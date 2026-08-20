@@ -1,0 +1,16 @@
+{
+    "title": "pas.plugins.identity",
+    "description": "A Plone add-on implementing a complete OAuth solution",
+    "project_slug": "pas-plugins-identity",
+    "author": "\u00c9rico Andrei",
+    "email": "ericof@plone.org",
+    "use_prerelease_versions": false,
+    "plone_version": "6.2.1",
+    "volto_version": "19.3.0",
+    "python_package_name": "pas.plugins.identity",
+    "npm_package_name": "@plone-collective/volto-identity",
+    "github_organization": "collective",
+    "container_registry": "github",
+    "initialize_documentation": false,
+    "__template__": "monorepo_addon"
+}
