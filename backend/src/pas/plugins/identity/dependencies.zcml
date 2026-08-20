@@ -1,7 +1,9 @@
 <configure xmlns="http://namespaces.zope.org/zope">
 
-  <!-- List all packages you depend here -->
+  <!-- Core depends on plone.restapi only: the services in ``core.services``
+       are its entire HTTP surface. ``plone.volto`` is deliberately absent so
+       that ``pip install pas.plugins.identity`` with no extras yields a
+       working install (I5). -->
   <include package="plone.restapi" />
-  <include package="plone.volto" />
 
 </configure>

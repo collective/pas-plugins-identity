@@ -1,0 +1,31 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <!-- Drivers are named utilities (D9); the name is the driver_id. -->
+  <utility
+      factory=".GitHubDriver"
+      provides="pas.plugins.identity.core.interfaces.IDriver"
+      name="github"
+      />
+
+  <utility
+      factory=".GoogleDriver"
+      provides="pas.plugins.identity.core.interfaces.IDriver"
+      name="google"
+      />
+
+  <utility
+      factory=".GenericOIDCDriver"
+      provides="pas.plugins.identity.core.interfaces.IDriver"
+      name="oidc-generic"
+      />
+
+  <utility
+      factory=".EmailDriver"
+      provides="pas.plugins.identity.core.interfaces.IDriver"
+      name="email"
+      />
+
+</configure>

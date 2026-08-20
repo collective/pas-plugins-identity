@@ -1,0 +1,13 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:five="http://namespaces.zope.org/five"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <five:registerClass
+      class=".plugin.IdentityPlugin"
+      meta_type="Identity Plugin"
+      permission="cmf.ManagePortal"
+      />
+
+</configure>

@@ -7,18 +7,10 @@
   <genericsetup:registerProfile
       name="default"
       title="pas.plugins.identity: Install"
-      description="A Plone add-on implementing a complete OAuth solution"
+      description="Multi-provider external authentication for Plone."
       provides="Products.GenericSetup.interfaces.EXTENSION"
       directory="profiles/default"
-      />
-
-  <genericsetup:registerProfile
-      name="initial"
-      title="pas.plugins.identity: Example content"
-      description="Create example content to showcase this addon."
-      provides="Products.GenericSetup.interfaces.EXTENSION"
-      directory="profiles/initial"
-      pre_handler=".setuphandlers.initial.create_example_content"
+      post_handler=".setuphandlers.post_install"
       />
 
   <genericsetup:registerProfile
@@ -27,14 +19,14 @@
       description="Uninstall pas.plugins.identity setup."
       provides="Products.GenericSetup.interfaces.EXTENSION"
       directory="profiles/uninstall"
+      post_handler=".setuphandlers.post_uninstall"
       />
 
-  <!-- Hide Uninstall Profile-->
+  <!-- Hide Uninstall Profile -->
   <utility
       factory=".setuphandlers.HiddenProfiles"
       name="pas.plugins.identity"
       />
-
 
   <include package=".upgrades" />
 

@@ -3,6 +3,38 @@
           i18n:domain="pas.plugins.identity"
 >
 
-  <!-- -*- extra stuff goes here -*- -->
+  <!-- Configured providers, as a JSON list. One record keeps the whole
+       configuration GenericSetup-exportable in a single place (§4.5). -->
+  <record name="pas.plugins.identity.providers">
+    <field type="plone.registry.field.Text">
+      <title>Providers</title>
+      <description>JSON list of configured authentication providers.</description>
+      <required>False</required>
+    </field>
+    <value></value>
+  </record>
+
+  <!-- Audit log retention (D7). PII is opt-in and off. -->
+  <record name="pas.plugins.identity.audit_max_entries">
+    <field type="plone.registry.field.Int">
+      <title>Audit entries kept per user</title>
+    </field>
+    <value>500</value>
+  </record>
+
+  <record name="pas.plugins.identity.audit_max_days">
+    <field type="plone.registry.field.Int">
+      <title>Audit retention in days</title>
+    </field>
+    <value>180</value>
+  </record>
+
+  <record name="pas.plugins.identity.audit_record_pii">
+    <field type="plone.registry.field.Bool">
+      <title>Record IP address and user agent</title>
+      <description>Off by default. Enabling this stores personal data; see the privacy notes in the documentation.</description>
+    </field>
+    <value>False</value>
+  </record>
 
 </registry>
