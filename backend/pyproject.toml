@@ -168,7 +168,8 @@ order-by-type = false
 preview = true
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["E501", "RUF001", "S101"]
+# S105/S106: test fixtures carry obviously-fake provider secrets.
+"tests/*" = ["E501", "RUF001", "S101", "S105", "S106"]
 # ``id`` and ``title`` are the constructor signature Zope factories expect.
 "src/pas/plugins/identity/core/pas/plugin.py" = ["A002"]
 

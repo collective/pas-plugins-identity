@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<registry>
+  <record name="pas.plugins.identity.providers" remove="true" />
+  <record name="pas.plugins.identity.audit_max_entries" remove="true" />
+  <record name="pas.plugins.identity.audit_max_days" remove="true" />
+  <record name="pas.plugins.identity.audit_record_pii" remove="true" />
+</registry>
