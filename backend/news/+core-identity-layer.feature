@@ -1,0 +1,1 @@
+Added the core identity layer: an identity store mapping `(provider, subject)` pairs to a permanent canonical userid, a driver framework with GitHub, Google, generic OIDC and email drivers, the five-event contract, and a PAS plugin providing extraction, authentication, credentials reset and opt-in challenge. @ericof
