@@ -3,6 +3,7 @@
     i18n_domain="pas.plugins.identity"
     >
 
+  <include package=".audit" />
   <include package=".drivers" />
   <include package=".pas" />
   <include package=".services" />

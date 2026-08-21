@@ -11,6 +11,9 @@ This is the only place per login where network I/O and authentication happen
 """
 
 from pas.plugins.identity import logger
+from pas.plugins.identity.core.audit import FLOW_REFUSED
+from pas.plugins.identity.core.audit import PAYLOAD_REJECTED
+from pas.plugins.identity.core.audit import record as audit
 from pas.plugins.identity.core.controlpanel import get_callback_url
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.flows import FlowManager
@@ -65,11 +68,15 @@ class IdentityCallback(IdentityService):
             claims = provider.driver.normalize_claims(payload)
         except FlowError as exc:
             # S1 -- a bad state, a replayed code or a rejected id_token all
-            # land here, and all read the same to the caller.
+            # land here, and all read the same to the caller. They do not read
+            # the same in the audit log, which is where an operator looking at
+            # a run of refusals needs the detail.
             logger.info("Refused callback for %r: %s", provider.provider_id, exc)
+            self._audit_failure(provider.provider_id, FLOW_REFUSED, exc)
             return self._error(401, "Authentication failed", str(exc))
         except ClaimsError as exc:
             logger.info("Unusable payload from %r: %s", provider.provider_id, exc)
+            self._audit_failure(provider.provider_id, PAYLOAD_REJECTED, exc)
             return self._error(502, "Provider payload rejected", str(exc))
 
         userid = self._authenticate(provider.provider_id, subject, claims)
@@ -83,6 +90,28 @@ class IdentityCallback(IdentityService):
                 "JWT authentication plugin not installed.",
             )
         return {"token": token, "came_from": attempt.came_from}
+
+    def _audit_failure(self, provider_id: str, event: str, exc: Exception) -> None:
+        """Record a refused callback (§4.6).
+
+        There is no userid to attribute this to -- that is what being refused
+        means -- so it lands in the unattributed bucket, which is where an
+        operator investigating an attack will look.
+
+        :param provider_id: Provider the callback claimed to come from.
+        :param event: Audit event name.
+        :param exc: The refusal, whose message names the precondition that
+            failed. It carries no credential: the flow layer raises on state,
+            nonce and signature, never echoing the code or the token.
+        """
+        audit(
+            None,
+            event,
+            provider_id,
+            False,
+            {"reason": str(exc)},
+            request=self.request,
+        )
 
     # ------------------------------------------------------------------
     # Steps

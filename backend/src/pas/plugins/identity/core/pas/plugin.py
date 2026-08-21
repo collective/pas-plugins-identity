@@ -14,6 +14,7 @@ plugin handed out, and never reaches the network.
 from AccessControl.class_init import InitializeClass
 from BTrees.OOBTree import OOSet
 from pas.plugins.identity import logger
+from pas.plugins.identity.core.audit import AuditLog
 from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
 from pas.plugins.identity.core.events import IdentityLinked
 from pas.plugins.identity.core.events import IdentityUnlinked
@@ -82,6 +83,7 @@ class IdentityPlugin(BasePlugin):
         self.id = id
         self.title = title
         self._store = IdentityStore()
+        self._audit = AuditLog()
         self._placeholder_passwords = OOSet()
 
     @property
@@ -91,6 +93,21 @@ class IdentityPlugin(BasePlugin):
         :returns: The store persisted inside this plugin.
         """
         return self._store
+
+    @property
+    def audit(self) -> AuditLog:
+        """Return the audit log (§4.6).
+
+        Created on demand as well as in the constructor, so a plugin that
+        predates the audit log gains one on first use rather than raising --
+        an upgrade step would do the same thing later and less kindly.
+
+        :returns: The log persisted inside this plugin.
+        """
+        log = getattr(self, "_audit", None)
+        if log is None:
+            log = self._audit = AuditLog()
+        return log
 
     # ------------------------------------------------------------------
     # IExtractionPlugin
