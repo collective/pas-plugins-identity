@@ -165,4 +165,41 @@ its own session binding (S1), duplicating the callback service in a different
 shape. Whether the zero-touch redirect URI is worth that is a judgement about
 the migration audience, not a technical blocker.
 
-**Status: open.** Recorded rather than decided.
+**Status: skipped** (Érico, 2026-08-21). Migrating sites update the redirect
+URI at each provider once, which is a documented one-time step; a second
+permanent entry point into the flow is a worse trade than that.
+
+### Decided after the spike
+
+**Both packages are test dependencies** (Érico, 2026-08-21), so the migration
+fixtures install the real plugins rather than synthesizing their storage. A
+fixture that encoded our reading of their BTrees would pass while the migration
+was wrong about them, which is the failure the spike existed to rule out. It
+paid for itself twice within the hour -- see the two findings below.
+
+**Non-default OIDC strategies are refused, not guessed** (Érico, 2026-08-21).
+Rather than adding a per-provider subject claim -- which would change a core
+driver signature Gate 1 depends on -- the migration detects a
+``user_property_as_userid`` that is not ``sub`` and refuses with an
+explanation. Those sites stay on ``pas.plugins.oidc``.
+
+### Two things the real dependency caught
+
+**``UserIdentity.from_dict`` is not in a release.** It exists in authomatic's
+development branch, which is what the local checkout had, and not in the 2.0.0
+on PyPI. A fixture written against the checked-out source failed immediately
+against the installed package. The migration itself never used it -- it reads
+the BTrees -- but the near miss is the argument for real fixtures in one line.
+
+**authomatic and oidc break the import-linter contract check.** Both 2.0.0
+wheels ship a ``pas/__init__.py`` containing a ``pkg_resources`` namespace
+declaration, and neither declares it in dist-info, so
+``horse-with-no-namespace`` cannot neutralise it. With either installed,
+``pas.plugins`` stops being a PEP 420 namespace and grimp refuses to build a
+graph rooted at ``pas.plugins.identity`` -- silently, printing a banner and
+exiting non-zero with no message.
+
+``make check-imports`` now runs in a throwaway venv holding this package and
+import-linter and nothing else (``--no-deps``, so it is quick). The layer
+contract is a property of this package's own source, so checking it in
+isolation is the more honest thing regardless; this just forced the issue.

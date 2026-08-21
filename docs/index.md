@@ -16,6 +16,7 @@ install
 providers
 audit-log
 profiles
+migration
 ```
 
 ```{toctree}

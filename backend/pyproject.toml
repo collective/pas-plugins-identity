@@ -48,6 +48,11 @@ server = [
 ]
 test = [
     "collective.MockMailHost",
+    # Gate 7 migration fixtures. Test-only, and deliberately real rather than
+    # synthesized: a fixture that encodes our reading of their storage would
+    # pass while the migration was wrong about it.
+    "pas.plugins.authomatic>=2.0.0",
+    "pas.plugins.oidc>=2.0.0",
     "horse-with-no-namespace",
     "import-linter",
     "plone.app.testing",

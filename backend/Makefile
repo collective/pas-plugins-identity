@@ -196,9 +196,23 @@ check-clean-install: requirements-mxdev.txt ## Import the package from a no-extr
 	rm -rf $(BACKEND_FOLDER)/.venv-clean
 
 .PHONY: check-imports
-check-imports: $(VENV_FOLDER) ## Enforce the core/profile/server layer boundary (§4.2)
+check-imports: ## Enforce the core/profile/server layer boundary (§4.2)
 	@echo "$(GREEN)==> Check layer boundaries$(RESET)"
-	@$(BIN_FOLDER)/lint-imports --config pyproject.toml
+	@# Run against a venv holding nothing but this package. The Gate 7 test
+	@# dependencies (pas.plugins.authomatic, pas.plugins.oidc) each ship a
+	@# pas/__init__.py declaring a pkg_resources namespace and do *not* declare
+	@# it in their dist-info, so horse-with-no-namespace cannot neutralise it.
+	@# With those installed, `pas.plugins` stops being a PEP 420 namespace and
+	@# grimp refuses to build a graph rooted at pas.plugins.identity at all --
+	@# silently, with a banner and a non-zero exit and no message.
+	@# The contract is a property of this package's own source, so checking it
+	@# in isolation is the more honest thing anyway. --no-deps keeps it quick.
+	@rm -rf $(BACKEND_FOLDER)/.venv-imports && \
+	uv venv $(UV_VENV_ARGS) $(BACKEND_FOLDER)/.venv-imports && \
+	VIRTUAL_ENV=$(BACKEND_FOLDER)/.venv-imports uv pip install -q import-linter && \
+	VIRTUAL_ENV=$(BACKEND_FOLDER)/.venv-imports uv pip install -q --no-deps . && \
+	$(BACKEND_FOLDER)/.venv-imports/bin/lint-imports --config pyproject.toml && \
+	rm -rf $(BACKEND_FOLDER)/.venv-imports
 
 # i18n
 .PHONY: i18n

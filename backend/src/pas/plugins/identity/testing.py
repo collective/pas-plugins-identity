@@ -10,7 +10,6 @@ from plone.registry.interfaces import IRegistry
 from plone.testing.zope import WSGI_SERVER_FIXTURE
 from zope.component import getUtility
 
-import pas.plugins.identity
 
 
 class Layer(PloneSandboxLayer):
@@ -21,9 +20,20 @@ class Layer(PloneSandboxLayer):
         # The z3c.autoinclude feature is disabled in the Plone fixture base
         # layer.
         import collective.MockMailHost
+        import pas.plugins.authomatic
+        import pas.plugins.oidc
         import plone.restapi
 
         self.loadZCML(package=plone.restapi)
+        # The two packages this one migrates from (Gate 7). Loaded here so the
+        # migration tests can install them for real rather than synthesizing
+        # their storage -- a fixture that encoded our reading of their BTrees
+        # would pass while the migration was wrong about them. Loading the
+        # ZCML registers their profiles; nothing applies one unless a test
+        # asks, so every other test still runs in a site that has never heard
+        # of either.
+        self.loadZCML(package=pas.plugins.authomatic)
+        self.loadZCML(package=pas.plugins.oidc)
         # Captures outgoing mail in the MailHost tool instead of sending it,
         # which is what makes the magic-link round trip testable in process
         # (Gate 3) without a mail server anywhere.
