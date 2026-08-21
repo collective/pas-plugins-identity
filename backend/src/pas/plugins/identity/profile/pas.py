@@ -8,8 +8,10 @@ object-load count is zero while they run.
 
 Why it matters: enumeration is called on paths where waking content is
 unacceptable -- rendering a Sharing tab, resolving a local role, listing group
-members. Membrane's userproperties plugin is the cautionary example (C9), and
-avoiding that shape is the reason this package does not depend on it.
+members. Whether Products.membrane has this problem is claim C9 and is *not*
+verified, so it is not asserted here or in the documentation; what is claimed
+is only that this package needs to be able to prove the property about its own
+code on every CI run, which is what the tests in ``tests/profile`` do.
 
 **Ordering.** Plone resolves a member property by walking the ordered property
 sheets and taking the first that *has* the property, so this plugin has to sit

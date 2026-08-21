@@ -4,7 +4,40 @@
 [![Black code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![CI](https://github.com/collective/pas-plugins-identity/actions/workflows/main.yml/badge.svg)](https://github.com/collective/pas-plugins-identity/actions/workflows/main.yml)
 
-A Plone add-on implementing a complete OAuth solution
+Multi-provider external authentication for Plone, built on [authlib](https://authlib.org/).
+
+One canonical Plone user id maps to many external identities — GitHub, Google, ORCID, a generic OIDC provider, an emailed magic link — for the same human, without running a separate identity broker.
+
+📖 **[Read the documentation](./docs/index.md)**
+
+## Features
+
+- **Identity linking.** One account, many providers. The identity key is `(provider, subject)`, and an identity already linked to somebody is never silently re-attached: a collision is a hard error, not a merge.
+- **Providers configured through the web.** A control panel with a form generated from each driver's published schema. Client secrets are write-only through every API surface, including GenericSetup export.
+- **Magic-link sign-in.** Single-use signed tokens, at most fifteen minutes, rate limited per address *and* per IP, answering identically for known and unknown addresses.
+- **An audit log.** Successes and refusals, per user or site-wide, bounded and purged on write. IP and user agent are off by default.
+- **A documented event contract**, which is what the audit log, the profile layer and your own integrations all consume. Nothing reaches into anything else.
+- **Optional content-backed profiles and groups** (`[profile]`), with user properties, enumeration and group membership served entirely from a dedicated catalog — no content object is woken to answer them, and the test suite asserts that rather than claiming it.
+- **Core installs alone.** `pip install pas.plugins.identity` with no extras is a tested configuration, enforced in CI by an import-linter contract.
+
+## Relationship to pas.plugins.oidc and pas.plugins.authomatic
+
+[`pas.plugins.authomatic`](https://github.com/collective/pas.plugins.authomatic) is the long-standing multi-provider option, built on the `authomatic` library, which is no longer maintained upstream. This package is a candidate successor for those sites.
+
+[`pas.plugins.oidc`](https://github.com/collective/pas.plugins.oidc) does one OIDC provider, and does it well. If that is what you need, it is the smaller and more mature dependency; there is no reason to move.
+
+The difference is linking. Neither of the above maps several external identities onto one canonical Plone user id, and that mapping is what this package is arranged around. Migration paths from both are planned; neither has shipped yet.
+
+## Why not Products.membrane / dexterity.membrane
+
+`Products.membrane` solves a similar problem — users as content — and has been doing so far longer than this package has existed.
+
+Its published compatibility matrix lists Plone 6.0 and 6.1, not 6.2. That is a fact about the current release rather than a judgement, and it may well change.
+
+The other reason is narrower: serving user properties and enumeration without waking a content object is the property the `[profile]` layer exists to provide, so it has to be something this package can assert about its own code on every CI run. It does, with a test that counts ZODB object activations and requires zero.
+
+We make no claim here about whether membrane has that problem; we have not measured it. Membrane's *design* is nonetheless where this one comes from, and the resemblance is not accidental.
+
 
 ## Quick Start 🏁
 
@@ -81,7 +114,7 @@ This monorepo consists of the following distinct sections:
 - **backend**: Houses the API and Plone installation, utilizing pip instead of buildout, and includes a policy package named pas.plugins.identity.
 - **frontend**: Contains the React (Volto) package.
 - **devops**: Encompasses Docker stack, Ansible playbooks, and cache settings.
-- **docs**: Scaffold for writing documentation for your project.
+- **docs**: Sphinx + MyST documentation, built in CI.
 
 ### Why this structure? 🤔
 

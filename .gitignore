@@ -3,3 +3,6 @@ node_modules
 /core
 /public
 *.mo
+
+# Sphinx build output
+docs/_build/
