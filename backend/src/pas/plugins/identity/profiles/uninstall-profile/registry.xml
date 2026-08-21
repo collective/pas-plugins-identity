@@ -15,4 +15,7 @@
   <record name="pas.plugins.identity.profile_enumeration_states"
           remove="True"
   />
+  <record name="pas.plugins.identity.profile_sync_portraits"
+          remove="True"
+  />
 </registry>

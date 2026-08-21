@@ -38,6 +38,7 @@ from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.profile.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.profile.catalog import query_catalog
 from pas.plugins.identity.profile.container import get_container
+from pas.plugins.identity.profile.portraits import sync_portrait
 from persistent.mapping import PersistentMapping
 from plone import api
 from plone.base.utils import safe_text
@@ -57,6 +58,12 @@ CLAIM_FIELDS = {
     "fullname": "fullname",
     "email": "email",
 }
+
+#: Key under which the last-synced avatar URL is remembered. Kept alongside
+#: the field values so the portrait is fetched when the provider changes it
+#: and not on every login -- this is the one part of the sync that makes a
+#: network request, and it runs while somebody waits for a page.
+PICTURE_KEY = "picture_url"
 
 
 def _remembered(profile: Any) -> Any:
@@ -189,6 +196,28 @@ def _login_for(userid: str, claims: Claims) -> str:
     return safe_text(claims.get("username") or claims.get("email") or userid)
 
 
+def sync_picture(profile: Any, userid: str, claims: Claims) -> bool:
+    """Copy the provider's avatar into portrait storage when it changed (D5).
+
+    Off unless the site switched it on; see
+    :mod:`pas.plugins.identity.profile.portraits` for why that is the default.
+
+    :param profile: The Profile, which remembers the last URL synced.
+    :param userid: Canonical Plone userid.
+    :param claims: Normalized claims.
+    :returns: Whether a portrait was stored.
+    """
+    url = safe_text(claims.get("picture_url") or "")
+    remembered = _remembered(profile)
+    if not url or url == remembered.get(PICTURE_KEY):
+        return False
+    # Remembered whether or not the fetch succeeds. A URL that failed once
+    # will fail again, and retrying it on every login turns one bad avatar
+    # into a permanent tax on that user's sign-in.
+    remembered[PICTURE_KEY] = url
+    return sync_portrait(userid, url)
+
+
 def _handle(userid: str, claims: Claims) -> None:
     """Ensure the Profile exists and sync the claims onto it.
 
@@ -199,6 +228,7 @@ def _handle(userid: str, claims: Claims) -> None:
     if profile is None:
         return
     sync_claims(profile, claims)
+    sync_picture(profile, userid, claims)
 
 
 def on_authenticated(event: Any) -> None:
@@ -236,4 +266,5 @@ __all__ = [
     "on_claims_refreshed",
     "on_identity_linked",
     "sync_claims",
+    "sync_picture",
 ]
