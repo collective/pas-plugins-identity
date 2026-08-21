@@ -13,7 +13,10 @@ from pas.plugins.identity.profile import indexing
 from pas.plugins.identity.profile import setuphandlers
 from pas.plugins.identity.profile.catalog import CATALOG_ID
 from pas.plugins.identity.profile.catalog import query_catalog
+from pas.plugins.identity.profile.pas import IdentityProfilePlugin
+from pas.plugins.identity.profile.pas import PLUGIN_ID
 from plone import api
+from plone.app.testing import TEST_USER_ID
 
 import pytest
 
@@ -73,6 +76,38 @@ class TestSubscribersAreInert:
     def test_modified_is_a_no_op(self, core_portal):
         """Same on edit."""
         indexing.profile_modified(core_portal, FakeEvent())
+
+
+class TestPluginIsInert:
+    """The plugin class itself, in a site that never installed the layer.
+
+    It is not registered there, so these instantiate it directly: the point is
+    that the code answers "nothing here" rather than raising, which is what a
+    misconfigured site -- plugin installed, profile removed -- would hit.
+    """
+
+    def test_enumeration_returns_nothing(self, core_portal):
+        """No catalog, no users to enumerate."""
+        assert IdentityProfilePlugin().enumerateUsers() == ()
+
+    def test_properties_return_none(self, core_portal):
+        """And no property sheet to offer."""
+        plugin = IdentityProfilePlugin()
+
+        assert (
+            plugin.getPropertiesForUser(core_portal.acl_users.getUserById(TEST_USER_ID))
+            is None
+        )
+
+
+class TestUninstallWithoutAPlugin:
+    def test_removing_an_absent_plugin_is_a_no_op(self, core_portal):
+        """Re-running the uninstall profile must not fail on the second pass."""
+        acl_users = api.portal.get_tool("acl_users")
+
+        setuphandlers.uninstall_plugin(acl_users)
+
+        assert PLUGIN_ID not in acl_users.objectIds()
 
 
 class TestRebuildStep:
