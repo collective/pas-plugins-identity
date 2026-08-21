@@ -47,6 +47,7 @@ server = [
     "cryptography>=42",
 ]
 test = [
+    "collective.MockMailHost",
     "horse-with-no-namespace",
     "import-linter",
     "plone.app.testing",
