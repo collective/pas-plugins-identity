@@ -1,0 +1,21 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <!-- The default sink writes into the identity plugin's own bounded log.
+       A deployment that wants entries elsewhere overrides this utility. -->
+  <utility
+      factory=".PluginAuditSink"
+      provides="pas.plugins.identity.core.interfaces.IAuditSink"
+      />
+
+  <!-- Successes are recorded from the event contract, so anything that fires
+       an event is audited, whoever fired it. -->
+  <subscriber handler=".subscribers.record_authentication" />
+  <subscriber handler=".subscribers.record_link" />
+  <subscriber handler=".subscribers.record_unlink" />
+  <subscriber handler=".subscribers.record_email_verified" />
+  <subscriber handler=".subscribers.record_claims_refresh" />
+
+</configure>

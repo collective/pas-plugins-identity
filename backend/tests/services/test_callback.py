@@ -10,6 +10,10 @@ from . import DEX_METADATA
 from . import USERINFO
 from .conftest import body
 from authlib.integrations.requests_client import OAuth2Session
+from pas.plugins.identity.core.audit import AUTHENTICATED
+from pas.plugins.identity.core.audit import FLOW_REFUSED
+from pas.plugins.identity.core.audit import PAYLOAD_REJECTED
+from pas.plugins.identity.core.audit import UNATTRIBUTED
 from pas.plugins.identity.core.flows import session as flow_session
 from pas.plugins.identity.core.flows.session import COOKIE_NAME
 from pas.plugins.identity.core.services.callback import IdentityCallback
@@ -330,3 +334,80 @@ class TestMisconfiguredSite:
 
         assert request_.response.getStatus() == 501
         assert "JWT authentication plugin" in result["error"]["message"]
+
+
+class TestAuditTrail:
+    """Gate 1 asks that every S1 refusal leaves an audit entry. A refusal
+    nobody can see afterwards is how a credential-stuffing run goes unnoticed.
+    """
+
+    @pytest.fixture()
+    def log(self, portal):
+        """Return the plugin's audit log, emptied."""
+        plugin = api.portal.get_tool("acl_users")["identity"]
+        plugin.audit._by_userid.clear()
+        return plugin.audit
+
+    def test_successful_login_is_recorded(self, portal, request_, flow, log):
+        """The happy path is audited too, against the userid it resolved."""
+        callback(portal, request_, provider="dex", code="c", state=flow)
+
+        entries = log.entries()
+        assert [entry.event for entry in entries] == [AUTHENTICATED]
+        assert entries[0].success is True
+
+    def test_unknown_state_is_recorded(self, portal, request_, flow, log):
+        """S1 -- and the entry says which precondition failed."""
+        callback(portal, request_, provider="dex", code="c", state="forged")
+
+        entry = log.entries()[0]
+        assert entry.event == FLOW_REFUSED
+        assert entry.success is False
+        assert entry.provider == "dex"
+        assert "state" in entry.detail["reason"].lower()
+
+    def test_replayed_code_is_recorded(self, portal, request_, flow, log):
+        """Two attempts, two entries: one success and one refusal."""
+        callback(portal, request_, provider="dex", code="c", state=flow)
+        request_.cookies[COOKIE_NAME] = request_.response.cookies[COOKIE_NAME]["value"]
+        callback(portal, request_, provider="dex", code="c", state=flow)
+
+        assert sorted(entry.event for entry in log.entries()) == [
+            AUTHENTICATED,
+            FLOW_REFUSED,
+        ]
+
+    def test_refusals_are_unattributed(self, portal, request_, flow, log):
+        """A refused callback has no userid -- that is what refused means --
+        so it lands in the bucket an operator investigating an attack reads."""
+        callback(portal, request_, provider="dex", code="c", state="forged")
+
+        assert len(log.entries(UNATTRIBUTED)) == 1
+
+    def test_unusable_payload_is_recorded(
+        self, portal, request_, configured, stub_metadata, stub_provider, log
+    ):
+        """A provider that identifies nobody is worth a distinct entry."""
+        stub_metadata(DEX_METADATA)
+        stub_provider({"email": "erico@plone.org"})
+        state = start_flow(portal, request_)
+
+        callback(portal, request_, provider="dex", code="c", state=state)
+
+        assert log.entries()[0].event == PAYLOAD_REJECTED
+
+    def test_no_credentials_are_recorded(self, portal, request_, flow, log):
+        """I4 -- the code, the token and the verifier never reach the log."""
+        callback(portal, request_, provider="dex", code="super-secret-code", state=flow)
+        request_.cookies[COOKIE_NAME] = request_.response.cookies[COOKIE_NAME]["value"]
+        callback(portal, request_, provider="dex", code="super-secret-code", state=flow)
+
+        rendered = str([entry.serialize() for entry in log.entries()])
+        assert "super-secret-code" not in rendered
+        assert "at" not in rendered.split("'detail'")[0]
+
+    def test_no_ip_recorded_by_default(self, portal, request_, flow, log):
+        """D7 -- privacy default is off, including on the failure path."""
+        callback(portal, request_, provider="dex", code="c", state="forged")
+
+        assert "ip" not in log.entries()[0].detail
