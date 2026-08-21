@@ -103,3 +103,38 @@ class TestPublished:
         )
 
         assert response.status_code in (404, 405)
+
+    def test_identities_is_reachable(self, url: str):
+        """``@identities`` is published, and refuses anonymous with JSON
+        rather than bouncing to a login form."""
+        response = requests.get(
+            f"{url}/@identities",
+            headers={"Accept": "application/json"},
+            timeout=30,
+        )
+
+        assert response.status_code == 401
+        assert response.json()["error"]["type"] == "Not authenticated"
+
+    def test_identities_accepts_post(self, url: str):
+        """The POST factory is registered under the same name."""
+        response = requests.post(
+            f"{url}/@identities",
+            headers={"Accept": "application/json"},
+            json={"provider": "dex"},
+            timeout=30,
+        )
+
+        assert response.status_code == 401
+
+    def test_identities_accepts_delete_with_two_segments(self, url: str):
+        """DELETE traverses ``<provider>/<subject>`` rather than 404ing on
+        the extra path segments."""
+        response = requests.delete(
+            f"{url}/@identities/dex/some-subject",
+            headers={"Accept": "application/json"},
+            timeout=30,
+        )
+
+        assert response.status_code == 401
+        assert response.json()["error"]["type"] == "Not authenticated"

@@ -12,6 +12,8 @@ This is the only place per login where network I/O and authentication happen
 
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.audit import FLOW_REFUSED
+from pas.plugins.identity.core.audit import LINK_COLLISION
+from pas.plugins.identity.core.audit import LINK_REFUSED
 from pas.plugins.identity.core.audit import PAYLOAD_REJECTED
 from pas.plugins.identity.core.audit import record as audit
 from pas.plugins.identity.core.controlpanel import get_callback_url
@@ -21,6 +23,7 @@ from pas.plugins.identity.core.flows.metadata import metadata_for
 from pas.plugins.identity.core.flows.session import FlowSession
 from pas.plugins.identity.core.interfaces import ClaimsError
 from pas.plugins.identity.core.interfaces import FlowError
+from pas.plugins.identity.core.interfaces import IdentityCollision
 from pas.plugins.identity.core.pas import CREDENTIALS_KEY
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.services.base import IdentityService
@@ -79,6 +82,9 @@ class IdentityCallback(IdentityService):
             self._audit_failure(provider.provider_id, PAYLOAD_REJECTED, exc)
             return self._error(502, "Provider payload rejected", str(exc))
 
+        if attempt.link_for is not None:
+            return self._link(attempt.link_for, provider.provider_id, subject, claims)
+
         userid = self._authenticate(provider.provider_id, subject, claims)
         token = self._token(userid)
         if token is None:
@@ -90,6 +96,61 @@ class IdentityCallback(IdentityService):
                 "JWT authentication plugin not installed.",
             )
         return {"token": token, "came_from": attempt.came_from}
+
+    def _link(
+        self, link_for: str, provider_id: str, subject: str, claims: dict
+    ) -> dict[str, Any]:
+        """Attach the identity just proven to an already-authenticated user.
+
+        S1 -- a linking flow requires an authenticated session at initiation
+        *and* completion by the same session. The attempt records whose
+        account it was started for; if the browser finishing it is anonymous,
+        or is somebody else, the link is refused. Without that check, an
+        attacker who could get a victim to finish their flow would attach
+        their own provider account to the victim's login.
+
+        :param link_for: Userid the attempt was started for.
+        :param provider_id: Provider id.
+        :param subject: Provider-side subject identifier.
+        :param claims: Normalized claims.
+        :returns: The linked identity, or an error body.
+        """
+        current = api.user.get_current()
+        userid = None if api.user.is_anonymous() else current.getId()
+        if userid != link_for:
+            logger.warning("Refusing to complete a link for %r as %r", link_for, userid)
+            audit(
+                link_for,
+                LINK_REFUSED,
+                provider_id,
+                False,
+                {"reason": "completed by a different session"},
+                request=self.request,
+            )
+            return self._error(
+                403,
+                "Link refused",
+                "This linking flow was started by a different session.",
+            )
+
+        try:
+            api.portal.get_tool("acl_users")[PLUGIN_ID].link(
+                userid, provider_id, subject, claims
+            )
+        except IdentityCollision as exc:
+            # I3/S3 -- never merge two people into one account.
+            logger.warning("Identity collision on %r: %s", provider_id, exc)
+            audit(
+                userid,
+                LINK_COLLISION,
+                provider_id,
+                False,
+                {"subject": subject, "reason": str(exc)},
+                request=self.request,
+            )
+            return self._error(409, "Identity already linked", str(exc))
+
+        return {"linked": {"provider": provider_id, "subject": subject}}
 
     def _audit_failure(self, provider_id: str, event: str, exc: Exception) -> None:
         """Record a refused callback (§4.6).

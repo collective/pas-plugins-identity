@@ -46,11 +46,14 @@ def finish(api_session, portal_url: str, query: dict):
 
 
 class TestCodeFlow:
-    def test_provider_is_listed(self, api_session, portal_url):
-        """The login page offers the provider that is actually configured."""
+    def test_providers_are_listed(self, api_session, portal_url):
+        """The login page offers the providers that are actually configured."""
         response = api_session.get(f"{portal_url}/@login-providers", timeout=30)
 
-        assert [item["id"] for item in response.json()["items"]] == ["dex"]
+        assert [item["id"] for item in response.json()["items"]] == [
+            "dex",
+            "dex-second",
+        ]
 
     def test_authorize_url_points_at_dex(self, api_session, portal_url, dex_service):
         """The authorize endpoint comes from Dex's own discovery document."""

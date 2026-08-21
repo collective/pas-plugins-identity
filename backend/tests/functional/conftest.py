@@ -23,10 +23,32 @@ CALLBACK_URL = "http://localhost:3000/login-identity"
 
 
 @pytest.fixture()
-def portal(functional, dex):
-    """Return the portal with the running Dex configured as a provider."""
+def second_provider(dex) -> dict:
+    """Return a second provider record, Dex's other static client.
+
+    One issuer, two clients: the identity key is ``(provider_id, subject)``,
+    so two provider ids against the same Dex is enough to exercise linking.
+    """
+    return {
+        **dex,
+        "id": "dex-second",
+        "title": "Dex (second)",
+        "config": {
+            **dex["config"],
+            "client_id": "plone-second",
+            "client_secret": "plone-second-secret",
+        },
+    }
+
+
+@pytest.fixture()
+def portal(functional, dex, second_provider):
+    """Return the portal with both Dex clients configured as providers."""
     site = functional["portal"]
-    set_providers([ProviderConfig.deserialize(dex)])
+    set_providers([
+        ProviderConfig.deserialize(dex),
+        ProviderConfig.deserialize(second_provider),
+    ])
     api.portal.set_registry_record(CALLBACK_URL_RECORD, CALLBACK_URL)
     transaction.commit()
     # Discovery is cached per issuer for the process; a previous test module
