@@ -298,13 +298,14 @@ class FlowManager:
             code_verifier=attempt.code_verifier,
             redirect_uri=redirect_uri,
         )
-        payload = self._claims(client, token, metadata, attempt)
+        payload = self._claims(client, token, provider, metadata, attempt)
         return attempt, payload
 
     def _claims(
         self,
         client: OAuth2Session,
         token: dict[str, Any],
+        provider: ProviderConfig,
         metadata: dict[str, Any],
         attempt: FlowAttempt,
     ) -> dict[str, Any]:
@@ -316,13 +317,14 @@ class FlowManager:
 
         :param client: The authlib client holding the token.
         :param token: The token response.
+        :param provider: The configured provider.
         :param metadata: Provider metadata.
         :param attempt: The consumed attempt, for nonce checking.
         :returns: The raw claims payload.
         :raises FlowError: When no claims can be obtained.
         """
         if "id_token" in token:
-            return self._id_token_claims(token, metadata, attempt)
+            return self._id_token_claims(token, provider, metadata, attempt)
         userinfo_endpoint = metadata.get("userinfo_endpoint")
         if not userinfo_endpoint:
             raise FlowError("Provider returned no id_token and exposes no userinfo")
@@ -333,6 +335,7 @@ class FlowManager:
     def _id_token_claims(
         self,
         token: dict[str, Any],
+        provider: ProviderConfig,
         metadata: dict[str, Any],
         attempt: FlowAttempt,
     ) -> dict[str, Any]:
@@ -343,6 +346,7 @@ class FlowManager:
         the session that started the flow (S1).
 
         :param token: The token response.
+        :param provider: The configured provider, naming the audience.
         :param metadata: Provider metadata, carrying ``jwks`` and ``issuer``.
         :param attempt: The consumed attempt.
         :returns: The validated claims.
@@ -354,13 +358,14 @@ class FlowManager:
         jwks = metadata.get("jwks")
         if not jwks:
             raise FlowError("Provider issued an id_token but exposes no JWKS")
+        audience = self._client_id(provider)
         try:
             claims = JsonWebToken(["RS256", "ES256", "RS512"]).decode(
                 token["id_token"],
                 key=jwks,
                 claims_options={
                     "iss": {"essential": True, "value": metadata.get("issuer")},
-                    "aud": {"essential": True, "value": self._client_id(metadata)},
+                    "aud": {"essential": True, "value": audience},
                     "nonce": {"essential": True, "value": attempt.nonce},
                 },
             )
@@ -370,13 +375,26 @@ class FlowManager:
         return dict(claims)
 
     @staticmethod
-    def _client_id(metadata: dict[str, Any]) -> str:
+    def _client_id(provider: ProviderConfig) -> str:
         """Return the client id the id_token audience must match.
 
-        :param metadata: Provider metadata, carrying ``client_id``.
+        Read from the provider's own configuration, not from the discovery
+        document: the audience of an ``id_token`` is the client *we*
+        authenticated as, and the provider does not get to name it.
+
+        An empty client id is refused rather than passed on, because authlib
+        reads ``{"value": ""}`` as "no constraint" -- so a misconfigured
+        provider would silently disable the audience check and accept a token
+        minted for any other client (S1).
+
+        :param provider: The configured provider.
         :returns: The client id.
+        :raises FlowError: When the provider has no client id configured.
         """
-        return metadata.get("client_id", "")
+        client_id = provider.config.get("client_id", "")
+        if not client_id:
+            raise FlowError(f"{provider.provider_id}: no client_id configured")
+        return client_id
 
     @staticmethod
     def _client(provider: ProviderConfig, redirect_uri: str) -> OAuth2Session:
