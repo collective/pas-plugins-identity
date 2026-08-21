@@ -1,0 +1,1 @@
+Made unmasking symmetric with masking for a provider whose driver has been removed. Masking already replaced every value for such a provider, but unmasking restored none of them, so a control panel round-trip that only renamed an orphaned provider overwrote its whole configuration with the mask sentinel. @ericof

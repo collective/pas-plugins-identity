@@ -1,4 +1,29 @@
 from pas.plugins.identity import PACKAGE_NAME
+from pas.plugins.identity.setuphandlers import HiddenProfiles
+
+
+class TestHiddenProfiles:
+    """The add-ons control panel should offer one thing: the add-on."""
+
+    def test_uninstall_profiles_hidden(self):
+        """Uninstall profiles are reached through the add-on, not listed."""
+        hidden = HiddenProfiles().getNonInstallableProfiles()
+
+        assert f"{PACKAGE_NAME}:uninstall" in hidden
+        assert f"{PACKAGE_NAME}:uninstall-profile" in hidden
+        assert f"{PACKAGE_NAME}:uninstall-server" in hidden
+
+    def test_default_profile_stays_installable(self):
+        """Hiding must not hide the profile people actually install."""
+        assert f"{PACKAGE_NAME}:default" not in (
+            HiddenProfiles().getNonInstallableProfiles()
+        )
+
+    def test_upgrades_package_hidden(self):
+        """The upgrades package is machinery, not a product."""
+        assert HiddenProfiles().getNonInstallableProducts() == [
+            f"{PACKAGE_NAME}.upgrades"
+        ]
 
 
 class TestSetupInstall:

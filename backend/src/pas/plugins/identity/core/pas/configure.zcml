@@ -6,8 +6,8 @@
 
   <five:registerClass
       class=".plugin.IdentityPlugin"
-      meta_type="Identity Plugin"
       permission="cmf.ManagePortal"
+      meta_type="Identity Plugin"
       />
 
 </configure>

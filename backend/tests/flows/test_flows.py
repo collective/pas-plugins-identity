@@ -9,6 +9,7 @@ from . import DEX_METADATA
 from . import DEX_PROVIDER
 from . import PORTAL_URL
 from . import REDIRECT_URI
+from datetime import timedelta
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.flows import ATTEMPT_TTL
 from pas.plugins.identity.core.flows import CODE_CHALLENGE_METHOD
@@ -17,7 +18,6 @@ from pas.plugins.identity.core.flows import FlowManager
 from pas.plugins.identity.core.flows import SESSION_KEY
 from pas.plugins.identity.core.flows import validate_came_from
 from pas.plugins.identity.core.interfaces import FlowError
-from datetime import timedelta
 from urllib.parse import parse_qs
 from urllib.parse import urlparse
 

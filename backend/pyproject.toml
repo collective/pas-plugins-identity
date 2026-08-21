@@ -40,6 +40,7 @@ server = [
 ]
 test = [
     "horse-with-no-namespace",
+    "import-linter",
     "plone.app.testing",
     "plone.restapi[test]",
     "pytest",
@@ -190,4 +191,36 @@ branch = true
 parallel = true
 omit = [
   "src/pas/plugins/identity/locales/*.py",
+]
+
+# Gate 0: the gate is 100% *branch* coverage, and it is enforced rather than
+# reported. An authentication plugin has no line that is fine to leave
+# unexercised, and the cheapest moment to cover one is when it is written.
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+skip_covered = true
+
+# Gate 0: the hard layer boundary (§4.2). ``core`` is what ``pip install
+# pas.plugins.identity`` gives you with no extras (I5), so it must never reach
+# into a layer that may not be installed -- and the two optional layers must
+# not grow a dependency on each other either.
+[tool.importlinter]
+root_packages = ["pas.plugins.identity"]
+
+[[tool.importlinter.contracts]]
+name = "Core never imports the optional layers"
+type = "forbidden"
+source_modules = ["pas.plugins.identity.core"]
+forbidden_modules = [
+  "pas.plugins.identity.profile",
+  "pas.plugins.identity.server",
+]
+
+[[tool.importlinter.contracts]]
+name = "The optional layers are independent of each other"
+type = "independence"
+modules = [
+  "pas.plugins.identity.profile",
+  "pas.plugins.identity.server",
 ]

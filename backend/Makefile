@@ -96,6 +96,19 @@ config: instance/etc/zope.ini
 .PHONY: install
 install: $(VENV_FOLDER) config ## Install Plone and dependencies
 
+# Optional dependency layers. The base install is core-only on purpose (I5),
+# so the CI matrix layers the extras on top: core / +profile / +server / all.
+EXTRAS ?=
+
+.PHONY: install-extras
+install-extras: $(VENV_FOLDER) ## Layer optional extras on top, e.g. EXTRAS=profile,server
+	@if [ -z "$(EXTRAS)" ]; then \
+		echo "$(YELLOW)==> No extras requested; core-only install$(RESET)"; \
+	else \
+		echo "$(GREEN)==> Install extras: $(EXTRAS)$(RESET)"; \
+		uv pip install -c constraints-mxdev.txt -e ".[test,$(EXTRAS)]"; \
+	fi
+
 .PHONY: clean
 clean: ## Clean installation and instance
 	@echo "$(RED)==> Cleaning environment and build$(RESET)"
@@ -140,6 +153,11 @@ format: ## Check and fix code base according to Plone standards
 	@uvx ruff@latest check --select I --fix --config $(BACKEND_FOLDER)/pyproject.toml
 	@uvx ruff@latest format --config $(BACKEND_FOLDER)/pyproject.toml
 	@uvx zpretty@latest -i src
+
+.PHONY: check-imports
+check-imports: $(VENV_FOLDER) ## Enforce the core/profile/server layer boundary (§4.2)
+	@echo "$(GREEN)==> Check layer boundaries$(RESET)"
+	@$(BIN_FOLDER)/lint-imports --config pyproject.toml
 
 # i18n
 .PHONY: i18n
