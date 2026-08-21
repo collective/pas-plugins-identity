@@ -1,0 +1,42 @@
+name: Docs
+
+on:
+  workflow_call:
+    inputs:
+      python-version:
+        required: false
+        type: string
+        default: "3.14"
+
+jobs:
+  build:
+    name: "Docs: Build"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: pip
+          cache-dependency-path: docs/requirements.txt
+
+      - name: Install
+        run: pip install -r docs/requirements.txt
+
+      # -W turns a warning into an error, so a dead cross reference, an
+      # orphaned page or a malformed directive fails here rather than
+      # shipping. Gate 4 requires the events page to be part of this build.
+      - name: Build
+        run: make -C docs html
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs
+          path: docs/_build/html
+          retention-days: 7
