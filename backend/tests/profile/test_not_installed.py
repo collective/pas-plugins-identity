@@ -11,6 +11,7 @@ These tests deliberately use the plain ``integration`` layer rather than the
 
 from pas.plugins.identity.profile import indexing
 from pas.plugins.identity.profile import setuphandlers
+from pas.plugins.identity.profile import subscribers
 from pas.plugins.identity.profile.catalog import CATALOG_ID
 from pas.plugins.identity.profile.catalog import query_catalog
 from pas.plugins.identity.profile.pas import IdentityProfilePlugin
@@ -98,6 +99,19 @@ class TestPluginIsInert:
             plugin.getPropertiesForUser(core_portal.acl_users.getUserById(TEST_USER_ID))
             is None
         )
+
+
+class TestSubscribersAreInertToo:
+    """First login in a core-only site must not go looking for a container."""
+
+    def test_get_profile_answers_none(self, core_portal):
+        """Nothing to find, and no exception on the way to finding nothing."""
+        assert subscribers.get_profile("alice") is None
+
+    def test_ensure_profile_creates_nothing(self, core_portal):
+        """A login in a core-only site must not mint content."""
+        assert subscribers.ensure_profile("alice", "alice", {}) is None
+        assert "identity-profiles" not in core_portal.objectIds()
 
 
 class TestUninstallWithoutAPlugin:

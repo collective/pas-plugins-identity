@@ -12,6 +12,7 @@ import {
   CONFIRM_MAGIC_LINK,
   CREATE_PROVIDER,
   DELETE_PROVIDER,
+  GET_MY_PROFILE,
   LIST_DRIVERS,
   LIST_IDENTITIES,
   LIST_LOGIN_PROVIDERS,
@@ -225,5 +226,20 @@ export function testProvider(providerId: string) {
       path: `/@identity-providers/${encodeURIComponent(providerId)}/test-connection`,
       data: {},
     },
+  };
+}
+
+/**
+ * Ask where the signed-in user's own Profile is, and how far along it is.
+ *
+ * Used for first-login routing: a user whose Profile is still `incomplete`
+ * should be asked to fill it in before being sent on their way. Answers
+ * usably in a site without the `[profile]` extra, so the caller does not have
+ * to know whether it is installed.
+ */
+export function getMyProfile() {
+  return {
+    type: GET_MY_PROFILE,
+    request: { op: 'get', path: '/@my-profile' },
   };
 }

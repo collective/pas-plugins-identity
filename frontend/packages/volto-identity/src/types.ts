@@ -77,3 +77,13 @@ export interface ConnectionCheck {
   token_endpoint?: string;
   has_jwks?: boolean;
 }
+
+/** Answer from `@my-profile`: where the caller's Profile is, and how far along. */
+export interface MyProfile {
+  '@id': string;
+  userid: string;
+  /** Absolute URL of the Profile, or null when the user has none. */
+  profile: string | null;
+  /** Workflow state, or null when the user has no Profile. */
+  review_state: string | null;
+}

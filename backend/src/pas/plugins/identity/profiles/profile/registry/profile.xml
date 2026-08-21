@@ -54,4 +54,16 @@
     </value>
   </record>
 
+  <!-- D5 portraits. Off by default: picture_url is a claim, and at plenty
+       of providers a claim is whatever the user typed. Turning it into a
+       server-side fetch makes the login path a request forger, so no site
+       should acquire that by upgrading. -->
+  <record name="pas.plugins.identity.profile_sync_portraits">
+    <field type="plone.registry.field.Bool">
+      <title>Copy provider avatars into portrait storage</title>
+      <description>Off by default. When on, the backend fetches the picture_url claim over HTTPS and stores it as the user's portrait. The URL comes from the provider and may be user-supplied; read the documentation before enabling this on a site with private network services.</description>
+    </field>
+    <value>False</value>
+  </record>
+
 </registry>

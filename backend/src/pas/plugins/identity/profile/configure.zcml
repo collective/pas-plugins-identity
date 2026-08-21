@@ -1,6 +1,7 @@
 <configure
     xmlns="http://namespaces.zope.org/zope"
     xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    xmlns:plone="http://namespaces.plone.org/plone"
     i18n_domain="pas.plugins.identity"
     >
 
@@ -51,6 +52,39 @@
   <adapter
       factory=".indexing.searchable_text_index"
       name="SearchableText"
+      />
+
+  <!-- First login and claims sync (Gate 6c). Registered for the event
+       contract only (§4.3): this layer never reaches into core, and anything
+       that fires the events gets profile handling for free. -->
+  <subscriber
+      for="pas.plugins.identity.core.events.IExternalIdentityAuthenticated"
+      handler=".subscribers.on_authenticated"
+      />
+
+  <subscriber
+      for="pas.plugins.identity.core.events.IIdentityLinked"
+      handler=".subscribers.on_identity_linked"
+      />
+
+  <subscriber
+      for="pas.plugins.identity.core.events.IUserClaimsRefreshed"
+      handler=".subscribers.on_claims_refreshed"
+      />
+
+  <!-- A user may edit their own Profile and nobody else's. Computed rather
+       than assigned, so there is nothing to keep in step. -->
+  <adapter factory=".localroles.ProfileSelfRole" />
+
+  <!-- Volto's first-login routing question. Authenticated-only, checked in
+       the service so the refusal is a JSON body rather than a login form. -->
+  <plone:service
+      method="GET"
+      factory=".services.myprofile.MyProfileGet"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer=".interfaces.IIdentityProfileLayer"
+      name="@my-profile"
       />
 
   <!-- Repair, kept apart from the check that finds the damage. Re-runnable

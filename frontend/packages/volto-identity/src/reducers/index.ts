@@ -11,6 +11,7 @@ import {
   CONFIRM_MAGIC_LINK,
   CREATE_PROVIDER,
   DELETE_PROVIDER,
+  GET_MY_PROFILE,
   LIST_DRIVERS,
   LIST_IDENTITIES,
   LIST_LOGIN_PROVIDERS,
@@ -29,6 +30,7 @@ import type {
   Driver,
   Identity,
   LoginProvider,
+  MyProfile,
   RequestState,
   TokenResponse,
 } from '../types';
@@ -158,6 +160,12 @@ export const providerTest = requestReducer<ConnectionCheck | null>(
   null,
 );
 
+export const myProfile = requestReducer<MyProfile | null>(
+  GET_MY_PROFILE,
+  (result) => result ?? null,
+  null,
+);
+
 const reducers = {
   loginProviders,
   providerLogin,
@@ -173,6 +181,7 @@ const reducers = {
   providerUpdate,
   providerDelete,
   providerTest,
+  myProfile,
 };
 
 export default reducers;
