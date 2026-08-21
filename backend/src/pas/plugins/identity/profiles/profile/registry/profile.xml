@@ -58,6 +58,20 @@
        of providers a claim is whatever the user typed. Turning it into a
        server-side fetch makes the login path a request forger, so no site
        should acquire that by upgrading. -->
+  <!-- Workflow states in which a Group is enumerated and grants membership
+       (Gate 6d). Deactivating a group removes its members' access without
+       editing a single Profile. -->
+  <record name="pas.plugins.identity.group_enumeration_states">
+    <field type="plone.registry.field.Tuple">
+      <title>Enumeration-active group states</title>
+      <description>Groups in these workflow states are visible to group enumeration and grant membership.</description>
+      <value_type type="plone.registry.field.TextLine" />
+    </field>
+    <value>
+      <element>active</element>
+    </value>
+  </record>
+
   <record name="pas.plugins.identity.profile_sync_portraits">
     <field type="plone.registry.field.Bool">
       <title>Copy provider avatars into portrait storage</title>

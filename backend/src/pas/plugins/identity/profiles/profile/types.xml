@@ -5,4 +5,7 @@
   <object meta_type="Dexterity FTI"
           name="IdentityProfile"
   />
+  <object meta_type="Dexterity FTI"
+          name="IdentityGroup"
+  />
 </object>

@@ -5,9 +5,15 @@
   <object meta_type="Workflow"
           name="identity_profile_workflow"
   />
+  <object meta_type="Workflow"
+          name="identity_group_workflow"
+  />
   <bindings>
     <type type_id="IdentityProfile">
       <bound-workflow workflow_id="identity_profile_workflow" />
+    </type>
+    <type type_id="IdentityGroup">
+      <bound-workflow workflow_id="identity_group_workflow" />
     </type>
   </bindings>
 </object>

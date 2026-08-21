@@ -16,7 +16,9 @@ cache; a test that only checked ghost state would miss a load followed by a
 deactivation.
 """
 
+from pas.plugins.identity.profile.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.profile.catalog import PROFILE_PORTAL_TYPE
+from pas.plugins.identity.profile.content.group import Group
 from pas.plugins.identity.profile.content.profile import Profile
 from pas.plugins.identity.profile.pas import PLUGIN_ID
 from plone import api
@@ -65,11 +67,21 @@ def profiles(portal):
       here would be measuring the fixture, not the plugin.
 
     :param portal: The Plone site.
-    :returns: The Profile objects, as ghosts.
+    :returns: The Profile and Group objects, as ghosts.
     """
     container = portal["identity-profiles"]
     created = []
     with api.env.adopt_roles(["Manager"]):
+        for group_id in ("editors", "reviewers"):
+            created.append(
+                api.content.create(
+                    container=container,
+                    type=GROUP_PORTAL_TYPE,
+                    id=group_id,
+                    group_id=group_id,
+                    title=group_id.title(),
+                )
+            )
         for index in range(10):
             created.append(
                 api.content.create(
@@ -81,6 +93,7 @@ def profiles(portal):
                     fullname=f"User Number {index}",
                     email=f"user{index}@example.com",
                     location=f"Room {index}",
+                    group_ids=("editors",) if index % 2 else (),
                 )
             )
     transaction.savepoint(optimistic=True)
@@ -118,29 +131,35 @@ def loads(monkeypatch):
 
 
 def profile_loads(recorded: list[str]) -> list[str]:
-    """Filter a load record down to Profile activations.
+    """Filter a load record down to Profile and Group activations.
 
     :param recorded: Class names recorded by the ``loads`` fixture.
-    :returns: Only the Profile entries.
+    :returns: Only the entries for content this layer catalogues.
     """
-    return [name for name in recorded if name == Profile.__name__]
+    return [name for name in recorded if name in (Profile.__name__, Group.__name__)]
 
 
 class TestTheFixtureItself:
     def test_profiles_start_as_ghosts(self, profiles):
         """Without this, a load count of zero would prove nothing."""
-        assert [profile._p_changed for profile in profiles] == [None] * 10
+        assert [profile._p_changed for profile in profiles] == [None] * 12
 
     def test_the_counter_sees_a_real_load(self, profiles, loads):
         """The counter is wired up: touching a Profile registers."""
-        profiles[0].fullname  # noqa: B018 - the point is the side effect
+        profile = next(one for one in profiles if isinstance(one, Profile))
 
-        assert profile_loads(loads) == [Profile.__name__]
+        profile.fullname  # noqa: B018 - the point is the side effect
+
+        assert Profile.__name__ in profile_loads(loads)
 
 
 class TestEnumerationWakesNothing:
     def test_enumerate_everybody(self, plugin, profiles, loads):
-        """A bare enumeration returns all ten and loads none of them."""
+        """A bare enumeration returns the ten users and loads none of them.
+
+        Ten, not twelve: the two Groups share this catalog and must not leak
+        into a user listing.
+        """
         results = plugin.enumerateUsers()
 
         assert len(results) == 10
@@ -164,7 +183,7 @@ class TestEnumerationWakesNothing:
         """The other half of the claim: nothing was woken and put back."""
         plugin.enumerateUsers(fullname="User")
 
-        assert [profile._p_changed for profile in profiles] == [None] * 10
+        assert [profile._p_changed for profile in profiles] == [None] * 12
 
 
 class TestPropertiesWakeNothing:
@@ -197,3 +216,47 @@ class TestPropertiesWakeNothing:
             plugin.getPropertiesForUser(user)
 
         assert profile_loads(loads) == []
+
+
+class TestGroupsWakeNothing:
+    """Gate 6d rides on the same guarantee, on a hotter path.
+
+    ``getGroupsForPrincipal`` runs on every permission check that touches a
+    local role, so if anything here woke an object it would do so constantly.
+    """
+
+    def test_groups_for_principal(self, plugin, profiles, acl_users, loads):
+        """The hottest question in the layer."""
+        principal = acl_users.getUserById("user1")
+
+        assert plugin.getGroupsForPrincipal(principal) == ("editors",)
+        assert profile_loads(loads) == []
+
+    def test_group_enumeration(self, plugin, profiles, loads):
+        """Rendering the group listing."""
+        assert len(plugin.enumerateGroups()) == 2
+        assert profile_loads(loads) == []
+
+    def test_group_members(self, plugin, profiles, loads):
+        """The rare direction, still off the index."""
+        assert plugin.getGroupMembers("editors") == (
+            "user1",
+            "user3",
+            "user5",
+            "user7",
+            "user9",
+        )
+        assert profile_loads(loads) == []
+
+    def test_group_ids(self, plugin, profiles, loads):
+        """Introspection too."""
+        assert plugin.getGroupIds() == ["editors", "reviewers"]
+        assert profile_loads(loads) == []
+
+    def test_everything_is_still_a_ghost(self, plugin, profiles, acl_users):
+        """The other half of the claim, over the whole group surface."""
+        plugin.getGroupsForPrincipal(acl_users.getUserById("user1"))
+        plugin.enumerateGroups()
+        plugin.getGroupMembers("editors")
+
+        assert [profile._p_changed for profile in profiles] == [None] * 12

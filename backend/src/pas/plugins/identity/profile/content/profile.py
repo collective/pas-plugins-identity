@@ -63,6 +63,18 @@ class IProfileSchema(model.Schema):
         required=False,
     )
 
+    group_ids = schema.Tuple(
+        title=_("Groups"),
+        description=_(
+            "Ids of the groups this user belongs to. Editing this field is "
+            "the only way membership changes; there is no write API (§7)."
+        ),
+        value_type=schema.TextLine(),
+        required=False,
+        missing_value=(),
+        default=(),
+    )
+
 
 @implementer(IProfileSchema)
 class Profile(Container):

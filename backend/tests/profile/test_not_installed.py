@@ -91,6 +91,18 @@ class TestPluginIsInert:
         """No catalog, no users to enumerate."""
         assert IdentityProfilePlugin().enumerateUsers() == ()
 
+    def test_group_enumeration_returns_nothing(self, core_portal):
+        """No catalog, no groups."""
+        assert IdentityProfilePlugin().enumerateGroups() == ()
+
+    def test_group_ids_are_empty(self, core_portal):
+        """Introspection answers, rather than raising."""
+        assert IdentityProfilePlugin().getGroupIds() == []
+
+    def test_group_members_are_empty(self, core_portal):
+        """Including the query-shaped one."""
+        assert IdentityProfilePlugin().getGroupMembers("editors") == ()
+
     def test_properties_return_none(self, core_portal):
         """And no property sheet to offer."""
         plugin = IdentityProfilePlugin()

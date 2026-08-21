@@ -6,6 +6,7 @@ test too. These damage the catalog on purpose, one mode at a time.
 """
 
 from pas.plugins.identity.profile import doctor
+from pas.plugins.identity.profile.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.profile.catalog import PROFILE_PORTAL_TYPE
 from plone import api
 
@@ -87,7 +88,10 @@ class TestDrift:
         findings = doctor.check()
 
         assert kinds(findings) == {doctor.STALE}
-        assert "fullname" in findings[0]["detail"]
+        details = " ".join(finding["detail"] for finding in findings)
+        assert "fullname" in details
+        # Title is computed from the full name, so it goes stale with it.
+        assert "Title" in details
 
     def test_cleared_field_is_reported(self, make_profile):
         """Clearing a field silently is drift too, and easier to miss."""
@@ -122,6 +126,90 @@ class TestDrift:
         make_profile("bob", login="")
 
         assert doctor.DUPLICATE_LOGIN not in kinds(doctor.check())
+
+
+@pytest.fixture
+def make_group(portal):
+    """Return a factory for Group content.
+
+    :param portal: The Plone site.
+    :returns: Callable taking a group id.
+    """
+
+    def factory(group_id: str, **kwargs) -> object:
+        with api.env.adopt_roles(["Manager"]):
+            return api.content.create(
+                container=portal["identity-profiles"],
+                type=GROUP_PORTAL_TYPE,
+                id=kwargs.pop("id", group_id),
+                group_id=group_id,
+                title=kwargs.pop("title", group_id.title()),
+                **kwargs,
+            )
+
+    return factory
+
+
+class TestGroups:
+    """The catalog holds both types, so the check has to cover both."""
+
+    def test_a_healthy_group_is_clean(self, make_group):
+        """A Group created through the normal path is consistent."""
+        make_group("editors")
+
+        assert doctor.check() == []
+
+    def test_a_missing_group_is_reported(self, catalog, make_group):
+        """Same drift mode, other type."""
+        group = make_group("editors")
+        catalog.unindexObject(group)
+
+        assert doctor.MISSING in kinds(doctor.check())
+
+    def test_stale_group_metadata_is_reported(self, make_group):
+        """An edit that never reached the catalog."""
+        group = make_group("editors", title="Site Editors")
+        group.title = "Something Else"
+
+        assert doctor.STALE in kinds(doctor.check())
+
+    def test_duplicate_group_ids_are_reported(self, make_group):
+        """Two groups answering to one id is never legitimate."""
+        make_group("editors", id="editors")
+        make_group("editors", id="editors-again")
+
+        assert doctor.DUPLICATE_GROUP_ID in kinds(doctor.check())
+
+    def test_a_profile_listing_an_unknown_group_is_reported(self, make_profile):
+        """Almost always a renamed or deleted group nobody cleaned up after.
+
+        Not fatal -- the groups plugin filters it out rather than granting
+        anything -- but it is silent, which is exactly what the check is for.
+        """
+        make_profile("alice", group_ids=("ghosts",))
+
+        findings = doctor.check()
+
+        assert doctor.UNKNOWN_GROUP in kinds(findings)
+        assert "ghosts" in " ".join(f["detail"] for f in findings)
+
+    def test_a_known_group_is_not_reported(self, make_profile, make_group):
+        """The other half."""
+        make_group("editors")
+        make_profile("alice", group_ids=("editors",))
+
+        assert doctor.check() == []
+
+    def test_profile_columns_are_not_checked_on_a_group(self, make_group):
+        """One catalog schema, two types.
+
+        A Group has no login and a Profile has no group_id; comparing the
+        whole schema against both would report a dozen findings per object
+        and bury the one that mattered.
+        """
+        make_group("editors")
+
+        assert doctor.check() == []
 
 
 class TestRebuildRepairs:

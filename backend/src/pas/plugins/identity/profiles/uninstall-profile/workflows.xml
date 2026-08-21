@@ -5,4 +5,7 @@
   <object name="identity_profile_workflow"
           remove="True"
   />
+  <object name="identity_group_workflow"
+          remove="True"
+  />
 </object>

@@ -27,10 +27,17 @@ this plugin, not an incidental property (I1).
 """
 
 from AccessControl.class_init import InitializeClass
-from pas.plugins.identity.profile.catalog import all_brains
+from pas.plugins.identity.profile.catalog import group_brains
+from pas.plugins.identity.profile.catalog import profile_brains
+from pas.plugins.identity.profile.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.profile.catalog import query_catalog
 from plone import api
+from Products.PlonePAS.interfaces.group import IGroupIntrospection
+from Products.PlonePAS.plugins.group import PloneGroup
+from Products.PluggableAuthService.interfaces.plugins import IGroupEnumerationPlugin
+from Products.PluggableAuthService.interfaces.plugins import IGroupsPlugin
 from Products.PluggableAuthService.interfaces.plugins import IPropertiesPlugin
+from Products.PluggableAuthService.interfaces.plugins import IRolesPlugin
 from Products.PluggableAuthService.interfaces.plugins import IUserEnumerationPlugin
 from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
 from Products.PluggableAuthService.UserPropertySheet import UserPropertySheet
@@ -47,6 +54,9 @@ PLUGIN_TITLE = "Identity: profile-backed properties and enumeration"
 
 #: Registry record listing the workflow states a Profile is enumerated in.
 ENUMERATION_STATES_RECORD = "pas.plugins.identity.profile_enumeration_states"
+
+#: Registry record listing the workflow states a Group is enumerated in.
+GROUP_STATES_RECORD = "pas.plugins.identity.group_enumeration_states"
 
 #: Member properties served from brain metadata. Deliberately the standard
 #: Plone set and nothing invented: a property Plone has no idea about is a
@@ -101,9 +111,15 @@ def _matches(candidate: str | None, terms: list[str], exact: bool) -> bool:
     return any(term in folded for term in terms)
 
 
-@implementer(IPropertiesPlugin, IUserEnumerationPlugin)
+@implementer(
+    IPropertiesPlugin,
+    IUserEnumerationPlugin,
+    IGroupsPlugin,
+    IGroupEnumerationPlugin,
+    IGroupIntrospection,
+)
 class IdentityProfilePlugin(BasePlugin):
-    """Serves member properties and user enumeration from the Profile catalog."""
+    """Serves properties, user enumeration and groups from the catalog."""
 
     meta_type = "Identity Profile Plugin"
     security = None  # set by InitializeClass below
@@ -137,7 +153,9 @@ class IdentityProfilePlugin(BasePlugin):
         if catalog is None:
             return []
         states = self._enumeration_states()
-        return [brain for brain in all_brains(catalog) if brain.review_state in states]
+        return [
+            brain for brain in profile_brains(catalog) if brain.review_state in states
+        ]
 
     def _brain_for_userid(self, userid: str | None) -> Any | None:
         """Return the brain of one user's Profile.
@@ -266,11 +284,192 @@ class IdentityProfilePlugin(BasePlugin):
             for attribute, terms in criteria
         )
 
+    # -- groups (Gate 6d) -------------------------------------------------
+
+    def _group_states(self) -> tuple[str, ...]:
+        """Return the workflow states a Group is visible in.
+
+        :returns: State ids; empty when the layer is not installed here.
+        """
+        states = api.portal.get_registry_record(GROUP_STATES_RECORD, default=None)
+        return tuple(states) if states else ()
+
+    def _active_group_brains(self) -> list[Any]:
+        """Return brains for every Group in an enumeration-active state.
+
+        :returns: Brains, or an empty list when the layer is not installed.
+        """
+        catalog = query_catalog()
+        if catalog is None:
+            return []
+        states = self._group_states()
+        return [
+            brain for brain in group_brains(catalog) if brain.review_state in states
+        ]
+
+    def _active_group_ids(self) -> set[str]:
+        """Return the ids of the groups that currently exist and are active.
+
+        :returns: Group ids.
+        """
+        return {brain.group_id for brain in self._active_group_brains()}
+
+    def getGroupsForPrincipal(
+        self, principal: Any, request: Any = None
+    ) -> tuple[str, ...]:
+        """Return the ids of the groups a principal belongs to.
+
+        Read off the principal's own Profile brain, which is why membership
+        lives on the member rather than on the group: this is asked on every
+        permission check that touches a local role, and answering it must not
+        cost an object load (C6).
+
+        Filtered against the groups that actually exist and are active, so
+        deactivating a group removes its members' access without editing a
+        single Profile -- and so a group id left behind by a deleted group
+        does not keep granting anything.
+
+        :param principal: The user PAS is asking about.
+        :param request: The request, unused.
+        :returns: Group ids.
+        """
+        brain = self._brain_for_userid(principal.getId())
+        if brain is None:
+            return ()
+        claimed = tuple(getattr(brain, "group_ids", None) or ())
+        if not claimed:
+            return ()
+        active = self._active_group_ids()
+        return tuple(group_id for group_id in claimed if group_id in active)
+
+    def enumerateGroups(
+        self,
+        id: str | None = None,
+        exact_match: bool = False,
+        sort_by: str | None = None,
+        max_results: int | None = None,
+        **kw: Any,
+    ) -> tuple[dict[str, str], ...]:
+        """Enumerate groups from Group brains.
+
+        Substring by default, like the user enumeration and for the same
+        reason: it is what the stock plugins do and therefore what the Sharing
+        tab expects.
+
+        :param id: Group id or ids to match.
+        :param exact_match: Require the whole value to equal a term.
+        :param sort_by: Sort key; applied by PAS, ignored here.
+        :param max_results: Result cap.
+        :param kw: Additional criteria; ``title`` and ``name`` are understood.
+        :returns: One record per matching group.
+        """
+        criteria = [
+            (attribute, [term.lower() for term in terms])
+            for attribute, terms in (
+                ("group_id", _as_terms(id)),
+                ("Title", _as_terms(kw.get("title"))),
+                ("group_id", _as_terms(kw.get("name"))),
+            )
+            if terms
+        ]
+        results = []
+        for brain in self._active_group_brains():
+            if criteria and not self._brain_matches(brain, criteria, exact_match):
+                continue
+            results.append({
+                "id": brain.group_id,
+                "title": brain.Title,
+                "pluginid": self.getId(),
+            })
+            if max_results and len(results) >= max_results:
+                break
+        return tuple(results)
+
+    # -- IGroupIntrospection ---------------------------------------------
+
+    def getGroupById(self, group_id: str, default: Any = None) -> Any:
+        """Return a decorated group object for one group id.
+
+        Built the way PlonePAS builds its own: a ``PloneGroup`` decorated with
+        every property sheet, nested group and role the site's plugins offer
+        it. Constructing it by hand instead would produce something that looks
+        like a group until the first template asks it a question.
+
+        :param group_id: The group id.
+        :param default: Returned when there is no such active group.
+        :returns: The group, or ``default``.
+        """
+        if group_id not in self._active_group_ids():
+            return default
+        return self._decorate(group_id)
+
+    def _decorate(self, group_id: str) -> Any:
+        """Wrap a group id as a ``PloneGroup`` carrying its site data.
+
+        :param group_id: The group id.
+        :returns: The decorated group.
+        """
+        plugins = self._getPAS()._getOb("plugins")
+        group = PloneGroup(group_id, group_id).__of__(self)
+
+        for propfinder_id, propfinder in plugins.listPlugins(IPropertiesPlugin):
+            data = propfinder.getPropertiesForUser(group, None)
+            if data:
+                group.addPropertysheet(propfinder_id, data)
+
+        for _rolemaker_id, rolemaker in plugins.listPlugins(IRolesPlugin):
+            roles = rolemaker.getRolesForPrincipal(group, None)
+            if roles:
+                group._addRoles(roles)
+        group._addRoles(["Authenticated"])
+
+        return group.__of__(self)
+
+    def getGroupIds(self) -> list[str]:
+        """Return the ids of every active group.
+
+        :returns: Group ids, sorted so listings are stable.
+        """
+        return sorted(self._active_group_ids())
+
+    def getGroups(self) -> list[Any]:
+        """Return every active group, decorated.
+
+        :returns: Group objects.
+        """
+        return [self._decorate(group_id) for group_id in self.getGroupIds()]
+
+    def getGroupMembers(self, group_id: str) -> tuple[str, ...]:
+        """Return the userids belonging to a group.
+
+        The rare direction of the question, so it is the one that costs a
+        catalog query rather than a metadata read. Still brains only.
+
+        :param group_id: The group id.
+        :returns: Userids, sorted.
+        """
+        catalog = query_catalog()
+        if catalog is None:
+            return ()
+        states = self._enumeration_states()
+        return tuple(
+            sorted(
+                brain.userid
+                for brain in catalog.unrestrictedSearchResults(
+                    portal_type=PROFILE_PORTAL_TYPE, group_ids=group_id
+                )
+                if brain.review_state in states
+            )
+        )
+
 
 classImplements(
     IdentityProfilePlugin,
     IPropertiesPlugin,
     IUserEnumerationPlugin,
+    IGroupsPlugin,
+    IGroupEnumerationPlugin,
+    IGroupIntrospection,
 )
 
 InitializeClass(IdentityProfilePlugin)

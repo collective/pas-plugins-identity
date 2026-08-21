@@ -63,6 +63,16 @@ class TestRegistrationsRemoved:
         workflows = api.portal.get_tool("portal_workflow")
         assert "identity_profile_workflow" not in workflows.objectIds()
 
+    def test_group_type_removed(self, portal, uninstalled):
+        """Both content types go, not just the one anybody remembers."""
+        types = api.portal.get_tool("portal_types")
+        assert "IdentityGroup" not in types.objectIds()
+
+    def test_group_workflow_removed(self, portal, uninstalled):
+        """And both workflows."""
+        workflows = api.portal.get_tool("portal_workflow")
+        assert "identity_group_workflow" not in workflows.objectIds()
+
     def test_pas_plugin_removed(self, portal, uninstalled):
         """No orphan plugins (I8)."""
         acl_users = api.portal.get_tool("acl_users")
