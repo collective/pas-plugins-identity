@@ -10,6 +10,7 @@ from pas.plugins.identity import PACKAGE_NAME
 from pas.plugins.identity.profile.catalog import CATALOG_ID
 from pas.plugins.identity.profile.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.profile.interfaces import IIdentityProfileLayer
+from pas.plugins.identity.profile.pas import PLUGIN_ID as PROFILE_PLUGIN_ID
 from plone import api
 
 import pytest
@@ -61,6 +62,27 @@ class TestRegistrationsRemoved:
         """The workflow definition is unregistered."""
         workflows = api.portal.get_tool("portal_workflow")
         assert "identity_profile_workflow" not in workflows.objectIds()
+
+    def test_pas_plugin_removed(self, portal, uninstalled):
+        """No orphan plugins (I8)."""
+        acl_users = api.portal.get_tool("acl_users")
+
+        assert PROFILE_PLUGIN_ID not in acl_users.objectIds()
+
+    def test_pas_plugin_deactivated_everywhere(self, portal, uninstalled):
+        """A plugin id left in an interface list breaks the next PAS lookup."""
+        plugins = api.portal.get_tool("acl_users").plugins
+
+        for info in plugins.listPluginTypeInfo():
+            assert PROFILE_PLUGIN_ID not in plugins.listPluginIds(info["interface"])
+
+    def test_properties_fall_back_to_the_seeded_sheet(self, portal, uninstalled):
+        """The site still works, on whatever core left behind."""
+        acl_users = api.portal.get_tool("acl_users")
+        acl_users.source_users.addUser("bob", "bob", "placeholder-password")
+        api.user.get(userid="bob").setMemberProperties({"fullname": "Bob"})
+
+        assert api.user.get(userid="bob").getProperty("fullname") == "Bob"
 
     def test_browserlayer_removed(self, portal, uninstalled, browser_layers):
         """Nothing bound to the layer answers any more."""

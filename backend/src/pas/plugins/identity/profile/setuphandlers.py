@@ -19,8 +19,13 @@ from pas.plugins.identity.profile.catalog import INDEXES
 from pas.plugins.identity.profile.catalog import METADATA
 from pas.plugins.identity.profile.catalog import query_catalog
 from pas.plugins.identity.profile.container import get_container
+from pas.plugins.identity.profile.pas import IdentityProfilePlugin
+from pas.plugins.identity.profile.pas import PLUGIN_ID
+from pas.plugins.identity.profile.pas import PLUGIN_TITLE
 from plone import api
 from Products.GenericSetup.tool import SetupTool
+from Products.PluggableAuthService.interfaces.plugins import IPropertiesPlugin
+from Products.PluggableAuthService.interfaces.plugins import IUserEnumerationPlugin
 from Products.ZCTextIndex.PipelineFactory import element_factory
 from Products.ZCTextIndex.ZCTextIndex import PLexicon
 from typing import Any
@@ -41,6 +46,11 @@ LEXICON_PIPELINE = (
     ("Word Splitter", "Unicode Whitespace splitter"),
     ("Case Normalizer", "Unicode Ignoring Accents Case Normalizer"),
 )
+
+#: PAS interfaces the profile plugin is activated for (§4.7). Properties
+#: and enumeration only: authentication stays in core, and this layer never
+#: becomes a way to log in.
+ACTIVATED_INTERFACES = (IPropertiesPlugin, IUserEnumerationPlugin)
 
 #: ``extra`` record for the ZCTextIndex, mirroring ``portal_catalog``.
 ZCTEXT_EXTRA = {"index_type": "Okapi BM25 Rank", "lexicon_id": LEXICON_ID}
@@ -109,8 +119,49 @@ def add_metadata(catalog: Any) -> None:
             logger.info("Added metadata %s to %s", column, CATALOG_ID)
 
 
+def install_plugin(acl_users: Any) -> IdentityProfilePlugin:
+    """Add the profile plugin to PAS and activate its interfaces.
+
+    Idempotent, and it moves the plugin to the top of ``IPropertiesPlugin``.
+    That ordering is load-bearing rather than cosmetic: Plone resolves a member
+    property by taking the first sheet that *has* it, so below
+    ``mutable_properties`` the Profile would never be read at all and the
+    layer would look installed while doing nothing.
+
+    :param acl_users: The site's PAS instance.
+    :returns: The installed plugin.
+    """
+    if PLUGIN_ID not in acl_users:
+        acl_users._setObject(PLUGIN_ID, IdentityProfilePlugin(PLUGIN_ID, PLUGIN_TITLE))
+        logger.info("Added %s plugin to acl_users", PLUGIN_ID)
+
+    plugin = acl_users[PLUGIN_ID]
+    plugins = acl_users.plugins
+    for interface in ACTIVATED_INTERFACES:
+        if PLUGIN_ID not in plugins.listPluginIds(interface):
+            plugins.activatePlugin(interface, PLUGIN_ID)
+    plugins.movePluginsTop(IPropertiesPlugin, [PLUGIN_ID])
+    return plugin
+
+
+def uninstall_plugin(acl_users: Any) -> None:
+    """Deactivate and remove the profile plugin.
+
+    :param acl_users: The site's PAS instance.
+    """
+    if PLUGIN_ID not in acl_users:
+        return
+    plugins = acl_users.plugins
+    for interface in plugins.listPluginTypeInfo():
+        iface = interface["interface"]
+        if PLUGIN_ID in plugins.listPluginIds(iface):
+            plugins.deactivatePlugin(iface, PLUGIN_ID)
+    acl_users._delObject(PLUGIN_ID)
+    logger.info("Removed %s plugin from acl_users", PLUGIN_ID)
+
+
 def post_install(context: SetupTool) -> None:
-    """Build the catalog and the Profile container.
+    """Build the catalog, the Profile container and the PAS plugin.
 
     :param context: The setup tool running the import.
     """
@@ -119,6 +170,7 @@ def post_install(context: SetupTool) -> None:
     add_indexes(catalog)
     add_metadata(catalog)
     get_container(create=True)
+    install_plugin(api.portal.get_tool("acl_users"))
 
 
 def rebuild_catalog(context: SetupTool) -> None:
@@ -146,13 +198,13 @@ def rebuild_catalog(context: SetupTool) -> None:
 
 
 def post_uninstall(context: SetupTool) -> None:
-    """Nothing to undo beyond what the uninstall profile declares.
+    """Remove the PAS plugin; leave every Profile where it is.
 
-    Present so that the ``uninstall-profile`` profile has the same shape as
-    every other profile in this package (I8), and so that the decision *not*
-    to delete Profile content has somewhere to be written down rather than
-    being inferred from an absence.
+    Uninstalling an add-on is a configuration change, not an instruction to
+    delete everyone's account data, so the Profiles and their container stay.
+    The same reasoning already governs provider deletion in the control panel.
 
     :param context: The setup tool running the import.
     """
+    uninstall_plugin(api.portal.get_tool("acl_users"))
     logger.info("Uninstalled the profile layer; Profile content was left in place.")
