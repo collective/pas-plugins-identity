@@ -54,6 +54,9 @@ FLOW_REFUSED = "flow-refused"
 PAYLOAD_REJECTED = "payload-rejected"
 LINK_REFUSED = "link-refused"
 LINK_COLLISION = "link-collision"
+MAGIC_LINK_SENT = "magic-link-sent"
+MAGIC_LINK_CONFIRMED = "magic-link-confirmed"
+MAGIC_LINK_REFUSED = "magic-link-refused"
 
 
 class AuditEntry(Persistent):

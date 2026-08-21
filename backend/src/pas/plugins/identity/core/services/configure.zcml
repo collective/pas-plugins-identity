@@ -56,4 +56,26 @@
       name="@identities"
       />
 
+  <!-- Magic link (Gate 3, S5). Anonymous by design on both halves: the
+       point is to log somebody in who has no other way to prove who they
+       are. What guards them is the rate limiter and the signed, single-use,
+       short-lived token. -->
+  <plone:service
+      method="POST"
+      factory=".magiclink.MagicLinkSend"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@magic-link"
+      />
+
+  <plone:service
+      method="POST"
+      factory=".magiclink.MagicLinkConfirm"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@magic-link-confirm"
+      />
+
 </configure>

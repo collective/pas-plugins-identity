@@ -18,6 +18,7 @@ from pas.plugins.identity.core.audit import AuditLog
 from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
 from pas.plugins.identity.core.events import IdentityLinked
 from pas.plugins.identity.core.events import IdentityUnlinked
+from pas.plugins.identity.core.flows.magiclink import MagicLinkStore
 from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.core.interfaces import IIdentityPlugin
 from pas.plugins.identity.core.interfaces import LockoutRefused
@@ -84,6 +85,7 @@ class IdentityPlugin(BasePlugin):
         self.title = title
         self._store = IdentityStore()
         self._audit = AuditLog()
+        self._magic_links = MagicLinkStore()
         self._placeholder_passwords = OOSet()
 
     @property
@@ -108,6 +110,20 @@ class IdentityPlugin(BasePlugin):
         if log is None:
             log = self._audit = AuditLog()
         return log
+
+    @property
+    def magic_links(self) -> MagicLinkStore:
+        """Return the magic-link store (S5).
+
+        Created on demand as well as in the constructor, for the same reason
+        as :attr:`audit`.
+
+        :returns: The store persisted inside this plugin.
+        """
+        store = getattr(self, "_magic_links", None)
+        if store is None:
+            store = self._magic_links = MagicLinkStore()
+        return store
 
     # ------------------------------------------------------------------
     # IExtractionPlugin
@@ -156,10 +172,14 @@ class IdentityPlugin(BasePlugin):
         claims: Claims = credentials.get("claims", {})
 
         userid = self._store.userid_for(provider, subject)
-        is_new_user = userid is None
-        if is_new_user:
-            userid = mint_userid()
-            self._create_plone_user(userid, claims)
+        is_new_identity = userid is None
+        is_new_user = False
+        if is_new_identity:
+            userid = self._adopt_by_verified_email(provider, claims)
+            if userid is None:
+                is_new_user = True
+                userid = mint_userid()
+                self._create_plone_user(userid, claims)
             self._store.add(provider, subject, userid, claims)
         else:
             self._store.touch(provider, subject, claims)
@@ -171,10 +191,43 @@ class IdentityPlugin(BasePlugin):
                 subject=subject,
                 claims=claims,
                 is_new_user=is_new_user,
-                is_new_identity=is_new_user,
+                is_new_identity=is_new_identity,
             )
         )
         return (userid, userid)
+
+    def _adopt_by_verified_email(self, provider: str, claims: Claims) -> str | None:
+        """Find an existing account to attach this identity to (S2).
+
+        Auto-linking by email is off unless the operator switched it on for
+        this provider, and even then it matches only against an ``email``
+        identity **this site** verified with a magic link. A provider saying
+        ``email_verified`` about an address is not evidence: anyone who can
+        register at that provider with a chosen address could otherwise walk
+        into the matching Plone account.
+
+        :param provider: Provider id the login came from.
+        :param claims: Normalized claims from the provider.
+        :returns: The userid to adopt, or ``None`` to mint a fresh one.
+        """
+        from pas.plugins.identity.core.controlpanel import get_provider
+
+        config = get_provider(provider)
+        if config is None or not config.config.get("auto_link_by_email"):
+            return None
+        # Only a literal True counts, exactly as in the driver layer: a
+        # missing key or a string "false" must not read as verified.
+        if claims.get("email_verified") is not True:
+            return None
+        address = (claims.get("email") or "").strip().lower()
+        if not address:
+            return None
+        owner = self._store.userid_for(EMAIL_PROVIDER, address)
+        if owner is not None:
+            logger.info(
+                "Attaching %s identity to %s by verified email", provider, owner
+            )
+        return owner
 
     # ------------------------------------------------------------------
     # ICredentialsResetPlugin

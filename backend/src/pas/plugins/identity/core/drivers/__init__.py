@@ -82,6 +82,21 @@ class BaseDriver:
         """
         schema = {k: dict(v) for k, v in _OAUTH_FIELDS.items()}
         schema["scope"]["default"] = self.default_scope
+        # S2. Off by default, and even when on it is only ever honoured
+        # against this package's own magic-link-verified addresses -- never
+        # against another provider's word for it.
+        schema["auto_link_by_email"] = {
+            "type": "bool",
+            "title": "Attach to an existing account with the same verified email",
+            "description": (
+                "Only matches addresses this site verified itself with a "
+                "magic link. A provider asserting email_verified is not "
+                "enough."
+            ),
+            "required": False,
+            "secret": False,
+            "default": False,
+        }
         for name, descriptor in self.extra_fields.items():
             schema[name] = dict(descriptor)
         return schema
