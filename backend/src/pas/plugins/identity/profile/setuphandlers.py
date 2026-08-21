@@ -24,6 +24,8 @@ from pas.plugins.identity.profile.pas import PLUGIN_ID
 from pas.plugins.identity.profile.pas import PLUGIN_TITLE
 from plone import api
 from Products.GenericSetup.tool import SetupTool
+from Products.PluggableAuthService.interfaces.plugins import IGroupEnumerationPlugin
+from Products.PluggableAuthService.interfaces.plugins import IGroupsPlugin
 from Products.PluggableAuthService.interfaces.plugins import IPropertiesPlugin
 from Products.PluggableAuthService.interfaces.plugins import IUserEnumerationPlugin
 from Products.ZCTextIndex.PipelineFactory import element_factory
@@ -50,7 +52,12 @@ LEXICON_PIPELINE = (
 #: PAS interfaces the profile plugin is activated for (§4.7). Properties
 #: and enumeration only: authentication stays in core, and this layer never
 #: becomes a way to log in.
-ACTIVATED_INTERFACES = (IPropertiesPlugin, IUserEnumerationPlugin)
+ACTIVATED_INTERFACES = (
+    IPropertiesPlugin,
+    IUserEnumerationPlugin,
+    IGroupsPlugin,
+    IGroupEnumerationPlugin,
+)
 
 #: ``extra`` record for the ZCTextIndex, mirroring ``portal_catalog``.
 ZCTEXT_EXTRA = {"index_type": "Okapi BM25 Rank", "lexicon_id": LEXICON_ID}

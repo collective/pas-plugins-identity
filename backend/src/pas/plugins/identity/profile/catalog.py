@@ -55,13 +55,23 @@ CATALOG_ID = "portal_identity_catalog"
 #: neither should have to import the class to get it.
 PROFILE_PORTAL_TYPE = "IdentityProfile"
 
+#: ``portal_type`` of the Group content type (Gate 6d).
+GROUP_PORTAL_TYPE = "IdentityGroup"
+
+#: Every type filed in this catalog. Used by the rebuild, which must find
+#: them all, and nowhere else -- see :func:`brains_of_type`.
+CATALOGUED_TYPES = (PROFILE_PORTAL_TYPE, GROUP_PORTAL_TYPE)
+
 #: Indexes the catalog is created with. ``login`` is lowercased at index time
 #: by the indexer in :mod:`pas.plugins.identity.profile.indexing` and must be
 #: lowercased at query time by every caller -- login names are
 #: case-insensitive in Plone, FieldIndex is not.
 INDEXES = (
+    ("portal_type", "FieldIndex"),
     ("userid", "FieldIndex"),
     ("login", "FieldIndex"),
+    ("group_id", "FieldIndex"),
+    ("group_ids", "KeywordIndex"),
     ("review_state", "FieldIndex"),
     ("path", "ExtendedPathIndex"),
     ("SearchableText", "ZCTextIndex"),
@@ -71,6 +81,9 @@ INDEXES = (
 #: the PAS property sheet and the enumeration results from brains alone, so
 #: every field a property sheet exposes has to be here (C6).
 METADATA = (
+    "portal_type",
+    "Title",
+    "review_state",
     "userid",
     "login",
     "fullname",
@@ -78,7 +91,35 @@ METADATA = (
     "home_page",
     "description",
     "location",
+    "group_id",
+    "group_ids",
+)
+
+#: Columns that mean something on a Profile. The catalog holds one schema for
+#: both types, so a Profile's ``group_id`` is empty and a Group's ``login`` is
+#: -- which matters only to the consistency check, which would otherwise
+#: report every one of them as drift.
+PROFILE_METADATA = (
+    "portal_type",
+    "Title",
     "review_state",
+    "userid",
+    "login",
+    "fullname",
+    "email",
+    "home_page",
+    "description",
+    "location",
+    "group_ids",
+)
+
+#: Columns that mean something on a Group.
+GROUP_METADATA = (
+    "portal_type",
+    "Title",
+    "review_state",
+    "group_id",
+    "description",
 )
 
 
@@ -139,12 +180,12 @@ class IdentityProfileCatalog(CatalogTool):
         portal = aq_parent(aq_inner(self))
         count = 0
         for brain in portal.portal_catalog.unrestrictedSearchResults(
-            portal_type=PROFILE_PORTAL_TYPE
+            portal_type=CATALOGUED_TYPES
         ):
             obj = brain._unrestrictedGetObject()
             self.catalog_object(obj, "/".join(obj.getPhysicalPath()))
             count += 1
-        logger.info("Rebuilt %s with %d profiles", CATALOG_ID, count)
+        logger.info("Rebuilt %s with %d objects", CATALOG_ID, count)
 
 
 InitializeClass(IdentityProfileCatalog)
@@ -174,6 +215,39 @@ def query_catalog() -> Any | None:
         return get_catalog()
     except api.exc.InvalidParameterError:
         return None
+
+
+def brains_of_type(catalog: Any, portal_type: str) -> list[Any]:
+    """Return every brain of one content type.
+
+    Profiles and Groups share this catalog, which is why almost nothing wants
+    :func:`all_brains`: a caller that forgets to narrow gets the other type's
+    records back and, in a consistency check, reports every one of them as an
+    orphan.
+
+    :param catalog: The Profile catalog.
+    :param portal_type: The type to return.
+    :returns: Matching brains.
+    """
+    return list(catalog.unrestrictedSearchResults(portal_type=portal_type))
+
+
+def profile_brains(catalog: Any) -> list[Any]:
+    """Return every Profile brain.
+
+    :param catalog: The Profile catalog.
+    :returns: Profile brains.
+    """
+    return brains_of_type(catalog, PROFILE_PORTAL_TYPE)
+
+
+def group_brains(catalog: Any) -> list[Any]:
+    """Return every Group brain.
+
+    :param catalog: The Profile catalog.
+    :returns: Group brains.
+    """
+    return brains_of_type(catalog, GROUP_PORTAL_TYPE)
 
 
 def all_brains(catalog: Any) -> list[Any]:

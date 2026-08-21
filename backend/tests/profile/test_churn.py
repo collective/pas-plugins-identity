@@ -14,6 +14,7 @@ of these ever goes red, the seed in the test id reproduces it exactly.
 
 from pas.plugins.identity.profile import doctor
 from pas.plugins.identity.profile.catalog import all_brains
+from pas.plugins.identity.profile.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.profile.catalog import PROFILE_PORTAL_TYPE
 from plone import api
 from zope.lifecycleevent import modified
@@ -28,6 +29,11 @@ STEPS = 40
 
 #: Seeds to run. Independent sequences, not repetitions of one.
 SEEDS = (1, 7, 13, 42, 2026)
+
+#: Group ids the steps draw from. A small pool on purpose: the interesting
+#: sequences are the ones where a Profile lists a group that is created,
+#: deleted and created again around it.
+GROUP_IDS = ("editors", "reviewers", "readers")
 
 #: Field values the modify step draws from. ``None`` is included on purpose:
 #: clearing a field is the case where a stale brain is most visible, because
@@ -64,18 +70,31 @@ class Churn:
                 )
             )
 
+    def _of_type(self, portal_type: str) -> list:
+        """Return the live objects of one type.
+
+        :param portal_type: The type to collect.
+        :returns: The objects.
+        """
+        catalog = api.portal.get_tool("portal_catalog")
+        return [
+            brain._unrestrictedGetObject()
+            for brain in catalog.unrestrictedSearchResults(portal_type=portal_type)
+        ]
+
+    def _groups(self) -> list:
+        """Return the live Groups.
+
+        :returns: Group objects.
+        """
+        return self._of_type(GROUP_PORTAL_TYPE)
+
     def _profiles(self) -> list:
         """Return the Profiles currently in the site.
 
         :returns: Live Profile objects.
         """
-        catalog = api.portal.get_tool("portal_catalog")
-        return [
-            brain._unrestrictedGetObject()
-            for brain in catalog.unrestrictedSearchResults(
-                portal_type=PROFILE_PORTAL_TYPE
-            )
-        ]
+        return self._of_type(PROFILE_PORTAL_TYPE)
 
     def _pick(self):
         """Return a random existing Profile.
@@ -98,7 +117,67 @@ class Churn:
             userid=userid,
             login=f"{userid}@example.com",
             fullname=self.rng.choice(FULLNAMES),
+            group_ids=self._some_groups(),
         )
+
+    def _some_groups(self) -> tuple:
+        """Return a random subset of the group id pool.
+
+        Drawn from the pool rather than from the groups that exist, so a
+        Profile routinely names a group that is not there -- which is the
+        state a deleted group leaves behind and the one the consistency check
+        has an opinion about.
+
+        :returns: Group ids.
+        """
+        return tuple(group_id for group_id in GROUP_IDS if self.rng.random() < 0.4)
+
+    def _available_group_ids(self) -> list[str]:
+        """Return the group ids nothing is using yet.
+
+        :returns: Free group ids.
+        """
+        taken = {group.group_id for group in self._groups()}
+        return [group_id for group_id in GROUP_IDS if group_id not in taken]
+
+    def create_group(self) -> None:
+        """Add a Group under an id nothing is using."""
+        group_id = self.rng.choice(self._available_group_ids())
+        api.content.create(
+            container=self.rng.choice(self.folders),
+            type=GROUP_PORTAL_TYPE,
+            id=group_id,
+            group_id=group_id,
+            title=group_id.title(),
+        )
+
+    def transition_group(self) -> None:
+        """Fire a random available transition on a random Group."""
+        groups = self._groups()
+        if not groups:
+            return
+        group = self.rng.choice(groups)
+        available = [
+            action["id"]
+            for action in api.portal.get_tool("portal_workflow").listActionInfos(
+                object=group
+            )
+            if action["category"] == "workflow" and action["available"]
+        ]
+        api.content.transition(obj=group, transition=self.rng.choice(available))
+
+    def delete_group(self) -> None:
+        """Remove a random Group, leaving whoever listed it behind."""
+        groups = self._groups()
+        if not groups:
+            return
+        api.content.delete(obj=self.rng.choice(groups))
+
+    def regroup(self) -> None:
+        """Rewrite a random Profile's memberships."""
+        profile = self._pick()
+        profile.group_ids = self._some_groups()
+        modified(profile)
 
     def modify(self) -> None:
         """Edit fields on a random Profile."""
@@ -161,11 +240,20 @@ class Churn:
 
         :returns: The operation that ran.
         """
+        creators = (
+            (self.create, self.create_group)
+            if self._available_group_ids()
+            else (self.create,)
+        )
         pool = (
             (
                 self.create,
                 self.create,
                 self.create,
+                *creators,
+                self.transition_group,
+                self.delete_group,
+                self.regroup,
                 self.modify,
                 self.transition,
                 self.rename,
@@ -173,7 +261,7 @@ class Churn:
                 self.delete,
             )
             if self._profiles()
-            else (self.create,)
+            else creators
         )
         operation = self.rng.choice(pool)
         operation()
@@ -190,7 +278,15 @@ class TestChurn:
             for step in range(STEPS):
                 operation = churn.step()
 
-                findings = doctor.check()
+                # UNKNOWN_GROUP is expected here and is not drift: the
+                # churn deliberately has Profiles naming groups that come and
+                # go, and the point is that the catalog stays consistent while
+                # they do. Every other kind is a real inconsistency.
+                findings = [
+                    finding
+                    for finding in doctor.check()
+                    if finding["kind"] != doctor.UNKNOWN_GROUP
+                ]
                 assert findings == [], (
                     f"seed {seed}, step {step}, after {operation.__name__}"
                 )
@@ -203,6 +299,7 @@ class TestChurn:
             for step in range(STEPS):
                 operation = churn.step()
 
-                assert len(all_brains(catalog)) == len(churn._profiles()), (
+                expected = len(churn._profiles()) + len(churn._groups())
+                assert len(all_brains(catalog)) == expected, (
                     f"seed {seed}, step {step}, after {operation.__name__}"
                 )

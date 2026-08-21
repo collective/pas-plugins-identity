@@ -17,13 +17,25 @@ class IIdentityProfileLayer(IDefaultBrowserLayer):
     """
 
 
-class IProfile(Interface):
+class IIdentityCatalogued(Interface):
+    """Marker for anything filed in the dedicated identity catalog.
+
+    Both content types this layer defines carry it, so the indexing
+    subscribers are registered once for the pair rather than twice for each.
+    """
+
+
+class IProfile(IIdentityCatalogued):
     """Marker for the Profile content type.
 
     Applied through the FTI rather than the class so that the catalog
     subscribers can be registered for the marker and stay indifferent to how
     the object was constructed.
     """
+
+
+class IIdentityGroup(IIdentityCatalogued):
+    """Marker for the Group content type (Gate 6d)."""
 
 
 class IIdentityProfileCatalog(Interface):

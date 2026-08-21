@@ -5,6 +5,10 @@
     i18n_domain="pas.plugins.identity"
     >
 
+  <class class=".content.group.Group">
+    <implements interface=".interfaces.IIdentityGroup" />
+  </class>
+
   <!-- The Profile marker is applied to the class rather than through the FTI
        so that the catalog subscribers below bind to it however the object was
        constructed — including by a test that instantiates it directly. -->
@@ -17,19 +21,19 @@
        subscribers loaded and inert: there are no Profiles to fire them, and
        ``query_catalog`` answers None if one somehow appears. -->
   <subscriber
-      for=".interfaces.IProfile
+      for=".interfaces.IIdentityCatalogued
            zope.lifecycleevent.interfaces.IObjectMovedEvent"
       handler=".indexing.profile_moved"
       />
 
   <subscriber
-      for=".interfaces.IProfile
+      for=".interfaces.IIdentityCatalogued
            OFS.interfaces.IObjectWillBeMovedEvent"
       handler=".indexing.profile_will_be_moved"
       />
 
   <subscriber
-      for=".interfaces.IProfile
+      for=".interfaces.IIdentityCatalogued
            zope.lifecycleevent.interfaces.IObjectModifiedEvent"
       handler=".indexing.profile_modified"
       />
@@ -37,7 +41,7 @@
   <!-- A transition changes review_state, which is both an index and a
        metadata column, and fires no modification event of its own. -->
   <subscriber
-      for=".interfaces.IProfile
+      for=".interfaces.IIdentityCatalogued
            Products.DCWorkflow.interfaces.IAfterTransitionEvent"
       handler=".indexing.profile_modified"
       />

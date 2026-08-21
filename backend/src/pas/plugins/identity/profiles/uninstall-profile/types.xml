@@ -5,4 +5,7 @@
   <object name="IdentityProfile"
           remove="True"
   />
+  <object name="IdentityGroup"
+          remove="True"
+  />
 </object>
