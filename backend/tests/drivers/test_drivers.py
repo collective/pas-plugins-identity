@@ -9,9 +9,11 @@ from . import GITHUB_USER
 from . import GITHUB_USER_NO_NAME
 from . import GOOGLE_USERINFO
 from . import UNVERIFIED_OIDC
+from pas.plugins.identity.core.drivers import all_drivers
 from pas.plugins.identity.core.drivers import BaseDriver
 from pas.plugins.identity.core.drivers import EmailDriver
 from pas.plugins.identity.core.drivers import GenericOIDCDriver
+from pas.plugins.identity.core.drivers import get_driver
 from pas.plugins.identity.core.drivers import GitHubDriver
 from pas.plugins.identity.core.drivers import GoogleDriver
 from pas.plugins.identity.core.interfaces import ClaimsError
@@ -89,6 +91,23 @@ class TestDriverContract:
         """An unusable payload is a hard error, never a made-up subject (I1)."""
         with pytest.raises(ClaimsError):
             factory().subject({"unrelated": "value"})
+
+
+class TestDriverRegistry:
+    """D9 -- drivers are named utilities, and the name is the driver id."""
+
+    def test_every_shipped_driver_is_registered(self, portal):
+        """ZCML and :data:`ALL_DRIVERS` agree on what v1 ships."""
+        assert set(all_drivers()) == {factory().driver_id for factory in ALL_DRIVERS}
+
+    def test_lookup_agrees_with_enumeration(self, portal):
+        """The two ways in reach the same utility."""
+        for driver_id, driver in all_drivers().items():
+            assert get_driver(driver_id) is driver
+
+    def test_unknown_driver_is_none_not_an_error(self, portal):
+        """An orphaned provider record must be inspectable, not fatal."""
+        assert get_driver("no-such-driver") is None
 
 
 class TestSecretFlagging:

@@ -1,10 +1,10 @@
 """Integration tests for the PAS plugin (§4.1, I1/I3/I6/S4)."""
 
-from Acquisition import aq_base
 from . import CLAIMS
 from . import DEX_IDENTITY
 from . import GITHUB_IDENTITY
 from . import OTHER_CLAIMS
+from Acquisition import aq_base
 from pas.plugins.identity.core.events import IExternalIdentityAuthenticated
 from pas.plugins.identity.core.events import IIdentityLinked
 from pas.plugins.identity.core.events import IIdentityUnlinked
@@ -19,6 +19,7 @@ from pas.plugins.identity.core.pas.plugin import mint_userid
 from pas.plugins.identity.setuphandlers import ACTIVATED_INTERFACES
 from pas.plugins.identity.setuphandlers import install_plugin
 from pas.plugins.identity.setuphandlers import uninstall_plugin
+from plone import api
 from Products.PluggableAuthService.interfaces.plugins import IChallengePlugin
 from zope.component import adapter
 from zope.component import getGlobalSiteManager
@@ -444,6 +445,52 @@ class TestVerifiedEmail:
         assert plugin.store.userid_for(*DEX_IDENTITY) is None
 
 
+class TestLocalPassword:
+    """S4's third escape hatch: a real ``source_users`` password."""
+
+    @pytest.fixture()
+    def member(self, portal) -> str:
+        """Create an ordinary Plone member, password and all."""
+        with api.env.adopt_roles(["Manager"]):
+            user = api.user.create(
+                email="local@plone.org",
+                username="local",
+                password="s3cr3t-local",
+            )
+        return user.getId()
+
+    def test_password_permits_unlink_of_last_identity(
+        self, plugin: IdentityPlugin, member: str
+    ):
+        """Someone who signed up locally and later linked a provider can
+        unlink it again: they still have a password to log in with."""
+        plugin.link(member, *DEX_IDENTITY, CLAIMS)
+
+        assert plugin.can_unlink(member, *DEX_IDENTITY) is True
+
+    def test_unlink_goes_through(self, plugin: IdentityPlugin, member: str):
+        """And the guard's answer is what ``unlink`` acts on."""
+        plugin.link(member, *DEX_IDENTITY, CLAIMS)
+
+        plugin.unlink(member, *DEX_IDENTITY)
+
+        assert plugin.store.userid_for(*DEX_IDENTITY) is None
+
+    def test_placeholder_password_does_not_count(
+        self, plugin: IdentityPlugin, credentials
+    ):
+        """The placeholder seeded at first login is not a way in, so it must
+        not satisfy the guard -- that was how a user could unlink their last
+        identity and lose the account."""
+        userid, _ = plugin.authenticateCredentials(credentials)
+
+        assert plugin.can_unlink(userid, *DEX_IDENTITY) is False
+
+    def test_userid_absent_from_source_users(self, plugin: IdentityPlugin, portal):
+        """A userid ``source_users`` has never heard of has no password."""
+        assert plugin.can_unlink("never-existed", *GITHUB_IDENTITY) is False
+
+
 class TestCredentialsReset:
     def test_reset_clears_deposit(self, plugin: IdentityPlugin, portal):
         """Logging out drops anything this plugin left on the request."""
@@ -489,3 +536,15 @@ class TestChallenge:
         plugin.challenge(portal.REQUEST, portal.REQUEST.response)
 
         assert "came_from=" in portal.REQUEST.response.getHeader("Location")
+
+    def test_no_came_from_when_there_is_nowhere_to_return_to(
+        self, plugin: IdentityPlugin, portal
+    ):
+        """A challenge with no originating URL sends a bare picker URL rather
+        than an empty ``came_from`` for the picker to puzzle over."""
+        plugin.challenge_enabled = True
+        portal.REQUEST["ACTUAL_URL"] = ""
+
+        plugin.challenge(portal.REQUEST, portal.REQUEST.response)
+
+        assert "came_from" not in portal.REQUEST.response.getHeader("Location")

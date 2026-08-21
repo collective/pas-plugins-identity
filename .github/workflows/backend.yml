@@ -33,18 +33,84 @@ jobs:
       plone-version: ${{ inputs.plone-version }}
       working-directory: ${{ inputs.working-directory }}
 
+  # The floor is Plone 6.2 / Python 3.12 (see pyproject's requires-python and
+  # classifiers); anything older is out of scope by decision, not by accident.
   test:
     name: "Backend: Test"
     uses: plone/meta/.github/workflows/backend-pytest.yml@2.x
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.11', '3.12', '3.13']
-        plone-version: ['6.2-latest', '6.1-latest', '6.0-latest']
+        python-version: ['3.12', '3.13']
+        plone-version: ['6.2-latest']
     with:
       python-version: ${{ matrix.python-version }}
       plone-version: ${{ matrix.plone-version }}
       working-directory: ${{ inputs.working-directory }}
+
+  # Gate 0: the four dependency configurations the package promises to support.
+  # ``pip install pas.plugins.identity`` with no extras has to work on its own
+  # (I5), so "core" is the job that matters most here -- it is the one that
+  # fails the moment something in core starts needing an optional dependency.
+  extras:
+    name: "Backend: Extras (${{ matrix.name }})"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: core
+            extras: ''
+          - name: +profile
+            extras: 'profile'
+          - name: +server
+            extras: 'server'
+          - name: all
+            extras: 'profile,server'
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup codebase
+        uses: plone/meta/.github/actions/setup_backend_uv@2.x
+        with:
+          python-version: ${{ inputs.python-version }}
+          plone-version: ${{ inputs.plone-version }}
+          working-directory: ${{ inputs.working-directory }}
+
+      - name: Install extras
+        run: make install-extras EXTRAS=${{ matrix.extras }}
+
+      - name: Test
+        run: make test
+
+  # Gate 0: the hard layer boundary (§4.2), enforced rather than documented.
+  imports:
+    name: "Backend: Layer boundaries"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup codebase
+        uses: plone/meta/.github/actions/setup_backend_uv@2.x
+        with:
+          python-version: ${{ inputs.python-version }}
+          plone-version: ${{ inputs.plone-version }}
+          working-directory: ${{ inputs.working-directory }}
+
+      - name: Check layer boundaries
+        run: make check-imports
 
   coverage:
     name: "Backend: Coverage"
@@ -60,6 +126,8 @@ jobs:
     needs:
       - lint
       - test
+      - extras
+      - imports
       - coverage
     permissions:
       contents: read
@@ -83,6 +151,8 @@ jobs:
     needs:
       - lint
       - test
+      - extras
+      - imports
       - coverage
       - release
     steps:
@@ -93,5 +163,7 @@ jobs:
           echo '| --- | --- |' >> $GITHUB_STEP_SUMMARY
           echo '| lint | ${{ needs.lint.result }} |' >> $GITHUB_STEP_SUMMARY
           echo '| test | ${{ needs.test.result }} |' >> $GITHUB_STEP_SUMMARY
+          echo '| extras | ${{ needs.extras.result }} |' >> $GITHUB_STEP_SUMMARY
+          echo '| imports | ${{ needs.imports.result }} |' >> $GITHUB_STEP_SUMMARY
           echo '| coverage | ${{ needs.coverage.result }} |' >> $GITHUB_STEP_SUMMARY
           echo '| release | ${{ needs.release.result }} |' >> $GITHUB_STEP_SUMMARY

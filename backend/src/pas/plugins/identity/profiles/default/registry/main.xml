@@ -11,7 +11,7 @@
       <description>JSON list of configured authentication providers.</description>
       <required>False</required>
     </field>
-    <value></value>
+    <value />
   </record>
 
   <!-- Audit log retention (D7). PII is opt-in and off. -->
