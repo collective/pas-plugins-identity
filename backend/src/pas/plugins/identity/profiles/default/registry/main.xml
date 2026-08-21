@@ -14,6 +14,20 @@
     <value />
   </record>
 
+  <!-- Where the provider sends the user back. This is a route in the Volto
+       frontend, not a backend view: the frontend reads code and state off the
+       query string and POSTs them to @identity-callback. It is also the exact
+       string registered with the provider as the redirect URI, so it cannot
+       be guessed from the portal URL. -->
+  <record name="pas.plugins.identity.callback_url">
+    <field type="plone.registry.field.TextLine">
+      <title>Login callback URL</title>
+      <description>Absolute URL of the frontend route the provider redirects to after login, for example https://example.com/login-identity. Must match the redirect URI registered with every provider.</description>
+      <required>False</required>
+    </field>
+    <value />
+  </record>
+
   <!-- Audit log retention (D7). PII is opt-in and off. -->
   <record name="pas.plugins.identity.audit_max_entries">
     <field type="plone.registry.field.Int">

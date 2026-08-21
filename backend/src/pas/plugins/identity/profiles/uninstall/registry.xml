@@ -3,6 +3,9 @@
   <record name="pas.plugins.identity.providers"
           remove="true"
   />
+  <record name="pas.plugins.identity.callback_url"
+          remove="true"
+  />
   <record name="pas.plugins.identity.audit_max_entries"
           remove="true"
   />
