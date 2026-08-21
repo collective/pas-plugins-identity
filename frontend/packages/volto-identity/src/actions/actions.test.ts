@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   completeCallback,
   confirmMagicLink,
+  getMyProfile,
   listLoginProviders,
   sendMagicLink,
   startProviderLogin,
@@ -78,5 +79,14 @@ describe('magic link', () => {
 
     expect(path).toBe('/@magic-link-confirm');
     expect(data).toEqual({ token: 'tok' });
+  });
+});
+
+describe('getMyProfile', () => {
+  it('reads the routing endpoint', () => {
+    expect(getMyProfile().request).toEqual({
+      op: 'get',
+      path: '/@my-profile',
+    });
   });
 });

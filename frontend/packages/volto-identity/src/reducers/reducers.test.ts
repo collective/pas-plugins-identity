@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   COMPLETE_CALLBACK,
+  GET_MY_PROFILE,
   LIST_LOGIN_PROVIDERS,
   SEND_MAGIC_LINK,
   START_PROVIDER_LOGIN,
@@ -9,6 +10,7 @@ import {
 import {
   identityCallback,
   loginProviders,
+  myProfile,
   magicLinkSend,
   providerLogin,
 } from './index';
@@ -130,5 +132,41 @@ describe('magicLinkSend', () => {
 
     expect(state.data).toBe(false);
     expect(state.error).toEqual({ status: 429 });
+  });
+});
+
+describe('myProfile', () => {
+  it('starts with nothing known', () => {
+    const state = myProfile(undefined, { type: 'INIT' });
+
+    expect(state.data).toBeNull();
+    expect(state.loaded).toBe(false);
+  });
+
+  it('keeps the whole answer', () => {
+    const result = {
+      '@id': '/@my-profile',
+      userid: 'alice',
+      profile: '/identity-profiles/alice',
+      review_state: 'incomplete',
+    };
+
+    const state = myProfile(undefined, {
+      type: `${GET_MY_PROFILE}_SUCCESS`,
+      result,
+    });
+
+    expect(state.data).toEqual(result);
+    expect(state.loaded).toBe(true);
+  });
+
+  it('records a failure without pretending it loaded', () => {
+    const state = myProfile(undefined, {
+      type: `${GET_MY_PROFILE}_FAIL`,
+      error: 'nope',
+    });
+
+    expect(state.error).toBe('nope');
+    expect(state.loaded).toBe(false);
   });
 });
