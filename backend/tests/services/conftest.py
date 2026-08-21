@@ -48,6 +48,7 @@ def stub_metadata(monkeypatch):
             Defaults to the Dex fixture.
         """
         from pas.plugins.identity.core.services import callback as callback_module
+        from pas.plugins.identity.core.services import identities as identities_module
         from pas.plugins.identity.core.services import login as login_module
 
         answer = DEX_METADATA if metadata is None else metadata
@@ -65,6 +66,7 @@ def stub_metadata(monkeypatch):
 
         monkeypatch.setattr(login_module, "metadata_for", fake)
         monkeypatch.setattr(callback_module, "metadata_for", fake)
+        monkeypatch.setattr(identities_module, "metadata_for", fake)
 
     return install
 
@@ -76,3 +78,77 @@ def body(request: Any, data: dict) -> None:
     :param data: The body payload.
     """
     request.set("BODY", json.dumps(data))
+
+
+@pytest.fixture()
+def log(portal):
+    """Return the plugin's audit log, emptied.
+
+    :returns: The identity plugin's audit log.
+    """
+    from pas.plugins.identity.core.pas import PLUGIN_ID
+
+    plugin = api.portal.get_tool("acl_users")[PLUGIN_ID]
+    plugin.audit._by_userid.clear()
+    return plugin.audit
+
+
+@pytest.fixture()
+def stub_provider(monkeypatch):
+    """Replace the provider's token and userinfo endpoints.
+
+    :returns: Callable taking the userinfo payload to answer with.
+    """
+
+    class StubResponse:
+        """The part of ``requests.Response`` the userinfo call touches."""
+
+        def __init__(self, payload: dict) -> None:
+            """Hold a canned payload.
+
+            :param payload: What :meth:`json` returns.
+            """
+            self.payload = payload
+
+        def raise_for_status(self) -> None:
+            """Succeed: this stub stands in for a healthy provider."""
+
+        def json(self) -> dict:
+            """Return the canned payload.
+
+            :returns: The payload.
+            """
+            return dict(self.payload)
+
+    def install(userinfo: dict):
+        """Install the stub.
+
+        :param userinfo: What the userinfo endpoint answers.
+        """
+        from authlib.integrations.requests_client import OAuth2Session
+        from pas.plugins.identity.core import flows
+
+        class StubSession(OAuth2Session):
+            """authlib's client with the network calls short-circuited."""
+
+            def fetch_token(self, url: str, **kwargs) -> dict:
+                """Answer the token request.
+
+                :param url: Ignored.
+                :param kwargs: Ignored.
+                :returns: A token with no ``id_token``.
+                """
+                return {"access_token": "at", "token_type": "Bearer"}
+
+            def get(self, url: str, **kwargs) -> StubResponse:
+                """Answer the userinfo request.
+
+                :param url: Ignored.
+                :param kwargs: Ignored.
+                :returns: The canned response.
+                """
+                return StubResponse(userinfo)
+
+        monkeypatch.setattr(flows, "OAuth2Session", StubSession)
+
+    return install

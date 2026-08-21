@@ -27,4 +27,33 @@
       name="@identity-callback"
       />
 
+  <!-- Your own external identities (Gate 2). Authenticated-only, checked in
+       the service so the refusal is a JSON body rather than a login form. -->
+  <plone:service
+      method="GET"
+      factory=".identities.IdentitiesGet"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@identities"
+      />
+
+  <plone:service
+      method="POST"
+      factory=".identities.IdentitiesPost"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@identities"
+      />
+
+  <plone:service
+      method="DELETE"
+      factory=".identities.IdentitiesDelete"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@identities"
+      />
+
 </configure>

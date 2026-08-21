@@ -52,6 +52,8 @@ EMAIL_VERIFIED = "email-verified"
 CLAIMS_REFRESHED = "claims-refreshed"
 FLOW_REFUSED = "flow-refused"
 PAYLOAD_REJECTED = "payload-rejected"
+LINK_REFUSED = "link-refused"
+LINK_COLLISION = "link-collision"
 
 
 class AuditEntry(Persistent):
