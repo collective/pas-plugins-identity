@@ -138,3 +138,35 @@ class TestPublished:
 
         assert response.status_code == 401
         assert response.json()["error"]["type"] == "Not authenticated"
+
+    def test_audit_log_is_reachable(self, url: str):
+        """``@audit-log`` is published and refuses anonymous with JSON."""
+        response = requests.get(
+            f"{url}/@audit-log",
+            headers={"Accept": "application/json"},
+            timeout=30,
+        )
+
+        assert response.status_code == 401
+        assert response.json()["error"]["type"] == "Not authenticated"
+
+    def test_magic_link_endpoints_are_reachable(self, url: str):
+        """Both halves of the magic-link flow are published for POST."""
+        send = requests.post(
+            f"{url}/@magic-link",
+            headers={"Accept": "application/json"},
+            json={},
+            timeout=30,
+        )
+        confirm = requests.post(
+            f"{url}/@magic-link-confirm",
+            headers={"Accept": "application/json"},
+            json={},
+            timeout=30,
+        )
+
+        # No email provider is configured in this fixture, so both answer 404
+        # from our own service rather than from the publisher.
+        for response in (send, confirm):
+            assert response.status_code == 404
+            assert response.json()["error"]["type"] == "Unknown provider"

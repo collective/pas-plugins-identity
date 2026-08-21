@@ -78,4 +78,16 @@
       name="@magic-link-confirm"
       />
 
+  <!-- The authentication event log (Gate 4). Authenticated-only; reading
+       beyond your own entries additionally needs Manage portal, checked in
+       the service. -->
+  <plone:service
+      method="GET"
+      factory=".auditlog.AuditLogGet"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@audit-log"
+      />
+
 </configure>
