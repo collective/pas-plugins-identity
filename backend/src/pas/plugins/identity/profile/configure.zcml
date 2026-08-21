@@ -1,0 +1,65 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <!-- The Profile marker is applied to the class rather than through the FTI
+       so that the catalog subscribers below bind to it however the object was
+       constructed — including by a test that instantiates it directly. -->
+  <class class=".content.profile.Profile">
+    <implements interface=".interfaces.IProfile" />
+  </class>
+
+  <!-- Catalog maintenance (§4.7). Registered for the marker, so a site
+       without the ``profile`` GenericSetup profile applied has these
+       subscribers loaded and inert: there are no Profiles to fire them, and
+       ``query_catalog`` answers None if one somehow appears. -->
+  <subscriber
+      for=".interfaces.IProfile
+           zope.lifecycleevent.interfaces.IObjectMovedEvent"
+      handler=".indexing.profile_moved"
+      />
+
+  <subscriber
+      for=".interfaces.IProfile
+           OFS.interfaces.IObjectWillBeMovedEvent"
+      handler=".indexing.profile_will_be_moved"
+      />
+
+  <subscriber
+      for=".interfaces.IProfile
+           zope.lifecycleevent.interfaces.IObjectModifiedEvent"
+      handler=".indexing.profile_modified"
+      />
+
+  <!-- A transition changes review_state, which is both an index and a
+       metadata column, and fires no modification event of its own. -->
+  <subscriber
+      for=".interfaces.IProfile
+           Products.DCWorkflow.interfaces.IAfterTransitionEvent"
+      handler=".indexing.profile_modified"
+      />
+
+  <!-- Both indexers fold or narrow what the field literally holds; see the
+       module for why. -->
+  <adapter
+      factory=".indexing.login_index"
+      name="login"
+      />
+
+  <adapter
+      factory=".indexing.searchable_text_index"
+      name="SearchableText"
+      />
+
+  <!-- Repair, kept apart from the check that finds the damage. Re-runnable
+       from portal_setup whenever the doctor reports drift. -->
+  <genericsetup:importStep
+      name="pas.plugins.identity.rebuild-profile-catalog"
+      title="Rebuild the identity profile catalog"
+      description="Clear the dedicated Profile catalog and index every Profile in the site again."
+      handler=".setuphandlers.rebuild_catalog"
+      />
+
+</configure>

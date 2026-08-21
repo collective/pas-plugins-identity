@@ -1,5 +1,14 @@
 <configure xmlns="http://namespaces.zope.org/zope">
 
-  <!-- -*- extra stuff goes here -*- -->
+  <!-- Adding a Profile is not an authoring action: Profiles are minted by the
+       first-login machinery of the ``[profile]`` layer and otherwise managed
+       by administrators. The permission is declared here, in core, because
+       ZCML permission ids are global and a permission that only exists when
+       an extra is installed would make the FTI unimportable in a site that
+       later adds the extra. -->
+  <permission
+      id="pas.plugins.identity.AddProfile"
+      title="pas.plugins.identity: Add Profile"
+      />
 
 </configure>

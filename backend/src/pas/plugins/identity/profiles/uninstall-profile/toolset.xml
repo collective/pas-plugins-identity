@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tool-setup>
+  <!-- The catalog is a derived index, so removing it loses nothing that
+       reinstalling cannot rebuild. The Profile objects it pointed at are
+       content and are left alone; see setuphandlers.post_uninstall. -->
+  <forbidden tool_id="portal_identity_catalog" />
+</tool-setup>

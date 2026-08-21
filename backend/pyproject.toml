@@ -183,6 +183,12 @@ preview = true
 "tests/*" = ["E501", "RUF001", "S101", "S105", "S106"]
 # ``id`` and ``title`` are the constructor signature Zope factories expect.
 "src/pas/plugins/identity/core/pas/plugin.py" = ["A002"]
+# A002: ``object`` is CMFCore's parameter name for the indexing methods we
+# override. Renaming it would break every keyword caller in Zope.
+"src/pas/plugins/identity/profile/catalog.py" = ["A002"]
+# S311: the churn sequences are randomized for coverage of orderings, not
+# for unpredictability; the seeds are fixed precisely so they repeat.
+"tests/profile/test_churn.py" = ["S311"]
 
 [tool.check-manifest]
 ignore = [

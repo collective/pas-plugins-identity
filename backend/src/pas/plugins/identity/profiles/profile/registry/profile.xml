@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<registry xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+          i18n:domain="pas.plugins.identity"
+>
+
+  <!-- Where Profiles are stored. Four records rather than a constant so the
+       add-on does not dictate the site's structure (Érico, 2026-08-21). The
+       catalog indexes a Profile wherever it actually is; these settings only
+       answer "where does a new one go". -->
+  <record name="pas.plugins.identity.profile_container_parent">
+    <field type="plone.registry.field.TextLine">
+      <title>Profile container parent</title>
+      <description>Path of the folder the profile container lives in, relative to the site root. Empty means the site root itself.</description>
+      <required>False</required>
+    </field>
+    <value />
+  </record>
+
+  <record name="pas.plugins.identity.profile_container_id">
+    <field type="plone.registry.field.TextLine">
+      <title>Profile container id</title>
+      <description>Id of the folder holding user profiles.</description>
+    </field>
+    <value>identity-profiles</value>
+  </record>
+
+  <record name="pas.plugins.identity.profile_container_title">
+    <field type="plone.registry.field.TextLine">
+      <title>Profile container title</title>
+      <description>Title given to the profile container when this add-on creates it. Changing it later does not rename an existing folder.</description>
+    </field>
+    <value>Identity Profiles</value>
+  </record>
+
+  <record name="pas.plugins.identity.profile_container_type">
+    <field type="plone.registry.field.TextLine">
+      <title>Profile container type</title>
+      <description>Portal type used when this add-on creates the profile container.</description>
+    </field>
+    <value>Folder</value>
+  </record>
+
+  <!-- Workflow states in which a Profile is served to PAS enumeration
+       (§4.7). Both working states are active; deactivated is not. -->
+  <record name="pas.plugins.identity.profile_enumeration_states">
+    <field type="plone.registry.field.Tuple">
+      <title>Enumeration-active states</title>
+      <description>Profiles in these workflow states are visible to user enumeration and to the properties plugin.</description>
+      <value_type type="plone.registry.field.TextLine" />
+    </field>
+    <value>
+      <element>incomplete</element>
+      <element>complete</element>
+    </value>
+  </record>
+
+</registry>
