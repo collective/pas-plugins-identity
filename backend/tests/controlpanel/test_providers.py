@@ -3,13 +3,13 @@
 from . import DISABLED_PROVIDER
 from . import GITHUB_PROVIDER
 from . import ORPHANED_PROVIDER
+from pas.plugins.identity.core.controlpanel import enabled_providers
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.controlpanel import mask
-from pas.plugins.identity.core.controlpanel import PROVIDERS_RECORD
 from pas.plugins.identity.core.controlpanel import ProviderConfig
+from pas.plugins.identity.core.controlpanel import PROVIDERS_RECORD
 from pas.plugins.identity.core.controlpanel import SECRET_SENTINEL
-from pas.plugins.identity.core.controlpanel import enabled_providers
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.controlpanel import unmask
 from plone import api
@@ -199,6 +199,28 @@ class TestUnmasking:
         result = unmask("github", incoming, stored)
 
         assert result["client_id"] == "Iv1.changed"
+
+    def test_unknown_driver_restores_every_sentinel(self, portal):
+        """:func:`mask` masked every value for an orphaned provider, so
+        unmasking must restore every one of them -- otherwise the round-trip
+        that only renamed the provider overwrites its whole config with
+        bullets."""
+        stored = ORPHANED_PROVIDER["config"]
+        incoming = dict.fromkeys(stored, SECRET_SENTINEL)
+
+        result = unmask("no-such-driver", incoming, stored)
+
+        assert result == stored
+
+    def test_unknown_driver_still_accepts_new_values(self, portal):
+        """Restoring sentinels must not freeze an orphan's configuration."""
+        stored = ORPHANED_PROVIDER["config"]
+        incoming = {**dict.fromkeys(stored, SECRET_SENTINEL), "client_id": "new-id"}
+
+        result = unmask("no-such-driver", incoming, stored)
+
+        assert result["client_id"] == "new-id"
+        assert result["client_secret"] == "legacy-secret"
 
     def test_round_trip_preserves_secret(self, portal, configured):
         """The full read-modify-write cycle the control panel performs."""

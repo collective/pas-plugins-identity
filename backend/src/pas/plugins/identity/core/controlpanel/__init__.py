@@ -113,19 +113,27 @@ class ProviderConfig:
         return f"<ProviderConfig {self.provider_id} ({self.driver_id})>"
 
 
-def _secret_fields(driver_id: str) -> set[str]:
-    """Return the config fields a driver flags as secret.
+def _secret_fields(driver_id: str, config: dict[str, Any]) -> set[str]:
+    """Return the config fields to treat as secret (I4).
 
-    An unknown driver yields an empty set, which would mask nothing. Callers
-    that could leak a secret must therefore treat an unknown driver as a
-    reason to refuse, not as "no secrets here" -- see :func:`mask`.
+    A known driver flags its own. For an unknown driver -- one whose add-on
+    was removed while its provider record stayed behind -- *every* field
+    counts. Both directions need that: :func:`mask` must not start publishing
+    the client secret of a provider nobody can audit any more, and
+    :func:`unmask` must restore every echoed sentinel rather than write a row
+    of bullets over the stored configuration.
 
     :param driver_id: Driver id.
-    :returns: Names of secret fields.
+    :param config: The configuration being masked or unmasked.
+    :returns: Names of the fields to treat as secret.
     """
     driver = get_driver(driver_id)
     if driver is None:
-        return set()
+        logger.warning(
+            "Unknown driver %r: treating every config value as secret",
+            driver_id,
+        )
+        return set(config)
     return {
         name
         for name, descriptor in driver.config_schema().items()
@@ -136,23 +144,16 @@ def _secret_fields(driver_id: str) -> set[str]:
 def mask(driver_id: str, config: dict[str, Any]) -> dict[str, Any]:
     """Replace secret values with the sentinel (I4).
 
-    When the driver is unknown, *every* value is masked. Masking nothing would
-    be the dangerous failure here: an add-on that removed its driver would
-    start publishing its own client secrets through the control panel.
+    When the driver is unknown, *every* set value is masked -- see
+    :func:`_secret_fields`. Masking nothing would be the dangerous failure
+    here: an add-on that removed its driver would start publishing its own
+    client secrets through the control panel.
 
     :param driver_id: Driver id.
     :param config: Stored configuration.
     :returns: A copy safe to send outside the backend.
     """
-    driver = get_driver(driver_id)
-    if driver is None:
-        logger.warning(
-            "Unknown driver %r: masking every config value rather than risk "
-            "publishing a secret",
-            driver_id,
-        )
-        return dict.fromkeys(config, SECRET_SENTINEL)
-    secrets = _secret_fields(driver_id)
+    secrets = _secret_fields(driver_id, config)
     return {
         key: (SECRET_SENTINEL if key in secrets and value else value)
         for key, value in config.items()
@@ -172,7 +173,7 @@ def unmask(
     :param stored: Configuration currently in the registry.
     :returns: Configuration to store.
     """
-    secrets = _secret_fields(driver_id)
+    secrets = _secret_fields(driver_id, incoming)
     result = dict(incoming)
     for key in secrets:
         if result.get(key) == SECRET_SENTINEL:
