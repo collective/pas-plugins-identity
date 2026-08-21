@@ -13,6 +13,7 @@ PATCH echoes the sentinel unchanged.
 
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.drivers import get_driver
+from pas.plugins.identity.core.interfaces import FlowError
 from plone import api
 from typing import Any
 
@@ -21,6 +22,9 @@ import json
 
 #: Registry key holding the provider list.
 PROVIDERS_RECORD = "pas.plugins.identity.providers"
+
+#: Registry key holding the frontend route the provider redirects back to.
+CALLBACK_URL_RECORD = "pas.plugins.identity.callback_url"
 
 #: What a secret looks like once it has left the backend. A PATCH that sends
 #: this back means "leave the stored value alone".
@@ -216,6 +220,30 @@ def enabled_providers() -> list[ProviderConfig]:
     :returns: Enabled providers with a registered driver.
     """
     return [p for p in get_providers() if p.enabled and p.driver is not None]
+
+
+def get_callback_url() -> str:
+    """Return the frontend route the provider redirects back to.
+
+    This is the exact string registered with the provider as the redirect
+    URI, so it is configuration rather than something derived from the portal
+    URL: with Volto the frontend and the backend need not share an origin,
+    and providers match the redirect URI exactly.
+
+    :returns: The configured absolute URL.
+    :raises FlowError: When no callback URL has been configured, which would
+        otherwise surface as an opaque rejection from the provider.
+    """
+    url = (
+        api.portal.get_registry_record(CALLBACK_URL_RECORD, default="") or ""
+    ).strip()
+    if not url:
+        raise FlowError(
+            "No login callback URL is configured; set "
+            f"{CALLBACK_URL_RECORD} to the frontend route the provider "
+            "redirects to"
+        )
+    return url
 
 
 def set_providers(providers: list[ProviderConfig]) -> None:
