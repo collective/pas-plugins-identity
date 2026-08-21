@@ -170,3 +170,50 @@ class TestPublished:
         for response in (send, confirm):
             assert response.status_code == 404
             assert response.json()["error"]["type"] == "Unknown provider"
+
+    def test_control_panel_endpoints_are_published(self, url: str):
+        """Both control-panel reads are registered, and refuse anonymous with
+        JSON rather than a login form."""
+        for name in ("@identity-drivers", "@identity-providers"):
+            response = requests.get(
+                f"{url}/{name}",
+                headers={"Accept": "application/json"},
+                timeout=30,
+            )
+            assert response.status_code == 401, name
+            assert response.json()["error"]["type"] == "Not authenticated"
+
+    def test_provider_write_verbs_are_published(self, url: str):
+        """POST, PATCH and DELETE all resolve to our services."""
+        headers = {"Accept": "application/json"}
+        assert (
+            requests.post(
+                f"{url}/@identity-providers", headers=headers, json={}, timeout=30
+            ).status_code
+            == 401
+        )
+        assert (
+            requests.patch(
+                f"{url}/@identity-providers/dex", headers=headers, json={}, timeout=30
+            ).status_code
+            == 401
+        )
+        assert (
+            requests.delete(
+                f"{url}/@identity-providers/dex", headers=headers, timeout=30
+            ).status_code
+            == 401
+        )
+
+    def test_test_connection_action_traverses(self, url: str):
+        """``<id>/test-connection`` reaches the POST service rather than
+        404ing on the extra segments."""
+        response = requests.post(
+            f"{url}/@identity-providers/dex/test-connection",
+            headers={"Accept": "application/json"},
+            json={},
+            timeout=30,
+        )
+
+        assert response.status_code == 401
+        assert response.json()["error"]["type"] == "Not authenticated"

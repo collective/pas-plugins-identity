@@ -47,6 +47,7 @@ def stub_metadata(monkeypatch):
         :param metadata: Metadata to return, or an exception to raise.
             Defaults to the Dex fixture.
         """
+        from pas.plugins.identity.core.flows import metadata as metadata_module
         from pas.plugins.identity.core.services import callback as callback_module
         from pas.plugins.identity.core.services import identities as identities_module
         from pas.plugins.identity.core.services import login as login_module
@@ -67,6 +68,9 @@ def stub_metadata(monkeypatch):
         monkeypatch.setattr(login_module, "metadata_for", fake)
         monkeypatch.setattr(callback_module, "metadata_for", fake)
         monkeypatch.setattr(identities_module, "metadata_for", fake)
+        # providers.py reaches through the module rather than importing the
+        # name, so patching the importers is not enough for it.
+        monkeypatch.setattr(metadata_module, "metadata_for", fake)
 
     return install
 

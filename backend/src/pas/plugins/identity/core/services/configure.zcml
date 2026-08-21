@@ -90,4 +90,52 @@
       name="@audit-log"
       />
 
+  <!-- Provider configuration (Gate 5, §4.5). Registered for View and
+       guarded on Manage portal inside the services, so a caller without it
+       gets a JSON refusal rather than a login form. -->
+  <plone:service
+      method="GET"
+      factory=".providers.DriversGet"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@identity-drivers"
+      />
+
+  <plone:service
+      method="GET"
+      factory=".providers.ProvidersGet"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@identity-providers"
+      />
+
+  <plone:service
+      method="POST"
+      factory=".providers.ProvidersPost"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@identity-providers"
+      />
+
+  <plone:service
+      method="PATCH"
+      factory=".providers.ProvidersPatch"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@identity-providers"
+      />
+
+  <plone:service
+      method="DELETE"
+      factory=".providers.ProvidersDelete"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@identity-providers"
+      />
+
 </configure>
