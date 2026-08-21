@@ -1368,6 +1368,18 @@ importers:
       '@types/react-dom':
         specifier: ^18.3.1
         version: 18.3.7(@types/react@18.3.31)
+      '@types/react-redux':
+        specifier: ^7.1.34
+        version: 7.1.34
+      '@types/react-router-dom':
+        specifier: ^5.3.3
+        version: 5.3.3
+      react-redux:
+        specifier: 8.1.2
+        version: 8.1.2(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(redux@4.2.1)
+      react-router-dom:
+        specifier: 5.2.0
+        version: 5.2.0(react@18.2.0)
       release-it:
         specifier: ^19.0.5
         version: 19.2.4(@types/node@24.13.3)(magicast@0.3.5)
