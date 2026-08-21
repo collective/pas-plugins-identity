@@ -53,7 +53,7 @@ test = [
     "plone.restapi[test]",
     "pytest",
     "pytest-cov",
-    "pytest-plone>=1.0.0a2",
+    "pytest-plone>=1.0.0",
     "requests",
 ]
 
