@@ -1,6 +1,7 @@
 <configure
     xmlns="http://namespaces.zope.org/zope"
     xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
     i18n_domain="pas.plugins.identity"
     >
 
@@ -27,6 +28,33 @@
       factory=".setuphandlers.HiddenProfiles"
       name="pas.plugins.identity"
       />
+
+  <!-- The [profile] extra's profiles (§4.9). Declared here rather than in
+       the layer's own configure.zcml because GenericSetup builds a profile id
+       from the package the directive appears in: declared next to the code,
+       these would install as ``pas.plugins.identity.profile:profile``, which
+       is not a name anybody would guess. -->
+  <configure zcml:condition="installed plone.app.dexterity">
+
+    <genericsetup:registerProfile
+        name="profile"
+        title="pas.plugins.identity: Profiles"
+        description="Content-backed user profiles, with a dedicated catalog."
+        provides="Products.GenericSetup.interfaces.EXTENSION"
+        directory="profiles/profile"
+        post_handler=".profile.setuphandlers.post_install"
+        />
+
+    <genericsetup:registerProfile
+        name="uninstall-profile"
+        title="pas.plugins.identity: Uninstall profiles"
+        description="Remove the Profile catalog and content type registrations."
+        provides="Products.GenericSetup.interfaces.EXTENSION"
+        directory="profiles/uninstall-profile"
+        post_handler=".profile.setuphandlers.post_uninstall"
+        />
+
+  </configure>
 
   <include package=".upgrades" />
 

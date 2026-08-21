@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<registry>
+  <record name="pas.plugins.identity.profile_container_parent"
+          remove="True"
+  />
+  <record name="pas.plugins.identity.profile_container_id"
+          remove="True"
+  />
+  <record name="pas.plugins.identity.profile_container_title"
+          remove="True"
+  />
+  <record name="pas.plugins.identity.profile_container_type"
+          remove="True"
+  />
+  <record name="pas.plugins.identity.profile_enumeration_states"
+          remove="True"
+  />
+</registry>

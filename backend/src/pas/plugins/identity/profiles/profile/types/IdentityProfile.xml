@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<object xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+        meta_type="Dexterity FTI"
+        name="IdentityProfile"
+        i18n:domain="pas.plugins.identity"
+>
+  <property name="title"
+            i18n:translate=""
+  >Identity Profile</property>
+  <property name="description"
+            i18n:translate=""
+  >Content-backed profile for one Plone user.</property>
+  <property name="allowed_content_types" />
+  <property name="filter_content_types">True</property>
+  <!-- Addable anywhere, but only by someone holding
+       ``pas.plugins.identity: Add Profile`` — Manager and Site
+       Administrator per rolemap.xml. A permission is the right lock here
+       and a structural one is not: with ``global_allow`` false a Profile
+       cannot be pasted into an ordinary folder at all, which would make
+       reorganising content silently impossible for the administrator who
+       is allowed to do everything else. -->
+  <property name="global_allow">True</property>
+  <property name="icon_expr">string:person</property>
+  <property name="klass">pas.plugins.identity.profile.content.profile.Profile</property>
+  <property name="schema">pas.plugins.identity.profile.content.profile.IProfileSchema</property>
+  <property name="add_permission">pas.plugins.identity.AddProfile</property>
+  <property name="link_target" />
+  <property name="model_source" />
+  <property name="model_file" />
+
+  <!-- Deliberately short. The claims-sync subscriber (Gate 6c) and the PAS
+       property sheet (6b) are the consumers of this type; the standard
+       Dublin Core behaviors would add metadata nobody serves, and every
+       behavior field is a field the churn test has to keep consistent. -->
+  <property name="behaviors">
+    <element value="plone.namefromtitle" />
+    <element value="plone.shortname" />
+  </property>
+
+  <alias from="(Default)"
+         to="(dynamic view)"
+  />
+  <alias from="edit"
+         to="@@edit"
+  />
+  <alias from="sharing"
+         to="@@sharing"
+  />
+  <alias from="view"
+         to="(selected layout)"
+  />
+
+  <action action_id="view"
+          category="object"
+          condition_expr=""
+          title="View"
+          url_expr="string:${object_url}"
+          visible="True"
+          i18n:attributes="title"
+  >
+    <permission value="View" />
+  </action>
+  <action action_id="edit"
+          category="object"
+          condition_expr=""
+          title="Edit"
+          url_expr="string:${object_url}/edit"
+          visible="True"
+          i18n:attributes="title"
+  >
+    <permission value="Modify portal content" />
+  </action>
+</object>

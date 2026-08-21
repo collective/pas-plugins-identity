@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rolemap>
+  <permissions>
+    <!-- Profiles are created by the first-login machinery (Gate 6c) and by
+         site administrators, never by users adding content. ``global_allow``
+         is False as well; this is the second lock. -->
+    <permission acquire="False"
+                name="pas.plugins.identity: Add Profile"
+    >
+      <role name="Manager" />
+      <role name="Site Administrator" />
+    </permission>
+  </permissions>
+</rolemap>
