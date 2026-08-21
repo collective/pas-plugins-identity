@@ -29,3 +29,51 @@ export interface RequestState {
   loaded: boolean;
   error: unknown | null;
 }
+
+/** One identity the signed-in user owns, from `@identities`. */
+export interface Identity {
+  '@id': string;
+  provider: string;
+  subject: string;
+  title: string;
+  created: string;
+  last_login: string | null;
+  /** S4: false when this is the user's last way in. */
+  can_unlink: boolean;
+}
+
+/** One field of a driver's configuration schema. */
+export interface DriverField {
+  type: string;
+  title: string;
+  description?: string;
+  required?: boolean;
+  secret: boolean;
+  default?: unknown;
+}
+
+/** A driver and the form it needs, from `@identity-drivers`. */
+export interface Driver {
+  id: string;
+  title: string;
+  schema: Record<string, DriverField>;
+}
+
+/** A configured provider as the control panel sees it. */
+export interface ConfiguredProvider {
+  '@id': string;
+  id: string;
+  driver: string;
+  title: string;
+  enabled: boolean;
+  config: Record<string, unknown>;
+}
+
+/** Answer from the per-provider connection check. */
+export interface ConnectionCheck {
+  ok: boolean;
+  error?: string;
+  authorization_endpoint?: string;
+  token_endpoint?: string;
+  has_jwks?: boolean;
+}

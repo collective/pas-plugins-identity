@@ -9,12 +9,25 @@
 import {
   COMPLETE_CALLBACK,
   CONFIRM_MAGIC_LINK,
+  CREATE_PROVIDER,
+  DELETE_PROVIDER,
+  LIST_DRIVERS,
+  LIST_IDENTITIES,
   LIST_LOGIN_PROVIDERS,
+  LIST_PROVIDERS,
   SEND_MAGIC_LINK,
+  START_LINKING,
   START_PROVIDER_LOGIN,
+  TEST_PROVIDER,
+  UNLINK_IDENTITY,
+  UPDATE_PROVIDER,
 } from '../constants/ActionTypes';
 import type {
   AuthorizeRedirect,
+  ConfiguredProvider,
+  ConnectionCheck,
+  Driver,
+  Identity,
   LoginProvider,
   RequestState,
   TokenResponse,
@@ -91,12 +104,75 @@ export const magicLinkConfirm = requestReducer<TokenResponse | null>(
   null,
 );
 
+export const identities = requestReducer<Identity[]>(
+  LIST_IDENTITIES,
+  (result) => result?.items ?? [],
+  [],
+);
+
+export const identityLinking = requestReducer<AuthorizeRedirect | null>(
+  START_LINKING,
+  (result) => result ?? null,
+  null,
+);
+
+export const identityUnlink = requestReducer<boolean>(
+  UNLINK_IDENTITY,
+  () => true,
+  false,
+);
+
+export const identityDrivers = requestReducer<Driver[]>(
+  LIST_DRIVERS,
+  (result) => result?.items ?? [],
+  [],
+);
+
+export const configuredProviders = requestReducer<ConfiguredProvider[]>(
+  LIST_PROVIDERS,
+  (result) => result?.items ?? [],
+  [],
+);
+
+export const providerCreate = requestReducer<ConfiguredProvider | null>(
+  CREATE_PROVIDER,
+  (result) => result ?? null,
+  null,
+);
+
+export const providerUpdate = requestReducer<boolean>(
+  UPDATE_PROVIDER,
+  () => true,
+  false,
+);
+
+export const providerDelete = requestReducer<boolean>(
+  DELETE_PROVIDER,
+  () => true,
+  false,
+);
+
+export const providerTest = requestReducer<ConnectionCheck | null>(
+  TEST_PROVIDER,
+  (result) => result ?? null,
+  null,
+);
+
 const reducers = {
   loginProviders,
   providerLogin,
   identityCallback,
   magicLinkSend,
   magicLinkConfirm,
+  identities,
+  identityLinking,
+  identityUnlink,
+  identityDrivers,
+  configuredProviders,
+  providerCreate,
+  providerUpdate,
+  providerDelete,
+  providerTest,
 };
 
 export default reducers;

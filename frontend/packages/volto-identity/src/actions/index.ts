@@ -10,9 +10,18 @@
 import {
   COMPLETE_CALLBACK,
   CONFIRM_MAGIC_LINK,
+  CREATE_PROVIDER,
+  DELETE_PROVIDER,
+  LIST_DRIVERS,
+  LIST_IDENTITIES,
   LIST_LOGIN_PROVIDERS,
+  LIST_PROVIDERS,
   SEND_MAGIC_LINK,
+  START_LINKING,
   START_PROVIDER_LOGIN,
+  TEST_PROVIDER,
+  UNLINK_IDENTITY,
+  UPDATE_PROVIDER,
 } from '../constants/ActionTypes';
 
 /**
@@ -89,6 +98,132 @@ export function confirmMagicLink(token: string) {
       op: 'post',
       path: '/@magic-link-confirm',
       data: { token },
+    },
+  };
+}
+
+/**
+ * List the identities the signed-in user owns.
+ */
+export function listIdentities() {
+  return {
+    type: LIST_IDENTITIES,
+    request: { op: 'get', path: '/@identities' },
+  };
+}
+
+/**
+ * Start a flow that attaches another provider to the caller's account.
+ *
+ * @param providerId Provider to link.
+ * @param cameFrom Where to send the user afterwards.
+ */
+export function startLinking(providerId: string, cameFrom = '') {
+  return {
+    type: START_LINKING,
+    request: {
+      op: 'post',
+      path: '/@identities',
+      data: { provider: providerId, came_from: cameFrom },
+    },
+  };
+}
+
+/**
+ * Detach one identity.
+ *
+ * @param provider Provider id.
+ * @param subject Provider-side subject.
+ */
+export function unlinkIdentity(provider: string, subject: string) {
+  return {
+    type: UNLINK_IDENTITY,
+    request: {
+      op: 'del',
+      path: `/@identities/${encodeURIComponent(provider)}/${encodeURIComponent(subject)}`,
+    },
+  };
+}
+
+/**
+ * List the drivers, with the schema the control-panel form renders from.
+ */
+export function listDrivers() {
+  return {
+    type: LIST_DRIVERS,
+    request: { op: 'get', path: '/@identity-drivers' },
+  };
+}
+
+/**
+ * List the configured providers.
+ */
+export function listProviders() {
+  return {
+    type: LIST_PROVIDERS,
+    request: { op: 'get', path: '/@identity-providers' },
+  };
+}
+
+/**
+ * Create a provider.
+ *
+ * @param data The provider record.
+ */
+export function createProvider(data: Record<string, unknown>) {
+  return {
+    type: CREATE_PROVIDER,
+    request: { op: 'post', path: '/@identity-providers', data },
+  };
+}
+
+/**
+ * Update a provider in place.
+ *
+ * @param providerId Provider to update.
+ * @param data The fields to change.
+ */
+export function updateProvider(
+  providerId: string,
+  data: Record<string, unknown>,
+) {
+  return {
+    type: UPDATE_PROVIDER,
+    request: {
+      op: 'patch',
+      path: `/@identity-providers/${encodeURIComponent(providerId)}`,
+      data,
+    },
+  };
+}
+
+/**
+ * Remove a provider.
+ *
+ * @param providerId Provider to remove.
+ */
+export function deleteProvider(providerId: string) {
+  return {
+    type: DELETE_PROVIDER,
+    request: {
+      op: 'del',
+      path: `/@identity-providers/${encodeURIComponent(providerId)}`,
+    },
+  };
+}
+
+/**
+ * Check that a provider can actually be reached.
+ *
+ * @param providerId Provider to check.
+ */
+export function testProvider(providerId: string) {
+  return {
+    type: TEST_PROVIDER,
+    request: {
+      op: 'post',
+      path: `/@identity-providers/${encodeURIComponent(providerId)}/test-connection`,
+      data: {},
     },
   };
 }
