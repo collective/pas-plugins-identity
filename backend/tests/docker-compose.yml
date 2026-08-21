@@ -1,0 +1,17 @@
+# The OIDC provider the functional flow tests run against (C2).
+#
+# Started and stopped by pytest-docker, on demand: only tests that ask for the
+# ``dex_service`` fixture bring it up, so the unit and integration suite stays
+# free of Docker. `make dex-start` / `make dex-stop` drive the same stack by
+# hand while developing.
+services:
+  dex:
+    image: ghcr.io/dexidp/dex:${DEX_VERSION:-v2.44.0}
+    command: ['dex', 'serve', '/etc/dex/config.yaml']
+    volumes:
+      - ./dex/config.yaml:/etc/dex/config.yaml:ro
+    ports:
+      # Fixed rather than ephemeral: Dex publishes its issuer in the discovery
+      # document and refuses to be reached under any other URL, so the port
+      # has to match the issuer in dex/config.yaml.
+      - 5556:5556
