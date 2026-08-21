@@ -1,0 +1,1 @@
+Enforced the coverage pragma policy: `# pragma: no cover` now requires a same-line justification, checked by `make check-pragmas` in CI. An unjustified pragma is how a 100% coverage gate quietly stops meaning anything. @ericof

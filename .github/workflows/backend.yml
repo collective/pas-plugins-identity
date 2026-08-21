@@ -89,6 +89,10 @@ jobs:
 
       - name: Test
         run: make test
+        env:
+          # Fail rather than skip if Docker is missing: the flow tests are the
+          # only thing proving the protocol integration works (C2).
+          PAS_IDENTITY_REQUIRE_DOCKER: "1"
 
   # Gate 0: "pip install . in a clean venv imports". The extras matrix cannot
   # cover this -- every one of its jobs installs [test] -- so a runtime
@@ -137,6 +141,9 @@ jobs:
 
       - name: Check layer boundaries
         run: make check-imports
+
+      - name: Check the coverage pragma policy
+        run: make check-pragmas
 
   coverage:
     name: "Backend: Coverage"

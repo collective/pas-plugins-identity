@@ -53,6 +53,7 @@ test = [
     "plone.restapi[test]",
     "pytest",
     "pytest-cov",
+    "pytest-docker",
     "pytest-plone>=1.0.0",
     "requests",
 ]
@@ -192,6 +193,9 @@ ignore = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "docker: needs the compose stack in tests/docker-compose.yml (C2).",
+]
 
 [tool.coverage.run]
 source_pkgs = ["pas.plugins.identity", "tests"]

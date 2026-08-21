@@ -1,0 +1,41 @@
+# Dex configuration for the functional flow tests (C2).
+#
+# Deliberately minimal: in-memory storage, one static client, one static
+# password. There is no database, so the container is up in about a second
+# and every run starts from the same state.
+#
+# The issuer must be exactly the URL the tests reach Dex at -- Dex publishes
+# it in the discovery document, and metadata resolution refuses a document
+# that declares a different issuer (RFC 8414 section 3.3).
+issuer: http://127.0.0.1:5556/dex
+
+storage:
+  type: memory
+
+web:
+  http: 0.0.0.0:5556
+
+# Dex matches redirect URIs exactly; no wildcards. This is the value the
+# tests put in the pas.plugins.identity.callback_url registry record, and it
+# stands in for the Volto route.
+staticClients:
+  - id: plone
+    name: Plone
+    secret: plone-secret
+    redirectURIs:
+      - http://localhost:3000/login-identity
+
+oauth2:
+  # Skip the "grant access to Plone?" interstitial: the tests drive the login
+  # form headlessly, and the consent screen is not what they are testing.
+  skipApprovalScreen: true
+
+enablePasswordDB: true
+
+# Password is "plone-test-password"; the hash was generated with bcrypt at
+# cost 10 and verified, not copied from a tutorial.
+staticPasswords:
+  - email: erico@plone.org
+    hash: "$2b$10$kuq1VDhhJl79.G.9nQ5W8ePb3FoaYjZ4Oi1Q.KNROBW.5lERVc6bS"
+    username: ericof
+    userID: 6e4e3a1c-0d5f-4b0a-9a1e-2f6c8d4b7a90

@@ -1,0 +1,1 @@
+Added the coverage pragma policy check to backend CI, and made the Docker-backed flow tests mandatory there: without `PAS_IDENTITY_REQUIRE_DOCKER` a machine with no Docker skips them, which is right for a laptop and quietly wrong for a pipeline. @ericof

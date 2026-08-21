@@ -154,6 +154,35 @@ format: ## Check and fix code base according to Plone standards
 	@uvx ruff@latest format --config $(BACKEND_FOLDER)/pyproject.toml
 	@uvx zpretty@latest -i src
 
+############################################
+# Dex, the OIDC provider for the flow tests (C2)
+############################################
+# pytest-docker starts and stops this stack on demand, so `make test` needs
+# none of these. They are for driving the provider by hand -- poking at its
+# discovery document, reading its logs. Stop it before running the suite: the
+# port is fixed, so a hand-started Dex and pytest-docker's own cannot coexist.
+COMPOSE_FILE=$(BACKEND_FOLDER)/tests/docker-compose.yml
+
+.PHONY: dex-start
+dex-start: ## Start Dex by hand on localhost:5556
+	@echo "$(GREEN)==> Start Dex$(RESET)"
+	@docker compose -f $(COMPOSE_FILE) up -d
+
+.PHONY: dex-status
+dex-status: ## Show the Dex stack status
+	@echo "$(GREEN)==> Dex status$(RESET)"
+	@docker compose -f $(COMPOSE_FILE) ps
+
+.PHONY: dex-stop
+dex-stop: ## Stop Dex
+	@echo "$(RED)==> Stop Dex$(RESET)"
+	@docker compose -f $(COMPOSE_FILE) down
+
+.PHONY: check-pragmas
+check-pragmas: ## Enforce the coverage pragma policy (PLAN section 8.2)
+	@echo "$(GREEN)==> Check coverage pragmas$(RESET)"
+	@$(BIN_FOLDER)/python scripts/check_pragmas.py
+
 .PHONY: check-clean-install
 check-clean-install: requirements-mxdev.txt ## Import the package from a no-extras install (I5)
 	@echo "$(GREEN)==> Check that the no-extras install imports$(RESET)"
