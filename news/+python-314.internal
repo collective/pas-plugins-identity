@@ -1,0 +1,1 @@
+Added Python 3.14 to the backend CI test matrix, which now covers 3.12, 3.13 and 3.14 — matching the 3.14 the shared workflow configuration already defaulted to. @ericof

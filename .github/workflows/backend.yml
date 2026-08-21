@@ -35,13 +35,14 @@ jobs:
 
   # The floor is Plone 6.2 / Python 3.12 (see pyproject's requires-python and
   # classifiers); anything older is out of scope by decision, not by accident.
+  # The ceiling is 3.14, which is also what the reusable workflows default to.
   test:
     name: "Backend: Test"
     uses: plone/meta/.github/workflows/backend-pytest.yml@2.x
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.12', '3.13']
+        python-version: ['3.12', '3.13', '3.14']
         plone-version: ['6.2-latest']
     with:
       python-version: ${{ matrix.python-version }}
