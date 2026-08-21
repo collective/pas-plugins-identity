@@ -9,6 +9,7 @@
              i18n:domain="pas.plugins.identity"
 >
   <permission>Access contents information</permission>
+  <permission>Delete objects</permission>
   <permission>Modify portal content</permission>
   <permission>View</permission>
 
@@ -24,21 +25,27 @@
     >
       <permission-role>Manager</permission-role>
       <permission-role>Site Administrator</permission-role>
-      <permission-role>Owner</permission-role>
+      <permission-role>Editor</permission-role>
     </permission-map>
     <permission-map acquired="False"
                     name="Modify portal content"
     >
       <permission-role>Manager</permission-role>
       <permission-role>Site Administrator</permission-role>
-      <permission-role>Owner</permission-role>
+      <permission-role>Editor</permission-role>
     </permission-map>
     <permission-map acquired="False"
                     name="View"
     >
       <permission-role>Manager</permission-role>
       <permission-role>Site Administrator</permission-role>
-      <permission-role>Owner</permission-role>
+      <permission-role>Editor</permission-role>
+    </permission-map>
+    <permission-map acquired="False"
+                    name="Delete objects"
+    >
+      <permission-role>Manager</permission-role>
+      <permission-role>Site Administrator</permission-role>
     </permission-map>
   </state>
 
@@ -54,7 +61,7 @@
     >
       <permission-role>Manager</permission-role>
       <permission-role>Site Administrator</permission-role>
-      <permission-role>Owner</permission-role>
+      <permission-role>Editor</permission-role>
       <permission-role>Member</permission-role>
     </permission-map>
     <permission-map acquired="False"
@@ -62,15 +69,21 @@
     >
       <permission-role>Manager</permission-role>
       <permission-role>Site Administrator</permission-role>
-      <permission-role>Owner</permission-role>
+      <permission-role>Editor</permission-role>
     </permission-map>
     <permission-map acquired="False"
                     name="View"
     >
       <permission-role>Manager</permission-role>
       <permission-role>Site Administrator</permission-role>
-      <permission-role>Owner</permission-role>
+      <permission-role>Editor</permission-role>
       <permission-role>Member</permission-role>
+    </permission-map>
+    <permission-map acquired="False"
+                    name="Delete objects"
+    >
+      <permission-role>Manager</permission-role>
+      <permission-role>Site Administrator</permission-role>
     </permission-map>
   </state>
 
@@ -94,6 +107,12 @@
     </permission-map>
     <permission-map acquired="False"
                     name="View"
+    >
+      <permission-role>Manager</permission-role>
+      <permission-role>Site Administrator</permission-role>
+    </permission-map>
+    <permission-map acquired="False"
+                    name="Delete objects"
     >
       <permission-role>Manager</permission-role>
       <permission-role>Site Administrator</permission-role>

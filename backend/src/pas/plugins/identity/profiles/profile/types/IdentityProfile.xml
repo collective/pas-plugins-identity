@@ -31,9 +31,12 @@
   <!-- Deliberately short. The claims-sync subscriber (Gate 6c) and the PAS
        property sheet (6b) are the consumers of this type; the standard
        Dublin Core behaviors would add metadata nobody serves, and every
-       behavior field is a field the churn test has to keep consistent. -->
+       behavior field is a field the churn test has to keep consistent.
+
+       plone.namefromtitle is absent on purpose: Title() here is computed
+       from the full name, which is neither unique nor stable, and every
+       Profile is created with an explicit id (the canonical userid). -->
   <property name="behaviors">
-    <element value="plone.namefromtitle" />
     <element value="plone.shortname" />
   </property>
 
