@@ -1,0 +1,1 @@
+Added the Gate 0 clean-install check as a CI job and a `make check-clean-install` target: the package is installed with no extras into a throwaway virtualenv and imported, so a runtime dependency that only the test extra happens to supply cannot pass unnoticed. @ericof

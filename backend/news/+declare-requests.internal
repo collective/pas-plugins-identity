@@ -1,0 +1,1 @@
+Declared `requests` as a direct dependency. `core/flows` imports authlib's requests integration at module scope and Authlib does not pull `requests` in itself; it currently arrives via Products.CMFPlone, which is not a graph this package should depend on staying put. @ericof

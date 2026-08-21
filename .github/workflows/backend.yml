@@ -90,6 +90,31 @@ jobs:
       - name: Test
         run: make test
 
+  # Gate 0: "pip install . in a clean venv imports". The extras matrix cannot
+  # cover this -- every one of its jobs installs [test] -- so a runtime
+  # dependency that only the test extra happens to provide would slip through.
+  clean_install:
+    name: "Backend: No-extras install imports"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup codebase
+        uses: plone/meta/.github/actions/setup_backend_uv@2.x
+        with:
+          python-version: ${{ inputs.python-version }}
+          plone-version: ${{ inputs.plone-version }}
+          working-directory: ${{ inputs.working-directory }}
+
+      - name: Import from a no-extras install
+        run: make check-clean-install
+
   # Gate 0: the hard layer boundary (§4.2), enforced rather than documented.
   imports:
     name: "Backend: Layer boundaries"
@@ -128,6 +153,7 @@ jobs:
       - lint
       - test
       - extras
+      - clean_install
       - imports
       - coverage
     permissions:
@@ -153,6 +179,7 @@ jobs:
       - lint
       - test
       - extras
+      - clean_install
       - imports
       - coverage
       - release
@@ -165,6 +192,7 @@ jobs:
           echo '| lint | ${{ needs.lint.result }} |' >> $GITHUB_STEP_SUMMARY
           echo '| test | ${{ needs.test.result }} |' >> $GITHUB_STEP_SUMMARY
           echo '| extras | ${{ needs.extras.result }} |' >> $GITHUB_STEP_SUMMARY
+          echo '| clean-install | ${{ needs.clean_install.result }} |' >> $GITHUB_STEP_SUMMARY
           echo '| imports | ${{ needs.imports.result }} |' >> $GITHUB_STEP_SUMMARY
           echo '| coverage | ${{ needs.coverage.result }} |' >> $GITHUB_STEP_SUMMARY
           echo '| release | ${{ needs.release.result }} |' >> $GITHUB_STEP_SUMMARY

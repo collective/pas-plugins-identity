@@ -30,6 +30,13 @@ dependencies = [
     "Products.CMFPlone",
     "plone.api",
     "plone.restapi",
+    # core/flows imports authlib.integrations.requests_client at module scope,
+    # and Authlib does not pull requests in on its own. Today it arrives anyway
+    # via Products.CMFPlone (plone.app.event, plone.app.portlets and
+    # plone.cachepurging each require it unconditionally), so this is declared
+    # for honesty rather than to fix a live breakage: what we import directly
+    # should not depend on another package's dependency graph staying put.
+    "requests",
 ]
 
 [project.optional-dependencies]

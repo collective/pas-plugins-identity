@@ -154,6 +154,18 @@ format: ## Check and fix code base according to Plone standards
 	@uvx ruff@latest format --config $(BACKEND_FOLDER)/pyproject.toml
 	@uvx zpretty@latest -i src
 
+.PHONY: check-clean-install
+check-clean-install: requirements-mxdev.txt ## Import the package from a no-extras install (I5)
+	@echo "$(GREEN)==> Check that the no-extras install imports$(RESET)"
+	@# Joined with && rather than ;: macOS ships GNU Make 3.81, which ignores
+	@# both .ONESHELL and .SHELLFLAGS' -e, so a ;-chain would report the exit
+	@# status of the trailing rm and the check could never fail.
+	@rm -rf $(BACKEND_FOLDER)/.venv-clean && \
+	uv venv $(UV_VENV_ARGS) $(BACKEND_FOLDER)/.venv-clean && \
+	VIRTUAL_ENV=$(BACKEND_FOLDER)/.venv-clean uv pip install -q -c constraints-mxdev.txt . && \
+	$(BACKEND_FOLDER)/.venv-clean/bin/python -c "import pas.plugins.identity.core.flows; print('no-extras import OK')" && \
+	rm -rf $(BACKEND_FOLDER)/.venv-clean
+
 .PHONY: check-imports
 check-imports: $(VENV_FOLDER) ## Enforce the core/profile/server layer boundary (§4.2)
 	@echo "$(GREEN)==> Check layer boundaries$(RESET)"
