@@ -34,45 +34,6 @@ if not DEMO_PROFILE:
 
 SITE_ID = os.getenv("SITE", "Plone")
 
-#: Id of the Profile container, matching the ``profile_container_id`` record
-#: that ``pas.plugins.identity:profile`` ships.
-PROFILE_CONTAINER_ID = "identity-profiles"
-
-#: What that record has to say on a site built from the Volto distribution,
-#: which does not allow ``Folder`` at the portal root at all. See
-#: :func:`prepare_profile_layer`.
-VOLTO_CONTAINER_TYPE = "Document"
-
-
-def prepare_profile_layer(site) -> None:
-    """Create the Profile container as a type a Volto site allows.
-
-    The demo sites are built from the ``volto`` distribution, which does not
-    allow ``Folder`` at the portal root, and that is what
-    ``pas.plugins.identity:profile`` creates by default.
-
-    Overriding the ``profile_container_type`` record cannot work from a
-    profile: that layer's own registry step rewrites the record every time it
-    is applied, and its post handler creates the container immediately
-    afterwards, so any value set beforehand is gone by the time it is read and
-    any value set afterwards arrives too late. ``get_container`` returns an
-    existing container untouched, though, so creating it first settles the
-    question before the profile ever asks it.
-
-    The demo's own ``registry.xml`` then sets the record to match, which
-    matters for nothing today and would matter if the container were ever
-    removed and recreated.
-
-    :param site: The Plone site.
-    """
-    if PROFILE_CONTAINER_ID in site.objectIds():
-        return
-    site.invokeFactory(
-        VOLTO_CONTAINER_TYPE, PROFILE_CONTAINER_ID, title="Identity Profiles"
-    )
-    transaction.commit()
-
-
 app = makerequest(globals()["app"])
 
 request = app.REQUEST
@@ -101,9 +62,6 @@ if SITE_ID not in app.objectIds():
     portal_setup: SetupTool = site.portal_setup
     portal_setup.runAllImportStepsFromProfile("profile-pas.plugins.identity:default")
     transaction.commit()
-
-    if DEMO_PROFILE.endswith(":idp"):
-        prepare_profile_layer(site)
 
     # The demo profile's metadata declares the rest of what it needs, so the
     # dependency chain applies it. Naming those profiles here as well would

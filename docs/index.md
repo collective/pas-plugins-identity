@@ -18,6 +18,7 @@ audit-log
 profiles
 claims
 migration
+federation-demo
 ```
 
 ```{toctree}

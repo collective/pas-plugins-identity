@@ -1,0 +1,3 @@
+Added `docker-compose.demo.yml` and the `demo-stack-*` targets: two full Plone sites, in a browser, one signing users in against the other. `make demo-stack-start`, then open http://plone.localhost and sign in as a user who exists only on http://id.localhost.
+
+Separate from `docker-compose.yml` on purpose. That file is the one-site development stack, and growing it into this would build two Volto frontends for everyone running `make stack-start`. Documented in `docs/federation-demo.md`. @ericof

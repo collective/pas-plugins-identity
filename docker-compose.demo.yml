@@ -1,0 +1,229 @@
+---
+# The manual federation stack: two full Plone sites, in a browser.
+#
+#   id.localhost      site A -- core + profile + server. An OpenID provider.
+#   plone.localhost   site B -- core, with the generic OIDC driver pointed at A.
+#
+# Deliberately separate from tests/federation/docker-compose.yml, which is the
+# hermetic Gate S3 stack: that one has to run in CI, so it is headless, gets no
+# real provider and publishes ports directly. This one exists for exactly what
+# CI cannot do -- a real browser, real cross-origin cookies between sibling
+# .localhost hosts, Volto's real login route and its real callback route.
+#
+# Separate from docker-compose.yml too, which is the ordinary one-site
+# development stack. Growing that into this would build two Volto frontends
+# for everyone running `make stack-start`.
+#
+#   make demo-stack-start     then open http://plone.localhost
+#
+# Sign in with alice / alice-demo-password. She exists only on id.localhost.
+
+name: pas-plugins-identity-demo
+
+x-backend-build: &backend-build
+  context: ./backend
+  dockerfile: Dockerfile.demo
+  args:
+    - PLONE_VERSION=${PLONE_VERSION:-6.2.1}
+
+x-frontend-build: &frontend-build
+  context: ./frontend
+  args:
+    - VOLTO_VERSION=${VOLTO_VERSION}
+
+# Both sites read these. The URLs are what identitydemo.settings reads at
+# import time, and they have to be what the browser actually types: the issuer
+# is compared as a string, never parsed, and the redirect URI is compared byte
+# for byte at the token endpoint.
+#
+# No ports and no /Plone here, unlike the hermetic stack: Traefik serves each
+# site at the root of its own hostname.
+x-demo-env: &demo-env
+  IDENTITY_DEMO: '1'
+  DEMO_IDP_URL: http://id.localhost
+  DEMO_RP_URL: http://plone.localhost
+  DEMO_REDIRECT_URI: http://plone.localhost/login-identity
+  SITE: Plone
+  CONFIGURE_PACKAGES: plone.restapi,plone.volto,identitydemo
+
+services:
+  traefik:
+    image: traefik:v3.7
+    ports:
+      - 80:80
+    # Both public hostnames resolve to Traefik from inside the network too.
+    # The relying party fetches discovery server to server, but under the
+    # issuer's public hostname, because that is the only name the issuer
+    # answers to -- one URL that has to resolve in the browser and in a
+    # container, which is the single most confusing thing about this stack.
+    networks:
+      default:
+        aliases:
+          - id.localhost
+          - plone.localhost
+    labels:
+      - traefik.enable=true
+      - traefik.constraint-label=public
+      - traefik.http.middlewares.gzip.compress=true
+      - traefik.http.middlewares.gzip.compress.excludedcontenttypes=image/png, image/jpeg, font/woff2
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command:
+      - --providers.docker
+      - --providers.docker.constraints=Label(`traefik.constraint-label`, `public`)
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.http.address=:80
+      - --accesslog
+      - --log
+      - --api
+
+  # ------------------------------------------------------------------
+  # id.localhost -- the identity provider
+  # ------------------------------------------------------------------
+  idp-frontend:
+    build: *frontend-build
+    environment:
+      RAZZLE_INTERNAL_API_PATH: http://idp-backend:8080/Plone
+    depends_on:
+      - idp-backend
+    labels:
+      - traefik.enable=true
+      - traefik.constraint-label=public
+      - traefik.http.services.svc-idp-frontend.loadbalancer.server.port=3000
+      - traefik.http.routers.rt-idp-frontend.rule=Host(`id.localhost`)
+      - traefik.http.routers.rt-idp-frontend.entrypoints=http
+      - traefik.http.routers.rt-idp-frontend.service=svc-idp-frontend
+      - traefik.http.routers.rt-idp-frontend.middlewares=gzip
+
+  idp-backend:
+    build: *backend-build
+    environment:
+      <<: *demo-env
+      DEMO_PROFILE: identitydemo:idp
+      ZEO_ADDRESS: 'idp-zeo:8100'
+    depends_on:
+      - idp-zeo
+    labels:
+      - traefik.enable=true
+      - traefik.constraint-label=public
+      - traefik.http.services.svc-idp-backend.loadbalancer.server.port=8080
+
+      ## VHM rewrite /++api++/
+      - "traefik.http.middlewares.mw-idp-vhm-api.replacepathregex.regex=^/\\+\\+api\\+\\+($$|/.*)"
+      - "traefik.http.middlewares.mw-idp-vhm-api.replacepathregex.replacement=/VirtualHostBase/http/id.localhost/Plone/++api++/VirtualHostRoot$$1"
+
+      ## VHM rewrite /ClassicUI/
+      - "traefik.http.middlewares.mw-idp-vhm-classic.replacepathregex.regex=^/ClassicUI($$|/.*)"
+      - "traefik.http.middlewares.mw-idp-vhm-classic.replacepathregex.replacement=/VirtualHostBase/http/id.localhost/Plone/VirtualHostRoot/_vh_ClassicUI$$1"
+
+      ## VHM rewrite for the OAuth endpoints, which are Zope views on the site
+      ## root and not REST API services. Without this router they are simply
+      ## not routed to the backend at all, and the issuer URL published in the
+      ## discovery document points at the Volto frontend. This is what makes
+      ## the decision to configure the issuer rather than derive it from the
+      ## portal URL load-bearing rather than fussy.
+      - "traefik.http.middlewares.mw-idp-vhm-oauth.replacepathregex.regex=^/(.*)"
+      - "traefik.http.middlewares.mw-idp-vhm-oauth.replacepathregex.replacement=/VirtualHostBase/http/id.localhost/Plone/VirtualHostRoot/$$1"
+
+      ## Basic Authentication for ClassicUI. Defaults to admin:admin.
+      - traefik.http.middlewares.mw-idp-auth.basicauth.headerField=X-Auth-ClassicUI
+      - traefik.http.middlewares.mw-idp-auth.basicauth.users=admin:$$apr1$$uZPT5Fgu$$AmlIdamxT5ipBvPlsdfD70
+
+      # Routers
+      - traefik.http.routers.rt-idp-api.rule=Host(`id.localhost`) && PathPrefix(`/++api++`)
+      - traefik.http.routers.rt-idp-api.entrypoints=http
+      - traefik.http.routers.rt-idp-api.service=svc-idp-backend
+      - traefik.http.routers.rt-idp-api.middlewares=gzip,mw-idp-vhm-api
+
+      - traefik.http.routers.rt-idp-classic.rule=Host(`id.localhost`) && PathPrefix(`/ClassicUI`)
+      - traefik.http.routers.rt-idp-classic.entrypoints=http
+      - traefik.http.routers.rt-idp-classic.service=svc-idp-backend
+      - traefik.http.routers.rt-idp-classic.middlewares=gzip,mw-idp-auth,mw-idp-vhm-classic
+
+      ## The OAuth surface. Every path here is a browser-facing endpoint of the
+      ## authorization server: discovery, the authorize view (which also serves
+      ## and receives the consent screen), the token endpoint, the public keys
+      ## and userinfo.
+      - traefik.http.routers.rt-idp-oauth.rule=Host(`id.localhost`) && (PathPrefix(`/.well-known`) || PathPrefix(`/@@oauth-authorize`) || PathPrefix(`/@@oauth-token`) || PathPrefix(`/@@oauth-jwks`) || PathPrefix(`/@@oauth-userinfo`) || PathPrefix(`/@@backchannel-logout`))
+      - traefik.http.routers.rt-idp-oauth.entrypoints=http
+      - traefik.http.routers.rt-idp-oauth.service=svc-idp-backend
+      - traefik.http.routers.rt-idp-oauth.middlewares=gzip,mw-idp-vhm-oauth
+
+      ## Plone's own login form, which is what the authorize view challenges
+      ## an anonymous visitor with, and the cookie-auth plugin's challenge
+      ## path that gets them there. The authorization endpoint needs a real
+      ## Zope session -- Volto's login returns a JWT, which authenticates the
+      ## REST API and not a browser view -- so this deliberately serves the
+      ## Classic login form on the provider rather than Volto's picker.
+      - traefik.http.routers.rt-idp-login.rule=Host(`id.localhost`) && (Path(`/login`) || Path(`/logged_in`) || Path(`/login_form`) || PathPrefix(`/acl_users/credentials_cookie_auth`) || PathPrefix(`/++resource++`) || PathPrefix(`/++plone++`))
+      - traefik.http.routers.rt-idp-login.entrypoints=http
+      - traefik.http.routers.rt-idp-login.service=svc-idp-backend
+      - traefik.http.routers.rt-idp-login.middlewares=gzip,mw-idp-vhm-oauth
+      ## Higher than the frontend's catch-all Host() rule, which would
+      ## otherwise win /login and serve Volto's picker to a browser the
+      ## authorize view sent here to authenticate.
+      - traefik.http.routers.rt-idp-login.priority=100
+
+  idp-zeo:
+    image: plone/plone-zeo:6.0.0
+    volumes:
+      - vol-idp-data:/data
+
+  # ------------------------------------------------------------------
+  # plone.localhost -- the relying party
+  # ------------------------------------------------------------------
+  rp-frontend:
+    build: *frontend-build
+    environment:
+      RAZZLE_INTERNAL_API_PATH: http://rp-backend:8080/Plone
+    depends_on:
+      - rp-backend
+    labels:
+      - traefik.enable=true
+      - traefik.constraint-label=public
+      - traefik.http.services.svc-rp-frontend.loadbalancer.server.port=3000
+      - traefik.http.routers.rt-rp-frontend.rule=Host(`plone.localhost`)
+      - traefik.http.routers.rt-rp-frontend.entrypoints=http
+      - traefik.http.routers.rt-rp-frontend.service=svc-rp-frontend
+      - traefik.http.routers.rt-rp-frontend.middlewares=gzip
+
+  rp-backend:
+    build: *backend-build
+    environment:
+      <<: *demo-env
+      DEMO_PROFILE: identitydemo:rp
+      ZEO_ADDRESS: 'rp-zeo:8100'
+    depends_on:
+      - rp-zeo
+    labels:
+      - traefik.enable=true
+      - traefik.constraint-label=public
+      - traefik.http.services.svc-rp-backend.loadbalancer.server.port=8080
+
+      - "traefik.http.middlewares.mw-rp-vhm-api.replacepathregex.regex=^/\\+\\+api\\+\\+($$|/.*)"
+      - "traefik.http.middlewares.mw-rp-vhm-api.replacepathregex.replacement=/VirtualHostBase/http/plone.localhost/Plone/++api++/VirtualHostRoot$$1"
+
+      - "traefik.http.middlewares.mw-rp-vhm-classic.replacepathregex.regex=^/ClassicUI($$|/.*)"
+      - "traefik.http.middlewares.mw-rp-vhm-classic.replacepathregex.replacement=/VirtualHostBase/http/plone.localhost/Plone/VirtualHostRoot/_vh_ClassicUI$$1"
+
+      - traefik.http.middlewares.mw-rp-auth.basicauth.headerField=X-Auth-ClassicUI
+      - traefik.http.middlewares.mw-rp-auth.basicauth.users=admin:$$apr1$$uZPT5Fgu$$AmlIdamxT5ipBvPlsdfD70
+
+      - traefik.http.routers.rt-rp-api.rule=Host(`plone.localhost`) && PathPrefix(`/++api++`)
+      - traefik.http.routers.rt-rp-api.entrypoints=http
+      - traefik.http.routers.rt-rp-api.service=svc-rp-backend
+      - traefik.http.routers.rt-rp-api.middlewares=gzip,mw-rp-vhm-api
+
+      - traefik.http.routers.rt-rp-classic.rule=Host(`plone.localhost`) && PathPrefix(`/ClassicUI`)
+      - traefik.http.routers.rt-rp-classic.entrypoints=http
+      - traefik.http.routers.rt-rp-classic.service=svc-rp-backend
+      - traefik.http.routers.rt-rp-classic.middlewares=gzip,mw-rp-auth,mw-rp-vhm-classic
+
+  rp-zeo:
+    image: plone/plone-zeo:6.0.0
+    volumes:
+      - vol-rp-data:/data
+
+volumes:
+  vol-idp-data: {}
+  vol-rp-data: {}

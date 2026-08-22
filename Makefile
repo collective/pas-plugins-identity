@@ -205,6 +205,42 @@ stack-rm:  ## Local Stack: Remove Services and Volumes
 	@docker volume rm $(PROJECT_NAME)_vol-site-data
 
 ###########################################
+# Demo Stack: the manual federation scenario
+###########################################
+# Two full Plone sites in a browser: id.localhost is an OpenID provider and
+# plone.localhost signs users in against it. Distinct from `stack-*`, which is
+# the one-site development stack, and from the hermetic Gate S3 stack in
+# backend/tests/federation, which is headless and runs in CI.
+DEMO_COMPOSE_FILE=docker-compose.demo.yml
+
+.PHONY: demo-stack-start
+demo-stack-start:  ## Demo Stack: Start the two-site federation scenario
+	@echo "Start the federation demo stack"
+	@docker compose -f $(DEMO_COMPOSE_FILE) up -d --build
+	@echo ""
+	@echo "  Relying party:     http://plone.localhost"
+	@echo "  Identity provider: http://id.localhost"
+	@echo ""
+	@echo "  Sign in at plone.localhost as alice / alice-demo-password."
+	@echo "  She exists only on id.localhost."
+
+.PHONY: demo-stack-status
+demo-stack-status:  ## Demo Stack: Check Status
+	@docker compose -f $(DEMO_COMPOSE_FILE) ps
+
+.PHONY: demo-stack-logs
+demo-stack-logs:  ## Demo Stack: Follow the backends' logs
+	@docker compose -f $(DEMO_COMPOSE_FILE) logs -f idp-backend rp-backend
+
+.PHONY: demo-stack-stop
+demo-stack-stop:  ## Demo Stack: Stop Services
+	@docker compose -f $(DEMO_COMPOSE_FILE) stop
+
+.PHONY: demo-stack-rm
+demo-stack-rm:  ## Demo Stack: Remove Services and Volumes
+	@docker compose -f $(DEMO_COMPOSE_FILE) down -v
+
+###########################################
 # Acceptance
 ###########################################
 .PHONY: acceptance-backend-start

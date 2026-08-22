@@ -1,45 +1,71 @@
-"""The fixed identities the two demo sites agree on.
+"""The identities and URLs the two demo sites agree on.
 
-Everything here is a constant rather than a generated value, and that is the
-whole point: the IdP profile and the RP profile are applied in two separate
-containers that never talk to each other at install time, so the only way the
-RP can hold a credential the IdP will accept is for both to be written from
-the same literal.
+The credentials are fixed literals, and that is the whole point: the IdP
+profile and the RP profile are applied in two separate containers that never
+talk to each other at install time, so the only way the RP can hold a
+credential the IdP will accept is for both to be written from the same value.
 
 Which is also why this package must never be published, and why
 :func:`identitydemo.setuphandlers.guard` refuses to install without an
 explicit opt-in. A site that applied ``identitydemo:idp`` by accident would
 have a registered OAuth client whose secret is in a public git repository.
+
+The *URLs* are not fixed, because there are two demo deployments and they do
+not agree on them. The hermetic Gate S3 stack publishes ports and reaches
+Plone at ``/Plone``; the manual stack puts Traefik in front and serves each
+site at the root of its own hostname. Both are read from the environment with
+the hermetic values as defaults, so the test stack needs no configuration and
+the manual stack overrides four variables.
+
+Every one of these is read *at import time* rather than looked up per call:
+the setup handlers write them into the site, and a value that could change
+between two handlers in one install would be a demo that half agrees with
+itself.
 """
+
+import os
+
+
+def _url(name: str, default: str) -> str:
+    """Read a URL from the environment, without a trailing slash.
+
+    A trailing slash is the difference between an issuer that matches and one
+    that does not: it is compared as a string, never parsed.
+
+    :param name: Environment variable to read.
+    :param default: Value for the hermetic test stack.
+    :returns: The configured URL.
+    """
+    return (os.environ.get(name) or default).rstrip("/")
+
 
 #: Environment variable that has to be set, to anything non-empty, before
 #: either profile will install. See :func:`identitydemo.setuphandlers.guard`.
 OPT_IN_ENV = "IDENTITY_DEMO"
 
-#: Where the IdP is reachable *from the RP container*. The RP fetches
-#: discovery server to server, so this is a compose service name, not a
-#: browser-facing host.
-IDP_INTERNAL_URL = "http://idp:8080/Plone"
-
 #: Where the IdP is reachable *from the browser*. The authorization redirect
-#: and the consent screen happen in the user agent, so this one has to resolve
-#: on the developer's machine. Discovery publishes a single issuer, so these
-#: two being different is the first thing to check when a flow half works.
-IDP_PUBLIC_URL = "http://id.localhost:8080/Plone"
+#: and the consent screen happen in the user agent, so this has to resolve on
+#: the developer's machine. It is also the issuer, byte for byte: discovery
+#: publishes one, and the relying party compares it as a string.
+IDP_PUBLIC_URL = _url("DEMO_IDP_URL", "http://id.localhost:8080/Plone")
 
 #: Where the RP is reachable from the browser.
-RP_PUBLIC_URL = "http://plone.localhost:8081/Plone"
+RP_PUBLIC_URL = _url("DEMO_RP_URL", "http://plone.localhost:8081/Plone")
 
 #: Where the identity provider sends the browser back to. A frontend route
 #: rather than a backend view: the frontend reads code and state off the query
-#: string and posts them to ``@identity-callback``. Nothing serves it in this
-#: demo, and nothing needs to -- the flow test reads the redirect the way the
-#: frontend would.
+#: string and posts them to ``@identity-callback``.
 #:
-#: The same literal is the relying party's ``callback_url`` record and the
+#: In the hermetic stack nothing serves it, and nothing needs to -- the flow
+#: test reads the redirect the way the frontend would. In the manual stack
+#: Volto serves it for real, which is the difference between the two.
+#:
+#: This same value is the relying party's ``callback_url`` record and the
 #: identity provider's registered redirect URI. They are compared byte for
-#: byte at the token endpoint, so this constant existing once is the point.
-DEMO_REDIRECT_URI = "http://plone.localhost:8081/login-identity"
+#: byte at the token endpoint, so it existing once is the point.
+DEMO_REDIRECT_URI = _url(
+    "DEMO_REDIRECT_URI", "http://plone.localhost:8081/login-identity"
+)
 
 #: The client the RP authenticates as.
 DEMO_CLIENT_ID = "demo-rp"

@@ -8,6 +8,7 @@ click in ``portal_setup`` and a site holding a published client secret.
 
 from identitydemo import logger
 from identitydemo import settings
+from pas.plugins.identity.core.controlpanel import CALLBACK_URL_RECORD
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.controlpanel import get_providers
@@ -17,6 +18,7 @@ from pas.plugins.identity.server.clients import get_client
 from pas.plugins.identity.server.clients import get_clients
 from pas.plugins.identity.server.clients import hash_secret
 from pas.plugins.identity.server.clients import set_clients
+from pas.plugins.identity.server.tokens import ISSUER_RECORD
 from plone import api
 from Products.GenericSetup.tool import SetupTool
 
@@ -58,6 +60,13 @@ def install_idp(context: SetupTool) -> None:
     """
     guard()
 
+    # Written here rather than in the profile's registry XML because the URLs
+    # come from the environment: the hermetic stack and the manual stack do
+    # not agree on them, and XML cannot read an environment variable. Stating
+    # them in one place also removes the drift between a Python constant and
+    # an XML literal that nothing would have caught.
+    api.portal.set_registry_record(ISSUER_RECORD, settings.IDP_PUBLIC_URL)
+
     if get_client(settings.DEMO_CLIENT_ID) is None:
         client = ClientConfig(
             client_id=settings.DEMO_CLIENT_ID,
@@ -93,6 +102,11 @@ def install_rp(context: SetupTool) -> None:
     :param context: The setup tool running the import.
     """
     guard()
+
+    # Without this the login endpoint answers 502 and says so, which is
+    # correct and is the first thing a new deployment hits. It has to be the
+    # byte-identical twin of the redirect URI registered with the provider.
+    api.portal.set_registry_record(CALLBACK_URL_RECORD, settings.DEMO_REDIRECT_URI)
 
     if get_provider(settings.DEMO_PROVIDER_ID) is not None:
         return

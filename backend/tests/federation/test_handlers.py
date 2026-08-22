@@ -20,15 +20,14 @@ from identitydemo.setuphandlers import DemoRefused
 from identitydemo.setuphandlers import guard
 from identitydemo.setuphandlers import install_idp
 from identitydemo.setuphandlers import install_rp
+from pas.plugins.identity.core.controlpanel import CALLBACK_URL_RECORD
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.server.clients import get_client
 from pas.plugins.identity.server.clients import get_clients
 from pas.plugins.identity.server.clients import verify_secret
-from pathlib import Path
+from pas.plugins.identity.server.tokens import ISSUER_RECORD
 from plone import api
-from xml.etree import ElementTree
 
-import identitydemo
 import pytest
 
 
@@ -178,60 +177,64 @@ class TestInstallRP:
         assert get_provider(settings.DEMO_PROVIDER_ID) is not None
 
 
-class TestSettingsMatchTheProfileXML:
-    """The issuer and the container type are stated twice: once in
-    ``identitydemo.settings``, which the Python handlers read, and once in the
-    ``idp`` profile's registry XML, which GenericSetup reads. Nothing makes
-    them agree, so these assert it. A drift here is a demo that comes up,
-    serves discovery, and fails the flow with a mismatched ``iss``."""
+class TestSettingsReachTheSite:
+    """The issuer and the callback URL used to be stated twice -- once in
+    ``identitydemo.settings`` for the Python handlers, once in profile XML for
+    GenericSetup -- with nothing making them agree. They are now written by
+    the handlers from the one value, because the URLs come from the
+    environment and XML cannot read one. These assert they arrive."""
 
-    @staticmethod
-    def _registry_value(profile: str, filename: str, key: str) -> str:
-        path = (
-            Path(identitydemo.__file__).parent
-            / "profiles"
-            / profile
-            / "registry"
-            / filename
-        )
-        # S314: the file being parsed is this package's own profile XML,
-        # two directories away, and is in the same commit as this test.
-        tree = ElementTree.parse(path)  # noqa: S314
-        for value in tree.getroot().iter("value"):
-            if value.get("key") == key:
-                return (value.text or "").strip()
-        raise AssertionError(f"{key} is not set in {filename}")
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, monkeypatch):
+        monkeypatch.setenv(settings.OPT_IN_ENV, "1")
+        self.portal = portal
+        self.setup_tool = portal.portal_setup
 
-    def test_the_issuer_matches(self):
-        issuer = self._registry_value(
-            "idp",
-            "pas.plugins.identity.server.interfaces.IServerSettings.xml",
-            "server_issuer",
-        )
+    @pytest.mark.portal(profiles=[SERVER_PROFILE_ID])
+    def test_the_issuer_is_configured_from_the_settings(self):
+        """Until it is set the server signs nothing and discovery answers
+        503, which is the correct initial state for a real site and the one
+        thing a demo has to decide for itself."""
+        install_idp(self.setup_tool)
 
-        assert issuer == settings.IDP_PUBLIC_URL
+        assert api.portal.get_registry_record(ISSUER_RECORD) == settings.IDP_PUBLIC_URL
 
-    def test_the_callback_url_matches(self):
+    def test_the_callback_url_is_configured_from_the_settings(self):
         """The relying party's ``callback_url``, the redirect URI registered
-        with the identity provider and this constant are compared byte for
-        byte at the token endpoint. Two of the three are set from Python and
-        the third from XML."""
-        callback = self._registry_value(
-            "rp",
-            "pas.plugins.identity.core.controlpanel.interfaces.IIdentitySettings.xml",
-            "callback_url",
+        with the provider and this constant are compared byte for byte at the
+        token endpoint. One value, written twice into two sites."""
+        install_rp(self.setup_tool)
+
+        assert (
+            api.portal.get_registry_record(CALLBACK_URL_RECORD)
+            == settings.DEMO_REDIRECT_URI
         )
 
-        assert callback == settings.DEMO_REDIRECT_URI
 
-    def test_a_missing_key_is_an_error_rather_than_a_pass(self):
-        """The helper above returns the value it finds. Were a lookup for an
-        absent key to return the empty string, a drift test would compare it
-        to a constant, fail, and be "fixed" by someone reading the comparison
-        rather than the lookup. It raises instead."""
-        with pytest.raises(AssertionError, match="server_issuer_typo"):
-            self._registry_value(
-                "idp",
-                "pas.plugins.identity.server.interfaces.IServerSettings.xml",
-                "server_issuer_typo",
-            )
+class TestDeploymentURLs:
+    """Two demo deployments, one package. The hermetic stack publishes ports
+    and serves Plone at ``/Plone``; the manual stack puts Traefik in front and
+    serves each site at the root of its own host."""
+
+    def test_a_trailing_slash_is_stripped(self):
+        """An issuer is compared as a string and never parsed, so a trailing
+        slash from a copy-pasted environment variable is a login that fails
+        with nothing useful to say."""
+        assert settings._url("UNSET_IN_TESTS", "http://example.org/site/") == (
+            "http://example.org/site"
+        )
+
+    def test_the_environment_wins_over_the_default(self, monkeypatch):
+        monkeypatch.setenv("DEMO_PROBE_URL", "http://id.localhost")
+
+        assert settings._url("DEMO_PROBE_URL", "http://unused") == (
+            "http://id.localhost"
+        )
+
+    def test_an_empty_variable_falls_back_to_the_default(self, monkeypatch):
+        """Compose writes an empty value for a variable it has no setting
+        for, and an empty issuer is a site that serves 503 for reasons nobody
+        would guess from the compose file."""
+        monkeypatch.setenv("DEMO_PROBE_URL", "")
+
+        assert settings._url("DEMO_PROBE_URL", "http://fallback") == ("http://fallback")
