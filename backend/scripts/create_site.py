@@ -29,6 +29,21 @@ def asbool(s):
 DELETE_EXISTING = asbool(os.getenv("DELETE_EXISTING"))
 EXAMPLE_CONTENT = asbool(os.getenv("EXAMPLE_CONTENT", "1"))
 
+#: Profile applied when example content is asked for. Not registered by this
+#: package yet; see the call site.
+EXAMPLE_CONTENT_PROFILE = "pas.plugins.identity:initial"
+
+
+def _registered_profiles() -> set:
+    """Return the ids of every registered GenericSetup profile.
+
+    :returns: Profile ids, without the ``profile-`` prefix.
+    """
+    from Products.GenericSetup.registry import _profile_registry
+
+    return set(_profile_registry.listProfiles())
+
+
 app = makerequest(globals()["app"])
 
 request = app.REQUEST
@@ -66,9 +81,13 @@ if site_id not in app.objectIds():
     portal_setup.runAllImportStepsFromProfile("profile-pas.plugins.identity:default")
     transaction.commit()
 
-    if EXAMPLE_CONTENT:
-        portal_setup.runAllImportStepsFromProfile(
-            "profile-pas.plugins.identity:initial"
-        )
+    # This package ships no ``initial`` profile today, and applying one that
+    # is not registered raises KeyError *after* the site has been created --
+    # so the container dies with a traceback about GenericSetup rather than
+    # about example content, and dies on every start with EXAMPLE_CONTENT at
+    # its default of on. Asking first keeps the hook for whenever the profile
+    # does arrive, without making its absence fatal.
+    if EXAMPLE_CONTENT and EXAMPLE_CONTENT_PROFILE in _registered_profiles():
+        portal_setup.runAllImportStepsFromProfile(f"profile-{EXAMPLE_CONTENT_PROFILE}")
         transaction.commit()
     app._p_jar.sync()
