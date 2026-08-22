@@ -1,0 +1,170 @@
+"""The claims contract.
+
+What this server tells a relying party about a user, and on whose authority.
+
+The tests worth reading twice are the ``email_verified`` ones. That claim is
+the one a relying party will auto-link accounts on, and this package's own
+core layer refuses to trust a *provider's* assertion of it. Emitting it on
+that basis would export the problem rather than solve it, so it is true only
+when this site verified the address itself.
+"""
+
+from . import PROFILE_ID
+from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
+from pas.plugins.identity.core.store import EMAIL_PROVIDER
+from pas.plugins.identity.server.claims import claims_for
+from pas.plugins.identity.server.claims import released
+from plone import api
+
+import pytest
+
+
+pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
+
+USERID = "alice"
+ADDRESS = "alice@example.org"
+
+
+@pytest.fixture
+def user(portal):
+    """A user with every mappable property filled in."""
+    with api.env.adopt_roles(["Manager"]):
+        member = api.user.create(
+            email=ADDRESS,
+            username=USERID,
+            password="irrelevant-to-claims",
+            properties={
+                "fullname": "Alice Liddell",
+                "home_page": "https://alice.example.org",
+                "location": "Oxford",
+                "description": "Curious.",
+            },
+        )
+    return member
+
+
+@pytest.fixture
+def verified(portal, user):
+    """Record that this site verified Alice's address with a magic link."""
+    store = portal.acl_users[CORE_PLUGIN_ID].store
+    store.add(EMAIL_PROVIDER, ADDRESS, USERID, {})
+    return store
+
+
+class TestScopeRelease:
+    """Which claims a scope releases, with no user in sight."""
+
+    def test_openid_alone_releases_nothing(self):
+        """`sub` is not scope-gated, so the scope that asks for an identity
+        releases no claims of its own."""
+        assert released("openid") == []
+
+    def test_profile_releases_the_profile_claims(self):
+        assert released("profile") == ["name", "preferred_username", "website"]
+
+    def test_email_releases_the_address_and_its_status(self):
+        assert released("email") == ["email", "email_verified"]
+
+    def test_scopes_combine(self):
+        assert "name" in released("openid profile email")
+        assert "email" in released("openid profile email")
+
+    def test_an_unknown_scope_releases_nothing(self):
+        """Quietly, not with an exception: the authorization endpoint already
+        refused any scope the client is not registered for, so an unknown one
+        here means a site removed a scope after a token was issued."""
+        assert released("openid telepathy") == []
+
+    def test_claims_are_not_repeated(self):
+        """Two scopes releasing the same claim must not emit it twice."""
+        assert released("profile profile") == released("profile")
+
+
+class TestClaims:
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, user) -> None:
+        self.portal = portal
+
+    def test_sub_is_always_present(self):
+        """Even with no scope at all: a token that says nothing about who it
+        speaks for is not an identity token."""
+        assert claims_for(USERID) == {"sub": USERID}
+
+    def test_no_scope_releases_no_personal_data(self):
+        assert "email" not in claims_for(USERID)
+        assert "name" not in claims_for(USERID)
+
+    def test_the_profile_scope_maps_plone_properties(self):
+        claims = claims_for(USERID, "profile")
+
+        assert claims["name"] == "Alice Liddell"
+        assert claims["website"] == "https://alice.example.org"
+
+    def test_preferred_username_is_the_login_not_the_userid(self):
+        """Userids are uuid4 hex (D10) and mean nothing to a person. The
+        login is what they typed."""
+        assert claims_for(USERID, "profile")["preferred_username"] == USERID
+
+    def test_the_email_scope_releases_the_address(self):
+        assert claims_for(USERID, "email")["email"] == ADDRESS
+
+    def test_the_address_scope_uses_the_formatted_member(self):
+        """Plone's `location` is one free-text line, which is what OIDC's
+        `formatted` is for. Splitting it into street and locality would be
+        guessing."""
+        assert claims_for(USERID, "address")["address"] == {"formatted": "Oxford"}
+
+    def test_description_is_not_emitted(self):
+        """There is no registered claim for a free-text biography, and a
+        private one would emit something no other relying party can read."""
+        claims = claims_for(USERID, "openid profile email address")
+
+        assert "Curious." not in str(claims)
+
+    def test_an_empty_property_is_omitted_not_blank(self):
+        """OIDC asks that a claim with no value be absent, so a relying party
+        can tell "we do not know" from "it is blank"."""
+        with api.env.adopt_roles(["Manager"]):
+            api.user.get(userid=USERID).setMemberProperties({"home_page": ""})
+
+        assert "website" not in claims_for(USERID, "profile")
+
+
+class TestEmailVerified:
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, user) -> None:
+        self.portal = portal
+
+    def test_false_when_this_site_never_verified_it(self):
+        """The default. An address that arrived in a provider's claims is not
+        verified by this server, whatever the provider said about it."""
+        assert claims_for(USERID, "email")["email_verified"] is False
+
+    def test_true_after_a_magic_link(self, verified):
+        """A magic link is this site proving the address itself, which is the
+        only evidence this server will pass on."""
+        assert claims_for(USERID, "email")["email_verified"] is True
+
+    def test_another_users_verification_does_not_count(self, verified):
+        """The record is keyed by address, so a check that only asked "is
+        this address verified" would hand Alice's proof to anybody who put
+        her address in their profile."""
+        with api.env.adopt_roles(["Manager"]):
+            api.user.create(
+                email=ADDRESS,
+                username="mallory",
+                password="irrelevant-to-claims",
+            )
+
+        assert claims_for("mallory", "email")["email_verified"] is False
+
+    def test_it_is_absent_without_an_address(self):
+        """A claim about nothing. OIDC readers differ on what to do with
+        `email_verified` when there is no `email`, so it is not sent."""
+        with api.env.adopt_roles(["Manager"]):
+            api.user.get(userid=USERID).setMemberProperties({"email": ""})
+
+        assert "email_verified" not in claims_for(USERID, "email")
+
+    def test_it_is_not_released_without_the_email_scope(self):
+        assert "email_verified" not in claims_for(USERID, "profile")

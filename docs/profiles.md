@@ -168,9 +168,24 @@ about the current release, not a judgement.
 And the zero-wake property above is the whole point of this design, so it has
 to be something this package can assert about its own code on every CI run.
 
-We make no claim here about whether membrane wakes content objects to answer
-these questions. We have not measured it, and an unmeasured claim about
-somebody else's package does not belong in documentation.
+Membrane does wake them, and it is worth being precise about where. Its
+`MembranePropertyManager.getPropertiesForUser` collects property providers
+through `findMembraneUserAspect`, which adapts `brain._unrestrictedGetObject()`
+— so answering a property lookup loads the content object, one per matching
+brain. The plugin inherits `OFS.Cache.Cacheable`, but that path never calls it,
+so there is no cache in front of the load. Its *user enumeration* is not
+affected: that goes through `findImplementations`, which stays on the brains.
 
-Membrane's *design* is nonetheless where this one comes from, and the
-resemblance is not accidental.
+This is architecture, not oversight. Membrane's property values live on the
+content object and are read through an adapter on it, so a brain genuinely
+cannot answer; this layer copies the values it serves into catalog metadata
+instead, which is what lets a brain answer and what the zero-wake test
+measures. The trade is real in both directions — metadata has to be kept
+honest, and that is why this layer ships a consistency check and a rebuild
+step.
+
+Verified against `Products.membrane` 7.0.1.dev0 (`plugins/propertymanager.py`,
+`utils.py`) by reading the source, not by measurement — membrane is not a
+dependency here, and its compatibility matrix would make it awkward to install
+alongside. Membrane's *design* is nonetheless where this one comes from, and
+the resemblance is not accidental.

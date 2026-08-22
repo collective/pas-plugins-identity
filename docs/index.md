@@ -16,6 +16,7 @@ install
 providers
 audit-log
 profiles
+claims
 migration
 ```
 
