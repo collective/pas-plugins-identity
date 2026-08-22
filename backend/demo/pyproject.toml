@@ -1,0 +1,32 @@
+[project]
+name = "identitydemo"
+version = "1.0.0a0"
+description = "The federation demo stack for pas.plugins.identity. Never published."
+requires-python = ">=3.12"
+license = "GPL-2.0-only"
+authors = [
+    { name = "Érico Andrei", email = "ericof@plone.org" },
+]
+# Deliberately not on PyPI, and the classifier says so rather than relying on
+# nobody running `hatch publish` here by accident.
+classifiers = [
+    "Private :: Do Not Upload",
+    "Framework :: Plone",
+    "Framework :: Plone :: Addon",
+]
+dependencies = [
+    "pas.plugins.identity[profile,server]",
+]
+
+[project.entry-points."plone.autoinclude.plugin"]
+target = "plone"
+
+[tool.uv]
+managed = false
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/identitydemo"]

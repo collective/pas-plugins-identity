@@ -1,0 +1,67 @@
+# Gate S3: this package federating with itself.
+#
+# Two Plone sites, one image. Site A applies the server layer and registers a
+# client; site B applies core and points an oidc-generic provider at A's
+# discovery document. Nothing here is provider-specific, which is the claim
+# under test: an off-the-shelf relying party should need only the issuer URL.
+#
+# Started and stopped by pytest-docker, like the Dex and Keycloak stacks.
+x-demo-image: &demo-image ${DEMO_IMAGE:-ghcr.io/collective/pas-plugins-identity-demo:latest}
+
+# The base image ships no healthcheck and no curl. Python is the one thing
+# certainly present, and the discovery document is exactly the right readiness
+# signal: it answers 503 with `server_not_configured` until the server layer
+# is installed and a signing key exists, and 200 only once the site is
+# genuinely able to be an issuer. Only the idp gets it -- on the relying
+# party the same URL would answer 503 forever, correctly.
+x-healthcheck: &healthcheck
+  test:
+    - CMD
+    - python
+    - -c
+    - |
+      import urllib.request, sys
+      url = "http://localhost:8080/Plone/.well-known/openid-configuration"
+      sys.exit(0 if urllib.request.urlopen(url, timeout=5).status == 200 else 1)
+  interval: 5s
+  timeout: 10s
+  retries: 30
+  start_period: 30s
+
+services:
+  idp:
+    image: *demo-image
+    environment:
+      # The guard in identitydemo.setuphandlers. Set here and nowhere else.
+      IDENTITY_DEMO: '1'
+      SITE: Plone
+      CONFIGURE_PACKAGES: plone.restapi,plone.volto,identitydemo
+      DEMO_PROFILE: identitydemo:idp
+    healthcheck: *healthcheck
+    # Fixed, and matching IDP_PUBLIC_URL in identitydemo.settings: the issuer
+    # is published in the discovery document and the provider will not be
+    # reached under any other URL. The same constraint the Dex and Keycloak
+    # stacks already live with.
+    ports:
+      - 8080:8080
+
+  rp:
+    image: *demo-image
+    depends_on:
+      idp:
+        # The relying party fetches discovery at install time, so starting it
+        # before the provider answers is a race that would fail the profile
+        # rather than retry it.
+        condition: service_healthy
+    environment:
+      IDENTITY_DEMO: '1'
+      SITE: Plone
+      CONFIGURE_PACKAGES: plone.restapi,plone.volto,identitydemo
+      DEMO_PROFILE: identitydemo:rp
+    # The relying party reaches the provider server to server, but under the
+    # issuer's public hostname, because that is the only name the issuer
+    # answers to. This is what makes one URL resolve in both places.
+    extra_hosts:
+      - 'id.localhost:host-gateway'
+    ports:
+      - 8081:8080

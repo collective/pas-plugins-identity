@@ -109,6 +109,16 @@ install-extras: $(VENV_FOLDER) ## Layer optional extras on top, e.g. EXTRAS=prof
 		uv pip install -c constraints-mxdev.txt -e ".[test,$(EXTRAS)]"; \
 	fi
 
+# The federation demo stack (Gate S3). Installed explicitly rather than from
+# an mx.ini source: `Dockerfile` copies the whole tree and runs mxdev, so a
+# source section here would put the demo profiles -- and their published
+# client secret -- into the production image's portal_setup. The one place
+# that must never happen is the one place nobody would look.
+.PHONY: install-demo
+install-demo: $(VENV_FOLDER) ## Install the federation demo package (never published)
+	@echo "$(GREEN)==> Install the federation demo$(RESET)"
+	@uv pip install -c constraints-mxdev.txt -e "./demo"
+
 .PHONY: clean
 clean: ## Clean installation and instance
 	@echo "$(RED)==> Cleaning environment and build$(RESET)"
@@ -235,6 +245,20 @@ build-image:  ## Build Docker Images
 	@docker build . -t $(IMAGE_NAME) -f Dockerfile --build-arg PLONE_VERSION=$(PLONE_VERSION)
 
 # Acceptance tests
+.PHONY: demo-image-build
+demo-image-build:  ## Build the federation demo image
+	@docker build . -t $(IMAGE_NAME_PREFIX_WITH_SEPARATOR)demo:$(IMAGE_TAG) -f Dockerfile.demo --build-arg PLONE_VERSION=$(PLONE_VERSION)
+
+DEMO_COMPOSE_FILE=$(BACKEND_FOLDER)/tests/federation/docker-compose.yml
+
+.PHONY: demo-start
+demo-start: ## Start the two-site federation demo
+	@docker compose -f $(DEMO_COMPOSE_FILE) up -d
+
+.PHONY: demo-stop
+demo-stop: ## Stop the federation demo
+	@docker compose -f $(DEMO_COMPOSE_FILE) down
+
 .PHONY: acceptance-backend-start
 acceptance-backend-start: ## Start backend acceptance server
 	ZSERVER_HOST=0.0.0.0 ZSERVER_PORT=55001 LISTEN_PORT=55001 APPLY_PROFILES="$(PACKAGE_NAME):default" CONFIGURE_PACKAGES="plone.restapi,plone.volto,plone.volto.cors,$(PACKAGE_NAME)" $(BIN_FOLDER)/robot-server plone.app.robotframework.testing.VOLTO_ROBOT_TESTING

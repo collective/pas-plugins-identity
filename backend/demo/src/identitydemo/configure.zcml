@@ -1,0 +1,25 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="identitydemo"
+    >
+
+  <genericsetup:registerProfile
+      name="idp"
+      title="Identity demo: identity provider"
+      description="Site A of the federation demo. Registers the demo OAuth client and the demo user."
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      directory="profiles/idp"
+      post_handler=".setuphandlers.install_idp"
+      />
+
+  <genericsetup:registerProfile
+      name="rp"
+      title="Identity demo: relying party"
+      description="Site B of the federation demo. Points an oidc-generic provider at site A."
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      directory="profiles/rp"
+      post_handler=".setuphandlers.install_rp"
+      />
+
+</configure>

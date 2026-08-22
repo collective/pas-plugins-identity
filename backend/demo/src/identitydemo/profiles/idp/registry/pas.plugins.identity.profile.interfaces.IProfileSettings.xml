@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<registry xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+          i18n:domain="identitydemo"
+>
+
+  <records interface="pas.plugins.identity.profile.interfaces.IProfileSettings"
+           prefix="pas.plugins.identity"
+  >
+
+    <!-- The demo sites are built from the volto distribution, which does not
+         allow Folder at the portal root. The container itself is created
+         before the profile layer is applied, because this record is rewritten
+         by that layer's own registry step every time it runs and read by its
+         post handler immediately afterwards. This entry runs last in the
+         chain and simply leaves the record agreeing with the container that
+         is already there. -->
+    <value key="profile_container_type">Document</value>
+
+  </records>
+
+</registry>
