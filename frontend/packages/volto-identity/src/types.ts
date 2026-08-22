@@ -87,3 +87,43 @@ export interface MyProfile {
   /** Workflow state, or null when the user has no Profile. */
   review_state: string | null;
 }
+
+/** One registered OAuth client: who may log in *to* this site. */
+export interface OAuthClient {
+  '@id': string;
+  client_id: string;
+  title: string;
+  redirect_uris: string[];
+  grant_types: string[];
+  scope: string;
+  auth_method: string;
+  public: boolean;
+  enabled: boolean;
+  service_user: string;
+  /**
+   * The plaintext secret. Present only in the response that minted it, at
+   * registration or rotation, and never readable again: the server stores a
+   * hash. Anything holding this has to show it to the operator at once.
+   */
+  secret?: string;
+  /** The server's own words about that, shown alongside the secret. */
+  notice?: string;
+}
+
+/** One key in the signing ring. Metadata only; never key material. */
+export interface SigningKey {
+  kid: string;
+  /** Whether this is the key currently signing. */
+  active: boolean;
+}
+
+/** The signing ring, as the admin API describes it. */
+export interface SigningKeyRing {
+  '@id': string;
+  algorithm: string;
+  /** How many keys the ring holds before the oldest is dropped. */
+  ring_size: number;
+  jwks_uri: string;
+  items_total: number;
+  items: SigningKey[];
+}

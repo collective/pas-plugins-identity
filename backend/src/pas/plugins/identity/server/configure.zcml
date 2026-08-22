@@ -13,6 +13,16 @@
        merely unused. -->
 
   <include package=".browser" />
+
+  <!-- The control panel entry. Bound to this layer, so it appears only in a
+       site that switched the authorization server on: a panel for managing
+       OAuth clients where none can exist is a menu item leading to a
+       question. -->
+  <adapter
+      factory=".controlpanel.IdentityServerConfigletPanel"
+      provides=".controlpanel.IIdentityServerControlpanel"
+      name="identity-clients"
+      />
   <include package=".services" />
 
   <!-- A logout arriving from an upstream provider ends the sessions this

@@ -178,3 +178,50 @@
   margin: 0;
   color: var(--identity-error);
 }
+
+/* The OAuth client control panel. Structural only: spacing, and making the
+   one irreversible thing on the page look like it. */
+.identity-clients section {
+  margin-bottom: 2rem;
+}
+
+.identity-clients__actions {
+  display: flex;
+  margin-top: 0.5rem;
+  gap: 0.5rem;
+}
+
+.identity-clients__disabled,
+.identity-clients__keys-warning {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.identity-clients__new label {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.identity-clients__new small {
+  display: block;
+}
+
+/* The secret is shown once and never again, so it does not look like the
+   rest of the page. */
+.identity-secret {
+  padding: 1rem;
+  border: 2px solid currentColor;
+  border-radius: 0.25rem;
+  margin-bottom: 2rem;
+}
+
+.identity-secret__value {
+  display: flex;
+  margin: 0.75rem 0;
+  gap: 0.5rem;
+}
+
+.identity-secret__value input {
+  flex: 1;
+  font-family: monospace;
+}

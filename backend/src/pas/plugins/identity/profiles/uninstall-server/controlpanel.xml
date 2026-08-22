@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<object xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+        name="portal_controlpanel"
+        purge="False"
+>
+  <configlet action_id="identity-clients"
+             remove="True"
+  />
+</object>

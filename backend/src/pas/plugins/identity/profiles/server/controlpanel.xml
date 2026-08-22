@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<object xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+        name="portal_controlpanel"
+        purge="False"
+        i18n:domain="pas.plugins.identity"
+>
+
+  <!-- What makes the panel appear in the control panel listing and in
+       @controlpanels. The frontend routes @controlpanels entries by their
+       id, so it renders its own panel at /controlpanel/identity-clients.
+
+       url_expr points at the same frontend route rather than at a Classic
+       form. There is no plain registry form to fall back to here: the
+       client list is a JSON record whose entries carry hashed secrets, and
+       a generic edit form over it would offer an operator a textarea in
+       which a typo silently unregisters an application. -->
+  <configlet action_id="identity-clients"
+             appId="pas.plugins.identity"
+             category="plone-users"
+             condition_expr=""
+             icon_expr="string:key"
+             title="OAuth clients"
+             url_expr="string:${portal_url}/controlpanel/identity-clients"
+             visible="True"
+             i18n:attributes="title"
+  >
+    <permission>Manage portal</permission>
+  </configlet>
+
+</object>

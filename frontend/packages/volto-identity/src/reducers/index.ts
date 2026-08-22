@@ -9,18 +9,25 @@
 import {
   COMPLETE_CALLBACK,
   CONFIRM_MAGIC_LINK,
+  CREATE_CLIENT,
   CREATE_PROVIDER,
+  DELETE_CLIENT,
   DELETE_PROVIDER,
   GET_MY_PROFILE,
+  LIST_CLIENTS,
   LIST_DRIVERS,
+  LIST_KEYS,
   LIST_IDENTITIES,
   LIST_LOGIN_PROVIDERS,
   LIST_PROVIDERS,
+  ROTATE_CLIENT_SECRET,
+  ROTATE_KEY,
   SEND_MAGIC_LINK,
   START_LINKING,
   START_PROVIDER_LOGIN,
   TEST_PROVIDER,
   UNLINK_IDENTITY,
+  UPDATE_CLIENT,
   UPDATE_PROVIDER,
 } from '../constants/ActionTypes';
 import type {
@@ -31,7 +38,9 @@ import type {
   Identity,
   LoginProvider,
   MyProfile,
+  OAuthClient,
   RequestState,
+  SigningKeyRing,
   TokenResponse,
 } from '../types';
 
@@ -166,6 +175,51 @@ export const myProfile = requestReducer<MyProfile | null>(
   null,
 );
 
+export const oauthClients = requestReducer<OAuthClient[]>(
+  LIST_CLIENTS,
+  (result) => result?.items ?? [],
+  [],
+);
+
+// The create and rotate results keep the *whole* client rather than a list
+// entry, because they are the only place the secret ever appears and the
+// panel has to render it from somewhere.
+export const clientCreate = requestReducer<OAuthClient | null>(
+  CREATE_CLIENT,
+  (result) => result ?? null,
+  null,
+);
+
+export const clientSecretRotate = requestReducer<OAuthClient | null>(
+  ROTATE_CLIENT_SECRET,
+  (result) => result ?? null,
+  null,
+);
+
+export const clientUpdate = requestReducer<OAuthClient | null>(
+  UPDATE_CLIENT,
+  (result) => result ?? null,
+  null,
+);
+
+export const clientDelete = requestReducer<boolean>(
+  DELETE_CLIENT,
+  () => true,
+  false,
+);
+
+export const signingKeys = requestReducer<SigningKeyRing | null>(
+  LIST_KEYS,
+  (result) => result ?? null,
+  null,
+);
+
+export const keyRotate = requestReducer<SigningKeyRing | null>(
+  ROTATE_KEY,
+  (result) => result ?? null,
+  null,
+);
+
 const reducers = {
   loginProviders,
   providerLogin,
@@ -182,6 +236,13 @@ const reducers = {
   providerDelete,
   providerTest,
   myProfile,
+  oauthClients,
+  clientCreate,
+  clientUpdate,
+  clientDelete,
+  clientSecretRotate,
+  signingKeys,
+  keyRotate,
 };
 
 export default reducers;

@@ -10,18 +10,25 @@
 import {
   COMPLETE_CALLBACK,
   CONFIRM_MAGIC_LINK,
+  CREATE_CLIENT,
   CREATE_PROVIDER,
+  DELETE_CLIENT,
   DELETE_PROVIDER,
   GET_MY_PROFILE,
+  LIST_CLIENTS,
   LIST_DRIVERS,
+  LIST_KEYS,
   LIST_IDENTITIES,
   LIST_LOGIN_PROVIDERS,
   LIST_PROVIDERS,
+  ROTATE_CLIENT_SECRET,
+  ROTATE_KEY,
   SEND_MAGIC_LINK,
   START_LINKING,
   START_PROVIDER_LOGIN,
   TEST_PROVIDER,
   UNLINK_IDENTITY,
+  UPDATE_CLIENT,
   UPDATE_PROVIDER,
 } from '../constants/ActionTypes';
 
@@ -241,5 +248,117 @@ export function getMyProfile() {
   return {
     type: GET_MY_PROFILE,
     request: { op: 'get', path: '/@my-profile' },
+  };
+}
+
+/** Base path of the OAuth client registry. */
+const CLIENTS = '/@identity-clients';
+
+/** Base path of the signing key ring. */
+const KEYS = '/@identity-keys';
+
+/**
+ * List the OAuth clients registered against this site.
+ *
+ * The other direction from `listProviders`: those are who this site lets
+ * people log in *with*, these are who may log in *to* it.
+ */
+export function listClients() {
+  return {
+    type: LIST_CLIENTS,
+    request: { op: 'get', path: CLIENTS },
+  };
+}
+
+/**
+ * Register an OAuth client.
+ *
+ * The answer carries the client secret, and it is the only time it exists:
+ * the server stores a hash and cannot read it back. Whatever handles this
+ * result has to put it in front of the operator immediately.
+ *
+ * @param data The registration.
+ */
+export function createClient(data: Record<string, unknown>) {
+  return {
+    type: CREATE_CLIENT,
+    request: { op: 'post', path: CLIENTS, data },
+  };
+}
+
+/**
+ * Amend a client registration.
+ *
+ * `client_id` and `auth_method` are not editable and the backend refuses
+ * them, along with any field it does not know: silently dropping one is how
+ * somebody comes to believe they changed something they did not.
+ *
+ * @param clientId The client to amend.
+ * @param data The fields to change.
+ */
+export function updateClient(clientId: string, data: Record<string, unknown>) {
+  return {
+    type: UPDATE_CLIENT,
+    request: {
+      op: 'patch',
+      path: `${CLIENTS}/${encodeURIComponent(clientId)}`,
+      data,
+    },
+  };
+}
+
+/**
+ * Unregister a client.
+ *
+ * Also a revocation: access tokens carry the client id as their audience and
+ * it is checked against the registry on every request, so this stops its
+ * tokens working at once.
+ *
+ * @param clientId The client to remove.
+ */
+export function deleteClient(clientId: string) {
+  return {
+    type: DELETE_CLIENT,
+    request: { op: 'del', path: `${CLIENTS}/${encodeURIComponent(clientId)}` },
+  };
+}
+
+/**
+ * Mint a client a fresh secret, discarding the old one.
+ *
+ * As with registration the answer carries the only copy.
+ *
+ * @param clientId The client to rotate.
+ */
+export function rotateClientSecret(clientId: string) {
+  return {
+    type: ROTATE_CLIENT_SECRET,
+    request: {
+      op: 'post',
+      path: `${CLIENTS}/${encodeURIComponent(clientId)}/rotate-secret`,
+      data: {},
+    },
+  };
+}
+
+/** Describe the signing key ring. Metadata only; never key material. */
+export function listKeys() {
+  return {
+    type: LIST_KEYS,
+    request: { op: 'get', path: KEYS },
+  };
+}
+
+/**
+ * Rotate the signing key.
+ *
+ * Previous keys stay in the ring so tokens already issued keep verifying by
+ * `kid`. The ring is bounded, so rotating past that bound inside one
+ * access-token lifetime does invalidate tokens still in flight.
+ */
+export function rotateKey() {
+  return {
+    type: ROTATE_KEY,
+    request: { op: 'post', path: `${KEYS}/rotate`, data: {} },
   };
 }

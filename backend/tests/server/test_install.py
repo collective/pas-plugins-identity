@@ -1,6 +1,8 @@
 from . import PROFILE_ID
 from . import UNINSTALL_PROFILE_ID
 from pas.plugins.identity.server.clients import CLIENTS_RECORD
+from pas.plugins.identity.server.controlpanel import CONFIGLET_ID
+from pas.plugins.identity.server.controlpanel import IIdentityServerControlpanel
 from pas.plugins.identity.server.interfaces import IIdentityServerLayer
 from pas.plugins.identity.server.interfaces import IServerSettings
 from pas.plugins.identity.server.pas import PLUGIN_ID
@@ -9,6 +11,8 @@ from pas.plugins.identity.server.setuphandlers import uninstall_plugin
 from plone import api
 from plone.browserlayer.utils import registered_layers
 from Products.PluggableAuthService.interfaces.plugins import IChallengePlugin
+from zope.component import queryMultiAdapter
+from zope.interface import alsoProvides
 from zope.schema import getFieldNames
 
 import pytest
@@ -70,6 +74,13 @@ class TestPostUninstall:
         """Which is what takes the endpoints away again."""
         assert IIdentityServerLayer not in registered_layers()
 
+    def test_the_configlet_is_removed(self):
+        """A menu entry pointing at a panel whose endpoints are gone is
+        worse than no entry."""
+        tool = api.portal.get_tool("portal_controlpanel")
+
+        assert CONFIGLET_ID not in [a.getId() for a in tool.listActions()]
+
     @pytest.mark.parametrize("name", getFieldNames(IServerSettings))
     def test_records_removed(self, name):
         """Driven off the schema rather than a hand-kept list, so a field
@@ -82,6 +93,58 @@ class TestPostUninstall:
             )
             == "gone"
         )
+
+
+class TestTheControlPanel:
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+        self.tool = api.portal.get_tool("portal_controlpanel")
+
+    def test_the_configlet_is_registered(self):
+        """Without it the panel exists but nothing links to it, and
+        `@controlpanels` does not list it."""
+        assert CONFIGLET_ID in [action.getId() for action in self.tool.listActions()]
+
+    def test_it_points_at_the_frontend_route(self):
+        """There is no Classic fallback form on purpose: the client list is
+        a JSON record of hashed secrets, and a generic registry edit form
+        over it offers a textarea in which a typo unregisters an app."""
+        action = next(a for a in self.tool.listActions() if a.getId() == CONFIGLET_ID)
+
+        assert "controlpanel/identity-clients" in action.getActionExpression()
+
+    def test_it_needs_manage_portal(self):
+        action = next(a for a in self.tool.listActions() if a.getId() == CONFIGLET_ID)
+
+        assert action.getPermissions() == ("Manage portal",)
+
+    def test_the_panel_is_served(self):
+        """`@controlpanels` routes by id, which is what the frontend route of
+        the same name is listed under. The request is marked with the server
+        layer here because the publisher does that from the browserlayer
+        registration, and the adapter is bound to it deliberately."""
+        request = self.portal.REQUEST
+        alsoProvides(request, IIdentityServerLayer)
+
+        panel = queryMultiAdapter(
+            (self.portal, request),
+            IIdentityServerControlpanel,
+            name=CONFIGLET_ID,
+        )
+
+        assert panel is not None
+
+    def test_it_is_not_served_without_the_layer(self):
+        """Which is what keeps it out of a site that never switched the
+        authorization server on."""
+        panel = queryMultiAdapter(
+            (self.portal, self.portal.REQUEST),
+            IIdentityServerControlpanel,
+            name=CONFIGLET_ID,
+        )
+
+        assert panel is None
 
 
 class TestThePlugin:
