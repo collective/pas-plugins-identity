@@ -316,6 +316,14 @@ class TestTheEndpoint:
 
         assert status == 200
 
+    def test_success_is_200_and_not_204(self):
+        """Zope turns a 200 with an empty body and no content type into a
+        204, and the specification lists 200. A provider is entitled to read
+        an unlisted status as a failed delivery and retry."""
+        status, _body = post(self.portal, logout_token=self.mint())
+
+        assert status == 200
+
     def test_the_response_is_never_cached(self):
         post(self.portal, logout_token=self.mint())
 

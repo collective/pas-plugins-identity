@@ -128,6 +128,61 @@ def dex_service(docker_ip, docker_services) -> str:
 
 
 @pytest.fixture(scope="session")
+def keycloak_service(docker_ip, docker_services) -> str:
+    """Bring up Keycloak and wait for its realm to answer.
+
+    Dex is the provider for every other flow test and is the better one for
+    the job: lighter, configured from a file, deterministic. It does not
+    implement back-channel logout, though, so the single place this package
+    needs a *real* provider's logout token needs a provider that sends one.
+
+    :param docker_ip: Host the compose stack is reachable at.
+    :param docker_services: pytest-docker's service manager.
+    :returns: The realm's issuer URL.
+    :raises AssertionError: When Docker is unavailable but required.
+    """
+    if not _docker_available():  # pragma: no cover - environment branch: the suite that measures coverage is the one that has Docker
+        message = "Docker is not available; skipping the logout tests"
+        if os.environ.get(REQUIRE_DOCKER):
+            raise AssertionError(f"{message}, but {REQUIRE_DOCKER} is set")
+        pytest.skip(message)
+
+    # Fixed for the same reason Dex's is: the issuer is published in the
+    # discovery document and Keycloak will not be reached under another URL.
+    port = docker_services.port_for("keycloak", 8080)
+    issuer = f"http://{docker_ip}:{port}/realms/identity-test"
+    docker_services.wait_until_responsive(
+        # Generous next to Dex's: Keycloak boots a JVM and imports a realm
+        # before it answers anything.
+        timeout=180.0,
+        pause=1.0,
+        check=lambda: _responsive(f"{issuer}/.well-known/openid-configuration"),
+    )
+    return issuer
+
+
+@pytest.fixture(scope="session")
+def keycloak(keycloak_service: str) -> dict:
+    """Return the provider record for the running Keycloak.
+
+    :param keycloak_service: The issuer URL.
+    :returns: A provider configuration as the control panel stores it.
+    """
+    return {
+        "id": "keycloak",
+        "driver": "oidc-generic",
+        "title": "Keycloak",
+        "enabled": True,
+        "config": {
+            "issuer": keycloak_service,
+            "client_id": "plone",
+            "client_secret": "plone-secret",
+            "scope": "openid email profile",
+        },
+    }
+
+
+@pytest.fixture(scope="session")
 def dex(dex_service: str) -> dict:
     """Return the provider record for the running Dex.
 

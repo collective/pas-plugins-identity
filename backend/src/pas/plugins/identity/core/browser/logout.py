@@ -39,6 +39,13 @@ class BackChannelLogoutView(BrowserView):
 
         response = self.request.response
         response.setHeader("Cache-Control", "no-store")
+        # Set on the success path too, and not only because the error bodies
+        # are JSON. Zope's `finalize` turns a 200 with an empty body and no
+        # content type into a 204, and OpenID Connect Back-Channel Logout
+        # §2.8 asks for a 200 -- so without this the endpoint answers a
+        # status the specification does not list, which a strict provider is
+        # entitled to treat as a failed delivery and retry.
+        response.setHeader("Content-Type", "application/json")
 
         if self.request.get("REQUEST_METHOD", "GET").upper() != "POST":
             return self._error(response, 405, "POST required.")
@@ -93,7 +100,6 @@ class BackChannelLogoutView(BrowserView):
         :returns: The JSON body.
         """
         response.setStatus(status)
-        response.setHeader("Content-Type", "application/json")
         logger.warning("Back-channel logout refused: %s", description)
         return json.dumps({
             "error": "invalid_request",
