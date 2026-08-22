@@ -96,10 +96,18 @@ def metadata() -> JSONDict:
         # would need a per-client mapping this server does not keep.
         "subject_types_supported": ["public"],
         "id_token_signing_alg_values_supported": [ALGORITHM],
+        # ``client_secret_basic`` is first because RFC 6749 §2.3.1 requires a
+        # server to accept it and makes the form optional, so it is what an
+        # unconfigured client will try; a client that reads this list and
+        # takes the head gets the one both ends are surest about.
         # ``none`` is the public-client method, and it is listed because
         # public clients are supported -- with PKCE made mandatory for them,
         # which is what the next line says.
-        "token_endpoint_auth_methods_supported": ["client_secret_post", "none"],
+        "token_endpoint_auth_methods_supported": [
+            "client_secret_basic",
+            "client_secret_post",
+            "none",
+        ],
         "code_challenge_methods_supported": [CHALLENGE_METHOD],
         # Stated rather than implied: a client reading this knows it may send
         # prompt=none and get login_required back instead of a login page.

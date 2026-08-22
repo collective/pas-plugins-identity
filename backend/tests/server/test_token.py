@@ -12,7 +12,9 @@ from pas.plugins.identity.server.pas import PLUGIN_ID
 from pas.plugins.identity.server.tokens import decode_access_token
 from pas.plugins.identity.server.tokens import ISSUER_RECORD
 from plone import api
+from urllib.parse import quote
 
+import base64
 import json
 import pytest
 
@@ -68,12 +70,31 @@ def post(portal, **params):
     :param params: Form parameters.
     :returns: Status code and decoded JSON body.
     """
+    auth = params.pop("_auth", None)
     request = portal.REQUEST
     request.form.clear()
     request.form.update(params)
     request.environ["REQUEST_METHOD"] = "POST"
-    body = TokenView(portal, request)()
+    # ZPublisher moves the Authorization header onto ``_auth`` during request
+    # construction, so a test that set the header would be setting something
+    # the view never reads.
+    request._auth = auth
+    try:
+        body = TokenView(portal, request)()
+    finally:
+        request._auth = None
     return request.response.getStatus(), json.loads(body)
+
+
+def basic(client_id: str, secret: str) -> str:
+    """Return an ``Authorization: Basic`` header value.
+
+    :param client_id: The client id.
+    :param secret: The client secret.
+    :returns: The header value, credentials base64-encoded.
+    """
+    raw = f"{quote(client_id)}:{quote(secret)}".encode()
+    return "Basic " + base64.b64encode(raw).decode()
 
 
 class TestMethod:
@@ -353,3 +374,97 @@ class TestGrantRegistration:
 
         assert status == 400
         assert body["error"] == "invalid_grant"
+
+
+class TestBasicClientAuthentication:
+    """RFC 6749 §2.3.1 requires the token endpoint to accept HTTP Basic and
+    makes the form optional. This server took only the form until Gate S3
+    stood two of these sites up and the relying party -- authlib, whose
+    default is client_secret_basic -- was refused with invalid_client by its
+    own authorization server."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, issuer, add_client, codes) -> None:
+        self.portal = portal
+        _client, self.secret = add_client(
+            "basic-client",
+            redirect_uris=[REDIRECT],
+            grant_types=["authorization_code"],
+            public=False,
+        )
+        self.code = codes.issue("basic-client", "alice", REDIRECT)
+
+    def _exchange(self, **kwargs):
+        return post(
+            self.portal,
+            grant_type="authorization_code",
+            code=self.code,
+            redirect_uri=REDIRECT,
+            **kwargs,
+        )
+
+    def test_a_basic_header_authenticates_the_client(self):
+        status, body = self._exchange(_auth=basic("basic-client", self.secret))
+
+        assert status == 200
+        assert "access_token" in body
+
+    def test_a_wrong_secret_in_the_header_is_refused(self):
+        status, _body = self._exchange(_auth=basic("basic-client", "wrong"))
+
+        assert status == 401
+
+    def test_credentials_are_url_decoded(self):
+        """§2.3.1 says both halves are form-urlencoded before the base64.
+        Nothing this server mints needs it, so this is for a client
+        registered elsewhere."""
+        raw = b"basic-client:" + self.secret.encode()
+        header = "Basic " + base64.b64encode(raw).decode()
+
+        status, _body = self._exchange(_auth=header)
+
+        assert status == 200
+
+    def test_a_malformed_header_is_refused_rather_than_ignored(self):
+        """Falling through to the form here would authenticate a request
+        whose header could not be read."""
+        status, _body = self._exchange(
+            _auth="Basic not-base64!!", client_id="basic-client"
+        )
+
+        assert status == 401
+
+    def test_a_header_without_a_colon_is_refused(self):
+        header = "Basic " + base64.b64encode(b"no-colon-here").decode()
+
+        status, _body = self._exchange(_auth=header)
+
+        assert status == 401
+
+    def test_sending_a_secret_both_ways_is_refused(self):
+        """RFC 6749 §2.3 forbids using more than one method at once."""
+        status, _body = self._exchange(
+            _auth=basic("basic-client", self.secret),
+            client_id="basic-client",
+            client_secret=self.secret,
+        )
+
+        assert status == 401
+
+    def test_a_client_id_that_disagrees_with_the_header_is_refused(self):
+        """One client id asserted twice with two different answers. Picking a
+        winner is how a confused-deputy bug starts."""
+        status, _body = self._exchange(
+            _auth=basic("basic-client", self.secret), client_id="someone-else"
+        )
+
+        assert status == 401
+
+    def test_a_matching_client_id_in_the_form_is_allowed(self):
+        """Sending the id both ways is not sending the *secret* both ways,
+        and plenty of clients do it."""
+        status, _body = self._exchange(
+            _auth=basic("basic-client", self.secret), client_id="basic-client"
+        )
+
+        assert status == 200

@@ -34,14 +34,20 @@ from pas.plugins.identity.server.tokens import token_response
 from plone import api
 from plone.protect.interfaces import IDisableCSRFProtection
 from Products.Five.browser import BrowserView
+from urllib.parse import unquote
 from zope.interface import alsoProvides
 
+import base64
+import binascii
 import json
 
 
 #: The grants live in ``interfaces`` so the discovery document can advertise
 #: exactly what this endpoint serves without importing a browser view. An
 #: advertised grant nothing implements is a lie a client acts on.
+
+#: Scheme prefix of the ``Authorization`` header carrying client credentials.
+BASIC_PREFIX = "basic "
 
 
 class GrantError(Exception):
@@ -139,6 +145,40 @@ class TokenView(BrowserView):
             return "invalid_grant"
         return "invalid_request"
 
+    def _basic_credentials(self) -> tuple[str, str] | None:
+        """Return the client credentials from an ``Authorization: Basic``
+        header.
+
+        The header is read off ``request._auth`` rather than through
+        ``getHeader``: ZPublisher moves the ``Authorization`` header there
+        during request construction and takes it out of the environment, so
+        asking for the header by name finds nothing. The Bearer plugin reads
+        it the same way, for the same reason.
+
+        :returns: ``(client_id, secret)``, or ``None`` when the request
+            carries no Basic header. A header that is present but malformed
+            returns ``("", "")`` rather than ``None``, so the caller refuses
+            it instead of falling through to the form and authenticating a
+            request whose header it could not read.
+        """
+        header = getattr(self.request, "_auth", None) or ""
+        if not header.lower().startswith(BASIC_PREFIX):
+            return None
+
+        encoded = header[len(BASIC_PREFIX) :].strip()
+        try:
+            decoded = base64.b64decode(encoded, validate=True).decode("utf-8")
+        except (binascii.Error, UnicodeDecodeError, ValueError):
+            return ("", "")
+        if ":" not in decoded:
+            return ("", "")
+
+        # RFC 6749 §2.3.1 says both halves are form-urlencoded before the
+        # base64. Every id and secret this server mints is URL-safe already,
+        # so this matters only for a client that was registered elsewhere.
+        client_id, _, secret = decoded.partition(":")
+        return (unquote(client_id), unquote(secret))
+
     def _authenticate_client(self, grant_type: str):
         """Identify the client making the request.
 
@@ -153,11 +193,28 @@ class TokenView(BrowserView):
         RFC 6749 §4.4 requires client authentication outright, so a public
         client is refused here before it can ask.
 
+        Credentials arrive either in the form or in an ``Authorization:
+        Basic`` header. RFC 6749 §2.3.1 requires a server to accept the
+        header and says the form is optional, so a server that took only the
+        form -- as this one did -- refuses most off-the-shelf clients,
+        including authlib's, whose default is ``client_secret_basic``.
+
         :param grant_type: The requested grant.
         :returns: The client, or ``None`` when authentication fails.
         """
         client_id = self._param("client_id")
         secret = self._param("client_secret")
+
+        basic = self._basic_credentials()
+        if basic is not None:
+            basic_id, basic_secret = basic
+            # RFC 6749 §2.3 forbids sending credentials by both means at once,
+            # and a mismatch between them is a client id being asserted twice
+            # with two different answers. Refuse rather than pick a winner.
+            if (client_id and client_id != basic_id) or secret:
+                return None
+            client_id, secret = basic_id, basic_secret
+
         if secret:
             return authenticate(client_id, secret)
 
