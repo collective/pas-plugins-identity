@@ -1,0 +1,243 @@
+"""Plone as an authorization server, driven by a third-party OAuth client.
+
+The gate S1 check. Every other test of the ``[server]`` layer is this package
+talking to itself: the requests are built by tests that were written against
+the same reading of RFC 6749 as the endpoints, so the two agree about things
+neither of them has any right to assume.
+
+Here the client is `authlib`'s own ``OAuth2Session`` -- the same library
+`pas.plugins.identity` uses when it is the *relying party*, but used here from
+the other side, and it has never heard of this package. It builds the
+authorization URL, generates the PKCE verifier, chooses the ``state``, posts
+the token request, and parses the response. Everything it does is what a real
+integrator's client would do; the test only supplies the browser in the
+middle, because a redirect to a browser is the one thing a library cannot do
+for itself.
+
+No Docker here. Dex is a *provider* and is the right shape for testing this
+package as a client; there is no equivalent container to point at Plone as a
+server until the discovery document lands in Gate S2 and `oauth2-proxy`
+becomes configurable without hand-wiring every endpoint. An off-the-shelf
+client library is what the plan names as the alternative, and it is a real
+one.
+"""
+
+from authlib.integrations.requests_client import OAuth2Session
+from bs4 import BeautifulSoup
+from pas.plugins.identity import PACKAGE_NAME
+from pas.plugins.identity.server.clients import add_client
+from pas.plugins.identity.server.tokens import decode_access_token
+from pas.plugins.identity.server.tokens import ISSUER_RECORD
+from plone import api
+from plone.app.testing import applyProfile
+from urllib.parse import parse_qs
+from urllib.parse import urlparse
+
+import pytest
+import requests
+import transaction
+
+
+#: Nothing serves this. The test reads the code straight off the redirect the
+#: way a real client's callback route would, which is also how the Dex-facing
+#: flow tests treat the frontend callback URL.
+CALLBACK = "https://rp.example.org/callback"
+
+END_USER = "elena"
+END_USER_PASSWORD = "a-password-for-the-browser"
+SCOPE = "read"
+
+
+@pytest.fixture
+def server(functional):
+    """A Plone site acting as an authorization server, with one client.
+
+    :param functional: The functional layer.
+    :returns: Mapping of the portal URL and the registered client's secret.
+    """
+    portal = functional["portal"]
+    applyProfile(portal, f"{PACKAGE_NAME}:server")
+    api.portal.set_registry_record(ISSUER_RECORD, portal.absolute_url())
+    with api.env.adopt_roles(["Manager"]):
+        api.user.create(
+            email="elena@example.org",
+            username=END_USER,
+            password=END_USER_PASSWORD,
+        )
+    _client, secret = add_client(
+        "third-party-app",
+        title="A Third-Party App",
+        redirect_uris=[CALLBACK],
+        grant_types=["authorization_code"],
+        scope=SCOPE,
+        public=False,
+    )
+    transaction.commit()
+    return {"url": portal.absolute_url(), "secret": secret}
+
+
+@pytest.fixture
+def rp(server) -> OAuth2Session:
+    """Return authlib's OAuth client, configured for our server.
+
+    :param server: The authorization server.
+    :returns: An ``OAuth2Session`` that knows nothing about this package.
+    """
+    return OAuth2Session(
+        client_id="third-party-app",
+        client_secret=server["secret"],
+        redirect_uri=CALLBACK,
+        scope=SCOPE,
+        token_endpoint_auth_method="client_secret_post",
+        code_challenge_method="S256",
+    )
+
+
+def consent(browser: requests.Session, authorize_url: str) -> dict[str, str]:
+    """Play the browser: log in, read the consent form, click Allow.
+
+    Nothing here is OAuth. It is the part of the flow a human performs, and
+    the test performs it exactly as written on the page -- the form's own
+    action, its own hidden fields, its own CSRF token -- so a template that
+    stops carrying something fails here rather than being papered over.
+
+    :param browser: A session authenticated as the end user.
+    :param authorize_url: Where authlib says to send the browser.
+    :returns: The query parameters of the redirect back to the callback.
+    :raises AssertionError: When the server does not present a consent form,
+        or does not come back to the registered callback.
+    """
+    page = browser.get(authorize_url, timeout=30)
+    page.raise_for_status()
+
+    form = BeautifulSoup(page.text, "html.parser").find("form")
+    assert form is not None, f"No consent form; the server answered:\n{page.text[:400]}"
+    fields = {
+        field["name"]: field.get("value", "")
+        for field in form.find_all("input", attrs={"type": "hidden"})
+    }
+
+    response = browser.post(
+        form["action"],
+        data={**fields, "consent": "allow"},
+        allow_redirects=False,
+        timeout=30,
+    )
+    location = response.headers.get("Location")
+    assert location, f"Consent did not redirect; it answered {response.status_code}"
+    assert location.startswith(CALLBACK), f"Redirected to {location}, not the callback"
+    return {k: v[0] for k, v in parse_qs(urlparse(location).query).items()}
+
+
+class TestAThirdPartyClientCompletesTheFlow:
+    @pytest.fixture(autouse=True)
+    def _setup(self, server, rp) -> None:
+        self.url = server["url"]
+        self.rp = rp
+        self.browser = requests.Session()
+        self.browser.auth = (END_USER, END_USER_PASSWORD)
+
+    def authorize(self) -> tuple[dict[str, str], str, str]:
+        """Run the authorization half of the flow.
+
+        :returns: The callback query, the state authlib chose, and the PKCE
+            verifier it generated.
+        """
+        verifier = "a-verifier-long-enough-to-satisfy-rfc-7636-minimums"
+        url, state = self.rp.create_authorization_url(
+            f"{self.url}/@@oauth-authorize",
+            code_verifier=verifier,
+        )
+        return consent(self.browser, url), state, verifier
+
+    def test_the_client_gets_a_code_back(self):
+        query, state, _verifier = self.authorize()
+
+        assert query["code"]
+        assert query["state"] == state, "authlib's state did not survive the round trip"
+
+    def test_the_client_redeems_the_code_for_a_token(self):
+        """authlib posts the token request and parses the response. If this
+        server's body were malformed, or the token type spelled differently,
+        this is where a real integration would break."""
+        query, _state, verifier = self.authorize()
+
+        token = self.rp.fetch_token(
+            f"{self.url}/@@oauth-token",
+            code=query["code"],
+            code_verifier=verifier,
+        )
+
+        assert token["token_type"] == "Bearer"
+        assert token["expires_in"] > 0
+
+    def test_the_token_speaks_for_the_user_who_consented(self):
+        query, _state, verifier = self.authorize()
+
+        token = self.rp.fetch_token(
+            f"{self.url}/@@oauth-token",
+            code=query["code"],
+            code_verifier=verifier,
+        )
+
+        assert decode_access_token(token["access_token"])["sub"] == END_USER
+
+    def test_the_token_authenticates_a_request_to_plone(self):
+        """The end of the line: a third-party client holding nothing but a
+        token it obtained itself reads Plone as the user who consented."""
+        query, _state, verifier = self.authorize()
+        self.rp.fetch_token(
+            f"{self.url}/@@oauth-token",
+            code=query["code"],
+            code_verifier=verifier,
+        )
+
+        # authlib attaches the token itself, which is the point of asking it
+        # rather than setting the header by hand.
+        response = self.rp.get(
+            f"{self.url}/@users/{END_USER}",
+            headers={"Accept": "application/json"},
+            timeout=30,
+        )
+
+        assert response.status_code == 200
+        assert response.json()["id"] == END_USER
+
+    def test_the_code_cannot_be_redeemed_twice(self):
+        """Through a real client, so the refusal is one an integrator would
+        actually see rather than one the test constructed."""
+        query, _state, verifier = self.authorize()
+        self.rp.fetch_token(
+            f"{self.url}/@@oauth-token",
+            code=query["code"],
+            code_verifier=verifier,
+        )
+
+        with pytest.raises(Exception, match="invalid_grant"):
+            OAuth2Session(
+                client_id=self.rp.client_id,
+                client_secret=self.rp.client_secret,
+                redirect_uri=CALLBACK,
+                token_endpoint_auth_method="client_secret_post",
+            ).fetch_token(
+                f"{self.url}/@@oauth-token",
+                code=query["code"],
+                code_verifier=verifier,
+            )
+
+    def test_the_second_authorization_is_silent(self):
+        """Consent was recorded, so the same client asking for the same scope
+        again gets a code without troubling the user. Without this the
+        consent screen would appear on every login through the client, which
+        is what having a session at the authorization server is meant to
+        avoid."""
+        self.authorize()
+
+        url, _state = self.rp.create_authorization_url(
+            f"{self.url}/@@oauth-authorize",
+            code_verifier="another-verifier-long-enough-for-rfc-7636-limits",
+        )
+        response = self.browser.get(url, allow_redirects=False, timeout=30)
+
+        assert response.status_code == 302
+        assert "code=" in response.headers["Location"]

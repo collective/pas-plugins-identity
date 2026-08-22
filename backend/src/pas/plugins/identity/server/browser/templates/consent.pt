@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<!--
+  The consent screen.
+
+  Deliberately standalone rather than wrapped in ``main_template``. This page
+  is rendered inside somebody else's login journey: the relying party sent the
+  browser here and is waiting for it back, and a page that inherits the site's
+  navigation invites the user to wander off mid-flow. It is a page template
+  rather than a string built in Python so a site can restyle or override it,
+  which the refusal page above it does not need to be: nobody themes an
+  error that means the request was not trustworthy enough to redirect.
+-->
+<html xmlns:tal="http://xml.zope.org/namespaces/tal"
+      lang="en"
+>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1"
+    />
+    <meta name="robots"
+          content="noindex, nofollow"
+    />
+    <title tal:content="string:Authorize ${view/client_title}">Authorize</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 0; padding: 2rem;
+             background: #f4f4f5; color: #18181b; }
+      main { max-width: 30rem; margin: 3rem auto; background: #fff;
+             padding: 2rem; border-radius: .5rem;
+             box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+      h1 { font-size: 1.25rem; margin-top: 0; }
+      ul { padding-left: 1.25rem; }
+      li { margin-bottom: .25rem; }
+      .actions { display: flex; gap: .75rem; margin-top: 1.5rem; }
+      button { font: inherit; padding: .5rem 1.25rem; border-radius: .25rem;
+               border: 1px solid #d4d4d8; cursor: pointer; }
+      button.allow { background: #1e40af; border-color: #1e40af; color: #fff; }
+      .who { color: #52525b; font-size: .875rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 tal:content="string:Allow ${view/client_title} to use your account?">
+        Allow this application to use your account?
+      </h1>
+
+      <p class="who">
+        You are signed in as
+        <strong tal:content="view/user_label">someone</strong>.
+      </p>
+
+      <div tal:condition="view/scope_list">
+        <p>It is asking for:</p>
+        <ul>
+          <li tal:repeat="scope view/scope_list"
+              tal:content="scope"
+          >scope</li>
+        </ul>
+      </div>
+      <p tal:condition="not:view/scope_list">
+        It is not asking for any particular permission, only for a token that
+        says who you are.
+      </p>
+
+      <form method="post"
+            tal:attributes="
+              action view/form_action;
+            "
+      >
+        <!--
+          Every parameter of the original request is posted back rather than
+          held in a session. The authorization request belongs to the client
+          rather than to this server, and re-reading it from the form on the
+          way out means there is no server-side state to expire between the
+          question and the answer.
+        -->
+        <input type="hidden"
+               tal:repeat="field view/form_fields"
+               tal:attributes="
+                 name field/name;
+                 value field/value;
+               "
+        />
+        <input name="_authenticator"
+               type="hidden"
+               tal:attributes="
+                 value view/authenticator_token;
+               "
+        />
+        <div class="actions">
+          <button class="allow"
+                  name="consent"
+                  type="submit"
+                  value="allow"
+          >
+            Allow
+          </button>
+          <button name="consent"
+                  type="submit"
+                  value="deny"
+          >
+            Deny
+          </button>
+        </div>
+      </form>
+    </main>
+  </body>
+</html>

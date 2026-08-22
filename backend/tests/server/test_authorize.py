@@ -48,6 +48,30 @@ def public_client(portal, add_client):
     return client
 
 
+@pytest.fixture
+def consented(portal):
+    """Return a helper pre-recording the current user's consent.
+
+    The tests that use it are about issuing a code, and the consent screen
+    would otherwise stand between every one of them and the thing they
+    assert. Consent itself is tested in ``test_consent.py``.
+
+    :param portal: The Plone site.
+    :returns: Callable taking a client id and scope.
+    """
+
+    def record(client_id: str, scope: str = "") -> None:
+        """Record consent for the current user.
+
+        :param client_id: The client agreed to.
+        :param scope: The scopes agreed to.
+        """
+        plugin = portal.acl_users[PLUGIN_ID]
+        plugin.consent.record(api.user.get_current().getId(), client_id, scope)
+
+    return record
+
+
 def call(portal, **params):
     """Drive the view and return ``(status, location, body)``.
 
@@ -223,8 +247,9 @@ class TestReportedToTheClient:
 
 class TestIssuing:
     @pytest.fixture(autouse=True)
-    def _setup(self, portal, client) -> None:
+    def _setup(self, portal, client, consented) -> None:
         self.portal = portal
+        consented("app", "read write")
 
     def test_a_code_comes_back(self):
         _status, location, _body = call(
@@ -296,8 +321,9 @@ class TestIssuing:
 
 class TestPKCERequired:
     @pytest.fixture(autouse=True)
-    def _setup(self, portal, public_client) -> None:
+    def _setup(self, portal, public_client, consented) -> None:
         self.portal = portal
+        consented("spa")
 
     def test_a_public_client_without_pkce_is_refused(self):
         """S8."""

@@ -8,6 +8,7 @@ matters most here -- a browser layer that leaves the endpoints unreachable in
 a site that did apply the profile, or reachable in one that did not.
 """
 
+from bs4 import BeautifulSoup
 from pas.plugins.identity import PACKAGE_NAME
 from pas.plugins.identity.server.clients import add_client
 from pas.plugins.identity.server.tokens import ISSUER_RECORD
@@ -30,6 +31,23 @@ SERVICE_USER = "svc-indexer"
 
 #: plone.restapi does not traverse an ``@endpoint`` without it.
 JSON = {"Accept": "application/json"}
+
+
+def _fields(html: str) -> dict[str, str]:
+    """Return the hidden inputs of the consent form.
+
+    Parsed out of the rendered page rather than rebuilt from what the test
+    sent, so a field the template forgets to carry is a failure here instead
+    of a passing test that posts it anyway.
+
+    :param html: The consent page.
+    :returns: Mapping of field name to value.
+    """
+    form = BeautifulSoup(html, "html.parser").find("form")
+    return {
+        field["name"]: field.get("value", "")
+        for field in form.find_all("input", attrs={"type": "hidden"})
+    }
 
 
 @pytest.fixture
@@ -127,8 +145,11 @@ class TestPublished:
         assert response.status_code == 400
         assert "Location" not in response.headers
 
-    def test_authorize_issues_a_code_to_an_authenticated_user(self):
-        """The success path end to end: a real session, a real redirect."""
+    def test_authorize_asks_an_authenticated_user_first(self):
+        """A real session gets the consent screen, not a code. Through the
+        publisher because the template only compiles here: a page template is
+        cooked on first render, so a broken one is invisible to every test
+        that constructs the view and reads the redirect."""
         response = requests.get(
             f"{self.url}/@@oauth-authorize",
             params={
@@ -138,6 +159,32 @@ class TestPublished:
                 "state": "xyzzy",
             },
             auth=(SITE_OWNER_NAME, SITE_OWNER_PASSWORD),
+            allow_redirects=False,
+            timeout=30,
+        )
+
+        assert response.status_code == 200
+        assert "<form" in response.text
+
+    def test_consenting_issues_a_code(self):
+        """The success path end to end: a real session, a real form, a real
+        CSRF token, a real redirect."""
+        browser = requests.Session()
+        browser.auth = (SITE_OWNER_NAME, SITE_OWNER_PASSWORD)
+        form = browser.get(
+            f"{self.url}/@@oauth-authorize",
+            params={
+                "response_type": "code",
+                "client_id": "app",
+                "redirect_uri": REDIRECT,
+                "state": "xyzzy",
+            },
+            timeout=30,
+        )
+
+        response = browser.post(
+            f"{self.url}/@@oauth-authorize",
+            data={**_fields(form.text), "consent": "allow"},
             allow_redirects=False,
             timeout=30,
         )

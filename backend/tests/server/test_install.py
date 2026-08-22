@@ -155,6 +155,15 @@ class TestThePlugin:
 
         assert plugin.codes.count() == 0
 
+    def test_the_consent_store_survives_a_missing_attribute(self):
+        """Same reasoning as the code store, with the opposite stakes: a lost
+        code costs somebody one retry, a lost consent record costs them a
+        prompt they have already answered."""
+        plugin = self.acl_users[PLUGIN_ID]
+        del plugin._consent
+
+        assert plugin.consent.granted("alice", "app") is False
+
     def test_uninstalling_when_absent_is_quiet(self):
         """A second uninstall, or one on a site that never installed it."""
         uninstall_plugin(self.acl_users)

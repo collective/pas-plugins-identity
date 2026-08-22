@@ -16,6 +16,13 @@ and the split is a security boundary rather than a nicety:
 * Every other failure goes back to the registered redirect URI as
   ``error=...``, because by then the destination is known-good and the client
   is the thing that needs to hear about it.
+
+The consent screen sits at the end of that validation, not the start of it. A
+user should never be shown a form asking them to approve a request that was
+going to be refused anyway -- and a form rendered before the redirect URI is
+verified would be a phishing page this server hosts on the client's behalf.
+Consent is remembered per user and client, so the prompt appears once and on
+any later request for a scope not already agreed to.
 """
 
 from pas.plugins.identity.server.clients import get_client
@@ -23,9 +30,13 @@ from pas.plugins.identity.server.codes import ChallengeError
 from pas.plugins.identity.server.codes import check_challenge
 from pas.plugins.identity.server.pas import PLUGIN_ID
 from plone import api
+from plone.protect.authenticator import AuthenticatorView
+from plone.protect.authenticator import createToken
 from plone.protect.interfaces import IDisableCSRFProtection
 from Products.Five.browser import BrowserView
+from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from urllib.parse import urlencode
+from zExceptions import Forbidden
 from zope.interface import alsoProvides
 
 import html
@@ -35,6 +46,29 @@ import html
 #: out: OAuth 2.1 removes the implicit grant, and this server has no reason to
 #: put a token in a URL fragment.
 RESPONSE_TYPE = "code"
+
+#: Request parameters the consent form posts back, so the authorization
+#: request survives the round trip without any server-side state.
+CARRIED_PARAMS = (
+    "response_type",
+    "client_id",
+    "redirect_uri",
+    "scope",
+    "state",
+    "code_challenge",
+    "code_challenge_method",
+)
+
+#: The form value that means yes. Anything else -- "deny", a missing value, a
+#: button a future template adds -- is a refusal. Consent is the thing that
+#: has to be given explicitly, so it is the only value spelled out.
+CONSENT_ALLOW = "allow"
+
+#: Returned by the consent check when the user has not been asked yet. A
+#: sentinel rather than ``None`` because ``None`` is already a perfectly good
+#: answer to "did they agree", and confusing "no" with "not yet" here would
+#: mean silently denying every first-time authorization.
+CONSENT_PENDING = object()
 
 
 class AuthorizationError(Exception):
@@ -60,6 +94,12 @@ class AuthorizationError(Exception):
 class AuthorizeView(BrowserView):
     """Issue an authorization code to a registered client."""
 
+    consent_form = ViewPageTemplateFile("templates/consent.pt")
+
+    #: The client this request is for, once it has been verified. The consent
+    #: template reads it; nothing before the verification does.
+    client = None
+
     def _param(self, name: str) -> str:
         """Return a request parameter as a stripped string.
 
@@ -72,7 +112,8 @@ class AuthorizeView(BrowserView):
         """Handle an authorization request.
 
         :returns: An error page when the client or redirect URI cannot be
-            trusted; otherwise the empty string, having set a redirect.
+            trusted, the consent form when the user has not answered yet, and
+            otherwise the empty string, having set a redirect.
         """
         # This endpoint is reached by a cross-site redirect by design, so
         # plone.protect's automatic CSRF handling must not rewrite it into a
@@ -96,6 +137,7 @@ class AuthorizeView(BrowserView):
                 "this client.",
             )
 
+        self.client = client
         state = self._param("state")
         try:
             location = self._authorize(client, redirect_uri)
@@ -104,6 +146,12 @@ class AuthorizeView(BrowserView):
             if state:
                 params["state"] = state
             location = f"{redirect_uri}?{urlencode(params)}"
+        else:
+            if location is None:
+                # The user is being asked. Nothing has been issued, nothing
+                # has been recorded, and the client hears from us when they
+                # answer.
+                return self.consent_form()
 
         self.request.response.redirect(location, status=302)
         return ""
@@ -113,7 +161,9 @@ class AuthorizeView(BrowserView):
 
         :param client: The registered client.
         :param redirect_uri: The verified redirect URI.
-        :returns: The URL to redirect the browser to.
+        :returns: The URL to redirect the browser to, or ``None`` when the
+            user still has to be asked and the consent form should be
+            rendered instead.
         :raises AuthorizationError: For any failure the client should be told
             about at its redirect URI.
         """
@@ -157,7 +207,21 @@ class AuthorizeView(BrowserView):
                 "The end user is not authenticated at the authorization server.",
             )
 
-        codes = api.portal.get_tool("acl_users")[PLUGIN_ID].codes
+        plugin = api.portal.get_tool("acl_users")[PLUGIN_ID]
+        decision = self._consent_decision(plugin, user.getId(), client, scope)
+        if decision is CONSENT_PENDING:
+            # The caller gets the form instead of a redirect. Raising would
+            # send an error to the client; returning None says "this request
+            # has not finished yet, and the browser is being asked a
+            # question".
+            return None
+        if not decision:
+            raise AuthorizationError(
+                "access_denied",
+                "The end user refused the request.",
+            )
+
+        codes = plugin.codes
         code = codes.issue(
             client_id=client.client_id,
             subject=user.getId(),
@@ -172,6 +236,104 @@ class AuthorizeView(BrowserView):
             # token, and this server's only job is to hand it back unchanged.
             params["state"] = state
         return f"{redirect_uri}?{urlencode(params)}"
+
+    def _consent_decision(self, plugin, userid: str, client, scope: str):
+        """Decide whether the user has agreed to this request.
+
+        Three answers, and the middle one is why this is not a boolean. The
+        user has agreed before and need not be asked; the user is answering
+        right now; or the user has not been asked at all, which is
+        :data:`CONSENT_PENDING`.
+
+        :param plugin: The server PAS plugin, holding the consent store.
+        :param userid: The authenticated user.
+        :param client: The verified client.
+        :param scope: The requested scope.
+        :returns: ``True`` to proceed, ``False`` for a refusal, or
+            :data:`CONSENT_PENDING` to render the form.
+        :raises Forbidden: When a consent form comes back without a valid
+            CSRF token. Silently treating that as a denial would be friendlier
+            and wrong: a forged consent POST is an attempt to authorize an
+            application in somebody else's name, and it should look like the
+            attack it is rather than like the user clicking "no".
+        """
+        answer = self._param("consent")
+        if not answer:
+            if plugin.consent.granted(userid, client.client_id, scope):
+                return True
+            return CONSENT_PENDING
+
+        if not AuthenticatorView(self.context, self.request).verify():
+            raise Forbidden("The consent form's authenticator is invalid.")
+        if answer != CONSENT_ALLOW:
+            return False
+        plugin.consent.record(userid, client.client_id, scope)
+        return True
+
+    # ------------------------------------------------------------------
+    # Consent template
+    # ------------------------------------------------------------------
+
+    def client_title(self) -> str:
+        """Return what to call the client on the consent screen.
+
+        :returns: The registered title, falling back to the client id. A
+            client registered without a title is still something the user has
+            to be able to identify, and its id is what the operator typed.
+        """
+        return self.client.title or self.client.client_id
+
+    def user_label(self) -> str:
+        """Return how to name the signed-in user on the consent screen.
+
+        Shown because the browser may hold a session the user forgot about,
+        and agreeing on behalf of the wrong account is the mistake this
+        screen exists to make visible.
+
+        :returns: Their full name, or their userid when they have none.
+        """
+        user = api.user.get_current()
+        return user.getProperty("fullname", "") or user.getId()
+
+    def scope_list(self) -> list[str]:
+        """Return the requested scopes, for display.
+
+        :returns: The scopes in the order the client asked for them, which is
+            the order it will have documented them in.
+        """
+        return self._param("scope").split()
+
+    def form_action(self) -> str:
+        """Return where the consent form posts back to.
+
+        Itself: the second request re-runs every check the first one did, so
+        a client disabled between the question and the answer is refused on
+        the way out as surely as on the way in.
+
+        :returns: The endpoint URL.
+        """
+        return f"{self.context.absolute_url()}/@@oauth-authorize"
+
+    def form_fields(self) -> list[dict]:
+        """Return the authorization request, as hidden form fields.
+
+        :returns: One mapping per parameter that was actually sent. Absent
+            parameters are left absent rather than posted back empty: an
+            empty ``code_challenge`` is not the same request as no
+            ``code_challenge``, and PKCE turns on that difference.
+        """
+        return [
+            {"name": name, "value": self._param(name)}
+            for name in CARRIED_PARAMS
+            if self._param(name)
+        ]
+
+    def authenticator_token(self) -> str:
+        """Return a CSRF token for the consent form.
+
+        :returns: A plone.protect token, bound to the current user.
+        """
+        return createToken()
 
     def _refuse(self, title: str, detail: str) -> str:
         """Report a failure that must not be redirected anywhere.
