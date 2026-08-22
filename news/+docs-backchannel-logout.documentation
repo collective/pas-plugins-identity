@@ -1,0 +1,1 @@
+Documented back-channel logout in the providers guide: the URL to register, the `per_user_keyring` switch it depends on and how to turn it on, what a logout reaches (Plone session tickets, refresh tokens across every client) and what it deliberately does not (self-encoded access tokens, which live out their lifetime), and what the endpoint refuses and why.

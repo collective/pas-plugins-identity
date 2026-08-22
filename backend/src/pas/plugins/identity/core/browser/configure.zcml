@@ -1,0 +1,18 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <!-- Public because the caller is a provider's back channel, not a Plone
+       user: it holds no session and could not authenticate if asked. The
+       logout token's signature is what authenticates the request, and that
+       is checked inside. -->
+  <browser:page
+      name="backchannel-logout"
+      for="plone.base.interfaces.IPloneSiteRoot"
+      class=".logout.BackChannelLogoutView"
+      permission="zope2.Public"
+      />
+
+</configure>

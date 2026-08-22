@@ -51,6 +51,25 @@ class IEmailVerified(IIdentityEvent):
     address = Attribute("The verified email address, lowercased.")
 
 
+class ISessionsRevoked(IIdentityEvent):
+    """Fired when a provider ends a user's session from its own side.
+
+    The hook the ``[server]`` layer needs. Core cannot import ``server`` --
+    the import-linter contract forbids it -- so a site that is both a relying
+    party and an authorization server joins the two ends here: core receives
+    the back-channel logout and fires this, and the server layer subscribes
+    and revokes the refresh tokens it issued.
+    """
+
+    provider = Attribute("Provider id that sent the logout.")
+    subject = Attribute("Provider-side subject identifier.")
+    sessions_ended = Attribute(
+        "Whether Plone's own session tickets could actually be ended. False "
+        "means plone.session is not configured with per_user_keyring, so the "
+        "user's existing tickets live out their timeout."
+    )
+
+
 class IUserClaimsRefreshed(IIdentityEvent):
     """Fired when a later login refreshes the stored claims."""
 
@@ -152,3 +171,27 @@ class UserClaimsRefreshed:
         self.userid = userid
         self.provider = provider
         self.claims = claims
+
+
+@implementer(ISessionsRevoked)
+class SessionsRevoked:
+    """See :class:`ISessionsRevoked`."""
+
+    def __init__(
+        self,
+        userid: str,
+        provider: str,
+        subject: str,
+        sessions_ended: bool,
+    ) -> None:
+        """Record that a provider ended a user's session.
+
+        :param userid: Canonical Plone userid.
+        :param provider: Provider id that sent the logout.
+        :param subject: Provider-side subject identifier.
+        :param sessions_ended: Whether Plone's session tickets were ended.
+        """
+        self.userid = userid
+        self.provider = provider
+        self.subject = subject
+        self.sessions_ended = sessions_ended

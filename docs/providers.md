@@ -71,6 +71,72 @@ attack, which uses a fresh address every time.
 The send endpoint answers identically whether or not the address belongs to an
 account. That is deliberate: a different answer is an account-existence oracle.
 
+## Back-channel logout
+
+When somebody signs out at the provider, the provider can tell this site
+directly — server to server, with no browser involved, which is exactly why it
+still works after the user has closed the tab.
+
+Register this URL with the provider as the client's back-channel logout URI:
+
+```
+https://your-site.example.org/@@backchannel-logout
+```
+
+One endpoint serves every configured provider. The logout token names its
+issuer, and that is how the provider — and therefore the key to verify the
+signature with — is chosen.
+
+### Turn on per-user keyrings, or this does nothing
+
+A `plone.session` ticket is stateless and signed from a keyring, so there is
+normally no way to end one person's session without ending everybody's.
+`plone.session` has a switch for exactly this case:
+
+1. Go to `acl_users/session` in the ZMI.
+2. Open the **Manage secrets** tab.
+3. Enable **per user keyring**.
+
+Each user then gets their own signing ring, and a back-channel logout clears
+and rotates only theirs.
+
+```{warning}
+Without `per_user_keyring` the endpoint still accepts and validates the
+provider's token, but it **cannot end the user's Plone session** — their
+existing ticket stays valid until it times out. The failure is logged as an
+error rather than passed over quietly, and the `sessions_ended` attribute on
+the `SessionsRevoked` event reports `False`.
+```
+
+### What a logout does and does not reach
+
+| | |
+| --- | --- |
+| Plone session tickets | Ended, with `per_user_keyring` on. |
+| Refresh tokens issued by the `[server]` layer | Revoked, across every client — the logout was about the person, not one application. |
+| Access tokens issued by the `[server]` layer | **Not** revoked. They are self-encoded and there is no denylist (D3), so they live out their lifetime — at most the configured access-token TTL, fifteen minutes by default. |
+
+That last row is the cost of the self-encoded design, and it is stated rather
+than hidden: the access-token lifetime is also the worst case between a logout
+and the last token honouring it going quiet.
+
+### What is refused
+
+The endpoint follows OpenID Connect Back-Channel Logout 1.0: the token's
+signature, issuer, audience, `iat` and `jti` are checked; it must declare the
+back-channel logout event; it must carry a `sub` or a `sid`; and it must not
+carry a `nonce`, since a nonce means somebody is trying to pass an `id_token`
+off as a logout instruction. A `jti` already acted on is refused as a replay.
+
+A logout for an identity this site has never seen answers `200`, not an error.
+There is nothing to end, and answering differently would tell an
+unauthenticated caller which of a provider's subjects have accounts here.
+
+```{note}
+Only `sub`-based logout is supported. This package does not track provider
+session identifiers, so a token carrying only a `sid` is refused.
+```
+
 ## Writing your own driver
 
 See {doc}`drivers`.

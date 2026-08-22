@@ -23,6 +23,7 @@ from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.core.interfaces import IIdentityPlugin
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.interfaces import LockoutRefused
+from pas.plugins.identity.core.logout import LogoutJTIStore
 from pas.plugins.identity.core.pas import CREDENTIALS_KEY
 from pas.plugins.identity.core.pas import EXTRACTOR
 from pas.plugins.identity.core.pas import PLUGIN_ID
@@ -95,6 +96,7 @@ class IdentityPlugin(BasePlugin):
         self._store = IdentityStore()
         self._audit = AuditLog()
         self._magic_links = MagicLinkStore()
+        self._logout_jtis = LogoutJTIStore()
         self._placeholder_passwords = OOSet()
 
     @property
@@ -132,6 +134,25 @@ class IdentityPlugin(BasePlugin):
         store = getattr(self, "_magic_links", None)
         if store is None:
             store = self._magic_links = MagicLinkStore()
+        return store
+
+    @property
+    def logout_jtis(self) -> LogoutJTIStore:
+        """Return the spent logout-token identifiers.
+
+        Its own store rather than a corner of the magic-link burn list: both
+        burn a ``jti``, but one is this site's own token and the other is a
+        provider's, and a shared namespace between two issuers is a
+        collision waiting for somebody to explain it.
+
+        Created on demand as well as in the constructor, for the same reason
+        as :attr:`audit`.
+
+        :returns: The store persisted inside this plugin.
+        """
+        store = getattr(self, "_logout_jtis", None)
+        if store is None:
+            store = self._logout_jtis = LogoutJTIStore()
         return store
 
     # ------------------------------------------------------------------

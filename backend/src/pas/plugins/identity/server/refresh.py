@@ -180,6 +180,22 @@ class RefreshTokenStore(Persistent):
             del self._tokens[token]
         return len(doomed)
 
+    def revoke_for_subject(self, subject: str) -> int:
+        """Revoke every live token belonging to one user.
+
+        What a back-channel logout reaches. The user's session upstream has
+        ended, so the tokens this server issued on the strength of it should
+        end too -- across every client, because the logout was about the
+        person rather than about one application.
+
+        :param subject: The Plone userid.
+        :returns: How many live tokens were revoked.
+        """
+        doomed = [t for t, v in self._tokens.items() if v.subject == subject]
+        for token in doomed:
+            del self._tokens[token]
+        return len(doomed)
+
     def rotate(self, token: str, client_id: str) -> tuple[str, RefreshToken]:
         """Redeem a refresh token and issue its replacement.
 

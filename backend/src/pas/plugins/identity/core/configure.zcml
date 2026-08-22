@@ -9,4 +9,6 @@
   <include package=".pas" />
   <include package=".services" />
 
+  <include package=".browser" />
+
 </configure>

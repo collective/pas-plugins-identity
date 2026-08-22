@@ -9,6 +9,7 @@ from pas.plugins.identity.core.events import EmailVerified
 from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
 from pas.plugins.identity.core.events import IdentityLinked
 from pas.plugins.identity.core.events import IdentityUnlinked
+from pas.plugins.identity.core.events import SessionsRevoked
 from pas.plugins.identity.core.events import UserClaimsRefreshed
 from pas.plugins.identity.core.interfaces import IAuditSink
 from pas.plugins.identity.core.interfaces import IDriver
@@ -25,5 +26,6 @@ __all__ = [
     "IdentityLinked",
     "IdentityRecord",
     "IdentityUnlinked",
+    "SessionsRevoked",
     "UserClaimsRefreshed",
 ]
