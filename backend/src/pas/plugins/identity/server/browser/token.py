@@ -190,6 +190,10 @@ class TokenView(BrowserView):
             client_id=client.client_id,
             subject=grant.subject,
             scope=grant.scope,
+            # Recorded at the authorization request and echoed now. The
+            # client-credentials path below has no nonce because it has no
+            # authorization request and no browser to bind one to.
+            nonce=grant.nonce,
         )
 
     def _client_credentials(self, client):

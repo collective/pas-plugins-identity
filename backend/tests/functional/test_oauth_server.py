@@ -23,6 +23,9 @@ one.
 """
 
 from authlib.integrations.requests_client import OAuth2Session
+from authlib.jose import JsonWebKey
+from authlib.jose import JsonWebToken
+from authlib.oidc.discovery import OpenIDProviderMetadata
 from bs4 import BeautifulSoup
 from pas.plugins.identity import PACKAGE_NAME
 from pas.plugins.identity.server.clients import add_client
@@ -45,7 +48,7 @@ CALLBACK = "https://rp.example.org/callback"
 
 END_USER = "elena"
 END_USER_PASSWORD = "a-password-for-the-browser"
-SCOPE = "read"
+SCOPE = "openid profile email"
 
 
 @pytest.fixture
@@ -63,6 +66,7 @@ def server(functional):
             email="elena@example.org",
             username=END_USER,
             password=END_USER_PASSWORD,
+            properties={"fullname": "Elena Example"},
         )
     _client, secret = add_client(
         "third-party-app",
@@ -241,3 +245,103 @@ class TestAThirdPartyClientCompletesTheFlow:
 
         assert response.status_code == 302
         assert "code=" in response.headers["Location"]
+
+
+class TestDiscovery:
+    """The Gate S2 check: an off-the-shelf OIDC client is given an issuer URL
+    and nothing else, and everything it needs follows from that."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, server, rp) -> None:
+        self.url = server["url"]
+        self.rp = rp
+        self.browser = requests.Session()
+        self.browser.auth = (END_USER, END_USER_PASSWORD)
+
+    def discover(self) -> dict:
+        """Fetch and validate the discovery document, as a client does.
+
+        :returns: The provider metadata.
+        """
+        response = requests.get(
+            f"{self.url}/.well-known/openid-configuration", timeout=30
+        )
+        response.raise_for_status()
+        document = response.json()
+        # authlib's own validator, not our assertions: it enforces the
+        # required members and their types the way a conforming client would
+        # before trusting any of them.
+        OpenIDProviderMetadata(document).validate()
+        return document
+
+    def test_the_document_is_published_and_valid(self):
+        assert self.discover()["issuer"] == self.url
+
+    def test_the_issuer_matches_where_it_was_fetched_from(self):
+        """A conforming client compares these byte for byte and refuses the
+        document when they differ, which is what makes the configured issuer
+        (rather than a derived portal URL) load-bearing."""
+        document = self.discover()
+
+        assert document["issuer"] == self.url
+
+    def test_the_advertised_jwks_serves_the_signing_keys(self):
+        keys = requests.get(self.discover()["jwks_uri"], timeout=30).json()
+
+        assert keys["keys"]
+        assert "d" not in keys["keys"][0], "a private key reached the JWKS"
+
+    def test_a_client_validates_the_id_token_through_discovery_alone(self):
+        """The whole gate in one test. Nothing here is configured by hand:
+        the endpoints, the keys and the algorithm all come from the document,
+        and the token is validated with the keys it pointed at."""
+        document = self.discover()
+        jwks = requests.get(document["jwks_uri"], timeout=30).json()
+        nonce = "a-nonce-the-client-chose"
+
+        url, _state = self.rp.create_authorization_url(
+            document["authorization_endpoint"],
+            code_verifier="a-verifier-long-enough-to-satisfy-rfc-7636-minimums",
+            nonce=nonce,
+        )
+        query = consent(self.browser, url)
+        token = self.rp.fetch_token(
+            document["token_endpoint"],
+            code=query["code"],
+            code_verifier="a-verifier-long-enough-to-satisfy-rfc-7636-minimums",
+        )
+
+        claims = JsonWebToken(document["id_token_signing_alg_values_supported"]).decode(
+            token["id_token"],
+            key=JsonWebKey.import_key_set(jwks),
+            claims_options={
+                "iss": {"essential": True, "value": document["issuer"]},
+                "aud": {"essential": True, "value": "third-party-app"},
+                "nonce": {"essential": True, "value": nonce},
+            },
+        )
+        claims.validate()
+
+        assert claims["sub"] == END_USER
+        assert claims["email"] == "elena@example.org"
+
+    def test_the_advertised_userinfo_endpoint_answers(self):
+        """The other half of the contract: a client that would rather ask
+        than read the token gets the same answer."""
+        document = self.discover()
+        url, _state = self.rp.create_authorization_url(
+            document["authorization_endpoint"],
+            code_verifier="a-verifier-long-enough-to-satisfy-rfc-7636-minimums",
+        )
+        query = consent(self.browser, url)
+        self.rp.fetch_token(
+            document["token_endpoint"],
+            code=query["code"],
+            code_verifier="a-verifier-long-enough-to-satisfy-rfc-7636-minimums",
+        )
+
+        response = self.rp.get(document["userinfo_endpoint"], timeout=30)
+
+        assert response.status_code == 200
+        assert response.json()["sub"] == END_USER
+        assert response.json()["name"] == "Elena Example"

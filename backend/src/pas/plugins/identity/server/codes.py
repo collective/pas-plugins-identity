@@ -68,6 +68,11 @@ class AuthorizationCode(Persistent):
         though it had come through another.
     :ivar scope: The granted scopes.
     :ivar challenge: The PKCE code challenge, empty when none was sent.
+    :ivar nonce: The OIDC nonce to echo in the ``id_token``, empty when none
+        was sent. Recorded here rather than reconstructed at the token
+        endpoint because it arrives with the *authorization* request and is
+        the relying party's binding between that request and the token it
+        eventually reads.
     :ivar expires_at: When the code stops being redeemable.
     """
 
@@ -78,6 +83,7 @@ class AuthorizationCode(Persistent):
         redirect_uri: str,
         scope: str = "",
         challenge: str = "",
+        nonce: str = "",
         expires_at: datetime | None = None,
     ) -> None:
         """Record an issued code.
@@ -87,6 +93,7 @@ class AuthorizationCode(Persistent):
         :param redirect_uri: The redirect URI used.
         :param scope: Granted scopes.
         :param challenge: PKCE code challenge.
+        :param nonce: OIDC nonce to echo in the ``id_token``.
         :param expires_at: Expiry; computed from :data:`CODE_TTL` by default.
         """
         self.client_id = client_id
@@ -94,6 +101,7 @@ class AuthorizationCode(Persistent):
         self.redirect_uri = redirect_uri
         self.scope = scope
         self.challenge = challenge
+        self.nonce = nonce
         self.expires_at = expires_at or (
             datetime.now(UTC) + timedelta(seconds=CODE_TTL)
         )
@@ -120,6 +128,7 @@ class AuthorizationCode(Persistent):
             "redirect_uri": self.redirect_uri,
             "scope": self.scope,
             "pkce": bool(self.challenge),
+            "nonce": bool(self.nonce),
             "expires_at": self.expires_at.isoformat(),
         }
 
@@ -151,6 +160,7 @@ class AuthorizationCodeStore(Persistent):
         redirect_uri: str,
         scope: str = "",
         challenge: str = "",
+        nonce: str = "",
     ) -> str:
         """Issue a code.
 
@@ -159,6 +169,7 @@ class AuthorizationCodeStore(Persistent):
         :param redirect_uri: The redirect URI in use.
         :param scope: Granted scopes.
         :param challenge: PKCE code challenge, empty when none was sent.
+        :param nonce: OIDC nonce, empty when none was sent.
         :returns: The code, which is the only copy: the store maps it to the
             grant and nothing recovers it afterwards.
         """
@@ -170,6 +181,7 @@ class AuthorizationCodeStore(Persistent):
             redirect_uri=redirect_uri,
             scope=scope,
             challenge=challenge,
+            nonce=nonce,
         )
         return code
 

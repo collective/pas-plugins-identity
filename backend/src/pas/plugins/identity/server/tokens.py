@@ -17,6 +17,8 @@ from datetime import datetime
 from datetime import timedelta
 from datetime import UTC
 from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity.server.claims import claims_for
+from pas.plugins.identity.server.claims import OPENID_SCOPE
 from pas.plugins.identity.server.interfaces import ServerError
 from pas.plugins.identity.server.keys import ALGORITHM
 from pas.plugins.identity.server.keys import current_key
@@ -31,6 +33,12 @@ ISSUER_RECORD = "pas.plugins.identity.server_issuer"
 
 #: Registry key holding the access-token lifetime, in seconds.
 TTL_RECORD = "pas.plugins.identity.server_access_token_ttl"
+
+#: How long an ``id_token`` is good for, in seconds. Much shorter than an
+#: access token: a relying party validates it the moment it arrives and then
+#: has its own session, so a long-lived one is only a longer window in which
+#: a leaked copy is worth something.
+ID_TOKEN_TTL = 300
 
 #: Token type, as it appears in a token endpoint response. Not a credential:
 #: S105 matches the name, not the value, and RFC 6749 fixes this string.
@@ -190,17 +198,70 @@ def decode_access_token(token: str, audience: str | None = None) -> JSONDict:
     return dict(claims)
 
 
+def mint_id_token(
+    client_id: str,
+    subject: str,
+    scope: str = "",
+    nonce: str = "",
+) -> str:
+    """Mint an ``id_token`` for a relying party.
+
+    An access token and an ``id_token`` say different things and are read by
+    different parties, which is why this is not a flag on
+    :func:`mint_access_token`. An access token is a *credential*: the relying
+    party carries it back here and this server reads it. An ``id_token`` is a
+    *statement*, signed for the relying party to read itself and never sent
+    anywhere. The claims go inside it for that reason -- so a relying party
+    learns who signed in without a second round trip -- while the userinfo
+    endpoint stays available for the ones that prefer to ask.
+
+    :param client_id: The client the statement is addressed to.
+    :param subject: The Plone userid it is about.
+    :param scope: Space-separated granted scopes, deciding which claims are
+        released.
+    :param nonce: The nonce from the authorization request, echoed verbatim.
+        This is the relying party's binding between the browser it sent here
+        and the token it is now reading; omitting it when one was sent makes
+        the token useless to a conforming client, and this package's own
+        client refuses such a token outright.
+    :returns: The encoded token.
+    :raises TokenError: When there is no issuer or no signing key.
+    """
+    from authlib.jose import JsonWebToken
+
+    now = datetime.now(UTC)
+    key = _signing_key()
+    payload = {
+        **claims_for(subject, scope),
+        "iss": get_issuer(),
+        "aud": client_id,
+        "iat": int(now.timestamp()),
+        # Its own lifetime, and a short one: an id_token is consumed the
+        # moment it arrives, so it has no reason to outlive the exchange
+        # that produced it.
+        "exp": int((now + timedelta(seconds=ID_TOKEN_TTL)).timestamp()),
+    }
+    if nonce:
+        payload["nonce"] = nonce
+    header = {"alg": ALGORITHM, "kid": key["kid"], "typ": "JWT"}
+    return JsonWebToken([ALGORITHM]).encode(header, payload, key).decode("ascii")
+
+
 def token_response(
     client_id: str,
     subject: str,
     scope: str = "",
+    nonce: str = "",
 ) -> JSONDict:
     """Build a token endpoint response body.
 
     :param client_id: The client the token is for.
     :param subject: The userid the token acts for.
     :param scope: Space-separated granted scopes.
-    :returns: An RFC 6749 token response.
+    :param nonce: The nonce from the authorization request, if any.
+    :returns: An RFC 6749 token response, carrying an ``id_token`` when the
+        ``openid`` scope was granted and not otherwise. A client that did not
+        ask to be told who the user is does not get told.
     """
     token, lifetime = mint_access_token(client_id, subject, scope)
     body: JSONDict = {
@@ -210,4 +271,6 @@ def token_response(
     }
     if scope:
         body["scope"] = scope
+    if OPENID_SCOPE in scope.split():
+        body["id_token"] = mint_id_token(client_id, subject, scope, nonce)
     return body

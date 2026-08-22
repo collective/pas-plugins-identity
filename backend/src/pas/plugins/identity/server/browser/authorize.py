@@ -58,6 +58,7 @@ CARRIED_PARAMS = (
     "state",
     "code_challenge",
     "code_challenge_method",
+    "nonce",
 )
 
 #: The form value that means yes. Anything else -- "deny", a missing value, a
@@ -226,6 +227,7 @@ class AuthorizeView(BrowserView):
             redirect_uri=redirect_uri,
             scope=scope,
             challenge=challenge,
+            nonce=self._param("nonce"),
         )
         params = {"code": code}
         state = self._param("state")

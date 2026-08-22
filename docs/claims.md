@@ -5,6 +5,39 @@
 When this site acts as an authorization server, this is what it will tell a
 relying party about a user, and what a relying party may rely on.
 
+## Where a relying party finds all this
+
+Point a conforming OIDC client at the **issuer URL** and it needs nothing else.
+
+`<issuer>/.well-known/openid-configuration` carries the endpoints, the
+`jwks_uri`, the signing algorithm, the supported scopes and this claim list.
+The issuer is configured (`pas.plugins.identity.server_issuer`), never derived
+from the portal URL, and every URL in the document is built from it — because
+a client compares the document's `issuer` field to the URL it fetched the
+document from, byte for byte, and refuses the document if they differ. Deriving
+endpoints from `portal_url` would make that comparison depend on a proxy
+header, a virtual host or a trailing slash.
+
+Two ways to learn who signed in, and they are not interchangeable:
+
+- the **`id_token`**, returned from the token endpoint when the `openid` scope
+  was granted. A signed *statement* the relying party reads itself, carrying
+  the claims its scopes released. It echoes the `nonce` from the authorization
+  request verbatim.
+- the **userinfo endpoint**, for clients that prefer to ask. Present the access
+  token as a Bearer credential and get the same claims back. The scope comes
+  from the token, so a caller cannot widen what it was granted by asking for
+  more here.
+
+An access token is a *credential*, not an identity assertion. A client that did
+not request `openid` gets no `id_token` at all.
+
+```{note}
+The document lists only what this server implements and the test suite
+exercises — one response type, one signing algorithm, `S256` and nothing else
+for PKCE. A client that trusts it should not get a surprise.
+```
+
 ## Where claims come from
 
 Claims are read from **Plone user properties**. Not from a `Profile`, even on

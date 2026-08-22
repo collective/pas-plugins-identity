@@ -32,4 +32,37 @@
       layer="pas.plugins.identity.server.interfaces.IIdentityServerLayer"
       />
 
+  <!-- Discovery. Anonymous and cacheable by design: it describes endpoints
+       a client is about to be sent to anyway. Registered as `.well-known`
+       with a traversal stub, because a view name cannot contain a slash. -->
+  <browser:page
+      name=".well-known"
+      for="plone.base.interfaces.IPloneSiteRoot"
+      class=".discovery.WellKnownView"
+      permission="zope2.Public"
+      layer="pas.plugins.identity.server.interfaces.IIdentityServerLayer"
+      />
+
+  <!-- The public half of the signing ring. Its whole purpose is to be
+       fetched by strangers. -->
+  <browser:page
+      name="oauth-jwks"
+      for="plone.base.interfaces.IPloneSiteRoot"
+      class=".discovery.JWKSView"
+      permission="zope2.Public"
+      layer="pas.plugins.identity.server.interfaces.IIdentityServerLayer"
+      />
+
+  <!-- Public, and validating the Bearer token itself. A protected view
+       would now answer an unauthenticated caller with a login page, which
+       is right for a browser and useless to the back-channel GET a relying
+       party makes here. RFC 6750 wants a 401 with WWW-Authenticate. -->
+  <browser:page
+      name="oauth-userinfo"
+      for="plone.base.interfaces.IPloneSiteRoot"
+      class=".userinfo.UserInfoView"
+      permission="zope2.Public"
+      layer="pas.plugins.identity.server.interfaces.IIdentityServerLayer"
+      />
+
 </configure>
