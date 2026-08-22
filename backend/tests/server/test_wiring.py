@@ -366,3 +366,70 @@ class TestNotPublishedWithoutTheProfile:
         response = requests.post(f"{self.url}/@@oauth-token", timeout=30)
 
         assert response.status_code == 404
+
+    def test_the_admin_api_is_absent(self):
+        """A site that never switched the server on has no clients to manage
+        and should not publish an API implying otherwise."""
+        response = requests.get(
+            f"{self.url}/@identity-clients",
+            headers=JSON,
+            auth=(SITE_OWNER_NAME, SITE_OWNER_PASSWORD),
+            timeout=30,
+        )
+
+        assert response.status_code == 404
+
+    def test_the_keys_api_is_absent(self):
+        response = requests.get(
+            f"{self.url}/@identity-keys",
+            headers=JSON,
+            auth=(SITE_OWNER_NAME, SITE_OWNER_PASSWORD),
+            timeout=30,
+        )
+
+        assert response.status_code == 404
+
+
+class TestTheAdminAPIIsPublished:
+    """Through the publisher, because the guard's shape matters: a caller
+    without the permission must get a JSON refusal, not the login page that
+    an anonymous request to a protected view now produces."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, url: str) -> None:
+        self.url = url
+
+    def test_a_manager_can_read_the_registry(self):
+        response = requests.get(
+            f"{self.url}/@identity-clients",
+            headers=JSON,
+            auth=(SITE_OWNER_NAME, SITE_OWNER_PASSWORD),
+            timeout=30,
+        )
+
+        assert response.status_code == 200
+        assert response.json()["items"][0]["client_id"] == "app"
+
+    def test_an_anonymous_caller_gets_json_not_a_login_page(self):
+        """The reason these services are registered for View and guard
+        internally. A redirect here would hand an API client an HTML form."""
+        response = requests.get(
+            f"{self.url}/@identity-clients",
+            headers=JSON,
+            allow_redirects=False,
+            timeout=30,
+        )
+
+        assert response.status_code == 401
+        assert response.headers["Content-Type"].startswith("application/json")
+
+    def test_the_key_ring_is_readable(self):
+        response = requests.get(
+            f"{self.url}/@identity-keys",
+            headers=JSON,
+            auth=(SITE_OWNER_NAME, SITE_OWNER_PASSWORD),
+            timeout=30,
+        )
+
+        assert response.status_code == 200
+        assert response.json()["items_total"] == 1

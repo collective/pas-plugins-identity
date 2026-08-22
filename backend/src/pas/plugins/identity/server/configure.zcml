@@ -13,6 +13,7 @@
        merely unused. -->
 
   <include package=".browser" />
+  <include package=".services" />
 
   <!-- A logout arriving from an upstream provider ends the sessions this
        server issued as well. Core fires the event; this layer is the only

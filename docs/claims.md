@@ -5,6 +5,66 @@
 When this site acts as an authorization server, this is what it will tell a
 relying party about a user, and what a relying party may rely on.
 
+## Managing clients and keys
+
+Who may log in *to* this site is managed over the REST API, and it needs
+`Manage portal`. Every endpoint is bound to the `[server]` browser layer, so a
+site that never applied the server profile does not publish them at all.
+
+| | |
+| --- | --- |
+| `GET @identity-clients` | list registrations |
+| `GET @identity-clients/<id>` | read one |
+| `POST @identity-clients` | register one |
+| `POST @identity-clients/<id>/rotate-secret` | mint a fresh secret |
+| `PATCH @identity-clients/<id>` | amend title, redirect URIs, grants, scope, service user, enabled |
+| `DELETE @identity-clients/<id>` | unregister |
+| `GET @identity-keys` | describe the signing ring |
+| `POST @identity-keys/rotate` | rotate the signing key |
+
+### The secret exists exactly once
+
+This is the opposite of how provider secrets behave, and the difference is
+deliberate. A *provider's* secret is masked on the way out and can be echoed
+back unchanged, because this package is the client there and has to keep
+sending it. Here this package is the **server**: the secret is stored as a
+scrypt hash (S8) and nothing ever needs the plaintext again.
+
+So a secret appears in exactly one response — the one that mints it, at
+registration or rotation — and cannot be read back. Capture it then. If it is
+lost, rotate; there is no recovery, by design.
+
+### What a PATCH will not change
+
+`client_id` and `auth_method` are not editable. Renaming a client would orphan
+every token already minted for it, and turning a confidential client public
+would leave a stored secret hash that nothing checks. Both are a delete and a
+re-register. A PATCH naming any other unknown field is **refused rather than
+ignored** — silently dropping one is how an operator comes to believe they
+changed something they did not.
+
+### Deleting a client is a revocation
+
+Access tokens carry the client id as their audience, and the Bearer plugin
+looks it up in the registry on every request. So unregistering a client — or
+just setting `enabled: false` — stops its tokens working immediately. With no
+denylist (D3) that is the only revocation this server has, which makes it
+worth knowing before doing it by accident.
+
+### Key rotation
+
+`GET @identity-keys` returns metadata only — key ids and which one is signing,
+never key material. The public halves are already served at `@@oauth-jwks` and
+a second copy would only be something to fetch out of step with the first.
+
+Rotating mints a new signing key and keeps the previous ones, so tokens issued
+before the rotation keep verifying until they expire; a relying party finds
+the right one by `kid`. The ring is bounded, and the response reports the
+bound: rotating more times than it holds within one access-token lifetime
+*does* invalidate tokens still in flight. That is a decision rather than an
+accident, which is why the number is in the response instead of only in the
+source.
+
 ## Where a relying party finds all this
 
 Point a conforming OIDC client at the **issuer URL** and it needs nothing else.

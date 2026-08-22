@@ -1,0 +1,71 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <!-- Bound to the server browser layer, like every other endpoint this
+       layer publishes: a site that never switched the authorization server
+       on has no clients to manage and no keys to rotate, and should not
+       publish an API saying otherwise.
+
+       Registered for View and guarded on Manage portal inside the services,
+       so a caller without it gets a JSON refusal rather than a login form.
+       That matters more since anonymous requests to protected views now
+       redirect to one. -->
+
+  <plone:service
+      method="GET"
+      factory=".clients.get.ClientsGet"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.server.interfaces.IIdentityServerLayer"
+      name="@identity-clients"
+      />
+
+  <plone:service
+      method="POST"
+      factory=".clients.post.ClientsPost"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.server.interfaces.IIdentityServerLayer"
+      name="@identity-clients"
+      />
+
+  <plone:service
+      method="PATCH"
+      factory=".clients.patch.ClientsPatch"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.server.interfaces.IIdentityServerLayer"
+      name="@identity-clients"
+      />
+
+  <plone:service
+      method="DELETE"
+      factory=".clients.delete.ClientsDelete"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.server.interfaces.IIdentityServerLayer"
+      name="@identity-clients"
+      />
+
+  <plone:service
+      method="GET"
+      factory=".keys.KeysGet"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.server.interfaces.IIdentityServerLayer"
+      name="@identity-keys"
+      />
+
+  <plone:service
+      method="POST"
+      factory=".keys.KeysPost"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.server.interfaces.IIdentityServerLayer"
+      name="@identity-keys"
+      />
+
+</configure>
