@@ -11,6 +11,7 @@ a site that did apply the profile, or reachable in one that did not.
 from pas.plugins.identity import PACKAGE_NAME
 from pas.plugins.identity.server.clients import add_client
 from pas.plugins.identity.server.tokens import ISSUER_RECORD
+from pas.plugins.identity.server.tokens import mint_access_token
 from plone import api
 from plone.app.testing import applyProfile
 from plone.app.testing import SITE_OWNER_NAME
@@ -23,6 +24,12 @@ import transaction
 
 REDIRECT = "https://app.example.org/cb"
 ISSUER = "https://id.example.org"
+
+#: The Plone user a client-credentials token acts as, in the Bearer tests.
+SERVICE_USER = "svc-indexer"
+
+#: plone.restapi does not traverse an ``@endpoint`` without it.
+JSON = {"Accept": "application/json"}
 
 
 @pytest.fixture
@@ -49,6 +56,34 @@ def server_site(functional):
 def url(server_site) -> str:
     """Return the portal URL as served by the test WSGI server."""
     return server_site.absolute_url()
+
+
+@pytest.fixture
+def service_site(functional):
+    """A site set up for the client-credentials grant and Bearer tokens.
+
+    :param functional: The functional layer.
+    :returns: Mapping of the portal, its URL and the client secret. The
+        secret has to be carried out of the fixture because registration is
+        the only moment it exists.
+    """
+    portal = functional["portal"]
+    applyProfile(portal, f"{PACKAGE_NAME}:server")
+    api.portal.set_registry_record(ISSUER_RECORD, ISSUER)
+    with api.env.adopt_roles(["Manager"]):
+        api.user.create(
+            email="svc@example.org",
+            username=SERVICE_USER,
+            password="not-used-by-this-grant",
+        )
+    _client, secret = add_client(
+        "svc",
+        grant_types=["client_credentials"],
+        public=False,
+        service_user=SERVICE_USER,
+    )
+    transaction.commit()
+    return {"portal": portal, "url": portal.absolute_url(), "secret": secret}
 
 
 class TestPublished:
@@ -145,6 +180,75 @@ class TestPublished:
         response = requests.get(f"{self.url}/@@oauth-token", timeout=30)
 
         assert response.status_code == 405
+
+
+class TestBearerAuthentication:
+    """The token doing what it was issued for, through the real publisher.
+
+    Everything else about the Bearer plugin is tested by handing it
+    credentials directly, which proves the checks and proves nothing about
+    the wiring. These go through PAS's own extraction chain -- which is where
+    the plugin's marker gets overwritten with its plugin id, and where Plone's
+    ``jwt_auth`` is reading the same header at the same time.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, service_site) -> None:
+        self.url = service_site["url"]
+        self.secret = service_site["secret"]
+        self.token = mint_access_token("svc", SERVICE_USER)[0]
+
+    def test_a_token_authenticates_its_subject(self):
+        response = requests.get(
+            f"{self.url}/@users/{SERVICE_USER}",
+            headers={**JSON, "Authorization": f"Bearer {self.token}"},
+            timeout=30,
+        )
+
+        assert response.status_code == 200
+        assert response.json()["id"] == SERVICE_USER
+
+    def test_without_the_token_the_same_request_is_anonymous(self):
+        """The control. Without it the test above proves only that the URL
+        is readable, not that the token did anything."""
+        response = requests.get(
+            f"{self.url}/@users/{SERVICE_USER}", headers=JSON, timeout=30
+        )
+
+        assert response.status_code == 401
+
+    def test_a_garbage_token_does_not_authenticate(self):
+        response = requests.get(
+            f"{self.url}/@users/{SERVICE_USER}",
+            headers={**JSON, "Authorization": "Bearer not-a-jwt"},
+            timeout=30,
+        )
+
+        assert response.status_code == 401
+
+    def test_the_client_credentials_grant_yields_a_usable_token(self):
+        """The whole of S1d in one test: a server with a client secret and no
+        human anywhere gets a token, and that token is a session."""
+        minted = requests.post(
+            f"{self.url}/@@oauth-token",
+            data={
+                "grant_type": "client_credentials",
+                "client_id": "svc",
+                "client_secret": self.secret,
+            },
+            timeout=30,
+        )
+        token = minted.json()["access_token"]
+
+        response = requests.get(
+            f"{self.url}/@users/{SERVICE_USER}",
+            headers={**JSON, "Authorization": f"Bearer {token}"},
+            timeout=30,
+        )
+
+        assert minted.status_code == 200
+        assert response.status_code == 200
+        assert response.json()["id"] == SERVICE_USER
 
 
 class TestNotPublishedWithoutTheProfile:

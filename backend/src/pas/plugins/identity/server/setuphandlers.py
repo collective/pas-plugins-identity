@@ -12,7 +12,20 @@ from pas.plugins.identity.server.pas import PLUGIN_ID
 from pas.plugins.identity.server.pas import PLUGIN_TITLE
 from plone import api
 from Products.GenericSetup.tool import SetupTool
+from Products.PluggableAuthService.interfaces.plugins import IAuthenticationPlugin
+from Products.PluggableAuthService.interfaces.plugins import IExtractionPlugin
 from Products.PluggableAuthService.PluggableAuthService import PluggableAuthService
+
+
+#: PAS interfaces the plugin is activated for on install. ``IChallengePlugin``
+#: is absent on purpose: a request that fails to authenticate here should fall
+#: through to whatever the site already does, not be answered with
+#: ``WWW-Authenticate: Bearer`` by an add-on that has decided the site is an
+#: API.
+ACTIVATED_INTERFACES = (
+    IExtractionPlugin,
+    IAuthenticationPlugin,
+)
 
 
 def post_install(context: SetupTool) -> None:
@@ -34,11 +47,11 @@ def post_install(context: SetupTool) -> None:
 
 
 def install_plugin(acl_users: PluggableAuthService) -> IdentityServerPlugin:
-    """Add the server plugin to PAS.
+    """Add the server plugin to PAS and activate its interfaces.
 
-    No interfaces are activated: the plugin is a persistent home for the
-    authorization codes and nothing asks it anything yet. Bearer validation
-    is what will activate them.
+    Idempotent, and it does not reorder anything: extraction and
+    authentication are a chain rather than a priority list, so this plugin
+    sits wherever it lands and answers only for tokens it minted.
 
     :param acl_users: The site's PAS instance.
     :returns: The installed plugin.
@@ -46,20 +59,31 @@ def install_plugin(acl_users: PluggableAuthService) -> IdentityServerPlugin:
     if PLUGIN_ID not in acl_users:
         acl_users._setObject(PLUGIN_ID, IdentityServerPlugin(PLUGIN_ID, PLUGIN_TITLE))
         logger.info("Added %s plugin to acl_users", PLUGIN_ID)
-    return acl_users[PLUGIN_ID]
+
+    plugin = acl_users[PLUGIN_ID]
+    plugins = acl_users.plugins
+    for interface in ACTIVATED_INTERFACES:
+        if PLUGIN_ID not in plugins.listPluginIds(interface):
+            plugins.activatePlugin(interface, PLUGIN_ID)
+    return plugin
 
 
 def uninstall_plugin(acl_users: PluggableAuthService) -> None:
-    """Remove the server plugin.
+    """Deactivate and remove the server plugin.
 
-    No interfaces are deactivated first, because none are activated: this
-    plugin is a persistent home and answers nothing. The deactivation loop
-    belongs with the Bearer interfaces, and arrives when they do.
+    Every interface is deactivated, not only the ones install activates: a
+    site that switched one on by hand in the ZMI must not be left with a
+    registration pointing at an object that no longer exists.
 
     :param acl_users: The site's PAS instance.
     """
     if PLUGIN_ID not in acl_users:
         return
+    plugins = acl_users.plugins
+    for info in plugins.listPluginTypeInfo():
+        iface = info["interface"]
+        if PLUGIN_ID in plugins.listPluginIds(iface):
+            plugins.deactivatePlugin(iface, PLUGIN_ID)
     acl_users._delObject(PLUGIN_ID)
     logger.info("Removed %s plugin from acl_users", PLUGIN_ID)
 

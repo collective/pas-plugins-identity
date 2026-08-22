@@ -8,6 +8,7 @@ from pas.plugins.identity.server.setuphandlers import install_plugin
 from pas.plugins.identity.server.setuphandlers import uninstall_plugin
 from plone import api
 from plone.browserlayer.utils import registered_layers
+from Products.PluggableAuthService.interfaces.plugins import IChallengePlugin
 from zope.schema import getFieldNames
 
 import pytest
@@ -94,18 +95,41 @@ class TestThePlugin:
         """It is the persistent home for the authorization codes."""
         assert PLUGIN_ID in self.acl_users
 
-    def test_it_activates_no_interfaces(self):
-        """Deliberately: a plugin that claims an interface it does not
-        implement would be asked to answer, and answering nothing is not the
-        same as not being asked."""
+    def test_it_activates_extraction_and_authentication(self):
+        """Exactly the two the Bearer plugin implements, and no more: a
+        plugin that claims an interface it does not implement would be asked
+        to answer, and answering nothing is not the same as not being
+        asked."""
         plugins = self.acl_users.plugins
-        active = [
+        active = {
+            info["id"]
+            for info in plugins.listPluginTypeInfo()
+            if PLUGIN_ID in plugins.listPluginIds(info["interface"])
+        }
+
+        assert active == {"IExtractionPlugin", "IAuthenticationPlugin"}
+
+    def test_it_does_not_challenge(self):
+        """A request that fails to authenticate should fall through to
+        whatever the site already does. Answering `WWW-Authenticate: Bearer`
+        would be this add-on deciding the site is an API."""
+        plugins = self.acl_users.plugins
+
+        assert PLUGIN_ID not in plugins.listPluginIds(IChallengePlugin)
+
+    def test_uninstalling_deactivates_it_everywhere(self):
+        """A registration pointing at a deleted object is worse than an
+        unused plugin, so uninstall sweeps every interface rather than the
+        list install happens to know about."""
+        plugins = self.acl_users.plugins
+
+        uninstall_plugin(self.acl_users)
+
+        assert not [
             info["id"]
             for info in plugins.listPluginTypeInfo()
             if PLUGIN_ID in plugins.listPluginIds(info["interface"])
         ]
-
-        assert active == []
 
     def test_installing_twice_keeps_the_codes_in_flight(self):
         """Re-applying the profile must not swap the plugin out from under a

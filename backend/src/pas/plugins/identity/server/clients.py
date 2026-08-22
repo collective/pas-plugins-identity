@@ -104,6 +104,8 @@ class ClientConfig:
     :ivar secret_hash: Stored hash of the client secret, empty for a public
         client.
     :ivar enabled: Whether the client may obtain tokens at all.
+    :ivar service_user: The Plone userid a client-credentials token for this
+        client acts as. Empty unless the client is registered for that grant.
     """
 
     def __init__(
@@ -116,6 +118,7 @@ class ClientConfig:
         auth_method: str = PUBLIC_AUTH_METHOD,
         secret_hash: str = "",
         enabled: bool = True,
+        service_user: str = "",
     ) -> None:
         """Build a client registration.
 
@@ -127,6 +130,7 @@ class ClientConfig:
         :param auth_method: Token-endpoint auth method.
         :param secret_hash: Stored secret hash.
         :param enabled: Whether the client is usable.
+        :param service_user: Plone userid for the client-credentials grant.
         """
         self.client_id = client_id
         self.title = title
@@ -136,6 +140,7 @@ class ClientConfig:
         self.auth_method = auth_method
         self.secret_hash = secret_hash
         self.enabled = enabled
+        self.service_user = service_user
 
     @property
     def is_public(self) -> bool:
@@ -215,6 +220,7 @@ class ClientConfig:
             "auth_method": self.auth_method,
             "public": self.is_public,
             "enabled": self.enabled,
+            "service_user": self.service_user,
         }
         if include_hash:
             data["secret_hash"] = self.secret_hash
@@ -236,6 +242,7 @@ class ClientConfig:
             auth_method=data.get("auth_method", PUBLIC_AUTH_METHOD),
             secret_hash=data.get("secret_hash", ""),
             enabled=data.get("enabled", True),
+            service_user=data.get("service_user", ""),
         )
 
     def __repr__(self) -> str:
@@ -286,6 +293,7 @@ def add_client(
     grant_types: list[str] | None = None,
     scope: str = "",
     public: bool = False,
+    service_user: str = "",
 ) -> tuple[ClientConfig, str]:
     """Register a client, minting a secret for a confidential one.
 
@@ -295,6 +303,7 @@ def add_client(
     :param grant_types: Grants this client may use.
     :param scope: Space-separated scopes.
     :param public: Whether the client authenticates with no secret.
+    :param service_user: Plone userid a client-credentials token acts as.
     :returns: The stored client and its plaintext secret. The secret is empty
         for a public client, and this is the only time it exists: it is hashed
         on the way in and cannot be read back.
@@ -313,6 +322,7 @@ def add_client(
         scope=scope,
         auth_method=PUBLIC_AUTH_METHOD if public else "client_secret_post",
         secret_hash="" if public else hash_secret(secret),
+        service_user=service_user,
     )
     set_clients([*get_clients(), client])
     return client, secret
