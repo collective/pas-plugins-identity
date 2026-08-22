@@ -23,8 +23,13 @@ attacker nothing they did not already have the secret to learn.
 from pas.plugins.identity.server.clients import authenticate
 from pas.plugins.identity.server.clients import get_client
 from pas.plugins.identity.server.codes import CodeError
+from pas.plugins.identity.server.interfaces import AUTHORIZATION_CODE
+from pas.plugins.identity.server.interfaces import CLIENT_CREDENTIALS
+from pas.plugins.identity.server.interfaces import GRANT_TYPES
+from pas.plugins.identity.server.interfaces import REFRESH_TOKEN
 from pas.plugins.identity.server.interfaces import ServerError
 from pas.plugins.identity.server.pas import PLUGIN_ID
+from pas.plugins.identity.server.refresh import RefreshError
 from pas.plugins.identity.server.tokens import token_response
 from plone import api
 from plone.protect.interfaces import IDisableCSRFProtection
@@ -34,16 +39,9 @@ from zope.interface import alsoProvides
 import json
 
 
-#: The authorization code grant: a human authorized this at ``/authorize``.
-AUTHORIZATION_CODE = "authorization_code"
-
-#: The client-credentials grant: no human, no redirect, no code. The client
-#: authenticates as itself and acts as its registered service user.
-CLIENT_CREDENTIALS = "client_credentials"
-
-#: Everything this endpoint implements. Refresh and device code are out of
-#: scope for v1 and are named in the plan rather than half-built here.
-GRANT_TYPES = (AUTHORIZATION_CODE, CLIENT_CREDENTIALS)
+#: The grants live in ``interfaces`` so the discovery document can advertise
+#: exactly what this endpoint serves without importing a browser view. An
+#: advertised grant nothing implements is a lie a client acts on.
 
 
 class GrantError(Exception):
@@ -118,11 +116,13 @@ class TokenView(BrowserView):
         try:
             if grant_type == CLIENT_CREDENTIALS:
                 body = self._client_credentials(client)
+            elif grant_type == REFRESH_TOKEN:
+                body = self._refresh(client)
             else:
                 body = self._exchange(client)
         except GrantError as exc:
             return self._error(response, 400, exc.error, exc.description)
-        except (CodeError, ServerError) as exc:
+        except (CodeError, RefreshError, ServerError) as exc:
             return self._error(response, 400, self._error_code(exc), str(exc))
         return json.dumps(body)
 
@@ -135,7 +135,9 @@ class TokenView(BrowserView):
             second is a misconfiguration the operator has to see, not a
             refusal the client caused.
         """
-        return "invalid_grant" if isinstance(exc, CodeError) else "invalid_request"
+        if isinstance(exc, CodeError | RefreshError):
+            return "invalid_grant"
+        return "invalid_request"
 
     def _authenticate_client(self, grant_type: str):
         """Identify the client making the request.
@@ -186,7 +188,7 @@ class TokenView(BrowserView):
             redirect_uri=self._param("redirect_uri"),
             verifier=self._param("code_verifier"),
         )
-        return token_response(
+        body = token_response(
             client_id=client.client_id,
             subject=grant.subject,
             scope=grant.scope,
@@ -195,6 +197,66 @@ class TokenView(BrowserView):
             # authorization request and no browser to bind one to.
             nonce=grant.nonce,
         )
+        return self._with_refresh(client, grant.subject, grant.scope, body)
+
+    def _with_refresh(self, client, subject: str, scope: str, body):
+        """Add a refresh token when the client is registered for one.
+
+        Gated on the registration rather than on a scope, so whether a client
+        may keep working without its user present is an operator's decision
+        recorded where every other client permission lives -- not something a
+        client grants itself by asking.
+
+        :param client: The authenticated client.
+        :param subject: The userid the tokens act for.
+        :param scope: The granted scopes.
+        :param body: The token response so far.
+        :returns: The response, with a refresh token if one is due.
+        """
+        if not client.allows_grant(REFRESH_TOKEN):
+            return body
+        store = api.portal.get_tool("acl_users")[PLUGIN_ID].refresh
+        body["refresh_token"] = store.issue(client.client_id, subject, scope)
+        return body
+
+    def _refresh(self, client):
+        """Rotate a refresh token and mint a fresh access token.
+
+        :param client: The authenticated client.
+        :returns: The token response body.
+        :raises GrantError: When the client may not use this grant, or asks
+            to widen its scope.
+        :raises RefreshError: When the token is refused.
+        """
+        if not client.allows_grant(REFRESH_TOKEN):
+            raise GrantError(
+                "unauthorized_client",
+                "This client is not registered for the refresh token grant.",
+            )
+
+        store = api.portal.get_tool("acl_users")[PLUGIN_ID].refresh
+        replacement, grant = store.rotate(
+            self._param("refresh_token"), client.client_id
+        )
+
+        # RFC 6749 §6: a refresh request may narrow the scope, never widen
+        # it. Silently granting more than the user agreed to at the
+        # authorization endpoint would make consent a one-time formality.
+        scope = self._param("scope") or grant.scope
+        extra = set(scope.split()) - set(grant.scope.split())
+        if extra:
+            raise GrantError(
+                "invalid_scope",
+                f"The refresh token does not carry: {' '.join(sorted(extra))}.",
+            )
+
+        body = token_response(
+            client_id=client.client_id,
+            subject=grant.subject,
+            scope=scope,
+        )
+        body["refresh_token"] = replacement
+        return body
 
     def _client_credentials(self, client):
         """Mint a token for the client acting as its service user.

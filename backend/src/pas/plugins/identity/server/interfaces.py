@@ -20,6 +20,24 @@ class IIdentityServerLayer(IDefaultBrowserLayer):
     """
 
 
+#: The authorization code grant: a human authorized this at ``/authorize``.
+AUTHORIZATION_CODE = "authorization_code"
+
+#: The client-credentials grant: no human, no redirect, no code. The client
+#: authenticates as itself and acts as its registered service user.
+CLIENT_CREDENTIALS = "client_credentials"
+
+#: The refresh grant: exchange a refresh token for a new access token, and a
+#: new refresh token.
+REFRESH_TOKEN = "refresh_token"  # noqa: S105 - a grant name, not a credential
+
+#: Every grant the token endpoint implements. Named here rather than in the
+#: endpoint so the discovery document can advertise exactly what is served
+#: without importing a browser view -- an advertised grant nothing implements
+#: is a lie a client acts on.
+GRANT_TYPES = (AUTHORIZATION_CODE, CLIENT_CREDENTIALS, REFRESH_TOKEN)
+
+
 class ServerError(Exception):
     """A request to the authorization server cannot be honoured.
 
@@ -71,6 +89,16 @@ class IServerSettings(Interface):
         ),
         required=False,
         default="",
+    )
+
+    server_refresh_token_ttl = schema.Int(
+        title=_("Refresh token lifetime (seconds)"),
+        description=_(
+            "Refresh tokens are rotated on every use, so this is how long a "
+            "client may stay away before a human has to sign in again."
+        ),
+        required=False,
+        default=1209600,
     )
 
     server_access_token_ttl = schema.Int(

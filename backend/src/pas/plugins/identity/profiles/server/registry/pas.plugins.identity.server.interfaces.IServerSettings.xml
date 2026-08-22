@@ -20,6 +20,12 @@
          minted for it expiring. -->
     <value key="server_access_token_ttl">900</value>
 
+    <!-- Fourteen days. Refresh tokens rotate on every use, so this is how
+         long a client may stay away before a human has to sign in again:
+         long enough that a daily integration never sees a login page, short
+         enough that an abandoned one stops working inside a sprint. -->
+    <value key="server_refresh_token_ttl">1209600</value>
+
   </records>
 
 </registry>

@@ -23,6 +23,7 @@ from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.server.claims import OPENID_SCOPE
 from pas.plugins.identity.server.claims import SCOPE_CLAIMS
 from pas.plugins.identity.server.codes import CHALLENGE_METHOD
+from pas.plugins.identity.server.interfaces import GRANT_TYPES
 from pas.plugins.identity.server.keys import ALGORITHM
 from pas.plugins.identity.server.tokens import get_issuer
 
@@ -89,7 +90,7 @@ def metadata() -> JSONDict:
         # token in a URL fragment.
         "response_types_supported": ["code"],
         "response_modes_supported": ["query"],
-        "grant_types_supported": ["authorization_code", "client_credentials"],
+        "grant_types_supported": list(GRANT_TYPES),
         # ``public`` rather than ``pairwise``: the ``sub`` is the Plone
         # userid, and every relying party sees the same one. Pairwise subjects
         # would need a per-client mapping this server does not keep.

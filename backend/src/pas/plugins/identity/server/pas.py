@@ -2,12 +2,13 @@
 
 Two jobs, and they arrived in that order.
 
-It is the persistent home for the authorization codes and the recorded
-consent, because every other persistent store in this package lives on a PAS
-plugin -- the identity store, the magic-link burn list and the audit log all
-sit on the core one. Putting them in a site annotation instead would be the
-only such store in the package, and reaching into core's plugin from here
-would cross the layer boundary the import-linter contract exists to keep.
+It is the persistent home for the authorization codes, the recorded consent
+and the refresh tokens, because every other persistent store in this package
+lives on a PAS plugin -- the identity store, the magic-link burn list and the
+audit log all sit on the core one. Putting them in a site annotation instead
+would be the only such store in the package, and reaching into core's plugin
+from here would cross the layer boundary the import-linter contract exists to
+keep.
 
 It is also the Bearer plugin: it turns an access token this server minted back
 into a Plone principal. That is what makes a token worth issuing. Extraction
@@ -27,6 +28,7 @@ from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.server.clients import get_client
 from pas.plugins.identity.server.codes import AuthorizationCodeStore
 from pas.plugins.identity.server.consent import ConsentStore
+from pas.plugins.identity.server.refresh import RefreshTokenStore
 from pas.plugins.identity.server.tokens import decode_access_token
 from pas.plugins.identity.server.tokens import TOKEN_TYPE
 from pas.plugins.identity.server.tokens import TokenError
@@ -65,6 +67,22 @@ class IdentityServerPlugin(BasePlugin):
         self.title = title
         self._codes = AuthorizationCodeStore()
         self._consent = ConsentStore()
+        self._refresh = RefreshTokenStore()
+
+    @property
+    def refresh(self) -> RefreshTokenStore:
+        """Return the refresh-token store.
+
+        Created on demand as well as in ``__init__``, like its two
+        neighbours. Losing it logs every client out rather than corrupting
+        anything, which is survivable and still not worth an upgrade step.
+
+        :returns: The store.
+        """
+        store = getattr(self, "_refresh", None)
+        if store is None:
+            store = self._refresh = RefreshTokenStore()
+        return store
 
     @property
     def consent(self) -> ConsentStore:

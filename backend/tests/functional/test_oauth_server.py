@@ -72,7 +72,7 @@ def server(functional):
         "third-party-app",
         title="A Third-Party App",
         redirect_uris=[CALLBACK],
-        grant_types=["authorization_code"],
+        grant_types=["authorization_code", "refresh_token"],
         scope=SCOPE,
         public=False,
     )
@@ -345,3 +345,91 @@ class TestDiscovery:
         assert response.status_code == 200
         assert response.json()["sub"] == END_USER
         assert response.json()["name"] == "Elena Example"
+
+
+class TestRefreshRotation:
+    """Rotation driven by a real client, which is where it has to work."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, server, rp) -> None:
+        self.url = server["url"]
+        self.rp = rp
+        self.browser = requests.Session()
+        self.browser.auth = (END_USER, END_USER_PASSWORD)
+
+    def sign_in(self) -> dict:
+        """Complete a full authorization and return the token response.
+
+        :returns: The token, including its refresh token.
+        """
+        verifier = "a-verifier-long-enough-to-satisfy-rfc-7636-minimums"
+        url, _state = self.rp.create_authorization_url(
+            f"{self.url}/@@oauth-authorize", code_verifier=verifier
+        )
+        query = consent(self.browser, url)
+        return self.rp.fetch_token(
+            f"{self.url}/@@oauth-token", code=query["code"], code_verifier=verifier
+        )
+
+    def test_the_code_grant_hands_back_a_refresh_token(self):
+        assert self.sign_in()["refresh_token"]
+
+    def test_refreshing_yields_a_working_access_token(self):
+        """The point of the whole mechanism: the client keeps working with no
+        human anywhere near it."""
+        original = self.sign_in()
+
+        refreshed = self.rp.refresh_token(
+            f"{self.url}/@@oauth-token", refresh_token=original["refresh_token"]
+        )
+
+        response = requests.get(
+            f"{self.url}/@users/{END_USER}",
+            headers={
+                "Accept": "application/json",
+                "Authorization": f"Bearer {refreshed['access_token']}",
+            },
+            timeout=30,
+        )
+        assert response.status_code == 200
+        assert response.json()["id"] == END_USER
+
+    def test_the_refresh_token_is_rotated(self):
+        original = self.sign_in()
+
+        refreshed = self.rp.refresh_token(
+            f"{self.url}/@@oauth-token", refresh_token=original["refresh_token"]
+        )
+
+        assert refreshed["refresh_token"] != original["refresh_token"]
+
+    def test_the_previous_refresh_token_stops_working(self):
+        """The plan's check for this gate, through a real client."""
+        original = self.sign_in()
+        self.rp.refresh_token(
+            f"{self.url}/@@oauth-token", refresh_token=original["refresh_token"]
+        )
+
+        with pytest.raises(Exception, match="invalid_grant"):
+            self.rp.refresh_token(
+                f"{self.url}/@@oauth-token", refresh_token=original["refresh_token"]
+            )
+
+    def test_a_replay_revokes_the_whole_chain(self):
+        """Rotation without this is theatre: a thief who uses the stolen copy
+        first simply becomes the client. Detecting that two parties hold one
+        token, and cutting both off, is what the rotation is for."""
+        original = self.sign_in()
+        live = self.rp.refresh_token(
+            f"{self.url}/@@oauth-token", refresh_token=original["refresh_token"]
+        )
+
+        with pytest.raises(Exception, match="invalid_grant"):
+            self.rp.refresh_token(
+                f"{self.url}/@@oauth-token", refresh_token=original["refresh_token"]
+            )
+
+        with pytest.raises(Exception, match="invalid_grant"):
+            self.rp.refresh_token(
+                f"{self.url}/@@oauth-token", refresh_token=live["refresh_token"]
+            )

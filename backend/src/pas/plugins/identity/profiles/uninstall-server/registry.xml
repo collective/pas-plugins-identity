@@ -12,4 +12,7 @@
   <record name="pas.plugins.identity.server_access_token_ttl"
           remove="True"
   />
+  <record name="pas.plugins.identity.server_refresh_token_ttl"
+          remove="True"
+  />
 </registry>

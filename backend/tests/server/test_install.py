@@ -70,13 +70,12 @@ class TestPostUninstall:
         """Which is what takes the endpoints away again."""
         assert IIdentityServerLayer not in registered_layers()
 
-    @pytest.mark.parametrize(
-        "name",
-        ["server_clients", "server_issuer", "server_access_token_ttl"],
-    )
+    @pytest.mark.parametrize("name", getFieldNames(IServerSettings))
     def test_records_removed(self, name):
-        """Every field the schema declares, so uninstall stays in step with
-        install rather than drifting a record at a time."""
+        """Driven off the schema rather than a hand-kept list, so a field
+        added without a matching removal fails here instead of quietly
+        surviving an uninstall. A literal list said "every field the schema
+        declares" while naming three of them."""
         assert (
             api.portal.get_registry_record(
                 f"pas.plugins.identity.{name}", default="gone"
@@ -163,6 +162,14 @@ class TestThePlugin:
         del plugin._consent
 
         assert plugin.consent.granted("alice", "app") is False
+
+    def test_the_refresh_store_survives_a_missing_attribute(self):
+        """The third store on this plugin, and the mildest loss of the three:
+        losing it logs every client out rather than corrupting anything."""
+        plugin = self.acl_users[PLUGIN_ID]
+        del plugin._refresh
+
+        assert plugin.refresh.count() == 0
 
     def test_uninstalling_when_absent_is_quiet(self):
         """A second uninstall, or one on a site that never installed it."""
