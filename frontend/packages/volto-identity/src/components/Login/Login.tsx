@@ -11,6 +11,8 @@ import {
   sendMagicLink,
   startProviderLogin,
 } from '../../actions';
+import { login } from '@plone/volto/actions/userSession/userSession';
+
 import { returnUrl } from '../../helpers/returnUrl';
 import type { LoginProvider } from '../../types';
 import LoginForm from './LoginForm';
@@ -23,6 +25,7 @@ const Login: React.FC = () => {
   const providers = useSelector((state: any) => state.loginProviders);
   const started = useSelector((state: any) => state.providerLogin);
   const magic = useSelector((state: any) => state.magicLinkSend);
+  const userSession = useSelector((state: any) => state.userSession);
 
   useEffect(() => {
     dispatch(listLoginProviders());
@@ -49,6 +52,22 @@ const Login: React.FC = () => {
     [dispatch, location.search, location.pathname],
   );
 
+  const onPasswordLogin = useCallback(
+    (username: string, password: string) => {
+      dispatch(login(username, password));
+    },
+    [dispatch],
+  );
+
+  // Volto stores the token and its own AppExtras redirects; all this has to
+  // do is get the user back to where the flow started, which for an
+  // authorization request is the whole request.
+  useEffect(() => {
+    if (userSession?.token) {
+      window.location.href = returnUrl(location.search, location.pathname);
+    }
+  }, [userSession?.token, location.search, location.pathname]);
+
   const onSendMagicLink = useCallback(
     (email: string) => {
       dispatch(sendMagicLink(email));
@@ -67,6 +86,9 @@ const Login: React.FC = () => {
       magicLinkError={magic?.error}
       onSelectProvider={onSelectProvider}
       onSendMagicLink={onSendMagicLink}
+      passwordLoading={Boolean(userSession?.login?.loading)}
+      passwordError={userSession?.login?.error}
+      onPasswordLogin={onPasswordLogin}
     />
   );
 };

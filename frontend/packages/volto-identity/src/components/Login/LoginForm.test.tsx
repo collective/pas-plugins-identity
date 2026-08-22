@@ -24,6 +24,7 @@ function renderForm(
 ) {
   const onSelectProvider = vi.fn();
   const onSendMagicLink = vi.fn();
+  const onPasswordLogin = vi.fn();
   render(
     <LoginForm
       providers={[DEX]}
@@ -31,19 +32,24 @@ function renderForm(
       starting={false}
       magicLinkSent={false}
       magicLinkLoading={false}
+      passwordLoading={false}
       onSelectProvider={onSelectProvider}
       onSendMagicLink={onSendMagicLink}
+      onPasswordLogin={onPasswordLogin}
       {...props}
     />,
   );
-  return { onSelectProvider, onSendMagicLink };
+  return { onSelectProvider, onSendMagicLink, onPasswordLogin };
 }
 
 describe('LoginForm', () => {
   it('renders a button per provider', () => {
     renderForm({ providers: [DEX, { ...DEX, id: 'github', title: 'GitHub' }] });
 
-    expect(screen.getAllByRole('button')).toHaveLength(2);
+    // Scoped to the provider list: the page also carries the password
+    // disclosure, which is not a provider.
+    const list = document.querySelector('.identity-providers');
+    expect(list?.querySelectorAll('button')).toHaveLength(2);
     expect(screen.getByText('Dex')).toBeTruthy();
   });
 
@@ -69,11 +75,48 @@ describe('LoginForm', () => {
     expect(screen.getByRole('status').textContent).toContain('Loading');
   });
 
-  it('says so when a site has none configured', () => {
+  it('says so when a site has no providers configured', () => {
     renderForm({ providers: [] });
 
-    expect(screen.getByText(/No sign-in options/)).toBeTruthy();
-    expect(screen.queryAllByRole('button')).toHaveLength(0);
+    expect(screen.getByText(/No sign-in providers/)).toBeTruthy();
+  });
+
+  it('still offers a password on a site with no providers', () => {
+    // This page replaces Volto's login, so hiding the password here left a
+    // site with local accounts and no provider -- an authorization server,
+    // for instance -- with no way in at all.
+    renderForm({ providers: [] });
+
+    expect(screen.getByText('Sign in with a password')).toBeTruthy();
+  });
+
+  it('offers a password alongside the providers', () => {
+    renderForm();
+
+    expect(screen.getByText('Sign in with a password')).toBeTruthy();
+  });
+
+  it('submits the credentials that were typed', () => {
+    const { onPasswordLogin } = renderForm();
+    fireEvent.click(screen.getByText('Sign in with a password'));
+
+    fireEvent.change(screen.getByLabelText('Login name'), {
+      target: { value: 'alice' },
+    });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'hunter2' },
+    });
+    fireEvent.click(screen.getByText('Sign in'));
+
+    expect(onPasswordLogin).toHaveBeenCalledWith('alice', 'hunter2');
+  });
+
+  it('does not distinguish a wrong name from a wrong password', () => {
+    // Telling them apart is an account-enumeration oracle.
+    renderForm({ passwordError: { status: 401 } });
+    fireEvent.click(screen.getByText('Sign in with a password'));
+
+    expect(screen.getByRole('alert').textContent).toContain('did not match');
   });
 
   it('reports a failed start', () => {

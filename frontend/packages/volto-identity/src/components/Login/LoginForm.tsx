@@ -9,6 +9,7 @@
 import React from 'react';
 import type { LoginProvider } from '../../types';
 import MagicLinkForm from './MagicLinkForm';
+import PasswordForm from './PasswordForm';
 import ProviderButton from './ProviderButton';
 
 interface LoginFormProps {
@@ -19,8 +20,13 @@ interface LoginFormProps {
   magicLinkSent: boolean;
   magicLinkLoading: boolean;
   magicLinkError?: unknown;
+  /** Whether a password sign-in is in flight. */
+  passwordLoading: boolean;
+  /** Whether the last password sign-in was refused. */
+  passwordError?: unknown;
   onSelectProvider: (provider: LoginProvider) => void;
   onSendMagicLink: (email: string) => void;
+  onPasswordLogin: (username: string, password: string) => void;
 }
 
 /** Providers handled by the magic-link form rather than a button. */
@@ -34,8 +40,11 @@ const LoginForm: React.FC<LoginFormProps> = ({
   magicLinkSent,
   magicLinkLoading,
   magicLinkError,
+  passwordLoading,
+  passwordError,
   onSelectProvider,
   onSendMagicLink,
+  onPasswordLogin,
 }) => {
   const buttons = providers.filter((p) => p.driver !== EMAIL_DRIVER);
   const hasMagicLink = providers.some((p) => p.driver === EMAIL_DRIVER);
@@ -51,9 +60,18 @@ const LoginForm: React.FC<LoginFormProps> = ({
   if (!providers.length) {
     // Not an error: a site can legitimately have none configured yet, and
     // saying so beats an empty page that looks broken.
+    // A site can legitimately have no providers configured yet, and an
+    // authorization server may never have any: its users are local. Saying
+    // "no sign-in options" while hiding the one that works was how this page
+    // left an identity provider with no way in at all.
     return (
       <div className="identity-login identity-login--empty">
-        <p>No sign-in options are configured for this site.</p>
+        <p>No sign-in providers are configured for this site.</p>
+        <PasswordForm
+          loading={passwordLoading}
+          error={passwordError}
+          onSubmit={onPasswordLogin}
+        />
       </div>
     );
   }
@@ -88,6 +106,12 @@ const LoginForm: React.FC<LoginFormProps> = ({
           onSend={onSendMagicLink}
         />
       ) : null}
+
+      <PasswordForm
+        loading={passwordLoading}
+        error={passwordError}
+        onSubmit={onPasswordLogin}
+      />
     </div>
   );
 };
