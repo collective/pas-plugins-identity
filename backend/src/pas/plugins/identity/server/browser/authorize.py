@@ -25,6 +25,7 @@ Consent is remembered per user and client, so the prompt appears once and on
 any later request for a scope not already agreed to.
 """
 
+from AccessControl import Unauthorized
 from pas.plugins.identity.server.clients import get_client
 from pas.plugins.identity.server.codes import ChallengeError
 from pas.plugins.identity.server.codes import check_challenge
@@ -63,6 +64,13 @@ CARRIED_PARAMS = (
 #: button a future template adds -- is a refusal. Consent is the thing that
 #: has to be given explicitly, so it is the only value spelled out.
 CONSENT_ALLOW = "allow"
+
+#: The OIDC ``prompt`` value that forbids any interaction with the end user.
+#: Supported now rather than with the rest of OIDC because it is what keeps
+#: ``login_required`` and ``consent_required`` meaningful: without it, an
+#: authorization server that redirects to a login page has no way to be asked
+#: *not* to, and those two error codes become unreachable.
+PROMPT_NONE = "none"
 
 #: Returned by the consent check when the user has not been asked yet. A
 #: sentinel rather than ``None`` because ``None`` is already a perfectly good
@@ -166,50 +174,40 @@ class AuthorizeView(BrowserView):
             rendered instead.
         :raises AuthorizationError: For any failure the client should be told
             about at its redirect URI.
+        :raises Unauthorized: When the end user is not signed in and the
+            client has not forbidden interaction. Plone's challenge machinery
+            takes it from there.
         """
-        if self._param("response_type") != RESPONSE_TYPE:
-            raise AuthorizationError(
-                "unsupported_response_type",
-                "Only the authorization code flow is supported.",
-            )
-        if not client.allows_grant("authorization_code"):
-            raise AuthorizationError(
-                "unauthorized_client",
-                "This client is not registered for the authorization code grant.",
-            )
-
-        try:
-            challenge = check_challenge(
-                self._param("code_challenge"),
-                self._param("code_challenge_method"),
-                required=client.requires_pkce,
-            )
-        except ChallengeError as exc:
-            raise AuthorizationError("invalid_request", str(exc)) from exc
-
-        scope = self._param("scope")
-        granted = client.scopes()
-        requested = set(scope.split())
-        if requested - granted:
-            raise AuthorizationError(
-                "invalid_scope",
-                "The client is not registered for: "
-                f"{' '.join(sorted(requested - granted))}.",
-            )
+        challenge, scope = self._check_request(client)
+        quiet = self._param("prompt") == PROMPT_NONE
 
         user = api.user.get_current()
         if api.user.is_anonymous():
-            # Nothing to consent with. The relying party sent a browser here
-            # expecting a login; where that login happens is the site's
-            # business, so it is told to come back rather than guessed at.
-            raise AuthorizationError(
-                "login_required",
-                "The end user is not authenticated at the authorization server.",
+            if quiet:
+                raise AuthorizationError(
+                    "login_required",
+                    "The end user is not authenticated at the authorization "
+                    "server, and prompt=none forbids asking them.",
+                )
+            # Anything else means: go and log them in. Raising Unauthorized
+            # hands that to Plone's own challenge machinery rather than
+            # reimplementing it -- which matters, because the stock challenge
+            # carries the query string into `came_from` and sanitises it to a
+            # local URL. This whole request *is* its query string, and
+            # sanitising a return URL is exactly the thing not to write twice.
+            raise Unauthorized(
+                "The end user must authenticate before authorizing a client."
             )
 
         plugin = api.portal.get_tool("acl_users")[PLUGIN_ID]
         decision = self._consent_decision(plugin, user.getId(), client, scope)
         if decision is CONSENT_PENDING:
+            if quiet:
+                raise AuthorizationError(
+                    "consent_required",
+                    "The end user has not agreed to this request, and "
+                    "prompt=none forbids asking them.",
+                )
             # The caller gets the form instead of a redirect. Raising would
             # send an error to the client; returning None says "this request
             # has not finished yet, and the browser is being asked a
@@ -236,6 +234,47 @@ class AuthorizeView(BrowserView):
             # token, and this server's only job is to hand it back unchanged.
             params["state"] = state
         return f"{redirect_uri}?{urlencode(params)}"
+
+    def _check_request(self, client) -> tuple[str, str]:
+        """Validate everything about the request that the client controls.
+
+        Split out from :meth:`_authorize` because these are the checks that
+        happen before any human is involved: nothing here reads a session,
+        and every failure is something the client got wrong.
+
+        :param client: The registered client.
+        :returns: The PKCE challenge to record, and the requested scope.
+        :raises AuthorizationError: For any failure the client should be told
+            about at its redirect URI.
+        """
+        if self._param("response_type") != RESPONSE_TYPE:
+            raise AuthorizationError(
+                "unsupported_response_type",
+                "Only the authorization code flow is supported.",
+            )
+        if not client.allows_grant("authorization_code"):
+            raise AuthorizationError(
+                "unauthorized_client",
+                "This client is not registered for the authorization code grant.",
+            )
+
+        try:
+            challenge = check_challenge(
+                self._param("code_challenge"),
+                self._param("code_challenge_method"),
+                required=client.requires_pkce,
+            )
+        except ChallengeError as exc:
+            raise AuthorizationError("invalid_request", str(exc)) from exc
+
+        scope = self._param("scope")
+        extra = set(scope.split()) - client.scopes()
+        if extra:
+            raise AuthorizationError(
+                "invalid_scope",
+                f"The client is not registered for: {' '.join(sorted(extra))}.",
+            )
+        return challenge, scope
 
     def _consent_decision(self, plugin, userid: str, client, scope: str):
         """Decide whether the user has agreed to this request.

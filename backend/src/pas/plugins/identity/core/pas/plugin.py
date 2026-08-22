@@ -37,6 +37,8 @@ from Products.PluggableAuthService.interfaces.plugins import IExtractionPlugin
 from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
 from Products.PluggableAuthService.plugins.ZODBUserManager import ZODBUserManager
 from Products.PluggableAuthService.utils import classImplements
+from Products.PluggableAuthService.utils import url_local
+from urllib.parse import quote
 from uuid import uuid4
 from zope.event import notify
 from zope.interface import implementer
@@ -47,7 +49,11 @@ import secrets
 
 
 #: Where the provider picker lives, for the optional challenge plugin.
-LOGIN_VIEW = "@@identity-login"
+#: ``/login`` rather than a view of this package's own: the Volto add-on
+#: overrides that route with the provider picker, and a Classic site serves
+#: Plone's login form there. A name only this package knew would be served by
+#: neither.
+LOGIN_VIEW = "login"
 
 
 def mint_userid() -> str:
@@ -261,8 +267,26 @@ class IdentityPlugin(BasePlugin):
             return False
         url = f"{self._portal_url()}/{LOGIN_VIEW}"
         came_from = request.get("ACTUAL_URL", "")
+        query = request.get("QUERY_STRING")
+        if came_from and query:
+            # The query string is not decoration. An OAuth authorization
+            # request *is* its query string, so a `came_from` built from the
+            # path alone resumes a request with no client, no redirect URI
+            # and no PKCE challenge -- which fails in a way that reads like a
+            # client bug.
+            came_from = f"{came_from}?{query}"
+        # Stripped to a site-local URL before being handed back, exactly as
+        # the stock CookieAuthHelper does: this value ends up in a redirect
+        # after login, and an absolute one would make the login form an open
+        # redirect. Reduced *before* the emptiness test, because a URL that is
+        # nothing but a host reduces to nothing, and appending an empty
+        # `came_from=` is worse than appending none.
+        came_from = url_local(came_from)
         if came_from:
-            url = f"{url}?came_from={came_from}"
+            # Quoted, or the first `&` of the query string would be read as
+            # another parameter of the login URL rather than part of the
+            # return address.
+            url = f"{url}?came_from={quote(came_from)}"
         response.redirect(url, lock=True)
         return True
 

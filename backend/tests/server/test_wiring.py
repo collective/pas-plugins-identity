@@ -17,6 +17,9 @@ from plone import api
 from plone.app.testing import applyProfile
 from plone.app.testing import SITE_OWNER_NAME
 from plone.app.testing import SITE_OWNER_PASSWORD
+from urllib.parse import parse_qs
+from urllib.parse import unquote
+from urllib.parse import urlparse
 
 import pytest
 import requests
@@ -109,9 +112,11 @@ class TestPublished:
     def _setup(self, url: str) -> None:
         self.url = url
 
-    def test_authorize_is_reachable_anonymously(self):
-        """A relying party sends a browser here, and that browser may have no
-        Plone session at all. The endpoint has to answer, not 401."""
+    def test_an_anonymous_browser_is_sent_to_log_in(self):
+        """A relying party sends a browser here and that browser may have no
+        Plone session, which is the normal case rather than an error. This is
+        the test that proves the challenge machinery actually engages: the
+        view raises Unauthorized and Plone turns it into a redirect."""
         response = requests.get(
             f"{self.url}/@@oauth-authorize",
             params={
@@ -125,6 +130,47 @@ class TestPublished:
         )
 
         assert response.status_code == 302
+        assert "came_from" in response.headers["Location"]
+
+    def test_the_whole_request_survives_the_login_redirect(self):
+        """The authorization request *is* its query string. If `came_from`
+        carried only the path, the user would log in and resume a request
+        with no client and no PKCE challenge."""
+        response = requests.get(
+            f"{self.url}/@@oauth-authorize",
+            params={
+                "response_type": "code",
+                "client_id": "app",
+                "redirect_uri": REDIRECT,
+                "state": "xyzzy",
+            },
+            allow_redirects=False,
+            timeout=30,
+        )
+
+        came_from = unquote(
+            parse_qs(urlparse(response.headers["Location"]).query)["came_from"][0]
+        )
+
+        assert "client_id=app" in came_from
+        assert "state=xyzzy" in came_from
+        assert came_from.startswith("/"), "came_from must be a local URL"
+
+    def test_prompt_none_is_still_reported_to_the_client(self):
+        """The client asked us not to interact, so the refusal goes back to
+        it rather than to a login form."""
+        response = requests.get(
+            f"{self.url}/@@oauth-authorize",
+            params={
+                "response_type": "code",
+                "client_id": "app",
+                "redirect_uri": REDIRECT,
+                "prompt": "none",
+            },
+            allow_redirects=False,
+            timeout=30,
+        )
+
         assert response.headers["Location"].startswith(REDIRECT)
         assert "error=login_required" in response.headers["Location"]
 

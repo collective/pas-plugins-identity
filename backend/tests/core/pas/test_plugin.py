@@ -526,13 +526,17 @@ class TestChallenge:
         assert self.plugin.challenge(self.request, self.request.response) is False
 
     def test_enabled_redirects_to_picker(self):
-        """Once on, an unauthorized request goes to the provider picker."""
+        """Once on, an unauthorized request goes to the provider picker.
+
+        ``/login`` rather than a name only this package knows: the Volto
+        add-on overrides that route with the picker, and a Classic site serves
+        Plone's own form there."""
         self.plugin.challenge_enabled = True
 
         handled = self.plugin.challenge(self.request, self.request.response)
 
         assert handled is True
-        assert "@@identity-login" in self.location()
+        assert self.location().endswith("/login")
 
     def test_came_from_is_preserved(self):
         """The user returns where they were headed."""
@@ -542,6 +546,42 @@ class TestChallenge:
         self.plugin.challenge(self.request, self.request.response)
 
         assert "came_from=" in self.location()
+
+    def test_the_query_string_is_carried_too(self):
+        """Not decoration: an OAuth authorization request *is* its query
+        string, so a came_from built from the path alone resumes a request
+        with no client, no redirect URI and no PKCE challenge."""
+        self.plugin.challenge_enabled = True
+        self.request["ACTUAL_URL"] = f"{self.portal.absolute_url()}/@@oauth-authorize"
+        self.request.environ["QUERY_STRING"] = "client_id=app&state=xyzzy"
+
+        self.plugin.challenge(self.request, self.request.response)
+
+        assert "client_id%3Dapp" in self.location()
+        assert "state%3Dxyzzy" in self.location()
+
+    def test_came_from_is_quoted(self):
+        """Unquoted, the first `&` of the query string would be read as
+        another parameter of the login URL rather than part of the return
+        address."""
+        self.plugin.challenge_enabled = True
+        self.request["ACTUAL_URL"] = f"{self.portal.absolute_url()}/@@oauth-authorize"
+        self.request.environ["QUERY_STRING"] = "a=1&b=2"
+
+        self.plugin.challenge(self.request, self.request.response)
+
+        assert self.location().count("came_from") == 1
+        assert "&b=2" not in self.location()
+
+    def test_came_from_is_reduced_to_a_local_url(self):
+        """This value ends up in a redirect after login. An absolute one
+        would make the login form an open redirect."""
+        self.plugin.challenge_enabled = True
+        self.request["ACTUAL_URL"] = "https://evil.example.org/steal"
+
+        self.plugin.challenge(self.request, self.request.response)
+
+        assert "evil.example.org" not in self.location()
 
     def test_no_came_from_when_there_is_nowhere_to_return_to(self):
         """A challenge with no originating URL sends a bare picker URL rather

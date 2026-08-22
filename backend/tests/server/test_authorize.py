@@ -7,6 +7,7 @@ open redirect, so it is asserted in both directions.
 """
 
 from . import PROFILE_ID
+from AccessControl import Unauthorized
 from pas.plugins.identity.server.browser.authorize import AuthorizeView
 from pas.plugins.identity.server.codes import make_verifier
 from pas.plugins.identity.server.pas import PLUGIN_ID
@@ -232,7 +233,26 @@ class TestReportedToTheClient:
 
         assert query(location)["state"] == "xyzzy"
 
-    def test_an_anonymous_end_user_is_reported_as_login_required(self):
+    def test_an_anonymous_end_user_is_sent_to_log_in(self):
+        """Not an error to the client: an authorization server whose answer
+        to "no session" is a refusal cannot be used by anybody. Raising
+        Unauthorized hands this to Plone's own challenge machinery, which
+        carries the query string into `came_from` and sanitises it."""
+        logout()
+
+        with pytest.raises(Unauthorized):
+            call(
+                self.portal,
+                response_type="code",
+                client_id="app",
+                redirect_uri=REDIRECT,
+            )
+
+    def test_prompt_none_is_reported_as_login_required(self):
+        """The one case where refusing is right. `login_required` means the
+        client asked us not to interact, so this is where it belongs -- and
+        having it here is what stops the redirect above from being
+        unconditional."""
         logout()
 
         _status, location, _body = call(
@@ -240,9 +260,23 @@ class TestReportedToTheClient:
             response_type="code",
             client_id="app",
             redirect_uri=REDIRECT,
+            prompt="none",
         )
 
         assert query(location)["error"] == "login_required"
+
+    def test_prompt_none_without_consent_is_consent_required(self):
+        """Rendering a consent form for a client that said "do not interact"
+        would violate the parameter as surely as showing a login page."""
+        _status, location, _body = call(
+            self.portal,
+            response_type="code",
+            client_id="app",
+            redirect_uri=REDIRECT,
+            prompt="none",
+        )
+
+        assert query(location)["error"] == "consent_required"
 
 
 class TestIssuing:
