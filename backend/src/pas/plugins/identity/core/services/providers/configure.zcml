@@ -1,0 +1,55 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <!-- Provider configuration. Registered for View and guarded on Manage
+       portal inside the services, so a caller without it gets a JSON
+       refusal rather than a login form. -->
+  <plone:service
+      method="GET"
+      factory=".drivers.DriversGet"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@identity-drivers"
+      />
+
+  <plone:service
+      method="GET"
+      factory=".get.ProvidersGet"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@identity-providers"
+      />
+
+  <plone:service
+      method="POST"
+      factory=".post.ProvidersPost"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@identity-providers"
+      />
+
+  <plone:service
+      method="PATCH"
+      factory=".patch.ProvidersPatch"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@identity-providers"
+      />
+
+  <plone:service
+      method="DELETE"
+      factory=".delete.ProvidersDelete"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@identity-providers"
+      />
+
+</configure>

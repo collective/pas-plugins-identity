@@ -3,27 +3,27 @@
     i18n_domain="pas.plugins.identity"
     >
 
-  <!-- Drivers are named utilities (D9); the name is the driver_id. -->
+  <!-- Drivers are named utilities; the name is the driver_id. -->
   <utility
-      factory=".GitHubDriver"
+      factory=".github.GitHubDriver"
       provides="pas.plugins.identity.core.interfaces.IDriver"
       name="github"
       />
 
   <utility
-      factory=".GoogleDriver"
+      factory=".google.GoogleDriver"
       provides="pas.plugins.identity.core.interfaces.IDriver"
       name="google"
       />
 
   <utility
-      factory=".GenericOIDCDriver"
+      factory=".oidc.GenericOIDCDriver"
       provides="pas.plugins.identity.core.interfaces.IDriver"
       name="oidc-generic"
       />
 
   <utility
-      factory=".EmailDriver"
+      factory=".emaillink.EmailDriver"
       provides="pas.plugins.identity.core.interfaces.IDriver"
       name="email"
       />

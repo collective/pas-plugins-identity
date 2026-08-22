@@ -3,7 +3,7 @@
   <!-- Core depends on plone.restapi only: the services in ``core.services``
        are its entire HTTP surface. ``plone.volto`` is deliberately absent so
        that ``pip install pas.plugins.identity`` with no extras yields a
-       working install (I5). -->
+       working install. -->
   <include package="plone.restapi" />
 
 </configure>

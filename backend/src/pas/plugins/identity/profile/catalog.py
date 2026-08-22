@@ -1,4 +1,4 @@
-"""The dedicated Profile catalog (§4.7, C6).
+"""The dedicated Profile catalog.
 
 A separate catalog rather than extra indexes on ``portal_catalog``, for three
 reasons that all point the same way: PAS enumeration runs on requests where
@@ -40,8 +40,9 @@ from Acquisition import aq_parent
 from pas.plugins.identity import logger
 from pas.plugins.identity.profile.interfaces import IIdentityProfileCatalog
 from plone import api
+from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 from Products.CMFPlone.CatalogTool import CatalogTool
-from typing import Any
+from Products.ZCatalog.CatalogBrains import AbstractCatalogBrain
 from zope.interface import implementer
 
 
@@ -55,7 +56,7 @@ CATALOG_ID = "portal_identity_catalog"
 #: neither should have to import the class to get it.
 PROFILE_PORTAL_TYPE = "IdentityProfile"
 
-#: ``portal_type`` of the Group content type (Gate 6d).
+#: ``portal_type`` of the Group content type.
 GROUP_PORTAL_TYPE = "IdentityGroup"
 
 #: Every type filed in this catalog. Used by the rebuild, which must find
@@ -77,9 +78,9 @@ INDEXES = (
     ("SearchableText", "ZCTextIndex"),
 )
 
-#: Metadata columns. These are the whole point of the catalog: Gate 6b serves
-#: the PAS property sheet and the enumeration results from brains alone, so
-#: every field a property sheet exposes has to be here (C6).
+#: Metadata columns. These are the whole point of the catalog: the PAS
+#: property sheet and the enumeration results are served from brains alone,
+#: so every field a property sheet exposes has to be here.
 METADATA = (
     "portal_type",
     "Title",
@@ -131,7 +132,7 @@ class IdentityProfileCatalog(CatalogTool):
     meta_type = "Identity Profile Catalog"
     title = "Identity Profile Catalog"
 
-    def indexObject(self, object: Any) -> None:
+    def indexObject(self, object: CMFCatalogAware) -> None:
         """Index an object in this catalog, immediately.
 
         :param object: The object to index.
@@ -140,7 +141,7 @@ class IdentityProfileCatalog(CatalogTool):
 
     def reindexObject(
         self,
-        object: Any,
+        object: CMFCatalogAware,
         idxs: list[str] | None = None,
         update_metadata: int = 1,
         uid: str | None = None,
@@ -159,7 +160,7 @@ class IdentityProfileCatalog(CatalogTool):
             uid=uid,
         )
 
-    def unindexObject(self, object: Any) -> None:
+    def unindexObject(self, object: CMFCatalogAware) -> None:
         """Remove an object from this catalog, immediately.
 
         :param object: The object to unindex.
@@ -191,7 +192,7 @@ class IdentityProfileCatalog(CatalogTool):
 InitializeClass(IdentityProfileCatalog)
 
 
-def get_catalog() -> Any:
+def get_catalog() -> IdentityProfileCatalog:
     """Return the Profile catalog of the current site.
 
     :returns: The catalog tool.
@@ -201,10 +202,10 @@ def get_catalog() -> Any:
     return api.portal.get_tool(CATALOG_ID)
 
 
-def query_catalog() -> Any | None:
+def query_catalog() -> IdentityProfileCatalog | None:
     """Return the Profile catalog, or ``None`` when the layer is not installed.
 
-    The PAS plugins of Gate 6b run in every site of the Zope instance,
+    This layer's PAS plugins run in every site of the Zope instance,
     including sites that never applied the ``profile`` profile. They ask this
     rather than :func:`get_catalog` so that "not installed here" is an ordinary
     answer instead of an exception.
@@ -217,7 +218,9 @@ def query_catalog() -> Any | None:
         return None
 
 
-def brains_of_type(catalog: Any, portal_type: str) -> list[Any]:
+def brains_of_type(
+    catalog: IdentityProfileCatalog, portal_type: str
+) -> list[AbstractCatalogBrain]:
     """Return every brain of one content type.
 
     Profiles and Groups share this catalog, which is why almost nothing wants
@@ -232,7 +235,7 @@ def brains_of_type(catalog: Any, portal_type: str) -> list[Any]:
     return list(catalog.unrestrictedSearchResults(portal_type=portal_type))
 
 
-def profile_brains(catalog: Any) -> list[Any]:
+def profile_brains(catalog: IdentityProfileCatalog) -> list[AbstractCatalogBrain]:
     """Return every Profile brain.
 
     :param catalog: The Profile catalog.
@@ -241,7 +244,7 @@ def profile_brains(catalog: Any) -> list[Any]:
     return brains_of_type(catalog, PROFILE_PORTAL_TYPE)
 
 
-def group_brains(catalog: Any) -> list[Any]:
+def group_brains(catalog: IdentityProfileCatalog) -> list[AbstractCatalogBrain]:
     """Return every Group brain.
 
     :param catalog: The Profile catalog.
@@ -250,7 +253,7 @@ def group_brains(catalog: Any) -> list[Any]:
     return brains_of_type(catalog, GROUP_PORTAL_TYPE)
 
 
-def all_brains(catalog: Any) -> list[Any]:
+def all_brains(catalog: IdentityProfileCatalog) -> list[AbstractCatalogBrain]:
     """Return every brain in the Profile catalog.
 
     A ZCatalog query with no criteria returns *nothing*, not everything, and

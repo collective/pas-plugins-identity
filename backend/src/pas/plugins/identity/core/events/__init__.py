@@ -1,4 +1,4 @@
-"""The event contract (§4.3) -- the public API of this package.
+"""The event contract -- the public API of this package.
 
 Consumers (profile sync, audit log, third-party integrations) subscribe to
 these; nothing in this package reaches into another layer directly. Claims
@@ -52,7 +52,7 @@ class IEmailVerified(IIdentityEvent):
 
 
 class IUserClaimsRefreshed(IIdentityEvent):
-    """Fired when stored claims are updated by the D2 refresh policy."""
+    """Fired when a later login refreshes the stored claims."""
 
     provider = Attribute("Provider id.")
     claims = Attribute("The fresh normalized claims.")

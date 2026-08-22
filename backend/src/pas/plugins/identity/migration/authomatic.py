@@ -1,4 +1,4 @@
-"""Migrating from ``pas.plugins.authomatic`` (Gate 7, C5).
+"""Migrating from ``pas.plugins.authomatic``.
 
 The good news, established by reading its source rather than remembering it:
 authomatic already stores exactly the mapping this package stores. Its plugin
@@ -12,7 +12,7 @@ identity. A migration that preserves the user id verbatim is therefore correct
 in every mode, which is why nothing here branches on which mode a site used.
 The user ids come across unchanged, so every local role, every sharing
 setting and every piece of content ownership keeps pointing at the right
-person (I1).
+person.
 
 What does *not* come across:
 
@@ -33,10 +33,12 @@ from pas.plugins.identity import logger
 from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
+from pas.plugins.identity.core.interfaces import Claims
+from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.migration import Report
 from plone import api
-from typing import Any
+from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
 
 
 #: Object id authomatic's plugin is installed under. It refuses to install
@@ -55,7 +57,7 @@ DRIVER_FOR_PROVIDER = {
 FALLBACK_DRIVER = "oidc-generic"
 
 
-def _authomatic_plugin() -> Any | None:
+def _authomatic_plugin() -> BasePlugin | None:
     """Return the installed authomatic plugin, if there is one.
 
     :returns: The plugin, or ``None``.
@@ -64,7 +66,7 @@ def _authomatic_plugin() -> Any | None:
     return acl_users.get(AUTHOMATIC_PLUGIN_ID)
 
 
-def _authomatic_config() -> dict[str, Any]:
+def _authomatic_config() -> JSONDict:
     """Return authomatic's provider configuration.
 
     Read through its own helper so the JSON parsing, the class resolution and
@@ -82,7 +84,7 @@ def _authomatic_config() -> dict[str, Any]:
     return authomatic_cfg() or {}
 
 
-def _provider_records(config: dict[str, Any], report: Report) -> list[ProviderConfig]:
+def _provider_records(config: JSONDict, report: Report) -> list[ProviderConfig]:
     """Translate authomatic's provider configuration into ours.
 
     :param config: authomatic's configuration.
@@ -112,7 +114,7 @@ def _provider_records(config: dict[str, Any], report: Report) -> list[ProviderCo
     return records
 
 
-def _identity_pairs(plugin: Any) -> list[tuple[str, str, str]]:
+def _identity_pairs(plugin: BasePlugin) -> list[tuple[str, str, str]]:
     """Return every ``(provider, subject, userid)`` authomatic knows.
 
     Reads ``_userid_by_identityinfo`` directly. Its keys are already
@@ -128,7 +130,7 @@ def _identity_pairs(plugin: Any) -> list[tuple[str, str, str]]:
     return sorted(pairs)
 
 
-def _claims_for(plugin: Any, userid: str, provider: str) -> dict[str, Any]:
+def _claims_for(plugin: BasePlugin, userid: str, provider: str) -> Claims:
     """Build a claims snapshot from authomatic's stored user data.
 
     Best effort on purpose. The snapshot is a convenience -- the next login
@@ -150,8 +152,8 @@ def _claims_for(plugin: Any, userid: str, provider: str) -> dict[str, Any]:
         "fullname": identity.get("name") or "",
         "email": identity.get("email") or "",
         # Never inherited as verified. authomatic did not record whether the
-        # provider asserted it, and S2 will not link on a claim we cannot
-        # trace to a verification this site performed.
+        # provider asserted it, and auto-linking will not act on a claim we
+        # cannot trace to a verification this site performed.
         "email_verified": False,
         "username": identity.get("username") or "",
         "raw": {},

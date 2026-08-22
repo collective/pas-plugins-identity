@@ -4,6 +4,7 @@
     >
 
   <include package=".audit" />
+  <include package=".controlpanel" />
   <include package=".drivers" />
   <include package=".pas" />
   <include package=".services" />

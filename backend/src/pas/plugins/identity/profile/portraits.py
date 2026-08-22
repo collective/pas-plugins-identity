@@ -1,8 +1,8 @@
-"""Copying a provider's avatar into Plone's portrait storage (D5).
+"""Copying a provider's avatar into Plone's portrait storage.
 
-D5 asks for ``picture_url`` to be copied into the standard portrait storage
-during claims sync, with no custom adapter. That is what this does -- and it
-is **off by default**, which D5 did not ask for and which is worth explaining.
+``picture_url`` is copied into the standard portrait storage during claims
+sync, with no custom adapter. That is what this does -- and it is **off by
+default**, which is worth explaining.
 
 **Why off by default.** ``picture_url`` is a claim, and at plenty of providers
 a claim is whatever the user typed. Turning it into a server-side fetch makes

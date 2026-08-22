@@ -1,0 +1,18 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <!-- Listing and flow start. Anonymous by design: this is the login page.
+       No secrets and no provider configuration leave here. -->
+  <plone:service
+      method="GET"
+      factory=".get.LoginProviders"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@login-providers"
+      />
+
+</configure>

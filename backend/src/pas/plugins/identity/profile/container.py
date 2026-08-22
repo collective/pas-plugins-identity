@@ -7,20 +7,21 @@ project that is happy with ``/identity-profiles`` sets none.
 
 The catalog is deliberately *not* scoped to this container (Érico,
 2026-08-21). It indexes a Profile wherever it is in the site, which is what
-makes the move and rename steps of the churn test (§8.3) meaningful rather
+makes the move and rename steps of the churn test meaningful rather
 than forbidden: moving a Profile out of the configured container must keep it
 working, because an operator reorganising content has not deauthenticated
 anybody.
 
 What the container *is* for is answering "where does a new Profile go" --
-asked at install and at first login (Gate 6c) and nowhere else.
+asked at install and at first login and nowhere else.
 """
 
 from pas.plugins.identity import logger
 from plone import api
 from plone.app.dexterity.behaviors.exclfromnav import IExcludeFromNavigation
 from plone.base.interfaces import IPloneSiteRoot
-from typing import Any
+from plone.dexterity.content import Container
+from Products.CMFPlone.Portal import PloneSite
 
 
 #: Registry record prefix for the four container settings.
@@ -58,7 +59,7 @@ def settings() -> dict[str, str]:
     }
 
 
-def get_parent() -> Any:
+def get_parent() -> PloneSite | Container:
     """Return the object the container lives in.
 
     :returns: The portal root, or the folder named by the parent record.
@@ -76,7 +77,7 @@ def get_parent() -> Any:
     return parent
 
 
-def get_container(create: bool = False) -> Any | None:
+def get_container(create: bool = False) -> Container | None:
     """Return the configured Profile container.
 
     :param create: Create the container when it is missing. Off by default so
@@ -113,13 +114,13 @@ def get_container(create: bool = False) -> Any | None:
     return container
 
 
-def is_site_root(obj: Any) -> bool:
+def is_site_root(obj: object) -> bool:
     """Return whether an object is the Plone site root.
 
     Used by the uninstall handler, which removes the container it created but
     must never try to remove the portal.
 
-    :param obj: Any object.
+    :param obj: The object to test.
     :returns: ``True`` for the site root.
     """
     return IPloneSiteRoot.providedBy(obj)

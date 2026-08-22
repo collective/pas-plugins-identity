@@ -1,7 +1,7 @@
-"""Magic-link tokens (§4.4, S5).
+"""Magic-link tokens.
 
 A magic link is a signed, single-use, short-lived assertion that whoever holds
-it controls a mailbox. The signature is authlib's (I2 -- no hand-rolled JWT),
+it controls a mailbox. The signature is authlib's -- no hand-rolled JWT --
 the key comes from the same derivation as the flow cookie, and the ``jti`` is
 burned server-side on first use so the second click fails.
 
@@ -10,7 +10,7 @@ Three properties, each of which is the whole point of one part of this module:
 * **Signed** -- the address cannot be edited by the recipient.
 * **Single-use** -- a link forwarded, logged by a mail gateway, or sitting in
   a shared inbox is worth one login, not a permanent key.
-* **Short-lived** -- the default TTL is 15 minutes (S5), and the burn store
+* **Short-lived** -- the default TTL is 15 minutes, and the burn store
   only has to remember tokens for that long.
 
 Rate limiting lives here too, because the send endpoint is the one an attacker
@@ -25,9 +25,9 @@ from datetime import UTC
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.flows.session import signing_keys
 from pas.plugins.identity.core.interfaces import FlowError
+from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.interfaces import RateLimited
 from persistent import Persistent
-from typing import Any
 
 import secrets
 
@@ -36,14 +36,15 @@ import secrets
 #: the same Plone site, and there is nothing for a third party to check.
 ALGORITHM = "HS256"
 
-#: Default lifetime, in seconds. S5 caps this at fifteen minutes.
+#: Default lifetime, in seconds. Capped at fifteen minutes; see
+#: :data:`MAX_TTL`.
 DEFAULT_TTL = 900
 
 #: Hard ceiling, whatever an operator configures. A magic link that lives
 #: longer than this stops being a login and becomes a bearer credential.
 MAX_TTL = 900
 
-#: Default number of links one address may request per hour (S5).
+#: Default number of links one address may request per hour.
 DEFAULT_RATE_LIMIT = 5
 
 #: How many requests one IP may make per hour, whatever address it names.
@@ -106,7 +107,7 @@ def issue(address: str, ttl: int | None = None) -> tuple[str, str]:
     return token.decode("utf-8"), jti
 
 
-def verify(token: str) -> dict[str, Any]:
+def verify(token: str) -> JSONDict:
     """Validate a magic-link token and return its claims.
 
     Signature, expiry and purpose are all checked here; the ``jti`` burn is
@@ -150,7 +151,7 @@ class MagicLinkStore(Persistent):
         self._requests: OOBTree = OOBTree()
 
     # ------------------------------------------------------------------
-    # Single use (S5)
+    # Single use
     # ------------------------------------------------------------------
 
     def burn(self, jti: str, expires_at: datetime) -> None:
@@ -179,7 +180,7 @@ class MagicLinkStore(Persistent):
             del self._burned[jti]
 
     # ------------------------------------------------------------------
-    # Rate limiting (S5)
+    # Rate limiting
     # ------------------------------------------------------------------
 
     def check_and_record(self, bucket: str, limit: int) -> None:

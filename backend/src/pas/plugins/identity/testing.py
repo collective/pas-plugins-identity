@@ -11,7 +11,6 @@ from plone.testing.zope import WSGI_SERVER_FIXTURE
 from zope.component import getUtility
 
 
-
 class Layer(PloneSandboxLayer):
     defaultBases = (PLONE_APP_CONTENTTYPES_FIXTURE,)
 
@@ -25,7 +24,7 @@ class Layer(PloneSandboxLayer):
         import plone.restapi
 
         self.loadZCML(package=plone.restapi)
-        # The two packages this one migrates from (Gate 7). Loaded here so the
+        # The two packages this one migrates from. Loaded here so the
         # migration tests can install them for real rather than synthesizing
         # their storage -- a fixture that encoded our reading of their BTrees
         # would pass while the migration was wrong about them. Loading the
@@ -36,7 +35,7 @@ class Layer(PloneSandboxLayer):
         self.loadZCML(package=pas.plugins.oidc)
         # Captures outgoing mail in the MailHost tool instead of sending it,
         # which is what makes the magic-link round trip testable in process
-        # (Gate 3) without a mail server anywhere.
+        # without a mail server anywhere.
         self.loadZCML(package=collective.MockMailHost)
         self.loadZCML(package=pas.plugins.identity)
 

@@ -1,0 +1,18 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <!-- Authenticated-only; reading beyond your own entries additionally
+       needs Manage portal, checked in the service. -->
+  <plone:service
+      method="GET"
+      factory=".get.AuditLogGet"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@audit-log"
+      />
+
+</configure>

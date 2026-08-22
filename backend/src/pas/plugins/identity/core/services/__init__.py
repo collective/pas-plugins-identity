@@ -1,4 +1,7 @@
-"""REST API services for the login flow (Gate 1).
+"""REST API services for the login flow.
+
+There is one subpackage per endpoint family, and one module per HTTP verb
+inside it, mirroring how ``plone.restapi`` lays its own services out.
 
 The flow is driven by the frontend, not by the backend:
 

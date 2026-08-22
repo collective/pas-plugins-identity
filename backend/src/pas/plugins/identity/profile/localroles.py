@@ -1,4 +1,4 @@
-"""The self-Editor local role (§4.7).
+"""The self-Editor local role.
 
 A user may edit their own Profile and nobody else's. Expressed as a local role
 provider rather than as a local role *assignment* because the assignment would
@@ -12,8 +12,9 @@ enumeration silently stop working while the login keeps succeeding.
 """
 
 from borg.localrole.interfaces import ILocalRoleProvider
+from collections.abc import Iterator
+from pas.plugins.identity.profile.content.profile import Profile
 from pas.plugins.identity.profile.interfaces import IProfile
-from typing import Any
 from zope.component import adapter
 from zope.interface import implementer
 
@@ -27,7 +28,7 @@ SELF_ROLE = "Editor"
 class ProfileSelfRole:
     """Grants ``Editor`` on a Profile to the user it belongs to."""
 
-    def __init__(self, context: Any) -> None:
+    def __init__(self, context: Profile) -> None:
         """Bind to the Profile.
 
         :param context: The Profile.
@@ -45,7 +46,7 @@ class ProfileSelfRole:
             return (SELF_ROLE,)
         return ()
 
-    def getAllRoles(self) -> Any:
+    def getAllRoles(self) -> Iterator[tuple[str, tuple[str, ...]]]:
         """Yield every principal/roles pair on the Profile.
 
         Used by the Sharing tab to show what is already granted.

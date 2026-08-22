@@ -1,10 +1,10 @@
-"""Migrations from the packages this one succeeds (Gate 7, D4).
+"""Migrations from the packages this one succeeds.
 
 Both migrations are **hard cutovers** with a dry-run report mode. Coexistence
 -- running the old plugin and this one side by side -- is explicitly not
-supported and not tested (§7): two plugins both claiming to authenticate the
+supported and not tested: two plugins both claiming to authenticate the
 same people is a way to end up with two accounts for one human, which is the
-one outcome I1 exists to prevent.
+one outcome a stable userid exists to prevent.
 
 Every migration here is:
 

@@ -1,0 +1,19 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <!-- Anonymous by design: the whole point is that nobody is logged in yet.
+       What authorizes the request is the single-use state bound to the
+       signed flow cookie. -->
+  <plone:service
+      method="POST"
+      factory=".post.IdentityCallback"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@identity-callback"
+      />
+
+</configure>

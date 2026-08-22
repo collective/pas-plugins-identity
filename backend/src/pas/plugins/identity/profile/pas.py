@@ -1,17 +1,17 @@
-"""Properties and enumeration served from catalog brains (§4.7, C6).
+"""Properties and enumeration served from catalog brains.
 
 This is the claim the whole ``[profile]`` design rests on: a site can back its
 users with content objects and still answer "what is this user's full name"
 and "who matches 'liddell'" without loading a single Profile from the ZODB.
-Every read here goes through catalog metadata, and Gate 6b's tests assert the
-object-load count is zero while they run.
+Every read here goes through catalog metadata, and the tests for this module
+assert the object-load count is zero while they run.
 
 Why it matters: enumeration is called on paths where waking content is
 unacceptable -- rendering a Sharing tab, resolving a local role, listing group
-members. Whether Products.membrane has this problem is claim C9 and is *not*
-verified, so it is not asserted here or in the documentation; what is claimed
-is only that this package needs to be able to prove the property about its own
-code on every CI run, which is what the tests in ``tests/profile`` do.
+members. Whether ``Products.membrane`` has this problem has not been
+verified, so nothing is asserted about it here or in the documentation; what
+is claimed is only that this package proves the property about its own code on
+every CI run, which is what the tests in ``tests/profile`` do.
 
 **Ordering.** Plone resolves a member property by walking the ordered property
 sheets and taking the first that *has* the property, so this plugin has to sit
@@ -25,7 +25,7 @@ active and enumerating, so the same human is returned by both plugins. What
 makes them collapse back into one row is that both return the *same canonical
 userid* as ``id``: the Sharing tab, ``@users`` and PlonePAS's search view all
 merge on that key. Agreement on the userid is therefore a hard requirement of
-this plugin, not an incidental property (I1).
+this plugin, not an incidental property.
 """
 
 from AccessControl.class_init import InitializeClass
@@ -42,10 +42,12 @@ from Products.PluggableAuthService.interfaces.plugins import IPropertiesPlugin
 from Products.PluggableAuthService.interfaces.plugins import IRolesPlugin
 from Products.PluggableAuthService.interfaces.plugins import IUserEnumerationPlugin
 from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
+from Products.PluggableAuthService.PropertiedUser import PropertiedUser
 from Products.PluggableAuthService.UserPropertySheet import UserPropertySheet
 from Products.PluggableAuthService.utils import classImplements
-from typing import Any
+from Products.ZCatalog.CatalogBrains import AbstractCatalogBrain
 from zope.interface import implementer
+from ZPublisher.HTTPRequest import HTTPRequest
 
 
 #: Object id of the plugin inside ``acl_users``.
@@ -80,7 +82,7 @@ SEARCH_FIELDS = {
 }
 
 
-def _as_terms(value: Any) -> list[str]:
+def _as_terms(value: str | list[str] | tuple[str, ...] | None) -> list[str]:
     """Normalize an ``enumerateUsers`` argument to a list of strings.
 
     PAS allows every search argument to be either a string or a sequence of
@@ -146,7 +148,7 @@ class IdentityProfilePlugin(BasePlugin):
         states = api.portal.get_registry_record(ENUMERATION_STATES_RECORD, default=None)
         return tuple(states) if states else ()
 
-    def _active_brains(self) -> list[Any]:
+    def _active_brains(self) -> list[AbstractCatalogBrain]:
         """Return brains for every Profile in an enumeration-active state.
 
         :returns: Brains, or an empty list when the layer is not installed.
@@ -159,7 +161,7 @@ class IdentityProfilePlugin(BasePlugin):
             brain for brain in profile_brains(catalog) if brain.review_state in states
         ]
 
-    def _brain_for_userid(self, userid: str | None) -> Any | None:
+    def _brain_for_userid(self, userid: str | None) -> AbstractCatalogBrain | None:
         """Return the brain of one user's Profile.
 
         Queries the ``userid`` index rather than scanning: this runs on every
@@ -183,7 +185,9 @@ class IdentityProfilePlugin(BasePlugin):
 
     # -- IPropertiesPlugin -----------------------------------------------
 
-    def getPropertiesForUser(self, user: Any, request: Any = None) -> Any:
+    def getPropertiesForUser(
+        self, user: PropertiedUser, request: HTTPRequest | None = None
+    ) -> UserPropertySheet | None:
         """Return the property sheet backed by this user's Profile.
 
         :param user: The PAS user.
@@ -207,7 +211,7 @@ class IdentityProfilePlugin(BasePlugin):
         exact_match: bool = False,
         sort_by: str | None = None,
         max_results: int | None = None,
-        **kw: Any,
+        **kw: str,
     ) -> tuple[dict[str, str], ...]:
         """Enumerate users from Profile brains.
 
@@ -217,7 +221,7 @@ class IdentityProfilePlugin(BasePlugin):
         and would silently miss an infix match; the index is there for site
         search and admin tooling, not for this. Scanning brains is O(n) in
         Profiles, exactly as the stock plugin is O(n) in its BTree, and it
-        costs no object loads (C6).
+        costs no object loads.
 
         :param id: Userid or userids to match.
         :param login: Login name or names to match; folded, since login names
@@ -243,7 +247,7 @@ class IdentityProfilePlugin(BasePlugin):
         return tuple(results)
 
     def _criteria(
-        self, id: str | None, login: str | None, kw: dict[str, Any]
+        self, id: str | None, login: str | None, kw: dict[str, str]
     ) -> list[tuple[str, list[str]]]:
         """Build the ``(brain attribute, terms)`` pairs to match against.
 
@@ -266,7 +270,7 @@ class IdentityProfilePlugin(BasePlugin):
 
     def _brain_matches(
         self,
-        brain: Any,
+        brain: AbstractCatalogBrain,
         criteria: list[tuple[str, list[str]]],
         exact_match: bool,
     ) -> bool:
@@ -286,7 +290,7 @@ class IdentityProfilePlugin(BasePlugin):
             for attribute, terms in criteria
         )
 
-    # -- groups (Gate 6d) -------------------------------------------------
+    # -- groups -------------------------------------------------
 
     def _group_states(self) -> tuple[str, ...]:
         """Return the workflow states a Group is visible in.
@@ -296,7 +300,7 @@ class IdentityProfilePlugin(BasePlugin):
         states = api.portal.get_registry_record(GROUP_STATES_RECORD, default=None)
         return tuple(states) if states else ()
 
-    def _active_group_brains(self) -> list[Any]:
+    def _active_group_brains(self) -> list[AbstractCatalogBrain]:
         """Return brains for every Group in an enumeration-active state.
 
         :returns: Brains, or an empty list when the layer is not installed.
@@ -317,14 +321,14 @@ class IdentityProfilePlugin(BasePlugin):
         return {brain.group_id for brain in self._active_group_brains()}
 
     def getGroupsForPrincipal(
-        self, principal: Any, request: Any = None
+        self, principal: PropertiedUser, request: HTTPRequest | None = None
     ) -> tuple[str, ...]:
         """Return the ids of the groups a principal belongs to.
 
         Read off the principal's own Profile brain, which is why membership
         lives on the member rather than on the group: this is asked on every
         permission check that touches a local role, and answering it must not
-        cost an object load (C6).
+        cost an object load.
 
         Filtered against the groups that actually exist and are active, so
         deactivating a group removes its members' access without editing a
@@ -350,7 +354,7 @@ class IdentityProfilePlugin(BasePlugin):
         exact_match: bool = False,
         sort_by: str | None = None,
         max_results: int | None = None,
-        **kw: Any,
+        **kw: str,
     ) -> tuple[dict[str, str], ...]:
         """Enumerate groups from Group brains.
 
@@ -389,7 +393,9 @@ class IdentityProfilePlugin(BasePlugin):
 
     # -- IGroupIntrospection ---------------------------------------------
 
-    def getGroupById(self, group_id: str, default: Any = None) -> Any:
+    def getGroupById(
+        self, group_id: str, default: PloneGroup | None = None
+    ) -> PloneGroup | None:
         """Return a decorated group object for one group id.
 
         Built the way PlonePAS builds its own: a ``PloneGroup`` decorated with
@@ -405,7 +411,7 @@ class IdentityProfilePlugin(BasePlugin):
             return default
         return self._decorate(group_id)
 
-    def _decorate(self, group_id: str) -> Any:
+    def _decorate(self, group_id: str) -> PloneGroup:
         """Wrap a group id as a ``PloneGroup`` carrying its site data.
 
         :param group_id: The group id.
@@ -434,7 +440,7 @@ class IdentityProfilePlugin(BasePlugin):
         """
         return sorted(self._active_group_ids())
 
-    def getGroups(self) -> list[Any]:
+    def getGroups(self) -> list[PloneGroup]:
         """Return every active group, decorated.
 
         :returns: Group objects.

@@ -1,4 +1,4 @@
-"""Consistency check for the identity catalog (§4.7).
+"""Consistency check for the identity catalog.
 
 A dedicated catalog is a second copy of the truth, and a second copy drifts.
 This module answers "has it?" without repairing anything: repair is
@@ -7,7 +7,7 @@ and the two are kept apart on purpose so that a scheduled check can run
 read-only and so the churn test asserts against findings rather than against
 whatever a repair happened to leave behind.
 
-The check is the churn test's oracle (§8.3): every randomized sequence of
+The check is the churn test's oracle: every randomized sequence of
 create / modify / transition / rename / move / delete ends with :func:`check`
 and expects it to find nothing.
 
@@ -28,7 +28,8 @@ from pas.plugins.identity.profile.catalog import profile_brains
 from pas.plugins.identity.profile.catalog import PROFILE_METADATA
 from pas.plugins.identity.profile.catalog import PROFILE_PORTAL_TYPE
 from plone import api
-from typing import Any
+from plone.dexterity.content import Container
+from Products.ZCatalog.CatalogBrains import AbstractCatalogBrain
 
 
 #: An object exists in the site but has no entry in the identity catalog.
@@ -40,7 +41,7 @@ ORPHAN = "orphan"
 #: A brain's metadata disagrees with the object it points at.
 STALE = "stale"
 
-#: Two Profiles claim the same userid. Never legitimate (I1).
+#: Two Profiles claim the same userid. Never legitimate.
 DUPLICATE_USERID = "duplicate-userid"
 
 #: Two Profiles claim the same login name, case-insensitively.
@@ -66,7 +67,7 @@ def _finding(kind: str, path: str, detail: str) -> dict[str, str]:
     return {"kind": kind, "path": path, "detail": detail}
 
 
-def _site_objects(portal_type: str) -> dict[str, Any]:
+def _site_objects(portal_type: str) -> dict[str, Container]:
     """Return every object of one type in the site, by physical path.
 
     Uses ``portal_catalog`` rather than a tree walk: the site catalog is the
@@ -85,7 +86,7 @@ def _site_objects(portal_type: str) -> dict[str, Any]:
     }
 
 
-def _expected(obj: Any, column: str) -> Any:
+def _expected(obj: Container, column: str) -> object:
     """Return what a metadata column should hold for an object.
 
     :param obj: The catalogued object.
@@ -102,7 +103,10 @@ def _expected(obj: Any, column: str) -> Any:
 
 
 def _check_metadata(
-    path: str, obj: Any, brain: Any, columns: tuple[str, ...]
+    path: str,
+    obj: Container,
+    brain: AbstractCatalogBrain,
+    columns: tuple[str, ...],
 ) -> list[dict[str, str]]:
     """Compare one brain's metadata against its object.
 
@@ -130,7 +134,7 @@ def _check_metadata(
 
 
 def _check_duplicates(
-    objects: dict[str, Any],
+    objects: dict[str, Container],
     kind: str,
     attribute: str,
     fold: bool = False,
@@ -162,7 +166,7 @@ def _check_duplicates(
 
 
 def _check_group_references(
-    profiles: dict[str, Any], groups: dict[str, Any]
+    profiles: dict[str, Container], groups: dict[str, Container]
 ) -> list[dict[str, str]]:
     """Report Profiles listing groups that do not exist.
 
@@ -187,9 +191,9 @@ def _check_group_references(
 
 def _check_type(
     portal_type: str,
-    brains: list[Any],
+    brains: list[AbstractCatalogBrain],
     columns: tuple[str, ...],
-) -> tuple[dict[str, Any], list[dict[str, str]]]:
+) -> tuple[dict[str, Container], list[dict[str, str]]]:
     """Compare one content type's objects against its brains.
 
     :param portal_type: The type to check.

@@ -15,6 +15,7 @@ The same reasoning already governs provider deletion in the control panel.
 
 from pas.plugins.identity import logger
 from pas.plugins.identity.profile.catalog import CATALOG_ID
+from pas.plugins.identity.profile.catalog import IdentityProfileCatalog
 from pas.plugins.identity.profile.catalog import INDEXES
 from pas.plugins.identity.profile.catalog import METADATA
 from pas.plugins.identity.profile.catalog import query_catalog
@@ -28,9 +29,9 @@ from Products.PluggableAuthService.interfaces.plugins import IGroupEnumerationPl
 from Products.PluggableAuthService.interfaces.plugins import IGroupsPlugin
 from Products.PluggableAuthService.interfaces.plugins import IPropertiesPlugin
 from Products.PluggableAuthService.interfaces.plugins import IUserEnumerationPlugin
+from Products.PluggableAuthService.PluggableAuthService import PluggableAuthService
 from Products.ZCTextIndex.PipelineFactory import element_factory
 from Products.ZCTextIndex.ZCTextIndex import PLexicon
-from typing import Any
 
 
 #: Marker file the ``profile`` profile ships, so that import steps declared
@@ -49,7 +50,7 @@ LEXICON_PIPELINE = (
     ("Case Normalizer", "Unicode Ignoring Accents Case Normalizer"),
 )
 
-#: PAS interfaces the profile plugin is activated for (§4.7). Properties
+#: PAS interfaces the profile plugin is activated for. Properties
 #: and enumeration only: authentication stays in core, and this layer never
 #: becomes a way to log in.
 ACTIVATED_INTERFACES = (
@@ -78,7 +79,7 @@ class _Extra:
         self.__dict__.update(kwargs)
 
 
-def add_lexicon(catalog: Any) -> None:
+def add_lexicon(catalog: IdentityProfileCatalog) -> None:
     """Create the ZCTextIndex lexicon if it is missing.
 
     :param catalog: The Profile catalog.
@@ -88,7 +89,7 @@ def add_lexicon(catalog: Any) -> None:
     catalog._setObject(LEXICON_ID, PLexicon(LEXICON_ID, "", *_pipeline_elements()))
 
 
-def _pipeline_elements() -> tuple[Any, ...]:
+def _pipeline_elements() -> tuple[object, ...]:
     """Build the lexicon pipeline from the registered ZCTextIndex plugins.
 
     :returns: Instantiated pipeline elements, in order.
@@ -98,7 +99,7 @@ def _pipeline_elements() -> tuple[Any, ...]:
     )
 
 
-def add_indexes(catalog: Any) -> None:
+def add_indexes(catalog: IdentityProfileCatalog) -> None:
     """Create the declared indexes if they are missing.
 
     :param catalog: The Profile catalog.
@@ -114,7 +115,7 @@ def add_indexes(catalog: Any) -> None:
         logger.info("Added index %s (%s) to %s", name, meta_type, CATALOG_ID)
 
 
-def add_metadata(catalog: Any) -> None:
+def add_metadata(catalog: IdentityProfileCatalog) -> None:
     """Create the declared metadata columns if they are missing.
 
     :param catalog: The Profile catalog.
@@ -126,7 +127,7 @@ def add_metadata(catalog: Any) -> None:
             logger.info("Added metadata %s to %s", column, CATALOG_ID)
 
 
-def install_plugin(acl_users: Any) -> IdentityProfilePlugin:
+def install_plugin(acl_users: PluggableAuthService) -> IdentityProfilePlugin:
     """Add the profile plugin to PAS and activate its interfaces.
 
     Idempotent, and it moves the plugin to the top of ``IPropertiesPlugin``.
@@ -151,7 +152,7 @@ def install_plugin(acl_users: Any) -> IdentityProfilePlugin:
     return plugin
 
 
-def uninstall_plugin(acl_users: Any) -> None:
+def uninstall_plugin(acl_users: PluggableAuthService) -> None:
     """Deactivate and remove the profile plugin.
 
     :param acl_users: The site's PAS instance.
@@ -181,7 +182,7 @@ def post_install(context: SetupTool) -> None:
 
 
 def rebuild_catalog(context: SetupTool) -> None:
-    """Clear the Profile catalog and index every Profile again (§4.7).
+    """Clear the Profile catalog and index every Profile again.
 
     Registered as a re-runnable GenericSetup import step rather than as an
     upgrade step: drift is not tied to a version bump, and an operator who has

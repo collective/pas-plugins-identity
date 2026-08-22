@@ -1,0 +1,36 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <!-- Your own external identities. Authenticated-only, checked in the
+       service so the refusal is a JSON body rather than a login form. -->
+  <plone:service
+      method="GET"
+      factory=".get.IdentitiesGet"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@identities"
+      />
+
+  <plone:service
+      method="POST"
+      factory=".post.IdentitiesPost"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@identities"
+      />
+
+  <plone:service
+      method="DELETE"
+      factory=".delete.IdentitiesDelete"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@identities"
+      />
+
+</configure>

@@ -1,24 +1,9 @@
-"""``@audit-log`` -- read the authentication event log (§4.6, Gate 4).
-
-``GET @audit-log``
-    Your own entries.
-
-``GET @audit-log?userid=<id>``
-    Somebody else's. Managers only.
-
-``GET @audit-log?scope=site``
-    Everything, including the refusals that could not be attributed to
-    anybody -- which is the view an operator investigating an attack wants.
-    Managers only.
-
-The default is deliberately the narrow one. A log that shows the whole site
-to whoever asks is a list of who has accounts and when they signed in.
-"""
+"""``GET @audit-log`` -- read authentication events."""
 
 from pas.plugins.identity.core.interfaces import IAuditSink
+from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.services.base import IdentityService
 from plone import api
-from typing import Any
 from zope.component import queryUtility
 
 
@@ -36,7 +21,7 @@ MAX_LIMIT = 500
 class AuditLogGet(IdentityService):
     """Read authentication events."""
 
-    def reply(self) -> dict[str, Any]:
+    def reply(self) -> JSONDict:
         """Return the entries the caller is allowed to see.
 
         :returns: The listing, or an error body.

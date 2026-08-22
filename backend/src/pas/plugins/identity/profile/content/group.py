@@ -1,4 +1,4 @@
-"""The ``IdentityGroup`` content type (§4.7, Gate 6d).
+"""The ``IdentityGroup`` content type.
 
 A group is a piece of content, and membership is a field on the *Profile*
 rather than a list on the group. That is the direction Plone asks questions
@@ -7,7 +7,7 @@ in: ``getGroupsForPrincipal`` is called constantly and
 question is answered by one brain and the rare one by a catalog query.
 
 Membership is changed by editing a Profile and nothing else. ``IGroupManagement``
-is explicitly out of scope for v1 (§7), so there is no write API here and no
+is explicitly out of scope for v1, so there is no write API here and no
 way to acquire one by accident.
 
 No nesting in v1 either: a group whose members are groups makes

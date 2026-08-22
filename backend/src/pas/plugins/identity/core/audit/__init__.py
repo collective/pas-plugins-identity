@@ -1,4 +1,4 @@
-"""The audit log (§4.6, D7).
+"""The audit log.
 
 An authentication-event log, and deliberately not a session ledger: it records
 that a login was attempted and how it ended, not what the user did afterwards.
@@ -9,10 +9,10 @@ write against two registry-configured limits -- how many entries to keep per
 user and how long to keep them. Purging on write rather than on a schedule
 means the bound holds without anything having to run.
 
-Privacy (D7): the IP address and user agent are personal data, and are stored
+Privacy: the IP address and user agent are personal data, and are stored
 only when ``pas.plugins.identity.audit_record_pii`` is switched on. It is off
 by default. Credentials, tokens and authorization codes are never recorded, in
-any configuration (I4).
+any configuration.
 """
 
 from BTrees.OOBTree import OOBTree
@@ -21,12 +21,13 @@ from datetime import timedelta
 from datetime import UTC
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.interfaces import IAuditSink
+from pas.plugins.identity.core.interfaces import JSONDict
 from persistent import Persistent
 from persistent.list import PersistentList
 from persistent.mapping import PersistentMapping
 from plone import api
-from typing import Any
 from zope.interface import implementer
+from ZPublisher.HTTPRequest import HTTPRequest
 
 
 #: Registry key bounding how many entries are kept per user.
@@ -35,7 +36,7 @@ MAX_ENTRIES_RECORD = "pas.plugins.identity.audit_max_entries"
 #: Registry key bounding how long entries are kept.
 MAX_DAYS_RECORD = "pas.plugins.identity.audit_max_days"
 
-#: Registry key opting in to storing IP address and user agent (D7).
+#: Registry key opting in to storing IP address and user agent.
 RECORD_PII_RECORD = "pas.plugins.identity.audit_record_pii"
 
 #: Bucket for entries that cannot be attributed to a userid. A callback with
@@ -74,7 +75,7 @@ class AuditEntry(Persistent):
         event: str,
         provider: str,
         success: bool,
-        detail: dict[str, Any] | None = None,
+        detail: JSONDict | None = None,
     ) -> None:
         """Record one event.
 
@@ -89,7 +90,7 @@ class AuditEntry(Persistent):
         self.timestamp = datetime.now(UTC)
         self.detail = PersistentMapping(detail or {})
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> JSONDict:
         """Render the entry for an API response.
 
         :returns: JSON-ready mapping.
@@ -123,7 +124,7 @@ class AuditLog(Persistent):
         event: str,
         provider: str,
         success: bool,
-        detail: dict[str, Any] | None = None,
+        detail: JSONDict | None = None,
     ) -> AuditEntry:
         """Append an entry and purge whatever now falls outside the bounds.
 
@@ -186,14 +187,14 @@ def _setting(record: str, default: int) -> int:
 
 
 def record_pii() -> bool:
-    """Report whether IP address and user agent may be stored (D7).
+    """Report whether IP address and user agent may be stored.
 
     :returns: Whether the opt-in flag is on.
     """
     return bool(api.portal.get_registry_record(RECORD_PII_RECORD, default=False))
 
 
-def request_detail(request: Any) -> dict[str, Any]:
+def request_detail(request: HTTPRequest | None) -> JSONDict:
     """Return the request context an entry may carry.
 
     Empty unless the privacy flag is on: an IP address identifies a person's
@@ -225,7 +226,7 @@ class PluginAuditSink:
         event: str,
         provider: str,
         success: bool,
-        detail: dict[str, Any] | None = None,
+        detail: JSONDict | None = None,
     ) -> None:
         """Append one authentication event.
 
@@ -233,7 +234,7 @@ class PluginAuditSink:
         :param event: Event name.
         :param provider: Provider id involved.
         :param success: Whether the attempt succeeded.
-        :param detail: Extra, non-credential context. Never tokens (I4).
+        :param detail: Extra, non-credential context. Never tokens.
         """
         log = _log()
         if log is None:
@@ -271,8 +272,8 @@ def record(
     event: str,
     provider: str,
     success: bool,
-    detail: dict[str, Any] | None = None,
-    request: Any = None,
+    detail: JSONDict | None = None,
+    request: HTTPRequest | None = None,
 ) -> None:
     """Record one event through the configured sink.
 
@@ -286,7 +287,7 @@ def record(
     :param provider: Provider id involved.
     :param success: Whether the attempt succeeded.
     :param detail: Extra, non-credential context.
-    :param request: Current request, for the opt-in PII fields (D7).
+    :param request: Current request, for the opt-in PII fields.
     """
     from zope.component import queryUtility
 

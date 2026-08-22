@@ -1,10 +1,10 @@
-"""The identity store (§4.2).
+"""The identity store.
 
 Two BTrees kept inside the PAS plugin object:
 
 ``_identities``
     ``"<provider>\\x00<subject>"`` -> userid. The forward map; the uniqueness
-    of its keys is what enforces I3.
+    of its keys is what keeps one identity pointing at one userid.
 ``_by_userid``
     userid -> ``PersistentList`` of :class:`IdentityRecord`. The reverse map,
     so listing a user's identities never scans the forward map.
@@ -21,14 +21,14 @@ from datetime import UTC
 from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.core.interfaces import IdentityCollision
 from pas.plugins.identity.core.interfaces import IIdentityStore
+from pas.plugins.identity.core.interfaces import JSONDict
 from persistent import Persistent
 from persistent.list import PersistentList
 from persistent.mapping import PersistentMapping
-from typing import Any
 from zope.interface import implementer
 
 
-#: Provider id whose subjects are email addresses (§4.3, S2).
+#: Provider id whose subjects are email addresses.
 EMAIL_PROVIDER = "email"
 
 #: Separator for the composite forward-map key. NUL cannot occur in a provider
@@ -80,10 +80,10 @@ class IdentityRecord(Persistent):
         self.last_login: datetime | None = None
         self.claims = PersistentMapping(claims)
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> JSONDict:
         """Render the record for an API response.
 
-        Claims are included, credentials never are (I4).
+        Claims are included, credentials never are.
 
         :returns: JSON-ready mapping.
         """
@@ -160,7 +160,7 @@ class IdentityStore(Persistent):
         :param claims: Normalized claims snapshot.
         :returns: The stored record.
         :raises IdentityCollision: When the identity is already owned by a
-            different userid (I3, S3). Re-adding an identity to the userid that
+            different userid. Re-adding an identity to the userid that
             already owns it is also a collision: the caller should have used
             :meth:`touch`.
         """
@@ -203,7 +203,7 @@ class IdentityStore(Persistent):
     def touch(self, provider: str, subject: str, claims: Claims) -> IdentityRecord:
         """Record a successful login against an existing identity.
 
-        Claims are refreshed on every login (D2); profile-owned fields are
+        Claims are refreshed on every login; profile-owned fields are
         protected downstream by the claims-sync subscriber, not here.
 
         :param provider: Provider id.

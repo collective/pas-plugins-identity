@@ -1,7 +1,7 @@
 """GenericSetup handlers.
 
 Every profile here has a matching uninstall profile, and uninstall is tested
-(I8): install -> uninstall leaves no plugin behind and the site still works.
+: install -> uninstall leaves no plugin behind and the site still works.
 """
 
 from pas.plugins.identity import logger
@@ -15,12 +15,12 @@ from Products.GenericSetup.tool import SetupTool
 from Products.PluggableAuthService.interfaces.plugins import IAuthenticationPlugin
 from Products.PluggableAuthService.interfaces.plugins import ICredentialsResetPlugin
 from Products.PluggableAuthService.interfaces.plugins import IExtractionPlugin
-from typing import Any
+from Products.PluggableAuthService.PluggableAuthService import PluggableAuthService
 from zope.interface import implementer
 
 
 #: PAS interfaces the plugin is activated for on install. ``IChallengePlugin``
-#: is deliberately absent -- it is opt-in (§4.1).
+#: is deliberately absent -- it is opt-in.
 ACTIVATED_INTERFACES = (
     IExtractionPlugin,
     IAuthenticationPlugin,
@@ -51,7 +51,7 @@ class HiddenProfiles:
         return [f"{PACKAGE_NAME}.upgrades"]
 
 
-def _acl_users() -> Any:
+def _acl_users() -> PluggableAuthService:
     """Return the site's PAS instance.
 
     :returns: The ``acl_users`` folder of the current site.
@@ -59,7 +59,7 @@ def _acl_users() -> Any:
     return api.portal.get_tool("acl_users")
 
 
-def install_plugin(acl_users: Any) -> IdentityPlugin:
+def install_plugin(acl_users: PluggableAuthService) -> IdentityPlugin:
     """Add the identity plugin to PAS and activate its interfaces.
 
     Idempotent: re-running against a site that already has the plugin
@@ -81,7 +81,7 @@ def install_plugin(acl_users: Any) -> IdentityPlugin:
     return plugin
 
 
-def uninstall_plugin(acl_users: Any) -> None:
+def uninstall_plugin(acl_users: PluggableAuthService) -> None:
     """Deactivate and remove the identity plugin.
 
     :param acl_users: The site's PAS instance.

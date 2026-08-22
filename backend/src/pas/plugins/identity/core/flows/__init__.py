@@ -1,6 +1,6 @@
-"""Authorization-code flows (§4.4, S1).
+"""Authorization-code flows.
 
-Every byte of OAuth/OIDC wire protocol goes through authlib (I2): this module
+Every byte of OAuth/OIDC wire protocol goes through authlib: this module
 builds authlib clients from provider configuration, holds the per-attempt
 security material in the session, and hands the callback's payload back to the
 caller. It constructs no authorize URLs, no token requests and parses no JWTs
@@ -9,7 +9,7 @@ by hand.
 The security material -- ``state``, the PKCE ``code_verifier`` and the OIDC
 ``nonce`` -- is generated here, stored against the initiating session, and
 required to match at callback time. A callback that cannot produce all three
-is refused (S1).
+is refused.
 """
 
 from authlib.integrations.requests_client import OAuth2Session
@@ -19,7 +19,7 @@ from datetime import UTC
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.interfaces import FlowError
-from typing import Any
+from pas.plugins.identity.core.interfaces import JSONDict
 from urllib.parse import urlparse
 
 import secrets
@@ -85,7 +85,7 @@ class FlowAttempt:
         """
         return datetime.now(UTC) - self.created > ATTEMPT_TTL
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> JSONDict:
         """Render the attempt for session storage.
 
         :returns: JSON-ready mapping.
@@ -101,7 +101,7 @@ class FlowAttempt:
         }
 
     @classmethod
-    def deserialize(cls, data: dict[str, Any]) -> "FlowAttempt":
+    def deserialize(cls, data: JSONDict) -> "FlowAttempt":
         """Rebuild an attempt from session storage.
 
         :param data: Mapping as produced by :meth:`serialize`.
@@ -120,7 +120,7 @@ class FlowAttempt:
 
 
 def validate_came_from(came_from: str, portal_url: str) -> str:
-    """Reduce a post-login redirect target to something safe (S6).
+    """Reduce a post-login redirect target to something safe.
 
     Anything that is not inside the portal is dropped rather than corrected:
     a redirect an attacker chose is not made safe by rewriting its host.
@@ -150,7 +150,7 @@ def validate_came_from(came_from: str, portal_url: str) -> str:
 class FlowManager:
     """Starts and finishes authorization-code flows for one request."""
 
-    def __init__(self, session: dict[str, Any], portal_url: str) -> None:
+    def __init__(self, session: JSONDict, portal_url: str) -> None:
         """Bind the manager to a session and a portal.
 
         :param session: Mutable mapping surviving between the two requests of
@@ -164,7 +164,7 @@ class FlowManager:
     # Attempt bookkeeping
     # ------------------------------------------------------------------
 
-    def _attempts(self) -> dict[str, Any]:
+    def _attempts(self) -> JSONDict:
         """Return the pending attempts, dropping expired ones.
 
         :returns: Mapping of state to serialized attempt.
@@ -189,7 +189,7 @@ class FlowManager:
         self.session[SESSION_KEY] = attempts
 
     def pop(self, state: str) -> FlowAttempt:
-        """Consume an attempt, refusing anything that does not match (S1).
+        """Consume an attempt, refusing anything that does not match.
 
         Single-use by construction: the attempt is removed whether or not the
         rest of the callback succeeds, so a replayed ``state`` finds nothing.
@@ -215,7 +215,7 @@ class FlowManager:
         self,
         provider: ProviderConfig,
         redirect_uri: str,
-        metadata: dict[str, Any],
+        metadata: JSONDict,
         came_from: str = "",
         link_for: str | None = None,
     ) -> str:
@@ -226,7 +226,7 @@ class FlowManager:
             provider.
         :param metadata: Provider metadata, normally from discovery; must
             carry ``authorization_endpoint``.
-        :param came_from: Requested post-login redirect, validated here (S6).
+        :param came_from: Requested post-login redirect, validated here.
         :param link_for: Userid to link to, for a linking flow.
         :returns: The URL to send the user to.
         :raises FlowError: When the metadata carries no authorize endpoint.
@@ -267,10 +267,10 @@ class FlowManager:
         self,
         provider: ProviderConfig,
         redirect_uri: str,
-        metadata: dict[str, Any],
+        metadata: JSONDict,
         state: str,
         code: str,
-    ) -> tuple[FlowAttempt, dict[str, Any]]:
+    ) -> tuple[FlowAttempt, JSONDict]:
         """Exchange an authorization code for the provider's claims.
 
         :param provider: The configured provider.
@@ -304,11 +304,11 @@ class FlowManager:
     def _claims(
         self,
         client: OAuth2Session,
-        token: dict[str, Any],
+        token: JSONDict,
         provider: ProviderConfig,
-        metadata: dict[str, Any],
+        metadata: JSONDict,
         attempt: FlowAttempt,
-    ) -> dict[str, Any]:
+    ) -> JSONDict:
         """Read the user's claims out of a token response.
 
         Prefers the ``id_token`` when the provider issued one -- it is signed
@@ -334,16 +334,16 @@ class FlowManager:
 
     def _id_token_claims(
         self,
-        token: dict[str, Any],
+        token: JSONDict,
         provider: ProviderConfig,
-        metadata: dict[str, Any],
+        metadata: JSONDict,
         attempt: FlowAttempt,
-    ) -> dict[str, Any]:
+    ) -> JSONDict:
         """Validate an ``id_token`` and return its claims.
 
         Signature, issuer, audience and expiry are checked by authlib; the
         nonce is checked against the attempt, which is what ties the token to
-        the session that started the flow (S1).
+        the session that started the flow.
 
         :param token: The token response.
         :param provider: The configured provider, naming the audience.
@@ -385,7 +385,7 @@ class FlowManager:
         An empty client id is refused rather than passed on, because authlib
         reads ``{"value": ""}`` as "no constraint" -- so a misconfigured
         provider would silently disable the audience check and accept a token
-        minted for any other client (S1).
+        minted for any other client.
 
         :param provider: The configured provider.
         :returns: The client id.

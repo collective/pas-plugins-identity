@@ -1,12 +1,12 @@
-"""First login and claims sync (§4.7, D2).
+"""First login and claims sync.
 
-Two jobs, both driven purely by the §4.3 event contract: mint a Profile the
+Two jobs, both driven purely by the event contract: mint a Profile the
 first time somebody logs in, and keep the provider-owned fields on it fresh
 without ever overwriting something a human typed.
 
-**How "without overwriting" is decided.** D2 says provider-owned claims
-refresh on every login while profile-owned fields are never clobbered, which
-needs a way to tell the two apart. Rather than a flag per field -- which has
+**How "without overwriting" is decided.** Provider-owned claims refresh on
+every login while profile-owned fields are never clobbered, which needs a way
+to tell the two apart. Rather than a flag per field -- which has
 to be set somewhere, kept in step, and migrated -- the Profile remembers what
 the provider last wrote, and the provider may write a field only when the
 current value still equals that. One comparison covers every case:
@@ -34,15 +34,18 @@ against; a provider renaming somebody should not silently move their account.
 """
 
 from pas.plugins.identity import logger
+from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
+from pas.plugins.identity.core.events import IdentityLinked
+from pas.plugins.identity.core.events import UserClaimsRefreshed
 from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.profile.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.profile.catalog import query_catalog
 from pas.plugins.identity.profile.container import get_container
+from pas.plugins.identity.profile.content.profile import Profile
 from pas.plugins.identity.profile.portraits import sync_portrait
 from persistent.mapping import PersistentMapping
 from plone import api
 from plone.base.utils import safe_text
-from typing import Any
 from zope.annotation.interfaces import IAnnotations
 from zope.lifecycleevent import modified
 
@@ -66,7 +69,7 @@ CLAIM_FIELDS = {
 PICTURE_KEY = "picture_url"
 
 
-def _remembered(profile: Any) -> Any:
+def _remembered(profile: Profile) -> PersistentMapping:
     """Return the mutable record of provider-written values.
 
     :param profile: The Profile.
@@ -78,8 +81,10 @@ def _remembered(profile: Any) -> Any:
     return annotations[PROVIDER_VALUES_KEY]
 
 
-def _provider_may_write(profile: Any, field: str, remembered: Any) -> bool:
-    """Decide whether the provider still owns a field (D2).
+def _provider_may_write(
+    profile: Profile, field: str, remembered: PersistentMapping
+) -> bool:
+    """Decide whether the provider still owns a field.
 
     :param profile: The Profile.
     :param field: Field name.
@@ -90,7 +95,7 @@ def _provider_may_write(profile: Any, field: str, remembered: Any) -> bool:
     return current == (remembered.get(field) or "")
 
 
-def sync_claims(profile: Any, claims: Claims) -> list[str]:
+def sync_claims(profile: Profile, claims: Claims) -> list[str]:
     """Write the provider's claims onto the fields it still owns.
 
     :param profile: The Profile.
@@ -122,7 +127,7 @@ def _profile_id(userid: str) -> str:
     """Return the container id to file a userid's Profile under.
 
     The canonical userid, not a normalized name. It is opaque and it never
-    changes (I1), so the Profile never has to be renamed -- and a rename is
+    changes, so the Profile never has to be renamed -- and a rename is
     the one operation that can strand a URL somebody bookmarked.
 
     :param userid: Canonical Plone userid.
@@ -131,7 +136,7 @@ def _profile_id(userid: str) -> str:
     return userid
 
 
-def get_profile(userid: str) -> Any | None:
+def get_profile(userid: str) -> Profile | None:
     """Return a user's Profile object, or ``None``.
 
     Wakes the object, so this is for the paths that are going to write to it.
@@ -150,7 +155,7 @@ def get_profile(userid: str) -> Any | None:
     return brains[0]._unrestrictedGetObject()
 
 
-def ensure_profile(userid: str, login: str, claims: Claims) -> Any | None:
+def ensure_profile(userid: str, login: str, claims: Claims) -> Profile | None:
     """Return the user's Profile, creating it on first login.
 
     Runs unrestricted: the person this Profile is for is mid-login and holds
@@ -196,8 +201,8 @@ def _login_for(userid: str, claims: Claims) -> str:
     return safe_text(claims.get("username") or claims.get("email") or userid)
 
 
-def sync_picture(profile: Any, userid: str, claims: Claims) -> bool:
-    """Copy the provider's avatar into portrait storage when it changed (D5).
+def sync_picture(profile: Profile, userid: str, claims: Claims) -> bool:
+    """Copy the provider's avatar into portrait storage when it changed.
 
     Off unless the site switched it on; see
     :mod:`pas.plugins.identity.profile.portraits` for why that is the default.
@@ -231,15 +236,15 @@ def _handle(userid: str, claims: Claims) -> None:
     sync_picture(profile, userid, claims)
 
 
-def on_authenticated(event: Any) -> None:
-    """Mint the Profile on first login and refresh claims on every one (D2).
+def on_authenticated(event: ExternalIdentityAuthenticated) -> None:
+    """Mint the Profile on first login and refresh claims on every one.
 
     :param event: An ``ExternalIdentityAuthenticated`` event.
     """
     _handle(event.userid, event.claims)
 
 
-def on_identity_linked(event: Any) -> None:
+def on_identity_linked(event: IdentityLinked) -> None:
     """Fill still-provider-owned fields from a newly linked provider.
 
     Somebody who linked GitHub after signing up with a provider that sent no
@@ -251,7 +256,7 @@ def on_identity_linked(event: Any) -> None:
     _handle(event.userid, event.claims)
 
 
-def on_claims_refreshed(event: Any) -> None:
+def on_claims_refreshed(event: UserClaimsRefreshed) -> None:
     """Apply a claims refresh fired outside the login path.
 
     :param event: A ``UserClaimsRefreshed`` event.

@@ -4,11 +4,19 @@ Everything a consumer of this package needs to talk to the identity store, to
 write a driver, or to plug in an audit sink is declared here.
 """
 
-from typing import Any
 from typing import Protocol
 from typing import TypedDict
 from zope.interface import Attribute
 from zope.interface import Interface
+
+
+#: Any value that survives a JSON round trip.
+type JSONValue = (
+    str | int | float | bool | list[JSONValue] | dict[str, JSONValue] | None
+)
+
+#: A JSON object: a provider payload, a driver's config schema, a reply body.
+type JSONDict = dict[str, JSONValue]
 
 
 class Claims(TypedDict, total=False):
@@ -30,22 +38,22 @@ class Claims(TypedDict, total=False):
     email_verified: bool
     picture_url: str
     username: str
-    raw: dict[str, Any]
+    raw: JSONDict
 
 
 class IDriver(Interface):
     """A provider driver: static metadata plus claim normalization.
 
-    Drivers are registered as named utilities (D9). A driver is stateless: it
-    describes *how* to talk to a family of providers, while the per-site
-    configuration lives in the registry (§4.5).
+    Drivers are registered as named utilities, under their ``driver_id``. A
+    driver is stateless: it describes *how* to talk to a family of providers,
+    while the per-site configuration lives in the registry.
     """
 
     driver_id = Attribute("Unique id, e.g. ``github``. Matches the utility name.")
 
     title = Attribute("Human readable title shown in the control panel.")
 
-    def config_schema() -> dict[str, Any]:
+    def config_schema() -> JSONDict:
         """Return the configuration schema for this driver.
 
         :returns: Mapping of field name to a descriptor with at least
@@ -53,14 +61,14 @@ class IDriver(Interface):
             control panel widget is generated from this.
         """
 
-    def normalize_claims(payload: dict[str, Any]) -> Claims:
+    def normalize_claims(payload: JSONDict) -> Claims:
         """Map a provider payload onto the documented claims schema.
 
         :param payload: Raw userinfo/profile payload from the provider.
         :returns: Normalized claims.
         """
 
-    def subject(payload: dict[str, Any]) -> str:
+    def subject(payload: JSONDict) -> str:
         """Extract the immutable provider-side subject identifier.
 
         :param payload: Raw userinfo/profile payload from the provider.
@@ -72,7 +80,7 @@ class IDriver(Interface):
 class IIdentityStore(Interface):
     """Bidirectional map between external identities and canonical userids.
 
-    ``(provider, subject)`` resolves to exactly one userid (I3); a userid owns
+    ``(provider, subject)`` resolves to exactly one userid; a userid owns
     zero or more identity records. Implementations persist inside the PAS
     plugin object.
     """
@@ -101,7 +109,7 @@ class IIdentityStore(Interface):
         :param claims: Normalized claims snapshot.
         :returns: The stored record.
         :raises IdentityCollision: When the identity is already owned by a
-            different userid (I3, S3).
+            different userid.
         """
 
     def remove(provider: str, subject: str) -> None:
@@ -117,20 +125,20 @@ class IIdentityStore(Interface):
 
         :param provider: Provider id.
         :param subject: Provider-side subject identifier.
-        :param claims: Fresh normalized claims, stored per D2.
+        :param claims: Fresh normalized claims, replacing the stored ones.
         :returns: The updated record.
         """
 
 
 class IAuditSink(Interface):
-    """Destination for authentication events (§4.6)."""
+    """Destination for authentication events."""
 
     def record(
         userid: str | None,
         event: str,
         provider: str,
         success: bool,
-        detail: dict[str, Any] | None = None,
+        detail: JSONDict | None = None,
     ) -> None:
         """Append one authentication event.
 
@@ -138,7 +146,7 @@ class IAuditSink(Interface):
         :param event: Event name, e.g. ``authenticated`` or ``link-collision``.
         :param provider: Provider id involved.
         :param success: Whether the attempt succeeded.
-        :param detail: Extra, non-credential context. Never tokens (I4).
+        :param detail: Extra, non-credential context. Never tokens.
         """
 
     def entries(userid: str | None = None) -> list:
@@ -154,11 +162,11 @@ class IIdentityPlugin(Interface):
 
 
 class IdentityCollision(Exception):
-    """An external identity is already linked to a different userid (I3)."""
+    """An external identity is already linked to a different userid."""
 
 
 class LockoutRefused(Exception):
-    """Unlinking would leave the account with no way to authenticate (S4)."""
+    """Unlinking would leave the account with no way to authenticate."""
 
 
 class ClaimsError(ValueError):
@@ -166,11 +174,11 @@ class ClaimsError(ValueError):
 
 
 class FlowError(Exception):
-    """An OAuth/OIDC flow failed a security precondition (S1)."""
+    """An OAuth/OIDC flow failed a security precondition."""
 
 
 class RateLimited(Exception):
-    """A rate-limited endpoint refused the request (S5)."""
+    """A rate-limited endpoint refused the request."""
 
 
 class DriverProtocol(Protocol):
@@ -179,8 +187,8 @@ class DriverProtocol(Protocol):
     driver_id: str
     title: str
 
-    def config_schema(self) -> dict[str, Any]: ...
+    def config_schema(self) -> JSONDict: ...
 
-    def normalize_claims(self, payload: dict[str, Any]) -> Claims: ...
+    def normalize_claims(self, payload: JSONDict) -> Claims: ...
 
-    def subject(self, payload: dict[str, Any]) -> str: ...
+    def subject(self, payload: JSONDict) -> str: ...

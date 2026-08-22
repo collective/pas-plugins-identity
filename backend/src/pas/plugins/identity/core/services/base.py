@@ -1,7 +1,9 @@
 """Shared plumbing for this package's REST services."""
 
+from pas.plugins.identity.core.interfaces import JSONDict
 from plone.restapi.services import Service
-from typing import Any
+from Products.CMFPlone.Portal import PloneSite
+from ZPublisher.HTTPRequest import HTTPRequest
 
 
 class IdentityService(Service):
@@ -14,7 +16,7 @@ class IdentityService(Service):
     the publisher.
     """
 
-    def __init__(self, context: Any, request: Any) -> None:
+    def __init__(self, context: PloneSite, request: HTTPRequest) -> None:
         """Bind the service to its context and request.
 
         :param context: The context the service was traversed on.
@@ -23,7 +25,7 @@ class IdentityService(Service):
         self.context = context
         self.request = request
 
-    def _error(self, status: int, kind: str, message: str) -> dict[str, Any]:
+    def _error(self, status: int, kind: str, message: str) -> JSONDict:
         """Set a response status and render an error body.
 
         :param status: HTTP status to answer with.

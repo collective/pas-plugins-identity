@@ -1,4 +1,4 @@
-"""``@login-providers`` -- what the user can log in with, and how to start.
+"""``GET @login-providers``.
 
 Two shapes, deliberately:
 
@@ -21,18 +21,20 @@ from pas.plugins.identity.core.flows import FlowManager
 from pas.plugins.identity.core.flows.metadata import metadata_for
 from pas.plugins.identity.core.flows.session import FlowSession
 from pas.plugins.identity.core.interfaces import FlowError
+from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.services.base import IdentityService
 from plone import api
-from typing import Any
+from Products.CMFPlone.Portal import PloneSite
 from zope.interface import implementer
 from zope.publisher.interfaces import IPublishTraverse
+from ZPublisher.HTTPRequest import HTTPRequest
 
 
 @implementer(IPublishTraverse)
 class LoginProviders(IdentityService):
     """List the providers, or start a flow against one of them."""
 
-    def __init__(self, context: Any, request: Any) -> None:
+    def __init__(self, context: PloneSite, request: HTTPRequest) -> None:
         """Bind the service and prepare to consume a path segment.
 
         :param context: The context the service was traversed on.
@@ -41,7 +43,7 @@ class LoginProviders(IdentityService):
         super().__init__(context, request)
         self.provider_id: str | None = None
 
-    def publishTraverse(self, request: Any, name: str) -> "LoginProviders":
+    def publishTraverse(self, request: HTTPRequest, name: str) -> "LoginProviders":
         """Consume ``<id>`` from the URL.
 
         :param request: The current request.
@@ -51,7 +53,7 @@ class LoginProviders(IdentityService):
         self.provider_id = name
         return self
 
-    def reply(self) -> dict[str, Any]:
+    def reply(self) -> JSONDict:
         """Answer the request.
 
         :returns: The provider listing, or the authorize URL for one provider.
@@ -64,11 +66,11 @@ class LoginProviders(IdentityService):
     # GET @login-providers
     # ------------------------------------------------------------------
 
-    def _listing(self) -> dict[str, Any]:
+    def _listing(self) -> JSONDict:
         """Return the providers a user may log in with.
 
-        No secrets and no configuration leave here (I4): a login button needs
-        an id, a label and somewhere to click.
+        No secrets and no configuration leave here: a login button needs an
+        id, a label and somewhere to click.
 
         :returns: The listing.
         """
@@ -90,7 +92,7 @@ class LoginProviders(IdentityService):
     # GET @login-providers/<id>
     # ------------------------------------------------------------------
 
-    def _start(self) -> dict[str, Any]:
+    def _start(self) -> JSONDict:
         """Start a flow and return where to send the browser.
 
         :returns: The authorize URL, or an error body.

@@ -18,7 +18,7 @@
 
   <include package=".core" />
 
-  <!-- The optional layers (§4.9). Their ZCML loads whenever their dependency
+  <!-- The optional layers. Their ZCML loads whenever their dependency
        is importable; what actually switches them on in a site is applying the
        matching GenericSetup profile, which is what installs the tools, the
        types and the browser layer their registrations are bound to.

@@ -16,7 +16,7 @@
     <implements interface=".interfaces.IProfile" />
   </class>
 
-  <!-- Catalog maintenance (§4.7). Registered for the marker, so a site
+  <!-- Catalog maintenance. Registered for the marker, so a site
        without the ``profile`` GenericSetup profile applied has these
        subscribers loaded and inert: there are no Profiles to fire them, and
        ``query_catalog`` answers None if one somehow appears. -->
@@ -58,8 +58,8 @@
       name="SearchableText"
       />
 
-  <!-- First login and claims sync (Gate 6c). Registered for the event
-       contract only (§4.3): this layer never reaches into core, and anything
+  <!-- First login and claims sync. Registered for the event
+       contract only: this layer never reaches into core, and anything
        that fires the events gets profile handling for free. -->
   <subscriber
       for="pas.plugins.identity.core.events.IExternalIdentityAuthenticated"

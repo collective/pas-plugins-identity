@@ -1,12 +1,12 @@
-"""The PAS plugin (§4.1).
+"""The PAS plugin.
 
 Implements extraction, authentication, credentials reset and -- off by default
 -- challenge. It deliberately does **not** implement properties, enumeration,
 groups, roles or user adding: on first login it *decorates* the stock
 ``source_users`` and ``mutable_properties`` plugins instead, which is what lets
-core install and work with no extras (I5).
+core install and work with no extras.
 
-Extraction and authentication only ever run at callback time (I6). An ordinary
+Extraction and authentication only ever run at callback time. An ordinary
 request rides the ``plone.session`` ticket or the ``jwt_auth`` token that this
 plugin handed out, and never reaches the network.
 """
@@ -21,6 +21,7 @@ from pas.plugins.identity.core.events import IdentityUnlinked
 from pas.plugins.identity.core.flows.magiclink import MagicLinkStore
 from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.core.interfaces import IIdentityPlugin
+from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.interfaces import LockoutRefused
 from pas.plugins.identity.core.pas import CREDENTIALS_KEY
 from pas.plugins.identity.core.pas import EXTRACTOR
@@ -34,11 +35,13 @@ from Products.PluggableAuthService.interfaces.plugins import IChallengePlugin
 from Products.PluggableAuthService.interfaces.plugins import ICredentialsResetPlugin
 from Products.PluggableAuthService.interfaces.plugins import IExtractionPlugin
 from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
+from Products.PluggableAuthService.plugins.ZODBUserManager import ZODBUserManager
 from Products.PluggableAuthService.utils import classImplements
-from typing import Any
 from uuid import uuid4
 from zope.event import notify
 from zope.interface import implementer
+from ZPublisher.HTTPRequest import HTTPRequest
+from ZPublisher.HTTPResponse import HTTPResponse
 
 import secrets
 
@@ -48,7 +51,7 @@ LOGIN_VIEW = "@@identity-login"
 
 
 def mint_userid() -> str:
-    """Mint a canonical userid (D10, I1).
+    """Mint a canonical userid.
 
     A random UUID: never derived from provider claims, so it leaks nothing
     about where the account came from and cannot change when a claim does.
@@ -66,13 +69,13 @@ class IdentityPlugin(BasePlugin):
     security = None  # set by InitializeClass below
     manage_options = BasePlugin.manage_options
 
-    #: Whether to act as an ``IChallengePlugin``. Off by default (§4.1): a
+    #: Whether to act as an ``IChallengePlugin``. Off by default: a
     #: site that turns this on redirects anonymous 401s to the provider
     #: picker instead of the stock login form.
     challenge_enabled = False
 
     #: Userids whose ``source_users`` password is a plugin-generated
-    #: placeholder rather than something the human can type (S4).
+    #: placeholder rather than something the human can type.
     _placeholder_passwords: OOSet
 
     def __init__(self, id: str = PLUGIN_ID, title: str = PLUGIN_TITLE) -> None:
@@ -90,7 +93,7 @@ class IdentityPlugin(BasePlugin):
 
     @property
     def store(self) -> IdentityStore:
-        """Return the identity store (§4.2).
+        """Return the identity store.
 
         :returns: The store persisted inside this plugin.
         """
@@ -98,7 +101,7 @@ class IdentityPlugin(BasePlugin):
 
     @property
     def audit(self) -> AuditLog:
-        """Return the audit log (§4.6).
+        """Return the audit log.
 
         Created on demand as well as in the constructor, so a plugin that
         predates the audit log gains one on first use rather than raising --
@@ -113,7 +116,7 @@ class IdentityPlugin(BasePlugin):
 
     @property
     def magic_links(self) -> MagicLinkStore:
-        """Return the magic-link store (S5).
+        """Return the magic-link store.
 
         Created on demand as well as in the constructor, for the same reason
         as :attr:`audit`.
@@ -129,11 +132,11 @@ class IdentityPlugin(BasePlugin):
     # IExtractionPlugin
     # ------------------------------------------------------------------
 
-    def extractCredentials(self, request: Any) -> dict[str, Any]:
+    def extractCredentials(self, request: HTTPRequest) -> JSONDict:
         """Extract credentials deposited by the callback view.
 
         Nothing else in the request is inspected, so this is a dictionary
-        lookup on every ordinary request (I6).
+        lookup on every ordinary request.
 
         :param request: The current request.
         :returns: Credentials mapping, empty when this is not a callback.
@@ -152,12 +155,10 @@ class IdentityPlugin(BasePlugin):
     # IAuthenticationPlugin
     # ------------------------------------------------------------------
 
-    def authenticateCredentials(
-        self, credentials: dict[str, Any]
-    ) -> tuple[str, str] | None:
+    def authenticateCredentials(self, credentials: JSONDict) -> tuple[str, str] | None:
         """Resolve external credentials to a Plone principal.
 
-        On first sight of an identity a userid is minted (I1/D10) and a
+        On first sight of an identity a userid is minted and a
         matching ``source_users`` account is created, so the rest of Plone
         sees an ordinary user.
 
@@ -197,7 +198,7 @@ class IdentityPlugin(BasePlugin):
         return (userid, userid)
 
     def _adopt_by_verified_email(self, provider: str, claims: Claims) -> str | None:
-        """Find an existing account to attach this identity to (S2).
+        """Find an existing account to attach this identity to.
 
         Auto-linking by email is off unless the operator switched it on for
         this provider, and even then it matches only against an ``email``
@@ -233,7 +234,7 @@ class IdentityPlugin(BasePlugin):
     # ICredentialsResetPlugin
     # ------------------------------------------------------------------
 
-    def resetCredentials(self, request: Any, response: Any) -> None:
+    def resetCredentials(self, request: HTTPRequest, response: HTTPResponse) -> None:
         """Drop any credentials this plugin put on the request.
 
         The session ticket and JWT are owned by ``plone.session`` and
@@ -246,10 +247,10 @@ class IdentityPlugin(BasePlugin):
             request.other.pop(CREDENTIALS_KEY, None)
 
     # ------------------------------------------------------------------
-    # IChallengePlugin (opt-in, §4.1)
+    # IChallengePlugin (opt-in)
     # ------------------------------------------------------------------
 
-    def challenge(self, request: Any, response: Any) -> bool:
+    def challenge(self, request: HTTPRequest, response: HTTPResponse) -> bool:
         """Redirect an unauthorized request to the provider picker.
 
         :param request: The current request.
@@ -275,7 +276,7 @@ class IdentityPlugin(BasePlugin):
         return api.portal.get().absolute_url()
 
     # ------------------------------------------------------------------
-    # Linking API -- used by the ``@identities`` service (§Gate 2)
+    # Linking API -- used by the ``@identities`` service
     # ------------------------------------------------------------------
 
     def link(
@@ -288,7 +289,7 @@ class IdentityPlugin(BasePlugin):
         :param subject: Provider-side subject identifier.
         :param claims: Normalized claims.
         :returns: The stored record.
-        :raises IdentityCollision: When another userid already owns it (S3).
+        :raises IdentityCollision: When another userid already owns it.
         """
         record = self._store.add(provider, subject, userid, claims)
         notify(IdentityLinked(userid, provider, subject, claims))
@@ -301,7 +302,7 @@ class IdentityPlugin(BasePlugin):
         :param provider: Provider id.
         :param subject: Provider-side subject identifier.
         :raises KeyError: When the identity is unknown or owned by someone else.
-        :raises LockoutRefused: When this is the user's last way in (S4).
+        :raises LockoutRefused: When this is the user's last way in.
         """
         owner = self._store.userid_for(provider, subject)
         if owner != userid:
@@ -314,7 +315,7 @@ class IdentityPlugin(BasePlugin):
         notify(IdentityUnlinked(userid, provider, subject))
 
     def can_unlink(self, userid: str, provider: str, subject: str) -> bool:
-        """Decide whether unlinking would lock the user out (S4).
+        """Decide whether unlinking would lock the user out.
 
         Unlinking is allowed while the user keeps at least one other external
         identity, a verified email identity, or a ``source_users`` password.
@@ -351,7 +352,7 @@ class IdentityPlugin(BasePlugin):
 
         Every account this plugin creates carries a random placeholder in
         ``source_users`` -- see :meth:`_create_plone_user` -- and a placeholder
-        is not a way in. Counting it would defeat S4 entirely: the guard would
+        is not a way in. Counting it would defeat the lockout guard entirely: it would
         report "you still have a password" for every externally-created user,
         and cheerfully unlink their last identity.
 
@@ -372,7 +373,7 @@ class IdentityPlugin(BasePlugin):
     # Decoration of the stock plugins
     # ------------------------------------------------------------------
 
-    def _source_users(self) -> Any:
+    def _source_users(self) -> ZODBUserManager:
         """Return the site's ``source_users`` plugin.
 
         Reached through ``_getPAS()`` rather than ``aq_parent``: the plugin is
@@ -389,7 +390,7 @@ class IdentityPlugin(BasePlugin):
         The account gets a random placeholder password so the stock plugins
         have a complete record. Nobody is ever shown it and it is not a way in
         -- the userid is recorded in :attr:`_placeholder_passwords` so that the
-        S4 guard does not mistake it for one.
+        lockout guard does not mistake it for one.
 
         :param userid: The freshly minted userid.
         :param claims: Normalized claims used to seed the property sheet.
@@ -409,7 +410,7 @@ class IdentityPlugin(BasePlugin):
 
         ``setMemberProperties`` routes to whichever mutable property provider
         the site has, so core keeps working on a site that swapped
-        ``mutable_properties`` for something else (I5).
+        ``mutable_properties`` for something else.
 
         :param userid: Canonical Plone userid.
         :param claims: Normalized claims.

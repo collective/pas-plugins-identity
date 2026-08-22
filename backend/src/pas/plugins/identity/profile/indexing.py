@@ -1,7 +1,7 @@
-"""Keeping the Profile catalog honest (§4.7).
+"""Keeping the Profile catalog honest.
 
 Two subscribers and two indexers, and between them they are the whole reason
-the churn test (§8.3) can assert ``catalog count == Profile count`` after any
+the churn test can assert ``catalog count == Profile count`` after any
 sequence of operations.
 
 The subscribers follow CMFCore's own pattern rather than inventing one:
@@ -13,14 +13,16 @@ it also covers a Profile carried along inside a folder somebody moved.
 """
 
 from OFS.interfaces import IObjectWillBeMovedEvent
+from pas.plugins.identity.profile.catalog import IdentityProfileCatalog
 from pas.plugins.identity.profile.catalog import query_catalog
+from pas.plugins.identity.profile.content.profile import Profile
 from pas.plugins.identity.profile.interfaces import IProfile
 from plone.indexer.decorator import indexer
-from typing import Any
+from zope.lifecycleevent.interfaces import IObjectModifiedEvent
 from zope.lifecycleevent.interfaces import IObjectMovedEvent
 
 
-def _catalog_for(obj: Any) -> Any | None:
+def _catalog_for(obj: Profile) -> IdentityProfileCatalog | None:
     """Return the Profile catalog this object should be filed in.
 
     :param obj: A Profile.
@@ -30,7 +32,7 @@ def _catalog_for(obj: Any) -> Any | None:
     return query_catalog()
 
 
-def profile_moved(obj: Any, event: IObjectMovedEvent) -> None:
+def profile_moved(obj: Profile, event: IObjectMovedEvent) -> None:
     """Index a Profile that has arrived at a path.
 
     Covers creation, move and rename alike. ``newParent`` is ``None`` when the
@@ -47,7 +49,7 @@ def profile_moved(obj: Any, event: IObjectMovedEvent) -> None:
         catalog.indexObject(obj)
 
 
-def profile_will_be_moved(obj: Any, event: IObjectWillBeMovedEvent) -> None:
+def profile_will_be_moved(obj: Profile, event: IObjectWillBeMovedEvent) -> None:
     """Unindex a Profile that is about to leave its path.
 
     Runs before the move so that ``getPhysicalPath`` still yields the entry
@@ -64,7 +66,7 @@ def profile_will_be_moved(obj: Any, event: IObjectWillBeMovedEvent) -> None:
         catalog.unindexObject(obj)
 
 
-def profile_modified(obj: Any, event: Any) -> None:
+def profile_modified(obj: Profile, event: IObjectModifiedEvent) -> None:
     """Reindex a Profile whose fields or workflow state changed.
 
     Registered for both ``IObjectModifiedEvent`` and CMFCore's
@@ -80,12 +82,12 @@ def profile_modified(obj: Any, event: Any) -> None:
 
 
 @indexer(IProfile)
-def login_index(obj: Any) -> str:
+def login_index(obj: Profile) -> str:
     """Index the login name in lower case.
 
     Login names are case-insensitive in Plone; ``FieldIndex`` is not. Folding
-    here means every query has to fold too, which is why the callers in Gate
-    6b go through a single helper rather than querying the index directly.
+    here means every query has to fold too, which is why the PAS plugin goes
+    through a single helper rather than querying the index directly.
 
     :param obj: The Profile.
     :returns: The lowercased login, or an empty string.
@@ -94,7 +96,7 @@ def login_index(obj: Any) -> str:
 
 
 @indexer(IProfile)
-def searchable_text_index(obj: Any) -> str:
+def searchable_text_index(obj: Profile) -> str:
     """Index full name, login and email as one text blob.
 
     Deliberately not the biography: a Sharing-tab search for a user should not

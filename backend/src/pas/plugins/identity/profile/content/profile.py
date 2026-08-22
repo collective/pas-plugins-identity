@@ -1,13 +1,13 @@
-"""The ``Profile`` content type (§4.7).
+"""The ``Profile`` content type.
 
 One Profile per canonical userid. The fields are exactly the PAS property
-sheet the ``[profile]`` layer serves in Gate 6b, which is why they are listed
+sheet the ``[profile]`` layer's PAS plugin serves, which is why they are listed
 here rather than borrowed from a Dublin Core behavior: every one of them
 becomes catalog *metadata*, and metadata that nobody serves is dead weight in
 every brain.
 
 ``userid`` is the join to :mod:`pas.plugins.identity.core.store` and is
-permanent (I1). Nothing in this layer rewrites it; the field is marked
+permanent. Nothing in this layer rewrites it; the field is marked
 read-only after creation through the ``userid`` mode in the edit form, and the
 consistency check in :mod:`pas.plugins.identity.profile.doctor` treats a
 duplicate as an error rather than a merge.
@@ -67,7 +67,7 @@ class IProfileSchema(model.Schema):
         title=_("Groups"),
         description=_(
             "Ids of the groups this user belongs to. Editing this field is "
-            "the only way membership changes; there is no write API (§7)."
+            "the only way membership changes; there is no write API."
         ),
         value_type=schema.TextLine(),
         required=False,

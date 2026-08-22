@@ -1,4 +1,4 @@
-"""Provider metadata resolution (§4.4, C1).
+"""Provider metadata resolution.
 
 Drivers are static declarations and never perform I/O, but something has to
 turn "the ``dex`` provider" into the endpoint set
@@ -18,7 +18,7 @@ from datetime import UTC
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.interfaces import FlowError
-from typing import Any
+from pas.plugins.identity.core.interfaces import JSONDict
 from urllib.parse import urlparse
 
 import requests
@@ -27,7 +27,7 @@ import requests
 #: Providers whose endpoints are published and stable, so there is nothing to
 #: discover. GitHub is plain OAuth2: it issues no ``id_token`` and the flow
 #: falls back to its userinfo endpoint.
-STATIC_METADATA: dict[str, dict[str, Any]] = {
+STATIC_METADATA: dict[str, JSONDict] = {
     "github": {
         "authorization_endpoint": "https://github.com/login/oauth/authorize",
         "token_endpoint": "https://github.com/login/oauth/access_token",
@@ -59,7 +59,7 @@ DISCOVERY_TTL = timedelta(hours=12)
 DISCOVERY_TIMEOUT = 10
 
 #: Issuer -> (fetched at, metadata).
-_CACHE: dict[str, tuple[datetime, dict[str, Any]]] = {}
+_CACHE: dict[str, tuple[datetime, JSONDict]] = {}
 
 
 def forget(issuer: str | None = None) -> None:
@@ -75,7 +75,7 @@ def forget(issuer: str | None = None) -> None:
         _CACHE.pop(issuer, None)
 
 
-def metadata_for(provider: ProviderConfig) -> dict[str, Any]:
+def metadata_for(provider: ProviderConfig) -> JSONDict:
     """Return the endpoint metadata for a configured provider.
 
     :param provider: The configured provider.
@@ -113,7 +113,7 @@ def issuer_for(provider: ProviderConfig) -> str:
     return issuer
 
 
-def discover(issuer: str) -> dict[str, Any]:
+def discover(issuer: str) -> JSONDict:
     """Fetch and cache an issuer's discovery document and its JWKS.
 
     :param issuer: Issuer URL, without a trailing slash.
@@ -154,7 +154,7 @@ def discover(issuer: str) -> dict[str, Any]:
     return dict(metadata)
 
 
-def _fetch(url: str, issuer: str, secure: bool) -> dict[str, Any]:
+def _fetch(url: str, issuer: str, secure: bool) -> JSONDict:
     """GET a JSON document from a provider.
 
     :param url: Absolute URL to fetch.

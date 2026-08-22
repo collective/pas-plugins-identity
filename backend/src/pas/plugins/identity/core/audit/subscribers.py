@@ -1,4 +1,4 @@
-"""Audit subscribers (§4.6).
+"""Audit subscribers.
 
 The audit log is fed from the event contract rather than from the code paths
 that fire the events. That keeps the recording in one place and means an
@@ -10,30 +10,22 @@ Failures have no event to hang off: a callback refused for a bad state has no
 userid and no successful anything, so those are recorded by the caller.
 """
 
-from pas.plugins.identity.core.audit import AUTHENTICATED
-from pas.plugins.identity.core.audit import CLAIMS_REFRESHED
-from pas.plugins.identity.core.audit import EMAIL_VERIFIED
-from pas.plugins.identity.core.audit import IDENTITY_LINKED
-from pas.plugins.identity.core.audit import IDENTITY_UNLINKED
+from pas.plugins.identity.core import audit
+from pas.plugins.identity.core import events
 from pas.plugins.identity.core.audit import record
-from pas.plugins.identity.core.events import IEmailVerified
-from pas.plugins.identity.core.events import IExternalIdentityAuthenticated
-from pas.plugins.identity.core.events import IIdentityLinked
-from pas.plugins.identity.core.events import IIdentityUnlinked
-from pas.plugins.identity.core.events import IUserClaimsRefreshed
 from zope.component import adapter
 from zope.globalrequest import getRequest
 
 
-@adapter(IExternalIdentityAuthenticated)
-def record_authentication(event) -> None:
+@adapter(events.IExternalIdentityAuthenticated)
+def record_authentication(event: events.ExternalIdentityAuthenticated) -> None:
     """Record a successful external authentication.
 
     :param event: The event.
     """
     record(
         event.userid,
-        AUTHENTICATED,
+        audit.AUTHENTICATED,
         event.provider,
         True,
         {
@@ -45,15 +37,15 @@ def record_authentication(event) -> None:
     )
 
 
-@adapter(IIdentityLinked)
-def record_link(event) -> None:
+@adapter(events.IIdentityLinked)
+def record_link(event: events.IdentityLinked) -> None:
     """Record an identity being linked.
 
     :param event: The event.
     """
     record(
         event.userid,
-        IDENTITY_LINKED,
+        audit.IDENTITY_LINKED,
         event.provider,
         True,
         {"subject": event.subject},
@@ -61,15 +53,15 @@ def record_link(event) -> None:
     )
 
 
-@adapter(IIdentityUnlinked)
-def record_unlink(event) -> None:
+@adapter(events.IIdentityUnlinked)
+def record_unlink(event: events.IdentityUnlinked) -> None:
     """Record an identity being unlinked.
 
     :param event: The event.
     """
     record(
         event.userid,
-        IDENTITY_UNLINKED,
+        audit.IDENTITY_UNLINKED,
         event.provider,
         True,
         {"subject": event.subject},
@@ -77,8 +69,8 @@ def record_unlink(event) -> None:
     )
 
 
-@adapter(IEmailVerified)
-def record_email_verified(event) -> None:
+@adapter(events.IEmailVerified)
+def record_email_verified(event: events.EmailVerified) -> None:
     """Record an email address being proven.
 
     The address is the whole point of the event, so it is stored regardless of
@@ -89,7 +81,7 @@ def record_email_verified(event) -> None:
     """
     record(
         event.userid,
-        EMAIL_VERIFIED,
+        audit.EMAIL_VERIFIED,
         "email",
         True,
         {"address": event.address},
@@ -97,9 +89,9 @@ def record_email_verified(event) -> None:
     )
 
 
-@adapter(IUserClaimsRefreshed)
-def record_claims_refresh(event) -> None:
-    """Record stored claims being refreshed under the D2 policy.
+@adapter(events.IUserClaimsRefreshed)
+def record_claims_refresh(event: events.UserClaimsRefreshed) -> None:
+    """Record stored claims being refreshed on a later login.
 
     The claims themselves are not recorded: they are the user's personal data,
     they change on every login, and the useful fact is that a refresh happened.
@@ -108,7 +100,7 @@ def record_claims_refresh(event) -> None:
     """
     record(
         event.userid,
-        CLAIMS_REFRESHED,
+        audit.CLAIMS_REFRESHED,
         event.provider,
         True,
         request=getRequest(),

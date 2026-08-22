@@ -10,20 +10,20 @@ cannot work that out from ``@userschema`` or ``@users/<id>``, because neither
 knows anything about the workflow state of a piece of content.
 
 Answered from the catalog, so the routing check every login performs costs no
-object load (C6) -- the same discipline as the PAS plugin, for the same
+object load -- the same discipline as the PAS plugin, for the same
 reason.
 """
 
+from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.services.base import IdentityService
 from pas.plugins.identity.profile.catalog import query_catalog
 from plone import api
-from typing import Any
 
 
 class MyProfileGet(IdentityService):
     """Report the caller's own Profile."""
 
-    def reply(self) -> dict[str, Any]:
+    def reply(self) -> JSONDict:
         """Return the caller's Profile URL and workflow state.
 
         :returns: The body, or an error body.
@@ -32,7 +32,7 @@ class MyProfileGet(IdentityService):
             return self._error(401, "Not authenticated", "Log in first.")
 
         userid = api.user.get_current().getId()
-        body: dict[str, Any] = {
+        body: JSONDict = {
             "@id": f"{self.context.absolute_url()}/@my-profile",
             "userid": userid,
             "profile": None,

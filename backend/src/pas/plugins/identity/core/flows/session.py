@@ -1,4 +1,4 @@
-"""Flow session storage (S1).
+"""Flow session storage.
 
 :class:`~pas.plugins.identity.core.flows.FlowManager` needs a mapping that
 survives between the two requests of an authorization flow. Plone 6.2 ships no
@@ -6,8 +6,8 @@ survives between the two requests of an authorization flow. Plone 6.2 ships no
 a key from ``plone.keyring`` the way ``plone.session`` signs its auth tickets.
 
 Signed rather than merely encoded, because the cookie carries the ``state``,
-the PKCE ``code_verifier`` and the ``nonce``, and S1 requires the callback to
-be bound to the session that *started* the flow. With an unsigned cookie an
+the PKCE ``code_verifier`` and the ``nonce``, and the callback has to be
+bound to the session that *started* the flow. With an unsigned cookie an
 attacker authors all three in their own browser and that binding becomes a
 suggestion.
 
@@ -20,9 +20,11 @@ so a rotation does not strand a login that is already in flight.
 from collections.abc import Iterator
 from collections.abc import MutableMapping
 from pas.plugins.identity import logger
+from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity.core.interfaces import JSONValue
 from plone.keyring.interfaces import IKeyManager
-from typing import Any
 from zope.component import getUtility
+from ZPublisher.HTTPRequest import HTTPRequest
 
 import hashlib
 import hmac
@@ -68,7 +70,7 @@ def signing_keys() -> list[bytes]:
     return keys
 
 
-def encode(data: dict[str, Any]) -> str:
+def encode(data: JSONDict) -> str:
     """Render a mapping as a signed cookie value.
 
     :param data: JSON-serializable mapping.
@@ -84,7 +86,7 @@ def encode(data: dict[str, Any]) -> str:
     )
 
 
-def decode(raw: str) -> dict[str, Any]:
+def decode(raw: str) -> JSONDict:
     """Read a signed cookie value, refusing anything that does not verify.
 
     A bad cookie is never an error the user sees: it yields an empty session,
@@ -136,7 +138,7 @@ class FlowSession(MutableMapping):
     expire.
     """
 
-    def __init__(self, request: Any) -> None:
+    def __init__(self, request: HTTPRequest) -> None:
         """Bind the session to a request and its response.
 
         :param request: The current request.
@@ -144,7 +146,7 @@ class FlowSession(MutableMapping):
         self.request = request
         self._data = decode(request.cookies.get(COOKIE_NAME, ""))
 
-    def __getitem__(self, key: str) -> Any:
+    def __getitem__(self, key: str) -> JSONValue:
         """Return one stored value.
 
         :param key: Key to read.
@@ -153,7 +155,7 @@ class FlowSession(MutableMapping):
         """
         return self._data[key]
 
-    def __setitem__(self, key: str, value: Any) -> None:
+    def __setitem__(self, key: str, value: JSONValue) -> None:
         """Store a value and rewrite the cookie.
 
         :param key: Key to write.

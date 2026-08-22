@@ -1,4 +1,4 @@
-"""Migrating from ``pas.plugins.oidc`` (Gate 7, D8).
+"""Migrating from ``pas.plugins.oidc``.
 
 Harder than the authomatic migration, and for a reason worth stating plainly:
 **``pas.plugins.oidc`` stores no identity mapping at all.** Established by
@@ -45,9 +45,10 @@ from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.pas import PLUGIN_ID
+from pas.plugins.identity.core.store import IdentityStore
 from pas.plugins.identity.migration import Report
 from plone import api
-from typing import Any
+from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
 
 
 #: The only ``user_property_as_userid`` value a site can be migrated from.
@@ -58,7 +59,7 @@ SUPPORTED_USERID_PROPERTY = "sub"
 DRIVER = "oidc-generic"
 
 
-def _oidc_plugins() -> list[Any]:
+def _oidc_plugins() -> list[BasePlugin]:
     """Return every OIDC plugin installed in this site.
 
     A site may have several, one per issuer, so this is a list rather than a
@@ -76,7 +77,7 @@ def _oidc_plugins() -> list[Any]:
     ]
 
 
-def _userid_property(plugin: Any) -> str:
+def _userid_property(plugin: BasePlugin) -> str:
     """Return the claim a plugin uses as the Plone user id.
 
     :param plugin: An OIDC plugin.
@@ -85,7 +86,7 @@ def _userid_property(plugin: Any) -> str:
     return plugin.getProperty("user_property_as_userid") or SUPPORTED_USERID_PROPERTY
 
 
-def _provider_record(plugin: Any) -> ProviderConfig:
+def _provider_record(plugin: BasePlugin) -> ProviderConfig:
     """Translate one OIDC plugin into a provider record.
 
     :param plugin: An OIDC plugin.
@@ -121,7 +122,7 @@ def _candidate_userids(userids: list[str] | None) -> list[str]:
     return sorted(source_users.getUserIds())
 
 
-def _check_strategies(plugins: list[Any], report: Report) -> None:
+def _check_strategies(plugins: list[BasePlugin], report: Report) -> None:
     """Refuse any plugin whose user ids do not come from ``sub``.
 
     See the module docstring: the subject was never stored, so the join cannot
@@ -145,7 +146,10 @@ def _check_strategies(plugins: list[Any], report: Report) -> None:
 
 
 def _plan_identities(
-    plugins: list[Any], candidates: list[str], store: Any, report: Report
+    plugins: list[BasePlugin],
+    candidates: list[str],
+    store: IdentityStore,
+    report: Report,
 ) -> None:
     """Record which identities a run would create.
 

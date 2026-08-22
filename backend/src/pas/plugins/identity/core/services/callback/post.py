@@ -1,4 +1,4 @@
-"""``@identity-callback`` -- finish a flow and hand back a token.
+"""``POST @identity-callback``.
 
 The provider redirects the browser to a route in Volto, which reads ``code``
 and ``state`` off the query string and POSTs them here. This service does the
@@ -6,44 +6,39 @@ half that must happen on the backend: redeem the code, validate what comes
 back, resolve it to a canonical userid through the PAS plugin, and issue a
 ``jwt_auth`` token.
 
-This is the only place per login where network I/O and authentication happen
-(I6). Every request afterwards rides the token.
+This is the only place per login where network I/O and authentication happen.
+Every request afterwards rides the token.
 """
 
 from pas.plugins.identity import logger
-from pas.plugins.identity.core.audit import FLOW_REFUSED
-from pas.plugins.identity.core.audit import LINK_COLLISION
-from pas.plugins.identity.core.audit import LINK_REFUSED
-from pas.plugins.identity.core.audit import PAYLOAD_REJECTED
-from pas.plugins.identity.core.audit import record as audit
+from pas.plugins.identity.core import audit
 from pas.plugins.identity.core.controlpanel import get_callback_url
 from pas.plugins.identity.core.controlpanel import get_provider
+from pas.plugins.identity.core.controlpanel import ProviderConfig
+from pas.plugins.identity.core.flows import FlowAttempt
 from pas.plugins.identity.core.flows import FlowManager
 from pas.plugins.identity.core.flows.metadata import metadata_for
 from pas.plugins.identity.core.flows.session import FlowSession
+from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.core.interfaces import ClaimsError
 from pas.plugins.identity.core.interfaces import FlowError
 from pas.plugins.identity.core.interfaces import IdentityCollision
+from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.pas import CREDENTIALS_KEY
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.services.base import IdentityService
+from pas.plugins.identity.core.services.jwt import mint_token
 from plone import api
 from plone.restapi.deserializer import json_body
-from Products.PluggableAuthService.interfaces.plugins import IAuthenticationPlugin
-from typing import Any
 from zope.interface import alsoProvides
 
 import plone.protect.interfaces
 
 
-#: ``meta_type`` of the plugin that mints Volto's tokens.
-JWT_PLUGIN_META_TYPE = "JWT Authentication Plugin"
-
-
 class IdentityCallback(IdentityService):
     """Complete an authorization-code flow."""
 
-    def reply(self) -> dict[str, Any]:
+    def reply(self) -> JSONDict:
         """Finish the flow and answer with a token.
 
         :returns: The token and where to send the user, or an error body.
@@ -70,23 +65,23 @@ class IdentityCallback(IdentityService):
             subject = provider.driver.subject(payload)
             claims = provider.driver.normalize_claims(payload)
         except FlowError as exc:
-            # S1 -- a bad state, a replayed code or a rejected id_token all
-            # land here, and all read the same to the caller. They do not read
-            # the same in the audit log, which is where an operator looking at
-            # a run of refusals needs the detail.
+            # A bad state, a replayed code or a rejected id_token all land
+            # here, and all read the same to the caller. They do not read the
+            # same in the audit log, which is where an operator looking at a
+            # run of refusals needs the detail.
             logger.info("Refused callback for %r: %s", provider.provider_id, exc)
-            self._audit_failure(provider.provider_id, FLOW_REFUSED, exc)
+            self._audit_failure(provider.provider_id, audit.FLOW_REFUSED, exc)
             return self._error(401, "Authentication failed", str(exc))
         except ClaimsError as exc:
             logger.info("Unusable payload from %r: %s", provider.provider_id, exc)
-            self._audit_failure(provider.provider_id, PAYLOAD_REJECTED, exc)
+            self._audit_failure(provider.provider_id, audit.PAYLOAD_REJECTED, exc)
             return self._error(502, "Provider payload rejected", str(exc))
 
         if attempt.link_for is not None:
             return self._link(attempt.link_for, provider.provider_id, subject, claims)
 
         userid = self._authenticate(provider.provider_id, subject, claims)
-        token = self._token(userid)
+        token = mint_token(userid)
         if token is None:
             # Matches what plone.restapi's own @login answers: the site is
             # misconfigured, not the request.
@@ -98,16 +93,16 @@ class IdentityCallback(IdentityService):
         return {"token": token, "came_from": attempt.came_from}
 
     def _link(
-        self, link_for: str, provider_id: str, subject: str, claims: dict
-    ) -> dict[str, Any]:
+        self, link_for: str, provider_id: str, subject: str, claims: Claims
+    ) -> JSONDict:
         """Attach the identity just proven to an already-authenticated user.
 
-        S1 -- a linking flow requires an authenticated session at initiation
-        *and* completion by the same session. The attempt records whose
-        account it was started for; if the browser finishing it is anonymous,
-        or is somebody else, the link is refused. Without that check, an
-        attacker who could get a victim to finish their flow would attach
-        their own provider account to the victim's login.
+        A linking flow requires an authenticated session at initiation *and*
+        completion by the same session. The attempt records whose account it
+        was started for; if the browser finishing it is anonymous, or is
+        somebody else, the link is refused. Without that check, an attacker
+        who could get a victim to finish their flow would attach their own
+        provider account to the victim's login.
 
         :param link_for: Userid the attempt was started for.
         :param provider_id: Provider id.
@@ -119,9 +114,9 @@ class IdentityCallback(IdentityService):
         userid = None if api.user.is_anonymous() else current.getId()
         if userid != link_for:
             logger.warning("Refusing to complete a link for %r as %r", link_for, userid)
-            audit(
+            audit.record(
                 link_for,
-                LINK_REFUSED,
+                audit.LINK_REFUSED,
                 provider_id,
                 False,
                 {"reason": "completed by a different session"},
@@ -138,11 +133,11 @@ class IdentityCallback(IdentityService):
                 userid, provider_id, subject, claims
             )
         except IdentityCollision as exc:
-            # I3/S3 -- never merge two people into one account.
+            # Never merge two people into one account.
             logger.warning("Identity collision on %r: %s", provider_id, exc)
-            audit(
+            audit.record(
                 userid,
-                LINK_COLLISION,
+                audit.LINK_COLLISION,
                 provider_id,
                 False,
                 {"subject": subject, "reason": str(exc)},
@@ -153,7 +148,7 @@ class IdentityCallback(IdentityService):
         return {"linked": {"provider": provider_id, "subject": subject}}
 
     def _audit_failure(self, provider_id: str, event: str, exc: Exception) -> None:
-        """Record a refused callback (§4.6).
+        """Record a refused callback.
 
         There is no userid to attribute this to -- that is what being refused
         means -- so it lands in the unattributed bucket, which is where an
@@ -165,7 +160,7 @@ class IdentityCallback(IdentityService):
             failed. It carries no credential: the flow layer raises on state,
             nonce and signature, never echoing the code or the token.
         """
-        audit(
+        audit.record(
             None,
             event,
             provider_id,
@@ -179,15 +174,15 @@ class IdentityCallback(IdentityService):
     # ------------------------------------------------------------------
 
     def _exchange(
-        self, provider: Any, state: str, code: str
-    ) -> tuple[Any, dict[str, Any]]:
+        self, provider: ProviderConfig, state: str, code: str
+    ) -> tuple[FlowAttempt, JSONDict]:
         """Redeem the authorization code.
 
         :param provider: The configured provider.
         :param state: The ``state`` echoed back by the provider.
         :param code: The authorization code.
         :returns: The consumed attempt and the raw claims payload.
-        :raises FlowError: When any S1 precondition fails.
+        :raises FlowError: When any security precondition fails.
         """
         manager = FlowManager(
             FlowSession(self.request), api.portal.get().absolute_url()
@@ -200,7 +195,7 @@ class IdentityCallback(IdentityService):
             code,
         )
 
-    def _authenticate(self, provider_id: str, subject: str, claims: dict) -> str:
+    def _authenticate(self, provider_id: str, subject: str, claims: Claims) -> str:
         """Resolve an external identity to a canonical userid.
 
         Goes through the PAS plugin rather than around it, so first-login user
@@ -209,8 +204,8 @@ class IdentityCallback(IdentityService):
 
         A login cannot collide: an identity already in the store resolves to
         whoever owns it, and one that is not is minted a fresh userid.
-        ``IdentityCollision`` (I3/S3) belongs to the *linking* flow, where an
-        identity is attached to an already-authenticated user -- Gate 2.
+        ``IdentityCollision`` belongs to the *linking* flow, where an identity
+        is attached to an already-authenticated user.
 
         :param provider_id: Provider id.
         :param subject: Provider-side subject identifier.
@@ -227,20 +222,3 @@ class IdentityCallback(IdentityService):
             plugin.extractCredentials(self.request)
         )
         return userid
-
-    def _token(self, userid: str) -> str | None:
-        """Mint a ``jwt_auth`` token for a userid.
-
-        :param userid: Canonical Plone userid.
-        :returns: The encoded token, or ``None`` when the site has no JWT
-            plugin -- in which case Volto could not have logged anybody in by
-            any route, and the caller is owed a 501 rather than a traceback.
-        """
-        acl_users = api.portal.get_tool("acl_users")
-        for plugin in acl_users.plugins.listPlugins(IAuthenticationPlugin):
-            if plugin[1].meta_type == JWT_PLUGIN_META_TYPE:
-                user = acl_users.getUserById(userid)
-                return plugin[1].create_token(
-                    user.getId(), data={"fullname": user.getProperty("fullname", "")}
-                )
-        return None
