@@ -48,6 +48,18 @@ class IServerSettings(Interface):
         default="",
     )
 
+    server_signing_keys = schema.Text(
+        title=_("Signing key ring"),
+        description=_(
+            "JSON list of private JWKs, newest first. Generated when the "
+            "server profile is applied and rotated from the control panel; "
+            "never edited by hand. Only the public halves are published, as "
+            "the JWKS relying parties fetch."
+        ),
+        required=False,
+        default="",
+    )
+
     server_issuer = schema.TextLine(
         title=_("Issuer URL"),
         description=_(

@@ -3,6 +3,9 @@
   <record name="pas.plugins.identity.server_clients"
           remove="True"
   />
+  <record name="pas.plugins.identity.server_signing_keys"
+          remove="True"
+  />
   <record name="pas.plugins.identity.server_issuer"
           remove="True"
   />

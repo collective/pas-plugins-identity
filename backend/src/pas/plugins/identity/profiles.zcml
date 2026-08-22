@@ -67,6 +67,7 @@
         description="Plone as an OAuth 2.1 / OIDC provider."
         provides="Products.GenericSetup.interfaces.EXTENSION"
         directory="profiles/server"
+        post_handler=".server.setuphandlers.post_install"
         />
 
     <genericsetup:registerProfile
@@ -75,6 +76,7 @@
         description="Remove the authorization server's settings and browser layer."
         provides="Products.GenericSetup.interfaces.EXTENSION"
         directory="profiles/uninstall-server"
+        post_handler=".server.setuphandlers.post_uninstall"
         />
 
   </configure>
