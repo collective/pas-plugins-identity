@@ -1,4 +1,4 @@
-"""Gate 6c end to end: a real Dex login mints a real Profile.
+"""End to end: a real Dex login mints a real Profile.
 
 Everything in ``test_first_login`` fires the events by hand, which is the
 right way to test the subscriber and no way at all to prove the subscriber is
@@ -26,7 +26,7 @@ import transaction
 pytestmark = pytest.mark.docker
 
 
-@pytest.fixture()
+@pytest.fixture
 def profile_portal(portal):
     """The functional portal with the ``[profile]`` extra installed.
 
@@ -84,7 +84,7 @@ def finish(api_session, portal_url: str, query: dict):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def logged_in(api_session, profile_portal, portal_url, dex_login, dex_service):
     """Complete a real Dex login and return the session and userid.
 
@@ -109,87 +109,113 @@ def logged_in(api_session, profile_portal, portal_url, dex_login, dex_service):
 
 
 class TestFirstLoginMintsAProfile:
-    def test_profile_exists(self, profile_portal, logged_in):
+    @pytest.fixture(autouse=True)
+    def _setup(
+        self, api_session, portal_url, profile_portal, logged_in, dex_login
+    ) -> None:
+        self.dex_login = dex_login
+        self.api_session = api_session
+        self.portal_url = portal_url
+        self.profile_portal = profile_portal
+        self.logged_in = logged_in
+
+    def test_profile_exists(self):
         """Core fired the event; the extra acted on it."""
-        _, userid = logged_in
+        _, userid = self.logged_in
 
         assert query_catalog().unrestrictedSearchResults(userid=userid)
 
-    def test_the_login_is_recorded(self, profile_portal, logged_in):
+    def test_the_login_is_recorded(self):
         """From Dex's own claims: it sends no username, so this is the email."""
-        _, userid = logged_in
+        _, userid = self.logged_in
         brain = query_catalog().unrestrictedSearchResults(userid=userid)[0]
 
         assert brain.login == DEX_USER["email"]
 
-    def test_it_starts_incomplete(self, profile_portal, logged_in):
+    def test_it_starts_incomplete(self):
         """Which is what the frontend routes on."""
-        _, userid = logged_in
+        _, userid = self.logged_in
         brain = query_catalog().unrestrictedSearchResults(userid=userid)[0]
 
         assert brain.review_state == "incomplete"
 
-    def test_claims_from_dex_were_synced(self, profile_portal, logged_in):
+    def test_claims_from_dex_were_synced(self):
         """The real id_token's claims, not a fixture's."""
-        _, userid = logged_in
+        _, userid = self.logged_in
         brain = query_catalog().unrestrictedSearchResults(userid=userid)[0]
 
         assert brain.email == DEX_USER["email"]
 
-    def test_my_profile_reports_it(self, profile_portal, portal_url, logged_in):
+    def test_my_profile_reports_it(self):
         """Through the service Volto actually calls."""
-        session, _ = logged_in
+        session, _ = self.logged_in
 
-        body = session.get(f"{portal_url}/@my-profile", timeout=30).json()
+        body = session.get(f"{self.portal_url}/@my-profile", timeout=30).json()
 
         assert body["review_state"] == "incomplete"
         assert body["profile"]
 
 
 class TestTheUserCompletesIt:
-    def test_user_may_edit_their_own_profile(
-        self, profile_portal, portal_url, logged_in
-    ):
+    @pytest.fixture(autouse=True)
+    def _setup(
+        self, api_session, portal_url, profile_portal, logged_in, dex_login
+    ) -> None:
+        self.dex_login = dex_login
+        self.api_session = api_session
+        self.portal_url = portal_url
+        self.profile_portal = profile_portal
+        self.logged_in = logged_in
+
+    def test_user_may_edit_their_own_profile(self):
         """The self-Editor local role, over HTTP as the user themselves."""
-        session, _ = logged_in
-        url = session.get(f"{portal_url}/@my-profile", timeout=30).json()["profile"]
+        session, _ = self.logged_in
+        url = session.get(f"{self.portal_url}/@my-profile", timeout=30).json()[
+            "profile"
+        ]
 
         response = session.patch(url, json={"fullname": "Erico Andrei"}, timeout=30)
 
         assert response.status_code in (200, 204)
 
-    def test_the_edit_is_visible_to_pas(self, profile_portal, portal_url, logged_in):
+    def test_the_edit_is_visible_to_pas(self):
         """An edit nobody can read back is not an edit."""
-        session, userid = logged_in
-        url = session.get(f"{portal_url}/@my-profile", timeout=30).json()["profile"]
+        session, userid = self.logged_in
+        url = session.get(f"{self.portal_url}/@my-profile", timeout=30).json()[
+            "profile"
+        ]
         session.patch(url, json={"fullname": "Erico Andrei"}, timeout=30)
 
-        fresh(profile_portal)
+        fresh(self.profile_portal)
         assert api.user.get(userid=userid).getProperty("fullname") == "Erico Andrei"
 
-    def test_transition_to_complete_is_reflected(
-        self, profile_portal, portal_url, logged_in
-    ):
+    def test_transition_to_complete_is_reflected(self):
         """The last step of the gate's sequence."""
-        session, _ = logged_in
-        url = session.get(f"{portal_url}/@my-profile", timeout=30).json()["profile"]
+        session, _ = self.logged_in
+        url = session.get(f"{self.portal_url}/@my-profile", timeout=30).json()[
+            "profile"
+        ]
 
         session.post(
             f"{url}/@workflow/complete", json={}, timeout=30
         ).raise_for_status()
 
-        body = session.get(f"{portal_url}/@my-profile", timeout=30).json()
+        body = session.get(f"{self.portal_url}/@my-profile", timeout=30).json()
         assert body["review_state"] == "complete"
 
-    def test_a_second_login_does_not_undo_the_edit(
-        self, profile_portal, portal_url, logged_in, api_session, dex_login
-    ):
-        """D2, against a real provider that keeps sending its own name."""
-        session, userid = logged_in
-        url = session.get(f"{portal_url}/@my-profile", timeout=30).json()["profile"]
+    def test_a_second_login_does_not_undo_the_edit(self, dex_login):
+        """Against a real provider that keeps sending its own name."""
+        session, userid = self.logged_in
+        url = session.get(f"{self.portal_url}/@my-profile", timeout=30).json()[
+            "profile"
+        ]
         session.patch(url, json={"fullname": "Erico Andrei"}, timeout=30)
 
-        finish(api_session, portal_url, dex_login(start(api_session, portal_url)))
+        finish(
+            self.api_session,
+            self.portal_url,
+            self.dex_login(start(self.api_session, self.portal_url)),
+        )
 
-        fresh(profile_portal)
+        fresh(self.profile_portal)
         assert api.user.get(userid=userid).getProperty("fullname") == "Erico Andrei"

@@ -1,4 +1,4 @@
-"""Fixtures for the end-to-end flow tests against a real provider (C2)."""
+"""Fixtures for the end-to-end flow tests against a real provider."""
 
 from ..conftest import DEX_USER
 from bs4 import BeautifulSoup
@@ -22,7 +22,7 @@ import transaction
 CALLBACK_URL = "http://localhost:3000/login-identity"
 
 
-@pytest.fixture()
+@pytest.fixture
 def second_provider(dex) -> dict:
     """Return a second provider record, Dex's other static client.
 
@@ -41,7 +41,7 @@ def second_provider(dex) -> dict:
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def portal(functional, dex, second_provider):
     """Return the portal with both Dex clients configured as providers."""
     site = functional["portal"]
@@ -60,7 +60,7 @@ def portal(functional, dex, second_provider):
     flow_metadata.forget()
 
 
-@pytest.fixture()
+@pytest.fixture
 def api_session(portal):
     """Return a requests session speaking JSON to the portal.
 
@@ -73,13 +73,13 @@ def api_session(portal):
     session.close()
 
 
-@pytest.fixture()
+@pytest.fixture
 def portal_url(portal) -> str:
     """Return the portal URL as served by the test WSGI server."""
     return portal.absolute_url()
 
 
-@pytest.fixture()
+@pytest.fixture
 def dex_login():
     """Return a helper that logs in at Dex and returns the callback query.
 

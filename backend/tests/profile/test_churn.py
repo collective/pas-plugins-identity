@@ -1,4 +1,4 @@
-"""Property-style churn test for the Profile catalog (§8.3, Gate 6a).
+"""Property-style churn test for the Profile catalog.
 
 Randomized sequences of create / modify / transition / rename / move / delete,
 with :func:`pas.plugins.identity.profile.doctor.check` run after *every* step.
@@ -12,6 +12,7 @@ which is a worse failure than the bug it found. Adding a seed is cheap; if one
 of these ever goes red, the seed in the test id reproduces it exactly.
 """
 
+from . import PROFILE_ID
 from pas.plugins.identity.profile import doctor
 from pas.plugins.identity.profile.catalog import all_brains
 from pas.plugins.identity.profile.catalog import GROUP_PORTAL_TYPE
@@ -23,6 +24,7 @@ import pytest
 import random
 
 
+pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
 #: Number of operations per run. Long enough for deletes and moves to interact
 #: with each other, short enough that the whole matrix stays under a second.
 STEPS = 40
@@ -270,11 +272,16 @@ class Churn:
 
 @pytest.mark.parametrize("seed", SEEDS)
 class TestChurn:
-    def test_catalog_stays_consistent(self, portal, catalog, seed):
-        """No step leaves the catalog disagreeing with the site (§8.3)."""
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, catalog) -> None:
+        self.portal = portal
+        self.catalog = catalog
+
+    def test_catalog_stays_consistent(self, seed: int):
+        """No step leaves the catalog disagreeing with the site."""
         rng = random.Random(seed)
         with api.env.adopt_roles(["Manager"]):
-            churn = Churn(portal, rng)
+            churn = Churn(self.portal, rng)
             for step in range(STEPS):
                 operation = churn.step()
 
@@ -291,15 +298,15 @@ class TestChurn:
                     f"seed {seed}, step {step}, after {operation.__name__}"
                 )
 
-    def test_counts_agree(self, portal, catalog, seed):
-        """Catalog count equals Profile count, all the way through (§8.3)."""
+    def test_counts_agree(self, seed: int):
+        """Catalog count equals Profile count, all the way through."""
         rng = random.Random(seed)
         with api.env.adopt_roles(["Manager"]):
-            churn = Churn(portal, rng)
+            churn = Churn(self.portal, rng)
             for step in range(STEPS):
                 operation = churn.step()
 
                 expected = len(churn._profiles()) + len(churn._groups())
-                assert len(all_brains(catalog)) == expected, (
+                assert len(all_brains(self.catalog)) == expected, (
                     f"seed {seed}, step {step}, after {operation.__name__}"
                 )

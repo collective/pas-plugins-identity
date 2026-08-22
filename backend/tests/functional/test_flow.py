@@ -1,4 +1,4 @@
-"""The Gate 1 check: a browser-less code flow against a real provider (C2).
+"""A browser-less code flow against a real provider.
 
 Everything here is real. Dex runs in Docker, issues a real authorization code
 against a real end-user session, signs a real ``id_token``, and the test ends
@@ -46,37 +46,47 @@ def finish(api_session, portal_url: str, query: dict):
 
 
 class TestCodeFlow:
-    def test_providers_are_listed(self, api_session, portal_url):
+    @pytest.fixture(autouse=True)
+    def _setup(self, api_session, portal_url, dex_login) -> None:
+        self.dex_login = dex_login
+        self.api_session = api_session
+        self.portal_url = portal_url
+
+    def test_providers_are_listed(self):
         """The login page offers the providers that are actually configured."""
-        response = api_session.get(f"{portal_url}/@login-providers", timeout=30)
+        response = self.api_session.get(
+            f"{self.portal_url}/@login-providers", timeout=30
+        )
 
         assert [item["id"] for item in response.json()["items"]] == [
             "dex",
             "dex-second",
         ]
 
-    def test_authorize_url_points_at_dex(self, api_session, portal_url, dex_service):
+    def test_authorize_url_points_at_dex(self, dex_service):
         """The authorize endpoint comes from Dex's own discovery document."""
-        assert start(api_session, portal_url).startswith(f"{dex_service}/auth")
+        assert start(self.api_session, self.portal_url).startswith(
+            f"{dex_service}/auth"
+        )
 
-    def test_full_round_trip_yields_a_token(self, api_session, portal_url, dex_login):
+    def test_full_round_trip_yields_a_token(self):
         """Fetch providers, follow the redirect, log in at Dex, come back."""
-        query = dex_login(start(api_session, portal_url))
+        query = self.dex_login(start(self.api_session, self.portal_url))
 
-        response = finish(api_session, portal_url, query)
+        response = finish(self.api_session, self.portal_url, query)
 
         assert response.status_code == 200
         assert response.json()["token"]
 
-    def test_token_authenticates_against_site(self, api_session, portal_url, dex_login):
-        """The Gate 1 check proper: the token GETs @site as the user."""
-        query = dex_login(start(api_session, portal_url))
-        token = finish(api_session, portal_url, query).json()["token"]
+    def test_token_authenticates_against_site(self):
+        """The check proper: the token GETs @site as the user."""
+        query = self.dex_login(start(self.api_session, self.portal_url))
+        token = finish(self.api_session, self.portal_url, query).json()["token"]
 
         import requests
 
         response = requests.get(
-            f"{portal_url}/@site",
+            f"{self.portal_url}/@site",
             headers={
                 "Accept": "application/json",
                 "Authorization": f"Bearer {token}",
@@ -86,12 +96,10 @@ class TestCodeFlow:
 
         assert response.status_code == 200
 
-    def test_identity_is_persisted_with_a_uuid_userid(
-        self, api_session, portal_url, dex_login, portal
-    ):
-        """D10/I1 -- the userid is minted, never derived from Dex's subject."""
-        query = dex_login(start(api_session, portal_url))
-        finish(api_session, portal_url, query)
+    def test_identity_is_persisted_with_a_uuid_userid(self, portal):
+        """The userid is minted, never derived from Dex's subject."""
+        query = self.dex_login(start(self.api_session, self.portal_url))
+        finish(self.api_session, self.portal_url, query)
 
         store = identity_store()
         owners = userids(store)
@@ -104,10 +112,10 @@ class TestCodeFlow:
         subject = store.identities_for(userid)[0].subject
         assert subject and subject not in userid
 
-    def test_claims_come_from_dex(self, api_session, portal_url, dex_login, portal):
+    def test_claims_come_from_dex(self, portal):
         """The stored claims are the ones the provider actually asserted."""
-        query = dex_login(start(api_session, portal_url))
-        finish(api_session, portal_url, query)
+        query = self.dex_login(start(self.api_session, self.portal_url))
+        finish(self.api_session, self.portal_url, query)
 
         store = identity_store()
         userid = next(iter(userids(store)))
@@ -115,14 +123,20 @@ class TestCodeFlow:
         assert record.claims["email"] == DEX_USER["email"]
         assert record.claims["email_verified"] is True
 
-    def test_second_login_is_the_same_user(
-        self, api_session, portal_url, dex_login, portal
-    ):
+    def test_second_login_is_the_same_user(self, portal):
         """A returning human keeps their userid, and gains no second account."""
-        finish(api_session, portal_url, dex_login(start(api_session, portal_url)))
+        finish(
+            self.api_session,
+            self.portal_url,
+            self.dex_login(start(self.api_session, self.portal_url)),
+        )
         first = set(userids(identity_store()))
 
-        finish(api_session, portal_url, dex_login(start(api_session, portal_url)))
+        finish(
+            self.api_session,
+            self.portal_url,
+            self.dex_login(start(self.api_session, self.portal_url)),
+        )
 
         assert set(userids(identity_store())) == first
         assert len(first) == 1
@@ -131,29 +145,33 @@ class TestCodeFlow:
 class TestS1NegativesAgainstDex:
     """The refusals, against codes a real provider really issued."""
 
-    def test_replayed_code_is_refused(self, api_session, portal_url, dex_login):
-        """S1 -- the attempt is single-use even with a genuine code."""
-        query = dex_login(start(api_session, portal_url))
-        assert finish(api_session, portal_url, query).status_code == 200
+    @pytest.fixture(autouse=True)
+    def _setup(self, api_session, portal_url, dex_login) -> None:
+        self.api_session = api_session
+        self.portal_url = portal_url
+        self.dex_login = dex_login
 
-        assert finish(api_session, portal_url, query).status_code == 401
+    def test_replayed_code_is_refused(self):
+        """The attempt is single-use even with a genuine code."""
+        query = self.dex_login(start(self.api_session, self.portal_url))
+        assert finish(self.api_session, self.portal_url, query).status_code == 200
 
-    def test_tampered_state_is_refused(self, api_session, portal_url, dex_login):
-        """S1 -- the state has to be the one this session started with."""
-        query = dex_login(start(api_session, portal_url))
+        assert finish(self.api_session, self.portal_url, query).status_code == 401
+
+    def test_tampered_state_is_refused(self):
+        """The state has to be the one this session started with."""
+        query = self.dex_login(start(self.api_session, self.portal_url))
         query["state"] = "not-the-state-we-issued"
 
-        assert finish(api_session, portal_url, query).status_code == 401
+        assert finish(self.api_session, self.portal_url, query).status_code == 401
 
-    def test_code_without_the_flow_cookie_is_refused(
-        self, api_session, portal_url, dex_login
-    ):
-        """S1 -- the callback is bound to the browser that started the flow,
+    def test_code_without_the_flow_cookie_is_refused(self):
+        """The callback is bound to the browser that started the flow,
         so a genuine code presented by anyone else is worthless."""
-        query = dex_login(start(api_session, portal_url))
-        api_session.cookies.clear()
+        query = self.dex_login(start(self.api_session, self.portal_url))
+        self.api_session.cookies.clear()
 
-        assert finish(api_session, portal_url, query).status_code == 401
+        assert finish(self.api_session, self.portal_url, query).status_code == 401
 
 
 def identity_store():

@@ -1,4 +1,4 @@
-# The OIDC provider the functional flow tests run against (C2).
+# The OIDC provider the functional flow tests run against.
 #
 # Started and stopped by pytest-docker, on demand: only tests that ask for the
 # ``dex_service`` fixture bring it up, so the unit and integration suite stays

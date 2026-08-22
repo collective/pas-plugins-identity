@@ -1,4 +1,4 @@
-"""Migrating from ``pas.plugins.oidc`` (Gate 7, D8).
+"""Migrating from ``pas.plugins.oidc``.
 
 Most of these are about what the migration *refuses* to do, which is the
 honest shape for this one. Reading its source established that it stores no
@@ -13,19 +13,8 @@ limits are enforced here rather than documented and hoped for.
 from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.migration import oidc as migration
-from plone import api
 
 import pytest
-
-
-@pytest.fixture
-def acl_users(portal):
-    """The site's PAS instance.
-
-    :param portal: The Plone site.
-    :returns: ``acl_users``.
-    """
-    return api.portal.get_tool("acl_users")
 
 
 @pytest.fixture
@@ -48,16 +37,6 @@ def oidc_plugin(portal, acl_users):
 
 
 @pytest.fixture
-def store(acl_users):
-    """This package's identity store.
-
-    :param acl_users: The site's PAS instance.
-    :returns: The store.
-    """
-    return acl_users[PLUGIN_ID].store
-
-
-@pytest.fixture
 def legacy_user(acl_users):
     """Return a factory for a ``source_users`` account, as OIDC leaves one.
 
@@ -72,7 +51,11 @@ def legacy_user(acl_users):
 
 
 class TestNothingToDo:
-    def test_refuses_without_oidc(self, portal):
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+
+    def test_refuses_without_oidc(self):
         """A site that never had it."""
         report = migration.migrate(dry_run=True)
 
@@ -81,7 +64,7 @@ class TestNothingToDo:
 
 
 class TestRefusesANonDefaultStrategy:
-    """The finding that shaped this migration (D8).
+    """The finding that shaped this migration.
 
     ``pas.plugins.oidc`` never stored the subject. On the default ``sub``
     strategy the user id *is* the subject, so the join reconstructs. On any
@@ -90,44 +73,52 @@ class TestRefusesANonDefaultStrategy:
     as somebody logging into somebody else's account.
     """
 
-    def test_email_strategy_is_refused(self, oidc_plugin, legacy_user):
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, acl_users, oidc_plugin, legacy_user, store) -> None:
+        self.portal = portal
+        self.acl_users = acl_users
+        self.oidc_plugin = oidc_plugin
+        self.legacy_user = legacy_user
+        self.store = store
+
+    def test_email_strategy_is_refused(self):
         """The most likely non-default setting."""
-        oidc_plugin.user_property_as_userid = "email"
-        legacy_user("alice@example.com")
+        self.oidc_plugin.user_property_as_userid = "email"
+        self.legacy_user("alice@example.com")
 
         report = migration.migrate(dry_run=True)
 
         assert report.refused
 
-    def test_the_refusal_explains_why(self, oidc_plugin):
+    def test_the_refusal_explains_why(self):
         """An operator has to be able to act on it."""
-        oidc_plugin.user_property_as_userid = "email"
+        self.oidc_plugin.user_property_as_userid = "email"
 
         report = migration.migrate(dry_run=True)
 
         assert "was never stored" in report.refusals[0]
         assert "email" in report.refusals[0]
 
-    def test_nothing_is_migrated_when_refused(self, oidc_plugin, legacy_user, store):
+    def test_nothing_is_migrated_when_refused(self):
         """A refusal is not a partial migration."""
-        oidc_plugin.user_property_as_userid = "email"
-        legacy_user("alice@example.com")
+        self.oidc_plugin.user_property_as_userid = "email"
+        self.legacy_user("alice@example.com")
 
         migration.migrate(dry_run=False)
 
-        assert store.userid_for("oidc", "alice@example.com") is None
+        assert self.store.userid_for("oidc", "alice@example.com") is None
 
-    def test_no_provider_is_created_when_refused(self, oidc_plugin):
+    def test_no_provider_is_created_when_refused(self):
         """Not even the half that would have been safe."""
-        oidc_plugin.user_property_as_userid = "email"
+        self.oidc_plugin.user_property_as_userid = "email"
 
         migration.migrate(dry_run=False)
 
         assert get_providers() == []
 
-    def test_the_default_is_accepted(self, oidc_plugin, legacy_user):
+    def test_the_default_is_accepted(self):
         """The other half of the rule."""
-        legacy_user("sub-alice")
+        self.legacy_user("sub-alice")
 
         assert not migration.migrate(dry_run=True).refused
 
@@ -135,9 +126,15 @@ class TestRefusesANonDefaultStrategy:
 class TestDegradedSites:
     """States a half-removed installation can leave behind."""
 
-    def test_missing_identity_plugin_is_refused(self, portal, acl_users, oidc_plugin):
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, acl_users, oidc_plugin) -> None:
+        self.portal = portal
+        self.acl_users = acl_users
+        self.oidc_plugin = oidc_plugin
+
+    def test_missing_identity_plugin_is_refused(self):
         """Migrating onto a package that is not installed is not a migration."""
-        acl_users._delObject(PLUGIN_ID)
+        self.acl_users._delObject(PLUGIN_ID)
 
         report = migration.migrate(dry_run=True)
 
@@ -157,9 +154,9 @@ class TestDegradedSites:
 
         assert migration.migrate(dry_run=True).refused
 
-    def test_a_site_without_source_users_claims_nothing(self, acl_users, oidc_plugin):
+    def test_a_site_without_source_users_claims_nothing(self):
         """Nothing to enumerate, and no reason to fail over it."""
-        acl_users._delObject("source_users")
+        self.acl_users._delObject("source_users")
 
         report = migration.migrate(dry_run=True)
 
@@ -167,35 +164,51 @@ class TestDegradedSites:
 
 
 class TestDryRun:
-    def test_reports_what_it_would_do(self, oidc_plugin, legacy_user):
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, acl_users, oidc_plugin, legacy_user, store) -> None:
+        self.portal = portal
+        self.acl_users = acl_users
+        self.oidc_plugin = oidc_plugin
+        self.legacy_user = legacy_user
+        self.store = store
+
+    def test_reports_what_it_would_do(self):
         """Which accounts it would claim, so a mixed site can see it."""
-        legacy_user("sub-alice")
+        self.legacy_user("sub-alice")
 
         report = migration.migrate(dry_run=True)
 
         assert ("oidc", "sub-alice", "sub-alice") in report.identities
 
-    def test_writes_nothing(self, oidc_plugin, legacy_user, store):
+    def test_writes_nothing(self):
         """Dry run means dry."""
-        legacy_user("sub-alice")
+        self.legacy_user("sub-alice")
 
         migration.migrate(dry_run=True)
 
-        assert store.userid_for("oidc", "sub-alice") is None
+        assert self.store.userid_for("oidc", "sub-alice") is None
 
-    def test_is_the_default(self, oidc_plugin, legacy_user, store):
+    def test_is_the_default(self):
         """Same reasoning as the authomatic migration."""
-        legacy_user("sub-alice")
+        self.legacy_user("sub-alice")
 
         migration.migrate()
 
-        assert store.userid_for("oidc", "sub-alice") is None
+        assert self.store.userid_for("oidc", "sub-alice") is None
 
 
 class TestMigration:
-    def test_provider_configuration_is_translated(self, oidc_plugin, legacy_user):
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, acl_users, oidc_plugin, legacy_user, store) -> None:
+        self.portal = portal
+        self.acl_users = acl_users
+        self.oidc_plugin = oidc_plugin
+        self.legacy_user = legacy_user
+        self.store = store
+
+    def test_provider_configuration_is_translated(self):
         """The half that is unambiguous: it is all on the plugin."""
-        legacy_user("sub-alice")
+        self.legacy_user("sub-alice")
 
         migration.migrate(dry_run=False)
 
@@ -205,60 +218,56 @@ class TestMigration:
         assert record.config["issuer"] == "https://sso.example.com/"
         assert record.config["client_id"] == "plone"
 
-    def test_the_title_comes_across(self, oidc_plugin, legacy_user):
+    def test_the_title_comes_across(self):
         """So the login button still says what it said."""
-        legacy_user("sub-alice")
+        self.legacy_user("sub-alice")
 
         migration.migrate(dry_run=False)
 
         assert get_providers()[0].title == "Corporate SSO"
 
-    def test_the_userid_is_the_subject(self, oidc_plugin, legacy_user, store):
-        """D8's whole finding, asserted.
+    def test_the_userid_is_the_subject(self):
+        """The finding this migration rests on, asserted.
 
         With the ``sub`` strategy these are the same string, which is the only
         reason the join can be reconstructed at all.
         """
-        legacy_user("sub-alice")
+        self.legacy_user("sub-alice")
 
         migration.migrate(dry_run=False)
 
-        assert store.userid_for("oidc", "sub-alice") == "sub-alice"
+        assert self.store.userid_for("oidc", "sub-alice") == "sub-alice"
 
-    def test_explicit_userids_are_honoured(self, oidc_plugin, legacy_user, store):
+    def test_explicit_userids_are_honoured(self):
         """A mixed site names its OIDC accounts rather than claiming all."""
-        legacy_user("sub-alice")
-        legacy_user("locally-created")
+        self.legacy_user("sub-alice")
+        self.legacy_user("locally-created")
 
         migration.migrate(dry_run=False, userids=["sub-alice"])
 
-        assert store.userid_for("oidc", "sub-alice") == "sub-alice"
-        assert store.userid_for("oidc", "locally-created") is None
+        assert self.store.userid_for("oidc", "sub-alice") == "sub-alice"
+        assert self.store.userid_for("oidc", "locally-created") is None
 
-    def test_all_source_users_are_claimed_by_default(
-        self, oidc_plugin, legacy_user, store
-    ):
+    def test_all_source_users_are_claimed_by_default(self):
         """Right for a site that used OIDC exclusively, wrong for a mixed one.
 
         Pinned because it is a sharp edge: the dry-run report is what an
         operator is supposed to read before accepting it.
         """
-        legacy_user("sub-alice")
-        legacy_user("locally-created")
+        self.legacy_user("sub-alice")
+        self.legacy_user("locally-created")
 
         migration.migrate(dry_run=False)
 
-        assert store.userid_for("oidc", "locally-created") == "locally-created"
+        assert self.store.userid_for("oidc", "locally-created") == "locally-created"
 
-    def test_several_plugins_become_several_providers(
-        self, portal, acl_users, oidc_plugin, legacy_user
-    ):
+    def test_several_plugins_become_several_providers(self):
         """A site may have one plugin per issuer."""
         from pas.plugins.oidc.plugins import OIDCPlugin
 
-        acl_users._setObject("oidc2", OIDCPlugin("oidc2", title="Partner SSO"))
-        acl_users["oidc2"].issuer = "https://partner.example.com/"
-        legacy_user("sub-alice")
+        self.acl_users._setObject("oidc2", OIDCPlugin("oidc2", title="Partner SSO"))
+        self.acl_users["oidc2"].issuer = "https://partner.example.com/"
+        self.legacy_user("sub-alice")
 
         migration.migrate(dry_run=False)
 
@@ -269,37 +278,45 @@ class TestMigration:
 
 
 class TestIdempotence:
-    def test_second_run_migrates_nothing(self, oidc_plugin, legacy_user):
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, acl_users, oidc_plugin, legacy_user, store) -> None:
+        self.portal = portal
+        self.acl_users = acl_users
+        self.oidc_plugin = oidc_plugin
+        self.legacy_user = legacy_user
+        self.store = store
+
+    def test_second_run_migrates_nothing(self):
         """A migration you cannot re-run is a migration nobody dares run."""
-        legacy_user("sub-alice")
+        self.legacy_user("sub-alice")
         migration.migrate(dry_run=False)
 
         report = migration.migrate(dry_run=False)
 
         assert report.identities == []
 
-    def test_second_run_reports_it_as_skipped(self, oidc_plugin, legacy_user):
+    def test_second_run_reports_it_as_skipped(self):
         """Silence would read as "there was nothing there"."""
-        legacy_user("sub-alice")
+        self.legacy_user("sub-alice")
         migration.migrate(dry_run=False)
 
         report = migration.migrate(dry_run=False)
 
         assert any("already migrated" in note for note in report.skipped)
 
-    def test_second_run_does_not_duplicate_the_provider(self, oidc_plugin, legacy_user):
+    def test_second_run_does_not_duplicate_the_provider(self):
         """Provider records are keyed by id."""
-        legacy_user("sub-alice")
+        self.legacy_user("sub-alice")
         migration.migrate(dry_run=False)
 
         migration.migrate(dry_run=False)
 
         assert [record.provider_id for record in get_providers()] == ["oidc"]
 
-    def test_the_identity_still_resolves(self, oidc_plugin, legacy_user, store):
+    def test_the_identity_still_resolves(self):
         """The property that actually matters after a second run."""
-        legacy_user("sub-alice")
+        self.legacy_user("sub-alice")
         migration.migrate(dry_run=False)
         migration.migrate(dry_run=False)
 
-        assert store.userid_for("oidc", "sub-alice") == "sub-alice"
+        assert self.store.userid_for("oidc", "sub-alice") == "sub-alice"

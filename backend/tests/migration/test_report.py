@@ -1,4 +1,4 @@
-"""The migration report (Gate 7).
+"""The migration report.
 
 Small, and worth its own tests because it is the only thing an operator reads
 before deciding to commit a hard cutover.

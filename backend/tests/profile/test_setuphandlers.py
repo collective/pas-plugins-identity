@@ -1,4 +1,4 @@
-"""Install handlers that can run twice (§4.9).
+"""Install handlers that can run twice.
 
 Re-importing a GenericSetup profile is routine -- it is how an operator picks
 up a new registry record after an upgrade -- so every handler here has to be
@@ -7,6 +7,7 @@ lexicon, or a duplicated metadata column, quietly doubling the size of every
 brain.
 """
 
+from . import PROFILE_ID
 from pas.plugins.identity.profile import container as container_module
 from pas.plugins.identity.profile import setuphandlers
 from pas.plugins.identity.profile.catalog import INDEXES
@@ -17,6 +18,9 @@ from plone.app.dexterity.behaviors.exclfromnav import IExcludeFromNavigation
 from plone.dexterity.fti import DexterityFTI
 
 import pytest
+
+
+pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
 
 
 class Context:
@@ -43,80 +47,94 @@ class Context:
 
 
 class TestIdempotence:
-    def test_lexicon_is_not_duplicated(self, catalog):
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, catalog) -> None:
+        self.portal = portal
+        self.catalog = catalog
+
+    def test_lexicon_is_not_duplicated(self):
         """A second import must not add a second lexicon."""
-        setuphandlers.add_lexicon(catalog)
+        setuphandlers.add_lexicon(self.catalog)
 
         assert [
             obj_id
-            for obj_id in catalog.objectIds()
+            for obj_id in self.catalog.objectIds()
             if obj_id == setuphandlers.LEXICON_ID
         ] == [setuphandlers.LEXICON_ID]
 
-    def test_indexes_are_not_duplicated(self, catalog):
+    def test_indexes_are_not_duplicated(self):
         """Indexes are created once."""
-        before = sorted(catalog.indexes())
+        before = sorted(self.catalog.indexes())
 
-        setuphandlers.add_indexes(catalog)
+        setuphandlers.add_indexes(self.catalog)
 
-        assert sorted(catalog.indexes()) == before
+        assert sorted(self.catalog.indexes()) == before
 
-    def test_metadata_is_not_duplicated(self, catalog):
+    def test_metadata_is_not_duplicated(self):
         """Columns are created once; a duplicate would bloat every brain."""
-        before = sorted(catalog.schema())
+        before = sorted(self.catalog.schema())
 
-        setuphandlers.add_metadata(catalog)
+        setuphandlers.add_metadata(self.catalog)
 
-        assert sorted(catalog.schema()) == before
+        assert sorted(self.catalog.schema()) == before
 
-    def test_post_install_runs_twice(self, portal, catalog):
+    def test_post_install_runs_twice(self):
         """The whole handler, not just its parts."""
         setuphandlers.post_install(Context())
 
-        assert set(catalog.indexes()) >= {name for name, _ in INDEXES}
-        assert set(catalog.schema()) >= set(METADATA)
+        assert set(self.catalog.indexes()) >= {name for name, _ in INDEXES}
+        assert set(self.catalog.schema()) >= set(METADATA)
 
 
 class TestRebuildGuard:
-    def test_runs_for_our_profile(self, portal, catalog):
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, catalog) -> None:
+        self.portal = portal
+        self.catalog = catalog
+
+    def test_runs_for_our_profile(self):
         """With the marker present, the rebuild happens."""
         with api.env.adopt_roles(["Manager"]):
             api.content.create(
-                container=portal["identity-profiles"],
+                container=self.portal["identity-profiles"],
                 type=PROFILE_PORTAL_TYPE,
                 id="alice",
                 userid="alice",
                 login="alice@example.com",
             )
-        catalog.manage_catalogClear()
+        self.catalog.manage_catalogClear()
 
         setuphandlers.rebuild_catalog(Context())
 
-        assert catalog.unrestrictedSearchResults(userid="alice")
+        assert self.catalog.unrestrictedSearchResults(userid="alice")
 
-    def test_skipped_for_another_profile(self, portal, catalog):
-        """Installing an unrelated add-on must not touch this catalog."""
+    def test_skipped_for_another_profile(self):
+        """Installing an unrelated add-on must not touch this self.catalog."""
         with api.env.adopt_roles(["Manager"]):
             api.content.create(
-                container=portal["identity-profiles"],
+                container=self.portal["identity-profiles"],
                 type=PROFILE_PORTAL_TYPE,
                 id="alice",
                 userid="alice",
                 login="alice@example.com",
             )
-        catalog.manage_catalogClear()
+        self.catalog.manage_catalogClear()
 
         setuphandlers.rebuild_catalog(Context(marker=None))
 
-        assert not catalog.unrestrictedSearchResults(userid="alice")
+        assert not self.catalog.unrestrictedSearchResults(userid="alice")
 
 
 class TestPostUninstall:
-    def test_leaves_content_alone(self, portal):
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+
+    def test_leaves_content_alone(self):
         """It logs a decision; it does not delete anybody's data."""
         setuphandlers.post_uninstall(Context())
 
-        assert "identity-profiles" in portal.objectIds()
+        assert "identity-profiles" in self.portal.objectIds()
 
 
 @pytest.fixture
@@ -142,7 +160,7 @@ def plain_container_type(portal):
 
 
 class TestContainerTypeWithoutBehaviors:
-    def test_created_without_exclude_from_nav(self, portal, plain_container_type):
+    def test_created_without_exclude_from_nav(self, plain_container_type):
         """A custom container type is used as-is, not decorated blindly."""
         api.portal.set_registry_record(
             container_module.TYPE_RECORD, plain_container_type

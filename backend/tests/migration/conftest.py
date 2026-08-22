@@ -1,13 +1,15 @@
-"""Fixtures for the migration tests (Gate 7)."""
+"""Fixtures for the migration tests."""
+
+from pas.plugins.identity.core.pas import PLUGIN_ID
 
 import pytest
 
 
 @pytest.fixture
-def portal(integration):
-    """The site, with this package installed.
+def store(acl_users):
+    """Return this package's identity store.
 
-    :param integration: The integration layer.
-    :returns: The Plone site.
+    :param acl_users: The site's PAS instance.
+    :returns: The store.
     """
-    return integration["portal"]
+    return acl_users[PLUGIN_ID].store

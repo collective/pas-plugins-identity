@@ -1,6 +1,6 @@
-"""Gate 2 against a real provider: linking a second identity (S1/S3/I3).
+"""Linking a second identity, against a real provider.
 
-Same shape as the Gate 1 flow test -- real Dex, real codes -- but the flow is
+Same shape as the login flow test -- real Dex, real codes -- but the flow is
 started from ``@identities`` by an already-authenticated user, and finishes by
 attaching a second identity rather than minting an account.
 """
@@ -20,7 +20,7 @@ pytestmark = pytest.mark.docker
 
 
 def login_via_dex(api_session, portal_url: str, dex_login) -> str:
-    """Complete a Gate 1 login and return the resulting token.
+    """Complete an ordinary login and return the resulting token.
 
     :param api_session: The JSON session, which keeps the flow cookie.
     :param portal_url: The portal URL.
@@ -37,7 +37,7 @@ def login_via_dex(api_session, portal_url: str, dex_login) -> str:
     return finished.json()["token"]
 
 
-@pytest.fixture()
+@pytest.fixture
 def authenticated(api_session, portal_url, dex_login):
     """Log in through Dex and return a session carrying the token."""
     token = login_via_dex(api_session, portal_url, dex_login)
@@ -55,10 +55,17 @@ def identity_store():
 
 
 class TestLinkingASecondProvider:
-    def test_starts_from_identities(self, authenticated, portal_url):
-        """An authenticated user asks to link, and gets an authorize URL."""
-        response = authenticated.post(
-            f"{portal_url}/@identities",
+    @pytest.fixture(autouse=True)
+    def _setup(self, api_session, portal_url, dex_login, authenticated) -> None:
+        self.api_session = api_session
+        self.portal_url = portal_url
+        self.dex_login = dex_login
+        self.authenticated = authenticated
+
+    def test_starts_from_identities(self):
+        """An self.authenticated user asks to link, and gets an authorize URL."""
+        response = self.authenticated.post(
+            f"{self.portal_url}/@identities",
             json={"provider": "dex-second"},
             timeout=30,
         )
@@ -66,19 +73,17 @@ class TestLinkingASecondProvider:
         assert response.status_code == 200
         assert response.json()["authorize_url"].startswith("http")
 
-    def test_both_identities_resolve_to_one_userid(
-        self, authenticated, portal_url, dex_login
-    ):
-        """The Gate 2 check: link provider B, and A and B are the same human."""
-        started = authenticated.post(
-            f"{portal_url}/@identities",
+    def test_both_identities_resolve_to_one_userid(self):
+        """Link provider B, and A and B are the same human."""
+        started = self.authenticated.post(
+            f"{self.portal_url}/@identities",
             json={"provider": "dex-second"},
             timeout=30,
         )
-        query = dex_login(started.json()["authorize_url"])
+        query = self.dex_login(started.json()["authorize_url"])
 
-        finished = authenticated.post(
-            f"{portal_url}/@identity-callback",
+        finished = self.authenticated.post(
+            f"{self.portal_url}/@identity-callback",
             json={
                 "provider": "dex-second",
                 "code": query["code"],
@@ -93,16 +98,16 @@ class TestLinkingASecondProvider:
         assert len(owners) == 1
         assert len(store.identities_for(owners[0])) == 2
 
-    def test_listing_shows_both(self, authenticated, portal_url, dex_login):
+    def test_listing_shows_both(self):
         """And the user can see both in @identities."""
-        started = authenticated.post(
-            f"{portal_url}/@identities",
+        started = self.authenticated.post(
+            f"{self.portal_url}/@identities",
             json={"provider": "dex-second"},
             timeout=30,
         )
-        query = dex_login(started.json()["authorize_url"])
-        authenticated.post(
-            f"{portal_url}/@identity-callback",
+        query = self.dex_login(started.json()["authorize_url"])
+        self.authenticated.post(
+            f"{self.portal_url}/@identity-callback",
             json={
                 "provider": "dex-second",
                 "code": query["code"],
@@ -111,7 +116,7 @@ class TestLinkingASecondProvider:
             timeout=30,
         )
 
-        listing = authenticated.get(f"{portal_url}/@identities", timeout=30)
+        listing = self.authenticated.get(f"{self.portal_url}/@identities", timeout=30)
 
         assert sorted(i["provider"] for i in listing.json()["items"]) == [
             "dex",
@@ -120,38 +125,33 @@ class TestLinkingASecondProvider:
 
 
 class TestLinkingSecurity:
-    def test_anonymous_cannot_start_a_link(self, api_session, portal_url):
-        """S1 -- a linking flow may not be started without a session."""
-        response = api_session.post(
-            f"{portal_url}/@identities",
-            json={"provider": "dex-second"},
-            timeout=30,
-        )
+    @pytest.fixture(autouse=True)
+    def _setup(self, api_session, portal_url, dex_login, authenticated) -> None:
+        self.api_session = api_session
+        self.portal_url = portal_url
+        self.dex_login = dex_login
+        self.authenticated = authenticated
 
-        assert response.status_code == 401
-
-    def test_another_session_cannot_complete_the_link(
-        self, authenticated, portal_url, dex_login
-    ):
-        """S1 -- the flow must be finished by the session that started it.
+    def test_another_session_cannot_complete_the_link(self):
+        """The flow must be finished by the session that started it.
 
         The attacker here has the code, the state *and* the flow cookie, and
         is still refused, because they are not the user the attempt was
         started for. That is the property the ``link_for`` check buys.
         """
-        started = authenticated.post(
-            f"{portal_url}/@identities",
+        started = self.authenticated.post(
+            f"{self.portal_url}/@identities",
             json={"provider": "dex-second"},
             timeout=30,
         )
-        query = dex_login(started.json()["authorize_url"])
+        query = self.dex_login(started.json()["authorize_url"])
 
         # Same cookies, no token: an anonymous browser holding the flow state.
         anonymous = requests.Session()
         anonymous.headers.update({"Accept": "application/json"})
-        anonymous.cookies.update(authenticated.cookies)
+        anonymous.cookies.update(self.authenticated.cookies)
         response = anonymous.post(
-            f"{portal_url}/@identity-callback",
+            f"{self.portal_url}/@identity-callback",
             json={
                 "provider": "dex-second",
                 "code": query["code"],
@@ -163,14 +163,33 @@ class TestLinkingSecurity:
         assert response.status_code == 403
         assert response.json()["error"]["type"] == "Link refused"
 
-    def test_callback_url_is_the_configured_one(self, authenticated, portal_url):
+    def test_callback_url_is_the_configured_one(self):
         """The linking flow uses the same registered redirect URI, so Dex
         does not have to know about a second route."""
-        started = authenticated.post(
-            f"{portal_url}/@identities",
+        started = self.authenticated.post(
+            f"{self.portal_url}/@identities",
             json={"provider": "dex-second"},
             timeout=30,
         )
 
         query = parse_qs(urlparse(started.json()["authorize_url"]).query)
         assert query["redirect_uri"] == [CALLBACK_URL]
+
+
+class TestAnonymousLinking:
+    """Starting a link needs a session, so this one never logs in."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, api_session, portal_url) -> None:
+        self.api_session = api_session
+        self.portal_url = portal_url
+
+    def test_anonymous_cannot_start_a_link(self):
+        """A linking flow may not be started without a session."""
+        response = self.api_session.post(
+            f"{self.portal_url}/@identities",
+            json={"provider": "dex-second"},
+            timeout=30,
+        )
+
+        assert response.status_code == 401

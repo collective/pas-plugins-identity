@@ -1,11 +1,15 @@
-"""A user may edit their own Profile and nobody else's (§4.7)."""
+"""A user may edit their own Profile and nobody else's."""
 
+from . import PROFILE_ID
 from pas.plugins.identity.profile.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.profile.localroles import ProfileSelfRole
 from pas.plugins.identity.profile.localroles import SELF_ROLE
 from plone import api
 
 import pytest
+
+
+pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
 
 
 @pytest.fixture
@@ -31,36 +35,26 @@ def make_profile(portal, acl_users):
     return factory
 
 
-@pytest.fixture
-def acl_users(portal):
-    """The site's PAS instance.
-
-    :param portal: The Plone site.
-    :returns: ``acl_users``.
-    """
-    return api.portal.get_tool("acl_users")
-
-
 class TestRolesAreComputed:
-    def test_owner_gets_editor(self, make_profile):
+    @pytest.fixture(autouse=True)
+    def _setup(self, make_profile) -> None:
+        self.profile = make_profile("alice")
+
+    def test_owner_gets_editor(self):
         """The self-Editor role."""
-        profile = make_profile("alice")
+        assert ProfileSelfRole(self.profile).getRoles("alice") == (SELF_ROLE,)
 
-        assert ProfileSelfRole(profile).getRoles("alice") == (SELF_ROLE,)
-
-    def test_somebody_else_gets_nothing(self, make_profile):
+    def test_somebody_else_gets_nothing(self):
         """Which is the half that matters."""
-        profile = make_profile("alice")
+        assert ProfileSelfRole(self.profile).getRoles("bob") == ()
 
-        assert ProfileSelfRole(profile).getRoles("bob") == ()
-
-    def test_all_roles_lists_the_owner(self, make_profile):
+    def test_all_roles_lists_the_owner(self):
         """The Sharing tab shows what is granted."""
-        profile = make_profile("alice")
+        assert list(ProfileSelfRole(self.profile).getAllRoles()) == [
+            ("alice", (SELF_ROLE,))
+        ]
 
-        assert list(ProfileSelfRole(profile).getAllRoles()) == [("alice", (SELF_ROLE,))]
-
-    def test_a_profile_without_a_userid_grants_nothing(self, portal):
+    def test_a_profile_without_a_userid_grants_nothing(self):
         """Half-built content must not become a permission hole."""
 
         class Bare:
@@ -73,25 +67,26 @@ class TestRolesAreComputed:
 
 
 class TestThroughPAS:
-    def test_user_may_edit_their_own_profile(self, make_profile):
+    @pytest.fixture(autouse=True)
+    def _setup(self, make_profile) -> None:
+        self.make_profile = make_profile
+        self.profile = make_profile("alice")
+        self.alice = api.user.get(userid="alice")
+
+    def test_user_may_edit_their_own_profile(self):
         """End to end, through the permission machinery."""
-        profile = make_profile("alice")
+        with api.env.adopt_user(user=self.alice):
+            assert api.user.has_permission("Modify portal content", obj=self.profile)
 
-        with api.env.adopt_user(user=api.user.get(userid="alice")):
-            assert api.user.has_permission("Modify portal content", obj=profile)
-
-    def test_user_may_not_edit_somebody_elses(self, make_profile):
+    def test_user_may_not_edit_somebody_elses(self):
         """The point of the whole adapter."""
-        make_profile("alice")
-        other = make_profile("bob")
+        other = self.make_profile("bob")
 
-        with api.env.adopt_user(user=api.user.get(userid="alice")):
+        with api.env.adopt_user(user=self.alice):
             assert not api.user.has_permission("Modify portal content", obj=other)
 
-    def test_editor_does_not_carry_delete(self, make_profile):
+    def test_editor_does_not_carry_delete(self):
         """Owner would; a user deleting their own Profile breaks their account
         while the login keeps succeeding."""
-        profile = make_profile("alice")
-
-        with api.env.adopt_user(user=api.user.get(userid="alice")):
-            assert not api.user.has_permission("Delete objects", obj=profile)
+        with api.env.adopt_user(user=self.alice):
+            assert not api.user.has_permission("Delete objects", obj=self.profile)

@@ -14,6 +14,16 @@ import shutil
 pytest_plugins = ["pytest_plone"]
 
 
+@pytest.fixture
+def acl_users(portal):
+    """Return the site's PAS instance.
+
+    :param portal: The Plone site.
+    :returns: ``acl_users``.
+    """
+    return portal.acl_users
+
+
 globals().update(
     fixtures_factory((
         (ACCEPTANCE_TESTING, "acceptance"),

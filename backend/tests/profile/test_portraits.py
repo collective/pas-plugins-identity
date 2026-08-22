@@ -1,4 +1,4 @@
-"""Copying provider avatars into portrait storage (D5).
+"""Copying provider avatars into portrait storage.
 
 The feature is off by default and the guards are the interesting part, so most
 of these are about what is *refused*. A test suite that only proved the happy
@@ -9,6 +9,7 @@ Nothing here reaches the network: ``requests.get`` is replaced, which is also
 the honest way to test a size cap and a hostile content type.
 """
 
+from . import PROFILE_ID
 from io import BytesIO
 from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
 from pas.plugins.identity.profile import portraits
@@ -17,6 +18,9 @@ from plone import api
 from zope.event import notify
 
 import pytest
+
+
+pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
 
 
 #: A real 1x1 PNG. Built rather than pasted so it is obvious what it is.
@@ -108,73 +112,102 @@ def portrait_of(userid: str):
     return api.portal.get_tool("portal_memberdata")._getPortrait(userid)
 
 
+def fire_login(userid="alice-userid", **claims):
+    """Fire a login event.
+
+    :param userid: Canonical Plone userid.
+    :param claims: Claims to send.
+    """
+    notify(
+        ExternalIdentityAuthenticated(
+            userid=userid,
+            provider="dex",
+            subject="s1",
+            claims={"fullname": "Alice", "username": "alice", **claims},
+            is_new_user=True,
+            is_new_identity=True,
+        )
+    )
+
+
 class TestOffByDefault:
-    def test_disabled_in_a_fresh_site(self, portal):
-        """D5 asked for the feature; it did not ask for it to be on."""
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, answers) -> None:
+        self.portal = portal
+        self.answers = answers
+
+    def test_disabled_in_a_fresh_site(self):
+        """The feature exists; that is not the same as it being on."""
         assert portraits.enabled() is False
 
-    def test_nothing_is_fetched_when_off(self, portal, answers):
+    def test_nothing_is_fetched_when_off(self):
         """Not even the request goes out."""
-        calls = answers(FakeResponse(_png()))
+        calls = self.answers(FakeResponse(_png()))
 
         assert portraits.sync_portrait("alice", "https://cdn/a.png") is False
         assert calls == []
 
-    def test_no_url_is_not_an_error(self, on, answers):
+    def test_no_url_is_not_an_error(self):
         """A provider that sends no avatar is not a failure."""
-        calls = answers(FakeResponse(_png()))
+        calls = self.answers(FakeResponse(_png()))
 
         assert portraits.sync_portrait("alice", "") is False
         assert calls == []
 
 
 class TestGuards:
-    def test_https_only(self, on, answers):
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, answers, on) -> None:
+        self.portal = portal
+        self.answers = answers
+        self.on = on
+
+    def test_https_only(self):
         """A plain-HTTP URL is the easy way to aim this at an internal port."""
-        calls = answers(FakeResponse(_png()))
+        calls = self.answers(FakeResponse(_png()))
 
         assert portraits.sync_portrait("alice", "http://cdn/a.png") is False
         assert calls == []
 
-    def test_other_schemes_are_refused(self, on, answers):
+    def test_other_schemes_are_refused(self):
         """``file://`` would read the backend's disk."""
-        calls = answers(FakeResponse(_png()))
+        calls = self.answers(FakeResponse(_png()))
 
         assert portraits.sync_portrait("alice", "file:///etc/passwd") is False
         assert calls == []
 
-    def test_non_200_is_refused(self, on, answers):
+    def test_non_200_is_refused(self):
         """An error page is not an avatar."""
-        answers(FakeResponse(b"nope", status_code=404))
+        self.answers(FakeResponse(b"nope", status_code=404))
 
         assert portraits.sync_portrait("alice", "https://cdn/a.png") is False
 
-    def test_non_image_content_type_is_refused(self, on, answers):
+    def test_non_image_content_type_is_refused(self):
         """What the server says it is sending has to be an image."""
-        answers(FakeResponse(_png(), content_type="text/html"))
+        self.answers(FakeResponse(_png(), content_type="text/html"))
 
         assert portraits.sync_portrait("alice", "https://cdn/a.png") is False
 
-    def test_missing_content_type_is_refused(self, on, answers):
+    def test_missing_content_type_is_refused(self):
         """Absent is not "probably fine"."""
-        answers(FakeResponse(_png(), content_type=""))
+        self.answers(FakeResponse(_png(), content_type=""))
 
         assert portraits.sync_portrait("alice", "https://cdn/a.png") is False
 
-    def test_oversized_body_is_refused(self, on, answers):
+    def test_oversized_body_is_refused(self):
         """Counted off the stream, not taken from a header a server can lie
         about."""
-        answers(FakeResponse(b"\x00" * (portraits.MAX_BYTES + 1)))
+        self.answers(FakeResponse(b"\x00" * (portraits.MAX_BYTES + 1)))
 
         assert portraits.sync_portrait("alice", "https://cdn/a.png") is False
 
-    def test_a_broken_image_does_not_break_the_login(self, on, answers):
+    def test_a_broken_image_does_not_break_the_login(self):
         """Bytes that claim to be a PNG and are not."""
-        answers(FakeResponse(b"not an image at all"))
+        self.answers(FakeResponse(b"not an image at all"))
 
         assert portraits.sync_portrait("alice", "https://cdn/a.png") is False
 
-    def test_a_network_failure_does_not_break_the_login(self, on, monkeypatch):
+    def test_a_network_failure_does_not_break_the_login(self, monkeypatch):
         """The whole point of swallowing everything."""
 
         def explode(url, timeout=None, stream=False):
@@ -193,19 +226,25 @@ class TestGuards:
 
 
 class TestStoring:
-    def test_a_good_avatar_is_stored(self, on, answers):
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, answers, on) -> None:
+        self.portal = portal
+        self.answers = answers
+        self.on = on
+
+    def test_a_good_avatar_is_stored(self):
         """The happy path, once every guard is satisfied."""
-        answers(FakeResponse(_png()))
+        self.answers(FakeResponse(_png()))
 
         assert portraits.sync_portrait("alice", "https://cdn/a.png") is True
         assert portrait_of("alice") is not None
 
-    def test_it_replaces_a_previous_portrait(self, on, answers):
+    def test_it_replaces_a_previous_portrait(self):
         """Storing twice must not raise on the duplicate id."""
-        answers(FakeResponse(_png()))
+        self.answers(FakeResponse(_png()))
         portraits.sync_portrait("alice", "https://cdn/a.png")
 
-        answers(FakeResponse(_png()))
+        self.answers(FakeResponse(_png()))
 
         assert portraits.sync_portrait("alice", "https://cdn/b.png") is True
 
@@ -213,75 +252,73 @@ class TestStoring:
 class TestThroughTheSync:
     """The subscriber's side: when a fetch is attempted at all."""
 
-    def _login(self, userid="alice-userid", **claims):
-        """Fire a login event.
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, answers, on) -> None:
+        self.portal = portal
+        self.answers = answers
+        self.on = on
 
-        :param userid: Canonical Plone userid.
-        :param claims: Claims to send.
-        """
-        notify(
-            ExternalIdentityAuthenticated(
-                userid=userid,
-                provider="dex",
-                subject="s1",
-                claims={"fullname": "Alice", "username": "alice", **claims},
-                is_new_user=True,
-                is_new_identity=True,
-            )
-        )
-
-    def test_first_login_fetches_once(self, on, answers):
+    def test_first_login_fetches_once(self):
         """A new avatar is worth a request."""
-        calls = answers(FakeResponse(_png()))
+        calls = self.answers(FakeResponse(_png()))
 
-        self._login(picture_url="https://cdn/a.png")
+        fire_login(picture_url="https://cdn/a.png")
 
         assert calls == ["https://cdn/a.png"]
 
-    def test_second_login_with_the_same_url_does_not_refetch(self, on, answers):
+    def test_second_login_with_the_same_url_does_not_refetch(self):
         """This is the one part of the sync that touches the network, and it
         runs while somebody waits for a page."""
-        calls = answers(FakeResponse(_png()))
-        self._login(picture_url="https://cdn/a.png")
+        calls = self.answers(FakeResponse(_png()))
+        fire_login(picture_url="https://cdn/a.png")
 
-        self._login(picture_url="https://cdn/a.png")
+        fire_login(picture_url="https://cdn/a.png")
 
         assert calls == ["https://cdn/a.png"]
 
-    def test_a_changed_url_is_refetched(self, on, answers):
+    def test_a_changed_url_is_refetched(self):
         """Changing your avatar at the provider should change it here."""
-        calls = answers(FakeResponse(_png()))
-        self._login(picture_url="https://cdn/a.png")
+        calls = self.answers(FakeResponse(_png()))
+        fire_login(picture_url="https://cdn/a.png")
 
-        self._login(picture_url="https://cdn/b.png")
+        fire_login(picture_url="https://cdn/b.png")
 
         assert calls == ["https://cdn/a.png", "https://cdn/b.png"]
 
-    def test_a_failed_url_is_not_retried(self, on, answers):
+    def test_a_failed_url_is_not_retried(self):
         """One bad avatar must not become a permanent tax on that user's
         sign-in."""
-        calls = answers(FakeResponse(b"", status_code=500))
-        self._login(picture_url="https://cdn/a.png")
+        calls = self.answers(FakeResponse(b"", status_code=500))
+        fire_login(picture_url="https://cdn/a.png")
 
-        self._login(picture_url="https://cdn/a.png")
+        fire_login(picture_url="https://cdn/a.png")
 
         # One attempt, not two: the URL is remembered whether or not the fetch
         # worked, so a URL that failed once is not tried again on every login.
         assert calls == ["https://cdn/a.png"]
 
-    def test_no_picture_claim_is_a_no_op(self, on, answers):
+    def test_no_picture_claim_is_a_no_op(self):
         """Most providers send none."""
-        calls = answers(FakeResponse(_png()))
+        calls = self.answers(FakeResponse(_png()))
 
-        self._login()
+        fire_login()
 
         assert calls == []
 
-    def test_login_still_works_with_the_feature_off(self, portal, answers):
-        """The default path, which is the one nearly every site is on."""
-        calls = answers(FakeResponse(_png()))
 
-        self._login(picture_url="https://cdn/a.png")
+class TestTheFeatureOff:
+    """The default path, which is the one nearly every site is on."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, answers) -> None:
+        self.portal = portal
+        self.answers = answers
+
+    def test_login_still_works(self):
+        """No fetch, and the Profile is minted regardless."""
+        calls = self.answers(FakeResponse(_png()))
+
+        fire_login(picture_url="https://cdn/a.png")
 
         assert calls == []
         assert subscribers.get_profile("alice-userid") is not None

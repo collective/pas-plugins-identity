@@ -1,4 +1,4 @@
-"""Migrating from ``pas.plugins.authomatic`` (Gate 7, C5).
+"""Migrating from ``pas.plugins.authomatic``.
 
 The fixtures install the real plugin and write into its real BTrees rather
 than synthesizing the shapes. That is the whole point: a fixture that encoded
@@ -14,19 +14,8 @@ rather than assume it.
 from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.migration import authomatic as migration
-from plone import api
 
 import pytest
-
-
-@pytest.fixture
-def acl_users(portal):
-    """The site's PAS instance.
-
-    :param portal: The Plone site.
-    :returns: ``acl_users``.
-    """
-    return api.portal.get_tool("acl_users")
 
 
 @pytest.fixture
@@ -89,18 +78,13 @@ def legacy(authomatic_plugin):
     return add
 
 
-@pytest.fixture
-def store(acl_users):
-    """This package's identity store.
-
-    :param acl_users: The site's PAS instance.
-    :returns: The store.
-    """
-    return acl_users[PLUGIN_ID].store
-
-
 class TestNothingToDo:
-    def test_refuses_without_authomatic(self, portal):
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, acl_users) -> None:
+        self.portal = portal
+        self.acl_users = acl_users
+
+    def test_refuses_without_authomatic(self):
         """A site that never had it is not an error, but it is a refusal."""
         report = migration.migrate(dry_run=True)
 
@@ -118,11 +102,17 @@ class TestNothingToDo:
 class TestDegradedSites:
     """States a half-removed installation can leave behind."""
 
-    def test_missing_identity_plugin_is_refused(
-        self, portal, acl_users, authomatic_plugin
-    ):
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, acl_users, authomatic_plugin, legacy, store) -> None:
+        self.portal = portal
+        self.acl_users = acl_users
+        self.authomatic_plugin = authomatic_plugin
+        self.legacy = legacy
+        self.store = store
+
+    def test_missing_identity_plugin_is_refused(self):
         """Migrating onto a package that is not installed is not a migration."""
-        acl_users._delObject(PLUGIN_ID)
+        self.acl_users._delObject(PLUGIN_ID)
 
         report = migration.migrate(dry_run=True)
 
@@ -140,97 +130,109 @@ class TestDegradedSites:
         """
         import sys
 
-        legacy("github", "12345", "some-userid")
+        self.legacy("github", "12345", "some-userid")
         monkeypatch.setitem(sys.modules, "pas.plugins.authomatic.utils", None)
 
         report = migration.migrate(dry_run=False)
 
         # The identities still migrate: they live in the plugin's own BTrees,
         # not in the package. Only the provider configuration is lost.
-        assert store.userid_for("github", "12345") == "some-userid"
+        assert self.store.userid_for("github", "12345") == "some-userid"
         assert report.providers == []
 
-    def test_an_identity_without_stored_userdata_migrates_blank(
-        self, authomatic_plugin, store
-    ):
+    def test_an_identity_without_stored_userdata_migrates_blank(self):
         """The join is what matters; the claims snapshot is a convenience."""
-        authomatic_plugin._userid_by_identityinfo[("github", "999")] = "orphan"
+        self.authomatic_plugin._userid_by_identityinfo[("github", "999")] = "orphan"
 
         migration.migrate(dry_run=False)
 
-        assert store.userid_for("github", "999") == "orphan"
-        assert store.get("github", "999").claims == {}
+        assert self.store.userid_for("github", "999") == "orphan"
+        assert self.store.get("github", "999").claims == {}
 
-    def test_an_identity_for_an_unknown_provider_migrates_blank(
-        self, legacy, authomatic_plugin, store
-    ):
+    def test_an_identity_for_an_unknown_provider_migrates_blank(self):
         """User data exists, but not for that provider."""
-        legacy("github", "12345", "some-userid")
-        authomatic_plugin._userid_by_identityinfo[("google", "777")] = "some-userid"
+        self.legacy("github", "12345", "some-userid")
+        self.authomatic_plugin._userid_by_identityinfo[("google", "777")] = (
+            "some-userid"
+        )
 
         migration.migrate(dry_run=False)
 
-        assert store.get("google", "777").claims == {}
+        assert self.store.get("google", "777").claims == {}
 
 
 class TestDryRun:
-    def test_reports_what_it_would_do(self, legacy, store):
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, acl_users, legacy, store) -> None:
+        self.portal = portal
+        self.acl_users = acl_users
+        self.legacy = legacy
+        self.store = store
+
+    def test_reports_what_it_would_do(self):
         """The report is the thing an operator reads before committing."""
-        legacy("github", "12345", "some-userid")
+        self.legacy("github", "12345", "some-userid")
 
         report = migration.migrate(dry_run=True)
 
         assert report.identities == [("github", "12345", "some-userid")]
 
-    def test_writes_nothing(self, legacy, store):
+    def test_writes_nothing(self):
         """Dry run means dry."""
-        legacy("github", "12345", "some-userid")
+        self.legacy("github", "12345", "some-userid")
 
         migration.migrate(dry_run=True)
 
-        assert store.userid_for("github", "12345") is None
+        assert self.store.userid_for("github", "12345") is None
 
-    def test_creates_no_providers(self, legacy, portal):
+    def test_creates_no_providers(self):
         """Including the configuration half."""
-        legacy("github", "12345", "some-userid")
+        self.legacy("github", "12345", "some-userid")
 
         migration.migrate(dry_run=True)
 
         assert get_providers() == []
 
-    def test_is_the_default(self, legacy, store):
+    def test_is_the_default(self):
         """A function that rewrites authentication when somebody calls it to
         see what it does is a bad function."""
-        legacy("github", "12345", "some-userid")
+        self.legacy("github", "12345", "some-userid")
 
         migration.migrate()
 
-        assert store.userid_for("github", "12345") is None
+        assert self.store.userid_for("github", "12345") is None
 
 
 class TestMigration:
-    def test_identity_is_migrated(self, legacy, store):
-        """The mapping authomatic already had, now in this package's store."""
-        legacy("github", "12345", "some-userid")
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, acl_users, legacy, store) -> None:
+        self.portal = portal
+        self.acl_users = acl_users
+        self.legacy = legacy
+        self.store = store
+
+    def test_identity_is_migrated(self):
+        """The mapping authomatic already had, now in this package's self.store."""
+        self.legacy("github", "12345", "some-userid")
 
         migration.migrate(dry_run=False)
 
-        assert store.userid_for("github", "12345") == "some-userid"
+        assert self.store.userid_for("github", "12345") == "some-userid"
 
-    def test_several_providers_for_one_user(self, legacy, store):
+    def test_several_providers_for_one_user(self):
         """Linking is the point of this package; the migration must keep it."""
-        legacy("github", "12345", "shared-userid")
-        legacy("google", "sub-999", "shared-userid")
+        self.legacy("github", "12345", "shared-userid")
+        self.legacy("google", "sub-999", "shared-userid")
 
         migration.migrate(dry_run=False)
 
-        assert store.userid_for("github", "12345") == "shared-userid"
-        assert store.userid_for("google", "sub-999") == "shared-userid"
-        assert len(store.identities_for("shared-userid")) == 2
+        assert self.store.userid_for("github", "12345") == "shared-userid"
+        assert self.store.userid_for("google", "sub-999") == "shared-userid"
+        assert len(self.store.identities_for("shared-userid")) == 2
 
-    def test_claims_are_carried_over(self, legacy, store):
+    def test_claims_are_carried_over(self):
         """Best effort, so the account is not blank until the next login."""
-        legacy(
+        self.legacy(
             "github",
             "12345",
             "some-userid",
@@ -240,30 +242,31 @@ class TestMigration:
 
         migration.migrate(dry_run=False)
 
-        record = store.get("github", "12345")
+        record = self.store.get("github", "12345")
         assert record.claims["fullname"] == "Alice Liddell"
         assert record.claims["email"] == "alice@example.com"
 
-    def test_email_is_never_inherited_as_verified(self, legacy, store):
-        """S2 will not link on a claim we cannot trace to our own check.
+    def test_email_is_never_inherited_as_verified(self):
+        """Auto-linking will not act on a claim we cannot trace to our own
+        check.
 
         authomatic did not record whether the provider asserted verification,
         so inheriting it as true would be inventing evidence.
         """
-        legacy("github", "12345", "some-userid", email="alice@example.com")
+        self.legacy("github", "12345", "some-userid", email="alice@example.com")
 
         migration.migrate(dry_run=False)
 
-        assert store.get("github", "12345").claims["email_verified"] is False
+        assert self.store.get("github", "12345").claims["email_verified"] is False
 
-    def test_provider_configuration_is_created(self, portal, legacy):
+    def test_provider_configuration_is_created(self):
         """Without credentials nothing can log in afterwards."""
         from pas.plugins.authomatic.utils import authomatic_settings
 
         authomatic_settings().json_config = (
             '{"github": {"consumer_key": "key", "consumer_secret": "secret"}}'
         )
-        legacy("github", "12345", "some-userid")
+        self.legacy("github", "12345", "some-userid")
 
         migration.migrate(dry_run=False)
 
@@ -271,14 +274,14 @@ class TestMigration:
         assert providers["github"].driver_id == "github"
         assert providers["github"].config["client_id"] == "key"
 
-    def test_an_unknown_provider_lands_on_the_generic_driver(self, portal, legacy):
+    def test_an_unknown_provider_lands_on_the_generic_driver(self):
         """And says so, rather than looking configured."""
         from pas.plugins.authomatic.utils import authomatic_settings
 
         authomatic_settings().json_config = (
             '{"keycloak": {"consumer_key": "key", "consumer_secret": "secret"}}'
         )
-        legacy("keycloak", "sub-1", "some-userid")
+        self.legacy("keycloak", "sub-1", "some-userid")
 
         report = migration.migrate(dry_run=False)
 
@@ -293,8 +296,15 @@ class TestUserIdModes:
     Every factory writes an opaque string into the same BTree, so preserving
     the user id verbatim is correct in all of them. These pin that: whatever
     shape the id has, it survives unchanged, which is what keeps local roles,
-    sharing settings and content ownership pointing at the right person (I1).
+    sharing settings and content ownership pointing at the right person.
     """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, acl_users, legacy, store) -> None:
+        self.portal = portal
+        self.acl_users = acl_users
+        self.legacy = legacy
+        self.store = store
 
     @pytest.mark.parametrize(
         "userid",
@@ -305,52 +315,59 @@ class TestUserIdModes:
             "0f8fad5bd9cb469fa16570867728950e",  # uuid factory
         ],
     )
-    def test_the_userid_survives_verbatim(self, legacy, store, userid):
+    def test_the_userid_survives_verbatim(self, userid):
         """Whatever mode produced it."""
-        legacy("github", "12345", userid)
+        self.legacy("github", "12345", userid)
 
         migration.migrate(dry_run=False)
 
-        assert store.userid_for("github", "12345") == userid
+        assert self.store.userid_for("github", "12345") == userid
 
 
 class TestIdempotence:
-    def test_second_run_migrates_nothing(self, legacy, store):
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, acl_users, legacy, store) -> None:
+        self.portal = portal
+        self.acl_users = acl_users
+        self.legacy = legacy
+        self.store = store
+
+    def test_second_run_migrates_nothing(self):
         """A migration you cannot re-run is a migration nobody dares run."""
-        legacy("github", "12345", "some-userid")
+        self.legacy("github", "12345", "some-userid")
         migration.migrate(dry_run=False)
 
         report = migration.migrate(dry_run=False)
 
         assert report.identities == []
 
-    def test_second_run_reports_it_as_skipped(self, legacy, store):
+    def test_second_run_reports_it_as_skipped(self):
         """Silence would read as "there was nothing there"."""
-        legacy("github", "12345", "some-userid")
+        self.legacy("github", "12345", "some-userid")
         migration.migrate(dry_run=False)
 
         report = migration.migrate(dry_run=False)
 
         assert any("already migrated" in note for note in report.skipped)
 
-    def test_second_run_does_not_duplicate_the_provider(self, portal, legacy):
+    def test_second_run_does_not_duplicate_the_provider(self):
         """Provider records are keyed by id; two would be one too many."""
         from pas.plugins.authomatic.utils import authomatic_settings
 
         authomatic_settings().json_config = (
             '{"github": {"consumer_key": "key", "consumer_secret": "secret"}}'
         )
-        legacy("github", "12345", "some-userid")
+        self.legacy("github", "12345", "some-userid")
         migration.migrate(dry_run=False)
 
         migration.migrate(dry_run=False)
 
         assert [record.provider_id for record in get_providers()] == ["github"]
 
-    def test_the_identity_still_resolves(self, legacy, store):
+    def test_the_identity_still_resolves(self):
         """The property that actually matters after a second run."""
-        legacy("github", "12345", "some-userid")
+        self.legacy("github", "12345", "some-userid")
         migration.migrate(dry_run=False)
         migration.migrate(dry_run=False)
 
-        assert store.userid_for("github", "12345") == "some-userid"
+        assert self.store.userid_for("github", "12345") == "some-userid"

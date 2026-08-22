@@ -1,4 +1,4 @@
-"""C6: properties and enumeration wake no Profile objects.
+"""Properties and enumeration wake no Profile objects.
 
 This is the claim the ``[profile]`` design was chosen for, and the reason this
 package does not build on Products.membrane. It is asserted two ways, because
@@ -16,11 +16,11 @@ cache; a test that only checked ghost state would miss a load followed by a
 deactivation.
 """
 
+from . import PROFILE_ID
 from pas.plugins.identity.profile.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.profile.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.profile.content.group import Group
 from pas.plugins.identity.profile.content.profile import Profile
-from pas.plugins.identity.profile.pas import PLUGIN_ID
 from plone import api
 from Products.CMFCore.indexing import processQueue
 
@@ -29,24 +29,7 @@ import transaction
 import ZODB.Connection
 
 
-@pytest.fixture
-def acl_users(portal):
-    """The site's PAS instance.
-
-    :param portal: The Plone site.
-    :returns: ``acl_users``.
-    """
-    return api.portal.get_tool("acl_users")
-
-
-@pytest.fixture
-def plugin(acl_users):
-    """The profile PAS plugin.
-
-    :param acl_users: The site's PAS instance.
-    :returns: The plugin.
-    """
-    return acl_users[PLUGIN_ID]
+pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
 
 
 @pytest.fixture
@@ -140,123 +123,155 @@ def profile_loads(recorded: list[str]) -> list[str]:
 
 
 class TestTheFixtureItself:
-    def test_profiles_start_as_ghosts(self, profiles):
-        """Without this, a load count of zero would prove nothing."""
-        assert [profile._p_changed for profile in profiles] == [None] * 12
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, acl_users, plugin, profiles, loads) -> None:
+        self.portal = portal
+        self.acl_users = acl_users
+        self.plugin = plugin
+        self.profiles = profiles
+        self.loads = loads
 
-    def test_the_counter_sees_a_real_load(self, profiles, loads):
+    def test_profiles_start_as_ghosts(self):
+        """Without this, a load count of zero would prove nothing."""
+        assert [profile._p_changed for profile in self.profiles] == [None] * 12
+
+    def test_the_counter_sees_a_real_load(self):
         """The counter is wired up: touching a Profile registers."""
-        profile = next(one for one in profiles if isinstance(one, Profile))
+        profile = next(one for one in self.profiles if isinstance(one, Profile))
 
         profile.fullname  # noqa: B018 - the point is the side effect
 
-        assert Profile.__name__ in profile_loads(loads)
+        assert Profile.__name__ in profile_loads(self.loads)
 
 
 class TestEnumerationWakesNothing:
-    def test_enumerate_everybody(self, plugin, profiles, loads):
-        """A bare enumeration returns the ten users and loads none of them.
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, acl_users, plugin, profiles, loads) -> None:
+        self.portal = portal
+        self.acl_users = acl_users
+        self.plugin = plugin
+        self.profiles = profiles
+        self.loads = loads
+
+    def test_enumerate_everybody(self):
+        """A bare enumeration returns the ten users and self.loads none of them.
 
         Ten, not twelve: the two Groups share this catalog and must not leak
         into a user listing.
         """
-        results = plugin.enumerateUsers()
+        results = self.plugin.enumerateUsers()
 
         assert len(results) == 10
-        assert profile_loads(loads) == []
+        assert profile_loads(self.loads) == []
 
-    def test_enumerate_by_login(self, plugin, profiles, loads):
+    def test_enumerate_by_login(self):
         """The hot path: resolving one login."""
-        results = plugin.enumerateUsers(login="user3@example.com", exact_match=True)
+        results = self.plugin.enumerateUsers(
+            login="user3@example.com", exact_match=True
+        )
 
         assert [record["id"] for record in results] == ["user3"]
-        assert profile_loads(loads) == []
+        assert profile_loads(self.loads) == []
 
-    def test_substring_search(self, plugin, profiles, loads):
+    def test_substring_search(self):
         """A Sharing-style search over full names."""
-        results = plugin.enumerateUsers(fullname="Number 7")
+        results = self.plugin.enumerateUsers(fullname="Number 7")
 
         assert [record["id"] for record in results] == ["user7"]
-        assert profile_loads(loads) == []
+        assert profile_loads(self.loads) == []
 
-    def test_profiles_are_still_ghosts_afterwards(self, plugin, profiles):
+    def test_profiles_are_still_ghosts_afterwards(self):
         """The other half of the claim: nothing was woken and put back."""
-        plugin.enumerateUsers(fullname="User")
+        self.plugin.enumerateUsers(fullname="User")
 
-        assert [profile._p_changed for profile in profiles] == [None] * 12
+        assert [profile._p_changed for profile in self.profiles] == [None] * 12
 
 
 class TestPropertiesWakeNothing:
-    def test_property_sheet_is_built_from_the_brain(
-        self, plugin, profiles, acl_users, loads
-    ):
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, acl_users, plugin, profiles, loads) -> None:
+        self.portal = portal
+        self.acl_users = acl_users
+        self.plugin = plugin
+        self.profiles = profiles
+        self.loads = loads
+
+    def test_property_sheet_is_built_from_the_brain(self):
         """Reading a full name is the most frequent read in a Plone site."""
-        user = acl_users.getUserById("user4")
-        sheet = plugin.getPropertiesForUser(user)
+        user = self.acl_users.getUserById("user4")
+        sheet = self.plugin.getPropertiesForUser(user)
 
         assert sheet.getProperty("fullname") == "User Number 4"
         assert sheet.getProperty("email") == "user4@example.com"
         assert sheet.getProperty("location") == "Room 4"
-        assert profile_loads(loads) == []
+        assert profile_loads(self.loads) == []
 
-    def test_whole_sheet_read_wakes_nothing(self, plugin, profiles, acl_users, loads):
+    def test_whole_sheet_read_wakes_nothing(self):
         """Every served field, not just the two anybody remembers."""
-        user = acl_users.getUserById("user4")
-        sheet = plugin.getPropertiesForUser(user)
+        user = self.acl_users.getUserById("user4")
+        sheet = self.plugin.getPropertiesForUser(user)
 
         for name in sheet.propertyIds():
             sheet.getProperty(name)
 
-        assert profile_loads(loads) == []
+        assert profile_loads(self.loads) == []
 
-    def test_every_user_in_one_pass(self, plugin, profiles, acl_users, loads):
+    def test_every_user_in_one_pass(self):
         """Rendering a listing reads properties for everybody at once."""
         for index in range(10):
-            user = acl_users.getUserById(f"user{index}")
-            plugin.getPropertiesForUser(user)
+            user = self.acl_users.getUserById(f"user{index}")
+            self.plugin.getPropertiesForUser(user)
 
-        assert profile_loads(loads) == []
+        assert profile_loads(self.loads) == []
 
 
 class TestGroupsWakeNothing:
-    """Gate 6d rides on the same guarantee, on a hotter path.
+    """Groups ride on the same guarantee, on a hotter path.
 
     ``getGroupsForPrincipal`` runs on every permission check that touches a
     local role, so if anything here woke an object it would do so constantly.
     """
 
-    def test_groups_for_principal(self, plugin, profiles, acl_users, loads):
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, acl_users, plugin, profiles, loads) -> None:
+        self.portal = portal
+        self.acl_users = acl_users
+        self.plugin = plugin
+        self.profiles = profiles
+        self.loads = loads
+
+    def test_groups_for_principal(self):
         """The hottest question in the layer."""
-        principal = acl_users.getUserById("user1")
+        principal = self.acl_users.getUserById("user1")
 
-        assert plugin.getGroupsForPrincipal(principal) == ("editors",)
-        assert profile_loads(loads) == []
+        assert self.plugin.getGroupsForPrincipal(principal) == ("editors",)
+        assert profile_loads(self.loads) == []
 
-    def test_group_enumeration(self, plugin, profiles, loads):
+    def test_group_enumeration(self):
         """Rendering the group listing."""
-        assert len(plugin.enumerateGroups()) == 2
-        assert profile_loads(loads) == []
+        assert len(self.plugin.enumerateGroups()) == 2
+        assert profile_loads(self.loads) == []
 
-    def test_group_members(self, plugin, profiles, loads):
+    def test_group_members(self):
         """The rare direction, still off the index."""
-        assert plugin.getGroupMembers("editors") == (
+        assert self.plugin.getGroupMembers("editors") == (
             "user1",
             "user3",
             "user5",
             "user7",
             "user9",
         )
-        assert profile_loads(loads) == []
+        assert profile_loads(self.loads) == []
 
-    def test_group_ids(self, plugin, profiles, loads):
+    def test_group_ids(self):
         """Introspection too."""
-        assert plugin.getGroupIds() == ["editors", "reviewers"]
-        assert profile_loads(loads) == []
+        assert self.plugin.getGroupIds() == ["editors", "reviewers"]
+        assert profile_loads(self.loads) == []
 
-    def test_everything_is_still_a_ghost(self, plugin, profiles, acl_users):
+    def test_everything_is_still_a_ghost(self):
         """The other half of the claim, over the whole group surface."""
-        plugin.getGroupsForPrincipal(acl_users.getUserById("user1"))
-        plugin.enumerateGroups()
-        plugin.getGroupMembers("editors")
+        self.plugin.getGroupsForPrincipal(self.acl_users.getUserById("user1"))
+        self.plugin.enumerateGroups()
+        self.plugin.getGroupMembers("editors")
 
-        assert [profile._p_changed for profile in profiles] == [None] * 12
+        assert [profile._p_changed for profile in self.profiles] == [None] * 12

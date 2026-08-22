@@ -1,4 +1,4 @@
-# Dex configuration for the functional flow tests (C2).
+# Dex configuration for the functional flow tests.
 #
 # Deliberately minimal: in-memory storage, one static client, one static
 # password. There is no database, so the container is up in about a second
@@ -18,7 +18,7 @@ web:
 # Dex matches redirect URIs exactly; no wildcards. This is the value the
 # tests put in the pas.plugins.identity.callback_url registry record, and it
 # stands in for the Volto route.
-# Two clients, because Gate 2 needs a *second* provider to link to. Dex
+# Two clients, because the linking tests need a *second* provider. Dex
 # serves both from one issuer, which is enough: the identity key is
 # (provider_id, subject), and the two providers carry different provider ids.
 staticClients:
