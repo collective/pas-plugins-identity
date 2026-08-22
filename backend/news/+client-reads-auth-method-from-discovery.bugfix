@@ -1,0 +1,3 @@
+The login flow now chooses its token-endpoint authentication method from the provider's discovery document instead of leaving it to authlib's default. A provider that accepts only `client_secret_post` refused the exchange, and the resulting `invalid_client` names the client rather than the mismatch, so the obvious next move is to check the secret — which is correct.
+
+Basic is preferred where a provider offers both, being the one RFC 6749 requires every server to support, and a provider that advertises nothing keeps authlib's default for the same reason. A provider configured with no secret is now declared as a public client rather than sending an empty one, which was being read as a failed confidential login rather than as a public client. @ericof

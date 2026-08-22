@@ -442,3 +442,46 @@ class TestIdTokenClaims:
 
         with pytest.raises(FlowError, match="no client_id configured"):
             self.finish(state, OIDC_METADATA)
+
+
+class TestTokenEndpointAuthMethod:
+    """authlib defaults to client_secret_basic and never reads discovery, so
+    a provider that accepts only the form refused the exchange with
+    invalid_client -- which reads as a wrong secret and is not one. Found by
+    pointing this package's client at this package's server."""
+
+    def test_no_secret_is_a_public_client(self):
+        """Said explicitly rather than left to authlib, which would send an
+        empty secret and have it read as a failed confidential login."""
+        assert flows.FlowManager._auth_method(False, {}) == "none"
+
+    def test_a_provider_that_advertises_nothing_gets_basic(self):
+        """RFC 6749 §2.3.1 requires a server to support Basic and makes the
+        form optional, so it is the safer guess. Also authlib's default, so
+        plain OAuth2 providers keep behaving as they did."""
+        assert flows.FlowManager._auth_method(True, {}) == "client_secret_basic"
+
+    def test_basic_is_preferred_when_both_are_offered(self):
+        metadata = {
+            "token_endpoint_auth_methods_supported": [
+                "client_secret_post",
+                "client_secret_basic",
+            ]
+        }
+
+        assert flows.FlowManager._auth_method(True, metadata) == "client_secret_basic"
+
+    def test_the_form_is_used_when_it_is_all_the_provider_takes(self):
+        """The case that was broken: a server advertising only the form."""
+        metadata = {
+            "token_endpoint_auth_methods_supported": ["client_secret_post", "none"]
+        }
+
+        assert flows.FlowManager._auth_method(True, metadata) == "client_secret_post"
+
+    def test_an_unrecognised_advertisement_falls_back_to_basic(self):
+        """A provider offering only methods this client cannot do -- mutual
+        TLS, a signed assertion -- is not a reason to send nothing."""
+        metadata = {"token_endpoint_auth_methods_supported": ["private_key_jwt"]}
+
+        assert flows.FlowManager._auth_method(True, metadata) == "client_secret_basic"

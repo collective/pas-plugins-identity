@@ -291,7 +291,7 @@ class FlowManager:
         if not endpoint:
             raise FlowError(f"{provider.provider_id}: metadata has no token_endpoint")
 
-        client = self._client(provider, redirect_uri)
+        client = self._client(provider, redirect_uri, metadata)
         token = client.fetch_token(
             endpoint,
             code=code,
@@ -397,18 +397,60 @@ class FlowManager:
         return client_id
 
     @staticmethod
-    def _client(provider: ProviderConfig, redirect_uri: str) -> OAuth2Session:
+    def _auth_method(has_secret: bool, metadata: JSONDict) -> str:
+        """Choose how to authenticate at the provider's token endpoint.
+
+        authlib defaults to ``client_secret_basic`` and never consults
+        discovery, so a provider that accepts only the form refuses the
+        exchange with ``invalid_client`` -- a failure that looks like a wrong
+        secret and is not one. This reads what the provider actually said it
+        accepts.
+
+        Basic is preferred where both are offered: RFC 6749 §2.3.1 requires a
+        server to support it and makes the form optional, so it is the method
+        the two ends are most likely to agree on. A provider that advertises
+        nothing keeps authlib's default, which is the same choice for the same
+        reason.
+
+        :param has_secret: Whether the provider is configured with a secret.
+        :param metadata: Provider metadata, normally from discovery.
+        :returns: An authlib ``token_endpoint_auth_method``.
+        """
+        if not has_secret:
+            # No secret to present. Saying so is what stops authlib sending an
+            # empty one and having it read as a failed confidential login
+            # rather than as a public client.
+            return "none"
+
+        supported = metadata.get("token_endpoint_auth_methods_supported") or []
+        for method in ("client_secret_basic", "client_secret_post"):
+            if method in supported:
+                return method
+        return "client_secret_basic"
+
+    @classmethod
+    def _client(
+        cls,
+        provider: ProviderConfig,
+        redirect_uri: str,
+        metadata: JSONDict | None = None,
+    ) -> OAuth2Session:
         """Build an authlib client for a provider.
 
         :param provider: The configured provider.
         :param redirect_uri: Absolute callback URL.
+        :param metadata: Provider metadata, when the caller has it. Only the
+            token exchange needs it; building an authorize URL does not touch
+            the token endpoint.
         :returns: The authlib session.
         """
         config = provider.config
+        secret = config.get("client_secret", "")
         return OAuth2Session(
             client_id=config.get("client_id", ""),
-            client_secret=config.get("client_secret", ""),
+            client_secret=secret,
             scope=config.get("scope", ""),
             redirect_uri=redirect_uri,
             code_challenge_method=CODE_CHALLENGE_METHOD,
+            token_endpoint_auth_method=cls._auth_method(bool(secret), metadata or {}),
         )
