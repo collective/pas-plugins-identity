@@ -137,6 +137,75 @@ class TestSuccessfulLogin(CallbackCase):
         assert self.plugin().store.userid_for("dex", USERINFO["sub"]) == userid
 
 
+class TestProviderIsOptional(CallbackCase):
+    """A provider redirects back with ``code`` and ``state`` and nothing else,
+    so the frontend route the browser lands on has no way to know which
+    provider it is talking to: it is a fresh page load and the query string is
+    all it has. Requiring it in the body meant every browser login answered
+    400 while every test that supplied it by hand passed."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(
+        self, portal, request_, configured, stub_metadata, stub_provider
+    ) -> None:
+        self.portal = portal
+        self.request = request_
+        stub_metadata(DEX_METADATA)
+        stub_provider()
+        self.flow = self.start_flow()
+
+    def test_the_provider_comes_from_the_state(self):
+        """The session minted the state against an attempt that records the
+        provider, and the code is redeemed against that same attempt a moment
+        later."""
+        result = self.callback(code="c", state=self.flow)
+
+        assert self.status() == 200
+        assert result["token"]
+
+    def test_an_empty_provider_is_the_same_as_none(self):
+        """Which is what the frontend sends: it reads the parameter off the
+        query string and defaults it to the empty string."""
+        result = self.callback(provider="", code="c", state=self.flow)
+
+        assert self.status() == 200
+        assert result["token"]
+
+    def test_a_supplied_provider_is_still_honoured(self):
+        """Callers that do know keep working, and a mismatched one is still
+        refused by the exchange."""
+        result = self.callback(provider="dex", code="c", state=self.flow)
+
+        assert self.status() == 200
+        assert result["token"]
+
+    def test_an_unusable_state_is_refused_as_authentication(self):
+        """Not as a missing parameter, and not as an unknown provider: the
+        state is the thing that failed, and it reads like every other state
+        failure."""
+        result = self.callback(code="c", state="never-issued")
+
+        assert self.status() == 401
+        assert result["error"]["type"] == "Authentication failed"
+
+    def test_deriving_the_provider_does_not_consume_the_state(self):
+        """``peek`` must leave the attempt where ``pop`` will find it, or the
+        exchange a line later fails on the state it just read."""
+        assert self.callback(code="c", state=self.flow)["token"]
+
+    def test_the_state_is_still_single_use(self):
+        """And having been read twice in one request must not make it
+        replayable. ``keep_cookie`` carries the rewritten session forward, as
+        a browser would; without it the second request still holds the
+        pre-redemption session and the assertion tests the harness."""
+        self.callback(code="c", state=self.flow)
+        self.keep_cookie()
+
+        self.callback(code="c", state=self.flow)
+
+        assert self.status() == 401
+
+
 class TestRefusals(CallbackCase):
     """Every one of these must be refused, and read the same to the caller."""
 
@@ -197,12 +266,17 @@ class TestRefusals(CallbackCase):
             {"provider": "dex"},
             {"provider": "dex", "code": "c"},
             {"provider": "dex", "state": "s"},
-            {"code": "c", "state": "s"},
             {"provider": "dex", "code": "", "state": "s"},
+            {"code": "c"},
+            {"state": "s"},
         ],
     )
     def test_incomplete_bodies_are_refused(self, payload: dict):
-        """A callback without all three parts cannot be honoured."""
+        """A callback without a code and a state cannot be honoured.
+
+        ``provider`` is not in that list: see
+        :meth:`TestProviderIsOptional.test_the_provider_comes_from_the_state`.
+        """
         result = self.callback(**payload)
 
         assert self.status() == 400

@@ -1,0 +1,5 @@
+Fixed every browser login failing at the callback with "That sign-in link is no longer valid". `POST @identity-callback` required a `provider` in its body, and a provider redirects the browser back with `code` and `state` and nothing else — so the Volto route the browser lands on had none to send. It is a fresh page load; the query string is all it has.
+
+The server already knew. `state` was minted against an attempt that records the provider, and the code is redeemed against exactly that attempt a moment later. `provider` is now optional and derived from the state, which is read without being consumed. Callers that do send one keep working, and a state that names a different provider is refused by the exchange as before. An unusable state reads as `Authentication failed`, like every other state failure, rather than as a missing parameter.
+
+The Gate S3 test did not catch this because it supplied `provider` by hand: it was written from the flow's point of view rather than the frontend's, and passed while every real browser login answered 400. It now sends exactly what the callback route sends. @ericof

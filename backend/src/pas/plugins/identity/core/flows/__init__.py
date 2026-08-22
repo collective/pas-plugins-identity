@@ -188,6 +188,27 @@ class FlowManager:
         attempts[attempt.state] = attempt.serialize()
         self.session[SESSION_KEY] = attempts
 
+    def peek(self, state: str) -> FlowAttempt:
+        """Read an attempt without consuming it.
+
+        Exists so the callback service can learn which provider a ``state``
+        belongs to before redeeming it. The provider's redirect carries only
+        ``code`` and ``state``, so the frontend route it lands on has no way
+        to know the provider -- but this session already does, and the code is
+        redeemed against exactly this attempt a moment later.
+
+        Refuses identically to :meth:`pop`, so nothing is learned by asking
+        this instead.
+
+        :param state: The ``state`` echoed back by the provider.
+        :returns: The matching attempt, still stored.
+        :raises FlowError: When the state is unknown, expired or already used.
+        """
+        data = self._attempts().get(state)
+        if data is None:
+            raise FlowError("Unknown or expired authorization state")
+        return FlowAttempt.deserialize(data)
+
     def pop(self, state: str) -> FlowAttempt:
         """Consume an attempt, refusing anything that does not match.
 

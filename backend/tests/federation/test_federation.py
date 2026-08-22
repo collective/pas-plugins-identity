@@ -125,12 +125,18 @@ class TestFederatedLogin:
         return granted.headers["Location"]
 
     def _redeem(self, redirect: str) -> dict:
+        """Redeem the code exactly as the Volto callback route does.
+
+        Deliberately sends no ``provider``. The redirect carries ``code`` and
+        ``state`` and nothing else, so the frontend has none to send -- and
+        this test supplying one by hand is how it managed to pass while every
+        real browser login answered 400.
+        """
         query = parse_qs(urlparse(redirect).query)
         response = self.session.post(
             f"{self.urls['rp']}/@identity-callback",
             headers=JSON_HEADERS,
             data=json.dumps({
-                "provider": settings.DEMO_PROVIDER_ID,
                 "code": query["code"][0],
                 "state": query["state"][0],
             }),

@@ -50,15 +50,32 @@ class IdentityCallback(IdentityService):
         alsoProvides(self.request, plone.protect.interfaces.IDisableCSRFProtection)
 
         data = json_body(self.request)
-        missing = [key for key in ("provider", "code", "state") if not data.get(key)]
+        missing = [key for key in ("code", "state") if not data.get(key)]
         if missing:
             return self._error(
                 400, "Missing parameters", f"Required: {', '.join(missing)}"
             )
 
-        provider = get_provider(data["provider"])
+        # ``provider`` is accepted but not required. A provider redirects back
+        # with ``code`` and ``state`` and nothing else, so the frontend route
+        # the browser lands on cannot know which provider it is talking to --
+        # it is a fresh page load, and the query string is all it has. This
+        # session does know: ``state`` was minted against an attempt that
+        # records the provider, and the code is redeemed against exactly that
+        # attempt a moment later. Requiring the caller to tell us as well was
+        # asking for something the caller does not have.
+        provider_id = data.get("provider") or ""
+        if not provider_id:
+            try:
+                provider_id = self._provider_for(data["state"])
+            except FlowError as exc:
+                logger.info("Refused callback with an unusable state: %s", exc)
+                self._audit_failure("", audit.FLOW_REFUSED, exc)
+                return self._error(401, "Authentication failed", str(exc))
+
+        provider = get_provider(provider_id)
         if provider is None or not provider.enabled or provider.driver is None:
-            return self._error(404, "Unknown provider", repr(data["provider"]))
+            return self._error(404, "Unknown provider", repr(provider_id))
 
         try:
             attempt, payload = self._exchange(provider, data["state"], data["code"])
@@ -172,6 +189,18 @@ class IdentityCallback(IdentityService):
     # ------------------------------------------------------------------
     # Steps
     # ------------------------------------------------------------------
+
+    def _provider_for(self, state: str) -> str:
+        """Return the provider a ``state`` was minted against.
+
+        :param state: The ``state`` echoed back by the provider.
+        :returns: The provider id recorded on the attempt.
+        :raises FlowError: When the state is unknown, expired or already used.
+        """
+        manager = FlowManager(
+            FlowSession(self.request), api.portal.get().absolute_url()
+        )
+        return manager.peek(state).provider_id
 
     def _exchange(
         self, provider: ProviderConfig, state: str, code: str
