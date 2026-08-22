@@ -1,6 +1,25 @@
 <configure
     xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
     i18n_domain="pas.plugins.identity"
     >
+
+  <!-- Classic UI. Where the configlet points, so the control panel entry
+       leads somewhere real in a site without the frontend. -->
+  <browser:page
+      name="identity-controlpanel"
+      for="plone.base.interfaces.IPloneSiteRoot"
+      class=".view.IdentitySettingsControlPanel"
+      permission="cmf.ManagePortal"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      />
+
+  <!-- What ``@controlpanels`` serves, and what the frontend route of the
+       same name is listed under. -->
+  <adapter
+      factory=".controlpanel.IdentityConfigletPanel"
+      provides=".interfaces.IIdentityControlpanel"
+      name="identity-providers"
+      />
 
 </configure>

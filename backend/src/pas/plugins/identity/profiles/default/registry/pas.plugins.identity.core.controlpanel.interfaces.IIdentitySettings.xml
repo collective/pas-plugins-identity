@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<registry xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+          i18n:domain="pas.plugins.identity"
+>
+
+  <records interface="pas.plugins.identity.core.controlpanel.interfaces.IIdentitySettings"
+           prefix="pas.plugins.identity"
+  >
+    <!-- ``providers`` and ``callback_url`` are not listed: an empty <value>
+         imports as None, while leaving them out takes the empty string the
+         schema declares. Everything else is stated here so the shipped
+         defaults are visible without reading the interface. -->
+    <value key="audit_max_entries">500</value>
+    <value key="audit_max_days">180</value>
+    <value key="audit_record_pii">False</value>
+  </records>
+
+</registry>

@@ -29,7 +29,7 @@
       name="pas.plugins.identity"
       />
 
-  <!-- The [profile] extra's profiles (§4.9). Declared here rather than in
+  <!-- The [profile] extra's profiles. Declared here rather than in
        the layer's own configure.zcml because GenericSetup builds a profile id
        from the package the directive appears in: declared next to the code,
        these would install as ``pas.plugins.identity.profile:profile``, which

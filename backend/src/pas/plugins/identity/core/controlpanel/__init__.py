@@ -1,11 +1,11 @@
-"""Provider configuration (§4.5).
+"""Provider configuration.
 
 Providers live in a single registry record as a JSON list, which is what makes
 them GenericSetup-exportable and importable. Each entry names the driver that
 knows how to talk to it, so adding a provider is configuration rather than
 code.
 
-Secrets are stored here but never leave the backend in readable form (I4):
+Secrets are stored here but never leave the backend in readable form:
 :func:`mask` replaces every field the driver flagged ``secret`` with
 :data:`SECRET_SENTINEL`, and :func:`unmask` puts the stored value back when a
 PATCH echoes the sentinel unchanged.
@@ -13,9 +13,10 @@ PATCH echoes the sentinel unchanged.
 
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.drivers import get_driver
+from pas.plugins.identity.core.drivers.base import BaseDriver
 from pas.plugins.identity.core.interfaces import FlowError
+from pas.plugins.identity.core.interfaces import JSONDict
 from plone import api
-from typing import Any
 
 import json
 
@@ -49,7 +50,7 @@ class ProviderConfig:
         driver_id: str,
         title: str = "",
         enabled: bool = True,
-        config: dict[str, Any] | None = None,
+        config: JSONDict | None = None,
     ) -> None:
         """Build a provider configuration.
 
@@ -66,7 +67,7 @@ class ProviderConfig:
         self.config = config or {}
 
     @property
-    def driver(self):
+    def driver(self) -> BaseDriver | None:
         """Return the driver for this provider.
 
         :returns: The driver utility, or ``None`` when the driver named by
@@ -75,11 +76,11 @@ class ProviderConfig:
         """
         return get_driver(self.driver_id)
 
-    def serialize(self, mask_secrets: bool = True) -> dict[str, Any]:
+    def serialize(self, mask_secrets: bool = True) -> JSONDict:
         """Render the provider for storage or for an API response.
 
         :param mask_secrets: Whether to replace secret values with the
-            sentinel. Always true on the way out of the backend (I4); false
+            sentinel. Always true on the way out of the backend; false
             only when writing back to the registry.
         :returns: JSON-ready mapping.
         """
@@ -95,7 +96,7 @@ class ProviderConfig:
         }
 
     @classmethod
-    def deserialize(cls, data: dict[str, Any]) -> "ProviderConfig":
+    def deserialize(cls, data: JSONDict) -> "ProviderConfig":
         """Build a provider from its stored representation.
 
         :param data: Mapping as produced by :meth:`serialize`.
@@ -117,8 +118,8 @@ class ProviderConfig:
         return f"<ProviderConfig {self.provider_id} ({self.driver_id})>"
 
 
-def _secret_fields(driver_id: str, config: dict[str, Any]) -> set[str]:
-    """Return the config fields to treat as secret (I4).
+def _secret_fields(driver_id: str, config: JSONDict) -> set[str]:
+    """Return the config fields to treat as secret.
 
     A known driver flags its own. For an unknown driver -- one whose add-on
     was removed while its provider record stayed behind -- *every* field
@@ -145,8 +146,8 @@ def _secret_fields(driver_id: str, config: dict[str, Any]) -> set[str]:
     }
 
 
-def mask(driver_id: str, config: dict[str, Any]) -> dict[str, Any]:
-    """Replace secret values with the sentinel (I4).
+def mask(driver_id: str, config: JSONDict) -> JSONDict:
+    """Replace secret values with the sentinel.
 
     When the driver is unknown, *every* set value is masked -- see
     :func:`_secret_fields`. Masking nothing would be the dangerous failure
@@ -164,9 +165,7 @@ def mask(driver_id: str, config: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def unmask(
-    driver_id: str, incoming: dict[str, Any], stored: dict[str, Any]
-) -> dict[str, Any]:
+def unmask(driver_id: str, incoming: JSONDict, stored: JSONDict) -> JSONDict:
     """Restore stored secrets that the caller echoed back unchanged.
 
     A control panel round-trip reads masked values and PATCHes them back; that

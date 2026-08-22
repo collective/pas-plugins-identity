@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <tool-setup>
-  <!-- The dedicated Profile catalog (§4.7). GenericSetup instantiates the
+  <!-- The dedicated Profile catalog. GenericSetup instantiates the
        class; its indexes and metadata are built by the post_install handler,
        because the ``catalog`` import step only ever addresses
        ``portal_catalog``. -->
