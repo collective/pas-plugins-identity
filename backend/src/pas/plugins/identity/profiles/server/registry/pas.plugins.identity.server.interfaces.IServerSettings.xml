@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<registry xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+          i18n:domain="pas.plugins.identity"
+>
+
+  <records interface="pas.plugins.identity.server.interfaces.IServerSettings"
+           prefix="pas.plugins.identity"
+  >
+
+    <!-- ``server_clients`` and ``server_issuer`` are deliberately not listed.
+         An empty <value> imports as None, while leaving the key out takes the
+         empty string each schema field declares as its default. That is the
+         same trap documented in the [profile] layer's registry XML.
+         A site with no clients and no issuer configured is the correct
+         initial state: the server signs nothing until it is told what it is
+         called. -->
+
+    <!-- D3: fifteen minutes. There is no denylist in v1, so this doubles as
+         the worst case between revoking a client and the last access token
+         minted for it expiring. -->
+    <value key="server_access_token_ttl">900</value>
+
+  </records>
+
+</registry>

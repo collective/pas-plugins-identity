@@ -1,0 +1,15 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <!-- Nothing is registered here yet beyond the layer itself. The endpoints
+       arrive with the rest of Gate S1 and will every one of them be bound to
+       ``.interfaces.IIdentityServerLayer``: an /authorize endpoint in a site
+       that never switched the server on is an attack surface, not an idle
+       feature, so the browser layer is what keeps it absent rather than
+       merely unused. -->
+
+</configure>

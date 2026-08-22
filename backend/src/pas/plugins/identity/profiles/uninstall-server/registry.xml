@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<registry>
+  <record name="pas.plugins.identity.server_clients"
+          remove="True"
+  />
+  <record name="pas.plugins.identity.server_issuer"
+          remove="True"
+  />
+  <record name="pas.plugins.identity.server_access_token_ttl"
+          remove="True"
+  />
+</registry>

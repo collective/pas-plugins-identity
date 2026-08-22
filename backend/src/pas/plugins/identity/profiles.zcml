@@ -56,6 +56,29 @@
 
   </configure>
 
+  <!-- The [server] extra's profiles. Declared here for the same reason as
+       the [profile] ones above: GenericSetup builds the profile id from the
+       package the directive appears in. -->
+  <configure zcml:condition="installed cryptography">
+
+    <genericsetup:registerProfile
+        name="server"
+        title="pas.plugins.identity: Authorization server"
+        description="Plone as an OAuth 2.1 / OIDC provider."
+        provides="Products.GenericSetup.interfaces.EXTENSION"
+        directory="profiles/server"
+        />
+
+    <genericsetup:registerProfile
+        name="uninstall-server"
+        title="pas.plugins.identity: Uninstall authorization server"
+        description="Remove the authorization server's settings and browser layer."
+        provides="Products.GenericSetup.interfaces.EXTENSION"
+        directory="profiles/uninstall-server"
+        />
+
+  </configure>
+
   <include package=".upgrades" />
 
 </configure>
