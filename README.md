@@ -26,7 +26,7 @@ One canonical Plone user id maps to many external identities — GitHub, Google,
 
 [`pas.plugins.oidc`](https://github.com/collective/pas.plugins.oidc) does one OIDC provider, and does it well. If that is what you need, it is the smaller and more mature dependency; there is no reason to move.
 
-The difference is linking. Neither of the above maps several external identities onto one canonical Plone user id, and that mapping is what this package is arranged around. Migration paths from both are planned; neither has shipped yet.
+The difference is linking. Neither of the above maps several external identities onto one canonical Plone user id, and that mapping is what this package is arranged around. Migrations from both have shipped: they are dry-run by default, idempotent, and report what they would do before you let them do it. See [Migrating from another package](docs/migration.md) for what each can and cannot recover.
 
 ## Why not Products.membrane / dexterity.membrane
 
@@ -36,7 +36,11 @@ Its published compatibility matrix lists Plone 6.0 and 6.1, not 6.2. That is a f
 
 The other reason is narrower: serving user properties and enumeration without waking a content object is the property the `[profile]` layer exists to provide, so it has to be something this package can assert about its own code on every CI run. It does, with a test that counts ZODB object activations and requires zero.
 
-We make no claim here about whether membrane has that problem; we have not measured it. Membrane's *design* is nonetheless where this one comes from, and the resemblance is not accidental.
+Membrane does wake them, and it is worth being precise about where. Its `MembranePropertyManager.getPropertiesForUser` collects property providers through `findMembraneUserAspect`, which adapts `brain._unrestrictedGetObject()` — so answering a property lookup loads the content object, one per matching brain. The plugin inherits `OFS.Cache.Cacheable`, but that path never calls it, so there is no cache in front of the load. Its *user enumeration* is not affected: that goes through `findImplementations`, which stays on the brains.
+
+This is architecture, not oversight. Membrane's property values live on the content object and are read through an adapter on it, so a brain genuinely cannot answer; the `[profile]` layer copies the values it serves into catalog metadata instead, which is what lets a brain answer and what the zero-wake test measures. The trade is real in both directions — metadata has to be kept honest, and this package ships a consistency check and a rebuild step precisely because of that.
+
+Verified against `Products.membrane` 7.0.1.dev0 (`plugins/propertymanager.py`, `utils.py`) by reading the source, not by measurement — membrane is not a dependency here, and its compatibility matrix would make it awkward to install alongside. Membrane's *design* is nonetheless where this one comes from, and the resemblance is not accidental.
 
 
 ## Quick Start 🏁
