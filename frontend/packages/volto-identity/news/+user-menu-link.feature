@@ -1,0 +1,1 @@
+Added a **Sign-in methods** entry to Volto's user menu, linking to `/identities`. It is contributed through the `toolbar-user-menu` pluggable that `PersonalTools` already exposes, so the add-on adds the entry without shadowing a core component. @ericof

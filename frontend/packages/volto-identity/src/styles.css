@@ -1,0 +1,180 @@
+/**
+ * Styles for volto-identity.
+ *
+ * These are deliberately structural: layout, spacing and the state colours a
+ * user has to be able to tell apart. Typography, buttons and form controls are
+ * left to inherit from whatever theme the site runs, so the add-on looks like
+ * part of the site rather than like itself. Everything is scoped under the
+ * `identity-` prefix the components already carry.
+ */
+
+:root {
+  --identity-gap: 12px;
+  --identity-radius: 4px;
+  --identity-border: 1px solid rgba(0, 0, 0, 0.15);
+  --identity-muted: rgba(0, 0, 0, 0.6);
+  --identity-error: #a01c1c;
+  --identity-ok: #1c7a3e;
+}
+
+/* Login ------------------------------------------------------------------ */
+
+.identity-login {
+  display: flex;
+  flex-direction: column;
+  gap: var(--identity-gap);
+}
+
+.identity-providers {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  margin: 0;
+  gap: var(--identity-gap);
+  list-style: none;
+}
+
+.identity-provider {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border: var(--identity-border);
+  border-radius: var(--identity-radius);
+  background: transparent;
+  cursor: pointer;
+  gap: 8px;
+  text-align: center;
+}
+
+.identity-provider:hover:not(:disabled) {
+  border-color: currentcolor;
+}
+
+.identity-provider:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.identity-magic-link {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.identity-magic-link--sent {
+  color: var(--identity-muted);
+}
+
+/* Callback and first login ----------------------------------------------- */
+
+.identity-callback,
+.identity-first-login {
+  padding: var(--identity-gap) 0;
+  color: var(--identity-muted);
+}
+
+.identity-callback--error {
+  color: var(--identity-error);
+}
+
+/* Identities ------------------------------------------------------------- */
+
+.identity-identities__list {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  margin: 0 0 var(--identity-gap);
+  gap: 8px;
+  list-style: none;
+}
+
+.identity-identities__list li {
+  display: flex;
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: var(--identity-border);
+  gap: 8px;
+}
+
+.identity-identities__title {
+  font-weight: 600;
+}
+
+.identity-identities__subject,
+.identity-identities__empty {
+  color: var(--identity-muted);
+  font-size: 0.9em;
+}
+
+.identity-identities__add {
+  margin-top: calc(var(--identity-gap) * 2);
+}
+
+/* Control panel ---------------------------------------------------------- */
+
+.identity-controlpanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--identity-gap);
+}
+
+.identity-controlpanel--empty {
+  color: var(--identity-muted);
+}
+
+.identity-controlpanel__provider {
+  padding: var(--identity-gap);
+  border: var(--identity-border);
+  border-radius: var(--identity-radius);
+}
+
+.identity-controlpanel__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.identity-provider-form {
+  display: flex;
+  flex-direction: column;
+  border: 0;
+  margin: 0;
+  gap: var(--identity-gap);
+  padding-inline: 0;
+}
+
+.identity-provider-form:disabled {
+  opacity: 0.6;
+}
+
+.identity-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* A connection test reports per-check, so each line has to say on its own
+   whether it passed -- colour alone would not survive a screen reader. The
+   components already supply the label; this only makes it scannable. */
+
+.identity-check {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.identity-check--ok {
+  color: var(--identity-ok);
+}
+
+.identity-check--failed {
+  color: var(--identity-error);
+}
+
+/* Errors ----------------------------------------------------------------- */
+
+.identity-error {
+  margin: 0;
+  color: var(--identity-error);
+}

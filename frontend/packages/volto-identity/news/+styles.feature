@@ -1,0 +1,1 @@
+Added a stylesheet for the add-on's components, which until now shipped class names and nothing to match them. It is deliberately structural -- layout, spacing, and the colours that distinguish an error or a failed connection check -- and leaves typography, buttons and form controls to inherit from the site's theme. @ericof
