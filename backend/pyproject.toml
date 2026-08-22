@@ -196,6 +196,7 @@ preview = true
 "src/pas/plugins/identity/profile/pas.py" = ["A002"]
 # A002: ``id``/``title`` are the Zope factory signature here too.
 "src/pas/plugins/identity/server/pas.py" = ["A002"]
+"src/pas/plugins/identity/server/session.py" = ["A002"]
 # S311: the churn sequences are randomized for coverage of orderings, not
 # for unpredictability; the seeds are fixed precisely so they repeat.
 "tests/profile/test_churn.py" = ["S311"]

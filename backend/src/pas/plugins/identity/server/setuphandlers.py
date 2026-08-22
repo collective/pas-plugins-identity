@@ -10,6 +10,9 @@ from pas.plugins.identity.server.keys import ensure_keys
 from pas.plugins.identity.server.pas import IdentityServerPlugin
 from pas.plugins.identity.server.pas import PLUGIN_ID
 from pas.plugins.identity.server.pas import PLUGIN_TITLE
+from pas.plugins.identity.server.session import IdentityAuthorizeSessionPlugin
+from pas.plugins.identity.server.session import PLUGIN_ID as SESSION_PLUGIN_ID
+from pas.plugins.identity.server.session import PLUGIN_TITLE as SESSION_PLUGIN_TITLE
 from plone import api
 from Products.GenericSetup.tool import SetupTool
 from Products.PluggableAuthService.interfaces.plugins import IAuthenticationPlugin
@@ -39,6 +42,7 @@ def post_install(context: SetupTool) -> None:
     """
     keys = ensure_keys()
     install_plugin(api.portal.get_tool("acl_users"))
+    install_session_plugin(api.portal.get_tool("acl_users"))
     logger.info(
         "Authorization server ready with %s signing key(s); active kid %s",
         len(keys),
@@ -66,6 +70,49 @@ def install_plugin(acl_users: PluggableAuthService) -> IdentityServerPlugin:
         if PLUGIN_ID not in plugins.listPluginIds(interface):
             plugins.activatePlugin(interface, PLUGIN_ID)
     return plugin
+
+
+def install_session_plugin(
+    acl_users: PluggableAuthService,
+) -> IdentityAuthorizeSessionPlugin:
+    """Add the Volto-session plugin to PAS and activate its interfaces.
+
+    Installed with the ``[server]`` layer because that is the layer that
+    creates the authorization endpoint it exists for. A site with no
+    authorization endpoint has nothing for this plugin to answer.
+
+    :param acl_users: The site's PAS instance.
+    :returns: The installed plugin.
+    """
+    if SESSION_PLUGIN_ID not in acl_users:
+        acl_users._setObject(
+            SESSION_PLUGIN_ID,
+            IdentityAuthorizeSessionPlugin(SESSION_PLUGIN_ID, SESSION_PLUGIN_TITLE),
+        )
+        logger.info("Added %s plugin to acl_users", SESSION_PLUGIN_ID)
+
+    plugin = acl_users[SESSION_PLUGIN_ID]
+    plugins = acl_users.plugins
+    for interface in ACTIVATED_INTERFACES:
+        if SESSION_PLUGIN_ID not in plugins.listPluginIds(interface):
+            plugins.activatePlugin(interface, SESSION_PLUGIN_ID)
+    return plugin
+
+
+def uninstall_session_plugin(acl_users: PluggableAuthService) -> None:
+    """Deactivate and remove the Volto-session plugin.
+
+    :param acl_users: The site's PAS instance.
+    """
+    if SESSION_PLUGIN_ID not in acl_users:
+        return
+    plugins = acl_users.plugins
+    for info in plugins.listPluginTypeInfo():
+        iface = info["interface"]
+        if SESSION_PLUGIN_ID in plugins.listPluginIds(iface):
+            plugins.deactivatePlugin(iface, SESSION_PLUGIN_ID)
+    acl_users._delObject(SESSION_PLUGIN_ID)
+    logger.info("Removed %s plugin from acl_users", SESSION_PLUGIN_ID)
 
 
 def uninstall_plugin(acl_users: PluggableAuthService) -> None:
@@ -100,6 +147,7 @@ def post_uninstall(context: SetupTool) -> None:
     :param context: The setup tool running the import.
     """
     uninstall_plugin(api.portal.get_tool("acl_users"))
+    uninstall_session_plugin(api.portal.get_tool("acl_users"))
     logger.info(
         "Authorization server uninstalled; the signing keys are gone and "
         "tokens minted with them will no longer verify"
