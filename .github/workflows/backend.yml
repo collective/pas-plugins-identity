@@ -49,9 +49,9 @@ jobs:
       plone-version: ${{ matrix.plone-version }}
       working-directory: ${{ inputs.working-directory }}
 
-  # Gate 0: the four dependency configurations the package promises to support.
-  # ``pip install pas.plugins.identity`` with no extras has to work on its own
-  # (I5), so "core" is the job that matters most here -- it is the one that
+  # The four dependency configurations the package promises to support.
+  # ``pip install pas.plugins.identity`` with no extras has to work on its
+  # own, so "core" is the job that matters most here -- it is the one that
   # fails the moment something in core starts needing an optional dependency.
   extras:
     name: "Backend: Extras (${{ matrix.name }})"
@@ -91,10 +91,10 @@ jobs:
         run: make test
         env:
           # Fail rather than skip if Docker is missing: the flow tests are the
-          # only thing proving the protocol integration works (C2).
+          # only thing proving the protocol integration works.
           PAS_IDENTITY_REQUIRE_DOCKER: "1"
 
-  # Gate 0: "pip install . in a clean venv imports". The extras matrix cannot
+  # "pip install . in a clean venv imports". The extras matrix cannot
   # cover this -- every one of its jobs installs [test] -- so a runtime
   # dependency that only the test extra happens to provide would slip through.
   clean_install:
@@ -119,7 +119,7 @@ jobs:
       - name: Import from a no-extras install
         run: make check-clean-install
 
-  # Gate 0: the hard layer boundary (§4.2), enforced rather than documented.
+  # The hard layer boundary, enforced rather than documented.
   imports:
     name: "Backend: Layer boundaries"
     runs-on: ubuntu-latest

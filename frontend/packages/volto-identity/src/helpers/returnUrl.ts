@@ -2,7 +2,7 @@
  * Deciding where a signed-in user lands.
  *
  * Pure, and separate from the container, because this is an open-redirect
- * check (S6) and those are worth testing on their own.
+ * check and those are worth testing on their own.
  * @module helpers/returnUrl
  */
 

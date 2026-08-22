@@ -96,7 +96,7 @@ config: instance/etc/zope.ini
 .PHONY: install
 install: $(VENV_FOLDER) config ## Install Plone and dependencies
 
-# Optional dependency layers. The base install is core-only on purpose (I5),
+# Optional dependency layers. The base install is core-only on purpose,
 # so the CI matrix layers the extras on top: core / +profile / +server / all.
 EXTRAS ?=
 
@@ -155,7 +155,7 @@ format: ## Check and fix code base according to Plone standards
 	@uvx zpretty@latest -i src
 
 ############################################
-# Dex, the OIDC provider for the flow tests (C2)
+# Dex, the OIDC provider for the flow tests
 ############################################
 # pytest-docker starts and stops this stack on demand, so `make test` needs
 # none of these. They are for driving the provider by hand -- poking at its
@@ -184,7 +184,7 @@ check-pragmas: ## Enforce the coverage pragma policy (PLAN section 8.2)
 	@$(BIN_FOLDER)/python scripts/check_pragmas.py
 
 .PHONY: check-clean-install
-check-clean-install: requirements-mxdev.txt ## Import the package from a no-extras install (I5)
+check-clean-install: requirements-mxdev.txt ## Import the package from a no-extras install
 	@echo "$(GREEN)==> Check that the no-extras install imports$(RESET)"
 	@# Joined with && rather than ;: macOS ships GNU Make 3.81, which ignores
 	@# both .ONESHELL and .SHELLFLAGS' -e, so a ;-chain would report the exit
@@ -196,10 +196,10 @@ check-clean-install: requirements-mxdev.txt ## Import the package from a no-extr
 	rm -rf $(BACKEND_FOLDER)/.venv-clean
 
 .PHONY: check-imports
-check-imports: ## Enforce the core/profile/server layer boundary (§4.2)
+check-imports: ## Enforce the core/profile/server layer boundary
 	@echo "$(GREEN)==> Check layer boundaries$(RESET)"
-	@# Run against a venv holding nothing but this package. The Gate 7 test
-	@# dependencies (pas.plugins.authomatic, pas.plugins.oidc) each ship a
+	@# Run against a venv holding nothing but this package. The migration
+	@# test dependencies (pas.plugins.authomatic, pas.plugins.oidc) each ship a
 	@# pas/__init__.py declaring a pkg_resources namespace and do *not* declare
 	@# it in their dist-info, so horse-with-no-namespace cannot neutralise it.
 	@# With those installed, `pas.plugins` stops being a PEP 420 namespace and

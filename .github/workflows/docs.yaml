@@ -30,7 +30,7 @@ jobs:
 
       # -W turns a warning into an error, so a dead cross reference, an
       # orphaned page or a malformed directive fails here rather than
-      # shipping. Gate 4 requires the events page to be part of this build.
+      # shipping. The event contract page has to be part of this build.
       - name: Build
         run: make -C docs html
 

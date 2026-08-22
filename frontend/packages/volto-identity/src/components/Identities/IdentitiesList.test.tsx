@@ -72,7 +72,7 @@ describe('IdentitiesList', () => {
   });
 
   it('refuses to offer removing the last way in', () => {
-    // S4, surfaced. A button that only fails when pressed is worse than one
+    // Surfaced. A button that only fails when pressed is worse than one
     // that explains itself.
     renderList({ identities: [{ ...DEX, can_unlink: false }] });
 

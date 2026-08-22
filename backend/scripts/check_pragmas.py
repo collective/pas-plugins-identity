@@ -1,4 +1,4 @@
-"""Enforce the coverage pragma policy (§8.2, I7).
+"""Enforce the coverage pragma policy.
 
 ``# pragma: no cover`` is permitted only on defensive can't-happen branches
 and typing-only blocks, and only with a same-line justification. An

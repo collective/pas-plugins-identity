@@ -4,22 +4,29 @@ A driver is two things: static metadata describing what a kind of provider
 needs, and a function turning that provider's answer into the normalized
 claims schema. It holds no state and makes no decisions about accounts.
 
-Drivers are registered as named ZCA utilities.
+Drivers are registered as named ZCA utilities, and the utility name is the
+driver id. This package keeps one module per driver; doing the same in your
+own add-on keeps a driver easy to find.
 
 ## The pieces
 
+Subclassing `BaseDriver` gives you the OAuth config fields, the subject
+extraction and the shared claim normalization, so a driver is usually a few
+class attributes and one override:
+
 ```python
+from pas.plugins.identity.core.drivers.base import BaseDriver
 from pas.plugins.identity.core.interfaces import Claims
-from pas.plugins.identity.core.interfaces import IDriver
-from zope.interface import implementer
+from pas.plugins.identity.core.interfaces import JSONDict
 
 
-@implementer(IDriver)
-class GitLabDriver:
+class GitLabDriver(BaseDriver):
     """Sign in with a self-hosted GitLab."""
 
-    id = "gitlab"
+    driver_id = "gitlab"
     title = "GitLab"
+    default_scope = "read_user"
+    subject_keys = ("sub", "id")
 
     #: Rendered by the control panel. The frontend builds the form from this,
     #: so a field you declare here appears with no frontend change.
@@ -28,24 +35,23 @@ class GitLabDriver:
             "type": "string",
             "title": "GitLab URL",
             "required": True,
+            "secret": False,
         },
     }
 
-    def normalize(self, payload: dict) -> Claims:
+    def normalize_claims(self, payload: JSONDict) -> Claims:
         """Turn GitLab's answer into the documented schema.
 
         :param payload: The provider's userinfo response.
         :returns: Normalized claims.
         """
-        return {
-            "fullname": payload.get("name", ""),
-            "email": payload.get("email", ""),
-            "email_verified": payload.get("email_verified") is True,
-            "picture_url": payload.get("avatar_url", ""),
-            "username": payload.get("username", ""),
-            "raw": payload,
-        }
+        claims = super().normalize_claims(payload)
+        claims["picture_url"] = payload.get("avatar_url", "")
+        return claims
 ```
+
+Implementing `IDriver` from scratch works too: the interface asks for
+`driver_id`, `title`, `config_schema()`, `subject()` and `normalize_claims()`.
 
 ```xml
 <utility

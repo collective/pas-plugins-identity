@@ -7,8 +7,8 @@ import type { Driver } from '../../types';
 
 /**
  * The schemas the backend actually publishes for the v1 drivers, trimmed to
- * the fields that matter here. Gate 5 asks that the widget renders every one
- * of them from metadata, so all four are exercised.
+ * the fields that matter here. The widget renders every one of them from
+ * metadata, so all four are exercised.
  */
 const DRIVERS: Record<string, Driver> = {
   github: {
@@ -128,7 +128,7 @@ describe.each(Object.keys(DRIVERS))('ProviderForm for %s', (driverId) => {
 describe('ProviderForm secrets', () => {
   it('shows the mask the backend sent rather than blanking the field', () => {
     // The masked value is what a save must send straight back to mean "keep
-    // the stored secret" (S7/I4). Clearing it would send an empty string,
+    // the stored secret". Clearing it would send an empty string,
     // which is a different instruction entirely.
     render(
       <ProviderForm

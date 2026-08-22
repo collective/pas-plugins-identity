@@ -1,0 +1,1 @@
+Wired the quality gates: an enforced 100% branch coverage floor, an import-linter contract keeping `core` free of any dependency on the optional `profile` and `server` layers and those two independent of each other, and a `make install-extras` target that layers the optional extras on top of the core-only install for the CI matrix. @ericof

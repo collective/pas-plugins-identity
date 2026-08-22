@@ -45,7 +45,7 @@ const IdentitiesList: React.FC<IdentitiesListProps> = ({
             <button
               type="button"
               disabled={busy || !identity.can_unlink}
-              // S4 surfaced: the backend refuses to remove the last way in,
+              // Surfaced: the backend refuses to remove the last way in,
               // and a button that only fails when pressed is worse than one
               // that explains itself.
               title={

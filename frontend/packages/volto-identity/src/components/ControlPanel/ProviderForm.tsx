@@ -2,7 +2,7 @@
  * A provider's configuration form, generated from its driver's schema.
  *
  * Nothing here knows what a "client secret" is: the driver says which fields
- * exist and which are secret, and this renders that (§4.5). Adding a driver
+ * exist and which are secret, and this renders that. Adding a driver
  * on the backend therefore adds its form here with no frontend change.
  * @module components/ControlPanel/ProviderForm
  */
@@ -73,7 +73,7 @@ const ProviderForm: React.FC<ProviderFormProps> = ({
             required={Boolean(field.required)}
             value={value === undefined || value === null ? '' : String(value)}
             // A stored secret arrives masked. Leaving it exactly as it came
-            // back is what tells the backend to keep it (S7/I4), so the field
+            // back is what tells the backend to keep it, so the field
             // is editable but never pre-filled with anything real.
             placeholder={field.secret ? SECRET_SENTINEL : undefined}
             onChange={(event) => onChange(name, event.target.value)}

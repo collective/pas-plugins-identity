@@ -48,7 +48,7 @@ server = [
 ]
 test = [
     "collective.MockMailHost",
-    # Gate 7 migration fixtures. Test-only, and deliberately real rather than
+    # Migration fixtures. Test-only, and deliberately real rather than
     # synthesized: a fixture that encodes our reading of their storage would
     # pass while the migration was wrong about it.
     "pas.plugins.authomatic>=2.0.0",
@@ -209,7 +209,7 @@ ignore = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [
-    "docker: needs the compose stack in tests/docker-compose.yml (C2).",
+    "docker: needs the compose stack in tests/docker-compose.yml.",
 ]
 
 [tool.coverage.run]
@@ -220,7 +220,7 @@ omit = [
   "src/pas/plugins/identity/locales/*.py",
 ]
 
-# Gate 0: the gate is 100% *branch* coverage, and it is enforced rather than
+# The floor is 100% *branch* coverage, and it is enforced rather than
 # reported. An authentication plugin has no line that is fine to leave
 # unexercised, and the cheapest moment to cover one is when it is written.
 [tool.coverage.report]
@@ -228,8 +228,8 @@ fail_under = 100
 show_missing = true
 skip_covered = true
 
-# Gate 0: the hard layer boundary (§4.2). ``core`` is what ``pip install
-# pas.plugins.identity`` gives you with no extras (I5), so it must never reach
+# The hard layer boundary. ``core`` is what ``pip install
+# pas.plugins.identity`` gives you with no extras, so it must never reach
 # into a layer that may not be installed -- and the two optional layers must
 # not grow a dependency on each other either.
 [tool.importlinter]

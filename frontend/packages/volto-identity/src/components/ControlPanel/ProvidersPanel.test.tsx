@@ -54,7 +54,7 @@ describe('ProvidersPanel', () => {
   });
 
   it('saves the masked secret straight back when it was not touched', () => {
-    // S7/I4: this is exactly the round trip that must not overwrite the
+    // This is exactly the round trip that must not overwrite the
     // stored secret with bullets.
     const { onSave } = renderPanel();
 

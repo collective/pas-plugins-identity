@@ -40,7 +40,7 @@ const Identities: React.FC = () => {
   useEffect(() => {
     if (removing?.loaded) {
       // The list is stale the moment an unlink succeeds, and can_unlink may
-      // have changed for everything left (S4).
+      // have changed for everything left.
       dispatch(listIdentities());
     }
   }, [dispatch, removing?.loaded]);

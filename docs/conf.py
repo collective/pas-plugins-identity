@@ -1,4 +1,4 @@
-"""Sphinx configuration for pas.plugins.identity (§11).
+"""Sphinx configuration for pas.plugins.identity.
 
 MyST rather than reStructuredText for the prose: the Plone documentation
 ecosystem standardized on it, and every other file a contributor touches in

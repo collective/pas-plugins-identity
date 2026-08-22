@@ -38,7 +38,7 @@ export interface Identity {
   title: string;
   created: string;
   last_login: string | null;
-  /** S4: false when this is the user's last way in. */
+  /** False when this is the user's last way in. */
   can_unlink: boolean;
 }
 

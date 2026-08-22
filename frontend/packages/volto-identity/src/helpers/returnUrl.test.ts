@@ -24,7 +24,7 @@ describe('returnUrl', () => {
     '//evil.example/phish',
     'http://evil.example',
   ])('refuses the off-site target %s', (target) => {
-    // S6, on the frontend too: the backend drops these as well, but a target
+    // On the frontend too: the backend drops these as well, but a target
     // that never leaves the browser would never reach the backend to be
     // checked.
     expect(
