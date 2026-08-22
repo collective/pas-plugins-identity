@@ -72,27 +72,29 @@ them and without `rt-idp-oauth` they reach the Volto frontend instead. This is
 what makes configuring the issuer, rather than deriving it from the portal
 URL, load-bearing rather than fussy.
 
-## Why the provider shows a Classic login form
+## How the provider authenticates its own users
 
-`http://id.localhost/login` serves Plone's own login form, not Volto's
-provider picker, and that is deliberate rather than an oversight in the
-routing.
+`http://id.localhost/login` is Volto's login page, and alice signs in there
+with a password.
 
-`@@oauth-authorize` is a browser view. When an anonymous visitor reaches it,
-Plone's challenge machinery sends them to the cookie-auth plugin's
-`require_login`, which lands on `/login`, and whatever authenticates them
-there has to leave them authenticated **for a subsequent browser view** —
-which means the `__ac` cookie the Classic form sets. Volto's login returns a
-JWT, which authenticates the REST API and nothing else, so a visitor who
-signed in through Volto's picker would arrive back at `@@oauth-authorize`
-still anonymous and be challenged again.
+That takes two things this package had to grow. `@@oauth-authorize` is a
+browser view, so the visitor arriving at it has to be a Zope principal — and a
+Volto login is not one: Volto keeps its token in an `auth_token` cookie and
+sends it as an `Authorization` header only on its own API calls, which
+`plone.restapi`'s JWT plugin is the only reader of. Measured on a running
+site, the authorize view with only the cookie answers as anonymous, and the
+same request with the token in a header authenticates. The `[server]` layer
+now installs a PAS plugin that reads that cookie **for the authorization
+endpoint and nothing else** — everywhere else the site behaves exactly as
+`plone.restapi` left it.
 
-So the provider's `/login`, `/logged_in`, `/login_form` and the cookie-auth
-challenge path are all routed to the backend, at a higher Traefik priority
-than the frontend's catch-all host rule. The relying party has no such router:
-there, `/login` is Volto's picker, which is the whole point.
+The second thing: this add-on's `/login` route replaces Volto's, and the page
+used to offer providers and the magic link only. An identity provider has no
+providers of its own, so it showed "no sign-in options" and no way in. The
+password form is back.
 
-Everything else on `id.localhost` is Volto as usual.
+Only the cookie-auth challenge path is routed to the backend, so the redirect
+an anonymous visitor gets can reach Volto's login page at all.
 
 ## Credentials
 

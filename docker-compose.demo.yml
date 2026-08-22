@@ -149,19 +149,17 @@ services:
       - traefik.http.routers.rt-idp-oauth.service=svc-idp-backend
       - traefik.http.routers.rt-idp-oauth.middlewares=gzip,mw-idp-vhm-oauth
 
-      ## Plone's own login form, which is what the authorize view challenges
-      ## an anonymous visitor with, and the cookie-auth plugin's challenge
-      ## path that gets them there. The authorization endpoint needs a real
-      ## Zope session -- Volto's login returns a JWT, which authenticates the
-      ## REST API and not a browser view -- so this deliberately serves the
-      ## Classic login form on the provider rather than Volto's picker.
-      - traefik.http.routers.rt-idp-login.rule=Host(`id.localhost`) && (Path(`/login`) || Path(`/logged_in`) || Path(`/login_form`) || PathPrefix(`/acl_users/credentials_cookie_auth`) || PathPrefix(`/++resource++`) || PathPrefix(`/++plone++`))
+      ## The cookie-auth plugin's challenge path, which is where an anonymous
+      ## visitor to the authorize view is sent before landing on /login.
+      ## /login itself is *not* here: it is Volto's, which is the point. The
+      ## visitor signs in there with a password, and the server layer's
+      ## session plugin reads the resulting Volto token when the browser
+      ## comes back to the authorization endpoint.
+      - traefik.http.routers.rt-idp-login.rule=Host(`id.localhost`) && (PathPrefix(`/acl_users/credentials_cookie_auth`) || PathPrefix(`/++resource++`) || PathPrefix(`/++plone++`))
       - traefik.http.routers.rt-idp-login.entrypoints=http
       - traefik.http.routers.rt-idp-login.service=svc-idp-backend
       - traefik.http.routers.rt-idp-login.middlewares=gzip,mw-idp-vhm-oauth
-      ## Higher than the frontend's catch-all Host() rule, which would
-      ## otherwise win /login and serve Volto's picker to a browser the
-      ## authorize view sent here to authenticate.
+      ## Higher than the frontend's catch-all Host() rule.
       - traefik.http.routers.rt-idp-login.priority=100
 
   idp-zeo:
