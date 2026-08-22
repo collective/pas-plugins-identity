@@ -3,6 +3,9 @@ from . import UNINSTALL_PROFILE_ID
 from pas.plugins.identity.server.clients import CLIENTS_RECORD
 from pas.plugins.identity.server.interfaces import IIdentityServerLayer
 from pas.plugins.identity.server.interfaces import IServerSettings
+from pas.plugins.identity.server.pas import PLUGIN_ID
+from pas.plugins.identity.server.setuphandlers import install_plugin
+from pas.plugins.identity.server.setuphandlers import uninstall_plugin
 from plone import api
 from plone.browserlayer.utils import registered_layers
 from zope.schema import getFieldNames
@@ -79,3 +82,59 @@ class TestPostUninstall:
             )
             == "gone"
         )
+
+
+class TestThePlugin:
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+        self.acl_users = portal.acl_users
+
+    def test_the_plugin_is_installed(self):
+        """It is the persistent home for the authorization codes."""
+        assert PLUGIN_ID in self.acl_users
+
+    def test_it_activates_no_interfaces(self):
+        """Deliberately: a plugin that claims an interface it does not
+        implement would be asked to answer, and answering nothing is not the
+        same as not being asked."""
+        plugins = self.acl_users.plugins
+        active = [
+            info["id"]
+            for info in plugins.listPluginTypeInfo()
+            if PLUGIN_ID in plugins.listPluginIds(info["interface"])
+        ]
+
+        assert active == []
+
+    def test_installing_twice_keeps_the_codes_in_flight(self):
+        """Re-applying the profile must not swap the plugin out from under a
+        code that is mid-flow. Asserted through the store's contents rather
+        than through object identity: `acl_users[PLUGIN_ID]` hands back a
+        fresh acquisition wrapper every time, so `is` compares wrappers and
+        passes for two different plugins as readily as for one."""
+        code = self.acl_users[PLUGIN_ID].codes.issue(
+            "app", "alice", "https://app.example.org/cb"
+        )
+
+        install_plugin(self.acl_users)
+
+        assert self.acl_users[PLUGIN_ID].codes.redeem(
+            code, "app", "https://app.example.org/cb"
+        )
+
+    def test_the_code_store_survives_a_missing_attribute(self):
+        """A plugin persisted before the store existed keeps working, rather
+        than needing an upgrade step for data worth sixty seconds."""
+        plugin = self.acl_users[PLUGIN_ID]
+        del plugin._codes
+
+        assert plugin.codes.count() == 0
+
+    def test_uninstalling_when_absent_is_quiet(self):
+        """A second uninstall, or one on a site that never installed it."""
+        uninstall_plugin(self.acl_users)
+
+        uninstall_plugin(self.acl_users)
+
+        assert PLUGIN_ID not in self.acl_users

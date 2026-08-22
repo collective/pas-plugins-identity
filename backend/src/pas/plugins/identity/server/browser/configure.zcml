@@ -1,0 +1,35 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <!-- Both are bound to the server browser layer, so a site that never
+       applied the ``server`` profile does not publish them at all. That is
+       the difference that matters between this layer and the others: an
+       unused endpoint here is an attack surface. -->
+
+  <!-- Public: it is where a relying party sends a browser, and the browser
+       may well be anonymous. The view refuses an unauthenticated end user
+       itself, with the error code the specification names, rather than
+       letting Plone answer with a login form the client cannot read. -->
+  <browser:page
+      name="oauth-authorize"
+      for="plone.base.interfaces.IPloneSiteRoot"
+      class=".authorize.AuthorizeView"
+      permission="zope2.Public"
+      layer="pas.plugins.identity.server.interfaces.IIdentityServerLayer"
+      />
+
+  <!-- Public because the caller is a server holding client credentials, not
+       a Plone user. Authentication happens inside, against the client
+       registry. -->
+  <browser:page
+      name="oauth-token"
+      for="plone.base.interfaces.IPloneSiteRoot"
+      class=".token.TokenView"
+      permission="zope2.Public"
+      layer="pas.plugins.identity.server.interfaces.IIdentityServerLayer"
+      />
+
+</configure>

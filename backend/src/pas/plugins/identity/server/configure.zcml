@@ -12,4 +12,6 @@
        feature, so the browser layer is what keeps it absent rather than
        merely unused. -->
 
+  <include package=".browser" />
+
 </configure>

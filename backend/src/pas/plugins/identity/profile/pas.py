@@ -8,10 +8,14 @@ assert the object-load count is zero while they run.
 
 Why it matters: enumeration is called on paths where waking content is
 unacceptable -- rendering a Sharing tab, resolving a local role, listing group
-members. Whether ``Products.membrane`` has this problem has not been
-verified, so nothing is asserted about it here or in the documentation; what
-is claimed is only that this package proves the property about its own code on
-every CI run, which is what the tests in ``tests/profile`` do.
+members. ``Products.membrane`` does wake objects on the *properties* path --
+its ``MembranePropertyManager`` adapts ``brain._unrestrictedGetObject()``,
+uncached -- though not on enumeration, which stays on brains. That is
+architecture rather than oversight: membrane's property values live on the
+content object and are read through an adapter on it, so a brain cannot
+answer. This layer copies the values it serves into catalog metadata instead,
+which is what lets a brain answer and what the tests in ``tests/profile``
+measure on every CI run.
 
 **Ordering.** Plone resolves a member property by walking the ordered property
 sheets and taking the first that *has* the property, so this plugin has to sit
