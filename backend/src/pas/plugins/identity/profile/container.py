@@ -41,6 +41,12 @@ TITLE_RECORD = f"{PREFIX}.profile_container_title"
 #: ``portal_type`` used when this package creates the container.
 TYPE_RECORD = f"{PREFIX}.profile_container_type"
 
+#: Types tried, in order, when the configured one may not be added where the
+#: container goes. ``Document`` is first because it is the folderish type a
+#: Volto site has, and Volto is the distribution that makes the default
+#: unusable.
+CONTAINER_TYPE_FALLBACKS = ("Document", "Folder")
+
 
 class ContainerNotFound(LookupError):
     """The configured parent path does not resolve to a folder in this site."""
@@ -77,6 +83,49 @@ def get_parent() -> PloneSite | Container:
     return parent
 
 
+def _creatable_type(parent, configured: str) -> str:
+    """Return a container type that may actually be added to ``parent``.
+
+    The configured type is used whenever the parent allows it, which is the
+    ordinary case and the only one on a site whose structure someone has
+    thought about.
+
+    It is not the case on a site built from the ``volto`` distribution, which
+    does not allow ``Folder`` at the portal root at all -- and ``Folder`` is
+    what this package ships as the default. Installing the layer there failed
+    with a bare "Disallowed subobject type", naming neither the record to
+    change nor the fact that a record exists. Since Volto is the frontend this
+    package ships, that is not an edge case to document.
+
+    :param parent: The object the container will be created in.
+    :param configured: The type named by the ``profile_container_type``
+        record.
+    :returns: The configured type, or the first allowed fallback.
+    :raises ContainerNotFound: When nothing addable here can hold Profiles.
+    """
+    allowed = [fti.getId() for fti in parent.allowedContentTypes()]
+    if configured in allowed:
+        return configured
+
+    for fallback in CONTAINER_TYPE_FALLBACKS:
+        if fallback in allowed:
+            logger.info(
+                "%s is %r, which %s does not allow; creating the Profile "
+                "container as %r instead. Set the record to silence this.",
+                TYPE_RECORD,
+                configured,
+                "/".join(parent.getPhysicalPath()),
+                fallback,
+            )
+            return fallback
+
+    raise ContainerNotFound(
+        f"{TYPE_RECORD} is {configured!r}, which cannot be added to "
+        f"{'/'.join(parent.getPhysicalPath())}, and none of "
+        f"{CONTAINER_TYPE_FALLBACKS} can either. Allowed here: {allowed}."
+    )
+
+
 def get_container(create: bool = False) -> Container | None:
     """Return the configured Profile container.
 
@@ -95,7 +144,7 @@ def get_container(create: bool = False) -> Container | None:
 
     container = api.content.create(
         container=parent,
-        type=config["type"],
+        type=_creatable_type(parent, config["type"]),
         id=config["id"],
         title=config["title"],
     )

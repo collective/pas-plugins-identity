@@ -147,3 +147,44 @@ class TestCatalogIsNotScopedToTheContainer:
         )
 
         assert self.catalog.unrestrictedSearchResults(userid="alice")
+
+
+class TestContainerTypeFallback:
+    """The container type is a registry record, and its shipped default is
+    ``Folder`` -- which a site built from the ``volto`` distribution does not
+    allow at the portal root at all. Installing the layer there failed with a
+    bare "Disallowed subobject type", naming neither the record to change nor
+    the fact that a record exists. Volto is the frontend this package ships,
+    so that is not an edge case to leave documented."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal):
+        self.portal = portal
+
+    def test_the_configured_type_is_used_when_it_is_allowed(self):
+        """The ordinary case, and the only one on a site whose structure
+        somebody has thought about."""
+        assert container._creatable_type(self.portal, "Folder") == "Folder"
+
+    def test_a_disallowed_type_falls_back_to_one_the_parent_takes(self):
+        """``Document`` is first in the fallback order because it is the
+        folderish type a Volto site has."""
+        chosen = container._creatable_type(self.portal, "NoSuchType")
+
+        assert chosen == "Document"
+
+    def test_nothing_addable_is_an_error_that_names_the_record(self):
+        """A site where neither fallback is allowed is misconfigured, and the
+        message has to say which knob to turn."""
+
+        class NoTypesAllowed:
+            @staticmethod
+            def allowedContentTypes():
+                return []
+
+            @staticmethod
+            def getPhysicalPath():
+                return ("", "Plone")
+
+        with pytest.raises(container.ContainerNotFound, match="container_type"):
+            container._creatable_type(NoTypesAllowed(), "Folder")
