@@ -94,14 +94,13 @@ class TestRebuildGuard:
 
     def test_runs_for_our_profile(self):
         """With the marker present, the rebuild happens."""
-        with api.env.adopt_roles(["Manager"]):
-            api.content.create(
-                container=self.portal["identity-profiles"],
-                type=PROFILE_PORTAL_TYPE,
-                id="alice",
-                userid="alice",
-                login="alice@example.com",
-            )
+        api.content.create(
+            container=self.portal["identity-profiles"],
+            type=PROFILE_PORTAL_TYPE,
+            id="alice",
+            userid="alice",
+            login="alice@example.com",
+        )
         self.catalog.manage_catalogClear()
 
         setuphandlers.rebuild_catalog(Context())
@@ -110,14 +109,13 @@ class TestRebuildGuard:
 
     def test_skipped_for_another_profile(self):
         """Installing an unrelated add-on must not touch this self.catalog."""
-        with api.env.adopt_roles(["Manager"]):
-            api.content.create(
-                container=self.portal["identity-profiles"],
-                type=PROFILE_PORTAL_TYPE,
-                id="alice",
-                userid="alice",
-                login="alice@example.com",
-            )
+        api.content.create(
+            container=self.portal["identity-profiles"],
+            type=PROFILE_PORTAL_TYPE,
+            id="alice",
+            userid="alice",
+            login="alice@example.com",
+        )
         self.catalog.manage_catalogClear()
 
         setuphandlers.rebuild_catalog(Context(marker=None))
@@ -167,8 +165,7 @@ class TestContainerTypeWithoutBehaviors:
         )
         api.portal.set_registry_record(container_module.ID_RECORD, "people")
 
-        with api.env.adopt_roles(["Manager"]):
-            created = container_module.get_container(create=True)
+        created = container_module.get_container(create=True)
 
         assert created.portal_type == plain_container_type
         assert not IExcludeFromNavigation.providedBy(created)

@@ -54,31 +54,30 @@ def profiles(portal):
     """
     container = portal["identity-profiles"]
     created = []
-    with api.env.adopt_roles(["Manager"]):
-        for group_id in ("editors", "reviewers"):
-            created.append(
-                api.content.create(
-                    container=container,
-                    type=GROUP_PORTAL_TYPE,
-                    id=group_id,
-                    group_id=group_id,
-                    title=group_id.title(),
-                )
+    for group_id in ("editors", "reviewers"):
+        created.append(
+            api.content.create(
+                container=container,
+                type=GROUP_PORTAL_TYPE,
+                id=group_id,
+                group_id=group_id,
+                title=group_id.title(),
             )
-        for index in range(10):
-            created.append(
-                api.content.create(
-                    container=container,
-                    type=PROFILE_PORTAL_TYPE,
-                    id=f"user{index}",
-                    userid=f"user{index}",
-                    login=f"user{index}@example.com",
-                    fullname=f"User Number {index}",
-                    email=f"user{index}@example.com",
-                    location=f"Room {index}",
-                    group_ids=("editors",) if index % 2 else (),
-                )
+        )
+    for index in range(10):
+        created.append(
+            api.content.create(
+                container=container,
+                type=PROFILE_PORTAL_TYPE,
+                id=f"user{index}",
+                userid=f"user{index}",
+                login=f"user{index}@example.com",
+                fullname=f"User Number {index}",
+                email=f"user{index}@example.com",
+                location=f"Room {index}",
+                group_ids=("editors",) if index % 2 else (),
             )
+        )
     transaction.savepoint(optimistic=True)
     processQueue()
     for profile in created:

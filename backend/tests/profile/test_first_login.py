@@ -211,15 +211,14 @@ class TestHandTypedValues:
 
     def test_hand_typed_value_is_never_clobbered(self):
         """Row 5: an administrator who typed it in owns it."""
-        with api.env.adopt_roles(["Manager"]):
-            api.content.create(
-                container=self.portal["identity-profiles"],
-                type=PROFILE_PORTAL_TYPE,
-                id="alice-userid",
-                userid="alice-userid",
-                login="alice",
-                fullname="Alice, on the third floor",
-            )
+        api.content.create(
+            container=self.portal["identity-profiles"],
+            type=PROFILE_PORTAL_TYPE,
+            id="alice-userid",
+            userid="alice-userid",
+            login="alice",
+            fullname="Alice, on the third floor",
+        )
 
         login()
 

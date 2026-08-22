@@ -84,8 +84,7 @@ class TestWithAProfile:
     def test_complete_is_reflected(self):
         """And what stops it appearing again."""
         profile = self.make_profile(TEST_USER_ID)
-        with api.env.adopt_roles(["Manager"]):
-            api.content.transition(obj=profile, transition="complete")
+        api.content.transition(obj=profile, transition="complete")
 
         assert self.service.reply()["review_state"] == "complete"
 

@@ -36,15 +36,14 @@ def make_member(portal, acl_users):
 
     def factory(userid: str, *group_ids: str) -> object:
         acl_users.source_users.addUser(userid, userid, "placeholder-password")
-        with api.env.adopt_roles(["Manager"]):
-            return api.content.create(
-                container=portal["identity-profiles"],
-                type=PROFILE_PORTAL_TYPE,
-                id=userid,
-                userid=userid,
-                login=f"{userid}@example.com",
-                group_ids=tuple(group_ids),
-            )
+        return api.content.create(
+            container=portal["identity-profiles"],
+            type=PROFILE_PORTAL_TYPE,
+            id=userid,
+            userid=userid,
+            login=f"{userid}@example.com",
+            group_ids=tuple(group_ids),
+        )
 
     return factory
 
@@ -166,8 +165,7 @@ class TestDeactivation:
         """Without editing a single Profile, which is the point of the state."""
         group = self.make_group("editors")
         self.make_member("alice", "editors")
-        with api.env.adopt_roles(["Manager"]):
-            api.content.transition(obj=group, transition="deactivate")
+        api.content.transition(obj=group, transition="deactivate")
 
         assert (
             self.plugin.getGroupsForPrincipal(self.acl_users.getUserById("alice")) == ()
@@ -177,8 +175,7 @@ class TestDeactivation:
         """Reactivating must bring the membership back exactly."""
         group = self.make_group("editors")
         profile = self.make_member("alice", "editors")
-        with api.env.adopt_roles(["Manager"]):
-            api.content.transition(obj=group, transition="deactivate")
+        api.content.transition(obj=group, transition="deactivate")
 
         assert profile.group_ids == ("editors",)
 
@@ -186,9 +183,8 @@ class TestDeactivation:
         """The membership it always had."""
         group = self.make_group("editors")
         self.make_member("alice", "editors")
-        with api.env.adopt_roles(["Manager"]):
-            api.content.transition(obj=group, transition="deactivate")
-            api.content.transition(obj=group, transition="reactivate")
+        api.content.transition(obj=group, transition="deactivate")
+        api.content.transition(obj=group, transition="reactivate")
 
         assert self.plugin.getGroupsForPrincipal(
             self.acl_users.getUserById("alice")
@@ -197,8 +193,7 @@ class TestDeactivation:
     def test_deactivated_group_is_not_enumerated(self):
         """It disappears from listings as well as from membership."""
         group = self.make_group("editors")
-        with api.env.adopt_roles(["Manager"]):
-            api.content.transition(obj=group, transition="deactivate")
+        api.content.transition(obj=group, transition="deactivate")
 
         assert self.plugin.enumerateGroups(id="editors", exact_match=True) == ()
 
@@ -306,8 +301,7 @@ class TestIntrospection:
     def test_a_deactivated_group_is_not_found(self):
         """Consistent with enumeration; two answers here would be a bug."""
         group = self.make_group("editors")
-        with api.env.adopt_roles(["Manager"]):
-            api.content.transition(obj=group, transition="deactivate")
+        api.content.transition(obj=group, transition="deactivate")
 
         assert self.plugin.getGroupById("editors") is None
 
@@ -359,8 +353,7 @@ class TestIntrospection:
         """A deactivated account is not a member of anything."""
         self.make_group("editors")
         profile = self.make_member("alice", "editors")
-        with api.env.adopt_roles(["Manager"]):
-            api.content.transition(obj=profile, transition="deactivate")
+        api.content.transition(obj=profile, transition="deactivate")
 
         assert self.plugin.getGroupMembers("editors") == ()
 

@@ -23,14 +23,13 @@ def make_profile(portal, acl_users):
 
     def factory(userid: str) -> object:
         acl_users.source_users.addUser(userid, userid, "placeholder-password")
-        with api.env.adopt_roles(["Manager"]):
-            return api.content.create(
-                container=portal["identity-profiles"],
-                type=PROFILE_PORTAL_TYPE,
-                id=userid,
-                userid=userid,
-                login=f"{userid}@example.com",
-            )
+        return api.content.create(
+            container=portal["identity-profiles"],
+            type=PROFILE_PORTAL_TYPE,
+            id=userid,
+            userid=userid,
+            login=f"{userid}@example.com",
+        )
 
     return factory
 

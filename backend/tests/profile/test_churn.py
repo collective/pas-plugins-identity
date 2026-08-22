@@ -280,33 +280,31 @@ class TestChurn:
     def test_catalog_stays_consistent(self, seed: int):
         """No step leaves the catalog disagreeing with the site."""
         rng = random.Random(seed)
-        with api.env.adopt_roles(["Manager"]):
-            churn = Churn(self.portal, rng)
-            for step in range(STEPS):
-                operation = churn.step()
+        churn = Churn(self.portal, rng)
+        for step in range(STEPS):
+            operation = churn.step()
 
-                # UNKNOWN_GROUP is expected here and is not drift: the
-                # churn deliberately has Profiles naming groups that come and
-                # go, and the point is that the catalog stays consistent while
-                # they do. Every other kind is a real inconsistency.
-                findings = [
-                    finding
-                    for finding in doctor.check()
-                    if finding["kind"] != doctor.UNKNOWN_GROUP
-                ]
-                assert findings == [], (
-                    f"seed {seed}, step {step}, after {operation.__name__}"
-                )
+            # UNKNOWN_GROUP is expected here and is not drift: the
+            # churn deliberately has Profiles naming groups that come and
+            # go, and the point is that the catalog stays consistent while
+            # they do. Every other kind is a real inconsistency.
+            findings = [
+                finding
+                for finding in doctor.check()
+                if finding["kind"] != doctor.UNKNOWN_GROUP
+            ]
+            assert findings == [], (
+                f"seed {seed}, step {step}, after {operation.__name__}"
+            )
 
     def test_counts_agree(self, seed: int):
         """Catalog count equals Profile count, all the way through."""
         rng = random.Random(seed)
-        with api.env.adopt_roles(["Manager"]):
-            churn = Churn(self.portal, rng)
-            for step in range(STEPS):
-                operation = churn.step()
+        churn = Churn(self.portal, rng)
+        for step in range(STEPS):
+            operation = churn.step()
 
-                expected = len(churn._profiles()) + len(churn._groups())
-                assert len(all_brains(self.catalog)) == expected, (
-                    f"seed {seed}, step {step}, after {operation.__name__}"
-                )
+            expected = len(churn._profiles()) + len(churn._groups())
+            assert len(all_brains(self.catalog)) == expected, (
+                f"seed {seed}, step {step}, after {operation.__name__}"
+            )

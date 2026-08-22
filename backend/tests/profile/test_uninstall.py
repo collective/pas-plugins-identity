@@ -27,15 +27,14 @@ def profile_with_data(portal):
     :param portal: The Plone site.
     :returns: Physical path of the Profile.
     """
-    with api.env.adopt_roles(["Manager"]):
-        profile = api.content.create(
-            container=portal["identity-profiles"],
-            type=PROFILE_PORTAL_TYPE,
-            id="alice",
-            userid="alice",
-            login="alice@example.com",
-            fullname="Alice Liddell",
-        )
+    profile = api.content.create(
+        container=portal["identity-profiles"],
+        type=PROFILE_PORTAL_TYPE,
+        id="alice",
+        userid="alice",
+        login="alice@example.com",
+        fullname="Alice Liddell",
+    )
     return "/".join(profile.getPhysicalPath())
 
 

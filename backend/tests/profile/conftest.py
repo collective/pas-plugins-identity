@@ -44,6 +44,18 @@ def _manager(integration):
     marker's own ``roles`` argument is deliberate: the marker grants roles
     *after* it applies profiles, which is too late to help the import step.
 
+    .. warning::
+
+       This fixture is now the *only* thing electing these tests, and the whole
+       package leans on it: the 27 explicit ``api.env.adopt_roles(["Manager"])``
+       blocks that used to double it up have been removed as redundant. It was
+       introduced as a workaround for `plone/pytest-plone#63
+       <https://github.com/plone/pytest-plone/issues/63>`_ and is marked for
+       deletion once that lands -- but deleting it wholesale would now strip
+       every test here of its role, not merely undo a workaround. When #63
+       ships, replace this with the marker's own ``roles`` argument; do not
+       simply drop it.
+
     :param integration: The integration layer.
     """
     setRoles(integration["portal"], TEST_USER_ID, ["Manager"])
@@ -78,15 +90,14 @@ def make_profile(portal):
     """
 
     def factory(userid: str, **kwargs) -> object:
-        with api.env.adopt_roles(["Manager"]):
-            return api.content.create(
-                container=kwargs.pop("container", portal["identity-profiles"]),
-                type=PROFILE_PORTAL_TYPE,
-                id=kwargs.pop("id", userid),
-                userid=userid,
-                login=kwargs.pop("login", f"{userid}@example.com"),
-                **kwargs,
-            )
+        return api.content.create(
+            container=kwargs.pop("container", portal["identity-profiles"]),
+            type=PROFILE_PORTAL_TYPE,
+            id=kwargs.pop("id", userid),
+            userid=userid,
+            login=kwargs.pop("login", f"{userid}@example.com"),
+            **kwargs,
+        )
 
     return factory
 
@@ -100,14 +111,13 @@ def make_group(portal):
     """
 
     def factory(group_id: str, title: str | None = None, **kwargs) -> object:
-        with api.env.adopt_roles(["Manager"]):
-            return api.content.create(
-                container=portal["identity-profiles"],
-                type=GROUP_PORTAL_TYPE,
-                id=kwargs.pop("id", group_id),
-                group_id=group_id,
-                title=title or kwargs.pop("title", group_id.title()),
-                **kwargs,
-            )
+        return api.content.create(
+            container=portal["identity-profiles"],
+            type=GROUP_PORTAL_TYPE,
+            id=kwargs.pop("id", group_id),
+            group_id=group_id,
+            title=title or kwargs.pop("title", group_id.title()),
+            **kwargs,
+        )
 
     return factory

@@ -40,15 +40,14 @@ def make_user(portal, acl_users):
         acl_users.source_users.addUser(userid, userid, "placeholder-password")
         if seeded:
             api.user.get(userid=userid).setMemberProperties(seeded)
-        with api.env.adopt_roles(["Manager"]):
-            return api.content.create(
-                container=portal["identity-profiles"],
-                type=PROFILE_PORTAL_TYPE,
-                id=userid,
-                userid=userid,
-                login=fields.pop("login", f"{userid}@example.com"),
-                **fields,
-            )
+        return api.content.create(
+            container=portal["identity-profiles"],
+            type=PROFILE_PORTAL_TYPE,
+            id=userid,
+            userid=userid,
+            login=fields.pop("login", f"{userid}@example.com"),
+            **fields,
+        )
 
     return factory
 
@@ -302,24 +301,21 @@ class TestEnumerationStates:
     def test_complete_is_enumerated(self):
         """So is a filled-in one."""
         profile = self.make_user("alice")
-        with api.env.adopt_roles(["Manager"]):
-            api.content.transition(obj=profile, transition="complete")
+        api.content.transition(obj=profile, transition="complete")
 
         assert self.plugin.enumerateUsers(id="alice", exact_match=True)
 
     def test_deactivated_is_not_enumerated(self):
         """The point of the state."""
         profile = self.make_user("alice")
-        with api.env.adopt_roles(["Manager"]):
-            api.content.transition(obj=profile, transition="deactivate")
+        api.content.transition(obj=profile, transition="deactivate")
 
         assert self.plugin.enumerateUsers(id="alice", exact_match=True) == ()
 
     def test_deactivated_profile_still_exists(self):
         """Deactivation hides an account; it does not delete one."""
         profile = self.make_user("alice")
-        with api.env.adopt_roles(["Manager"]):
-            api.content.transition(obj=profile, transition="deactivate")
+        api.content.transition(obj=profile, transition="deactivate")
 
         assert "alice" in self.portal["identity-profiles"].objectIds()
 

@@ -66,8 +66,7 @@ class TestIndexingLifecycle:
         """A transition changes review_state and nothing else notices."""
         profile = self.make_profile("alice")
 
-        with api.env.adopt_roles(["Manager"]):
-            api.content.transition(obj=profile, transition="complete")
+        api.content.transition(obj=profile, transition="complete")
 
         brain = self.catalog.unrestrictedSearchResults(userid="alice")[0]
         assert brain.review_state == "complete"
@@ -77,8 +76,7 @@ class TestIndexingLifecycle:
         profile = self.make_profile("alice")
         old_path = "/".join(profile.getPhysicalPath())
 
-        with api.env.adopt_roles(["Manager"]):
-            api.content.rename(obj=profile, new_id="alice-renamed")
+        api.content.rename(obj=profile, new_id="alice-renamed")
 
         paths = [b.getPath() for b in all_brains(self.catalog)]
         assert old_path not in paths
@@ -88,11 +86,10 @@ class TestIndexingLifecycle:
     def test_move_out_of_the_container_keeps_it_indexed(self):
         """The catalog is site-wide: reorganising content is not a logout."""
         profile = self.make_profile("alice")
-        with api.env.adopt_roles(["Manager"]):
-            target = api.content.create(
-                container=self.portal, type="Folder", id="elsewhere", title="Elsewhere"
-            )
-            api.content.move(source=profile, target=target)
+        target = api.content.create(
+            container=self.portal, type="Folder", id="elsewhere", title="Elsewhere"
+        )
+        api.content.move(source=profile, target=target)
 
         brains = self.catalog.unrestrictedSearchResults(userid="alice")
         assert len(brains) == 1
@@ -101,8 +98,7 @@ class TestIndexingLifecycle:
     def test_delete_unindexes(self):
         """A deleted Profile leaves no brain behind."""
         profile = self.make_profile("alice")
-        with api.env.adopt_roles(["Manager"]):
-            api.content.delete(obj=profile)
+        api.content.delete(obj=profile)
 
         assert not self.catalog.unrestrictedSearchResults(userid="alice")
 
