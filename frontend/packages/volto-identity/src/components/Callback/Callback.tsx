@@ -10,12 +10,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
+import { LOGIN } from '@plone/volto/constants/ActionTypes';
 
 import { completeCallback, confirmMagicLink } from '../../actions';
 import { readCallback } from '../../helpers/callback';
 
 interface CallbackProps {
-  /** Called with the issued token. Defaults to Volto's own login success. */
+  /** Called with the issued token instead of the default sign-in. */
   onToken?: (token: string, cameFrom: string) => void;
 }
 
@@ -58,10 +59,30 @@ const Callback: React.FC<CallbackProps> = ({ onToken }) => {
 
   useEffect(() => {
     const token = answered?.data?.token;
-    if (token && onToken) {
-      onToken(token, answered?.data?.came_from ?? '');
+    if (!token) {
+      return;
     }
-  }, [answered, onToken]);
+    const cameFrom = answered?.data?.came_from ?? '';
+    if (onToken) {
+      onToken(token, cameFrom);
+      return;
+    }
+
+    // The default, and the reason this is not an optional prop with no
+    // fallback: the route is registered as a bare component, so nothing
+    // passes onToken, and a page that fetched a token and then did nothing
+    // with it sat on "Signing you in…" forever with a 200 in the access log.
+    //
+    // Volto's own LOGIN_SUCCESS is the whole sign-in: `persistAuthToken`
+    // subscribes to the store at client start and writes any new
+    // `userSession.token` out to the cookie, so putting the token in the
+    // store is what makes the browser signed in. Reproducing that by writing
+    // the cookie here would be a second implementation of it.
+    dispatch({ type: `${LOGIN}_SUCCESS`, result: { token } });
+    // A full load rather than a router push: everything rendered so far was
+    // rendered for an anonymous user.
+    window.location.href = cameFrom || '/';
+  }, [answered, onToken, dispatch]);
 
   if (refusal) {
     return (
