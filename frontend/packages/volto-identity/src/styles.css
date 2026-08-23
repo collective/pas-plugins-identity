@@ -15,6 +15,236 @@
   --identity-muted: rgba(0, 0, 0, 0.6);
   --identity-error: #a01c1c;
   --identity-ok: #1c7a3e;
+
+  /* The login panel, taken from volto-authomatic so that two add-ons which
+     both replace /login do not look like two different products. */
+  --identity-login-width: 350px;
+  --identity-login-border: #c7d5d8;
+  --identity-login-description-bg: #edf1f2;
+  --identity-login-button-submit-color: #007eb1;
+  --identity-login-button-cancel-color: #ee0000;
+
+  /* Provider buttons, also from volto-authomatic. The geometry and the
+     per-provider colours are its values; a user who has seen one of these
+     login pages should recognise the other. */
+  --identity-provider-width: 300px;
+  --identity-provider-height: 45px;
+  --identity-provider-radius: 3px;
+  --identity-provider-shadow: rgba(0, 0, 0, 0.5) 0 1px 2px;
+
+  --identity-provider-default-bg: #000;
+  --identity-provider-default-color: #fff;
+
+  --identity-provider-github-bg: #333;
+  --identity-provider-github-bg-hover: #555;
+  --identity-provider-github-color: #fff;
+
+  --identity-provider-google-bg: #fff;
+  --identity-provider-google-bg-hover: #eff0ee;
+  --identity-provider-google-color: #000;
+
+  --identity-provider-oidc-bg: #333;
+  --identity-provider-oidc-bg-hover: #555;
+  --identity-provider-oidc-color: #fff;
+
+  /* Surfaces shared by every panel this add-on renders, so the identities
+     page, the two control panels and the login card read as one product. */
+  --identity-surface-border: #c7d5d8;
+  --identity-surface-header-bg: #edf1f2;
+  --identity-surface-shadow: 0 2px 4px 0 rgba(34, 36, 38, 0.12),
+    0 2px 10px 0 rgba(34, 36, 38, 0.15);
+  --identity-accent: #007eb1;
+  --identity-danger: #ee0000;
+}
+
+/* Shared surfaces -------------------------------------------------------- */
+
+.identity-identities,
+.identity-controlpanel__provider,
+.identity-clients section,
+.identity-clients__new,
+.identity-secret {
+  border: 1px solid var(--identity-surface-border);
+  background: #fff;
+  box-shadow: var(--identity-surface-shadow);
+}
+
+.identity-identities > h2,
+.identity-clients section > h2,
+.identity-clients__new > h3 {
+  padding: 12px 16px;
+  border-bottom: 0.22222222rem solid var(--identity-surface-border);
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* Buttons ---------------------------------------------------------------- */
+
+.identity-identities button,
+.identity-controlpanel button,
+.identity-clients button,
+.identity-secret button {
+  padding: 8px 14px;
+  border: 1px solid var(--identity-accent);
+  border-radius: var(--identity-radius);
+  background: transparent;
+  color: var(--identity-accent);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.identity-identities button:hover:not(:disabled),
+.identity-controlpanel button:hover:not(:disabled),
+.identity-clients button:hover:not(:disabled),
+.identity-secret button:hover:not(:disabled) {
+  background: var(--identity-surface-header-bg);
+}
+
+.identity-identities button:disabled,
+.identity-controlpanel button:disabled,
+.identity-clients button:disabled,
+.identity-secret button:disabled {
+  border-color: var(--identity-muted);
+  color: var(--identity-muted);
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* The irreversible ones say so. */
+.identity-identities button[data-action='unlink'],
+.identity-controlpanel button[data-action='delete'],
+.identity-clients button[data-action='delete'] {
+  border-color: var(--identity-danger);
+  color: var(--identity-danger);
+}
+
+/* Fields ----------------------------------------------------------------- */
+
+.identity-field input,
+.identity-field select,
+.identity-field textarea,
+.identity-clients__new input {
+  padding: 8px 6px;
+  border: 0 0 1px;
+  border-bottom: 1px solid var(--identity-surface-border);
+  background: transparent;
+  font-size: 16px;
+}
+
+.identity-field input:focus,
+.identity-clients__new input:focus {
+  border-bottom-color: var(--identity-accent);
+  outline: none;
+}
+
+.identity-field > label,
+.identity-clients__new label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* The login panel -------------------------------------------------------- */
+
+#page-login .loginForm {
+  width: var(--identity-login-width);
+  line-height: 1.5;
+}
+
+#page-login .wrapper {
+  border: 1px solid var(--identity-login-border);
+  margin: 1rem 0;
+  box-shadow:
+    0 2px 4px 0 rgba(34, 36, 38, 0.12),
+    0 2px 10px 0 rgba(34, 36, 38, 0.15);
+}
+
+#page-login .title {
+  padding: 16px;
+  border-bottom: 0.22222222rem solid var(--identity-login-border);
+  font-size: 16px;
+  font-weight: 500;
+}
+
+#page-login .description {
+  padding: 12px;
+  background-color: var(--identity-login-description-bg);
+  font-size: 12px;
+  font-weight: 200;
+}
+
+/* The password form, following volto-authomatic's PloneForm ------------- */
+
+.PloneAuth {
+  display: flex;
+  max-width: 100%;
+  flex-direction: column;
+  margin-right: auto;
+  margin-left: auto;
+  line-height: 1.5;
+}
+
+.PloneAuth .form {
+  padding: 10px;
+}
+
+.PloneAuth .form .react-aria-TextField {
+  width: 100%;
+  padding: 10px 0;
+}
+
+.PloneAuth .form .react-aria-TextField .react-aria-Label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.PloneAuth .form .react-aria-TextField .react-aria-Input {
+  width: 100%;
+  padding: 10px 5px;
+  border-width: 0 0 0.05rem;
+  margin-top: 10px;
+  font-size: 18px;
+}
+
+.PloneAuth .form .react-aria-TextField .react-aria-Input:not(:focus) {
+  border-radius: 0;
+}
+
+.PloneAuth .actions {
+  display: flex;
+  flex-direction: row-reverse;
+  padding: 20px 10px;
+  border-top: 1px solid var(--identity-login-description-bg);
+}
+
+.PloneAuth .actions > button {
+  border: unset;
+  cursor: pointer;
+}
+
+.PloneAuth .actions > button.react-aria-Button {
+  background-color: transparent !important;
+}
+
+.PloneAuth .actions > button#login-form-submit {
+  color: var(--identity-login-button-submit-color);
+}
+
+.PloneAuth .actions > button#login-form-cancel {
+  color: var(--identity-login-button-cancel-color);
+}
+
+.identity-password-toggle {
+  padding: 10px;
+}
+
+.identity-password-toggle > button {
+  padding: 0;
+  border: unset;
+  background: transparent;
+  color: var(--identity-login-button-submit-color);
+  cursor: pointer;
+  font-size: 14px;
 }
 
 /* Login ------------------------------------------------------------------ */
@@ -28,28 +258,58 @@
 .identity-providers {
   display: flex;
   flex-direction: column;
-  padding: 0;
-  margin: 0;
-  gap: var(--identity-gap);
+  align-items: center;
+  padding: 0 0 1rem;
+  margin: 1rem;
+  gap: 6px;
   list-style: none;
+  text-align: center;
 }
 
 .identity-provider {
-  display: flex;
-  width: 100%;
+  display: inline-flex;
+  width: var(--identity-provider-width);
+  max-width: 100%;
+  height: var(--identity-provider-height);
   align-items: center;
   justify-content: center;
-  padding: 10px 16px;
-  border: var(--identity-border);
-  border-radius: var(--identity-radius);
-  background: transparent;
+  padding: 5px;
+  border: none;
+  border-radius: var(--identity-provider-radius);
+  background: var(--identity-provider-default-bg);
+  box-shadow: var(--identity-provider-shadow);
+  color: var(--identity-provider-default-color);
   cursor: pointer;
+  font-size: 16px;
   gap: 8px;
   text-align: center;
 }
 
-.identity-provider:hover:not(:disabled) {
-  border-color: currentcolor;
+.identity-provider--github {
+  background: var(--identity-provider-github-bg);
+  color: var(--identity-provider-github-color);
+}
+
+.identity-provider--github:hover:not(:disabled) {
+  background: var(--identity-provider-github-bg-hover);
+}
+
+.identity-provider--google {
+  background: var(--identity-provider-google-bg);
+  color: var(--identity-provider-google-color);
+}
+
+.identity-provider--google:hover:not(:disabled) {
+  background: var(--identity-provider-google-bg-hover);
+}
+
+.identity-provider--oidc-generic {
+  background: var(--identity-provider-oidc-bg);
+  color: var(--identity-provider-oidc-color);
+}
+
+.identity-provider--oidc-generic:hover:not(:disabled) {
+  background: var(--identity-provider-oidc-bg-hover);
 }
 
 .identity-provider:disabled {
@@ -84,10 +344,15 @@
 .identity-identities__list {
   display: flex;
   flex-direction: column;
-  padding: 0;
+  padding: 0 16px;
   margin: 0 0 var(--identity-gap);
   gap: 8px;
   list-style: none;
+}
+
+.identity-identities__add,
+.identity-identities__empty {
+  padding: 0 16px 16px;
 }
 
 .identity-identities__list li {
@@ -109,7 +374,10 @@
 }
 
 .identity-identities__add {
+  display: flex;
+  flex-wrap: wrap;
   margin-top: calc(var(--identity-gap) * 2);
+  gap: 8px;
 }
 
 /* Control panel ---------------------------------------------------------- */
@@ -126,8 +394,13 @@
 
 .identity-controlpanel__provider {
   padding: var(--identity-gap);
-  border: var(--identity-border);
   border-radius: var(--identity-radius);
+}
+
+.identity-controlpanel__provider > h3 {
+  margin: 0 0 var(--identity-gap);
+  font-size: 16px;
+  font-weight: 500;
 }
 
 .identity-controlpanel__actions {
@@ -182,7 +455,18 @@
 /* The OAuth client control panel. Structural only: spacing, and making the
    one irreversible thing on the page look like it. */
 .identity-clients section {
+  padding: 0 0 16px;
   margin-bottom: 2rem;
+}
+
+.identity-clients__list,
+.identity-clients__keys,
+.identity-clients__empty {
+  padding: 0 16px;
+}
+
+.identity-clients__new {
+  padding: 0 16px 16px;
 }
 
 .identity-clients__actions {
@@ -210,9 +494,14 @@
    rest of the page. */
 .identity-secret {
   padding: 1rem;
-  border: 2px solid currentColor;
-  border-radius: 0.25rem;
+  border: 2px solid var(--identity-danger);
+  border-radius: var(--identity-radius);
   margin-bottom: 2rem;
+}
+
+.identity-secret__notice {
+  margin: 0 0 0.5rem;
+  font-weight: 500;
 }
 
 .identity-secret__value {

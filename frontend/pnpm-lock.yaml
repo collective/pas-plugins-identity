@@ -1350,6 +1350,9 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
     devDependencies:
+      '@plone/components':
+        specifier: workspace:*
+        version: link:../../core/packages/components
       '@plone/registry':
         specifier: workspace:*
         version: link:../../core/packages/registry
@@ -1359,6 +1362,9 @@ importers:
       '@plone/types':
         specifier: workspace:*
         version: link:../../core/packages/types
+      '@storybook/react':
+        specifier: ^8.0.4
+        version: 8.6.18(@storybook/test@8.6.15(storybook@8.6.18(prettier@3.2.5)))(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(storybook@8.6.18(prettier@3.2.5))(typescript@5.9.3)
       '@testing-library/react':
         specifier: ^16.2.0
         version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)

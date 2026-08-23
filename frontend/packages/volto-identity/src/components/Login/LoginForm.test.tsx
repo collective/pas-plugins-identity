@@ -106,7 +106,9 @@ describe('LoginForm', () => {
     fireEvent.change(screen.getByLabelText('Password'), {
       target: { value: 'hunter2' },
     });
-    fireEvent.click(screen.getByText('Sign in'));
+    // An icon button since the form took volto-authomatic's shape, so it is
+    // found by its accessible name rather than its text.
+    fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 
     expect(onPasswordLogin).toHaveBeenCalledWith('alice', 'hunter2');
   });
@@ -180,5 +182,35 @@ describe('MagicLinkForm', () => {
     const message = screen.getByRole('status').textContent ?? '';
     expect(message).toContain('If that address');
     expect(screen.queryByLabelText('Email address')).toBeNull();
+  });
+});
+
+describe('PasswordForm shape', () => {
+  it('uses the same markup the standard Volto login form does', () => {
+    // The classes are volto-authomatic's, and the styles are ported from it:
+    // two add-ons that both replace /login looking like two different
+    // products is worse than either looking like itself.
+    renderForm();
+    fireEvent.click(screen.getByText('Sign in with a password'));
+
+    expect(document.querySelector('form.PloneAuth')).toBeTruthy();
+    expect(document.querySelector('.PloneAuth .actions')).toBeTruthy();
+    expect(document.querySelector('#login-form-submit')).toBeTruthy();
+    expect(document.querySelector('#login-form-cancel')).toBeTruthy();
+  });
+
+  it('clears what was typed rather than submitting it', () => {
+    const { onPasswordLogin } = renderForm();
+    fireEvent.click(screen.getByText('Sign in with a password'));
+    fireEvent.change(screen.getByLabelText('Login name'), {
+      target: { value: 'alice' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+
+    expect(
+      (screen.getByLabelText('Login name') as HTMLInputElement).value,
+    ).toBe('');
+    expect(onPasswordLogin).not.toHaveBeenCalled();
   });
 });

@@ -16,6 +16,7 @@ import { login } from '@plone/volto/actions/userSession/userSession';
 import { returnUrl } from '../../helpers/returnUrl';
 import type { LoginProvider } from '../../types';
 import LoginForm from './LoginForm';
+import LoginPanel from './LoginPanel';
 
 const Login: React.FC = () => {
   const dispatch = useDispatch();
@@ -75,21 +76,30 @@ const Login: React.FC = () => {
     [dispatch],
   );
 
+  // The description names what is actually below, which differs by site: a
+  // provider list, a password form, or both.
+  const hasProviders = Boolean(providers?.data?.length);
+  const description = hasProviders
+    ? 'Choose how you would like to sign in.'
+    : 'Sign in with your account on this site.';
+
   return (
-    <LoginForm
-      providers={providers?.data ?? []}
-      loading={Boolean(providers?.loading)}
-      starting={redirecting}
-      error={started?.error}
-      magicLinkSent={Boolean(magic?.data)}
-      magicLinkLoading={Boolean(magic?.loading)}
-      magicLinkError={magic?.error}
-      onSelectProvider={onSelectProvider}
-      onSendMagicLink={onSendMagicLink}
-      passwordLoading={Boolean(userSession?.login?.loading)}
-      passwordError={userSession?.login?.error}
-      onPasswordLogin={onPasswordLogin}
-    />
+    <LoginPanel title="Log in" description={description}>
+      <LoginForm
+        providers={providers?.data ?? []}
+        loading={Boolean(providers?.loading)}
+        starting={redirecting}
+        error={started?.error}
+        magicLinkSent={Boolean(magic?.data)}
+        magicLinkLoading={Boolean(magic?.loading)}
+        magicLinkError={magic?.error}
+        onSelectProvider={onSelectProvider}
+        onSendMagicLink={onSendMagicLink}
+        passwordLoading={Boolean(userSession?.login?.loading)}
+        passwordError={userSession?.login?.error}
+        onPasswordLogin={onPasswordLogin}
+      />
+    </LoginPanel>
   );
 };
 
