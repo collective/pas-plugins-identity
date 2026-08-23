@@ -14,6 +14,22 @@ import shutil
 pytest_plugins = ["pytest_plone"]
 
 
+@pytest.fixture(scope="class")
+def http_request_class(integration_class):
+    """Return the request, for a class-scoped test.
+
+    ``pytest_plone`` ships ``http_request``, but it depends on the
+    function-scoped ``integration`` layer: asking for it from a class that
+    uses ``portal_class`` tears the class-scoped layer down mid-class and
+    fails with a bare ``KeyError: 'portal'``. This is the same fixture
+    against the layer those classes actually run on.
+
+    :param integration_class: The class-scoped integration layer.
+    :returns: The request.
+    """
+    return integration_class["request"]
+
+
 @pytest.fixture
 def acl_users(portal):
     """Return the site's PAS instance.

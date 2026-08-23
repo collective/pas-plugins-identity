@@ -9,9 +9,9 @@ from pas.plugins.identity.server.pas import PLUGIN_ID
 from pas.plugins.identity.server.setuphandlers import install_plugin
 from pas.plugins.identity.server.setuphandlers import uninstall_plugin
 from plone import api
+from plone.api.exc import InvalidParameterError
 from plone.browserlayer.utils import registered_layers
 from Products.PluggableAuthService.interfaces.plugins import IChallengePlugin
-from zope.component import queryMultiAdapter
 from zope.interface import alsoProvides
 from zope.schema import getFieldNames
 
@@ -97,9 +97,10 @@ class TestPostUninstall:
 
 class TestTheControlPanel:
     @pytest.fixture(autouse=True)
-    def _setup(self, portal) -> None:
+    def _setup(self, portal, http_request) -> None:
         self.portal = portal
         self.tool = api.portal.get_tool("portal_controlpanel")
+        self.request = http_request
 
     def test_the_configlet_is_registered(self):
         """Without it the panel exists but nothing links to it, and
@@ -127,24 +128,17 @@ class TestTheControlPanel:
         request = self.portal.REQUEST
         alsoProvides(request, IIdentityServerLayer)
 
-        panel = queryMultiAdapter(
-            (self.portal, request),
-            IIdentityServerControlpanel,
-            name=CONFIGLET_ID,
-        )
+        panel = api.content.get_view(CONFIGLET_ID, self.portal, request)
 
-        assert panel is not None
+        # get_view looks up by name only, so the interface the panel is
+        # bound to is asserted rather than implied by the lookup.
+        assert IIdentityServerControlpanel.providedBy(panel)
 
     def test_it_is_not_served_without_the_layer(self):
         """Which is what keeps it out of a site that never switched the
         authorization server on."""
-        panel = queryMultiAdapter(
-            (self.portal, self.portal.REQUEST),
-            IIdentityServerControlpanel,
-            name=CONFIGLET_ID,
-        )
-
-        assert panel is None
+        with pytest.raises(InvalidParameterError):
+            api.content.get_view(CONFIGLET_ID, self.portal, self.request)
 
 
 class TestThePlugin:

@@ -225,9 +225,9 @@ class TestPrivacy:
     """IP and user agent are personal data and are opt-in."""
 
     @pytest.fixture(autouse=True)
-    def _setup(self, portal) -> None:
+    def _setup(self, portal, http_request_class) -> None:
         self.portal = portal
-        self.request = portal.REQUEST
+        self.request = http_request_class
 
     def test_pii_is_off_by_default(self):
         """The default profile must not switch on data collection."""

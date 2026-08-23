@@ -12,22 +12,22 @@ from pas.plugins.identity.core.controlpanel.interfaces import IIdentityControlpa
 from pas.plugins.identity.core.controlpanel.interfaces import IIdentitySettings
 from pas.plugins.identity.core.controlpanel.view import IdentitySettingsControlPanel
 from plone import api
-from zope.component import getMultiAdapter
-from zope.component import queryMultiAdapter
 from zope.schema import getFieldNames
 
 import pytest
 
 
-class TestConfiglet:
-    @pytest.fixture(scope="class")
-    def portal(self, portal_class):
-        """Return the portal."""
-        yield portal_class
+@pytest.fixture(scope="class")
+def portal(portal_class):
+    """Return the portal."""
+    yield portal_class
 
+
+class TestConfiglet:
     @pytest.fixture(autouse=True)
-    def _setup(self, portal) -> None:
+    def _setup(self, portal, http_request_class) -> None:
         self.portal = portal
+        self.request = http_request_class
         self.tool = api.portal.get_tool("portal_controlpanel")
 
     def test_configlet_is_registered(self):
@@ -48,22 +48,16 @@ class TestConfiglet:
 
     def test_panel_adapter_is_reachable(self):
         """``@controlpanels/identity-providers`` resolves to our panel."""
-        panel = queryMultiAdapter(
-            (self.portal, self.portal.REQUEST),
-            IIdentityControlpanel,
-            name=CONFIGLET_ID,
-        )
+        panel = api.content.get_view(CONFIGLET_ID, self.portal, self.request)
 
-        assert panel is not None
+        # get_view looks up by name only, so the interface the frontend
+        # routes through is asserted separately rather than being implied
+        # by the lookup, as it was when this queried for it directly.
+        assert IIdentityControlpanel.providedBy(panel)
         assert panel.schema is IIdentitySettings
 
 
 class TestSettingsRecords:
-    @pytest.fixture(scope="class")
-    def portal(self, portal_class):
-        """Return the portal."""
-        yield portal_class
-
     @pytest.fixture(autouse=True)
     def _setup(self, portal) -> None:
         self.portal = portal
@@ -94,30 +88,21 @@ class TestSettingsRecords:
 class TestClassicView:
     """The plain registry form the configlet points at."""
 
-    @pytest.fixture(scope="class")
-    def portal(self, portal_class):
-        """Return the portal."""
-        yield portal_class
-
     @pytest.fixture(autouse=True)
-    def _setup(self, portal) -> None:
+    def _setup(self, portal, http_request_class) -> None:
         self.portal = portal
-        self.request = portal.REQUEST
+        self.request = http_request_class
 
     def test_view_is_registered(self):
         """Reachable as ``@@identity-controlpanel``."""
-        view = getMultiAdapter(
-            (self.portal, self.request), name="identity-controlpanel"
-        )
+        view = api.content.get_view("identity-controlpanel", self.portal, self.request)
 
         assert isinstance(view, IdentitySettingsControlPanel)
 
     def test_form_edits_the_settings_schema(self):
         """The same schema the profile imports, under the same prefix, so the
         form writes the records the rest of the package reads."""
-        view = getMultiAdapter(
-            (self.portal, self.request), name="identity-controlpanel"
-        )
+        view = api.content.get_view("identity-controlpanel", self.portal, self.request)
 
         assert view.form.schema is IIdentitySettings
         assert view.form.schema_prefix == "pas.plugins.identity"
@@ -125,8 +110,6 @@ class TestClassicView:
     def test_view_renders(self):
         """Rendering is the only thing that catches a broken widget or a
         field the registry has no record for."""
-        view = getMultiAdapter(
-            (self.portal, self.request), name="identity-controlpanel"
-        )
+        view = api.content.get_view("identity-controlpanel", self.portal, self.request)
 
         assert "identity-controlpanel" in view()

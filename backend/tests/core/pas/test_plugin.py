@@ -126,10 +126,10 @@ class TestExtraction:
     """Extraction is a dict lookup, never network I/O."""
 
     @pytest.fixture(autouse=True)
-    def _setup(self, plugin: IdentityPlugin, portal) -> None:
+    def _setup(self, plugin: IdentityPlugin, portal, http_request) -> None:
         self.plugin = plugin
         self.portal = portal
-        self.request = portal.REQUEST
+        self.request = http_request
 
     def test_ordinary_request_yields_nothing(self):
         """A normal request carries no identity credentials."""
@@ -480,10 +480,10 @@ class TestLocalPassword:
 
 class TestCredentialsReset:
     @pytest.fixture(autouse=True)
-    def _setup(self, plugin: IdentityPlugin, portal) -> None:
+    def _setup(self, plugin: IdentityPlugin, portal, http_request) -> None:
         self.plugin = plugin
         self.portal = portal
-        self.request = portal.REQUEST
+        self.request = http_request
 
     def test_reset_clears_deposit(self):
         """Logging out drops anything this plugin left on the request."""
@@ -508,10 +508,10 @@ class TestChallenge:
     """Opt-in, off by default."""
 
     @pytest.fixture(autouse=True)
-    def _setup(self, plugin: IdentityPlugin, portal) -> None:
+    def _setup(self, plugin: IdentityPlugin, portal, http_request) -> None:
         self.plugin = plugin
         self.portal = portal
-        self.request = portal.REQUEST
+        self.request = http_request
 
     def location(self) -> str:
         """Return the redirect the challenge issued.
