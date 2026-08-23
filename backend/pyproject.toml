@@ -53,6 +53,7 @@ test = [
     # pass while the migration was wrong about it.
     "pas.plugins.authomatic>=2.0.0",
     "pas.plugins.oidc>=2.0.0",
+    "plone.volto",
     "horse-with-no-namespace",
     "import-linter",
     "plone.app.testing",
