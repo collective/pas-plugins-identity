@@ -33,6 +33,8 @@ class ProvidersPatch(ProvidersService):
             target.title = data["title"]
         if "enabled" in data:
             target.enabled = bool(data["enabled"])
+        if "propertymap" in data:
+            target.propertymap = dict(data["propertymap"] or {})
         if "config" in data:
             # A round trip echoes the mask back, and that must not overwrite
             # the stored secret with a row of bullets.

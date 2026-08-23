@@ -78,7 +78,6 @@ class TestSettingsRecords:
     @pytest.mark.parametrize(
         "name,expected",
         [
-            ("providers", ""),
             ("callback_url", ""),
             ("audit_max_entries", 500),
             ("audit_max_days", 180),

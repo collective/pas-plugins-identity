@@ -6,20 +6,17 @@ from . import ORPHANED_PROVIDER
 from pas.plugins.identity.core.controlpanel import enabled_providers
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.controlpanel import get_providers
+from pas.plugins.identity.core.controlpanel import InvalidProviderId
 from pas.plugins.identity.core.controlpanel import mask
 from pas.plugins.identity.core.controlpanel import ProviderConfig
-from pas.plugins.identity.core.controlpanel import PROVIDERS_RECORD
+from pas.plugins.identity.core.controlpanel import PROVIDERS_PREFIX
 from pas.plugins.identity.core.controlpanel import SECRET_SENTINEL
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.controlpanel import unmask
-from plone import api
+from plone.registry.interfaces import IRegistry
+from zope.component import getUtility
 
-import json
 import pytest
-
-
-#: Sentinel telling "record absent" apart from "record present but empty".
-_MISSING = object()
 
 
 @pytest.fixture
@@ -39,23 +36,18 @@ class TestRegistryRecord:
     def _setup(self, portal) -> None:
         self.portal = portal
 
-    def stored(self) -> list[dict]:
-        """Return the registry record, parsed.
+    def records(self) -> dict:
+        """Return every provider record, by name.
 
-        :returns: The stored provider list.
+        :returns: Mapping of record name to stored value.
         """
-        return json.loads(api.portal.get_registry_record(PROVIDERS_RECORD))
+        registry = getUtility(IRegistry)
+        names = registry.records.keys(PROVIDERS_PREFIX, PROVIDERS_PREFIX + "\uffff")
+        return {name: registry.records[name].value for name in names}
 
-    def test_record_installed(self):
-        """The default profile created the record.
-
-        An empty ``<value></value>`` for a Text field imports as ``None``
-        rather than ``""``, which is why the reader coerces before parsing.
-        """
-        record = api.portal.get_registry_record(PROVIDERS_RECORD, default=_MISSING)
-
-        assert record is not _MISSING
-        assert not record
+    def test_no_records_on_a_fresh_site(self):
+        """Nothing is created until a provider is."""
+        assert self.records() == {}
 
     def test_empty_registry_yields_no_providers(self):
         """A fresh site offers nothing rather than erroring."""
@@ -71,13 +63,70 @@ class TestRegistryRecord:
         assert providers[0].provider_id == "github"
         assert providers[0].driver_id == "github"
 
-    def test_stored_as_json(self, configured):
-        """The record is plain JSON, so GenericSetup can carry it."""
-        assert [entry["id"] for entry in self.stored()] == ["github", "google"]
+    def test_each_setting_is_its_own_record(self, configured):
+        """A field is a record, not a key inside a blob."""
+        records = self.records()
+
+        assert records[f"{PROVIDERS_PREFIX}github.driver"] == "github"
+        assert records[f"{PROVIDERS_PREFIX}github.enabled"] is True
+        assert records[f"{PROVIDERS_PREFIX}google.enabled"] is False
+
+    def test_config_records_are_nested_under_config(self, configured):
+        """Driver settings are namespaced away from the provider's own."""
+        records = self.records()
+
+        assert (
+            records[f"{PROVIDERS_PREFIX}github.config.client_id"]
+            == GITHUB_PROVIDER["config"]["client_id"]
+        )
 
     def test_secrets_stored_unmasked(self, configured):
         """The backend keeps the real value -- masking is an exit filter."""
-        assert self.stored()[0]["config"]["client_secret"] == "gho_supersecret"
+        records = self.records()
+
+        assert (
+            records[f"{PROVIDERS_PREFIX}github.config.client_secret"]
+            == "gho_supersecret"
+        )
+
+    def test_order_is_recorded(self, configured):
+        """Records read back alphabetically, so order is stored explicitly."""
+        records = self.records()
+
+        assert records[f"{PROVIDERS_PREFIX}github.order"] == 0
+        assert records[f"{PROVIDERS_PREFIX}google.order"] == 1
+
+    def test_stored_order_survives_the_alphabet(self):
+        """A provider list is returned in its order, not sorted by id."""
+        set_providers([
+            ProviderConfig.deserialize(DISABLED_PROVIDER),
+            ProviderConfig.deserialize(GITHUB_PROVIDER),
+        ])
+
+        assert [p.provider_id for p in get_providers()] == ["google", "github"]
+
+    def test_removed_provider_leaves_nothing_behind(self, configured):
+        """Rewriting a shorter list deletes the vanished provider's records."""
+        set_providers([ProviderConfig.deserialize(GITHUB_PROVIDER)])
+
+        assert not [name for name in self.records() if ".google." in name]
+
+    def test_bool_config_round_trips_as_bool(self):
+        """The driver's schema types the record, so a flag stays a flag."""
+        set_providers([
+            ProviderConfig(
+                provider_id="gh",
+                driver_id="github",
+                config={"auto_link_by_email": True},
+            )
+        ])
+
+        assert get_providers()[0].config["auto_link_by_email"] is True
+
+    def test_a_dot_in_an_id_is_refused(self):
+        """It would split into a further record level and lose the setting."""
+        with pytest.raises(InvalidProviderId):
+            set_providers([ProviderConfig(provider_id="a.b", driver_id="github")])
 
 
 class TestLookup:
@@ -255,9 +304,12 @@ class TestUnmasking:
         provider.config = unmask("github", read["config"], provider.config)
         set_providers([provider, get_provider("google")])
 
-        stored = json.loads(api.portal.get_registry_record(PROVIDERS_RECORD))
-        assert stored[0]["title"] == "GitHub (renamed)"
-        assert stored[0]["config"]["client_secret"] == "gho_supersecret"
+        registry = getUtility(IRegistry)
+        prefix = f"{PROVIDERS_PREFIX}github."
+        assert registry.records[f"{prefix}title"].value == "GitHub (renamed)"
+        assert (
+            registry.records[f"{prefix}config.client_secret"].value == "gho_supersecret"
+        )
 
 
 class TestProviderConfig:

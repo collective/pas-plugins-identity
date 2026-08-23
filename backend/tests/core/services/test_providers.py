@@ -5,7 +5,10 @@ from . import DEX_METADATA
 from . import DEX_PROVIDER
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.controlpanel import get_providers
-from pas.plugins.identity.core.controlpanel import PROVIDERS_RECORD
+from pas.plugins.identity.core.controlpanel import PROVIDERS_PREFIX
+from plone.registry.interfaces import IRegistry
+from plone.registry.record import Record
+from zope.component import getUtility
 from pas.plugins.identity.core.controlpanel import SECRET_SENTINEL
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.interfaces import FlowError
@@ -408,28 +411,96 @@ class TestConnectionCheck(ControlPanelCase):
         assert forgotten == [DEX_PROVIDER["config"]["issuer"]]
 
 
-class TestGenericSetupRoundTrip(ControlPanelCase):
-    """The registry record is the single source of truth, and GenericSetup
-    carries it."""
+class TestPropertyMapThroughTheAPI(ControlPanelCase):
+    """The control panel edits the map over the same endpoints."""
 
     @pytest.fixture(autouse=True)
     def _setup(self, portal, request_, manager, configured) -> None:
         self.portal = portal
         self.request = request_
 
-    def test_export_carries_the_providers(self):
-        """What an export would pick up is the JSON we stored."""
-        raw = api.portal.get_registry_record(PROVIDERS_RECORD)
+    def test_created_with_a_map(self):
+        rendered = self.call(
+            ProvidersPost,
+            payload={
+                "id": "keycloak",
+                "driver": "oidc-generic",
+                "propertymap": {"preferred_username": "username"},
+            },
+        )
 
-        assert [entry["id"] for entry in json.loads(raw)] == ["dex", "github"]
+        assert rendered["propertymap"] == {"preferred_username": "username"}
+        assert get_provider("keycloak").propertymap == {
+            "preferred_username": "username"
+        }
+
+    def test_listing_carries_the_map(self):
+        rendered = self.call(ProvidersGet)
+
+        assert "propertymap" in rendered["items"][0]
+
+    def test_patched_in_place(self):
+        self.call(ProvidersPatch, "dex", payload={"propertymap": {"login": "username"}})
+
+        assert get_provider("dex").propertymap == {"login": "username"}
+
+    def test_patch_can_clear_the_map(self):
+        self.call(ProvidersPatch, "dex", payload={"propertymap": {}})
+
+        assert get_provider("dex").propertymap == {}
+
+    def test_a_dot_in_an_id_is_refused(self):
+        """It would split into a further registry record level."""
+        rendered = self.call(
+            ProvidersPost,
+            payload={"id": "not.allowed", "driver": "oidc-generic"},
+        )
+
+        assert rendered["error"]["type"] == "Invalid provider id"
+
+
+class TestGenericSetupRoundTrip(ControlPanelCase):
+    """The registry records are the single source of truth, and GenericSetup
+    carries them."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_, manager, configured) -> None:
+        self.portal = portal
+        self.request = request_
+        self.registry = getUtility(IRegistry)
+
+    def _snapshot(self) -> dict:
+        """Capture every provider record the way an export would.
+
+        :returns: Mapping of record name to ``(field, value)``.
+        """
+        names = list(
+            self.registry.records.keys(PROVIDERS_PREFIX, PROVIDERS_PREFIX + "\uffff")
+        )
+        return {
+            name: (
+                self.registry.records[name].field,
+                self.registry.records[name].value,
+            )
+            for name in names
+        }
+
+    def test_export_carries_every_setting_as_its_own_record(self):
+        """An export picks up real records, not one blob to be parsed."""
+        names = set(self._snapshot())
+
+        assert f"{PROVIDERS_PREFIX}dex.driver" in names
+        assert f"{PROVIDERS_PREFIX}dex.config.client_secret" in names
+        assert f"{PROVIDERS_PREFIX}github.enabled" in names
 
     def test_reimport_restores_them(self):
-        """Round trip: read the record out, wipe it, put it back."""
-        raw = api.portal.get_registry_record(PROVIDERS_RECORD)
+        """Round trip: read the records out, wipe them, put them back."""
+        snapshot = self._snapshot()
         set_providers([])
         assert get_providers() == []
 
-        api.portal.set_registry_record(PROVIDERS_RECORD, raw)
+        for name, (field, value) in snapshot.items():
+            self.registry.records[name] = Record(field, value)
 
         assert [p.provider_id for p in get_providers()] == ["dex", "github"]
         assert get_provider("dex").config["client_secret"] == "plone-secret"

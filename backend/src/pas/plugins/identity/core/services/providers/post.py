@@ -3,8 +3,10 @@
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.controlpanel import get_providers
+from pas.plugins.identity.core.controlpanel import InvalidProviderId
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
+from pas.plugins.identity.core.controlpanel import validate_provider_id
 from pas.plugins.identity.core.drivers import get_driver
 from pas.plugins.identity.core.flows import metadata as flow_metadata
 from pas.plugins.identity.core.interfaces import FlowError
@@ -39,6 +41,12 @@ class ProvidersPost(ProvidersService):
         driver_id = (data.get("driver") or "").strip()
         if not provider_id or not driver_id:
             return self._error(400, "Missing parameters", "Required: id, driver")
+        try:
+            validate_provider_id(provider_id)
+        except InvalidProviderId as error:
+            # The id becomes part of a registry record name, so this is a
+            # storage constraint rather than a matter of taste.
+            return self._error(400, "Invalid provider id", str(error))
         if get_driver(driver_id) is None:
             return self._error(400, "Unknown driver", repr(driver_id))
         if get_provider(provider_id) is not None:
@@ -54,6 +62,7 @@ class ProvidersPost(ProvidersService):
             title=data.get("title", ""),
             enabled=bool(data.get("enabled", True)),
             config=data.get("config", {}),
+            propertymap=data.get("propertymap", {}),
         )
         set_providers([*get_providers(), provider])
         self.request.response.setStatus(201)

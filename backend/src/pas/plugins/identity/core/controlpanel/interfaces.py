@@ -15,17 +15,14 @@ from zope.interface import Interface
 
 
 class IIdentitySettings(Interface):
-    """Site-wide settings for external identity providers."""
+    """Site-wide settings for external identity providers.
 
-    providers = schema.Text(
-        title=_("Providers"),
-        description=_(
-            "JSON list of configured authentication providers. One record "
-            "keeps the whole configuration exportable in a single place."
-        ),
-        required=False,
-        default="",
-    )
+    Providers themselves are *not* declared here. Each one owns a set of
+    records named ``pas.plugins.identity.providers.<id>.<field>``, created as
+    the provider is -- see :mod:`pas.plugins.identity.core.controlpanel`. A
+    fixed schema could not describe them: which config records exist depends
+    on the driver.
+    """
 
     callback_url = schema.TextLine(
         title=_("Login callback URL"),
