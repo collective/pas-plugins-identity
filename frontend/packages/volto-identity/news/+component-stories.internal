@@ -1,0 +1,5 @@
+Added a Storybook story for every component in the package, seventeen of them, and the fixtures they share. Storybook was configured here from the start and had no stories at all.
+
+The fixtures are the shapes the backend actually returns, taken from `types` rather than invented, so a story that renders is evidence the component can render what it will really be given. The connected components get an inert store decorator: Storybook's preview wraps stories in an `IntlProvider` and a router but not a redux `Provider`, and half of this add-on reads `useSelector`. The store never changes, which is what makes a loading state or a refusal something a story can simply ask for.
+
+The states worth looking at are the ones that are awkward to reach by hand: a provider list still loading, a site with no providers configured at all, the last identity a user has and therefore cannot unlink, a connection check that failed on a typo in the issuer, and the single moment a client secret is readable. @ericof
