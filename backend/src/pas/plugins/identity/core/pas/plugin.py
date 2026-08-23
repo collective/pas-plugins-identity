@@ -212,6 +212,10 @@ class IdentityPlugin(BasePlugin):
         else:
             self._store.touch(provider, subject, claims)
 
+        # Every login, not just the first: a name or address changed at the
+        # provider should reach Plone without the user being recreated.
+        self._apply_property_map(userid, provider, claims)
+
         notify(
             ExternalIdentityAuthenticated(
                 userid=userid,
@@ -470,6 +474,45 @@ class IdentityPlugin(BasePlugin):
             "fullname": claims.get("fullname", ""),
             "email": claims.get("email", ""),
         })
+
+    def _apply_property_map(
+        self, userid: str, provider_id: str, claims: Claims
+    ) -> None:
+        """Write the provider's mapped claims onto the user.
+
+        A property that already holds a value locally is left alone. The
+        provider is the source of truth for a field nobody has touched, but
+        an edit made in Plone must not be undone by the next login -- which
+        is what an unconditional write on every login would do.
+
+        Runs for every provider, mapped or not; a provider with no map
+        resolves to nothing and writes nothing.
+
+        :param userid: Canonical Plone userid.
+        :param provider_id: Provider the claims came from.
+        :param claims: Normalized claims.
+        """
+        from pas.plugins.identity.core.controlpanel import get_provider
+        from pas.plugins.identity.core.propertymap import apply_property_map
+        from plone import api
+
+        config = get_provider(provider_id)
+        if config is None or not config.propertymap:
+            return
+
+        member = api.user.get(userid=userid)
+        if member is None:  # pragma: no cover - can't-happen: just authenticated
+            logger.warning("Authenticated user %s is not retrievable", userid)
+            return
+
+        resolved = apply_property_map(config.propertymap, claims)
+        updates = {
+            field: value
+            for field, value in resolved.items()
+            if not member.getProperty(field, None)
+        }
+        if updates:
+            member.setMemberProperties(updates)
 
 
 classImplements(

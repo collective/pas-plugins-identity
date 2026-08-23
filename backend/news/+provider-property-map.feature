@@ -1,0 +1,5 @@
+Added a per-provider attribute mapping. Each provider carries a `propertymap` of provider claim to Plone user field, stored as its own registry record and editable over `@identity-providers`, so a claim this package does not normalize — `profile`, a Keycloak realm's custom attribute, anything — can be written onto the user.
+
+A claim is addressed by a dotted path (`email`, `address.formatted`), resolved against the normalized claims first and the provider's raw payload second. This differs deliberately from `pas.plugins.authomatic`, which nests the map itself; a path keeps the map flat, which is what lets it be one typed registry record.
+
+The map is applied on **every** login rather than only at account creation, so a name or address changed at the provider reaches Plone without the user being recreated. A field that already holds a value locally is left alone: the provider is the source of truth for a field nobody has touched, but an edit made in Plone must not be undone by the next sign-in. A claim the provider stops sending is skipped rather than written as empty, so it cannot blank the property it maps to. @ericof
