@@ -1,0 +1,1 @@
+"""Vocabularies this package publishes."""

@@ -8,6 +8,7 @@
   <include package=".drivers" />
   <include package=".pas" />
   <include package=".services" />
+  <include package=".vocabularies" />
 
   <include package=".browser" />
 
