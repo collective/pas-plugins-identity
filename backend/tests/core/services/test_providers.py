@@ -5,10 +5,9 @@ from . import DEX_METADATA
 from . import DEX_PROVIDER
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.controlpanel import get_providers
+from pas.plugins.identity.core.controlpanel import get_provider_record
+from pas.plugins.identity.core.controlpanel import provider_record_names
 from pas.plugins.identity.core.controlpanel import PROVIDERS_PREFIX
-from plone.registry.interfaces import IRegistry
-from plone.registry.record import Record
-from zope.component import getUtility
 from pas.plugins.identity.core.controlpanel import SECRET_SENTINEL
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.interfaces import FlowError
@@ -467,41 +466,41 @@ class TestGenericSetupRoundTrip(ControlPanelCase):
     def _setup(self, portal, request_, manager, configured) -> None:
         self.portal = portal
         self.request = request_
-        self.registry = getUtility(IRegistry)
 
-    def _snapshot(self) -> dict:
+    def _values(self) -> dict:
         """Capture every provider record the way an export would.
 
-        :returns: Mapping of record name to ``(field, value)``.
+        :returns: Mapping of record name to stored value.
         """
-        names = list(
-            self.registry.records.keys(PROVIDERS_PREFIX, PROVIDERS_PREFIX + "\uffff")
-        )
-        return {
-            name: (
-                self.registry.records[name].field,
-                self.registry.records[name].value,
-            )
-            for name in names
-        }
+        values = {}
+        for name in provider_record_names():
+            provider_id, field = name[len(PROVIDERS_PREFIX) :].split(".", 1)
+            values[name] = get_provider_record(provider_id, field)
+        return values
 
     def test_export_carries_every_setting_as_its_own_record(self):
         """An export picks up real records, not one blob to be parsed."""
-        names = set(self._snapshot())
+        names = set(provider_record_names())
 
         assert f"{PROVIDERS_PREFIX}dex.driver" in names
         assert f"{PROVIDERS_PREFIX}dex.config.client_secret" in names
         assert f"{PROVIDERS_PREFIX}github.enabled" in names
 
-    def test_reimport_restores_them(self):
-        """Round trip: read the records out, wipe them, put them back."""
-        snapshot = self._snapshot()
+    def test_rewriting_reproduces_the_same_records(self):
+        """Round trip: capture the records, wipe them, write the same
+        providers back, and land on byte-identical records. That is the
+        property an export and re-import depends on."""
+        before = self._values()
+        # Guards the comparison below: two dicts of None would match each
+        # other happily and prove nothing.
+        assert before[f"{PROVIDERS_PREFIX}dex.config.client_secret"] == "plone-secret"
+        providers = get_providers()
         set_providers([])
-        assert get_providers() == []
+        assert provider_record_names() == []
 
-        for name, (field, value) in snapshot.items():
-            self.registry.records[name] = Record(field, value)
+        set_providers(providers)
 
+        assert self._values() == before
         assert [p.provider_id for p in get_providers()] == ["dex", "github"]
         assert get_provider("dex").config["client_secret"] == "plone-secret"
 

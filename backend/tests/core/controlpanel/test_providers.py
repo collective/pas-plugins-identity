@@ -5,16 +5,15 @@ from . import GITHUB_PROVIDER
 from . import ORPHANED_PROVIDER
 from pas.plugins.identity.core.controlpanel import enabled_providers
 from pas.plugins.identity.core.controlpanel import get_provider
+from pas.plugins.identity.core.controlpanel import get_provider_record
 from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.controlpanel import InvalidProviderId
 from pas.plugins.identity.core.controlpanel import mask
+from pas.plugins.identity.core.controlpanel import provider_record_names
 from pas.plugins.identity.core.controlpanel import ProviderConfig
-from pas.plugins.identity.core.controlpanel import PROVIDERS_PREFIX
 from pas.plugins.identity.core.controlpanel import SECRET_SENTINEL
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.controlpanel import unmask
-from plone.registry.interfaces import IRegistry
-from zope.component import getUtility
 
 import pytest
 
@@ -36,18 +35,9 @@ class TestRegistryRecord:
     def _setup(self, portal) -> None:
         self.portal = portal
 
-    def records(self) -> dict:
-        """Return every provider record, by name.
-
-        :returns: Mapping of record name to stored value.
-        """
-        registry = getUtility(IRegistry)
-        names = registry.records.keys(PROVIDERS_PREFIX, PROVIDERS_PREFIX + "\uffff")
-        return {name: registry.records[name].value for name in names}
-
     def test_no_records_on_a_fresh_site(self):
         """Nothing is created until a provider is."""
-        assert self.records() == {}
+        assert provider_record_names() == []
 
     def test_empty_registry_yields_no_providers(self):
         """A fresh site offers nothing rather than erroring."""
@@ -65,36 +55,27 @@ class TestRegistryRecord:
 
     def test_each_setting_is_its_own_record(self, configured):
         """A field is a record, not a key inside a blob."""
-        records = self.records()
-
-        assert records[f"{PROVIDERS_PREFIX}github.driver"] == "github"
-        assert records[f"{PROVIDERS_PREFIX}github.enabled"] is True
-        assert records[f"{PROVIDERS_PREFIX}google.enabled"] is False
+        assert get_provider_record("github", "driver") == "github"
+        assert get_provider_record("github", "enabled") is True
+        assert get_provider_record("google", "enabled") is False
 
     def test_config_records_are_nested_under_config(self, configured):
         """Driver settings are namespaced away from the provider's own."""
-        records = self.records()
-
         assert (
-            records[f"{PROVIDERS_PREFIX}github.config.client_id"]
+            get_provider_record("github", "config.client_id")
             == GITHUB_PROVIDER["config"]["client_id"]
         )
 
     def test_secrets_stored_unmasked(self, configured):
         """The backend keeps the real value -- masking is an exit filter."""
-        records = self.records()
-
         assert (
-            records[f"{PROVIDERS_PREFIX}github.config.client_secret"]
-            == "gho_supersecret"
+            get_provider_record("github", "config.client_secret") == "gho_supersecret"
         )
 
     def test_order_is_recorded(self, configured):
         """Records read back alphabetically, so order is stored explicitly."""
-        records = self.records()
-
-        assert records[f"{PROVIDERS_PREFIX}github.order"] == 0
-        assert records[f"{PROVIDERS_PREFIX}google.order"] == 1
+        assert get_provider_record("github", "order") == 0
+        assert get_provider_record("google", "order") == 1
 
     def test_stored_order_survives_the_alphabet(self):
         """A provider list is returned in its order, not sorted by id."""
@@ -109,7 +90,7 @@ class TestRegistryRecord:
         """Rewriting a shorter list deletes the vanished provider's records."""
         set_providers([ProviderConfig.deserialize(GITHUB_PROVIDER)])
 
-        assert not [name for name in self.records() if ".google." in name]
+        assert provider_record_names("google") == []
 
     def test_bool_config_round_trips_as_bool(self):
         """The driver's schema types the record, so a flag stays a flag."""
@@ -304,11 +285,9 @@ class TestUnmasking:
         provider.config = unmask("github", read["config"], provider.config)
         set_providers([provider, get_provider("google")])
 
-        registry = getUtility(IRegistry)
-        prefix = f"{PROVIDERS_PREFIX}github."
-        assert registry.records[f"{prefix}title"].value == "GitHub (renamed)"
+        assert get_provider_record("github", "title") == "GitHub (renamed)"
         assert (
-            registry.records[f"{prefix}config.client_secret"].value == "gho_supersecret"
+            get_provider_record("github", "config.client_secret") == "gho_supersecret"
         )
 
 

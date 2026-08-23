@@ -278,17 +278,6 @@ def _field_for(descriptor: JSONDict | None, value: object):
     return registry_field.TextLine(title="", required=False)
 
 
-def _record_names(provider_id: str) -> list[str]:
-    """Return every record name belonging to one provider.
-
-    :param provider_id: The provider.
-    :returns: Record names, including its config records.
-    """
-    registry = _registry()
-    prefix = f"{PROVIDERS_PREFIX}{provider_id}."
-    return list(registry.records.keys(prefix, prefix + "\uffff"))
-
-
 def _provider_ids() -> set[str]:
     """Return the id of every provider that has records.
 
@@ -309,7 +298,7 @@ def _read_provider(provider_id: str) -> tuple[ProviderConfig, int]:
     prefix = f"{PROVIDERS_PREFIX}{provider_id}."
     own: JSONDict = {}
     config: JSONDict = {}
-    for name in _record_names(provider_id):
+    for name in provider_record_names(provider_id):
         leaf = name[len(prefix) :]
         value = registry.records[name].value
         if leaf.startswith(CONFIG_SEGMENT):
@@ -387,13 +376,48 @@ def get_callback_url() -> str:
     return url
 
 
+def provider_record_names(provider_id: str | None = None) -> list[str]:
+    """Return the names of the records that back a provider.
+
+    Reading the layout rather than reconstructing it: a caller checking what
+    was stored should not have to know that the records live under a prefix,
+    nor build the prefix itself.
+
+    :param provider_id: One provider, or ``None`` for every provider's
+        records.
+    :returns: Record names, in registry order.
+    """
+    prefix = PROVIDERS_PREFIX
+    if provider_id is not None:
+        prefix = f"{PROVIDERS_PREFIX}{provider_id}."
+    return list(_registry().records.keys(prefix, prefix + "\uffff"))
+
+
+def get_provider_record(provider_id: str, field: str, default: object = None) -> object:
+    """Read one of a provider's records.
+
+    The counterpart of :func:`plone.api.portal.get_registry_record` for this
+    package's layout: the caller names the provider and the field rather than
+    assembling a dotted record name.
+
+    :param provider_id: The provider.
+    :param field: The record below it -- one of ``driver``, ``title``,
+        ``enabled``, ``order``, ``propertymap``, or ``config.<key>`` for a
+        driver setting.
+    :param default: Returned when no such record exists.
+    :returns: The stored value, or ``default``.
+    """
+    record = _registry().records.get(f"{PROVIDERS_PREFIX}{provider_id}.{field}")
+    return default if record is None else record.value
+
+
 def _forget_provider(provider_id: str) -> None:
     """Remove every record belonging to one provider.
 
     :param provider_id: The provider to forget.
     """
     registry = _registry()
-    for name in _record_names(provider_id):
+    for name in provider_record_names(provider_id):
         del registry.records[name]
 
 
