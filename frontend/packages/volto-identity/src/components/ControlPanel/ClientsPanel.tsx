@@ -120,6 +120,7 @@ const ClientsPanel: React.FC<ClientsPanelProps> = ({
                   )}
                   <button
                     type="button"
+                    data-action="delete"
                     disabled={busy}
                     onClick={() => onDelete(client.client_id)}
                   >

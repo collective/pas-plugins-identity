@@ -67,6 +67,8 @@ export interface ConfiguredProvider {
   title: string;
   enabled: boolean;
   config: Record<string, unknown>;
+  /** Claim path to Plone user field, applied on every login. */
+  propertymap: Record<string, string>;
 }
 
 /** Answer from the per-provider connection check. */

@@ -1,0 +1,5 @@
+Fixed four stylesheet rules written against markup that never shipped, so the styling they described had never applied.
+
+`.identity-controlpanel__provider > h3` addressed a heading the component rendered as an `h2`, leaving the provider card's title at browser defaults while every other card had a styled header. `.identity-identities > h2` and `.identity-clients__new > h3` matched nothing at all. And the three `button[data-action='delete'|'unlink']` rules — the ones that colour an irreversible action red — never applied anywhere, because no component in the package emitted a `data-action` attribute: Delete, Remove and Unregister looked exactly like Save.
+
+Also gave `ProviderForm` a `scope` prop. Its field ids were derived from the driver alone, so two providers sharing a driver produced duplicate ids on the page and a label that pointed at the wrong input. @ericof

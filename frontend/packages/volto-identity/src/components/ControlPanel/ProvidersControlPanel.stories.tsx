@@ -20,6 +20,7 @@ type Story = StoryObj<typeof ProvidersControlPanel>;
 const base = {
   configuredProviders: { ...LOADED, data: CONFIGURED },
   identityDrivers: { ...LOADED, data: DRIVERS },
+  providerCreate: {},
   providerUpdate: {},
   providerDelete: {},
   providerTest: {},

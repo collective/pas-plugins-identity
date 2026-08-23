@@ -53,6 +53,7 @@ const IdentitiesList: React.FC<IdentitiesListProps> = ({
                   ? undefined
                   : 'This is your only way to sign in. Add another first.'
               }
+              data-action="unlink"
               onClick={() => onUnlink(identity)}
             >
               Remove

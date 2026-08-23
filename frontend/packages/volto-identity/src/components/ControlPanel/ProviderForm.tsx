@@ -13,6 +13,12 @@ interface ProviderFormProps {
   driver: Driver;
   values: Record<string, unknown>;
   disabled?: boolean;
+  /**
+   * What makes this form's field ids unique on the page. Two providers can
+   * share a driver, and the panel renders a blank form alongside them, so
+   * the driver id alone would label the wrong input.
+   */
+  scope?: string;
   onChange: (name: string, value: unknown) => void;
 }
 
@@ -39,12 +45,13 @@ const ProviderForm: React.FC<ProviderFormProps> = ({
   driver,
   values,
   disabled = false,
+  scope,
   onChange,
 }) => (
   <fieldset className="identity-provider-form" disabled={disabled}>
     <legend>{driver.title}</legend>
     {Object.entries(driver.schema).map(([name, field]) => {
-      const id = `identity-field-${driver.id}-${name}`;
+      const id = `identity-field-${scope ?? driver.id}-${name}`;
       const value = values[name];
 
       if (field.type === 'bool') {

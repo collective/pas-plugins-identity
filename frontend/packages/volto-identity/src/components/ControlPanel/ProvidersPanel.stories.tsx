@@ -1,16 +1,25 @@
 import type { Meta, StoryObj } from '@storybook/react';
 
 import ProvidersPanel from './ProvidersPanel';
-import { CONFIGURED, DRIVERS } from '../../stories/fixtures';
+import {
+  CONFIGURED,
+  DRIVERS,
+  USER_FIELDS_STATE,
+  withStore,
+} from '../../stories/fixtures';
 
 const meta: Meta<typeof ProvidersPanel> = {
   title: 'Identity/ControlPanel/ProvidersPanel',
   component: ProvidersPanel,
+  // The property-map editor is a Volto form widget and reads the
+  // vocabulary from the store.
+  decorators: [withStore({ vocabularies: USER_FIELDS_STATE })],
   args: {
     providers: CONFIGURED,
     drivers: DRIVERS,
     loading: false,
     busy: false,
+    onCreate: () => {},
     onSave: () => {},
     onDelete: () => {},
     onTest: () => {},
@@ -22,7 +31,11 @@ type Story = StoryObj<typeof ProvidersPanel>;
 
 export const Configured: Story = {};
 
+/** A fresh site: nothing configured, and the form that fixes that. */
 export const Empty: Story = { args: { providers: [] } };
+
+/** Nothing to configure with, because no add-on registered a driver. */
+export const NoDrivers: Story = { args: { providers: [], drivers: [] } };
 
 export const Loading: Story = { args: { loading: true, providers: [] } };
 

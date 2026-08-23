@@ -1380,6 +1380,9 @@ importers:
       '@types/react-router-dom':
         specifier: ^5.3.3
         version: 5.3.3
+      react-intl:
+        specifier: 3.12.1
+        version: 3.12.1(@types/react@18.3.31)(react@18.2.0)
       react-redux:
         specifier: 8.1.2
         version: 8.1.2(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(redux@4.2.1)

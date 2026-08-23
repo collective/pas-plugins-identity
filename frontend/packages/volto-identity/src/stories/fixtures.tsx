@@ -138,6 +138,10 @@ export const CONFIGURED: ConfiguredProvider[] = [
       issuer: 'https://id.example.org/realms/main',
       scope: 'openid email profile',
     },
+    propertymap: {
+      preferred_username: 'username',
+      'address.formatted': 'location',
+    },
   },
   {
     '@id': '/@identity-providers/github',
@@ -146,8 +150,31 @@ export const CONFIGURED: ConfiguredProvider[] = [
     title: 'GitHub',
     enabled: false,
     config: { client_id: 'Iv1.0123456789abcdef', client_secret: '••••••••' },
+    propertymap: {},
   },
 ];
+
+/**
+ * The vocabulary the property-map editor reads, already loaded.
+ *
+ * Served by the backend from the site's live user schema, so a story shows
+ * a representative subset rather than a list this file owns.
+ */
+export const USER_FIELDS_STATE = {
+  'pas.plugins.identity.UserFields': {
+    loaded: true,
+    loading: false,
+    items: [
+      { value: 'description', label: 'Biography' },
+      { value: 'email', label: 'Email' },
+      { value: 'fullname', label: 'Full Name' },
+      { value: 'home_page', label: 'Home page' },
+      { value: 'location', label: 'Location' },
+      { value: 'username', label: 'Username' },
+    ],
+    itemsTotal: 6,
+  },
+};
 
 export const CLIENT: OAuthClient = {
   '@id': '/@identity-clients/intranet',
