@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
 
 import LoginForm from './LoginForm';
@@ -25,19 +26,23 @@ function renderForm(
   const onSelectProvider = vi.fn();
   const onSendMagicLink = vi.fn();
   const onPasswordLogin = vi.fn();
+  // The password form links to /passwordreset, the way volto-authomatic's
+  // does, so it needs a router.
   render(
-    <LoginForm
-      providers={[DEX]}
-      loading={false}
-      starting={false}
-      magicLinkSent={false}
-      magicLinkLoading={false}
-      passwordLoading={false}
-      onSelectProvider={onSelectProvider}
-      onSendMagicLink={onSendMagicLink}
-      onPasswordLogin={onPasswordLogin}
-      {...props}
-    />,
+    <MemoryRouter>
+      <LoginForm
+        providers={[DEX]}
+        loading={false}
+        starting={false}
+        magicLinkSent={false}
+        magicLinkLoading={false}
+        passwordLoading={false}
+        onSelectProvider={onSelectProvider}
+        onSendMagicLink={onSendMagicLink}
+        onPasswordLogin={onPasswordLogin}
+        {...props}
+      />
+    </MemoryRouter>,
   );
   return { onSelectProvider, onSendMagicLink, onPasswordLogin };
 }

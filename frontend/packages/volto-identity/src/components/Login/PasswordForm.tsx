@@ -18,9 +18,16 @@
 import React, { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Button, Container, TextField } from '@plone/components';
+import { Link } from 'react-router-dom';
 import Icon from '@plone/volto/components/theme/Icon/Icon';
 import aheadSVG from '@plone/volto/icons/ahead.svg';
 import clearSVG from '@plone/volto/icons/clear.svg';
+
+// The widget's own stylesheet. `@plone/components` ships its CSS separately
+// from its components, so a TextField rendered without this is unstyled --
+// which is what made this form look unlike volto-authomatic's despite the
+// markup and the class names matching it exactly.
+import '@plone/components/src/styles/basic/TextField.css';
 
 interface PasswordFormProps {
   /** Whether a sign-in attempt is in flight. */
@@ -84,6 +91,12 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
           value={password}
           onChange={setPassword}
         />
+      </Container>
+
+      <Container className="forgotPassword">
+        <p className="help">
+          <Link to="/passwordreset">Forgot your password?</Link>
+        </p>
       </Container>
 
       {error ? (

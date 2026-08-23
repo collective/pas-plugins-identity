@@ -208,6 +208,10 @@
   border-radius: 0;
 }
 
+.PloneAuth .forgotPassword {
+  padding: 10px 10px 20px;
+}
+
 .PloneAuth .actions {
   display: flex;
   flex-direction: row-reverse;
