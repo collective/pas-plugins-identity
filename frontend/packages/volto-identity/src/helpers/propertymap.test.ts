@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { blankRow, fromRows, toRows } from './propertymap';
+import { fromRows, toRows } from './propertymap';
 
 describe('toRows', () => {
   it('turns a map into rows', () => {
@@ -23,21 +23,6 @@ describe('toRows', () => {
   });
 });
 
-describe('blankRow', () => {
-  it('is empty but identifiable', () => {
-    const row = blankRow();
-
-    expect(row.claim).toBe('');
-    expect(row.field).toBe('');
-    expect(row['@id']).toBeTruthy();
-  });
-
-  it('is distinct each time', () => {
-    // Two unfinished rows must be able to coexist on screen.
-    expect(blankRow()['@id']).not.toEqual(blankRow()['@id']);
-  });
-});
-
 describe('fromRows', () => {
   it('turns rows back into a map', () => {
     expect(
@@ -47,9 +32,10 @@ describe('fromRows', () => {
 
   it('drops a row the operator has not finished', () => {
     // A blank row is what pressing Add produces, and it must not be stored.
-    expect(fromRows([blankRow()])).toEqual({});
-    expect(fromRows([{ ...blankRow(), claim: 'login' }])).toEqual({});
-    expect(fromRows([{ ...blankRow(), field: 'username' }])).toEqual({});
+    const blank = { '@id': 'a', claim: '', field: '' };
+    expect(fromRows([blank])).toEqual({});
+    expect(fromRows([{ ...blank, claim: 'login' }])).toEqual({});
+    expect(fromRows([{ ...blank, field: 'username' }])).toEqual({});
   });
 
   it('trims what the operator typed', () => {

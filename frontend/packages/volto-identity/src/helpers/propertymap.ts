@@ -51,15 +51,6 @@ export function toRows(
 }
 
 /**
- * Return a blank row, as the editor's Add button produces.
- *
- * @returns An empty row with its own id.
- */
-export function blankRow(): PropertyMapRow {
-  return { '@id': rowId(), claim: '', field: '' };
-}
-
-/**
  * Turn editor rows back into a stored map.
  *
  * Rows missing either half are dropped: they are a row the operator started

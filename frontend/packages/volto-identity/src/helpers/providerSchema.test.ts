@@ -1,0 +1,203 @@
+import { describe, expect, it } from 'vitest';
+
+import {
+  CONFIG_PREFIX,
+  fromFormData,
+  propertyFor,
+  providerSchema,
+  toFormData,
+} from './providerSchema';
+import { fromRows, toRows } from './propertymap';
+import { USER_FIELDS_VOCABULARY } from '../constants/vocabularies';
+import type { Driver } from '../types';
+
+const OIDC: Driver = {
+  id: 'oidc-generic',
+  title: 'Generic OIDC',
+  schema: {
+    issuer: { type: 'string', title: 'Issuer', secret: false, required: true },
+    client_secret: { type: 'string', title: 'Client secret', secret: true },
+    timeout: { type: 'int', title: 'Timeout', secret: false },
+    auto_link: { type: 'bool', title: 'Auto link', secret: false },
+  },
+};
+
+const GITHUB: Driver = { id: 'github', title: 'GitHub', schema: {} };
+
+describe('propertyFor', () => {
+  it('renders a secret with the password widget', () => {
+    expect(propertyFor(OIDC.schema.client_secret).widget).toBe('password');
+  });
+
+  it('renders an int as a number', () => {
+    expect(propertyFor(OIDC.schema.timeout).type).toBe('number');
+  });
+
+  it('renders a bool as a boolean', () => {
+    expect(propertyFor(OIDC.schema.auto_link).type).toBe('boolean');
+  });
+
+  it('renders anything else as text', () => {
+    expect(propertyFor(OIDC.schema.issuer).type).toBe('string');
+  });
+
+  it('carries the driver description through', () => {
+    expect(
+      propertyFor({
+        type: 'string',
+        title: 'X',
+        description: 'why',
+        secret: false,
+      }).description,
+    ).toBe('why');
+  });
+});
+
+describe('providerSchema', () => {
+  it('asks for an id and a driver only when adding', () => {
+    const adding = providerSchema([OIDC], 'oidc-generic', true);
+    const editing = providerSchema([OIDC], 'oidc-generic', false);
+
+    expect(adding.properties.id).toBeTruthy();
+    expect(adding.required).toContain('id');
+    expect(editing.properties.id).toBeUndefined();
+  });
+
+  it('offers every installed driver as a choice', () => {
+    const schema = providerSchema([OIDC, GITHUB], undefined, true);
+
+    expect(schema.properties.driver.choices).toEqual([
+      ['oidc-generic', 'Generic OIDC'],
+      ['github', 'GitHub'],
+    ]);
+  });
+
+  it('renders the chosen driver fields, namespaced', () => {
+    const schema = providerSchema([OIDC], 'oidc-generic', true);
+
+    expect(schema.properties[`${CONFIG_PREFIX}issuer`]).toBeTruthy();
+    // Namespaced so a driver cannot collide with title or enabled.
+    expect(schema.properties.issuer).toBeUndefined();
+  });
+
+  it('carries the driver required flags into the schema', () => {
+    const schema = providerSchema([OIDC], 'oidc-generic', false);
+
+    expect(schema.required).toContain(`${CONFIG_PREFIX}issuer`);
+    expect(schema.required).not.toContain(`${CONFIG_PREFIX}timeout`);
+  });
+
+  it('shows no settings fieldset before a driver is chosen', () => {
+    // An empty fieldset reads as a broken form.
+    const schema = providerSchema([OIDC], undefined, true);
+
+    expect(schema.fieldsets.map((f) => f.id)).toEqual(['default', 'mapping']);
+  });
+
+  it('shows no settings fieldset for a driver that declares none', () => {
+    const schema = providerSchema([GITHUB], 'github', true);
+
+    expect(schema.fieldsets.map((f) => f.id)).toEqual(['default', 'mapping']);
+  });
+
+  it('titles the settings fieldset after the driver', () => {
+    const schema = providerSchema([OIDC], 'oidc-generic', true);
+
+    expect(schema.fieldsets[1]).toMatchObject({
+      id: 'settings',
+      title: 'Generic OIDC',
+    });
+  });
+
+  it('takes the user field from the vocabulary', () => {
+    const schema = providerSchema([OIDC], 'oidc-generic', true);
+    const rows = schema.properties.propertymap as any;
+
+    expect(rows.widget).toBe('object_list');
+    expect(rows.schema.properties.field.vocabulary).toEqual({
+      '@id': USER_FIELDS_VOCABULARY,
+    });
+    // Claim names come from the provider, so no vocabulary can know them.
+    expect(rows.schema.properties.claim.vocabulary).toBeUndefined();
+  });
+
+  it('survives a driver that is not installed', () => {
+    const schema = providerSchema([], 'gone', false);
+
+    expect(schema.fieldsets.map((f) => f.id)).toEqual(['default', 'mapping']);
+  });
+});
+
+describe('toFormData', () => {
+  it('defaults a new provider to enabled with no mapping', () => {
+    expect(toFormData(undefined, toRows)).toEqual({
+      enabled: true,
+      propertymap: [],
+    });
+  });
+
+  it('flattens config onto prefixed keys', () => {
+    const data = toFormData(
+      { title: 'Dex', enabled: true, config: { issuer: 'http://dex' } },
+      toRows,
+    );
+
+    expect(data[`${CONFIG_PREFIX}issuer`]).toBe('http://dex');
+  });
+
+  it('turns the stored mapping into rows', () => {
+    const data = toFormData(
+      { config: {}, propertymap: { login: 'username' } },
+      toRows,
+    );
+
+    expect(data.propertymap).toEqual([
+      { '@id': expect.any(String), claim: 'login', field: 'username' },
+    ]);
+  });
+});
+
+describe('fromFormData', () => {
+  it('nests the prefixed keys back under config', () => {
+    const payload = fromFormData(
+      { title: 'Dex', enabled: true, [`${CONFIG_PREFIX}issuer`]: 'http://dex' },
+      fromRows,
+    );
+
+    expect(payload.config).toEqual({ issuer: 'http://dex' });
+    expect(payload.title).toBe('Dex');
+  });
+
+  it('turns rows back into a mapping', () => {
+    const payload = fromFormData(
+      { propertymap: [{ '@id': 'a', claim: 'login', field: 'username' }] },
+      fromRows,
+    );
+
+    expect(payload.propertymap).toEqual({ login: 'username' });
+  });
+
+  it('drops the @id Volto adds to form data', () => {
+    const payload = fromFormData({ '@id': '/somewhere', title: 'X' }, fromRows);
+
+    expect(payload['@id']).toBeUndefined();
+  });
+
+  it('trims the id and the title', () => {
+    const payload = fromFormData({ id: '  dex  ', title: '  Dex  ' }, fromRows);
+
+    expect(payload.id).toBe('dex');
+    expect(payload.title).toBe('Dex');
+  });
+
+  it('always sends config, even when the driver has no fields', () => {
+    // Otherwise a PATCH would leave the previous config in place rather
+    // than reflecting what the form showed.
+    expect(fromFormData({ title: 'X' }, fromRows).config).toEqual({});
+  });
+
+  it('coerces enabled to a boolean', () => {
+    expect(fromFormData({}, fromRows).enabled).toBe(false);
+    expect(fromFormData({ enabled: true }, fromRows).enabled).toBe(true);
+  });
+});
