@@ -7,8 +7,23 @@
        an extra is installed would make the FTI unimportable in a site that
        later adds the extra. -->
   <permission
-      id="pas.plugins.identity.AddProfile"
+      id="pas.plugins.identity.profile.add"
       title="pas.plugins.identity: Add Profile"
+      />
+
+  <permission
+      id="pas.plugins.identity.profile.edit"
+      title="pas.plugins.identity: Edit Profile"
+      />
+
+  <permission
+      id="pas.plugins.identity.profile.view"
+      title="pas.plugins.identity: View Profile"
+      />
+
+  <permission
+      id="pas.plugins.identity.profile.viewpii"
+      title="pas.plugins.identity: View Personal Identifiable Information"
       />
 
 </configure>

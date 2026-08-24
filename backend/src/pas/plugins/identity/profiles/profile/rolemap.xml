@@ -10,5 +10,39 @@
       <role name="Manager" />
       <role name="Site Administrator" />
     </permission>
+
+    <!-- The other three are the field permissions declared on the schema in
+         ``profile.content.profile``. Every one of them is also managed by
+         ``identity_profile_workflow``, which is what decides who may read
+         and write a Profile in each of its states; these entries are the
+         site-wide floor for anywhere the workflow does not reach.
+
+         Stating them matters even so. A permission that no rolemap mentions
+         is not a permission nobody has: Zope falls back to whatever the
+         object acquires, and for a field permission that means the answer
+         changes with where the Profile happens to live. -->
+    <permission acquire="False"
+                name="pas.plugins.identity: Edit Profile"
+    >
+      <role name="Manager" />
+      <role name="Site Administrator" />
+    </permission>
+
+    <permission acquire="False"
+                name="pas.plugins.identity: View Profile"
+    >
+      <role name="Manager" />
+      <role name="Site Administrator" />
+    </permission>
+
+    <!-- Separate from ``View Profile`` so that a site can let members find
+         each other without publishing everybody's email address. The
+         workflow never grants it to ``Member``, in any state. -->
+    <permission acquire="False"
+                name="pas.plugins.identity: View Personal Identifiable Information"
+    >
+      <role name="Manager" />
+      <role name="Site Administrator" />
+    </permission>
   </permissions>
 </rolemap>

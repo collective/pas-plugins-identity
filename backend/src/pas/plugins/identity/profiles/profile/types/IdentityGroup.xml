@@ -16,7 +16,7 @@
   <property name="icon_expr">string:users</property>
   <property name="klass">pas.plugins.identity.profile.content.group.Group</property>
   <property name="schema">pas.plugins.identity.profile.content.group.IGroupSchema</property>
-  <property name="add_permission">pas.plugins.identity.AddProfile</property>
+  <property name="add_permission">pas.plugins.identity.profile.add</property>
   <property name="link_target" />
   <property name="model_source" />
   <property name="model_file" />

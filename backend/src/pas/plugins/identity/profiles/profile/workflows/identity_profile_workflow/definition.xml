@@ -12,6 +12,15 @@
   <permission>Delete objects</permission>
   <permission>Modify portal content</permission>
   <permission>View</permission>
+  <!-- The field permissions declared on the schema. Without them in this
+       list the workflow decides who may open a Profile and nothing decides
+       who may read or write a field on it, which is not a lock with a
+       sensible default: it is whatever the Profile acquires from wherever it
+       is filed. ``Editor`` is the local role a user holds on their own
+       Profile, granted by ``profile.localroles``. -->
+  <permission>pas.plugins.identity: Edit Profile</permission>
+  <permission>pas.plugins.identity: View Profile</permission>
+  <permission>pas.plugins.identity: View Personal Identifiable Information</permission>
 
   <state state_id="incomplete"
          title="Incomplete"
@@ -46,6 +55,27 @@
     >
       <permission-role>Manager</permission-role>
       <permission-role>Site Administrator</permission-role>
+    </permission-map>
+    <permission-map acquired="False"
+                    name="pas.plugins.identity: Edit Profile"
+    >
+      <permission-role>Manager</permission-role>
+      <permission-role>Site Administrator</permission-role>
+      <permission-role>Editor</permission-role>
+    </permission-map>
+    <permission-map acquired="False"
+                    name="pas.plugins.identity: View Profile"
+    >
+      <permission-role>Manager</permission-role>
+      <permission-role>Site Administrator</permission-role>
+      <permission-role>Editor</permission-role>
+    </permission-map>
+    <permission-map acquired="False"
+                    name="pas.plugins.identity: View Personal Identifiable Information"
+    >
+      <permission-role>Manager</permission-role>
+      <permission-role>Site Administrator</permission-role>
+      <permission-role>Editor</permission-role>
     </permission-map>
   </state>
 
@@ -85,6 +115,28 @@
       <permission-role>Manager</permission-role>
       <permission-role>Site Administrator</permission-role>
     </permission-map>
+    <permission-map acquired="False"
+                    name="pas.plugins.identity: Edit Profile"
+    >
+      <permission-role>Manager</permission-role>
+      <permission-role>Site Administrator</permission-role>
+      <permission-role>Editor</permission-role>
+    </permission-map>
+    <permission-map acquired="False"
+                    name="pas.plugins.identity: View Profile"
+    >
+      <permission-role>Manager</permission-role>
+      <permission-role>Site Administrator</permission-role>
+      <permission-role>Editor</permission-role>
+      <permission-role>Member</permission-role>
+    </permission-map>
+    <permission-map acquired="False"
+                    name="pas.plugins.identity: View Personal Identifiable Information"
+    >
+      <permission-role>Manager</permission-role>
+      <permission-role>Site Administrator</permission-role>
+      <permission-role>Editor</permission-role>
+    </permission-map>
   </state>
 
   <state state_id="deactivated"
@@ -113,6 +165,24 @@
     </permission-map>
     <permission-map acquired="False"
                     name="Delete objects"
+    >
+      <permission-role>Manager</permission-role>
+      <permission-role>Site Administrator</permission-role>
+    </permission-map>
+    <permission-map acquired="False"
+                    name="pas.plugins.identity: Edit Profile"
+    >
+      <permission-role>Manager</permission-role>
+      <permission-role>Site Administrator</permission-role>
+    </permission-map>
+    <permission-map acquired="False"
+                    name="pas.plugins.identity: View Profile"
+    >
+      <permission-role>Manager</permission-role>
+      <permission-role>Site Administrator</permission-role>
+    </permission-map>
+    <permission-map acquired="False"
+                    name="pas.plugins.identity: View Personal Identifiable Information"
     >
       <permission-role>Manager</permission-role>
       <permission-role>Site Administrator</permission-role>

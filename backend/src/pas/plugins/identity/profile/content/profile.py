@@ -14,6 +14,8 @@ duplicate as an error rather than a merge.
 """
 
 from pas.plugins.identity import _
+from plone.autoform.directives import read_permission
+from plone.autoform.directives import write_permission
 from plone.dexterity.content import Container
 from plone.supermodel import model
 from zope import schema
@@ -73,6 +75,26 @@ class IProfileSchema(model.Schema):
         required=False,
         missing_value=(),
         default=(),
+    )
+    write_permission(
+        userid="pas.plugins.identity.profile.edit",
+        login="pas.plugins.identity.profile.edit",
+        fullname="pas.plugins.identity.profile.edit",
+        email="pas.plugins.identity.profile.edit",
+        home_page="pas.plugins.identity.profile.edit",
+        description="pas.plugins.identity.profile.edit",
+        location="pas.plugins.identity.profile.edit",
+        group_ids="pas.plugins.identity.profile.edit",
+    )
+    read_permission(
+        userid="pas.plugins.identity.profile.view",
+        login="pas.plugins.identity.profile.view",
+        fullname="pas.plugins.identity.profile.view",
+        email="pas.plugins.identity.profile.viewpii",
+        home_page="pas.plugins.identity.profile.view",
+        description="pas.plugins.identity.profile.view",
+        location="pas.plugins.identity.profile.view",
+        group_ids="pas.plugins.identity.profile.view",
     )
 
 
