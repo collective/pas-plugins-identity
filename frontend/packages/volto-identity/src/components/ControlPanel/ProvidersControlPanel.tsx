@@ -49,6 +49,7 @@ import {
   CONFIG_PREFIX,
   fromFormData,
   providerSchema,
+  suggestedProviderId,
   toFormData,
 } from '../../helpers/providerSchema';
 import type { ConfiguredProvider, Driver } from '../../types';
@@ -134,6 +135,10 @@ const ProvidersControlPanel: React.FC = () => {
   // Which driver the add form is currently on. The schema depends on it, so
   // it is tracked as the form changes rather than read at submit time.
   const [draftDriver, setDraftDriver] = useState<string | undefined>(undefined);
+  // Whether the operator has written a provider id of their own. Until they
+  // do, choosing a driver names the provider after it; once they have, a
+  // later driver change must not overwrite what they typed.
+  const [idTouched, setIdTouched] = useState(false);
   // The live form state. A ref rather than state on purpose: it changes on
   // every keystroke and nothing here needs to re-render for that. It is read
   // once, when the driver changes, to carry what has already been typed
@@ -223,6 +228,7 @@ const ProvidersControlPanel: React.FC = () => {
     setEditing(null);
     setEditingSettings(false);
     setDraftDriver(undefined);
+    setIdTouched(false);
     setError(null);
   }
 
@@ -254,12 +260,25 @@ const ProvidersControlPanel: React.FC = () => {
   // defaults, which is how the driver's sane values reach the fields.
   const formData = adding
     ? {
-        ...toFormData(undefined, toRows),
+        ...toFormData(
+          undefined,
+          toRows,
+          driverList.find((d) => d.id === draftDriver)?.default_propertymap,
+        ),
         ...Object.fromEntries(
           Object.entries(draft.current).filter(
-            ([key]) => !key.startsWith(CONFIG_PREFIX),
+            // The mapping goes the way the settings do when the driver
+            // changes: it is written in the claim names of the driver that
+            // was chosen, so carrying it over would keep a map for a
+            // provider that no longer exists.
+            ([key]) => !key.startsWith(CONFIG_PREFIX) && key !== 'propertymap',
           ),
         ),
+        // Read on the remount a driver change causes, so the suggestion
+        // follows the driver for as long as the operator lets it.
+        ...(idTouched
+          ? {}
+          : { id: suggestedProviderId(driverList, draftDriver) }),
       }
     : toFormData(current, toRows);
 
@@ -349,6 +368,16 @@ const ProvidersControlPanel: React.FC = () => {
               // to rebuild the schema rather than wait for submit.
               if (adding && data.driver !== draftDriver) {
                 setDraftDriver(data.driver as string);
+              }
+              // Compared against the suggestion for the driver the form is
+              // still on: a driver change arrives here with the previous
+              // driver's id, which is the suggestion and not a typed one.
+              if (
+                adding &&
+                !idTouched &&
+                data.id !== suggestedProviderId(driverList, draftDriver)
+              ) {
+                setIdTouched(true);
               }
             }}
             hideActions

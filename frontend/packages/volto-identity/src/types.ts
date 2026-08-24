@@ -67,6 +67,13 @@ export interface Driver {
   id: string;
   title: string;
   schema: Record<string, DriverField>;
+  /**
+   * Claim path to user field, seeded into a new provider's mapping.
+   *
+   * A starting point rather than a rule: it is written into the form like
+   * anything typed there, and an operator edits or empties it before saving.
+   */
+  default_propertymap?: Record<string, string>;
 }
 
 /** A configured provider as the control panel sees it. */

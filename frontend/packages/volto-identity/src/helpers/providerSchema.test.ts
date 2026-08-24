@@ -5,6 +5,7 @@ import {
   fromFormData,
   orderedFields,
   propertyFor,
+  suggestedProviderId,
   providerSchema,
   toFormData,
 } from './providerSchema';
@@ -150,6 +151,63 @@ describe('orderedFields', () => {
     };
 
     expect(orderedFields(schema).map(([name]) => name)).toEqual(['a', 'b']);
+  });
+});
+
+describe('suggestedProviderId', () => {
+  it('names the provider after the driver', () => {
+    expect(suggestedProviderId([OIDC, GITHUB], 'github')).toBe('github');
+  });
+
+  it('slugifies a title that is not already one', () => {
+    expect(suggestedProviderId([OIDC], 'oidc-generic')).toBe('generic-oidc');
+  });
+
+  it('turns punctuation into separators rather than dropping it', () => {
+    // signinbeta would be a worse id than sign-in-beta, not a shorter one.
+    const driver = { id: 'x', title: 'Sign in (beta)', schema: {} };
+
+    expect(suggestedProviderId([driver], 'x')).toBe('sign-in-beta');
+  });
+
+  it("falls back to the driver's own id when the title slugifies to nothing", () => {
+    const driver = { id: 'kerberos', title: '???', schema: {} };
+
+    expect(suggestedProviderId([driver], 'kerberos')).toBe('kerberos');
+  });
+
+  it('suggests nothing before a driver is chosen', () => {
+    expect(suggestedProviderId([OIDC], undefined)).toBe('');
+    expect(suggestedProviderId([OIDC], 'no-such-driver')).toBe('');
+  });
+});
+
+describe('toFormData seeding', () => {
+  it("seeds a new provider's mapping from the driver", () => {
+    const data = toFormData(undefined, toRows, {
+      email: 'email',
+      fullname: 'fullname',
+    });
+
+    // The rows also carry the `@id` the list widget keys on; what matters
+    // here is that the driver's pairs arrived, in its own order.
+    expect(data.propertymap).toMatchObject([
+      { claim: 'email', field: 'email' },
+      { claim: 'fullname', field: 'fullname' },
+    ]);
+  });
+
+  it('seeds nothing when the driver declares no mapping', () => {
+    expect(toFormData(undefined, toRows).propertymap).toEqual([]);
+  });
+
+  it("leaves an existing provider's own mapping alone", () => {
+    // Including the deliberate decision to have none: a stored provider is
+    // the whole truth about itself, and a seed here would resurrect rows
+    // somebody removed on purpose.
+    const data = toFormData({ propertymap: {} }, toRows, { email: 'email' });
+
+    expect(data.propertymap).toEqual([]);
   });
 });
 

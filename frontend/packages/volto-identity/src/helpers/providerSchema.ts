@@ -45,6 +45,38 @@ export function orderedFields(
 }
 
 /**
+ * Suggest a provider id for a driver.
+ *
+ * The id is permanent and stored on every identity linked through the
+ * provider, so it is worth prefilling with something sane rather than
+ * leaving an operator to invent one -- most sites have exactly one provider
+ * per driver and want it called after the driver.
+ *
+ * @param drivers Every registered driver.
+ * @param driverId The driver chosen, if one is chosen yet.
+ * @returns The slugified driver title, or an empty string when no driver is
+ *   chosen or its title slugifies to nothing.
+ */
+export function suggestedProviderId(
+  drivers: Driver[],
+  driverId: string | undefined,
+): string {
+  const driver = drivers.find((d) => d.id === driverId);
+  if (!driver) {
+    return '';
+  }
+  return (
+    driver.title
+      .toLowerCase()
+      // The id accepts letters, digits, - and _ only, so everything else
+      // becomes a separator rather than being dropped -- "Sign in (beta)"
+      // should read as sign-in-beta, not signinbeta.
+      .replace(/[^a-z0-9_]+/g, '-')
+      .replace(/^-+|-+$/g, '') || driver.id
+  );
+}
+
+/**
  * Turn one driver field descriptor into a Volto schema property.
  *
  * @param field The descriptor from the driver.
@@ -210,14 +242,18 @@ export function providerSchema(
  *
  * @param provider The provider being edited, or undefined when adding.
  * @param toRows Converter for the stored mapping.
+ * @param defaultPropertymap The chosen driver's seed mapping, used only when
+ *   adding: an existing provider's own mapping is the whole truth about it,
+ *   including the deliberate decision to have none.
  * @returns Form data.
  */
 export function toFormData(
   provider: Record<string, any> | undefined,
   toRows: (map: Record<string, string> | undefined) => unknown[],
+  defaultPropertymap?: Record<string, string>,
 ): Record<string, unknown> {
   if (!provider) {
-    return { enabled: true, propertymap: [] };
+    return { enabled: true, propertymap: toRows(defaultPropertymap) };
   }
   const data: Record<string, unknown> = {
     title: provider.title ?? '',
