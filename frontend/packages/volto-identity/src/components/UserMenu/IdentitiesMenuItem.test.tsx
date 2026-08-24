@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen } from '../../testing';
 import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
 

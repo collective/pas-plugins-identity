@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Plone\n"
-"POT-Creation-Date: 2026-08-20T21:38:23.822Z\n"
+"POT-Creation-Date: 2026-08-24T15:04:49.055Z\n"
 "Last-Translator: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Language-Team: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -13,4 +13,459 @@ msgstr ""
 "Preferred-Encodings: utf-8\n"
 "Domain: volto\n"
 
+#. Default: "A browser or native app, which cannot keep a secret. PKCE is required for these and no secret is issued."
+#: components/ControlPanel/ClientsPanel
+msgid "A browser or native app, which cannot keep a secret."
+msgstr ""
 
+#. Default: "Actions"
+#: components/ControlPanel/ProvidersControlPanel
+msgid "Actions"
+msgstr ""
+
+#. Default: "Add another"
+#: components/Identities/IdentitiesList
+msgid "Add another"
+msgstr ""
+
+#. Default: "Add provider"
+#: components/ControlPanel/ProvidersControlPanel
+msgid "Add provider"
+msgstr ""
+
+#. Default: "Back"
+#: components/ControlPanel/ClientsControlPanel
+#: components/ControlPanel/ProvidersControlPanel
+#: components/Identities/Identities
+msgid "Back"
+msgstr ""
+
+#. Default: "Back to sign-in options"
+#: components/Login/LoginForm
+msgid "Back to sign-in options"
+msgstr ""
+
+#. Default: "Cancel"
+#: components/ControlPanel/ProvidersControlPanel
+msgid "Cancel"
+msgstr ""
+
+#. Default: "Changes saved"
+#: components/ControlPanel/ProvidersControlPanel
+msgid "Changes saved"
+msgstr ""
+
+#. Default: "Choose how you would like to sign in."
+#: components/Login/Login
+msgid "Choose how you would like to sign in."
+msgstr ""
+
+#. Default: "Clear"
+#: components/Login/PasswordForm
+msgid "Clear"
+msgstr ""
+
+#. Default: "Client ID"
+#: components/ControlPanel/ClientsPanel
+msgid "Client ID"
+msgstr ""
+
+#. Default: "Client secret for {clientId}"
+#: components/ControlPanel/SecretReveal
+msgid "Client secret for {clientId}"
+msgstr ""
+
+#. Default: "Confidential"
+#: components/ControlPanel/ClientsPanel
+msgid "Confidential"
+msgstr ""
+
+#. Default: "Copied"
+#: components/ControlPanel/SecretReveal
+msgid "Copied"
+msgstr ""
+
+#. Default: "Copy"
+#: components/ControlPanel/SecretReveal
+msgid "Copy"
+msgstr ""
+
+#. Default: "Delete"
+#: components/ControlPanel/ProvidersControlPanel
+msgid "Delete"
+msgstr ""
+
+#. Default: "Delete this provider? Identities already linked through it keep the stored id and stop resolving."
+#: components/ControlPanel/ProvidersControlPanel
+msgid "Delete this provider?"
+msgstr ""
+
+#. Default: "Disable"
+#: components/ControlPanel/ClientsPanel
+msgid "Disable"
+msgstr ""
+
+#. Default: "Disabled. Its existing access tokens are refused as well: the audience is checked against this registry on every request."
+#: components/ControlPanel/ClientsPanel
+msgid "Disabled. Its existing access tokens are refused as well."
+msgstr ""
+
+#. Default: "Driver"
+#: components/ControlPanel/ProvidersControlPanel
+msgid "Driver"
+msgstr ""
+
+#. Default: "Edit"
+#: components/ControlPanel/ProvidersControlPanel
+msgid "Edit"
+msgstr ""
+
+#. Default: "Email address"
+#: components/Login/MagicLinkForm
+msgid "Email address"
+msgstr ""
+
+#. Default: "Email me a link"
+#: components/Login/MagicLinkForm
+msgid "Email me a link"
+msgstr ""
+
+#. Default: "Enable"
+#: components/ControlPanel/ClientsPanel
+msgid "Enable"
+msgstr ""
+
+#. Default: "Enabled"
+#: components/ControlPanel/ProvidersControlPanel
+msgid "Enabled"
+msgstr ""
+
+#. Default: "Error"
+#: components/ControlPanel/ProvidersControlPanel
+msgid "Error"
+msgstr ""
+
+#. Default: "Grants"
+#: components/ControlPanel/ClientsPanel
+msgid "Grants"
+msgstr ""
+
+#. Default: "I have saved it"
+#: components/ControlPanel/SecretReveal
+msgid "I have saved it"
+msgstr ""
+
+#. Default: "Id"
+#: components/ControlPanel/ProvidersControlPanel
+msgid "Id"
+msgstr ""
+
+#. Default: "Identity providers"
+#: components/ControlPanel/ProvidersControlPanel
+msgid "Identity providers"
+msgstr ""
+
+#. Default: "If that address can sign in here, a link is on its way. It works once, and only for a few minutes."
+#: components/Login/MagicLinkForm
+msgid "If that address can sign in here"
+msgstr ""
+
+#. Default: "Loading clients…"
+#: components/ControlPanel/ClientsPanel
+msgid "Loading clients"
+msgstr ""
+
+#. Default: "Loading keys…"
+#: components/ControlPanel/ClientsPanel
+msgid "Loading keys"
+msgstr ""
+
+#. Default: "Loading sign-in options…"
+#: components/Login/LoginForm
+msgid "Loading sign-in options"
+msgstr ""
+
+#. Default: "Loading your sign-in methods…"
+#: components/Identities/IdentitiesList
+msgid "Loading your sign-in methods"
+msgstr ""
+
+#. Default: "Log in"
+#: components/Callback/Callback
+#: components/FirstLogin/FirstLogin
+#: components/Login/Login
+msgid "Log in"
+msgstr ""
+
+#. Default: "Login name"
+#: components/Login/PasswordForm
+msgid "Login name"
+msgstr ""
+
+#. Default: "No"
+#: components/ControlPanel/ProvidersControlPanel
+msgid "No"
+msgstr ""
+
+#. Default: "No clients are registered yet."
+#: components/ControlPanel/ClientsPanel
+msgid "No clients are registered yet."
+msgstr ""
+
+#. Default: "No drivers are installed, so there is nothing to configure. Install an add-on that registers one."
+#: components/ControlPanel/ProvidersControlPanel
+msgid "No drivers are installed."
+msgstr ""
+
+#. Default: "No login callback URL is configured, so no provider can complete a sign-in. Set it under Settings."
+#: components/ControlPanel/ProvidersControlPanel
+msgid "No login callback URL is configured"
+msgstr ""
+
+#. Default: "No providers are configured yet."
+#: components/ControlPanel/ProvidersControlPanel
+msgid "No providers are configured yet."
+msgstr ""
+
+#. Default: "OAuth clients"
+#: components/ControlPanel/ClientsControlPanel
+msgid "OAuth clients"
+msgstr ""
+
+#. Default: "Older keys stay in the ring so tokens already issued keep verifying. The ring holds {size}; rotating more than that within one access-token lifetime will invalidate tokens still in flight."
+#: components/ControlPanel/ClientsPanel
+msgid "Older keys stay in the ring so tokens already issued keep verifying."
+msgstr ""
+
+#. Default: "One per line. Matched exactly — a trailing slash or an extra query parameter is a different URI."
+#: components/ControlPanel/ClientsPanel
+msgid "One per line. Matched exactly."
+msgstr ""
+
+#. Default: "Password"
+#: components/Login/PasswordForm
+msgid "Password"
+msgstr ""
+
+#. Default: "Provider deleted"
+#: components/ControlPanel/ProvidersControlPanel
+msgid "Provider deleted"
+msgstr ""
+
+#. Default: "Public (PKCE required)"
+#: components/ControlPanel/ClientsPanel
+msgid "Public (PKCE required)"
+msgstr ""
+
+#. Default: "Public client"
+#: components/ControlPanel/ClientsPanel
+msgid "Public client"
+msgstr ""
+
+#. Default: "Reached {endpoint}"
+#: components/ControlPanel/ProvidersControlPanel
+msgid "Reached {endpoint}"
+msgstr ""
+
+#. Default: "Reached {endpoint} (no key set published)"
+#: components/ControlPanel/ProvidersControlPanel
+msgid "Reached {endpoint} (no key set published)"
+msgstr ""
+
+#. Default: "Redirect URIs"
+#: components/ControlPanel/ClientsPanel
+msgid "Redirect URIs"
+msgstr ""
+
+#. Default: "Register"
+#: components/ControlPanel/ClientsPanel
+msgid "Register"
+msgstr ""
+
+#. Default: "Register a client"
+#: components/ControlPanel/ClientsPanel
+msgid "Register a client"
+msgstr ""
+
+#. Default: "Registered clients"
+#: components/ControlPanel/ClientsPanel
+msgid "Registered clients"
+msgstr ""
+
+#. Default: "Remove"
+#: components/Identities/IdentitiesList
+msgid "Remove"
+msgstr ""
+
+#. Default: "Rotate secret"
+#: components/ControlPanel/ClientsPanel
+msgid "Rotate secret"
+msgstr ""
+
+#. Default: "Rotate signing key"
+#: components/ControlPanel/ClientsPanel
+msgid "Rotate signing key"
+msgstr ""
+
+#. Default: "Save"
+#: components/ControlPanel/ProvidersControlPanel
+msgid "Save"
+msgstr ""
+
+#. Default: "Scope"
+#: components/ControlPanel/ClientsPanel
+msgid "Scope"
+msgstr ""
+
+#. Default: "Secret for {clientId}"
+#: components/ControlPanel/SecretReveal
+msgid "Secret for {clientId}"
+msgstr ""
+
+#. Default: "Settings"
+#: components/ControlPanel/ProvidersControlPanel
+msgid "Settings"
+msgstr ""
+
+#. Default: "Sign in"
+#: components/Login/PasswordForm
+msgid "Sign in"
+msgstr ""
+
+#. Default: "Sign in with a password"
+#: components/Login/LoginForm
+msgid "Sign in with a password"
+msgstr ""
+
+#. Default: "Sign in with your account on this site."
+#: components/Login/Login
+msgid "Sign in with your account on this site."
+msgstr ""
+
+#. Default: "Sign-in methods"
+#: components/Identities/Identities
+#: components/UserMenu/IdentitiesMenuItem
+msgid "Sign-in methods"
+msgstr ""
+
+#. Default: "Signing in"
+#: components/Login/PasswordForm
+msgid "Signing in"
+msgstr ""
+
+#. Default: "Signing keys"
+#: components/ControlPanel/ClientsPanel
+msgid "Signing keys"
+msgstr ""
+
+#. Default: "Signing you in…"
+#: components/Callback/Callback
+#: components/FirstLogin/FirstLogin
+msgid "Signing you in"
+msgstr ""
+
+#. Default: "Space separated, for example “openid profile email”."
+#: components/ControlPanel/ClientsPanel
+msgid "Space separated, for example “openid profile email”."
+msgstr ""
+
+#. Default: "Test connection"
+#: components/ControlPanel/ProvidersControlPanel
+msgid "Test connection"
+msgstr ""
+
+#. Default: "That did not work. Please try again in a little while."
+#: components/Login/MagicLinkForm
+msgid "That did not work. Please try again in a little while."
+msgstr ""
+
+#. Default: "That did not work. Please try again."
+#: components/Identities/IdentitiesList
+msgid "That did not work. Please try again."
+msgstr ""
+
+#. Default: "That login name and password did not match."
+#: components/Login/PasswordForm
+msgid "That login name and password did not match."
+msgstr ""
+
+#. Default: "That sign-in link is no longer valid. Please start again."
+#: components/Callback/Callback
+msgid "That sign-in link is no longer valid. Please start again."
+msgstr ""
+
+#. Default: "That sign-in option is not available right now."
+#: components/Login/LoginForm
+msgid "That sign-in option is not available right now."
+msgstr ""
+
+#. Default: "The provider refused the sign-in."
+#: components/Callback/Callback
+msgid "The provider refused the sign-in."
+msgstr ""
+
+#. Default: "The site settings could not be read, so they cannot be edited here. The most likely cause is a settings field with no registry record, which happens when the add-on gained one and its profile has not been reapplied since."
+#: components/ControlPanel/ProvidersControlPanel
+msgid "The site settings could not be read"
+msgstr ""
+
+#. Default: "This is the only time this secret is shown. It is stored hashed and cannot be read back; if it is lost, rotate it."
+#: components/ControlPanel/SecretReveal
+msgid "This is the only time this secret is shown."
+msgstr ""
+
+#. Default: "This is your only way to sign in. Add another first."
+#: components/Identities/IdentitiesList
+msgid "This is your only way to sign in. Add another first."
+msgstr ""
+
+#. Default: "This sign-in link is incomplete."
+#: components/Callback/Callback
+msgid "This sign-in link is incomplete."
+msgstr ""
+
+#. Default: "Title"
+#: components/ControlPanel/ClientsPanel
+#: components/ControlPanel/ProvidersControlPanel
+msgid "Title"
+msgstr ""
+
+#. Default: "Type"
+#: components/ControlPanel/ClientsPanel
+msgid "Type"
+msgstr ""
+
+#. Default: "Unregister"
+#: components/ControlPanel/ClientsPanel
+msgid "Unregister"
+msgstr ""
+
+#. Default: "Yes"
+#: components/ControlPanel/ProvidersControlPanel
+msgid "Yes"
+msgstr ""
+
+#. Default: "You have no external sign-in methods linked yet."
+#: components/Identities/IdentitiesList
+msgid "You have no external sign-in methods linked yet."
+msgstr ""
+
+#. Default: "Forgot your password?"
+#: components/Login/PasswordForm
+msgid "box_forgot_password_option"
+msgstr ""
+
+#. Default: "signing"
+#: components/ControlPanel/ClientsPanel
+msgid "signing"
+msgstr ""
+
+#. Default: "verifying only"
+#: components/ControlPanel/ClientsPanel
+msgid "verifying only"
+msgstr ""
+
+#. Default: "{total} of {size} in the ring, signing with {algorithm}. Public keys are published at {jwks}."
+#: components/ControlPanel/ClientsPanel
+msgid "{total} of {size} in the ring, signing with {algorithm}."
+msgstr ""
