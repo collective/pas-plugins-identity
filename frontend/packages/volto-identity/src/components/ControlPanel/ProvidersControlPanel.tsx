@@ -70,6 +70,14 @@ const messages = defineMessages({
   saved: { id: 'Changes saved', defaultMessage: 'Changes saved' },
   deleted: { id: 'Provider deleted', defaultMessage: 'Provider deleted' },
   settings: { id: 'Settings', defaultMessage: 'Settings' },
+  settingsUnavailable: {
+    id: 'The site settings could not be read',
+    defaultMessage:
+      'The site settings could not be read, so they cannot be edited here. ' +
+      'The most likely cause is a settings field with no registry record, ' +
+      'which happens when the add-on gained one and its profile has not ' +
+      'been reapplied since.',
+  },
   noCallback: {
     id: 'No login callback URL is configured',
     defaultMessage:
@@ -124,6 +132,10 @@ const ProvidersControlPanel: React.FC = () => {
   const settings = useSelector(
     (state: any) => state.controlpanels?.controlpanel,
   );
+  // Its request state separately: the reducer clears `controlpanel` to null
+  // while pending *and* on failure, so the value alone cannot tell "still
+  // loading" from "the backend refused".
+  const settingsRequest = useSelector((state: any) => state.controlpanels?.get);
 
   const items = providers?.data ?? [];
   // Memoized because the schema is built from it: a fresh [] on every render
@@ -195,6 +207,9 @@ const ProvidersControlPanel: React.FC = () => {
     : undefined;
   const isForm = adding || editing !== null || editingSettings;
   const callbackUrl = settings?.data?.callback_url;
+  // Volto's Form reads schema.fieldsets on the first render, so opening the
+  // settings without one is a crash rather than an empty form.
+  const settingsReady = Boolean(settings?.schema);
 
   const schema = useMemo(
     () =>
@@ -249,7 +264,24 @@ const ProvidersControlPanel: React.FC = () => {
     <div id="page-controlpanel" className="identity-controlpanel">
       <Helmet title={intl.formatMessage(messages.title)} />
       <Container>
-        {isForm ? (
+        {editingSettings && !settingsReady ? (
+          <Segment.Group raised>
+            <Segment className="primary">
+              {intl.formatMessage(messages.settings)}
+            </Segment>
+            <Segment>
+              <p role="alert" className="identity-error">
+                {intl.formatMessage(messages.settingsUnavailable)}
+              </p>
+              {settingsRequest?.error ? (
+                <pre className="identity-controlpanel__detail">
+                  {settingsRequest.error?.response?.body?.message ??
+                    String(settingsRequest.error)}
+                </pre>
+              ) : null}
+            </Segment>
+          </Segment.Group>
+        ) : isForm ? (
           <Form
             ref={formRef}
             title={
@@ -369,19 +401,23 @@ const ProvidersControlPanel: React.FC = () => {
             inner={
               isForm ? (
                 <>
-                  <Button
-                    id="toolbar-save"
-                    className="save"
-                    aria-label={intl.formatMessage(messages.save)}
-                    onClick={() => formRef.current?.onSubmit()}
-                  >
-                    <Icon
-                      name={saveSVG}
-                      className="circled"
-                      size="30px"
-                      title={intl.formatMessage(messages.save)}
-                    />
-                  </Button>
+                  {/* No Save for a form that is not there; Cancel still is,
+                      so the error view is not a dead end. */}
+                  {editingSettings && !settingsReady ? null : (
+                    <Button
+                      id="toolbar-save"
+                      className="save"
+                      aria-label={intl.formatMessage(messages.save)}
+                      onClick={() => formRef.current?.onSubmit()}
+                    >
+                      <Icon
+                        name={saveSVG}
+                        className="circled"
+                        size="30px"
+                        title={intl.formatMessage(messages.save)}
+                      />
+                    </Button>
+                  )}
                   <Button
                     className="cancel"
                     aria-label={intl.formatMessage(messages.cancel)}
