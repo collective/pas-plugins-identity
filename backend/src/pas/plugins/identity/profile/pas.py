@@ -33,6 +33,7 @@ this plugin, not an incidental property.
 """
 
 from AccessControl.class_init import InitializeClass
+from pas.plugins.identity.core.interfaces import IOwnsUserProperties
 from pas.plugins.identity.profile.catalog import group_brains
 from pas.plugins.identity.profile.catalog import profile_brains
 from pas.plugins.identity.profile.catalog import PROFILE_PORTAL_TYPE
@@ -40,6 +41,7 @@ from pas.plugins.identity.profile.catalog import query_catalog
 from plone import api
 from Products.PlonePAS.interfaces.group import IGroupIntrospection
 from Products.PlonePAS.plugins.group import PloneGroup
+from Products.PlonePAS.sheet import MutablePropertySheet
 from Products.PluggableAuthService.interfaces.plugins import IGroupEnumerationPlugin
 from Products.PluggableAuthService.interfaces.plugins import IGroupsPlugin
 from Products.PluggableAuthService.interfaces.plugins import IPropertiesPlugin
@@ -47,10 +49,10 @@ from Products.PluggableAuthService.interfaces.plugins import IRolesPlugin
 from Products.PluggableAuthService.interfaces.plugins import IUserEnumerationPlugin
 from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
 from Products.PluggableAuthService.PropertiedUser import PropertiedUser
-from Products.PluggableAuthService.UserPropertySheet import UserPropertySheet
 from Products.PluggableAuthService.utils import classImplements
 from Products.ZCatalog.CatalogBrains import AbstractCatalogBrain
 from zope.interface import implementer
+from zope.lifecycleevent import modified
 from ZPublisher.HTTPRequest import HTTPRequest
 
 
@@ -120,6 +122,7 @@ def _matches(candidate: str | None, terms: list[str], exact: bool) -> bool:
 
 
 @implementer(
+    IOwnsUserProperties,
     IPropertiesPlugin,
     IUserEnumerationPlugin,
     IGroupsPlugin,
@@ -191,8 +194,17 @@ class IdentityProfilePlugin(BasePlugin):
 
     def getPropertiesForUser(
         self, user: PropertiedUser, request: HTTPRequest | None = None
-    ) -> UserPropertySheet | None:
+    ) -> MutablePropertySheet | None:
         """Return the property sheet backed by this user's Profile.
+
+        Mutable, and that is not a detail. ``MemberData.setMemberProperties``
+        walks the ordered sheets and, for each key, stops at the first sheet
+        that *has* it -- writing only if that sheet is mutable and silently
+        writing nowhere at all if it is not. This plugin sits at the top of
+        the order and has every field on it, so an immutable sheet here does
+        not mean "these properties are read-only": it means every write to
+        them, from the user's own preferences form, from ``@users``, from the
+        login path, returns successfully having done nothing.
 
         :param user: The PAS user.
         :param request: The request, unused.
@@ -201,10 +213,50 @@ class IdentityProfilePlugin(BasePlugin):
         brain = self._brain_for_userid(user.getId())
         if brain is None:
             return None
-        return UserPropertySheet(
+        return MutablePropertySheet(
             self.id,
             **{field: getattr(brain, field, None) or "" for field in PROPERTY_FIELDS},
         )
+
+    def setPropertiesForUser(
+        self, user: PropertiedUser, propertysheet: MutablePropertySheet
+    ) -> None:
+        """Write a sheet back onto the user's Profile.
+
+        Called by :class:`~Products.PlonePAS.sheet.MutablePropertySheet`,
+        which resolves this plugin by the id the sheet was built with.
+
+        Runs unrestricted. The permission to edit a Profile is decided on the
+        Profile, by the workflow -- see the ``profile`` profile's
+        ``rolemap.xml`` -- and PAS has already resolved who is asking by the
+        time a property write arrives here; re-deciding it against the
+        catalog's brain would be a second, weaker answer to a question
+        already answered.
+
+        :param user: The PAS user.
+        :param propertysheet: The sheet holding the new values.
+        """
+        from pas.plugins.identity.profile.subscribers import get_profile
+
+        profile = get_profile(user.getId())
+        if profile is None:  # pragma: no cover - the sheet came from a Profile
+            return
+
+        changed = False
+        for field in PROPERTY_FIELDS:
+            if not propertysheet.hasProperty(field):
+                continue
+            value = propertysheet.getProperty(field)
+            if (getattr(profile, field, None) or "") == (value or ""):
+                continue
+            setattr(profile, field, value)
+            changed = True
+
+        if changed:
+            # The catalog is this layer's only read path -- the property sheet
+            # above is served from a brain -- so a write nobody reindexed is a
+            # write nobody can see.
+            modified(profile)
 
     # -- IUserEnumerationPlugin ------------------------------------------
 
@@ -477,6 +529,7 @@ class IdentityProfilePlugin(BasePlugin):
 
 classImplements(
     IdentityProfilePlugin,
+    IOwnsUserProperties,
     IPropertiesPlugin,
     IUserEnumerationPlugin,
     IGroupsPlugin,
