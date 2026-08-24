@@ -11,14 +11,16 @@
  * is the shape Volto's own login form has: labelled fields with a single
  * underline, and a submit and a cancel as icon buttons on a divided row.
  *
- * Kept behind a disclosure and last on the page. The providers are the point
- * of this add-on; the password is the fallback.
+ * Just the form. Whether it is shown at all, and what it replaces when it is,
+ * belongs to `LoginForm`: opening the password form hides the providers, and a
+ * component cannot hide its own siblings.
  * @module components/Login/PasswordForm
  */
 import React, { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Button, Container, TextField } from '@plone/components';
 import { Link } from 'react-router-dom';
+import { defineMessages, useIntl } from 'react-intl';
 import Icon from '@plone/volto/components/theme/Icon/Icon';
 import aheadSVG from '@plone/volto/icons/ahead.svg';
 import clearSVG from '@plone/volto/icons/clear.svg';
@@ -28,6 +30,24 @@ import clearSVG from '@plone/volto/icons/clear.svg';
 // which is what made this form look unlike volto-authomatic's despite the
 // markup and the class names matching it exactly.
 import '@plone/components/src/styles/basic/TextField.css';
+
+import './PasswordForm.scss';
+
+const messages = defineMessages({
+  loginName: { id: 'Login name', defaultMessage: 'Login name' },
+  password: { id: 'Password', defaultMessage: 'Password' },
+  forgotPassword: {
+    id: 'box_forgot_password_option',
+    defaultMessage: 'Forgot your password?',
+  },
+  refused: {
+    id: 'That login name and password did not match.',
+    defaultMessage: 'That login name and password did not match.',
+  },
+  signIn: { id: 'Sign in', defaultMessage: 'Sign in' },
+  signingIn: { id: 'Signing in', defaultMessage: 'Signing in' },
+  clear: { id: 'Clear', defaultMessage: 'Clear' },
+});
 
 interface PasswordFormProps {
   /** Whether a sign-in attempt is in flight. */
@@ -43,7 +63,7 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
   error,
   onSubmit,
 }) => {
-  const [open, setOpen] = useState(false);
+  const intl = useIntl();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
@@ -59,33 +79,23 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
     setPassword('');
   };
 
-  if (!open) {
-    return (
-      <Container className="identity-password-toggle">
-        <button type="button" onClick={() => setOpen(true)}>
-          Sign in with a password
-        </button>
-      </Container>
-    );
-  }
-
   return (
     <form method="post" className="PloneAuth" onSubmit={submit}>
       <Container className="form">
         <TextField
-          label="Login name"
+          label={intl.formatMessage(messages.loginName)}
           name="username"
-          placeholder="Login name"
+          placeholder={intl.formatMessage(messages.loginName)}
           autoComplete="username"
           isRequired
           value={username}
           onChange={setUsername}
         />
         <TextField
-          label="Password"
+          label={intl.formatMessage(messages.password)}
           name="password"
           type="password"
-          placeholder="Password"
+          placeholder={intl.formatMessage(messages.password)}
           autoComplete="current-password"
           isRequired
           value={password}
@@ -95,7 +105,9 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
 
       <Container className="forgotPassword">
         <p className="help">
-          <Link to="/passwordreset">Forgot your password?</Link>
+          <Link to="/passwordreset">
+            {intl.formatMessage(messages.forgotPassword)}
+          </Link>
         </p>
       </Container>
 
@@ -103,7 +115,7 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
         // One message for a wrong name and a wrong password alike: telling
         // them apart is an account-enumeration oracle.
         <Container className="identity-error" role="alert">
-          That login name and password did not match.
+          {intl.formatMessage(messages.refused)}
         </Container>
       ) : null}
 
@@ -112,7 +124,9 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
           id="login-form-submit"
           type="submit"
           isDisabled={loading || !username || !password}
-          aria-label={loading ? 'Signing in' : 'Sign in'}
+          aria-label={intl.formatMessage(
+            loading ? messages.signingIn : messages.signIn,
+          )}
         >
           <Icon className="circled" name={aheadSVG} size="30px" />
         </Button>
@@ -121,7 +135,7 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
           id="login-form-cancel"
           type="button"
           onPress={clear}
-          aria-label="Clear"
+          aria-label={intl.formatMessage(messages.clear)}
         >
           <Icon className="circled" name={clearSVG} size="30px" />
         </Button>

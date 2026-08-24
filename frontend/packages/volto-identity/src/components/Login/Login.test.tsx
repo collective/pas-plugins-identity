@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { render } from '../../testing';
 import { MemoryRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import React from 'react';

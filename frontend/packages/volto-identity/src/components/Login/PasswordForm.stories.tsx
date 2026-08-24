@@ -12,8 +12,11 @@ export default meta;
 
 type Story = StoryObj<typeof PasswordForm>;
 
-/** Collapsed: the providers are the point, the password is the fallback. */
-export const Collapsed: Story = {};
+/**
+ * The form on its own. Whether the login page shows it, and what it replaces
+ * when it does, is `LoginForm`'s decision -- see its own stories.
+ */
+export const Default: Story = {};
 
 export const Refused: Story = { args: { error: FAILED.error } };
 

@@ -3,6 +3,24 @@
  * @module components/Login/MagicLinkForm
  */
 import React, { useState } from 'react';
+import { defineMessages, useIntl } from 'react-intl';
+
+import './MagicLinkForm.scss';
+
+const messages = defineMessages({
+  email: { id: 'Email address', defaultMessage: 'Email address' },
+  send: { id: 'Email me a link', defaultMessage: 'Email me a link' },
+  sent: {
+    id: 'If that address can sign in here',
+    defaultMessage:
+      'If that address can sign in here, a link is on its way. It works ' +
+      'once, and only for a few minutes.',
+  },
+  failed: {
+    id: 'That did not work. Please try again in a little while.',
+    defaultMessage: 'That did not work. Please try again in a little while.',
+  },
+});
 
 interface MagicLinkFormProps {
   sent: boolean;
@@ -17,6 +35,7 @@ const MagicLinkForm: React.FC<MagicLinkFormProps> = ({
   error,
   onSend,
 }) => {
+  const intl = useIntl();
   const [email, setEmail] = useState('');
 
   if (sent) {
@@ -28,8 +47,7 @@ const MagicLinkForm: React.FC<MagicLinkFormProps> = ({
         className="identity-magic-link identity-magic-link--sent"
         role="status"
       >
-        If that address can sign in here, a link is on its way. It works once,
-        and only for a few minutes.
+        {intl.formatMessage(messages.sent)}
       </p>
     );
   }
@@ -44,7 +62,9 @@ const MagicLinkForm: React.FC<MagicLinkFormProps> = ({
         }
       }}
     >
-      <label htmlFor="identity-magic-link-email">Email address</label>
+      <label htmlFor="identity-magic-link-email">
+        {intl.formatMessage(messages.email)}
+      </label>
       <input
         id="identity-magic-link-email"
         name="email"
@@ -54,12 +74,16 @@ const MagicLinkForm: React.FC<MagicLinkFormProps> = ({
         disabled={loading}
         onChange={(event) => setEmail(event.target.value)}
       />
-      <button type="submit" disabled={loading || !email.trim()}>
-        Email me a link
+      <button
+        type="submit"
+        className="identity-button"
+        disabled={loading || !email.trim()}
+      >
+        {intl.formatMessage(messages.send)}
       </button>
       {error ? (
         <p className="identity-error" role="alert">
-          That did not work. Please try again in a little while.
+          {intl.formatMessage(messages.failed)}
         </p>
       ) : null}
     </form>

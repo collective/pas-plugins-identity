@@ -25,10 +25,19 @@
 import React, { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory, useLocation } from 'react-router-dom';
+import { defineMessages, useIntl } from 'react-intl';
 
 import { getMyProfile } from '../../actions';
 import { afterLogin } from '../../helpers/firstLogin';
 import { returnUrl } from '../../helpers/returnUrl';
+import LoginPanel from '../Login/LoginPanel';
+
+import './FirstLogin.scss';
+
+const messages = defineMessages({
+  title: { id: 'Log in', defaultMessage: 'Log in' },
+  working: { id: 'Signing you in', defaultMessage: 'Signing you in…' },
+});
 
 interface FirstLoginProps {
   /** Backend base URL, when it differs from the frontend's. */
@@ -36,6 +45,7 @@ interface FirstLoginProps {
 }
 
 const FirstLogin: React.FC<FirstLoginProps> = ({ apiPath = '' }) => {
+  const intl = useIntl();
   const dispatch = useDispatch();
   const history = useHistory();
   const location = useLocation();
@@ -70,9 +80,14 @@ const FirstLogin: React.FC<FirstLoginProps> = ({ apiPath = '' }) => {
   }, [profile, history, location.search, apiPath]);
 
   return (
-    <div className="identity-first-login" role="status">
-      Signing you in…
-    </div>
+    // The same card the callback and the login page are: this is the last
+    // step of the same flow, and a bare line of text here sat against the
+    // left edge of the window.
+    <LoginPanel title={intl.formatMessage(messages.title)}>
+      <p className="identity-first-login" role="status">
+        {intl.formatMessage(messages.working)}
+      </p>
+    </LoginPanel>
   );
 };
 

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen } from '../../testing';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
@@ -118,6 +118,23 @@ describe('Callback', () => {
     expect(onToken).toHaveBeenCalledWith('a-token', '/x');
     // The override replaces the default rather than running alongside it.
     expect(window.location.href).toBe('');
+  });
+
+  it('renders inside the login card, not against the window edge', () => {
+    // It is the login page one redirect later. Rendered as a bare div it had
+    // no container at all, so its one line sat glued to the left edge.
+    renderCallback(PENDING);
+
+    expect(document.querySelector('#page-login .loginForm')).toBeTruthy();
+    expect(
+      document.querySelector('.loginForm .identity-callback'),
+    ).toBeTruthy();
+  });
+
+  it('leaves the description strip out, having nothing to put in it', () => {
+    renderCallback(PENDING);
+
+    expect(document.querySelector('#page-login .description')).toBeNull();
   });
 
   it('reports a refusal rather than waiting forever', () => {

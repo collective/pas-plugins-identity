@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '../../testing';
 import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
 
@@ -51,10 +51,10 @@ describe('LoginForm', () => {
   it('renders a button per provider', () => {
     renderForm({ providers: [DEX, { ...DEX, id: 'github', title: 'GitHub' }] });
 
-    // Scoped to the provider list: the page also carries the password
-    // disclosure, which is not a provider.
+    // Three buttons, not two: the local password is offered as one of these
+    // as well, so the list carries one more than there are providers.
     const list = document.querySelector('.identity-providers');
-    expect(list?.querySelectorAll('button')).toHaveLength(2);
+    expect(list?.querySelectorAll('button')).toHaveLength(3);
     expect(screen.getByText('Dex')).toBeTruthy();
   });
 
@@ -80,19 +80,63 @@ describe('LoginForm', () => {
     expect(screen.getByRole('status').textContent).toContain('Loading');
   });
 
-  it('says so when a site has no providers configured', () => {
-    renderForm({ providers: [] });
-
-    expect(screen.getByText(/No sign-in providers/)).toBeTruthy();
-  });
-
-  it('still offers a password on a site with no providers', () => {
+  it('is just the password form on a site with no providers', () => {
     // This page replaces Volto's login, so hiding the password here left a
     // site with local accounts and no provider -- an authorization server,
-    // for instance -- with no way in at all.
+    // for instance -- with no way in at all. With nothing to choose between,
+    // the disclosure is one click between the visitor and the only form
+    // there is, so the fields are on screen straight away.
     renderForm({ providers: [] });
 
-    expect(screen.getByText('Sign in with a password')).toBeTruthy();
+    expect(screen.queryByText('Sign in with a password')).toBeNull();
+    expect(screen.getByLabelText('Login name')).toBeTruthy();
+    expect(screen.getByLabelText('Password')).toBeTruthy();
+  });
+
+  it('does not announce the absence of providers', () => {
+    // The panel's description already says the account is one on this site;
+    // saying "none are configured" on top of that reads as an error over a
+    // form that works.
+    renderForm({ providers: [] });
+
+    expect(screen.queryByText(/No sign-in providers/)).toBeNull();
+  });
+
+  it('offers the password as one of the buttons, not a line of text', () => {
+    renderForm();
+
+    const button = screen.getByText('Sign in with a password');
+    expect(button.closest('.identity-providers')).toBeTruthy();
+    // volto-authomatic's `plone` colours, so the same button is the same
+    // blue in both add-ons.
+    expect(button.className).toContain('identity-provider--plone');
+    expect(screen.queryByLabelText('Login name')).toBeNull();
+  });
+
+  it('replaces the providers with the password form, not adds to it', () => {
+    // The password is a different way to sign in, not an extra field on the
+    // provider list; leaving the buttons above it made the page read as one
+    // form with a stray row of buttons on top.
+    renderForm({ providers: [DEX, EMAIL] });
+
+    fireEvent.click(screen.getByText('Sign in with a password'));
+
+    expect(document.querySelector('.identity-providers')).toBeNull();
+    expect(screen.queryByLabelText('Email address')).toBeNull();
+    expect(screen.getByLabelText('Login name')).toBeTruthy();
+  });
+
+  it('offers a way back to them', () => {
+    // Hiding the providers with no way back strands anybody who opened the
+    // password form by mistake on the one form they cannot use.
+    renderForm({ providers: [DEX, EMAIL] });
+    fireEvent.click(screen.getByText('Sign in with a password'));
+
+    fireEvent.click(screen.getByText('Back to sign-in options'));
+
+    expect(screen.getByText('Dex')).toBeTruthy();
+    expect(screen.getByLabelText('Email address')).toBeTruthy();
+    expect(screen.queryByLabelText('Login name')).toBeNull();
   });
 
   it('offers a password alongside the providers', () => {

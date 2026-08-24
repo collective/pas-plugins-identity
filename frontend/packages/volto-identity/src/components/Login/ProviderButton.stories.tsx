@@ -6,7 +6,13 @@ import { GITHUB, GOOGLE, KEYCLOAK } from '../../stories/fixtures';
 const meta: Meta<typeof ProviderButton> = {
   title: 'Identity/Login/ProviderButton',
   component: ProviderButton,
-  args: { provider: GOOGLE, disabled: false, onSelect: () => {} },
+  args: {
+    id: GOOGLE.id,
+    driver: GOOGLE.driver,
+    label: GOOGLE.title,
+    disabled: false,
+    onSelect: () => {},
+  },
 };
 export default meta;
 
@@ -14,10 +20,22 @@ type Story = StoryObj<typeof ProviderButton>;
 
 export const Google: Story = {};
 
-export const GitHub: Story = { args: { provider: GITHUB } };
+export const GitHub: Story = {
+  args: { id: GITHUB.id, driver: GITHUB.driver, label: GITHUB.title },
+};
 
 /** Any provider reached through discovery, which is most of them. */
-export const GenericOIDC: Story = { args: { provider: KEYCLOAK } };
+export const GenericOIDC: Story = {
+  args: { id: KEYCLOAK.id, driver: KEYCLOAK.driver, label: KEYCLOAK.title },
+};
+
+/**
+ * The local password form, which the login page offers as one of these. Its
+ * colours are `volto-authomatic`'s `plone` provider.
+ */
+export const Password: Story = {
+  args: { driver: 'plone', label: 'Sign in with a password', id: undefined },
+};
 
 /**
  * Disabled while a redirect is already under way: a second click would start
@@ -26,6 +44,4 @@ export const GenericOIDC: Story = { args: { provider: KEYCLOAK } };
 export const Redirecting: Story = { args: { disabled: true } };
 
 /** A provider whose title the operator never set falls back to its id. */
-export const Untitled: Story = {
-  args: { provider: { ...GOOGLE, title: '' } },
-};
+export const Untitled: Story = { args: { label: GOOGLE.id } };

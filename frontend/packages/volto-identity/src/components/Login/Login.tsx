@@ -5,6 +5,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
+import { defineMessages, useIntl } from 'react-intl';
 
 import {
   listLoginProviders,
@@ -18,7 +19,20 @@ import type { LoginProvider } from '../../types';
 import LoginForm from './LoginForm';
 import LoginPanel from './LoginPanel';
 
+const messages = defineMessages({
+  title: { id: 'Log in', defaultMessage: 'Log in' },
+  chooseHow: {
+    id: 'Choose how you would like to sign in.',
+    defaultMessage: 'Choose how you would like to sign in.',
+  },
+  signInLocally: {
+    id: 'Sign in with your account on this site.',
+    defaultMessage: 'Sign in with your account on this site.',
+  },
+});
+
 const Login: React.FC = () => {
+  const intl = useIntl();
   const dispatch = useDispatch();
   const location = useLocation();
   const [redirecting, setRedirecting] = useState(false);
@@ -97,12 +111,15 @@ const Login: React.FC = () => {
   // The description names what is actually below, which differs by site: a
   // provider list, a password form, or both.
   const hasProviders = Boolean(providers?.data?.length);
-  const description = hasProviders
-    ? 'Choose how you would like to sign in.'
-    : 'Sign in with your account on this site.';
+  const description = intl.formatMessage(
+    hasProviders ? messages.chooseHow : messages.signInLocally,
+  );
 
   return (
-    <LoginPanel title="Log in" description={description}>
+    <LoginPanel
+      title={intl.formatMessage(messages.title)}
+      description={description}
+    >
       <LoginForm
         providers={providers?.data ?? []}
         loading={Boolean(providers?.loading)}
