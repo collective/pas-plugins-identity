@@ -25,6 +25,6 @@ DEX_PROVIDER = {
         "issuer": "http://dex:5556/dex",
         "client_id": "plone",
         "client_secret": "plone-secret",
-        "scope": "openid email profile",
+        "scope": ("openid", "email", "profile"),
     },
 }

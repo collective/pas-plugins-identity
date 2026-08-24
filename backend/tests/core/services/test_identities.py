@@ -38,7 +38,7 @@ SECOND_PROVIDER = {
         "issuer": "http://dex:5556/dex",
         "client_id": "plone-second",
         "client_secret": "plone-second-secret",
-        "scope": "openid email profile",
+        "scope": ["openid", "email", "profile"],
     },
 }
 

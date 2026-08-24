@@ -53,6 +53,32 @@ class TestRegistryRecord:
         assert providers[0].provider_id == "github"
         assert providers[0].driver_id == "github"
 
+    def test_a_list_setting_round_trips_as_a_tuple(self, configured):
+        """A scope is a list of permissions, and comes back as one.
+
+        Stored in a ``Tuple`` record rather than a ``TextLine``: a scope
+        typed into one text box is where a stray comma becomes a permission
+        of its own that the provider then rejects as unknown.
+        """
+        assert get_provider_record("github", "config.scope") == (
+            "read:user",
+            "user:email",
+        )
+
+    def test_a_list_arriving_as_json_is_stored(self):
+        """JSON has one sequence type, and it decodes to a list.
+
+        The record holding it takes a tuple, so a scope submitted through
+        the control panel would be refused on the way in -- with a
+        ``WrongType`` naming the value rather than the shape.
+        """
+        provider = ProviderConfig.deserialize(GITHUB_PROVIDER)
+        provider.config = {**provider.config, "scope": ["repo", "gist"]}
+
+        set_providers([provider])
+
+        assert get_provider_record("github", "config.scope") == ("repo", "gist")
+
     def test_each_setting_is_its_own_record(self, configured):
         """A field is a record, not a key inside a blob."""
         assert get_provider_record("github", "driver") == "github"
@@ -325,22 +351,22 @@ class TestProviderConfig:
         half works.
         """
         assert self.provider.config == {
-            "scope": "read:user user:email",
+            "scope": ("read:user", "user:email"),
             "auto_link_by_email": False,
             "userid_source": "uuid",
         }
 
     def test_a_supplied_value_wins(self):
         """The default fills a gap; it never overrules a decision."""
-        provider = ProviderConfig("gh", "github", config={"scope": "repo"})
+        provider = ProviderConfig("gh", "github", config={"scope": ["repo"]})
 
-        assert provider.config["scope"] == "repo"
+        assert provider.config["scope"] == ("repo",)
 
     def test_an_explicit_empty_value_is_kept(self):
         """Clearing a setting is a decision, not a gap to fill."""
-        provider = ProviderConfig("gh", "github", config={"scope": ""})
+        provider = ProviderConfig("gh", "github", config={"scope": []})
 
-        assert provider.config["scope"] == ""
+        assert provider.config["scope"] == ()
 
     def test_a_field_with_no_default_stays_absent(self):
         """Nothing is invented for a setting only the operator can know."""

@@ -73,6 +73,33 @@ DEFAULT_CALLBACK_PATH = "/login-identity"
 SECRET_SENTINEL = "•" * 8
 
 
+def _stored_types(driver_id: str, config: JSONDict) -> JSONDict:
+    """Coerce settings into the types their registry records accept.
+
+    Only sequences need it today. A ``list`` setting is held in a
+    ``Tuple`` record, and JSON has one sequence type that decodes to a Python
+    list -- so a scope arriving over the API is a list and the record refuses
+    it. The refusal comes at write time, as a ``WrongType`` naming the value
+    rather than the shape, well away from the request that caused it.
+
+    :param driver_id: Driver that declares the schema.
+    :param config: Settings as supplied.
+    :returns: Those settings, with sequences as tuples.
+    """
+    driver = get_driver(driver_id)
+    if driver is None:
+        # An orphan is stored as whatever it already was; there is no schema
+        # left to say what any of it should be.
+        return dict(config)
+    schema = driver.config_schema()
+    return {
+        name: tuple(value)
+        if schema.get(name, {}).get("type") == "list" and isinstance(value, list)
+        else value
+        for name, value in config.items()
+    }
+
+
 def _with_driver_defaults(driver_id: str, config: JSONDict) -> JSONDict:
     """Fill in the settings the caller did not supply.
 
@@ -96,14 +123,15 @@ def _with_driver_defaults(driver_id: str, config: JSONDict) -> JSONDict:
         # No schema to consult -- the add-on that registered this driver is
         # gone. Whatever was stored is all there is.
         return dict(config)
+    schema = driver.config_schema()
     defaults = {
         name: copy.deepcopy(descriptor["default"])
-        for name, descriptor in driver.config_schema().items()
+        for name, descriptor in schema.items()
         # deepcopy because a `list` or `dict` default is one object on the
         # descriptor, and two providers sharing it would share every edit.
         if "default" in descriptor
     }
-    return {**defaults, **config}
+    return _stored_types(driver_id, {**defaults, **config})
 
 
 class ProviderConfig:
@@ -144,6 +172,28 @@ class ProviderConfig:
         self.enabled = enabled
         self.config = _with_driver_defaults(driver_id, config or {})
         self.propertymap = dict(propertymap or {})
+
+    @property
+    def config(self) -> JSONDict:
+        """Driver-specific settings, in the types the registry stores.
+
+        :returns: The settings.
+        """
+        return self._config
+
+    @config.setter
+    def config(self, value: JSONDict) -> None:
+        """Store settings, coercing them to the stored types.
+
+        A PATCH assigns here rather than building a provider, so this is the
+        one place both routes pass through. It coerces without defaulting:
+        filling a gap is a decision about a provider being *created*, and
+        doing it on every edit would reinstate a setting an operator had
+        just cleared.
+
+        :param value: The settings to store.
+        """
+        self._config = _stored_types(self.driver_id, dict(value or {}))
 
     @property
     def driver(self) -> BaseDriver | None:
@@ -310,6 +360,12 @@ def _field_for(descriptor: JSONDict | None, value: object):
         return registry_field.Bool(title="", required=False)
     if declared == "int" or (declared is None and isinstance(value, int)):
         return registry_field.Int(title="", required=False)
+    if declared == "list" or (declared is None and isinstance(value, (list, tuple))):
+        return registry_field.Tuple(
+            title="",
+            required=False,
+            value_type=registry_field.TextLine(title=""),
+        )
     if (descriptor or {}).get("secret"):
         # Marks it as a secret wherever the record is inspected. It is not
         # encryption: a GS export still carries the value, exactly as the

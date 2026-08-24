@@ -8,5 +8,5 @@ class GoogleDriver(BaseDriver):
 
     driver_id = "google"
     title = "Google"
-    default_scope = "openid email profile"
+    default_scope = ("openid", "email", "profile")
     subject_keys = ("sub",)

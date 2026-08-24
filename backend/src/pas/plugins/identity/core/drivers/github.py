@@ -15,7 +15,7 @@ class GitHubDriver(BaseDriver):
 
     driver_id = "github"
     title = "GitHub"
-    default_scope = "read:user user:email"
+    default_scope = ("read:user", "user:email")
     subject_keys = ("id", "node_id")
 
     def normalize_claims(self, payload: JSONDict) -> Claims:

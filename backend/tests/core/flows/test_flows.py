@@ -11,6 +11,7 @@ from . import PORTAL_URL
 from . import REDIRECT_URI
 from datetime import timedelta
 from pas.plugins.identity.core.controlpanel import ProviderConfig
+from pas.plugins.identity.core.flows import _scope_string
 from pas.plugins.identity.core.flows import ATTEMPT_TTL
 from pas.plugins.identity.core.flows import CODE_CHALLENGE_METHOD
 from pas.plugins.identity.core.flows import FlowAttempt
@@ -31,6 +32,28 @@ def _query(url: str) -> dict[str, str]:
     :returns: Single-valued query mapping.
     """
     return {k: v[0] for k, v in parse_qs(urlparse(url).query).items()}
+
+
+class TestScopeEncoding:
+    """How a configured scope becomes the one parameter OAuth 2 defines."""
+
+    def test_tokens_are_joined_with_spaces(self):
+        """RFC 6749 section 3.3: space-delimited, in the order configured."""
+        assert _scope_string(("openid", "email")) == "openid email"
+
+    def test_nothing_configured_sends_nothing(self):
+        """An empty scope is absent from the request, not an empty token."""
+        assert _scope_string(()) == ""
+        assert _scope_string(None) == ""
+
+    def test_a_string_is_already_wire_form(self):
+        """A provider stored before the field became a list, or migrated
+        from a plugin that kept it as one string, is passed through.
+
+        Re-splitting it would be this function inventing tokens out of
+        whatever whitespace happened to be in there.
+        """
+        assert _scope_string("openid email") == "openid email"
 
 
 class TestCameFromValidation:
@@ -100,6 +123,15 @@ class TestStart:
     def test_carries_state(self):
         """Every flow carries a state."""
         assert _query(self.start())["state"]
+
+    def test_scope_is_sent_space_delimited(self):
+        """RFC 6749 puts a scope on the wire space-delimited.
+
+        It is configured as a list of permissions, because a scope
+        containing a space is not one scope -- so the join happens at the
+        edge, where the request is built.
+        """
+        assert _query(self.start())["scope"] == "openid email profile"
 
     def test_carries_pkce_challenge(self):
         """PKCE, and never the ``plain`` method."""

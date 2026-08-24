@@ -242,7 +242,7 @@ def keycloak(keycloak_service: str) -> dict:
             "issuer": keycloak_service,
             "client_id": "plone",
             "client_secret": "plone-secret",
-            "scope": "openid email profile",
+            "scope": ("openid", "email", "profile"),
         },
     }
 
@@ -263,6 +263,6 @@ def dex(dex_service: str) -> dict:
             "issuer": dex_service,
             "client_id": "plone",
             "client_secret": "plone-secret",
-            "scope": "openid email profile",
+            "scope": ("openid", "email", "profile"),
         },
     }

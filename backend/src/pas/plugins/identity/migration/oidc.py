@@ -101,7 +101,7 @@ def _provider_record(plugin: BasePlugin) -> ProviderConfig:
             "issuer": plugin.getProperty("issuer") or "",
             "client_id": plugin.getProperty("client_id") or "",
             "client_secret": plugin.getProperty("client_secret") or "",
-            "scope": " ".join(plugin.getProperty("scope") or ()),
+            "scope": tuple(plugin.getProperty("scope") or ()),
         },
     )
 

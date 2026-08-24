@@ -8,7 +8,7 @@ class GenericOIDCDriver(BaseDriver):
 
     driver_id = "oidc-generic"
     title = "OpenID Connect"
-    default_scope = "openid email profile"
+    default_scope = ("openid", "email", "profile")
     subject_keys = ("sub",)
 
     extra_fields = {  # noqa: RUF012

@@ -119,6 +119,27 @@ class FlowAttempt:
         return attempt
 
 
+def _scope_string(scope: object) -> str:
+    """Render a configured scope as OAuth 2 puts it on the wire.
+
+    The scope is stored as a list of tokens, because a scope containing a
+    space is not one scope -- but RFC 6749 §3.3 sends them space-delimited,
+    so the join happens here, at the edge, rather than in the registry.
+
+    A string is passed through untouched: a provider configured before the
+    field became a list, or migrated from a plugin that stored it that way,
+    is already in wire form and re-splitting it would only invent tokens.
+
+    :param scope: The stored value.
+    :returns: The space-delimited scope, empty when nothing is configured.
+    """
+    if isinstance(scope, str):
+        return scope
+    if not scope:
+        return ""
+    return " ".join(str(token) for token in scope)
+
+
 def validate_came_from(came_from: str, portal_url: str) -> str:
     """Reduce a post-login redirect target to something safe.
 
@@ -470,7 +491,7 @@ class FlowManager:
         return OAuth2Session(
             client_id=config.get("client_id", ""),
             client_secret=secret,
-            scope=config.get("scope", ""),
+            scope=_scope_string(config.get("scope")),
             redirect_uri=redirect_uri,
             code_challenge_method=CODE_CHALLENGE_METHOD,
             token_endpoint_auth_method=cls._auth_method(bool(secret), metadata or {}),

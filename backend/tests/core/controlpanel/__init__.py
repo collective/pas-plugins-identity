@@ -8,7 +8,7 @@ GITHUB_PROVIDER = {
     "config": {
         "client_id": "Iv1.abc123",
         "client_secret": "gho_supersecret",
-        "scope": "read:user user:email",
+        "scope": ["read:user", "user:email"],
     },
 }
 
