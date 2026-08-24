@@ -1,0 +1,66 @@
+/**
+ * One provider button.
+ *
+ * The geometry and the per-provider colours are volto-authomatic's, keyed off
+ * the driver rather than the provider id: a site may call its Keycloak
+ * anything it likes, but it is still an OpenID Connect button.
+ */
+.identity-provider {
+  display: inline-flex;
+  width: var(--identity-provider-width);
+  max-width: 100%;
+  height: var(--identity-provider-height);
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  border: none;
+  border-radius: var(--identity-provider-radius);
+  background: var(--identity-provider-default-bg);
+  box-shadow: var(--identity-provider-shadow);
+  color: var(--identity-provider-default-color);
+  cursor: pointer;
+  font-size: 16px;
+  gap: 8px;
+  text-align: center;
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+
+  &.identity-provider--github {
+    background: var(--identity-provider-github-bg);
+    color: var(--identity-provider-github-color);
+
+    &:hover:not(:disabled) {
+      background: var(--identity-provider-github-bg-hover);
+    }
+  }
+
+  &.identity-provider--google {
+    background: var(--identity-provider-google-bg);
+    color: var(--identity-provider-google-color);
+
+    &:hover:not(:disabled) {
+      background: var(--identity-provider-google-bg-hover);
+    }
+  }
+
+  &.identity-provider--plone {
+    background: var(--identity-provider-plone-bg);
+    color: var(--identity-provider-plone-color);
+
+    &:hover:not(:disabled) {
+      background: var(--identity-provider-plone-bg-hover);
+    }
+  }
+
+  &.identity-provider--oidc-generic {
+    background: var(--identity-provider-oidc-bg);
+    color: var(--identity-provider-oidc-color);
+
+    &:hover:not(:disabled) {
+      background: var(--identity-provider-oidc-bg-hover);
+    }
+  }
+}

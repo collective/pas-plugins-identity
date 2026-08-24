@@ -1,0 +1,10 @@
+/** The "email me a link" form, and what it says once the link is on its way. */
+.identity-magic-link {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.identity-magic-link--sent {
+  color: var(--identity-muted);
+}

@@ -1,0 +1,31 @@
+/**
+ * The login card.
+ *
+ * The card itself is `.identity-surface` and its heading
+ * `.identity-surface__header`, both from the root stylesheet: this is the same
+ * card the control panel's sections are. Only what is particular to the login
+ * page lives here -- its width, and the description strip under the heading.
+ */
+#page-login {
+  /* `Container` only centres itself when it is given one of its own width
+     modifiers -- `narrow`, `default`, `layout` -- and this one is sized by us
+     instead, so the auto margins have to come from here. Without them the card
+     sits against the left edge of the window. */
+  .loginForm {
+    width: var(--identity-login-width);
+    max-width: 100%;
+    line-height: 1.5;
+    margin-inline: auto;
+  }
+
+  .wrapper {
+    margin: 1rem 0;
+  }
+
+  .description {
+    padding: 12px;
+    background-color: var(--identity-surface-header-bg);
+    font-size: 12px;
+    font-weight: 200;
+  }
+}

@@ -1,0 +1,12 @@
+/**
+ * The one line shown while the first-login decision is being made.
+ *
+ * Inside `LoginPanel`, like the callback: the card and its centring are the
+ * panel's, and this only centres the line within it.
+ */
+.identity-first-login {
+  padding: var(--identity-gap) 0;
+  margin: 0;
+  color: var(--identity-muted);
+  text-align: center;
+}

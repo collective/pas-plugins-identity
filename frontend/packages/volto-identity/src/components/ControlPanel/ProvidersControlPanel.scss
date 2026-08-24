@@ -1,0 +1,26 @@
+/**
+ * The providers control panel.
+ *
+ * Almost nothing: the table, the form and the toolbar are Volto's own, and
+ * styling them here is how a control panel stops looking like the others.
+ * What is left is the two things this panel says on its own.
+ */
+.identity-controlpanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--identity-gap);
+}
+
+/** The warning that no callback URL is set, so no sign-in can complete. */
+.identity-controlpanel__warning {
+  color: var(--identity-error);
+}
+
+/** The detail under an unreadable-settings report: a raw backend message. */
+.identity-controlpanel__detail {
+  padding: var(--identity-gap);
+  background: var(--identity-surface-header-bg);
+  font-size: 0.85em;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}

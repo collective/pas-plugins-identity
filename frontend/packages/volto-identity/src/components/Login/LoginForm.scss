@@ -1,0 +1,39 @@
+/**
+ * The stack of ways in: provider buttons, the magic link, the password form.
+ *
+ * Each is its own component with its own stylesheet; this only spaces them
+ * apart and centres the provider list.
+ */
+.identity-login {
+  display: flex;
+  flex-direction: column;
+  gap: var(--identity-gap);
+}
+
+/* The control that swaps between the providers and the password form. Plain
+   text rather than a button: it chooses between two ways in, and neither of
+   them is the page's action. */
+.identity-password-toggle {
+  padding: 10px;
+  text-align: center;
+
+  > button {
+    padding: 0;
+    border: unset;
+    background: transparent;
+    color: var(--identity-accent);
+    cursor: pointer;
+    font-size: 14px;
+  }
+}
+
+.identity-providers {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0 1rem;
+  margin: 1rem;
+  gap: 6px;
+  list-style: none;
+  text-align: center;
+}

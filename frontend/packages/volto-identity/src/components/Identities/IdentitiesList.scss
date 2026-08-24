@@ -1,0 +1,49 @@
+/**
+ * The "your sign-in methods" panel.
+ *
+ * No border or shadow of its own: the container that renders it already puts
+ * it inside a raised Segment, and a card inside a card reads as a mistake.
+ */
+.identity-identities__list {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  margin: 0 0 var(--identity-gap);
+  gap: 8px;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: baseline;
+    padding: 10px 0;
+    border-bottom: var(--identity-border);
+    gap: 8px;
+  }
+}
+
+.identity-identities__title {
+  font-weight: 600;
+}
+
+.identity-identities__add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  margin-top: calc(var(--identity-gap) * 2);
+  gap: 8px;
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0;
+    margin: 0;
+    gap: 8px;
+    list-style: none;
+  }
+}

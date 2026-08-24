@@ -1,32 +1,55 @@
 /**
- * Styles for volto-identity.
+ * The root stylesheet for volto-identity.
  *
- * These are deliberately structural: layout, spacing and the state colours a
- * user has to be able to tell apart. Typography, buttons and form controls are
- * left to inherit from whatever theme the site runs, so the add-on looks like
- * part of the site rather than like itself. Everything is scoped under the
- * `identity-` prefix the components already carry.
+ * Two things live here and nothing else: the design tokens every component
+ * reads, and the handful of base classes more than one component wears.
+ * Everything that styles one component lives next to it, in a `.scss` that
+ * component imports itself -- the shape `volto-authomatic` uses, so a rule is
+ * found by opening the file whose markup it styles rather than by scrolling
+ * one long stylesheet.
+ *
+ * The tokens are deliberately few, and structural: layout, spacing and the
+ * state colours a user has to be able to tell apart. Typography and form
+ * controls inherit from whatever theme the site runs, so the add-on looks
+ * like part of the site rather than like itself.
  */
 
 :root {
+  /* Rhythm ---------------------------------------------------------------- */
   --identity-gap: 12px;
   --identity-radius: 4px;
   --identity-border: 1px solid rgba(0, 0, 0, 0.15);
+
+  /* Palette. The accent and the danger colour are volto-authomatic's, so a
+     user who has seen one of these login pages recognises the other. */
+  --identity-accent: #007eb1;
+  --identity-danger: #ee0000;
   --identity-muted: rgba(0, 0, 0, 0.6);
   --identity-error: #a01c1c;
   --identity-ok: #1c7a3e;
 
-  /* The login panel, taken from volto-authomatic so that two add-ons which
-     both replace /login do not look like two different products. */
-  --identity-login-width: 350px;
-  --identity-login-border: #c7d5d8;
-  --identity-login-description-bg: #edf1f2;
-  --identity-login-button-submit-color: #007eb1;
-  --identity-login-button-cancel-color: #ee0000;
+  /* Surfaces: the card the login form sits in, and the panels the control
+     panel and the identities page are built from. */
+  /* Form fields. `@plone/components`' TextField.css draws its border with
+     `var(--border-color)`, which is defined in that package's theme.css -- a
+     stylesheet this add-on never loads, since it imports the widget's CSS on
+     its own. The custom property is therefore undefined, the `border`
+     shorthand is invalid at computed-value time, and what should have been a
+     grey underline resolved to no border at all. So the fields declare their
+     own. */
+  --identity-field-border: rgba(0, 0, 0, 0.3);
 
-  /* Provider buttons, also from volto-authomatic. The geometry and the
-     per-provider colours are its values; a user who has seen one of these
-     login pages should recognise the other. */
+  --identity-surface-bg: #fff;
+  --identity-surface-border: #c7d5d8;
+  --identity-surface-header-bg: #edf1f2;
+  --identity-surface-shadow: 0 2px 4px 0 rgba(34, 36, 38, 0.12),
+    0 2px 10px 0 rgba(34, 36, 38, 0.15);
+
+  /* The login card, sized the way Volto's own login page is. */
+  --identity-login-width: 350px;
+
+  /* Provider buttons: geometry and per-provider colours, also from
+     volto-authomatic. */
   --identity-provider-width: 300px;
   --identity-provider-height: 45px;
   --identity-provider-radius: 3px;
@@ -43,33 +66,34 @@
   --identity-provider-google-bg-hover: #eff0ee;
   --identity-provider-google-color: #000;
 
+  /* The local password form is offered as one of these. The colours are
+     volto-authomatic's `plone` provider, so the button a visitor presses to
+     sign in with a site account looks the same in both add-ons. */
+  --identity-provider-plone-bg: #0083be;
+  --identity-provider-plone-bg-hover: #006c9e;
+  --identity-provider-plone-color: #fff;
+
   --identity-provider-oidc-bg: #333;
   --identity-provider-oidc-bg-hover: #555;
   --identity-provider-oidc-color: #fff;
-
-  /* Surfaces shared by every panel this add-on renders, so the identities
-     page, the two control panels and the login card read as one product. */
-  --identity-surface-border: #c7d5d8;
-  --identity-surface-header-bg: #edf1f2;
-  --identity-surface-shadow: 0 2px 4px 0 rgba(34, 36, 38, 0.12),
-    0 2px 10px 0 rgba(34, 36, 38, 0.15);
-  --identity-accent: #007eb1;
-  --identity-danger: #ee0000;
 }
 
-/* Shared surfaces -------------------------------------------------------- */
+/* Base classes ------------------------------------------------------------
+ *
+ * Worn explicitly by the markup. They used to be selector lists naming every
+ * component that wanted the look, which meant a new component silently got
+ * none of it until somebody remembered to extend the list.
+ */
 
-.identity-identities,
-.identity-controlpanel > section,
-.identity-clients section,
-.identity-secret {
+/** A bordered, shadowed card: the login panel and each control-panel section. */
+.identity-surface {
   border: 1px solid var(--identity-surface-border);
-  background: #fff;
+  background: var(--identity-surface-bg);
   box-shadow: var(--identity-surface-shadow);
 }
 
-.identity-controlpanel > section > h2,
-.identity-clients section > h2 {
+/** Its titled header strip. */
+.identity-surface__header {
   padding: 12px 16px;
   border-bottom: 0.22222222rem solid var(--identity-surface-border);
   margin: 0;
@@ -77,12 +101,8 @@
   font-weight: 500;
 }
 
-/* Buttons ---------------------------------------------------------------- */
-
-.identity-identities button,
-.identity-controlpanel button,
-.identity-clients button,
-.identity-secret button {
+/** Every button this add-on renders itself, rather than through Volto. */
+.identity-button {
   padding: 8px 14px;
   border: 1px solid var(--identity-accent);
   border-radius: var(--identity-radius);
@@ -92,471 +112,31 @@
   font-size: 14px;
 }
 
-.identity-identities button:hover:not(:disabled),
-.identity-controlpanel button:hover:not(:disabled),
-.identity-clients button:hover:not(:disabled),
-.identity-secret button:hover:not(:disabled) {
+.identity-button:hover:not(:disabled) {
   background: var(--identity-surface-header-bg);
 }
 
-.identity-identities button:disabled,
-.identity-controlpanel button:disabled,
-.identity-clients button:disabled,
-.identity-secret button:disabled {
+.identity-button:disabled {
   border-color: var(--identity-muted);
   color: var(--identity-muted);
   cursor: default;
   opacity: 0.6;
 }
 
-/* The irreversible ones say so. */
-.identity-identities button[data-action='unlink'],
-.identity-controlpanel button[data-action='delete'],
-.identity-clients button[data-action='delete'] {
+/** The irreversible ones say so. */
+.identity-button--danger {
   border-color: var(--identity-danger);
   color: var(--identity-danger);
 }
 
-/* Fields ----------------------------------------------------------------- */
-
-.identity-field input,
-.identity-field select,
-.identity-field textarea,
-.identity-clients__new input {
-  padding: 8px 6px;
-  border: 0 0 1px;
-  border-bottom: 1px solid var(--identity-surface-border);
-  background: transparent;
-  font-size: 16px;
-}
-
-.identity-field input:focus,
-.identity-clients__new input:focus {
-  border-bottom-color: var(--identity-accent);
-  outline: none;
-}
-
-.identity-field > label,
-.identity-clients__new label {
-  font-size: 14px;
-  font-weight: 500;
-}
-
-/* The login panel -------------------------------------------------------- */
-
-#page-login .loginForm {
-  width: var(--identity-login-width);
-  line-height: 1.5;
-}
-
-#page-login .wrapper {
-  border: 1px solid var(--identity-login-border);
-  margin: 1rem 0;
-  box-shadow:
-    0 2px 4px 0 rgba(34, 36, 38, 0.12),
-    0 2px 10px 0 rgba(34, 36, 38, 0.15);
-}
-
-#page-login .title {
-  padding: 16px;
-  border-bottom: 0.22222222rem solid var(--identity-login-border);
-  font-size: 16px;
-  font-weight: 500;
-}
-
-#page-login .description {
-  padding: 12px;
-  background-color: var(--identity-login-description-bg);
-  font-size: 12px;
-  font-weight: 200;
-}
-
-/* The password form, following volto-authomatic's PloneForm ------------- */
-
-.PloneAuth {
-  display: flex;
-  max-width: 100%;
-  flex-direction: column;
-  margin-right: auto;
-  margin-left: auto;
-  line-height: 1.5;
-}
-
-.PloneAuth .form {
-  padding: 10px;
-}
-
-.PloneAuth .form .react-aria-TextField {
-  width: 100%;
-  padding: 10px 0;
-}
-
-.PloneAuth .form .react-aria-TextField .react-aria-Label {
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.PloneAuth .form .react-aria-TextField .react-aria-Input {
-  width: 100%;
-  padding: 10px 5px;
-  border-width: 0 0 0.05rem;
-  margin-top: 10px;
-  font-size: 18px;
-}
-
-.PloneAuth .form .react-aria-TextField .react-aria-Input:not(:focus) {
-  border-radius: 0;
-}
-
-.PloneAuth .forgotPassword {
-  padding: 10px 10px 20px;
-}
-
-.PloneAuth .actions {
-  display: flex;
-  flex-direction: row-reverse;
-  padding: 20px 10px;
-  border-top: 1px solid var(--identity-login-description-bg);
-}
-
-.PloneAuth .actions > button {
-  border: unset;
-  cursor: pointer;
-}
-
-.PloneAuth .actions > button.react-aria-Button {
-  background-color: transparent !important;
-}
-
-.PloneAuth .actions > button#login-form-submit {
-  color: var(--identity-login-button-submit-color);
-}
-
-.PloneAuth .actions > button#login-form-cancel {
-  color: var(--identity-login-button-cancel-color);
-}
-
-.identity-password-toggle {
-  padding: 10px;
-}
-
-.identity-password-toggle > button {
-  padding: 0;
-  border: unset;
-  background: transparent;
-  color: var(--identity-login-button-submit-color);
-  cursor: pointer;
-  font-size: 14px;
-}
-
-/* Login ------------------------------------------------------------------ */
-
-.identity-login {
-  display: flex;
-  flex-direction: column;
-  gap: var(--identity-gap);
-}
-
-.identity-providers {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 0 0 1rem;
-  margin: 1rem;
-  gap: 6px;
-  list-style: none;
-  text-align: center;
-}
-
-.identity-provider {
-  display: inline-flex;
-  width: var(--identity-provider-width);
-  max-width: 100%;
-  height: var(--identity-provider-height);
-  align-items: center;
-  justify-content: center;
-  padding: 5px;
-  border: none;
-  border-radius: var(--identity-provider-radius);
-  background: var(--identity-provider-default-bg);
-  box-shadow: var(--identity-provider-shadow);
-  color: var(--identity-provider-default-color);
-  cursor: pointer;
-  font-size: 16px;
-  gap: 8px;
-  text-align: center;
-}
-
-.identity-provider--github {
-  background: var(--identity-provider-github-bg);
-  color: var(--identity-provider-github-color);
-}
-
-.identity-provider--github:hover:not(:disabled) {
-  background: var(--identity-provider-github-bg-hover);
-}
-
-.identity-provider--google {
-  background: var(--identity-provider-google-bg);
-  color: var(--identity-provider-google-color);
-}
-
-.identity-provider--google:hover:not(:disabled) {
-  background: var(--identity-provider-google-bg-hover);
-}
-
-.identity-provider--oidc-generic {
-  background: var(--identity-provider-oidc-bg);
-  color: var(--identity-provider-oidc-color);
-}
-
-.identity-provider--oidc-generic:hover:not(:disabled) {
-  background: var(--identity-provider-oidc-bg-hover);
-}
-
-.identity-provider:disabled {
-  cursor: default;
-  opacity: 0.6;
-}
-
-.identity-magic-link {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.identity-magic-link--sent {
-  color: var(--identity-muted);
-}
-
-/* Callback and first login ----------------------------------------------- */
-
-.identity-callback,
-.identity-first-login {
-  padding: var(--identity-gap) 0;
-  color: var(--identity-muted);
-}
-
-.identity-callback--error {
-  color: var(--identity-error);
-}
-
-/* Identities ------------------------------------------------------------- */
-
-.identity-identities__list {
-  display: flex;
-  flex-direction: column;
-  padding: 0 16px;
-  margin: 0 0 var(--identity-gap);
-  gap: 8px;
-  list-style: none;
-}
-
-.identity-identities__add,
-.identity-identities__empty {
-  padding: 0 16px 16px;
-}
-
-.identity-identities__list li {
-  display: flex;
-  align-items: baseline;
-  padding: 10px 0;
-  border-bottom: var(--identity-border);
-  gap: 8px;
-}
-
-.identity-identities__title {
-  font-weight: 600;
-}
-
-.identity-identities__subject,
-.identity-identities__empty {
-  color: var(--identity-muted);
-  font-size: 0.9em;
-}
-
-.identity-identities__add {
-  display: flex;
-  flex-wrap: wrap;
-  margin-top: calc(var(--identity-gap) * 2);
-  gap: 8px;
-}
-
-/* Control panel ---------------------------------------------------------- */
-
-.identity-controlpanel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--identity-gap);
-}
-
-.identity-controlpanel__provider {
-  padding: var(--identity-gap);
-  border: 1px solid var(--identity-surface-border);
-  border-radius: var(--identity-radius);
-}
-
-.identity-controlpanel__list,
-.identity-controlpanel__new {
-  display: flex;
-  flex-direction: column;
-  gap: var(--identity-gap);
-}
-
-.identity-controlpanel__list > *:not(h2),
-.identity-controlpanel__new > *:not(h2) {
-  margin: 0 var(--identity-gap) var(--identity-gap);
-}
-
-.identity-controlpanel__new form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--identity-gap);
-}
-
-.identity-controlpanel__new label,
-.identity-clients__new label {
-  display: flex;
-  flex-direction: column;
-  font-weight: 500;
-  gap: 4px;
-}
-
-.identity-controlpanel__new select {
-  padding: 8px;
-  border: 1px solid var(--identity-surface-border);
-  border-radius: var(--identity-radius);
-  font: inherit;
-}
-
-.identity-controlpanel__new small,
-.identity-clients__new small {
-  color: var(--identity-muted);
-  font-weight: 400;
-}
-
-.identity-controlpanel__new button[type='submit'] {
-  align-self: flex-start;
-}
-
-.identity-controlpanel__empty {
-  color: var(--identity-muted);
-}
-
-.identity-controlpanel__provider > h3 {
-  margin: 0 0 var(--identity-gap);
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.identity-controlpanel__actions {
-  display: flex;
-  gap: 8px;
-}
-
-.identity-provider-form {
-  display: flex;
-  flex-direction: column;
-  border: 0;
-  margin: 0;
-  gap: var(--identity-gap);
-  padding-inline: 0;
-}
-
-.identity-provider-form:disabled {
-  opacity: 0.6;
-}
-
-.identity-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-/* A connection test reports per-check, so each line has to say on its own
-   whether it passed -- colour alone would not survive a screen reader. The
-   components already supply the label; this only makes it scannable. */
-
-.identity-check {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.identity-check--ok {
-  color: var(--identity-ok);
-}
-
-.identity-check--failed {
-  color: var(--identity-error);
-}
-
-/* Errors ----------------------------------------------------------------- */
-
+/** A refusal, wherever it is reported. */
 .identity-error {
   margin: 0;
   color: var(--identity-error);
 }
 
-/* The OAuth client control panel. Structural only: spacing, and making the
-   one irreversible thing on the page look like it. */
-.identity-clients section {
-  padding: 0 0 16px;
-  margin-bottom: 2rem;
-}
-
-.identity-clients__list,
-.identity-clients__keys,
-.identity-clients__empty {
-  padding: 0 16px;
-}
-
-.identity-clients__new {
-  padding: 0 16px 16px;
-}
-
-.identity-clients__actions {
-  display: flex;
-  margin-top: 0.5rem;
-  gap: 0.5rem;
-}
-
-.identity-clients__disabled,
-.identity-clients__keys-warning {
-  margin-top: 0.5rem;
-  font-size: 0.875rem;
-}
-
-.identity-clients__new label {
-  display: block;
-  margin-bottom: 1rem;
-}
-
-.identity-clients__new small {
-  display: block;
-}
-
-/* The secret is shown once and never again, so it does not look like the
-   rest of the page. */
-.identity-secret {
-  padding: 1rem;
-  border: 2px solid var(--identity-danger);
-  border-radius: var(--identity-radius);
-  margin-bottom: 2rem;
-}
-
-.identity-secret__notice {
-  margin: 0 0 0.5rem;
-  font-weight: 500;
-}
-
-.identity-secret__value {
-  display: flex;
-  margin: 0.75rem 0;
-  gap: 0.5rem;
-}
-
-.identity-secret__value input {
-  flex: 1;
-  font-family: monospace;
+/** Secondary text: an empty state, or what a control costs. */
+.identity-note {
+  color: var(--identity-muted);
+  font-size: 0.9em;
 }

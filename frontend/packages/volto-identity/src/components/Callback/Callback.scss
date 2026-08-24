@@ -1,0 +1,17 @@
+/**
+ * The page a provider redirects back to: one line, and rarely for long.
+ *
+ * It sits inside `LoginPanel`, so the card, its width and its centring come
+ * from there. This only centres the line within it -- the way
+ * `volto-authomatic` centres its logout message -- and colours a refusal.
+ */
+.identity-callback {
+  padding: var(--identity-gap) 0;
+  margin: 0;
+  color: var(--identity-muted);
+  text-align: center;
+}
+
+.identity-callback--error {
+  color: var(--identity-error);
+}
