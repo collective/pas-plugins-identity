@@ -1,11 +1,16 @@
-<configure xmlns="http://namespaces.zope.org/zope"
-    xmlns:zcml="http://namespaces.zope.org/zcml">
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:zcml="http://namespaces.zope.org/zcml"
+    >
 
   <!-- Core depends on plone.restapi only: the services in ``core.services``
        are its entire HTTP surface. ``plone.volto`` is deliberately absent so
        that ``pip install pas.plugins.identity`` with no extras yields a
        working install. -->
   <include package="plone.restapi" />
-  <include package="plone.volto" zcml:condition="installed plone.volto" />
+  <include
+      package="plone.volto"
+      zcml:condition="installed plone.volto"
+      />
 
 </configure>
