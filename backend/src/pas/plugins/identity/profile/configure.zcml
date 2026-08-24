@@ -91,13 +91,4 @@
       name="@my-profile"
       />
 
-  <!-- Repair, kept apart from the check that finds the damage. Re-runnable
-       from portal_setup whenever the doctor reports drift. -->
-  <genericsetup:importStep
-      name="pas.plugins.identity.rebuild-profile-catalog"
-      title="Rebuild the identity profile catalog"
-      description="Clear the dedicated Profile catalog and index every Profile in the site again."
-      handler=".setuphandlers.rebuild_catalog"
-      />
-
 </configure>

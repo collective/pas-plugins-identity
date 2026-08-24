@@ -24,26 +24,11 @@ pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
 
 
 class Context:
-    """Minimal GenericSetup import context.
+    """Stand-in for the setup tool a post handler is called with.
 
-    :param marker: What ``readDataFile`` should return; ``None`` means the
-        profile being imported is somebody else's.
+    The handlers here take it and never use it: GenericSetup decides whether
+    a profile runs, so there is nothing left for a handler to ask.
     """
-
-    def __init__(self, marker: str | None = "marker") -> None:
-        """Store the marker.
-
-        :param marker: Marker file content, or ``None``.
-        """
-        self.marker = marker
-
-    def readDataFile(self, name: str) -> str | None:
-        """Return the marker.
-
-        :param name: Marker file name.
-        :returns: The configured marker.
-        """
-        return self.marker
 
 
 class TestIdempotence:
@@ -86,14 +71,17 @@ class TestIdempotence:
         assert set(self.catalog.schema()) >= set(METADATA)
 
 
-class TestRebuildGuard:
+class TestRebuild:
+    """The rebuild is its own profile, so "did somebody ask for it" is
+    answered by GenericSetup rather than by a marker file this package used
+    to ship and a guard that read it."""
+
     @pytest.fixture(autouse=True)
     def _setup(self, portal, catalog) -> None:
         self.portal = portal
         self.catalog = catalog
 
-    def test_runs_for_our_profile(self):
-        """With the marker present, the rebuild happens."""
+    def test_indexes_every_profile_again(self):
         api.content.create(
             container=self.portal["identity-profiles"],
             type=PROFILE_PORTAL_TYPE,
@@ -107,20 +95,22 @@ class TestRebuildGuard:
 
         assert self.catalog.unrestrictedSearchResults(userid="alice")
 
-    def test_skipped_for_another_profile(self):
-        """Installing an unrelated add-on must not touch this self.catalog."""
-        api.content.create(
-            container=self.portal["identity-profiles"],
-            type=PROFILE_PORTAL_TYPE,
-            id="alice",
-            userid="alice",
-            login="alice@example.com",
+    def test_is_registered_as_a_profile(self):
+        """The registration is the guard now: a site-wide import step would
+        run during every add-on installation in the site, and clearing an
+        innocent catalog is not something to leave to a marker file."""
+        setup_tool = api.portal.get_tool("portal_setup")
+        profile_id = "pas.plugins.identity:rebuild-profile-catalog"
+
+        assert setup_tool.getProfileInfo(profile_id)
+
+    def test_no_import_step_claims_the_rebuild(self):
+        """What made the marker file necessary in the first place."""
+        setup_tool = api.portal.get_tool("portal_setup")
+
+        assert "pas.plugins.identity.rebuild-profile-catalog" not in (
+            setup_tool.getSortedImportSteps()
         )
-        self.catalog.manage_catalogClear()
-
-        setuphandlers.rebuild_catalog(Context(marker=None))
-
-        assert not self.catalog.unrestrictedSearchResults(userid="alice")
 
 
 class TestPostUninstall:

@@ -26,6 +26,8 @@ the extra says so at the top.
 from pas.plugins.identity.profile.catalog import CATALOG_ID
 from pas.plugins.identity.profile.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.profile.catalog import PROFILE_PORTAL_TYPE
+from pas.plugins.identity.profile.catalog import query_catalog
+from pas.plugins.identity.profile.container import get_container
 from pas.plugins.identity.profile.pas import PLUGIN_ID
 from plone import api
 from plone.app.testing import setRoles
@@ -59,6 +61,33 @@ def _manager(integration):
     :param integration: The integration layer.
     """
     setRoles(integration["portal"], TEST_USER_ID, ["Manager"])
+
+
+@pytest.fixture(autouse=True)
+def _profile_container(request, portal, _manager):
+    """Create the Profile container for the tests that expect one.
+
+    Installing the ``[profile]`` profile no longer creates it: where Profiles
+    live is a registry setting, and a profile layered on top sets it after the
+    install handler has run, so creating it eagerly created it under the wrong
+    id. First login creates it instead.
+
+    Almost every test here starts from "a site with somewhere to put a
+    Profile", so the harness does what a first login would, rather than each
+    module opening with the same two lines. A module that is testing the
+    creation itself opts out with ``@pytest.mark.no_profile_container``.
+
+    :param request: The test request, read for the opt-out marker.
+    :param portal: The Plone site.
+    :param _manager: Ensures the role is granted first.
+    """
+    if request.node.get_closest_marker("no_profile_container"):
+        return
+    if query_catalog() is None:
+        # The layer is not installed in this site; there is no Profile type
+        # to make a container for. ``test_not_installed`` lives here.
+        return
+    get_container(create=True)
 
 
 @pytest.fixture

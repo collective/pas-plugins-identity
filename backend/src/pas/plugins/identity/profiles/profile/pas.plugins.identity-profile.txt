@@ -1,4 +1,0 @@
-Marker for the [profile] extra of pas.plugins.identity.
-
-GenericSetup import steps declared by this package check for this file so they
-run when this profile is imported and not when any other add-on is installed.

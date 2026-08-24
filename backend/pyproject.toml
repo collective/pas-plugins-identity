@@ -214,6 +214,7 @@ ignore = [
 testpaths = ["tests"]
 markers = [
     "docker: needs the compose stack in tests/docker-compose.yml.",
+    "no_profile_container: start without a Profile container, for the tests that create one.",
 ]
 
 [tool.coverage.run]

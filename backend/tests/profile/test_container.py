@@ -35,9 +35,21 @@ class TestDefaults:
     def _setup(self, portal) -> None:
         self.portal = portal
 
-    def test_install_created_it(self):
-        """The container exists after the profile is applied."""
-        assert same(container.get_container(), self.portal["identity-profiles"])
+    @pytest.mark.no_profile_container
+    def test_install_did_not_create_it(self):
+        """Where Profiles live is a registry setting, and a profile layered
+        on top of this one sets it *after* the install handler runs. Creating
+        the container eagerly created it under the id this package ships and
+        left the configured one to first login, so a site had two."""
+        assert "identity-profiles" not in self.portal.objectIds()
+        assert container.get_container() is None
+
+    @pytest.mark.no_profile_container
+    def test_it_is_created_on_demand(self):
+        """Which is what first login does."""
+        created = container.get_container(create=True)
+
+        assert same(created, self.portal["identity-profiles"])
 
     def test_defaults_are_the_documented_ones(self):
         """The shipped registry values, read back through the helper."""

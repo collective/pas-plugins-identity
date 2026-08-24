@@ -42,9 +42,11 @@ class TestProfileInstall:
         chain = workflows.getChainForPortalType(PROFILE_PORTAL_TYPE)
         assert chain == ("identity_profile_workflow",)
 
-    def test_container_created(self):
-        """Install creates the configured container."""
-        assert "identity-profiles" in self.portal.objectIds()
+    @pytest.mark.no_profile_container
+    def test_container_not_created(self):
+        """Install deliberately leaves it to first login, or to an operator
+        who knows where they want it. See ``post_install``."""
+        assert "identity-profiles" not in self.portal.objectIds()
 
 
 class TestProfileSettings:
@@ -70,7 +72,6 @@ class TestProfileSettings:
             ("profile_container_type", "Folder"),
             ("profile_enumeration_states", ("incomplete", "complete")),
             ("group_enumeration_states", ("active",)),
-            ("profile_sync_portraits", False),
         ],
     )
     def test_default_value(self, name: str, expected):

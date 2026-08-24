@@ -45,6 +45,21 @@
         post_handler=".profile.setuphandlers.post_install"
         />
 
+    <!-- A profile rather than a site-wide import step. An import step is
+         registered once for the whole site and runs during *every* add-on
+         installation, so keeping it from clearing an innocent catalog needed
+         a marker file in the profile directory and a guard reading it. A
+         profile runs when somebody applies it and never otherwise, which is
+         the behaviour that guard was reconstructing. -->
+    <genericsetup:registerProfile
+        name="rebuild-profile-catalog"
+        title="pas.plugins.identity: Rebuild the Profile catalog"
+        description="Clear the dedicated Profile catalog and index every Profile in the site again. Re-runnable, and safe to run at any time."
+        provides="Products.GenericSetup.interfaces.EXTENSION"
+        directory="profiles/rebuild-profile-catalog"
+        post_handler=".profile.setuphandlers.rebuild_catalog"
+        />
+
     <genericsetup:registerProfile
         name="uninstall-profile"
         title="pas.plugins.identity: Uninstall profiles"

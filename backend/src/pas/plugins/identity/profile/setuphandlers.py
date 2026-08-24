@@ -19,10 +19,11 @@ from pas.plugins.identity.profile.catalog import IdentityProfileCatalog
 from pas.plugins.identity.profile.catalog import INDEXES
 from pas.plugins.identity.profile.catalog import METADATA
 from pas.plugins.identity.profile.catalog import query_catalog
-from pas.plugins.identity.profile.container import get_container
+from pas.plugins.identity.profile.interfaces import IProfileSettings
 from pas.plugins.identity.profile.pas import IdentityProfilePlugin
 from pas.plugins.identity.profile.pas import PLUGIN_ID
 from pas.plugins.identity.profile.pas import PLUGIN_TITLE
+from pas.plugins.identity.setuphandlers import register_settings
 from plone import api
 from Products.GenericSetup.tool import SetupTool
 from Products.PluggableAuthService.interfaces.plugins import IGroupEnumerationPlugin
@@ -33,11 +34,6 @@ from Products.PluggableAuthService.PluggableAuthService import PluggableAuthServ
 from Products.ZCTextIndex.PipelineFactory import element_factory
 from Products.ZCTextIndex.ZCTextIndex import PLexicon
 
-
-#: Marker file the ``profile`` profile ships, so that import steps declared
-#: by this package can tell "our profile is being imported" from "somebody
-#: else's is".
-MARKER = "pas.plugins.identity-profile.txt"
 
 #: Lexicon used by the ``SearchableText`` index. Named and configured exactly
 #: as Plone's own so that the splitting and accent-folding behaviour a site
@@ -169,36 +165,48 @@ def uninstall_plugin(acl_users: PluggableAuthService) -> None:
 
 
 def post_install(context: SetupTool) -> None:
-    """Build the catalog, the Profile container and the PAS plugin.
+    """Build the catalog and the PAS plugin.
+
+    The Profile *container* is deliberately not created here. Where Profiles
+    live is a registry setting, and a profile layered on top of this one --
+    a policy package, a demo, anything with its own ``registry.xml`` -- sets
+    it *after* this handler has run. Creating the container eagerly therefore
+    created it under whatever id this package happens to ship, and the site
+    ended up with two: the one nobody asked for, and the one the first login
+    made under the configured id.
+
+    Nothing is lost by waiting. A container with no Profiles in it does no
+    work, and :func:`~pas.plugins.identity.profile.subscribers.ensure_profile`
+    already creates it on first login. An operator who knows where they want
+    it creates it themselves, which is the case this was getting in the way
+    of.
 
     :param context: The setup tool running the import.
     """
+    register_settings(IProfileSettings)
     catalog = api.portal.get_tool(CATALOG_ID)
     add_lexicon(catalog)
     add_indexes(catalog)
     add_metadata(catalog)
-    get_container(create=True)
     install_plugin(api.portal.get_tool("acl_users"))
 
 
 def rebuild_catalog(context: SetupTool) -> None:
     """Clear the Profile catalog and index every Profile again.
 
-    Registered as a re-runnable GenericSetup import step rather than as an
-    upgrade step: drift is not tied to a version bump, and an operator who has
-    just been handed a list of findings by
-    :func:`~pas.plugins.identity.profile.doctor.check` needs to be able to run
-    this now and again next week.
+    Its own re-runnable profile rather than an upgrade step: drift is not
+    tied to a version bump, and an operator who has just been handed a list of
+    findings by :func:`~pas.plugins.identity.profile.doctor.check` needs to be
+    able to run this now and again next week.
 
-    Guarded by the marker file so that it runs for this package's ``profile``
-    profile and no other. Without the guard GenericSetup would run it during
-    *every* add-on installation in the site, each one silently clearing and
-    rebuilding a catalog that had nothing wrong with it.
+    A profile rather than a site-wide import step, which is registered once
+    for the whole site and runs during every add-on installation in it. That
+    took a marker file in the profile directory and a guard reading it to stop
+    an unrelated install from clearing a catalog that had nothing wrong with
+    it; a profile simply does not run unless somebody applies it.
 
     :param context: The setup tool running the import.
     """
-    if context.readDataFile(MARKER) is None:
-        return
     catalog = query_catalog()
     if catalog is None:
         return
