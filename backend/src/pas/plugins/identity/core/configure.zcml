@@ -12,4 +12,10 @@
 
   <include package=".browser" />
 
+  <!-- What `@users` says about a user once this package is installed: the
+       identities linked, the plugin the userid came from, and the Profile
+       when the [profile] layer put one there. On our own browser layer, so
+       a site that has not installed this package is untouched. -->
+  <adapter factory=".serializer.SerializeIdentityUserToJson" />
+
 </configure>
