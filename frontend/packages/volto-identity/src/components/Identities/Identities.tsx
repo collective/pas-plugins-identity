@@ -4,7 +4,17 @@
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { createPortal } from 'react-dom';
+import { Container, Segment } from 'semantic-ui-react';
+import { defineMessages, useIntl } from 'react-intl';
+
+import { Helmet } from '@plone/volto/helpers/Helmet/Helmet';
+import { useClient } from '@plone/volto/hooks/client/useClient';
+import Icon from '@plone/volto/components/theme/Icon/Icon';
+import Toolbar from '@plone/volto/components/manage/Toolbar/Toolbar';
+import { getBaseUrl } from '@plone/volto/helpers/Url/Url';
+import backSVG from '@plone/volto/icons/back.svg';
 
 import {
   listIdentities,
@@ -16,9 +26,17 @@ import { linkable } from '../../helpers/identities';
 import type { Identity, LoginProvider } from '../../types';
 import IdentitiesList from './IdentitiesList';
 
+const messages = defineMessages({
+  title: { id: 'Sign-in methods', defaultMessage: 'Sign-in methods' },
+  back: { id: 'Back', defaultMessage: 'Back' },
+});
+
 const Identities: React.FC = () => {
+  const intl = useIntl();
   const dispatch = useDispatch();
+  const isClient = useClient();
   const location = useLocation();
+  const { pathname } = location;
   const [redirecting, setRedirecting] = useState(false);
 
   const mine = useSelector((state: any) => state.identities);
@@ -61,15 +79,46 @@ const Identities: React.FC = () => {
   );
 
   return (
-    <IdentitiesList
-      identities={mine?.data ?? []}
-      available={linkable(offered?.data ?? [], mine?.data ?? [])}
-      loading={Boolean(mine?.loading)}
-      busy={redirecting || Boolean(removing?.loading)}
-      error={linking?.error ?? removing?.error}
-      onLink={onLink}
-      onUnlink={onUnlink}
-    />
+    // The page chrome Volto's own user-settings pages have: a container that
+    // centres the content, a titled panel, and the toolbar. Without it this
+    // route rendered as a bare list against the left edge of the window.
+    <Container id="page-identities">
+      <Helmet title={intl.formatMessage(messages.title)} />
+      <Segment.Group raised>
+        <Segment className="primary">
+          {intl.formatMessage(messages.title)}
+        </Segment>
+        <Segment>
+          <IdentitiesList
+            identities={mine?.data ?? []}
+            available={linkable(offered?.data ?? [], mine?.data ?? [])}
+            loading={Boolean(mine?.loading)}
+            busy={redirecting || Boolean(removing?.loading)}
+            error={linking?.error ?? removing?.error}
+            onLink={onLink}
+            onUnlink={onUnlink}
+          />
+        </Segment>
+      </Segment.Group>
+      {isClient &&
+        createPortal(
+          <Toolbar
+            pathname={pathname}
+            hideDefaultViewButtons
+            inner={
+              <Link to={`${getBaseUrl(pathname)}`} className="item">
+                <Icon
+                  name={backSVG}
+                  className="contents circled"
+                  size="30px"
+                  title={intl.formatMessage(messages.back)}
+                />
+              </Link>
+            }
+          />,
+          document.getElementById('toolbar') as HTMLElement,
+        )}
+    </Container>
   );
 };
 

@@ -1,0 +1,1 @@
+Gave `/identities` the page chrome Volto's own user-settings pages have: a container that centres the content, a titled panel around the list, and the toolbar with a back action. It rendered as a bare list against the left edge of the window, with no heading and no way back. @ericof
