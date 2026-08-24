@@ -24,6 +24,7 @@ from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from plone import api
+from urllib.parse import quote
 
 
 #: The scope every OIDC request carries. It releases nothing by itself: it
@@ -37,7 +38,7 @@ OPENID_SCOPE = "openid"
 #: would emit something no other relying party can read -- so it stays behind
 #: until a site asks for it and a private scope is designed on purpose.
 SCOPE_CLAIMS: dict[str, tuple[str, ...]] = {
-    "profile": ("name", "preferred_username", "website"),
+    "profile": ("name", "preferred_username", "website", "picture"),
     "email": ("email", "email_verified"),
     "address": ("address",),
 }
@@ -55,7 +56,36 @@ CLAIM_SOURCES = {
     "website": lambda user: user.getProperty("home_page", ""),
     "email": lambda user: user.getProperty("email", ""),
     "address": lambda user: user.getProperty("location", ""),
+    "picture": lambda user: portrait_url(user.getId()),
 }
+
+
+def portrait_url(userid: str) -> str:
+    """Return the public URL of a user's portrait, or nothing.
+
+    Only when a portrait is actually stored. Plone's
+    ``getPersonalPortrait`` falls back to a default image, and publishing a
+    ``picture`` claim that every user shares would tell a relying party that
+    everybody uploaded the same photograph.
+
+    Built from the configured issuer rather than from the portal URL, for the
+    reason the issuer is configured at all: the portal URL is whatever the
+    request came in on, and this URL is handed to another site to fetch.
+
+    :param userid: Canonical Plone userid.
+    :returns: An absolute URL, or an empty string.
+    """
+    from pas.plugins.identity.server.tokens import ISSUER_RECORD
+
+    memberdata = api.portal.get_tool("portal_memberdata")
+    membership = api.portal.get_tool("portal_membership")
+    if memberdata._getPortrait(membership._getSafeMemberId(userid)) is None:
+        return ""
+
+    issuer = (api.portal.get_registry_record(ISSUER_RECORD, default="") or "").strip()
+    if not issuer:
+        return ""
+    return f"{issuer.rstrip('/')}/@portrait/{quote(userid)}"
 
 
 def released(scope: str) -> list[str]:

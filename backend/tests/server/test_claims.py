@@ -14,8 +14,10 @@ from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from pas.plugins.identity.server.claims import claims_for
 from pas.plugins.identity.server.claims import released
+from pas.plugins.identity.server.tokens import ISSUER_RECORD
 from plone import api
 
+import base64
 import pytest
 
 
@@ -51,6 +53,26 @@ def verified(portal, user):
     return store
 
 
+@pytest.fixture
+def portrait(portal, user):
+    """Store a portrait for Alice.
+
+    :param portal: The Plone site.
+    :param user: The member it belongs to.
+    :returns: The userid.
+    """
+    from pas.plugins.identity.core.portraits import store
+
+    # A one-pixel PNG: the smallest thing ``scale_image`` will accept.
+    data = base64.b64decode(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8"
+        "BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    )
+    with api.env.adopt_roles(["Manager"]):
+        store(USERID, data)
+    return USERID
+
+
 class TestScopeRelease:
     """Which claims a scope releases, with no user in sight."""
 
@@ -60,7 +82,12 @@ class TestScopeRelease:
         assert released("openid") == []
 
     def test_profile_releases_the_profile_claims(self):
-        assert released("profile") == ["name", "preferred_username", "website"]
+        assert released("profile") == [
+            "name",
+            "preferred_username",
+            "website",
+            "picture",
+        ]
 
     def test_email_releases_the_address_and_its_status(self):
         assert released("email") == ["email", "email_verified"]
@@ -128,6 +155,49 @@ class TestClaims:
             api.user.get(userid=USERID).setMemberProperties({"home_page": ""})
 
         assert "website" not in claims_for(USERID, "profile")
+
+
+class TestPicture:
+    """The claim that carries a portrait across two sites.
+
+    A relying party cannot read this site's portrait storage, so the only way
+    an avatar reaches one is as a URL it can fetch. ``picture`` is the
+    registered claim for it and belongs to the ``profile`` scope, alongside
+    ``name`` -- there is nothing to opt into separately."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, user) -> None:
+        self.portal = portal
+        api.portal.set_registry_record(ISSUER_RECORD, "http://id.example.org")
+
+    def test_absent_when_the_user_has_no_portrait(self):
+        """Plone's own ``getPersonalPortrait`` falls back to a default image.
+        Publishing that would tell a relying party that every user uploaded
+        the same photograph."""
+        assert "picture" not in claims_for(USERID, "profile")
+
+    def test_present_once_a_portrait_is_stored(self, portrait):
+        assert claims_for(USERID, "profile")["picture"] == (
+            "http://id.example.org/@portrait/alice"
+        )
+
+    def test_it_is_built_from_the_issuer(self, portrait):
+        """Not from the portal URL, which is whatever the request came in on.
+        This URL is handed to another site to fetch."""
+        api.portal.set_registry_record(ISSUER_RECORD, "http://elsewhere.example.org/")
+
+        assert claims_for(USERID, "profile")["picture"] == (
+            "http://elsewhere.example.org/@portrait/alice"
+        )
+
+    def test_absent_without_an_issuer(self, portrait):
+        """A relative URL is not something another site can fetch."""
+        api.portal.set_registry_record(ISSUER_RECORD, "")
+
+        assert "picture" not in claims_for(USERID, "profile")
+
+    def test_it_is_not_released_without_the_profile_scope(self, portrait):
+        assert "picture" not in claims_for(USERID, "email")
 
 
 class TestEmailVerified:
