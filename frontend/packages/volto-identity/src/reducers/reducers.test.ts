@@ -68,6 +68,51 @@ describe('loginProviders', () => {
     expect(failed.data).toEqual([]);
   });
 
+  it('fills from the identities listing when it carried the component', () => {
+    // How the identities page loads in one request rather than two.
+    const state = loginProviders(undefined, {
+      type: 'IDENTITY_LIST_IDENTITIES_SUCCESS',
+      result: {
+        '@components': { 'login-providers': { items: [{ id: 'dex' }] } },
+      },
+    });
+
+    expect(state.data).toEqual([{ id: 'dex' }]);
+    expect(state.loaded).toBe(true);
+  });
+
+  it('keeps what it has when that listing carried no component', () => {
+    // The refresh after an unlink does not expand: the providers did not
+    // change, and clearing them would blank the buttons for a moment.
+    const loaded = loginProviders(undefined, {
+      type: 'IDENTITY_LIST_LOGIN_PROVIDERS_SUCCESS',
+      result: { items: [{ id: 'dex' }] },
+    });
+
+    const after = loginProviders(loaded, {
+      type: 'IDENTITY_LIST_IDENTITIES_SUCCESS',
+      result: { items: [] },
+    });
+
+    expect(after.data).toEqual([{ id: 'dex' }]);
+  });
+
+  it('is not put into a loading state by the other request', () => {
+    // The pending half belongs to somebody else's request; reacting to it
+    // would flicker these buttons on every identities refresh.
+    const loaded = loginProviders(undefined, {
+      type: 'IDENTITY_LIST_LOGIN_PROVIDERS_SUCCESS',
+      result: { items: [{ id: 'dex' }] },
+    });
+
+    const after = loginProviders(loaded, {
+      type: 'IDENTITY_LIST_IDENTITIES_PENDING',
+    });
+
+    expect(after.data).toEqual([{ id: 'dex' }]);
+    expect(after.loading).toBe(false);
+  });
+
   it('ignores actions belonging to something else', () => {
     const state = loginProviders(undefined, { type: 'SOMETHING_ELSE' });
 

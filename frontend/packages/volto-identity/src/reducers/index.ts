@@ -59,9 +59,26 @@ function requestReducer<T>(
   actionType: string,
   extract: (result: any) => T,
   empty: T,
+  alsoFrom?: { actionType: string; extract: (result: any) => T | undefined },
 ) {
   const initialState = { ...initial, data: empty };
   return function reducer(state = initialState, action: Action = { type: '' }) {
+    // A second action may carry this same data as an expanded component. It
+    // only ever *fills*: the request it belongs to is somebody else's, so its
+    // pending and failure states say nothing about this one, and a response
+    // that did not carry the component must leave what is here alone.
+    if (alsoFrom && action.type === `${alsoFrom.actionType}_SUCCESS`) {
+      const carried = alsoFrom.extract(action.result);
+      return carried === undefined
+        ? state
+        : {
+            ...state,
+            loading: false,
+            loaded: true,
+            error: null,
+            data: carried,
+          };
+    }
     switch (action.type) {
       case `${actionType}_PENDING`:
         // The previous answer is cleared here as well as on success: leaving
@@ -89,6 +106,12 @@ export const loginProviders = requestReducer<LoginProvider[]>(
   LIST_LOGIN_PROVIDERS,
   (result) => result?.items ?? [],
   [],
+  {
+    // The identities listing can carry the same providers as an expanded
+    // component, which is how the identities page loads in one request.
+    actionType: LIST_IDENTITIES,
+    extract: (result) => result?.['@components']?.['login-providers']?.items,
+  },
 );
 
 export const providerLogin = requestReducer<AuthorizeRedirect | null>(

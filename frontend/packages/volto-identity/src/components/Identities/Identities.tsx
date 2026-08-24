@@ -16,12 +16,7 @@ import Toolbar from '@plone/volto/components/manage/Toolbar/Toolbar';
 import { getBaseUrl } from '@plone/volto/helpers/Url/Url';
 import backSVG from '@plone/volto/icons/back.svg';
 
-import {
-  listIdentities,
-  listLoginProviders,
-  startLinking,
-  unlinkIdentity,
-} from '../../actions';
+import { listIdentities, startLinking, unlinkIdentity } from '../../actions';
 import { linkable } from '../../helpers/identities';
 import type { Identity, LoginProvider } from '../../types';
 import IdentitiesList from './IdentitiesList';
@@ -45,8 +40,8 @@ const Identities: React.FC = () => {
   const removing = useSelector((state: any) => state.identityUnlink);
 
   useEffect(() => {
-    dispatch(listIdentities());
-    dispatch(listLoginProviders());
+    // One request: the providers ride along as an expanded component.
+    dispatch(listIdentities(true));
   }, [dispatch]);
 
   useEffect(() => {

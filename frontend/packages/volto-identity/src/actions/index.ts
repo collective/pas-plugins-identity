@@ -112,11 +112,18 @@ export function confirmMagicLink(token: string) {
 
 /**
  * List the identities the signed-in user owns.
+ *
+ * The page showing them also offers what is *not* linked yet, which is the
+ * same listing `@login-providers` serves. Asking for it as a component here
+ * answers the whole screen in one request instead of two.
+ *
+ * @param withProviders Whether to expand the login providers alongside.
  */
-export function listIdentities() {
+export function listIdentities(withProviders = false) {
+  const query = withProviders ? '?expand=login-providers' : '';
   return {
     type: LIST_IDENTITIES,
-    request: { op: 'get', path: '/@identities' },
+    request: { op: 'get', path: `/@identities${query}` },
   };
 }
 

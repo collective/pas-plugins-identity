@@ -12,6 +12,7 @@ import {
   rotateClientSecret,
   rotateKey,
   sendMagicLink,
+  listIdentities,
   startProviderLogin,
   updateClient,
 } from './index';
@@ -22,6 +23,18 @@ describe('listLoginProviders', () => {
       op: 'get',
       path: '/@login-providers',
     });
+  });
+});
+
+describe('listIdentities', () => {
+  it('reads the listing', () => {
+    expect(listIdentities().request.path).toBe('/@identities');
+  });
+
+  it('can ask for the providers alongside, in one request', () => {
+    expect(listIdentities(true).request.path).toBe(
+      '/@identities?expand=login-providers',
+    );
   });
 });
 
