@@ -35,7 +35,6 @@
          providers a claim is whatever the user typed. Turning it into a
          server-side fetch makes the login path a request forger, so no site
          should acquire that by upgrading. -->
-    <value key="profile_sync_portraits">False</value>
 
   </records>
 

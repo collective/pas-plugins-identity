@@ -92,6 +92,28 @@ class BaseDriver:
             "secret": False,
             "default": False,
         }
+        schema["userid_source"] = {
+            "type": "choice",
+            "title": "Userid taken from",
+            "description": (
+                "What the Plone userid is minted from the first time "
+                "somebody signs in with this provider. A random id is the "
+                "safe default: it leaks nothing and never has to change. "
+                "The others are readable, which matters when a person has "
+                "to be recognised in Plone -- and they are claims, so two "
+                "providers can offer the same one. A userid already in use "
+                "is never handed out: the new one gets a numeric suffix."
+            ),
+            "required": False,
+            "secret": False,
+            "default": "uuid",
+            "choices": [
+                ["uuid", "A random id"],
+                ["username", "The provider's username"],
+                ["email", "The email address"],
+                ["subject", "The provider's subject identifier"],
+            ],
+        }
         for name, descriptor in self.extra_fields.items():
             schema[name] = dict(descriptor)
         return schema

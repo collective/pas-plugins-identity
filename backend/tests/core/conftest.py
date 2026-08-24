@@ -22,6 +22,17 @@ import pytest
 
 
 @pytest.fixture
+def plugin(portal):
+    """Return the installed identity plugin.
+
+    :param portal: The Plone site, so this binds to whichever one the
+        requesting module provides.
+    :returns: The plugin.
+    """
+    return api.portal.get_tool("acl_users")[PLUGIN_ID]
+
+
+@pytest.fixture
 def log(portal) -> AuditLog:
     """Return the installed plugin's audit log, emptied.
 

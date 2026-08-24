@@ -113,16 +113,3 @@ class IProfileSettings(Interface):
         required=False,
         default=("active",),
     )
-
-    profile_sync_portraits = schema.Bool(
-        title=_("Copy provider avatars into portrait storage"),
-        description=_(
-            "Off by default. When on, the backend fetches the picture_url "
-            "claim over HTTPS and stores it as the user's portrait. The URL "
-            "comes from the provider and may be user-supplied; read the "
-            "documentation before enabling this on a site with private "
-            "network services."
-        ),
-        required=False,
-        default=False,
-    )

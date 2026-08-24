@@ -157,6 +157,24 @@ class IAuditSink(Interface):
         """
 
 
+class IOwnsUserProperties(Interface):
+    """Marker for a PAS plugin that owns where user properties are stored.
+
+    Declared in core and implemented by an optional layer, which is the only
+    direction the import-linter contract allows -- and the only one that makes
+    sense: core has to be able to ask the question on a site where nothing
+    answers it.
+
+    A plugin claiming this says two things. Its property sheet is the
+    authoritative one for the users it serves, and it applies the provider's
+    property map to them itself. Core's own
+    :meth:`~pas.plugins.identity.core.pas.plugin.IdentityPlugin._apply_property_map`
+    therefore stands aside rather than writing through the sheet: both would
+    be writing the same fields from the same map, and only one of them knows
+    which of those fields a human has since edited.
+    """
+
+
 class IIdentityPlugin(Interface):
     """Marker for the PAS plugin provided by this package."""
 

@@ -21,6 +21,7 @@ from pas.plugins.identity.core.events import IdentityUnlinked
 from pas.plugins.identity.core.flows.magiclink import MagicLinkStore
 from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.core.interfaces import IIdentityPlugin
+from pas.plugins.identity.core.interfaces import IOwnsUserProperties
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.interfaces import LockoutRefused
 from pas.plugins.identity.core.logout import LogoutJTIStore
@@ -35,6 +36,7 @@ from Products.PluggableAuthService.interfaces.plugins import IAuthenticationPlug
 from Products.PluggableAuthService.interfaces.plugins import IChallengePlugin
 from Products.PluggableAuthService.interfaces.plugins import ICredentialsResetPlugin
 from Products.PluggableAuthService.interfaces.plugins import IExtractionPlugin
+from Products.PluggableAuthService.interfaces.plugins import IPropertiesPlugin
 from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
 from Products.PluggableAuthService.plugins.ZODBUserManager import ZODBUserManager
 from Products.PluggableAuthService.utils import classImplements
@@ -57,15 +59,88 @@ import secrets
 LOGIN_VIEW = "login"
 
 
-def mint_userid() -> str:
+#: What a provider may mint its userids from. ``uuid`` is the default and
+#: the only one that is not a claim.
+USERID_SOURCES = ("uuid", "username", "email", "subject")
+
+
+def _userid_candidate(source: str, claims: Claims, subject: str) -> str:
+    """Return the raw value a userid should be built from.
+
+    :param source: One of :data:`USERID_SOURCES`.
+    :param claims: Normalized claims.
+    :param subject: The provider-side subject.
+    :returns: The raw value, which may be empty.
+    """
+    if source == "username":
+        return str(claims.get("username") or "")
+    if source == "email":
+        return str(claims.get("email") or "")
+    if source == "subject":
+        return subject or ""
+    return ""
+
+
+def _available(userid: str) -> bool:
+    """Report whether a userid is free to hand out.
+
+    Checked against *every* PAS source, not just this plugin's. That is the
+    whole guard: a provider account called ``admin`` must not be handed the
+    site's ``admin`` userid and inherit its roles, and the only way to know
+    is to ask Plone rather than this plugin's own records.
+
+    :param userid: The candidate.
+    :returns: Whether no user already has it.
+    """
+    from plone import api
+
+    return api.user.get(userid=userid) is None
+
+
+def mint_userid(
+    source: str = "uuid", claims: Claims | None = None, subject: str = ""
+) -> str:
     """Mint a canonical userid.
 
-    A random UUID: never derived from provider claims, so it leaks nothing
-    about where the account came from and cannot change when a claim does.
+    A random UUID by default: never derived from provider claims, so it
+    leaks nothing about where the account came from and cannot change when a
+    claim does.
 
-    :returns: 32 hex characters.
+    A provider may instead ask for a readable userid, which is what makes a
+    person recognisable in Plone rather than being 32 hex characters. Three
+    things follow from that, and all three are handled here: the value is a
+    claim, so it is normalized into something usable as an id; it may be
+    empty, in which case this falls back to a UUID rather than minting
+    something unusable; and it may already belong to somebody, in which case
+    a numeric suffix is added until it does not.
+
+    :param source: One of :data:`USERID_SOURCES`.
+    :param claims: Normalized claims, when the source needs them.
+    :param subject: The provider-side subject, when the source needs it.
+    :returns: A userid nobody else holds.
     """
-    return uuid4().hex
+    if source not in USERID_SOURCES or source == "uuid":
+        return uuid4().hex
+
+    from plone.i18n.normalizer.interfaces import IIDNormalizer
+    from zope.component import getUtility
+
+    raw = _userid_candidate(source, claims or {}, subject)
+    normalized = getUtility(IIDNormalizer).normalize(raw) if raw else ""
+    if not normalized:
+        # A provider that sent nothing usable must not stop the login, and
+        # must not mint an empty or partial id either.
+        logger.info("No %r to mint a userid from; falling back to a UUID", source)
+        return uuid4().hex
+
+    if _available(normalized):
+        return normalized
+    # Somebody already holds it. Suffix rather than reuse: reusing would hand
+    # this identity somebody else's account.
+    counter = 2
+    while not _available(f"{normalized}-{counter}"):
+        counter += 1
+    return f"{normalized}-{counter}"
 
 
 @implementer(IIdentityPlugin)
@@ -201,12 +276,20 @@ class IdentityPlugin(BasePlugin):
 
         userid = self._store.userid_for(provider, subject)
         is_new_identity = userid is None
+        # Read before touch() overwrites the snapshot: the avatar is fetched
+        # only when the provider changed it, and that is the one part of
+        # signing in that makes a network request.
+        previous_picture = self._remembered_picture(provider, subject)
         is_new_user = False
         if is_new_identity:
             userid = self._adopt_by_verified_email(provider, claims)
             if userid is None:
                 is_new_user = True
-                userid = mint_userid()
+                userid = mint_userid(
+                    source=self._userid_source(provider),
+                    claims=claims,
+                    subject=subject,
+                )
                 self._create_plone_user(userid, claims)
             self._store.add(provider, subject, userid, claims)
         else:
@@ -215,6 +298,7 @@ class IdentityPlugin(BasePlugin):
         # Every login, not just the first: a name or address changed at the
         # provider should reach Plone without the user being recreated.
         self._apply_property_map(userid, provider, claims)
+        self._sync_portrait(userid, claims, previous_picture)
 
         notify(
             ExternalIdentityAuthenticated(
@@ -227,6 +311,52 @@ class IdentityPlugin(BasePlugin):
             )
         )
         return (userid, userid)
+
+    def _remembered_picture(self, provider: str, subject: str) -> str:
+        """Return the avatar URL stored the last time this identity signed in.
+
+        :param provider: Provider id.
+        :param subject: Provider-side subject.
+        :returns: The remembered URL, or an empty string.
+        """
+        record = self._store.get(provider, subject)
+        if record is None:
+            return ""
+        return str(record.claims.get("picture_url") or "")
+
+    def _sync_portrait(self, userid: str, claims: Claims, previous: str) -> None:
+        """Copy the provider's avatar into portrait storage when it changed.
+
+        Off unless the site switched it on -- see
+        :mod:`pas.plugins.identity.core.portraits` for why that is the
+        default. Fetching only on change keeps a network request out of
+        every sign-in, and a URL that failed is not retried until the
+        provider offers a different one.
+
+        :param userid: Canonical Plone userid.
+        :param claims: Normalized claims.
+        :param previous: The URL synced last time, if any.
+        """
+        from pas.plugins.identity.core.portraits import sync_portrait
+
+        url = str(claims.get("picture_url") or "")
+        if not url or url == previous:
+            return
+        sync_portrait(userid, url)
+
+    def _userid_source(self, provider_id: str) -> str:
+        """Return the userid strategy configured for a provider.
+
+        :param provider_id: The provider.
+        :returns: One of :data:`USERID_SOURCES`; ``uuid`` when the provider
+            is gone or says nothing.
+        """
+        from pas.plugins.identity.core.controlpanel import get_provider
+
+        config = get_provider(provider_id)
+        if config is None:
+            return "uuid"
+        return str(config.config.get("userid_source") or "uuid")
 
     def _adopt_by_verified_email(self, provider: str, claims: Claims) -> str | None:
         """Find an existing account to attach this identity to.
@@ -475,6 +605,35 @@ class IdentityPlugin(BasePlugin):
             "email": claims.get("email", ""),
         })
 
+    def _properties_owned_elsewhere(self, userid: str) -> bool:
+        """Report whether another plugin owns this user's properties.
+
+        The ``[profile]`` layer's plugin does, for a user who has a Profile:
+        it serves the property sheet, it applies the same property map, and it
+        remembers which fields the provider wrote so a human's edit survives
+        the next login. Writing through its sheet from here would defeat that
+        -- the write would land, and nothing here knows it should not have.
+
+        Asked per user rather than per site, because a site can run the layer
+        and still have users it does not serve.
+
+        :param userid: Canonical Plone userid.
+        :returns: Whether to leave this user's properties alone.
+        """
+        from plone import api
+
+        member = api.user.get(userid=userid)
+        if member is None:
+            return False
+
+        acl_users = api.portal.get_tool("acl_users")
+        for _plugin_id, plugin in acl_users.plugins.listPlugins(IPropertiesPlugin):
+            if not IOwnsUserProperties.providedBy(plugin):
+                continue
+            if plugin.getPropertiesForUser(member.getUser()) is not None:
+                return True
+        return False
+
     def _apply_property_map(
         self, userid: str, provider_id: str, claims: Claims
     ) -> None:
@@ -500,17 +659,27 @@ class IdentityPlugin(BasePlugin):
         if config is None or not config.propertymap:
             return
 
+        if self._properties_owned_elsewhere(userid):
+            return
+
         member = api.user.get(userid=userid)
         if member is None:  # pragma: no cover - can't-happen: just authenticated
             logger.warning("Authenticated user %s is not retrievable", userid)
             return
 
         resolved = apply_property_map(config.propertymap, claims)
+
         updates = {
             field: value
             for field, value in resolved.items()
             if not member.getProperty(field, None)
         }
+        # A portrait is an image in member storage, not a property: writing
+        # a URL string into it through setMemberProperties would store the
+        # URL. Avatars have their own path -- see :meth:`_sync_portrait` --
+        # which fetches, scales and stores the bytes, behind the opt-in that
+        # exists because the URL is a claim the user may control.
+        updates.pop("portrait", None)
         if updates:
             member.setMemberProperties(updates)
 

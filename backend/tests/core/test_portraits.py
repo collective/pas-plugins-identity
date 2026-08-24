@@ -9,18 +9,12 @@ Nothing here reaches the network: ``requests.get`` is replaced, which is also
 the honest way to test a size cap and a hostile content type.
 """
 
-from . import PROFILE_ID
 from io import BytesIO
-from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
-from pas.plugins.identity.profile import portraits
-from pas.plugins.identity.profile import subscribers
+from pas.plugins.identity.core import portraits
+from pas.plugins.identity.core.pas import EXTRACTOR
 from plone import api
-from zope.event import notify
 
 import pytest
-
-
-pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
 
 
 #: A real 1x1 PNG. Built rather than pasted so it is obvious what it is.
@@ -112,22 +106,21 @@ def portrait_of(userid: str):
     return api.portal.get_tool("portal_memberdata")._getPortrait(userid)
 
 
-def fire_login(userid="alice-userid", **claims):
-    """Fire a login event.
+def sign_in(plugin, subject="s1", **claims) -> str:
+    """Sign in through the plugin, which is what syncs the portrait.
 
-    :param userid: Canonical Plone userid.
+    :param plugin: The identity plugin.
+    :param subject: Provider-side subject; a new one is a new person.
     :param claims: Claims to send.
+    :returns: The userid signed in as.
     """
-    notify(
-        ExternalIdentityAuthenticated(
-            userid=userid,
-            provider="dex",
-            subject="s1",
-            claims={"fullname": "Alice", "username": "alice", **claims},
-            is_new_user=True,
-            is_new_identity=True,
-        )
-    )
+    userid, _ = plugin.authenticateCredentials({
+        "extractor": EXTRACTOR,
+        "provider": "dex",
+        "subject": subject,
+        "claims": {"fullname": "Alice", "username": "alice", **claims},
+    })
+    return userid
 
 
 class TestOffByDefault:
@@ -250,11 +243,13 @@ class TestStoring:
 
 
 class TestThroughTheSync:
-    """The subscriber's side: when a fetch is attempted at all."""
+    """Signing in: when a fetch is attempted at all. No [profile] layer here
+    -- portraits belong to the member, so they work without it."""
 
     @pytest.fixture(autouse=True)
-    def _setup(self, portal, answers, on) -> None:
+    def _setup(self, portal, plugin, answers, on) -> None:
         self.portal = portal
+        self.plugin = plugin
         self.answers = answers
         self.on = on
 
@@ -262,26 +257,26 @@ class TestThroughTheSync:
         """A new avatar is worth a request."""
         calls = self.answers(FakeResponse(_png()))
 
-        fire_login(picture_url="https://cdn/a.png")
+        sign_in(self.plugin, picture_url="https://cdn/a.png")
 
         assert calls == ["https://cdn/a.png"]
 
     def test_second_login_with_the_same_url_does_not_refetch(self):
-        """This is the one part of the sync that touches the network, and it
-        runs while somebody waits for a page."""
+        """This is the one part of signing in that touches the network, and
+        it runs while somebody waits for a page."""
         calls = self.answers(FakeResponse(_png()))
-        fire_login(picture_url="https://cdn/a.png")
+        sign_in(self.plugin, picture_url="https://cdn/a.png")
 
-        fire_login(picture_url="https://cdn/a.png")
+        sign_in(self.plugin, picture_url="https://cdn/a.png")
 
         assert calls == ["https://cdn/a.png"]
 
     def test_a_changed_url_is_refetched(self):
         """Changing your avatar at the provider should change it here."""
         calls = self.answers(FakeResponse(_png()))
-        fire_login(picture_url="https://cdn/a.png")
+        sign_in(self.plugin, picture_url="https://cdn/a.png")
 
-        fire_login(picture_url="https://cdn/b.png")
+        sign_in(self.plugin, picture_url="https://cdn/b.png")
 
         assert calls == ["https://cdn/a.png", "https://cdn/b.png"]
 
@@ -289,19 +284,20 @@ class TestThroughTheSync:
         """One bad avatar must not become a permanent tax on that user's
         sign-in."""
         calls = self.answers(FakeResponse(b"", status_code=500))
-        fire_login(picture_url="https://cdn/a.png")
+        sign_in(self.plugin, picture_url="https://cdn/a.png")
 
-        fire_login(picture_url="https://cdn/a.png")
+        sign_in(self.plugin, picture_url="https://cdn/a.png")
 
-        # One attempt, not two: the URL is remembered whether or not the fetch
-        # worked, so a URL that failed once is not tried again on every login.
+        # One attempt, not two: the claims snapshot remembers the URL whether
+        # or not the fetch worked, so a URL that failed once is not tried
+        # again on every login.
         assert calls == ["https://cdn/a.png"]
 
     def test_no_picture_claim_is_a_no_op(self):
         """Most providers send none."""
         calls = self.answers(FakeResponse(_png()))
 
-        fire_login()
+        sign_in(self.plugin)
 
         assert calls == []
 
@@ -310,15 +306,16 @@ class TestTheFeatureOff:
     """The default path, which is the one nearly every site is on."""
 
     @pytest.fixture(autouse=True)
-    def _setup(self, portal, answers) -> None:
+    def _setup(self, portal, plugin, answers) -> None:
         self.portal = portal
+        self.plugin = plugin
         self.answers = answers
 
     def test_login_still_works(self):
-        """No fetch, and the Profile is minted regardless."""
+        """No fetch, and the sign-in is unaffected."""
         calls = self.answers(FakeResponse(_png()))
 
-        fire_login(picture_url="https://cdn/a.png")
+        userid = sign_in(self.plugin, picture_url="https://cdn/a.png")
 
         assert calls == []
-        assert subscribers.get_profile("alice-userid") is not None
+        assert userid

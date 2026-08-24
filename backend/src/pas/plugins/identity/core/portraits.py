@@ -1,8 +1,11 @@
 """Copying a provider's avatar into Plone's portrait storage.
 
-``picture_url`` is copied into the standard portrait storage during claims
-sync, with no custom adapter. That is what this does -- and it is **off by
-default**, which is worth explaining.
+``picture_url`` is copied into the standard portrait storage on login, with
+no custom adapter -- ``portal_memberdata``, the same place a portrait
+uploaded through user preferences goes. That is deliberately *not* the
+``[profile]`` layer's Dexterity type, which has no image field: portraits
+belong to the member, so they work the same whether or not that layer is
+installed. It is **off by default**, which is worth explaining.
 
 **Why off by default.** ``picture_url`` is a claim, and at plenty of providers
 a claim is whatever the user typed. Turning it into a server-side fetch makes
@@ -38,7 +41,7 @@ import requests
 
 #: Registry record switching the whole feature on. Off by default; see the
 #: module docstring for why.
-ENABLED_RECORD = "pas.plugins.identity.profile_sync_portraits"
+ENABLED_RECORD = "pas.plugins.identity.sync_portraits"
 
 #: Seconds to wait for the image. Short on purpose: a user is watching a login
 #: spinner while this runs.
