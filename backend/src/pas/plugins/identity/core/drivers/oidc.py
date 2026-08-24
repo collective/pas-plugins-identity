@@ -19,5 +19,8 @@ class GenericOIDCDriver(BaseDriver):
             "secret": False,
             "description": "Discovery is fetched from "
             "<issuer>/.well-known/openid-configuration.",
+            # Ahead of the client credentials: everything else about this
+            # provider is read from what the issuer discovers.
+            "order": 10,
         },
     }

@@ -35,6 +35,7 @@ class EmailDriver(BaseDriver):
                 "required": False,
                 "secret": False,
                 "default": 900,
+                "order": 10,
             },
             "rate_limit_per_hour": {
                 "type": "int",
@@ -42,6 +43,7 @@ class EmailDriver(BaseDriver):
                 "required": False,
                 "secret": False,
                 "default": 5,
+                "order": 20,
             },
         }
 

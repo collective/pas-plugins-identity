@@ -27,24 +27,33 @@ def text(payload: JSONDict, *keys: str) -> str:
 
 
 #: Config fields every OAuth2/OIDC driver needs.
+#:
+#: Every descriptor carries an ``order``, because a schema travels as a JSON
+#: object and plone.restapi serialises those with ``sort_keys=True`` -- so the
+#: order these are declared in is gone by the time a form is built from them.
+#: The numbers are spaced by ten so a driver can slot a field of its own
+#: between two of these without renumbering anything.
 OAUTH_FIELDS: dict[str, JSONDict] = {
     "client_id": {
         "type": "string",
         "title": "Client ID",
         "required": True,
         "secret": False,
+        "order": 20,
     },
     "client_secret": {
         "type": "string",
         "title": "Client secret",
         "required": True,
         "secret": True,
+        "order": 30,
     },
     "scope": {
         "type": "string",
         "title": "Scope",
         "required": False,
         "secret": False,
+        "order": 40,
     },
 }
 
@@ -91,6 +100,7 @@ class BaseDriver:
             "required": False,
             "secret": False,
             "default": False,
+            "order": 60,
         }
         schema["userid_source"] = {
             "type": "choice",
@@ -107,6 +117,7 @@ class BaseDriver:
             "required": False,
             "secret": False,
             "default": "uuid",
+            "order": 50,
             "choices": [
                 ["uuid", "A random id"],
                 ["username", "The provider's username"],

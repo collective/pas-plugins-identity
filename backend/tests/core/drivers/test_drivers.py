@@ -44,7 +44,22 @@ class TestDriverContract:
     def test_config_schema_descriptors_complete(self, factory: type[BaseDriver]):
         """Every field declares the keys the Volto widget generator needs."""
         for name, descriptor in factory().config_schema().items():
-            assert {"type", "title", "required", "secret"} <= set(descriptor), name
+            assert {"type", "title", "required", "secret", "order"} <= set(
+                descriptor
+            ), name
+
+    @pytest.mark.parametrize("factory", ALL_DRIVERS)
+    def test_config_schema_order_is_unambiguous(self, factory: type[BaseDriver]):
+        """No two fields claim the same position.
+
+        A schema is serialised as a JSON object with sorted keys, so ``order``
+        is the only thing the form has to go on. Two fields sharing a number
+        would be separated alphabetically instead -- which is the bug this
+        replaced, hiding in one driver rather than all of them.
+        """
+        orders = [d["order"] for d in factory().config_schema().values()]
+
+        assert len(orders) == len(set(orders))
 
     @pytest.mark.parametrize("factory", ALL_DRIVERS)
     def test_driver_ids_are_unique(self, factory: type[BaseDriver]):
