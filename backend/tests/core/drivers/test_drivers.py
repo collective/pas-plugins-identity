@@ -19,6 +19,7 @@ from pas.plugins.identity.core.drivers.google import GoogleDriver
 from pas.plugins.identity.core.drivers.oidc import GenericOIDCDriver
 from pas.plugins.identity.core.interfaces import ClaimsError
 from pas.plugins.identity.core.interfaces import IDriver
+from plone.app.users.browser.schemaeditor import getFromBaseSchema
 from plone.app.users.schema import IUserDataSchema
 from zope.interface.verify import verifyObject
 
@@ -61,30 +62,6 @@ class TestDriverContract:
         orders = [d["order"] for d in factory().config_schema().values()]
 
         assert len(orders) == len(set(orders))
-
-    @pytest.mark.parametrize("factory", ALL_DRIVERS)
-    def test_default_propertymap_targets_real_member_fields(
-        self, factory: type[BaseDriver]
-    ):
-        """A seeded mapping writes somewhere a stock site actually has.
-
-        The vocabulary the control panel offers is built from the site's live
-        member schema, which a site may extend -- but a *default* may only
-        name what ``IUserDataSchema`` declares on its own, since that is all
-        a fresh site has. A default naming ``username`` would look right in
-        the form and resolve to nothing on every login.
-        """
-        stock = set(IUserDataSchema.names(all=True))
-
-        for claim, field in factory().default_propertymap.items():
-            assert field in stock, f"{claim} -> {field}"
-
-    @pytest.mark.parametrize("factory", ALL_DRIVERS)
-    def test_default_propertymap_claims_are_paths(self, factory: type[BaseDriver]):
-        """Every key is a non-empty claim path; an empty one resolves to
-        ``None`` for every provider forever."""
-        for claim in factory().default_propertymap:
-            assert claim and claim.strip() == claim
 
     @pytest.mark.parametrize("factory", ALL_DRIVERS)
     def test_driver_ids_are_unique(self, factory: type[BaseDriver]):
@@ -173,3 +150,38 @@ class TestSecretFlagging:
 
         assert not any(f["secret"] for f in schema.values())
         assert "client_secret" not in schema
+
+
+class TestDefaultPropertyMap:
+    """What a driver may seed into a new provider's attribute mapping."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+
+    @pytest.mark.parametrize("factory", ALL_DRIVERS)
+    def test_targets_a_field_the_site_has(self, factory: type[BaseDriver]):
+        """A seeded mapping writes somewhere a fresh site actually has.
+
+        The vocabulary the control panel offers is built from the site's live
+        member schema, and a site may extend it -- but a *default* may only
+        name what a stock site already carries, because that is all a fresh
+        one has. ``username`` is the trap this catches: providers publish it,
+        Plone has no member field for it, and a default naming it would look
+        right in the form and resolve to nothing on every login.
+        """
+        stock = set(getFromBaseSchema(IUserDataSchema))
+
+        for claim, field in factory().default_propertymap.items():
+            assert field in stock, f"{claim} -> {field}"
+
+    def test_username_is_not_a_member_field(self):
+        """The premise of the test above, stated rather than assumed."""
+        assert "username" not in set(getFromBaseSchema(IUserDataSchema))
+
+    @pytest.mark.parametrize("factory", ALL_DRIVERS)
+    def test_claims_are_paths(self, factory: type[BaseDriver]):
+        """Every key is a non-empty claim path; an empty one resolves to
+        ``None`` for every provider forever."""
+        for claim in factory().default_propertymap:
+            assert claim and claim.strip() == claim
