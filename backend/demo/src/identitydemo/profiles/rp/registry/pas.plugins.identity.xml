@@ -61,10 +61,16 @@
     <value>demo-secret-not-for-any-real-site</value>
   </record>
   <record name="pas.plugins.identity.providers.demo-idp.config.scope">
-    <field type="plone.registry.field.TextLine">
+    <field type="plone.registry.field.Tuple">
       <required>False</required>
+      <value_type type="plone.registry.field.TextLine" />
     </field>
-    <value>openid email profile address</value>
+    <value>
+      <element>openid</element>
+      <element>email</element>
+      <element>profile</element>
+      <element>address</element>
+    </value>
   </record>
 
 </registry>

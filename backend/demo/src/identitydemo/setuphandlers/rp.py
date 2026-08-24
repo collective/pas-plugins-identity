@@ -85,7 +85,7 @@ def _apply_deployment_urls() -> None:
                 config={
                     "client_id": settings.DEMO_CLIENT_ID,
                     "client_secret": settings.DEMO_CLIENT_SECRET,
-                    "scope": "openid email profile address",
+                    "scope": ("openid", "email", "profile", "address"),
                 },
             )
         )

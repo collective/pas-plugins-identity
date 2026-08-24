@@ -73,10 +73,14 @@
     <value>4630b2eeb13c88d98ec18480edc4ac332480edbb</value>
   </record>
   <record name="pas.plugins.identity.providers.github.config.scope">
-    <field type="plone.registry.field.TextLine">
+    <field type="plone.registry.field.Tuple">
       <required>False</required>
+      <value_type type="plone.registry.field.TextLine" />
     </field>
-    <value>read:user user:email</value>
+    <value>
+      <element>read:user</element>
+      <element>user:email</element>
+    </value>
   </record>
   <record name="pas.plugins.identity.providers.github.config.auto_link_by_email">
     <field type="plone.registry.field.Bool">
