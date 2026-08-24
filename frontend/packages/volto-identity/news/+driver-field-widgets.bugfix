@@ -1,0 +1,5 @@
+Fixed two ways the generated provider form misrepresented what a driver declares.
+
+A driver's `default` was dropped, so an add form started blank on every field. That is how a GitHub provider gets configured with `openid email profile` -- OIDC scopes, which GitHub does not grant -- instead of the `read:user user:email` the driver already declares, and then never returns an email address. Defaults now reach the form.
+
+A `list` field fell through to a plain text input rather than a repeating value. No driver ships one today, but the field type is part of the driver contract: a driver adds its own form here without a frontend change, so the form has to render every type that contract allows. @ericof

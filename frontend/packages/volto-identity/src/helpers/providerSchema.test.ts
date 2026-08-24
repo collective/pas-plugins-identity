@@ -19,6 +19,23 @@ const OIDC: Driver = {
     client_secret: { type: 'string', title: 'Client secret', secret: true },
     timeout: { type: 'int', title: 'Timeout', secret: false },
     auto_link: { type: 'bool', title: 'Auto link', secret: false },
+    scope: {
+      type: 'string',
+      title: 'Scope',
+      secret: false,
+      default: 'openid email profile',
+    },
+    allowed_groups: { type: 'list', title: 'Allowed groups', secret: false },
+    userid_source: {
+      type: 'choice',
+      title: 'Userid taken from',
+      secret: false,
+      default: 'uuid',
+      choices: [
+        ['uuid', 'A random id'],
+        ['username', "The provider's username"],
+      ],
+    },
   },
 };
 
@@ -39,6 +56,32 @@ describe('propertyFor', () => {
 
   it('renders anything else as text', () => {
     expect(propertyFor(OIDC.schema.issuer).type).toBe('string');
+  });
+
+  it('renders a list as a repeating value, not a text box', () => {
+    // Typing several groups into one input and hoping they are split is
+    // exactly the failure this avoids.
+    expect(propertyFor(OIDC.schema.allowed_groups)).toMatchObject({
+      type: 'array',
+      widget: 'token',
+    });
+  });
+
+  it('renders a choice as a select over the options the driver names', () => {
+    expect(propertyFor(OIDC.schema.userid_source).choices).toEqual([
+      ['uuid', 'A random id'],
+      ['username', "The provider's username"],
+    ]);
+  });
+
+  it("carries the driver's default into the form", () => {
+    // A blank scope field is how a GitHub provider ends up configured with
+    // OIDC scopes and never sees an email address.
+    expect(propertyFor(OIDC.schema.scope).default).toBe('openid email profile');
+  });
+
+  it('omits default entirely when the driver declares none', () => {
+    expect('default' in propertyFor(OIDC.schema.issuer)).toBe(false);
   });
 
   it('carries the driver description through', () => {

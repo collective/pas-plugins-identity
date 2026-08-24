@@ -50,6 +50,8 @@ export interface DriverField {
   required?: boolean;
   secret: boolean;
   default?: unknown;
+  /** Present on a `choice` field: the options, as [value, label] pairs. */
+  choices?: [string, string][];
 }
 
 /** A driver and the form it needs, from `@identity-drivers`. */

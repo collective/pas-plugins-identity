@@ -29,7 +29,15 @@ export const CONFIG_PREFIX = 'config.';
  * @returns The schema property.
  */
 export function propertyFor(field: DriverField): Record<string, unknown> {
-  const base = { title: field.title, description: field.description };
+  const base = {
+    title: field.title,
+    description: field.description,
+    // The driver's own default. Without it an add form starts blank and the
+    // operator has to know what a sensible value is -- which is how a GitHub
+    // provider ends up with OIDC scopes typed into it and never sees an
+    // email address.
+    ...(field.default === undefined ? {} : { default: field.default }),
+  };
   if (field.secret) {
     // Volto's password widget, so a stored secret is not shoulder-readable
     // and the browser does not offer to remember it.
@@ -40,6 +48,15 @@ export function propertyFor(field: DriverField): Record<string, unknown> {
   }
   if (field.type === 'bool') {
     return { ...base, type: 'boolean' };
+  }
+  if (field.type === 'list') {
+    // A repeating value, not a comma-separated string in a text box.
+    return { ...base, type: 'array', widget: 'token' };
+  }
+  if (field.type === 'choice') {
+    // The driver names the options, so a select renders whatever a driver
+    // offers without this knowing what any of them mean.
+    return { ...base, choices: field.choices ?? [] };
   }
   return { ...base, type: 'string' };
 }
