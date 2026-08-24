@@ -28,9 +28,19 @@ indistinguishable from a bug.
 Nothing here commits. Login runs inside the request's transaction, and a
 Profile minted for a login that then fails should not outlive it.
 
-``login`` is deliberately not synced. It is half of the case-folded index the
-enumeration plugin queries and it is what the identity join is displayed
-against; a provider renaming somebody should not silently move their account.
+**Which fields.** The provider's own property map, the one the control panel
+edits and :mod:`pas.plugins.identity.core.propertymap` applies to the Plone
+user, so a site states the mapping once and both the user and the Profile
+follow it. Claims are addressed by dotted path there, which is how
+``address.formatted`` reaches into a provider's own document; a path landing
+on an object rather than a scalar is treated as absent rather than written
+as a repr.
+
+``login`` is deliberately not in :data:`WRITABLE_FIELDS`, whatever a map says.
+It is half of the case-folded index the enumeration plugin queries and it is
+what the identity join is displayed against; a provider renaming somebody
+should not silently move their account. Neither is ``group_ids``: a provider
+that could edit it could grant itself roles.
 """
 
 from pas.plugins.identity import logger
@@ -38,11 +48,11 @@ from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
 from pas.plugins.identity.core.events import IdentityLinked
 from pas.plugins.identity.core.events import UserClaimsRefreshed
 from pas.plugins.identity.core.interfaces import Claims
+from pas.plugins.identity.core.propertymap import resolve_claim
 from pas.plugins.identity.profile.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.profile.catalog import query_catalog
 from pas.plugins.identity.profile.container import get_container
 from pas.plugins.identity.profile.content.profile import Profile
-from pas.plugins.identity.profile.portraits import sync_portrait
 from persistent.mapping import PersistentMapping
 from plone import api
 from plone.base.utils import safe_text
@@ -55,18 +65,69 @@ from zope.lifecycleevent import modified
 #: touched by a provider.
 PROVIDER_VALUES_KEY = "pas.plugins.identity.provider_values"
 
-#: Claim name to Profile field. Only what a provider legitimately owns; see
-#: the module docstring for why ``login`` is not here.
-CLAIM_FIELDS = {
+#: Profile fields a provider may ever write, whatever its property map says.
+#: ``userid`` is the join to the identity store and is permanent; ``login`` is
+#: half of the case-folded index the enumeration plugin queries; ``group_ids``
+#: is group membership, and a provider that could edit it could grant itself
+#: roles. A map naming any of them is ignored rather than refused: the map is
+#: typed in a control panel and a typo there must not fail a login.
+WRITABLE_FIELDS = frozenset({
+    "fullname",
+    "email",
+    "home_page",
+    "description",
+    "location",
+})
+
+#: Applied when a provider has no property map of its own. Enough to make an
+#: account identifiable, which is what an unconfigured provider owes the site.
+DEFAULT_CLAIM_FIELDS = {
     "fullname": "fullname",
     "email": "email",
 }
 
-#: Key under which the last-synced avatar URL is remembered. Kept alongside
-#: the field values so the portrait is fetched when the provider changes it
-#: and not on every login -- this is the one part of the sync that makes a
-#: network request, and it runs while somebody waits for a page.
-PICTURE_KEY = "picture_url"
+
+def claim_fields(provider_id: str) -> dict[str, str]:
+    """Return the claim path to Profile field map for one provider.
+
+    The provider's own map, which is what the control panel edits and what
+    :mod:`pas.plugins.identity.core.propertymap` applies to a Plone user, so a
+    site configures the mapping once and both the user and the Profile follow
+    it. A provider that has no map gets :data:`DEFAULT_CLAIM_FIELDS`.
+
+    :param provider_id: Provider the claims came from.
+    :returns: Claim path to Profile field, restricted to
+        :data:`WRITABLE_FIELDS`.
+    """
+    from pas.plugins.identity.core.controlpanel import get_provider
+
+    config = get_provider(provider_id)
+    if config is None or not config.propertymap:
+        return dict(DEFAULT_CLAIM_FIELDS)
+    return {
+        path: field
+        for path, field in config.propertymap.items()
+        if field in WRITABLE_FIELDS
+    }
+
+
+def _scalar(value: object) -> str:
+    """Render a resolved claim as text, or as nothing.
+
+    A claim path may land on a list or a mapping -- ``address`` is an object
+    at every OIDC provider -- and a Profile field is a line of text. Rather
+    than write ``{'formatted': ...}`` into somebody's location, anything that
+    is not a scalar is treated as an absent claim, which the caller already
+    knows not to write.
+
+    :param value: Whatever the claim path resolved to.
+    :returns: The value as text, or an empty string.
+    """
+    if value is None or isinstance(value, (dict, list, tuple, set)):
+        return ""
+    if isinstance(value, bool):
+        return ""
+    return str(value)
 
 
 def _remembered(profile: Profile) -> PersistentMapping:
@@ -95,17 +156,19 @@ def _provider_may_write(
     return current == (remembered.get(field) or "")
 
 
-def sync_claims(profile: Profile, claims: Claims) -> list[str]:
+def sync_claims(profile: Profile, claims: Claims, provider_id: str = "") -> list[str]:
     """Write the provider's claims onto the fields it still owns.
 
     :param profile: The Profile.
     :param claims: Normalized claims.
+    :param provider_id: Provider the claims came from. Empty means "no
+        provider in particular", which takes :data:`DEFAULT_CLAIM_FIELDS`.
     :returns: The fields that actually changed.
     """
     remembered = _remembered(profile)
     changed = []
-    for claim, field in CLAIM_FIELDS.items():
-        value = safe_text(claims.get(claim) or "")
+    for claim, field in claim_fields(provider_id).items():
+        value = safe_text(_scalar(resolve_claim(claim, claims)))
         if not value:
             # An absent claim is not an instruction to clear the field. A
             # provider that stops sending a name has not told us the user no
@@ -201,39 +264,17 @@ def _login_for(userid: str, claims: Claims) -> str:
     return safe_text(claims.get("username") or claims.get("email") or userid)
 
 
-def sync_picture(profile: Profile, userid: str, claims: Claims) -> bool:
-    """Copy the provider's avatar into portrait storage when it changed.
-
-    Off unless the site switched it on; see
-    :mod:`pas.plugins.identity.profile.portraits` for why that is the default.
-
-    :param profile: The Profile, which remembers the last URL synced.
-    :param userid: Canonical Plone userid.
-    :param claims: Normalized claims.
-    :returns: Whether a portrait was stored.
-    """
-    url = safe_text(claims.get("picture_url") or "")
-    remembered = _remembered(profile)
-    if not url or url == remembered.get(PICTURE_KEY):
-        return False
-    # Remembered whether or not the fetch succeeds. A URL that failed once
-    # will fail again, and retrying it on every login turns one bad avatar
-    # into a permanent tax on that user's sign-in.
-    remembered[PICTURE_KEY] = url
-    return sync_portrait(userid, url)
-
-
-def _handle(userid: str, claims: Claims) -> None:
+def _handle(userid: str, claims: Claims, provider_id: str) -> None:
     """Ensure the Profile exists and sync the claims onto it.
 
     :param userid: Canonical Plone userid.
     :param claims: Normalized claims.
+    :param provider_id: Provider the claims came from.
     """
     profile = ensure_profile(userid, _login_for(userid, claims), claims)
     if profile is None:
         return
-    sync_claims(profile, claims)
-    sync_picture(profile, userid, claims)
+    sync_claims(profile, claims, provider_id)
 
 
 def on_authenticated(event: ExternalIdentityAuthenticated) -> None:
@@ -241,7 +282,7 @@ def on_authenticated(event: ExternalIdentityAuthenticated) -> None:
 
     :param event: An ``ExternalIdentityAuthenticated`` event.
     """
-    _handle(event.userid, event.claims)
+    _handle(event.userid, event.claims, event.provider)
 
 
 def on_identity_linked(event: IdentityLinked) -> None:
@@ -253,7 +294,7 @@ def on_identity_linked(event: IdentityLinked) -> None:
 
     :param event: An ``IdentityLinked`` event.
     """
-    _handle(event.userid, event.claims)
+    _handle(event.userid, event.claims, event.provider)
 
 
 def on_claims_refreshed(event: UserClaimsRefreshed) -> None:
@@ -261,15 +302,15 @@ def on_claims_refreshed(event: UserClaimsRefreshed) -> None:
 
     :param event: A ``UserClaimsRefreshed`` event.
     """
-    _handle(event.userid, event.claims)
+    _handle(event.userid, event.claims, event.provider)
 
 
 __all__ = [
+    "claim_fields",
     "ensure_profile",
     "get_profile",
     "on_authenticated",
     "on_claims_refreshed",
     "on_identity_linked",
     "sync_claims",
-    "sync_picture",
 ]
