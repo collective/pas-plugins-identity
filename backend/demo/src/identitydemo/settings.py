@@ -11,7 +11,7 @@ explicit opt-in. A site that applied ``identitydemo:idp`` by accident would
 have a registered OAuth client whose secret is in a public git repository.
 
 The *URLs* are not fixed, because there are two demo deployments and they do
-not agree on them. The hermetic Gate S3 stack publishes ports and reaches
+not agree on them. The hermetic federation stack publishes ports and reaches
 Plone at ``/Plone``; the manual stack puts Traefik in front and serves each
 site at the root of its own hostname. Both are read from the environment with
 the hermetic values as defaults, so the test stack needs no configuration and
@@ -23,6 +23,9 @@ between two handlers in one install would be a demo that half agrees with
 itself.
 """
 
+from pathlib import Path
+
+import json
 import os
 
 
@@ -81,9 +84,33 @@ DEMO_CLIENT_SECRET = "demo-secret-not-for-any-real-site"  # noqa: S105
 #: provider: doing so silently re-points every stored identity.
 DEMO_PROVIDER_ID = "demo-idp"
 
-#: The demo user, created on the IdP only. The RP learns about them through
-#: the flow, which is the thing being demonstrated.
-DEMO_USER_ID = "alice"
-DEMO_USER_EMAIL = "alice@id.localhost"
+#: The demo user, read from the ``plone.exportimport`` payload that creates
+#: them rather than restated here. They exist on the IdP only; the RP learns
+#: about them through the flow, which is the thing being demonstrated.
+_DEMO_MEMBER = json.loads(
+    (Path(__file__).parent / "setuphandlers/idpcontent/principals.json").read_text()
+)["members"][0]
+
+DEMO_USER_ID = _DEMO_MEMBER["username"]
+DEMO_USER_EMAIL = _DEMO_MEMBER["email"]
+DEMO_USER_FULLNAME = _DEMO_MEMBER["fullname"]
+
+#: What a reader is told to type, and therefore the one field that cannot come
+#: out of the payload: an export carries the *hash*. It round-trips correctly
+#: -- PAS re-encrypts nothing that is already encrypted -- but a hash is not
+#: something anybody can log in with, and the flow test types this.
+#:
+#: The two are kept honest by :func:`demo_password_matches_the_payload`, which
+#: the test suite asserts: re-exporting the IdP after changing Alice's
+#: password would otherwise leave this line quietly wrong.
 DEMO_USER_PASSWORD = "alice-demo-password"  # noqa: S105
-DEMO_USER_FULLNAME = "Alice Example"
+
+
+def demo_password_matches_the_payload() -> bool:
+    """Whether :data:`DEMO_USER_PASSWORD` is the one the payload installs.
+
+    :returns: Whether the stored hash validates the documented password.
+    """
+    from AccessControl import AuthEncoding
+
+    return bool(AuthEncoding.pw_validate(_DEMO_MEMBER["password"], DEMO_USER_PASSWORD))

@@ -1,0 +1,50 @@
+{
+  "@id": "/Plone",
+  "@type": "Plone Site",
+  "UID": "plone_site_root",
+  "allow_discussion": null,
+  "blocks": {
+    "4b4455b0-2ef6-40bc-8a0e-988ecc55b6a4": {
+      "@type": "description"
+    },
+    "77105597-9bf2-4319-8169-6f2b8acd22cf": {
+      "@type": "title"
+    },
+    "e213ba80-0add-4c9f-9fac-34d8dc342c9b": {
+      "@type": "slate"
+    }
+  },
+  "blocks_layout": {
+    "items": [
+      "77105597-9bf2-4319-8169-6f2b8acd22cf",
+      "4b4455b0-2ef6-40bc-8a0e-988ecc55b6a4",
+      "e213ba80-0add-4c9f-9fac-34d8dc342c9b"
+    ]
+  },
+  "contributors": [],
+  "creators": [
+    "admin"
+  ],
+  "description": "Site with content information",
+  "effective": null,
+  "expires": null,
+  "exportimport.constrains": {},
+  "exportimport.conversation": [],
+  "id": "Plone",
+  "is_folderish": true,
+  "items_total": 0,
+  "language": "##DEFAULT##",
+  "layout": "document_view",
+  "lock": {
+    "locked": false,
+    "stealable": true
+  },
+  "review_state": null,
+  "rights": "",
+  "subjects": [],
+  "title": "Content site",
+  "type_title": "Plone Site",
+  "workflow_history": {},
+  "working_copy": null,
+  "working_copy_of": null
+}

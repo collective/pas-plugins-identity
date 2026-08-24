@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<registry>
+
+  <records interface="pas.plugins.identity.core.controlpanel.interfaces.IIdentitySettings"
+           prefix="pas.plugins.identity"
+  >
+    <value key="audit_max_days">180</value>
+    <value key="audit_max_entries">500</value>
+    <value key="audit_record_pii">False</value>
+    <value key="sync_portraits">True</value>
+    <!-- ``callback_url`` and the provider's ``issuer`` are deliberately not
+         stated here. Both are read from the environment by
+         ``identitydemo.settings`` and written by ``install_rp``, because the
+         hermetic federation stack and the manual Traefik stack do not agree on
+         them and XML cannot read an environment variable. -->
+  </records>
+
+  <!-- The five fields every provider has, whatever its driver, come from
+       IProviderRecords, so nothing here restates a type. The driver's own
+       settings below cannot: which of them exist, and what type each one is,
+       comes from the driver's config_schema at runtime, so each carries its
+       own field element. A record with neither an interface nor a field
+       element imports only into a site that already has it.
+
+       Claim paths on the left of the property map, Plone fields on the right,
+       never the other way round. What this identity provider actually
+       publishes is decided by server.claims.SCOPE_CLAIMS: name,
+       preferred_username, website, email, email_verified and address. There
+       is no biography claim and no picture claim, so nothing maps to
+       description or portrait.
+
+       address.formatted is the dotted path this package's property map exists
+       for: the provider sends address as an object, and the formatted member
+       is the human-readable line. -->
+  <records interface="pas.plugins.identity.core.controlpanel.interfaces.IProviderRecords"
+           prefix="pas.plugins.identity.providers.demo-idp"
+  >
+    <value key="driver">oidc-generic</value>
+    <value key="title">Sign in with the demo IdP</value>
+    <value key="enabled">True</value>
+    <value key="order">0</value>
+    <value key="propertymap">
+      <element key="fullname">fullname</element>
+      <element key="email">email</element>
+      <element key="website">home_page</element>
+      <element key="address.formatted">location</element>
+      <element key="picture">portrait</element>
+    </value>
+  </records>
+
+  <record name="pas.plugins.identity.providers.demo-idp.config.client_id">
+    <field type="plone.registry.field.TextLine">
+      <required>False</required>
+    </field>
+    <value>demo-rp</value>
+  </record>
+  <record name="pas.plugins.identity.providers.demo-idp.config.client_secret">
+    <field type="plone.registry.field.Password">
+      <required>False</required>
+    </field>
+    <value>demo-secret-not-for-any-real-site</value>
+  </record>
+  <record name="pas.plugins.identity.providers.demo-idp.config.scope">
+    <field type="plone.registry.field.TextLine">
+      <required>False</required>
+    </field>
+    <value>openid email profile address</value>
+  </record>
+
+</registry>

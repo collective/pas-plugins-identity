@@ -7,10 +7,10 @@
   <genericsetup:registerProfile
       name="idp"
       title="Identity demo: identity provider"
-      description="Site A of the federation demo. Registers the demo OAuth client and the demo user."
+      description="Site A of the federation demo. An OpenID Connect provider."
       provides="Products.GenericSetup.interfaces.EXTENSION"
       directory="profiles/idp"
-      post_handler=".setuphandlers.install_idp"
+      post_handler=".setuphandlers.idp.install_idp"
       />
 
   <genericsetup:registerProfile
@@ -19,7 +19,7 @@
       description="Site B of the federation demo. Points an oidc-generic provider at site A."
       provides="Products.GenericSetup.interfaces.EXTENSION"
       directory="profiles/rp"
-      post_handler=".setuphandlers.install_rp"
+      post_handler=".setuphandlers.rp.install_rp"
       />
 
 </configure>

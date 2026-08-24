@@ -18,13 +18,12 @@ from . import SERVER_PROFILE_ID
 from identitydemo import settings
 from identitydemo.setuphandlers import DemoRefused
 from identitydemo.setuphandlers import guard
-from identitydemo.setuphandlers import install_idp
-from identitydemo.setuphandlers import install_rp
+from identitydemo.setuphandlers.idp import install_idp
+from identitydemo.setuphandlers.rp import install_rp
 from pas.plugins.identity.core.controlpanel import CALLBACK_URL_RECORD
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.server.clients import get_client
 from pas.plugins.identity.server.clients import get_clients
-from pas.plugins.identity.server.clients import verify_secret
 from pas.plugins.identity.server.tokens import ISSUER_RECORD
 from plone import api
 
@@ -60,61 +59,64 @@ class TestGuard:
 @pytest.mark.portal(profiles=[SERVER_PROFILE_ID])
 class TestInstallIdP:
     @pytest.fixture(autouse=True)
-    def _setup(self, portal, monkeypatch):
+    def _setup(self, portal, monkeypatch, demo_registry):
         monkeypatch.setenv(settings.OPT_IN_ENV, "1")
         self.portal = portal
         self.setup_tool = portal.portal_setup
-
-    def test_refuses_without_the_opt_in(self, monkeypatch):
-        """The guard is on the handler, not only on a caller of it."""
-        monkeypatch.delenv(settings.OPT_IN_ENV, raising=False)
-
-        with pytest.raises(DemoRefused):
-            install_idp(self.setup_tool)
-
-        assert get_client(settings.DEMO_CLIENT_ID) is None
-
-    def test_registers_the_demo_client(self):
-        install_idp(self.setup_tool)
-
-        client = get_client(settings.DEMO_CLIENT_ID)
-
-        assert client is not None
-        assert client.title == settings.DEMO_CLIENT_TITLE
-
-    def test_the_registered_secret_is_the_documented_one(self):
-        """The whole reason the handler builds a ``ClientConfig`` by hand
-        instead of calling ``add_client``: the relying party is installed in
-        another container and can only be handed a literal."""
-        install_idp(self.setup_tool)
-
-        client = get_client(settings.DEMO_CLIENT_ID)
-
-        assert verify_secret(settings.DEMO_CLIENT_SECRET, client.secret_hash)
-
-    def test_the_secret_is_not_stored_in_the_clear(self):
-        """Stated because the secret being a known literal makes it easy to
-        stop caring how it is stored."""
-        install_idp(self.setup_tool)
-
-        client = get_client(settings.DEMO_CLIENT_ID)
-
-        assert settings.DEMO_CLIENT_SECRET not in client.secret_hash
-
-    def test_the_redirect_uri_points_at_the_relying_party(self):
-        install_idp(self.setup_tool)
-
-        client = get_client(settings.DEMO_CLIENT_ID)
-
-        assert client.redirect_uris == [settings.DEMO_REDIRECT_URI]
+        # The handler runs after the profile's registry XML, which is where
+        # the demo client and every server setting now live.
+        demo_registry("idp")
 
     def test_creates_the_demo_user(self):
+        """From ``principals.json``, not from four keyword arguments: the
+        payload is the shape ``plone-exporter`` writes, so the way to change
+        what the demo ships is to configure a site and export it."""
         install_idp(self.setup_tool)
 
         user = api.user.get(userid=settings.DEMO_USER_ID)
 
         assert user is not None
         assert user.getProperty("email") == settings.DEMO_USER_EMAIL
+        assert user.getProperty("fullname") == settings.DEMO_USER_FULLNAME
+
+    def test_the_demo_user_can_sign_in(self):
+        """The password is what the documentation tells a reader to type, so
+        it has to be stored as a password rather than as a property."""
+        install_idp(self.setup_tool)
+
+        assert self.portal.acl_users.authenticate(
+            settings.DEMO_USER_ID, settings.DEMO_USER_PASSWORD, self.portal.REQUEST
+        )
+
+    def test_needs_no_opt_in(self):
+        """The guard protects the relying party profile, which registers a
+        published client secret. A demo user whose password is in the same
+        public repository is not protected by refusing to create them."""
+        monkeypatch = pytest.MonkeyPatch()
+        monkeypatch.delenv(settings.OPT_IN_ENV, raising=False)
+        try:
+            install_idp(self.setup_tool)
+        finally:
+            monkeypatch.undo()
+
+        assert api.user.get(userid=settings.DEMO_USER_ID) is not None
+
+    def test_the_issuer_is_written_from_the_environment(self):
+        """It is not in the registry XML, and must not be: the two demo
+        stacks disagree on it and the issuer is compared as a string."""
+        install_idp(self.setup_tool)
+
+        assert api.portal.get_registry_record(ISSUER_RECORD) == settings.IDP_PUBLIC_URL
+
+    def test_the_client_redirect_uri_is_written_from_the_environment(self):
+        """The XML states one, but it is the manual stack's. The hermetic
+        stack reaches the relying party on another port and another path, and
+        the redirect URI is compared byte for byte at the token endpoint."""
+        install_idp(self.setup_tool)
+
+        client = get_client(settings.DEMO_CLIENT_ID)
+
+        assert client.redirect_uris == [settings.DEMO_REDIRECT_URI]
 
     def test_is_idempotent(self):
         """Re-applying the profile against a warm volume must not mint a
@@ -190,15 +192,6 @@ class TestSettingsReachTheSite:
         self.portal = portal
         self.setup_tool = portal.portal_setup
 
-    @pytest.mark.portal(profiles=[SERVER_PROFILE_ID])
-    def test_the_issuer_is_configured_from_the_settings(self):
-        """Until it is set the server signs nothing and discovery answers
-        503, which is the correct initial state for a real site and the one
-        thing a demo has to decide for itself."""
-        install_idp(self.setup_tool)
-
-        assert api.portal.get_registry_record(ISSUER_RECORD) == settings.IDP_PUBLIC_URL
-
     def test_the_callback_url_is_configured_from_the_settings(self):
         """The relying party's ``callback_url``, the redirect URI registered
         with the provider and this constant are compared byte for byte at the
@@ -209,6 +202,14 @@ class TestSettingsReachTheSite:
             api.portal.get_registry_record(CALLBACK_URL_RECORD)
             == settings.DEMO_REDIRECT_URI
         )
+
+
+class TestTheDemoPassword:
+    """The one field that cannot come out of the payload: an export carries
+    the hash, and a hash is not something a reader can type."""
+
+    def test_the_documented_password_is_the_one_installed(self):
+        assert settings.demo_password_matches_the_payload()
 
 
 class TestDeploymentURLs:

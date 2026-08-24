@@ -109,7 +109,7 @@ install-extras: $(VENV_FOLDER) ## Layer optional extras on top, e.g. EXTRAS=prof
 		uv pip install -c constraints-mxdev.txt -e ".[test,$(EXTRAS)]"; \
 	fi
 
-# The federation demo stack (Gate S3). Installed explicitly rather than from
+# The federation demo stack. Installed explicitly rather than from
 # an mx.ini source: `Dockerfile` copies the whole tree and runs mxdev, so a
 # source section here would put the demo profiles -- and their published
 # client secret -- into the production image's portal_setup. The one place
@@ -155,14 +155,14 @@ lint: ## Check and fix code base according to Plone standards
 	@uvx ruff@latest check --fix --config $(BACKEND_FOLDER)/pyproject.toml
 	@uvx pyroma@latest -d .
 	@uvx check-python-versions@latest .
-	@uvx zpretty@latest --check src
+	@uvx zpretty@latest --check src demo
 
 .PHONY: format
 format: ## Check and fix code base according to Plone standards
 	@echo "$(GREEN)==> Format codebase$(RESET)"
 	@uvx ruff@latest check --select I --fix --config $(BACKEND_FOLDER)/pyproject.toml
 	@uvx ruff@latest format --config $(BACKEND_FOLDER)/pyproject.toml
-	@uvx zpretty@latest -i src
+	@uvx zpretty@latest -i src demo
 
 ############################################
 # Dex, the OIDC provider for the flow tests

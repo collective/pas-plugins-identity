@@ -1,0 +1,61 @@
+{
+  "@id": "/Plone",
+  "@type": "Plone Site",
+  "UID": "plone_site_root",
+  "allow_discussion": null,
+  "blocks": {
+    "339d376d-509e-45c9-a186-db6f7b7cbe22": {
+      "@type": "description"
+    },
+    "5ccf5dcc-8a32-4954-ace5-7e5f4a2e678a": {
+      "@type": "slate",
+      "plaintext": "",
+      "value": [
+        {
+          "children": [
+            {
+              "text": ""
+            }
+          ],
+          "type": "p"
+        }
+      ]
+    },
+    "eb814e26-fa06-4dbc-bbbf-2a069a29b629": {
+      "@type": "title"
+    }
+  },
+  "blocks_layout": {
+    "items": [
+      "eb814e26-fa06-4dbc-bbbf-2a069a29b629",
+      "339d376d-509e-45c9-a186-db6f7b7cbe22",
+      "5ccf5dcc-8a32-4954-ace5-7e5f4a2e678a"
+    ]
+  },
+  "contributors": [],
+  "creators": [
+    "admin"
+  ],
+  "description": "IDP solution using Plone + pas.plugins.identity",
+  "effective": null,
+  "expires": null,
+  "exportimport.constrains": {},
+  "exportimport.conversation": [],
+  "id": "Plone",
+  "is_folderish": true,
+  "items_total": 1,
+  "language": "##DEFAULT##",
+  "layout": "document_view",
+  "lock": {
+    "locked": false,
+    "stealable": true
+  },
+  "review_state": null,
+  "rights": "",
+  "subjects": [],
+  "title": "ID.localhost",
+  "type_title": "Plone Site",
+  "workflow_history": {},
+  "working_copy": null,
+  "working_copy_of": null
+}

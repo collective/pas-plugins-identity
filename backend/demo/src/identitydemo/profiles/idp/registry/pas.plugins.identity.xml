@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<registry>
+  <records interface="pas.plugins.identity.core.controlpanel.interfaces.IIdentitySettings"
+           prefix="pas.plugins.identity"
+  >
+    <value key="audit_max_days">180</value>
+    <value key="audit_max_entries">500</value>
+    <value key="audit_record_pii">False</value>
+    <value key="callback_url">/login-identity</value>
+    <value key="sync_portraits">True</value>
+  </records>
+  <records interface="pas.plugins.identity.profile.interfaces.IProfileSettings"
+           prefix="pas.plugins.identity"
+  >
+    <value key="group_enumeration_states">
+      <element>active</element>
+    </value>
+    <value key="profile_container_id">profiles</value>
+    <value key="profile_container_parent" />
+    <value key="profile_container_title">Profiles</value>
+    <value key="profile_container_type">Document</value>
+    <value key="profile_enumeration_states">
+      <element>incomplete</element>
+      <element>complete</element>
+    </value>
+  </records>
+  <records interface="pas.plugins.identity.server.interfaces.IServerSettings"
+           prefix="pas.plugins.identity"
+  >
+    <!-- server_issuer is deliberately absent: it is read from the
+         environment and written by install_idp, because the two demo
+         stacks do not agree on it. The demo client's redirect URI is
+         rewritten there for the same reason, which is why the one below
+         is the manual stack's value rather than a promise. -->
+    <value key="server_access_token_ttl">900</value>
+    <value key="server_clients">[{"client_id": "demo-rp", "title": "Demo relying party", "redirect_uris": ["http://plone.localhost/login-identity"], "grant_types": ["authorization_code", "refresh_token"], "scope": "openid email profile address", "auth_method": "client_secret_post", "public": false, "enabled": true, "service_user": "", "secret_hash": "scrypt$16384$8$1$c33b80c3c3afe2ee4ea12eb808862ebe$8efbf88d18f6e2648877a92ea608296d6a8594b46f993fc40ce679b818809f6f4cb0ed4247570d7afe0c2d002e4982b2c1f3d042c5c08c36fef2fd9f1aa6a530"}]</value>
+    <value key="server_refresh_token_ttl">1209600</value>
+    <value key="server_signing_keys">[{"n": "r1qxj_MKTSk2kThymw9pDKYwTgxyHdwEL3Ye0F0Yzbo43u3rLbVnDzXKpV0nhwcwfK-6Xb8htPjgGbOCZVsgxhFeQWdRt7zKN3iLPcTBhNLz_oBCy6onhGBOMg0EoSq-hII_mHTyKFerlkQfkN8uCTFw3natNkEiFYm_7e_XtXH6gLXRRgzluGzursF2aYyvAmhaiSpDZ9Tnk75zfz4nfzEt1H4HQXrFVn3UyBIOT6pK5-6DW6hYlqbluJHt0WBXqDpMUrvBRKafOkBipxg3oHXT09Ct-ckKdODdfHFe9Y-DXCj8s_hcCO-9BqiG6EdfWmSK_ppsLYyToOcO4a_vMQ", "e": "AQAB", "d": "JxHkAhi6sNp_5_dVwaq7UzAsDxfCzVhaLmD5GJ_FiQD27uS_w51pawAnOJT626EEcqOMuJp_Xh0dgVx3rzGQqdDw2U217WRJAfb_vzF5lKiT6J6XQ12UFHCIu6oe3_HwJQIIPWXBFrAB8ScYiWTQkwfLCCYVDcORXo8kjlUkEK8ICWeAwYiu3jQLXGxDtnJvgrdnbR_LrdYszx29VlS9dPZxo0yxzi-SbYPgCTibhZjF5wl5BARdoJSts74eiNeMFPZeP0jwVfrI3MYYptmbkZ6BKMXCPuiByIEY3bKnt_cEUh96kSEYtq9V35XXIWiVKOFNUJFvxxSMDyLxxv5JaQ", "p": "3XxlHs5Ks0GbjNewGBmkm_GkwlC3z6jtWE7hSeZqb-_bJPUnwUrH0iDpL1mNQCbDKNbxmk36_JZvINbF-ZRGCeWiQwXSrpxb5-jhbGD_ksSboRVkMu16gL-3g17UCwimuGQ76CHDyakiEZiRwjRDiA66o8mi-4YbxtXRX5zfZac", "q": "yq3_GeM0HKyN9lyY0SsWSgZwdMMITN3VULFXYvW-k8zW6xKhHWojvTorLrjOtOASBlWVXcoV0gI2C8X-i81adEBKEYvmK1N8-4891j57nxY7aor4HxlxRh9IrMgsOPxTEN2PzIErmSU2C2IaKDEpjz_E3RxfrafkCMr2QGYEz2c", "dp": "C2jNDLkzv-gxSyARQiyP_jiEdD4UOe5Jy7LEiDoGYZ3JfC3kzmA7yudHG9lRHWzhwMjRyVEbDMfzEY3-xMyOjxP1N96k67nCQkAM3Lhicf0Ox02Cy9zP4rH9khbgdXEMpZMEQwD6RPkheCaT2501nVyk4KsSakKOS7_X-UTrfSE", "dq": "ZXJP5II_nDaWXACfENsTLfwpH5hbODY0xk3ton_EYzA9Rq4tbI6q0tUhtiIUfJ5HB1qhB6_V2ib3LE9vCETCCLwBFuVCUN9aCIP6_JiLweYb2UkzxkUy2FliQ_FxiRhq718m0cK5ss7YTTxOQV3SInxVqiLAlSga0HfeZ_9oWvM", "qi": "NjFLyZhox6wVjEj9QlwI6tnlsQLWwvvWm2b7nEFJErKMRikmYyRI2NNuB8A6fzIaL6SlI5HO6WR1hAycbXHpxjAhQ_QZAt9iKNK_5L45JlUK5IyYdd6YGucwJ4hWi5v-U9TxX7xXPtyyYdLeD5XmSfv5r7E4LmtlD3HAEI8LTwA", "kty": "RSA", "kid": "rIhmRIwkoCY3PelGgfD0Yk1M8X5Go3PoO-stiiaHNc0"}]</value>
+  </records>
+  <!-- The five fields every provider has, whatever its driver, come from
+       IProviderRecords, so nothing here restates a type. The driver's own
+       settings below cannot: which of them exist, and what type each one is,
+       comes from the driver's config_schema at runtime, so each carries its
+       own field element. A record with neither an interface nor a field
+       element imports only into a site that already has it. -->
+  <records interface="pas.plugins.identity.core.controlpanel.interfaces.IProviderRecords"
+           prefix="pas.plugins.identity.providers.github"
+  >
+    <value key="driver">github</value>
+    <value key="title">GitHub</value>
+    <value key="enabled">True</value>
+    <value key="order">0</value>
+    <value key="propertymap">
+      <element key="name">fullname</element>
+      <element key="email">email</element>
+      <element key="bio">description</element>
+      <element key="blog">home_page</element>
+      <element key="location">location</element>
+      <element key="picture_url">portrait</element>
+    </value>
+  </records>
+
+  <record name="pas.plugins.identity.providers.github.config.client_id">
+    <field type="plone.registry.field.TextLine">
+      <required>False</required>
+    </field>
+    <value>Ov23likPYPDU7XNSfzXd</value>
+  </record>
+  <record name="pas.plugins.identity.providers.github.config.client_secret">
+    <field type="plone.registry.field.Password">
+      <required>False</required>
+    </field>
+    <value>4630b2eeb13c88d98ec18480edc4ac332480edbb</value>
+  </record>
+  <record name="pas.plugins.identity.providers.github.config.scope">
+    <field type="plone.registry.field.TextLine">
+      <required>False</required>
+    </field>
+    <value>read:user user:email</value>
+  </record>
+  <record name="pas.plugins.identity.providers.github.config.auto_link_by_email">
+    <field type="plone.registry.field.Bool">
+      <required>False</required>
+    </field>
+    <value>True</value>
+  </record>
+  <record name="pas.plugins.identity.providers.github.config.userid_source">
+    <field type="plone.registry.field.TextLine">
+      <required>False</required>
+    </field>
+    <value>username</value>
+  </record>
+
+</registry>

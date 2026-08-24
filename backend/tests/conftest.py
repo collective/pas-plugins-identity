@@ -30,6 +30,55 @@ def http_request_class(integration_class):
     return integration_class["request"]
 
 
+#: Where the demo package keeps its GenericSetup profiles.
+DEMO_PROFILES = Path(__file__).parent.parent / "demo/src/identitydemo/profiles"
+
+
+class _ImportEnviron:
+    """The bare minimum ``RegistryImporter`` asks of its import context."""
+
+    def getLogger(self, name: str):
+        """Return a logger.
+
+        :param name: Logger name.
+        :returns: The logger.
+        """
+        import logging
+
+        return logging.getLogger(name)
+
+    def shouldPurge(self) -> bool:
+        """Report whether to purge before importing.
+
+        :returns: Always false -- a demo profile adds to a site.
+        """
+        return False
+
+
+@pytest.fixture
+def demo_registry(portal):
+    """Return a callable that applies a demo profile's registry XML.
+
+    Reading the file rather than applying the whole profile is deliberate:
+    applying it would need ``identitydemo`` installed in the test site, and a
+    second ``PloneSandboxLayer`` to get its ZCML loaded, which leaves two
+    layers sharing one site for the rest of the session.
+
+    :param portal: The Plone site.
+    :returns: A callable taking a profile name -- ``idp`` or ``rp``.
+    """
+    from plone.app.registry.exportimport.handler import RegistryImporter
+    from plone.registry.interfaces import IRegistry
+    from zope.component import getUtility
+
+    def apply(profile: str) -> None:
+        path = DEMO_PROFILES / profile / "registry/pas.plugins.identity.xml"
+        importer = RegistryImporter(getUtility(IRegistry), _ImportEnviron())
+        importer.importDocument(path.read_bytes())
+
+    return apply
+
+
 @pytest.fixture
 def acl_users(portal):
     """Return the site's PAS instance.
