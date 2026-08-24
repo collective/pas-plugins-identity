@@ -166,13 +166,26 @@ class TestStart:
         assert self.request.response.getStatus() == 502
         assert result["error"]["type"] == "Provider unavailable"
 
-    def test_missing_callback_url_is_reported(self):
-        """An unconfigured callback URL would otherwise surface as an opaque
-        rejection from the provider, long after the useful moment."""
+    def test_an_unset_callback_url_falls_back_to_the_default(self):
+        """It defaults to the route this package's own frontend registers,
+        so a site that installs both halves configures nothing."""
         self.stub_metadata()
         api.portal.set_registry_record(CALLBACK_URL_RECORD, "")
 
         result = self.start()
 
+        assert self.request.response.getStatus() == 200
+        assert "%2Flogin-identity" in result["authorize_url"] or (
+            "/login-identity" in result["authorize_url"]
+        )
+
+    def test_a_malformed_callback_url_is_reported(self):
+        """Neither a path nor an absolute URL: the provider would answer an
+        opaque rejection long after the useful moment."""
+        self.stub_metadata()
+        api.portal.set_registry_record(CALLBACK_URL_RECORD, "login-identity")
+
+        result = self.start()
+
         assert self.request.response.getStatus() == 502
-        assert "callback URL" in result["error"]["message"]
+        assert "callback_url" in result["error"]["message"]

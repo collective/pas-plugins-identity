@@ -30,6 +30,7 @@ PATCH echoes the sentinel unchanged.
 """
 
 from pas.plugins.identity import logger
+from pas.plugins.identity.core.controlpanel.interfaces import IProviderRecords
 from pas.plugins.identity.core.drivers import get_driver
 from pas.plugins.identity.core.drivers.base import BaseDriver
 from pas.plugins.identity.core.interfaces import FlowError
@@ -60,6 +61,11 @@ class InvalidProviderId(ValueError):
 
 #: Registry key holding the frontend route the provider redirects back to.
 CALLBACK_URL_RECORD = "pas.plugins.identity.callback_url"
+
+#: Where the frontend listens when nothing else is configured. It is the
+#: route this package's Volto add-on registers, so the default is right for
+#: every site that installs both halves.
+DEFAULT_CALLBACK_PATH = "/login-identity"
 
 #: What a secret looks like once it has left the backend. A PATCH that sends
 #: this back means "leave the stored value alone".
@@ -355,23 +361,30 @@ def enabled_providers() -> list[ProviderConfig]:
 def get_callback_url() -> str:
     """Return the frontend route the provider redirects back to.
 
-    This is the exact string registered with the provider as the redirect
-    URI, so it is configuration rather than something derived from the portal
-    URL: with Volto the frontend and the backend need not share an origin,
-    and providers match the redirect URI exactly.
+    Accepts either form. A **path** -- the usual case, and the default -- is
+    resolved against the portal URL, which under Volto is the public origin
+    the browser already uses. An **absolute URL** is taken verbatim, for the
+    deployment this setting was originally written for: the frontend and the
+    backend need not share an origin, and no portal URL can describe an
+    origin Plone is never reached on.
 
-    :returns: The configured absolute URL.
-    :raises FlowError: When no callback URL has been configured, which would
-        otherwise surface as an opaque rejection from the provider.
+    Whichever form it takes, the result has to match the redirect URI
+    registered with the provider byte for byte.
+
+    :returns: The absolute URL to hand the provider.
+    :raises FlowError: When the configured value is neither a path nor an
+        absolute URL, which a provider would reject opaquely.
     """
     url = (
         api.portal.get_registry_record(CALLBACK_URL_RECORD, default="") or ""
-    ).strip()
-    if not url:
+    ).strip() or DEFAULT_CALLBACK_PATH
+
+    if url.startswith("/"):
+        return f"{api.portal.get().absolute_url()}{url}"
+    if "://" not in url:
         raise FlowError(
-            "No login callback URL is configured; set "
-            f"{CALLBACK_URL_RECORD} to the frontend route the provider "
-            "redirects to"
+            f"{CALLBACK_URL_RECORD} is {url!r}, which is neither a path "
+            "starting with '/' nor an absolute URL"
         )
     return url
 
@@ -432,35 +445,24 @@ def _write_provider(provider: ProviderConfig, order: int) -> None:
     driver = provider.driver
     schema = driver.config_schema() if driver is not None else {}
 
-    registry.records[f"{prefix}driver"] = Record(
-        registry_field.TextLine(title="Driver", required=False),
-        provider.driver_id,
-    )
-    registry.records[f"{prefix}title"] = Record(
-        registry_field.TextLine(title="Title", required=False),
-        provider.title,
-    )
-    registry.records[f"{prefix}enabled"] = Record(
-        registry_field.Bool(title="Enabled", required=False),
-        bool(provider.enabled),
-    )
-    registry.records[f"{prefix}order"] = Record(
-        registry_field.Int(title="Order", required=False),
-        int(order),
-    )
-    # One record rather than one per row: the keys are claim paths an
-    # operator types, so a record each would mean creating and deleting
-    # records as the map is edited. A Dict is still a typed record that
-    # exports as real XML elements.
-    registry.records[f"{prefix}propertymap"] = Record(
-        registry_field.Dict(
-            title="Property map",
-            key_type=registry_field.TextLine(title="Claim"),
-            value_type=registry_field.TextLine(title="User field"),
-            required=False,
-        ),
-        dict(provider.propertymap),
-    )
+    # The same interface a profile's registry XML binds to, registered under
+    # the same prefix, so a provider created here and a provider imported from
+    # XML are the identical set of records. Doing it the other way -- building
+    # the five fields by hand -- is what made a profile have to restate a
+    # field type it could have inherited.
+    #
+    # Every value is assigned below rather than left at the schema default:
+    # ``registerInterface`` hands each new record the default *object*, so two
+    # providers that both fell back to the empty ``propertymap`` would share
+    # one dict.
+    registry.registerInterface(IProviderRecords, prefix=prefix.rstrip("."))
+
+    registry[f"{prefix}driver"] = provider.driver_id
+    registry[f"{prefix}title"] = provider.title
+    registry[f"{prefix}enabled"] = bool(provider.enabled)
+    registry[f"{prefix}order"] = int(order)
+    registry[f"{prefix}propertymap"] = dict(provider.propertymap)
+
     for key, value in provider.config.items():
         registry.records[f"{prefix}{CONFIG_SEGMENT}{key}"] = Record(
             _field_for(schema.get(key), value),

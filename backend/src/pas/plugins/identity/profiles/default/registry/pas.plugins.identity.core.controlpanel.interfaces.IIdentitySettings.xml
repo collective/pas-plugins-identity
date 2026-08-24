@@ -6,8 +6,8 @@
   <records interface="pas.plugins.identity.core.controlpanel.interfaces.IIdentitySettings"
            prefix="pas.plugins.identity"
   >
-    <!-- ``providers`` and ``callback_url`` are not listed: an empty <value>
-         imports as None, while leaving them out takes the empty string the
+    <!-- ``callback_url`` is not listed: an empty <value> imports as None,
+         while leaving it out takes the ``/login-identity`` default the
          schema declares. Everything else is stated here so the shipped
          defaults are visible without reading the interface. -->
     <value key="audit_max_entries">500</value>

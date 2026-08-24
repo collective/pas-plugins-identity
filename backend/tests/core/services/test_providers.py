@@ -4,8 +4,8 @@ from .. import body
 from . import DEX_METADATA
 from . import DEX_PROVIDER
 from pas.plugins.identity.core.controlpanel import get_provider
-from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.controlpanel import get_provider_record
+from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.controlpanel import provider_record_names
 from pas.plugins.identity.core.controlpanel import PROVIDERS_PREFIX
 from pas.plugins.identity.core.controlpanel import SECRET_SENTINEL

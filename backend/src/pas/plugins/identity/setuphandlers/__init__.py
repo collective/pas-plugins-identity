@@ -6,17 +6,21 @@ Every profile here has a matching uninstall profile, and uninstall is tested
 
 from pas.plugins.identity import logger
 from pas.plugins.identity import PACKAGE_NAME
+from pas.plugins.identity.core.controlpanel.interfaces import IIdentitySettings
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.pas import PLUGIN_TITLE
 from pas.plugins.identity.core.pas.plugin import IdentityPlugin
 from plone import api
 from plone.base.interfaces.installable import INonInstallable
+from plone.registry.interfaces import IRegistry
 from Products.GenericSetup.tool import SetupTool
 from Products.PluggableAuthService.interfaces.plugins import IAuthenticationPlugin
 from Products.PluggableAuthService.interfaces.plugins import ICredentialsResetPlugin
 from Products.PluggableAuthService.interfaces.plugins import IExtractionPlugin
 from Products.PluggableAuthService.PluggableAuthService import PluggableAuthService
+from zope.component import getUtility
 from zope.interface import implementer
+from zope.interface import Interface
 
 
 #: PAS interfaces the plugin is activated for on install. ``IChallengePlugin``
@@ -49,6 +53,35 @@ class HiddenProfiles:
         :returns: Product names to hide.
         """
         return [f"{PACKAGE_NAME}.upgrades"]
+
+
+#: Prefix every settings interface in this package is registered under. The
+#: registry XML states it too; they have to agree or a re-install creates a
+#: second, parallel set of records.
+SETTINGS_PREFIX = PACKAGE_NAME
+
+
+def register_settings(interface: type[Interface]) -> None:
+    """Create registry records for every field of a settings interface.
+
+    Called from each layer's ``post_install``, which makes a re-install
+    self-healing: a field added to the interface since the site was set up
+    gets its record, with its schema default, without an upgrade step.
+
+    Existing values are kept -- ``registerInterface`` re-reads each record it
+    already finds and only falls back to the default when the stored value no
+    longer validates. That is what makes this safe to run on every install
+    rather than only on the first.
+
+    Not a substitute for the profile's ``registry.xml``: that is what states
+    the *shipped* values, and a fresh site still gets them from there. This
+    covers the site that was installed before the field existed, which is
+    otherwise a ``KeyError`` from every control panel reading the interface.
+
+    :param interface: The settings schema to register.
+    """
+    registry = getUtility(IRegistry)
+    registry.registerInterface(interface, prefix=SETTINGS_PREFIX)
 
 
 def _acl_users() -> PluggableAuthService:
@@ -102,6 +135,7 @@ def post_install(context: SetupTool) -> None:
 
     :param context: The setup tool running the import.
     """
+    register_settings(IIdentitySettings)
     install_plugin(_acl_users())
 
 
