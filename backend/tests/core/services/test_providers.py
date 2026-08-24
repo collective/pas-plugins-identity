@@ -105,6 +105,7 @@ class TestDriverMetadata(ControlPanelCase):
             "github",
             "google",
             "oidc-generic",
+            "plone-identity",
             "email",
         }
 

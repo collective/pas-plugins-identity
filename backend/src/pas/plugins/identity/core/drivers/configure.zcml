@@ -23,6 +23,12 @@
       />
 
   <utility
+      factory=".identity.PloneIdentityDriver"
+      provides="pas.plugins.identity.core.interfaces.IDriver"
+      name="plone-identity"
+      />
+
+  <utility
       factory=".emaillink.EmailDriver"
       provides="pas.plugins.identity.core.interfaces.IDriver"
       name="email"

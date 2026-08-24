@@ -8,6 +8,7 @@ from pas.plugins.identity.core.drivers.base import BaseDriver
 from pas.plugins.identity.core.drivers.emaillink import EmailDriver
 from pas.plugins.identity.core.drivers.github import GitHubDriver
 from pas.plugins.identity.core.drivers.google import GoogleDriver
+from pas.plugins.identity.core.drivers.identity import PloneIdentityDriver
 from pas.plugins.identity.core.drivers.oidc import GenericOIDCDriver
 
 
@@ -16,6 +17,7 @@ ALL_DRIVERS: tuple[type[BaseDriver], ...] = (
     GitHubDriver,
     GoogleDriver,
     GenericOIDCDriver,
+    PloneIdentityDriver,
     EmailDriver,
 )
 
@@ -24,6 +26,7 @@ OAUTH_DRIVERS: tuple[type[BaseDriver], ...] = (
     GitHubDriver,
     GoogleDriver,
     GenericOIDCDriver,
+    PloneIdentityDriver,
 )
 
 #: Keys the normalized schema always carries.
@@ -81,4 +84,18 @@ UNVERIFIED_OIDC = {
     "name": "Not Érico",
     "email": "erico@plone.org",
     "email_verified": False,
+}
+
+#: Userinfo from a Plone site running this package's ``[server]`` layer.
+#: ``address`` is an object whose ``formatted`` member is the readable line,
+#: which is what the dotted path in the driver's mapping reaches.
+PLONE_IDENTITY_USERINFO = {
+    "sub": "8f14e45fceea167a5a36dedd4bea2543",
+    "name": "Érico Andrei",
+    "preferred_username": "ericof",
+    "website": "https://plone.org",
+    "picture": "http://id.localhost/portal_memberdata/portraits/ericof",
+    "email": "erico@plone.org",
+    "email_verified": True,
+    "address": {"formatted": "São Paulo, Brazil"},
 }

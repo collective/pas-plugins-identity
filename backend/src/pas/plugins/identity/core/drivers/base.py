@@ -74,6 +74,14 @@ class BaseDriver:
     driver_id: str = ""
     title: str = ""
 
+    #: Default for the ``userid_source`` config field.
+    #:
+    #: A class attribute rather than a literal in :meth:`config_schema`, so a
+    #: driver that knows something about its provider can move it. A random
+    #: id is right for a provider this site has no particular trust in; a peer
+    #: running this same package is a different case.
+    default_userid_source: str = "uuid"
+
     #: Default value for the ``scope`` config field, one token per entry.
     #:
     #: A tuple rather than the space-joined string OAuth 2 puts on the wire:
@@ -93,9 +101,15 @@ class BaseDriver:
     #: Written against the *normalized* claim names rather than any one
     #: provider's -- ``resolve_claim`` tries those before the raw payload, so
     #: ``fullname`` reaches GitHub's ``login`` fallback and an OIDC
-    #: ``preferred_username`` alike without either being named here. Only the
-    #: two fields ``IUserDataSchema`` actually declares are mapped: a stock
-    #: site has no ``username`` member field for a third to be written to.
+    #: ``preferred_username`` alike without either being named here.
+    #:
+    #: Only the two claims every provider offers are mapped here. A site's
+    #: member schema carries more than that -- ``home_page``, ``location``,
+    #: ``portrait`` -- but which of them a given provider can actually fill
+    #: is a fact about the provider, so a driver that knows adds them. What
+    #: no driver may add is ``username``: providers publish it, Plone has no
+    #: member field for it, and the mapping would resolve to nothing on every
+    #: login while looking correct in the form.
     default_propertymap: dict[str, str] = {  # noqa: RUF012
         "email": "email",
         "fullname": "fullname",
@@ -139,7 +153,7 @@ class BaseDriver:
             ),
             "required": False,
             "secret": False,
-            "default": "uuid",
+            "default": self.default_userid_source,
             "order": 50,
             "choices": [
                 ["uuid", "A random id"],
