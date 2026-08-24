@@ -25,7 +25,7 @@ class GitLabDriver(BaseDriver):
 
     driver_id = "gitlab"
     title = "GitLab"
-    default_scope = "read_user"
+    default_scope = ("read_user",)
     subject_keys = ("sub", "id")
 
     #: Rendered by the control panel. The frontend builds the form from this,
@@ -36,6 +36,10 @@ class GitLabDriver(BaseDriver):
             "title": "GitLab URL",
             "required": True,
             "secret": False,
+            # Where it goes in the form. A schema travels as a JSON object
+            # with sorted keys, so this is what survives the wire; the
+            # inherited fields are spaced by ten to leave room between them.
+            "order": 15,
         },
     }
 
@@ -66,6 +70,29 @@ Implementing `IDriver` from scratch works too: the interface asks for
 **Mark a field secret and it stays secret.** Anything you declare as a secret
 is masked on the way out of every API surface and omitted from GenericSetup
 export. Do not invent your own storage for credentials.
+
+**Every field needs an `order`, and no two may share one.** A config schema
+travels as a JSON object, and `plone.restapi` serialises those with sorted
+keys — so the order you declare your fields in is gone by the time the
+control panel builds a form from them. The number is what survives. The
+inherited fields are spaced by ten so you can slot yours between two of them;
+a tie fails the driver contract test rather than falling back to the
+alphabet, which is the bug this replaced.
+
+**A scope is a list, not a sentence.** `default_scope` is a tuple of
+permissions, and the space-delimited form RFC 6749 puts on the wire is built
+at the edge, where the request is. A scope typed into one text box is how a
+stray comma becomes a permission of its own that the provider rejects as
+unknown.
+
+**Seed a mapping with `default_propertymap`, against the normalized claim
+names.** It is written into a new provider's attribute mapping as a starting
+point, and it may only name member fields a stock site actually has —
+`IUserDataSchema` declares `fullname` and `email`, and nothing else is
+guaranteed. Write it against the normalized claims (`email`, `fullname`)
+rather than your provider's own: `resolve_claim` tries those first, so one
+default covers every provider. Name a raw claim only for something
+normalization does not already produce.
 
 **`email_verified` must be a boolean, and only `True` counts.** Several
 providers send the string `"true"`, and several send `1`. Normalize it. The
