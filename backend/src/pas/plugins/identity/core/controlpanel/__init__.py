@@ -41,6 +41,7 @@ from plone.registry.interfaces import IRegistry
 from plone.registry.record import Record
 from zope.component import getUtility
 
+import copy
 import re
 
 
@@ -70,6 +71,39 @@ DEFAULT_CALLBACK_PATH = "/login-identity"
 #: What a secret looks like once it has left the backend. A PATCH that sends
 #: this back means "leave the stored value alone".
 SECRET_SENTINEL = "•" * 8
+
+
+def _with_driver_defaults(driver_id: str, config: JSONDict) -> JSONDict:
+    """Fill in the settings the caller did not supply.
+
+    A driver declares a ``default`` for every setting that has a sensible
+    one -- the scope its API actually needs, the userid source that leaks
+    nothing -- and a provider created without them should get them rather
+    than an empty string that silently breaks the first sign-in. A key that
+    *is* present wins, empty or not: clearing a setting is a decision, and
+    reinstating the default over it would be this function overruling an
+    operator.
+
+    It runs on the way in, not on the way out, so what a control panel shows
+    and what the registry stores are the same values.
+
+    :param driver_id: Driver that declares the schema.
+    :param config: Settings as supplied.
+    :returns: Those settings, with the missing ones defaulted.
+    """
+    driver = get_driver(driver_id)
+    if driver is None:
+        # No schema to consult -- the add-on that registered this driver is
+        # gone. Whatever was stored is all there is.
+        return dict(config)
+    defaults = {
+        name: copy.deepcopy(descriptor["default"])
+        for name, descriptor in driver.config_schema().items()
+        # deepcopy because a `list` or `dict` default is one object on the
+        # descriptor, and two providers sharing it would share every edit.
+        if "default" in descriptor
+    }
+    return {**defaults, **config}
 
 
 class ProviderConfig:
@@ -108,7 +142,7 @@ class ProviderConfig:
         self.driver_id = driver_id
         self.title = title
         self.enabled = enabled
-        self.config = config or {}
+        self.config = _with_driver_defaults(driver_id, config or {})
         self.propertymap = dict(propertymap or {})
 
     @property

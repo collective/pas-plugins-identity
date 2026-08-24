@@ -313,10 +313,44 @@ class TestProviderConfig:
 
         assert provider.serialize()["title"] == ""
 
-    def test_defaults(self):
-        """A minimally-specified provider is enabled with no config."""
+    def test_enabled_unless_told_otherwise(self):
+        """A minimally-specified provider is offered."""
         assert self.provider.enabled is True
-        assert self.provider.config == {}
+
+    def test_driver_defaults_fill_in(self):
+        """A provider created with no config still gets sane settings.
+
+        The scope in particular: GitHub's API returns no email address
+        without it, so a provider created without one is a sign-in that
+        half works.
+        """
+        assert self.provider.config == {
+            "scope": "read:user user:email",
+            "auto_link_by_email": False,
+            "userid_source": "uuid",
+        }
+
+    def test_a_supplied_value_wins(self):
+        """The default fills a gap; it never overrules a decision."""
+        provider = ProviderConfig("gh", "github", config={"scope": "repo"})
+
+        assert provider.config["scope"] == "repo"
+
+    def test_an_explicit_empty_value_is_kept(self):
+        """Clearing a setting is a decision, not a gap to fill."""
+        provider = ProviderConfig("gh", "github", config={"scope": ""})
+
+        assert provider.config["scope"] == ""
+
+    def test_a_field_with_no_default_stays_absent(self):
+        """Nothing is invented for a setting only the operator can know."""
+        assert "client_id" not in self.provider.config
+
+    def test_an_orphan_gets_nothing(self):
+        """No driver, no schema, no defaults -- and no crash."""
+        provider = ProviderConfig("legacy", "no-such-driver", config={"a": "b"})
+
+        assert provider.config == {"a": "b"}
 
     def test_repr(self):
         """The object has a readable repr for debugging."""
