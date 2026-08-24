@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CONFIG_PREFIX,
   fromFormData,
+  orderedFields,
   propertyFor,
   providerSchema,
   toFormData,
@@ -15,22 +16,40 @@ const OIDC: Driver = {
   id: 'oidc-generic',
   title: 'Generic OIDC',
   schema: {
-    issuer: { type: 'string', title: 'Issuer', secret: false, required: true },
-    client_secret: { type: 'string', title: 'Client secret', secret: true },
-    timeout: { type: 'int', title: 'Timeout', secret: false },
-    auto_link: { type: 'bool', title: 'Auto link', secret: false },
+    issuer: {
+      type: 'string',
+      title: 'Issuer',
+      secret: false,
+      required: true,
+      order: 10,
+    },
+    client_secret: {
+      type: 'string',
+      title: 'Client secret',
+      secret: true,
+      order: 30,
+    },
+    timeout: { type: 'int', title: 'Timeout', secret: false, order: 70 },
+    auto_link: { type: 'bool', title: 'Auto link', secret: false, order: 60 },
     scope: {
       type: 'string',
       title: 'Scope',
       secret: false,
       default: 'openid email profile',
+      order: 40,
     },
-    allowed_groups: { type: 'list', title: 'Allowed groups', secret: false },
+    allowed_groups: {
+      type: 'list',
+      title: 'Allowed groups',
+      secret: false,
+      order: 80,
+    },
     userid_source: {
       type: 'choice',
       title: 'Userid taken from',
       secret: false,
       default: 'uuid',
+      order: 50,
       choices: [
         ['uuid', 'A random id'],
         ['username', "The provider's username"],
@@ -96,6 +115,44 @@ describe('propertyFor', () => {
   });
 });
 
+describe('orderedFields', () => {
+  it('sorts on the position the driver declared, not the key', () => {
+    // What arrives from the server is alphabetical -- plone.restapi
+    // serialises a schema with sorted keys -- so auto_link would otherwise
+    // render above issuer and client_secret.
+    expect(orderedFields(OIDC.schema).map(([name]) => name)).toEqual([
+      'issuer',
+      'client_secret',
+      'scope',
+      'userid_source',
+      'auto_link',
+      'timeout',
+      'allowed_groups',
+    ]);
+  });
+
+  it('sinks a field that declares no position, rather than dropping it', () => {
+    const schema = {
+      late: { type: 'string', title: 'Late', secret: false },
+      early: { type: 'string', title: 'Early', secret: false, order: 10 },
+    };
+
+    expect(orderedFields(schema).map(([name]) => name)).toEqual([
+      'early',
+      'late',
+    ]);
+  });
+
+  it('breaks a tie by name, so the result is stable', () => {
+    const schema = {
+      b: { type: 'string', title: 'B', secret: false, order: 10 },
+      a: { type: 'string', title: 'A', secret: false, order: 10 },
+    };
+
+    expect(orderedFields(schema).map(([name]) => name)).toEqual(['a', 'b']);
+  });
+});
+
 describe('providerSchema', () => {
   it('asks for an id and a driver only when adding', () => {
     const adding = providerSchema([OIDC], 'oidc-generic', true);
@@ -112,6 +169,33 @@ describe('providerSchema', () => {
     expect(schema.properties.driver.choices).toEqual([
       ['oidc-generic', 'Generic OIDC'],
       ['github', 'GitHub'],
+    ]);
+  });
+
+  it('asks which driver before asking anything about it', () => {
+    // The driver decides which fields the rest of the form has at all.
+    const schema = providerSchema([OIDC], 'oidc-generic', true);
+
+    expect(schema.fieldsets[0].fields).toEqual([
+      'driver',
+      'id',
+      'title',
+      'enabled',
+    ]);
+  });
+
+  it("renders the driver's settings in the order it asked for", () => {
+    const schema = providerSchema([OIDC], 'oidc-generic', true);
+    const settings = schema.fieldsets.find((f) => f.id === 'settings');
+
+    expect(settings?.fields).toEqual([
+      `${CONFIG_PREFIX}issuer`,
+      `${CONFIG_PREFIX}client_secret`,
+      `${CONFIG_PREFIX}scope`,
+      `${CONFIG_PREFIX}userid_source`,
+      `${CONFIG_PREFIX}auto_link`,
+      `${CONFIG_PREFIX}timeout`,
+      `${CONFIG_PREFIX}allowed_groups`,
     ]);
   });
 

@@ -50,6 +50,14 @@ export interface DriverField {
   required?: boolean;
   secret: boolean;
   default?: unknown;
+  /**
+   * Where the field goes in the form, low first.
+   *
+   * A schema arrives as a JSON object serialised with sorted keys, so the
+   * order the driver declared its fields in is already gone -- this is what
+   * survives the wire. A field without one sinks below those that have one.
+   */
+  order?: number;
   /** Present on a `choice` field: the options, as [value, label] pairs. */
   choices?: [string, string][];
 }

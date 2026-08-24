@@ -23,6 +23,28 @@ export interface VoltoSchema {
 export const CONFIG_PREFIX = 'config.';
 
 /**
+ * A driver's fields, in the order the driver wants them rendered.
+ *
+ * `@identity-drivers` answers with a JSON object, and plone.restapi
+ * serialises those with `sort_keys=True` -- so what arrives here is
+ * alphabetical whatever the driver declared, which puts `auto_link_by_email`
+ * above `client_id`. Each descriptor carries its own position instead.
+ *
+ * @param schema The driver's schema.
+ * @returns The entries, sorted; ties and missing positions fall back to the
+ *   field name, so the result is stable rather than merely sorted.
+ */
+export function orderedFields(
+  schema: Record<string, DriverField>,
+): [string, DriverField][] {
+  return Object.entries(schema).sort(
+    ([nameA, a], [nameB, b]) =>
+      (a.order ?? Number.MAX_SAFE_INTEGER) -
+        (b.order ?? Number.MAX_SAFE_INTEGER) || nameA.localeCompare(nameB),
+  );
+}
+
+/**
  * Turn one driver field descriptor into a Volto schema property.
  *
  * @param field The descriptor from the driver.
@@ -114,6 +136,13 @@ export function providerSchema(
   const identity: string[] = [];
 
   if (adding) {
+    // Driver before id: it decides which fields the rest of the form even
+    // has, so answering it first is the only order that reads forwards.
+    properties.driver = {
+      title: 'Driver',
+      description: 'Which integration handles this provider.',
+      choices: drivers.map((d) => [d.id, d.title]),
+    };
     properties.id = {
       title: 'Provider ID',
       description:
@@ -122,12 +151,7 @@ export function providerSchema(
         'digits, - and _ only.',
       type: 'string',
     };
-    properties.driver = {
-      title: 'Driver',
-      description: 'Which integration handles this provider.',
-      choices: drivers.map((d) => [d.id, d.title]),
-    };
-    identity.push('id', 'driver');
+    identity.push('driver', 'id');
   }
 
   properties.title = {
@@ -142,7 +166,7 @@ export function providerSchema(
   };
   identity.push('title', 'enabled');
 
-  const settings = Object.entries(driver?.schema ?? {}).map(([name, field]) => {
+  const settings = orderedFields(driver?.schema ?? {}).map(([name, field]) => {
     const key = `${CONFIG_PREFIX}${name}`;
     properties[key] = propertyFor(field);
     return key;
