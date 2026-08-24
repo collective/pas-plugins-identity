@@ -27,7 +27,3 @@ class TestGoogleDriver:
     def test_claims(self, key: str, expected):
         """Each documented claim is read from the right OIDC field."""
         assert self.driver.normalize_claims(GOOGLE_USERINFO)[key] == expected
-
-    def test_hosted_domain_field_present(self):
-        """Workspace restriction is configurable."""
-        assert "hosted_domain" in self.driver.config_schema()

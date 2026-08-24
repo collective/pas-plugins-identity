@@ -47,7 +47,3 @@ class TestGitHubDriver:
         claims = self.driver.normalize_claims(GITHUB_USER_NO_NAME)
 
         assert claims["fullname"] == "anon-dev"
-
-    def test_allowed_groups_field_present(self):
-        """The deny-at-door gate is configurable per provider."""
-        assert "allowed_groups" in self.driver.config_schema()

@@ -18,16 +18,6 @@ class GitHubDriver(BaseDriver):
     default_scope = "read:user user:email"
     subject_keys = ("id", "node_id")
 
-    extra_fields = {  # noqa: RUF012
-        "allowed_groups": {
-            "type": "list",
-            "title": "Allowed groups",
-            "required": False,
-            "secret": False,
-            "description": "When set, only members of these groups may log in.",
-        },
-    }
-
     def normalize_claims(self, payload: JSONDict) -> Claims:
         """Normalize a GitHub ``/user`` payload.
 

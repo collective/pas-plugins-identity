@@ -10,19 +10,3 @@ class GoogleDriver(BaseDriver):
     title = "Google"
     default_scope = "openid email profile"
     subject_keys = ("sub",)
-
-    extra_fields = {  # noqa: RUF012
-        "hosted_domain": {
-            "type": "string",
-            "title": "Hosted domain",
-            "required": False,
-            "secret": False,
-            "description": "When set, restrict logins to this Workspace domain.",
-        },
-        "allowed_groups": {
-            "type": "list",
-            "title": "Allowed groups",
-            "required": False,
-            "secret": False,
-        },
-    }

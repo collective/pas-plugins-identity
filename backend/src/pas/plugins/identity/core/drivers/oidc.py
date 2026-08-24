@@ -20,17 +20,4 @@ class GenericOIDCDriver(BaseDriver):
             "description": "Discovery is fetched from "
             "<issuer>/.well-known/openid-configuration.",
         },
-        "allowed_groups": {
-            "type": "list",
-            "title": "Allowed groups",
-            "required": False,
-            "secret": False,
-        },
-        "groups_claim": {
-            "type": "string",
-            "title": "Groups claim",
-            "required": False,
-            "secret": False,
-            "default": "groups",
-        },
     }

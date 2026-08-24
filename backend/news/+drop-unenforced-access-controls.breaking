@@ -1,0 +1,5 @@
+Removed three provider settings that enforced nothing: `allowed_groups` from the GitHub, Google and generic OIDC drivers, `hosted_domain` from Google, and `groups_claim` from generic OIDC.
+
+Each was declared in a driver's schema, rendered in the control panel, stored in the registry, and read by no code anywhere. The only tests asserted that the field appeared in the schema. A site could set "Allowed groups" or a Workspace "Hosted domain", see it saved, and be gated on nothing at all -- the worst failure available to an access control, because it is indistinguishable from working until someone who should have been refused signs in.
+
+They are removed rather than documented as unimplemented: the package is unreleased, so nobody depends on them, and a live control-panel field that quietly does nothing is worse than an absent one. Restricting logins by group or by hosted domain is worth having; it needs to be written, with tests that prove a non-member is actually refused, and a driver-by-driver answer for where the groups come from -- GitHub needs a separate call to `/user/orgs`, Google and OIDC read a claim. @ericof
