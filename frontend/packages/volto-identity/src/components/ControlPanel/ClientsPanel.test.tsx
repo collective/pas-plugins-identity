@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '../../testing';
 import React from 'react';
 
 import ClientsPanel from './ClientsPanel';

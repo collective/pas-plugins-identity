@@ -1,0 +1,3 @@
+Made the add-provider form show the driver's defaults. Volto's `Form` seeds an add form from its schema's defaults once, in its constructor — and when this form mounts no driver has been chosen yet, so it has no driver fields to seed. By the time choosing one rebuilt the schema, the only moment the defaults would have been applied was already past, and every field in the driver's fieldset rendered empty however good its default.
+
+Choosing a driver now remounts the form, so it seeds from the schema that driver actually declares. What was already typed is carried across; the previous driver's settings are dropped, because they mean nothing to the driver replacing it. @ericof

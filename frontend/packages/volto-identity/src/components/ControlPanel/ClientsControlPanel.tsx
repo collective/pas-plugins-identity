@@ -1,9 +1,25 @@
 /**
- * Control-panel container: store and dispatch around the clients panel.
+ * Control-panel container: store, dispatch, and page chrome around the
+ * clients panel.
+ *
+ * The chrome is the same chrome the providers panel has, which is Volto's
+ * own: a centred container, a titled panel, and the toolbar with a route
+ * back to the control-panel listing. Without it this route rendered as bare
+ * markup with no way out of it at all.
  * @module components/ControlPanel/ClientsControlPanel
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { createPortal } from 'react-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { Container, Segment } from 'semantic-ui-react';
+import { defineMessages, useIntl } from 'react-intl';
+
+import { Helmet } from '@plone/volto/helpers/Helmet/Helmet';
+import { useClient } from '@plone/volto/hooks/client/useClient';
+import Icon from '@plone/volto/components/theme/Icon/Icon';
+import Toolbar from '@plone/volto/components/manage/Toolbar/Toolbar';
+import backSVG from '@plone/volto/icons/back.svg';
 
 import {
   createClient,
@@ -17,7 +33,17 @@ import {
 import ClientsPanel from './ClientsPanel';
 import type { OAuthClient } from '../../types';
 
+const messages = defineMessages({
+  // The configlet's own title, so the page, the browser tab and the entry in
+  // the control-panel listing all say the same thing.
+  title: { id: 'OAuth clients', defaultMessage: 'OAuth clients' },
+  back: { id: 'Back', defaultMessage: 'Back' },
+});
+
 const ClientsControlPanel: React.FC = () => {
+  const intl = useIntl();
+  const isClient = useClient();
+  const { pathname } = useLocation();
   const dispatch = useDispatch();
   // Held here rather than read from the store on every render: the secret
   // must survive the re-listing that follows a create, and it must disappear
@@ -101,25 +127,55 @@ const ClientsControlPanel: React.FC = () => {
   const onDismissSecret = useCallback(() => setMinted(null), []);
 
   return (
-    <ClientsPanel
-      clients={clients?.data ?? []}
-      keys={keys?.data ?? null}
-      loading={Boolean(clients?.loading)}
-      busy={Boolean(
-        created?.loading ||
-          updated?.loading ||
-          removed?.loading ||
-          rotated?.loading ||
-          keyRotated?.loading,
-      )}
-      minted={minted}
-      onCreate={onCreate}
-      onToggle={onToggle}
-      onRotateSecret={onRotateSecret}
-      onDelete={onDelete}
-      onRotateKey={onRotateKey}
-      onDismissSecret={onDismissSecret}
-    />
+    <div id="page-controlpanel" className="identity-controlpanel">
+      <Helmet title={intl.formatMessage(messages.title)} />
+      <Container>
+        <Segment.Group raised>
+          <Segment className="primary">
+            {intl.formatMessage(messages.title)}
+          </Segment>
+          <Segment>
+            <ClientsPanel
+              clients={clients?.data ?? []}
+              keys={keys?.data ?? null}
+              loading={Boolean(clients?.loading)}
+              busy={Boolean(
+                created?.loading ||
+                  updated?.loading ||
+                  removed?.loading ||
+                  rotated?.loading ||
+                  keyRotated?.loading,
+              )}
+              minted={minted}
+              onCreate={onCreate}
+              onToggle={onToggle}
+              onRotateSecret={onRotateSecret}
+              onDelete={onDelete}
+              onRotateKey={onRotateKey}
+              onDismissSecret={onDismissSecret}
+            />
+          </Segment>
+        </Segment.Group>
+      </Container>
+      {isClient &&
+        createPortal(
+          <Toolbar
+            pathname={pathname}
+            hideDefaultViewButtons
+            inner={
+              <Link className="item" to="/controlpanel">
+                <Icon
+                  name={backSVG}
+                  className="circled"
+                  size="30px"
+                  title={intl.formatMessage(messages.back)}
+                />
+              </Link>
+            }
+          />,
+          document.getElementById('toolbar') as HTMLElement,
+        )}
+    </div>
   );
 };
 

@@ -1,0 +1,1 @@
+Made the providers control panel's back button a route rather than a page load. It was a plain `<a href="/controlpanel">`, so leaving the panel dropped the whole application and booted it again — a full reload to reach a route Volto already has, losing the store and every request already answered. It is a `react-router` `Link` now, like the one the identities page uses. @ericof

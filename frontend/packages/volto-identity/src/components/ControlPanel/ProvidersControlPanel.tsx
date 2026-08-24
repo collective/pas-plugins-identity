@@ -10,7 +10,7 @@
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { Button, Container, Segment, Table } from 'semantic-ui-react';
 import { defineMessages, useIntl } from 'react-intl';
@@ -46,11 +46,14 @@ import {
 } from '../../actions';
 import { fromRows, toRows } from '../../helpers/propertymap';
 import {
+  CONFIG_PREFIX,
   fromFormData,
   providerSchema,
   toFormData,
 } from '../../helpers/providerSchema';
 import type { ConfiguredProvider, Driver } from '../../types';
+
+import './ProvidersControlPanel.scss';
 
 /**
  * The configlet id, which is also the name the site-wide settings are served
@@ -95,6 +98,21 @@ const messages = defineMessages({
       'No drivers are installed, so there is nothing to configure. Install ' +
       'an add-on that registers one.',
   },
+  columnTitle: { id: 'Title', defaultMessage: 'Title' },
+  columnId: { id: 'Id', defaultMessage: 'Id' },
+  columnDriver: { id: 'Driver', defaultMessage: 'Driver' },
+  columnEnabled: { id: 'Enabled', defaultMessage: 'Enabled' },
+  columnActions: { id: 'Actions', defaultMessage: 'Actions' },
+  yes: { id: 'Yes', defaultMessage: 'Yes' },
+  no: { id: 'No', defaultMessage: 'No' },
+  reached: {
+    id: 'Reached {endpoint}',
+    defaultMessage: 'Reached {endpoint}',
+  },
+  reachedNoJwks: {
+    id: 'Reached {endpoint} (no key set published)',
+    defaultMessage: 'Reached {endpoint} (no key set published)',
+  },
   confirmDelete: {
     id: 'Delete this provider?',
     defaultMessage:
@@ -116,6 +134,11 @@ const ProvidersControlPanel: React.FC = () => {
   // Which driver the add form is currently on. The schema depends on it, so
   // it is tracked as the form changes rather than read at submit time.
   const [draftDriver, setDraftDriver] = useState<string | undefined>(undefined);
+  // The live form state. A ref rather than state on purpose: it changes on
+  // every keystroke and nothing here needs to re-render for that. It is read
+  // once, when the driver changes, to carry what has already been typed
+  // across the remount the new schema needs.
+  const draft = useRef<Record<string, unknown>>({});
   const [error, setError] = useState<unknown>(null);
 
   const providers = useSelector((state: any) => state.configuredProviders) as {
@@ -160,9 +183,10 @@ const ProvidersControlPanel: React.FC = () => {
           <Toast
             success
             title={intl.formatMessage(messages.test)}
-            content={`Reached ${result.token_endpoint}${
-              result.has_jwks ? '' : ' (no key set published)'
-            }`}
+            content={intl.formatMessage(
+              result.has_jwks ? messages.reached : messages.reachedNoJwks,
+              { endpoint: result.token_endpoint },
+            )}
           />,
         );
       } else {
@@ -221,10 +245,23 @@ const ProvidersControlPanel: React.FC = () => {
     [driverList, adding, draftDriver, current?.driver],
   );
 
-  const formData = useMemo(
-    () => toFormData(adding ? undefined : current, toRows),
-    [adding, current],
-  );
+  // Not memoized: `Form` reads this once, when it mounts, so recomputing it
+  // on a render it will ignore costs nothing.
+  //
+  // For the add form it is whatever has been typed so far, minus the previous
+  // driver's settings -- those mean nothing to the driver just chosen. What
+  // replaces them is `Form`'s own job: it seeds an add form from the schema's
+  // defaults, which is how the driver's sane values reach the fields.
+  const formData = adding
+    ? {
+        ...toFormData(undefined, toRows),
+        ...Object.fromEntries(
+          Object.entries(draft.current).filter(
+            ([key]) => !key.startsWith(CONFIG_PREFIX),
+          ),
+        ),
+      }
+    : toFormData(current, toRows);
 
   const onSubmit = (data: Record<string, unknown>) => {
     const payload = fromFormData(data, fromRows);
@@ -284,6 +321,14 @@ const ProvidersControlPanel: React.FC = () => {
         ) : isForm ? (
           <Form
             ref={formRef}
+            // A new driver is a new set of fields, and `Form` seeds an add
+            // form's defaults in its constructor -- once, from the schema it
+            // mounted with. Without a remount the fields a driver declares
+            // appear empty however good its defaults are, because the only
+            // moment they would have been applied is already past.
+            key={
+              adding ? `add-${draftDriver ?? 'none'}` : editing ?? 'settings'
+            }
             title={
               editingSettings
                 ? intl.formatMessage(messages.settings)
@@ -299,6 +344,7 @@ const ProvidersControlPanel: React.FC = () => {
             onSubmit={editingSettings ? onSaveSettings : onSubmit}
             onCancel={closeForm}
             onChangeFormData={(data: Record<string, unknown>) => {
+              draft.current = data;
               // The driver decides which settings exist, so choosing one has
               // to rebuild the schema rather than wait for submit.
               if (adding && data.driver !== draftDriver) {
@@ -325,12 +371,20 @@ const ProvidersControlPanel: React.FC = () => {
                 <Table selectable compact>
                   <Table.Header>
                     <Table.Row>
-                      <Table.HeaderCell>Title</Table.HeaderCell>
-                      <Table.HeaderCell>Id</Table.HeaderCell>
-                      <Table.HeaderCell>Driver</Table.HeaderCell>
-                      <Table.HeaderCell>Enabled</Table.HeaderCell>
+                      <Table.HeaderCell>
+                        {intl.formatMessage(messages.columnTitle)}
+                      </Table.HeaderCell>
+                      <Table.HeaderCell>
+                        {intl.formatMessage(messages.columnId)}
+                      </Table.HeaderCell>
+                      <Table.HeaderCell>
+                        {intl.formatMessage(messages.columnDriver)}
+                      </Table.HeaderCell>
+                      <Table.HeaderCell>
+                        {intl.formatMessage(messages.columnEnabled)}
+                      </Table.HeaderCell>
                       <Table.HeaderCell textAlign="right">
-                        Actions
+                        {intl.formatMessage(messages.columnActions)}
                       </Table.HeaderCell>
                     </Table.Row>
                   </Table.Header>
@@ -346,7 +400,9 @@ const ProvidersControlPanel: React.FC = () => {
                         </Table.Cell>
                         <Table.Cell>{provider.driver}</Table.Cell>
                         <Table.Cell>
-                          {provider.enabled ? 'Yes' : 'No'}
+                          {intl.formatMessage(
+                            provider.enabled ? messages.yes : messages.no,
+                          )}
                         </Table.Cell>
                         <Table.Cell textAlign="right">
                           <Button
@@ -383,7 +439,7 @@ const ProvidersControlPanel: React.FC = () => {
                   </Table.Body>
                 </Table>
               ) : (
-                <p className="identity-controlpanel__empty">
+                <p className="identity-controlpanel__empty identity-note">
                   {intl.formatMessage(
                     driverList.length ? messages.empty : messages.noDrivers,
                   )}
@@ -459,14 +515,17 @@ const ProvidersControlPanel: React.FC = () => {
                       />
                     </Button>
                   ) : null}
-                  <a className="item" href="/controlpanel">
+                  {/* A router link, not an anchor: an `href` here left the
+                      toolbar's back button reloading the whole application
+                      to reach a route Volto already has. */}
+                  <Link className="item" to="/controlpanel">
                     <Icon
                       name={backSVG}
                       className="circled"
                       size="30px"
                       title={intl.formatMessage(messages.back)}
                     />
-                  </a>
+                  </Link>
                 </>
               )
             }

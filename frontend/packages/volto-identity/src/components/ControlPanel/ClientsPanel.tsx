@@ -3,8 +3,88 @@
  * @module components/ControlPanel/ClientsPanel
  */
 import React, { useState } from 'react';
+import { FormattedMessage, defineMessages, useIntl } from 'react-intl';
+
 import type { OAuthClient, SigningKeyRing } from '../../types';
 import SecretReveal from './SecretReveal';
+
+import './ClientsPanel.scss';
+
+const messages = defineMessages({
+  loading: { id: 'Loading clients', defaultMessage: 'Loading clients…' },
+  registered: {
+    id: 'Registered clients',
+    defaultMessage: 'Registered clients',
+  },
+  type: { id: 'Type', defaultMessage: 'Type' },
+  publicClient: {
+    id: 'Public (PKCE required)',
+    defaultMessage: 'Public (PKCE required)',
+  },
+  confidential: { id: 'Confidential', defaultMessage: 'Confidential' },
+  grants: { id: 'Grants', defaultMessage: 'Grants' },
+  redirectUris: { id: 'Redirect URIs', defaultMessage: 'Redirect URIs' },
+  scope: { id: 'Scope', defaultMessage: 'Scope' },
+  enable: { id: 'Enable', defaultMessage: 'Enable' },
+  disable: { id: 'Disable', defaultMessage: 'Disable' },
+  rotateSecret: { id: 'Rotate secret', defaultMessage: 'Rotate secret' },
+  unregister: { id: 'Unregister', defaultMessage: 'Unregister' },
+  disabledNotice: {
+    id: 'Disabled. Its existing access tokens are refused as well.',
+    defaultMessage:
+      'Disabled. Its existing access tokens are refused as well: the ' +
+      'audience is checked against this registry on every request.',
+  },
+  noClients: {
+    id: 'No clients are registered yet.',
+    defaultMessage: 'No clients are registered yet.',
+  },
+  register: { id: 'Register a client', defaultMessage: 'Register a client' },
+  clientId: { id: 'Client ID', defaultMessage: 'Client ID' },
+  title: { id: 'Title', defaultMessage: 'Title' },
+  redirectUrisHelp: {
+    id: 'One per line. Matched exactly.',
+    defaultMessage:
+      'One per line. Matched exactly — a trailing slash or an extra query ' +
+      'parameter is a different URI.',
+  },
+  scopeHelp: {
+    id: 'Space separated, for example “openid profile email”.',
+    defaultMessage: 'Space separated, for example “openid profile email”.',
+  },
+  publicClientLabel: { id: 'Public client', defaultMessage: 'Public client' },
+  publicClientHelp: {
+    id: 'A browser or native app, which cannot keep a secret.',
+    defaultMessage:
+      'A browser or native app, which cannot keep a secret. PKCE is ' +
+      'required for these and no secret is issued.',
+  },
+  submit: { id: 'Register', defaultMessage: 'Register' },
+  signingKeys: { id: 'Signing keys', defaultMessage: 'Signing keys' },
+  ring: {
+    id: '{total} of {size} in the ring, signing with {algorithm}.',
+    defaultMessage:
+      '{total} of {size} in the ring, signing with {algorithm}. Public keys ' +
+      'are published at {jwks}.',
+  },
+  signing: { id: 'signing', defaultMessage: 'signing' },
+  verifyingOnly: {
+    id: 'verifying only',
+    defaultMessage: 'verifying only',
+  },
+  rotateKey: {
+    id: 'Rotate signing key',
+    defaultMessage: 'Rotate signing key',
+  },
+  ringWarning: {
+    id: 'Older keys stay in the ring so tokens already issued keep verifying.',
+    defaultMessage:
+      'Older keys stay in the ring so tokens already issued keep verifying. ' +
+      'The ring holds {size}; rotating more than that within one ' +
+      'access-token lifetime will invalidate tokens still in flight.',
+  },
+  loadingKeys: { id: 'Loading keys', defaultMessage: 'Loading keys…' },
+});
 
 interface ClientsPanelProps {
   clients: OAuthClient[];
@@ -20,6 +100,9 @@ interface ClientsPanelProps {
   onRotateKey: () => void;
   onDismissSecret: () => void;
 }
+
+/** What a `<dd>` shows when the client has nothing for that field. */
+const NOTHING = '—';
 
 /** A registration form's starting state. */
 const BLANK = {
@@ -43,12 +126,13 @@ const ClientsPanel: React.FC<ClientsPanelProps> = ({
   onRotateKey,
   onDismissSecret,
 }) => {
+  const intl = useIntl();
   const [draft, setDraft] = useState({ ...BLANK });
 
   if (loading) {
     return (
       <div className="identity-clients" role="status">
-        Loading clients…
+        {intl.formatMessage(messages.loading)}
       </div>
     );
   }
@@ -78,7 +162,7 @@ const ClientsPanel: React.FC<ClientsPanelProps> = ({
       ) : null}
 
       <section className="identity-clients__list">
-        <h2>Registered clients</h2>
+        <h2>{intl.formatMessage(messages.registered)}</h2>
         {clients.length ? (
           <ul>
             {clients.map((client) => (
@@ -90,65 +174,75 @@ const ClientsPanel: React.FC<ClientsPanelProps> = ({
                   </small>
                 </h3>
                 <dl>
-                  <dt>Type</dt>
+                  <dt>{intl.formatMessage(messages.type)}</dt>
                   <dd>
-                    {client.public ? 'Public (PKCE required)' : 'Confidential'}
+                    {intl.formatMessage(
+                      client.public
+                        ? messages.publicClient
+                        : messages.confidential,
+                    )}
                   </dd>
-                  <dt>Grants</dt>
-                  <dd>{client.grant_types.join(', ') || '—'}</dd>
-                  <dt>Redirect URIs</dt>
-                  <dd>{client.redirect_uris.join(', ') || '—'}</dd>
-                  <dt>Scope</dt>
-                  <dd>{client.scope || '—'}</dd>
+                  <dt>{intl.formatMessage(messages.grants)}</dt>
+                  <dd>{client.grant_types.join(', ') || NOTHING}</dd>
+                  <dt>{intl.formatMessage(messages.redirectUris)}</dt>
+                  <dd>{client.redirect_uris.join(', ') || NOTHING}</dd>
+                  <dt>{intl.formatMessage(messages.scope)}</dt>
+                  <dd>{client.scope || NOTHING}</dd>
                 </dl>
                 <div className="identity-clients__actions">
                   <button
                     type="button"
+                    className="identity-button"
                     disabled={busy}
                     onClick={() => onToggle(client.client_id, !client.enabled)}
                   >
-                    {client.enabled ? 'Disable' : 'Enable'}
+                    {intl.formatMessage(
+                      client.enabled ? messages.disable : messages.enable,
+                    )}
                   </button>
                   {client.public ? null : (
                     <button
                       type="button"
+                      className="identity-button"
                       disabled={busy}
                       onClick={() => onRotateSecret(client.client_id)}
                     >
-                      Rotate secret
+                      {intl.formatMessage(messages.rotateSecret)}
                     </button>
                   )}
                   <button
                     type="button"
+                    className="identity-button identity-button--danger"
                     data-action="delete"
                     disabled={busy}
                     onClick={() => onDelete(client.client_id)}
                   >
-                    Unregister
+                    {intl.formatMessage(messages.unregister)}
                   </button>
                 </div>
                 {client.enabled ? null : (
-                  <p className="identity-clients__disabled" role="status">
-                    Disabled. Its existing access tokens are refused as well:
-                    the audience is checked against this registry on every
-                    request.
+                  <p
+                    className="identity-clients__disabled identity-note"
+                    role="status"
+                  >
+                    {intl.formatMessage(messages.disabledNotice)}
                   </p>
                 )}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="identity-clients__empty">
-            No clients are registered yet.
+          <p className="identity-clients__empty identity-note">
+            {intl.formatMessage(messages.noClients)}
           </p>
         )}
       </section>
 
       <section className="identity-clients__new">
-        <h2>Register a client</h2>
+        <h2>{intl.formatMessage(messages.register)}</h2>
         <form onSubmit={submit}>
           <label>
-            Client ID
+            {intl.formatMessage(messages.clientId)}
             <input
               type="text"
               required
@@ -159,7 +253,7 @@ const ClientsPanel: React.FC<ClientsPanelProps> = ({
             />
           </label>
           <label>
-            Title
+            {intl.formatMessage(messages.title)}
             <input
               type="text"
               value={draft.title}
@@ -169,7 +263,7 @@ const ClientsPanel: React.FC<ClientsPanelProps> = ({
             />
           </label>
           <label>
-            Redirect URIs
+            {intl.formatMessage(messages.redirectUris)}
             <textarea
               rows={3}
               value={draft.redirect_uris}
@@ -177,13 +271,10 @@ const ClientsPanel: React.FC<ClientsPanelProps> = ({
                 setDraft({ ...draft, redirect_uris: event.target.value })
               }
             />
-            <small>
-              One per line. Matched exactly — a trailing slash or an extra query
-              parameter is a different URI.
-            </small>
+            <small>{intl.formatMessage(messages.redirectUrisHelp)}</small>
           </label>
           <label>
-            Scope
+            {intl.formatMessage(messages.scope)}
             <input
               type="text"
               value={draft.scope}
@@ -191,7 +282,7 @@ const ClientsPanel: React.FC<ClientsPanelProps> = ({
                 setDraft({ ...draft, scope: event.target.value })
               }
             />
-            <small>Space separated, for example “openid profile email”.</small>
+            <small>{intl.formatMessage(messages.scopeHelp)}</small>
           </label>
           <label>
             <input
@@ -201,51 +292,58 @@ const ClientsPanel: React.FC<ClientsPanelProps> = ({
                 setDraft({ ...draft, public: event.target.checked })
               }
             />
-            Public client
-            <small>
-              A browser or native app, which cannot keep a secret. PKCE is
-              required for these and no secret is issued.
-            </small>
+            {intl.formatMessage(messages.publicClientLabel)}
+            <small>{intl.formatMessage(messages.publicClientHelp)}</small>
           </label>
-          <button type="submit" disabled={busy}>
-            Register
+          <button type="submit" className="identity-button" disabled={busy}>
+            {intl.formatMessage(messages.submit)}
           </button>
         </form>
       </section>
 
       <section className="identity-clients__keys">
-        <h2>Signing keys</h2>
+        <h2>{intl.formatMessage(messages.signingKeys)}</h2>
         {keys ? (
           <>
             <p>
-              {keys.items_total} of {keys.ring_size} in the ring, signing with{' '}
-              {keys.algorithm}. Public keys are published at{' '}
-              <a href={keys.jwks_uri}>{keys.jwks_uri}</a>.
+              <FormattedMessage
+                {...messages.ring}
+                values={{
+                  total: keys.items_total,
+                  size: keys.ring_size,
+                  algorithm: keys.algorithm,
+                  jwks: <a href={keys.jwks_uri}>{keys.jwks_uri}</a>,
+                }}
+              />
             </p>
             <ul>
               {keys.items.map((key) => (
                 <li key={key.kid} data-kid={key.kid}>
                   <code>{key.kid}</code>
                   {key.active ? (
-                    <strong> — signing</strong>
+                    <strong> — {intl.formatMessage(messages.signing)}</strong>
                   ) : (
-                    ' — verifying only'
+                    ` — ${intl.formatMessage(messages.verifyingOnly)}`
                   )}
                 </li>
               ))}
             </ul>
-            <button type="button" disabled={busy} onClick={onRotateKey}>
-              Rotate signing key
+            <button
+              type="button"
+              className="identity-button"
+              disabled={busy}
+              onClick={onRotateKey}
+            >
+              {intl.formatMessage(messages.rotateKey)}
             </button>
-            <p className="identity-clients__keys-warning">
-              Older keys stay in the ring so tokens already issued keep
-              verifying. The ring holds {keys.ring_size}; rotating more than
-              that within one access-token lifetime will invalidate tokens still
-              in flight.
+            <p className="identity-clients__keys-warning identity-note">
+              {intl.formatMessage(messages.ringWarning, {
+                size: keys.ring_size,
+              })}
             </p>
           </>
         ) : (
-          <p role="status">Loading keys…</p>
+          <p role="status">{intl.formatMessage(messages.loadingKeys)}</p>
         )}
       </section>
     </div>
