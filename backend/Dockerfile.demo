@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# The federation demo image (Gate S3). One image, run twice: which site it
+# The federation demo image. One image, run twice: which site it
 # becomes is decided by APPLY_PROFILES at container start, because the
 # identity provider and the relying party differ in configuration and not in
 # code.

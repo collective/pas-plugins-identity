@@ -40,7 +40,7 @@ Things worth doing once it is up:
   curl -s http://id.localhost/.well-known/openid-configuration | jq
   ```
 
-## Why this is not the Gate S3 stack
+## Why this is not the hermetic federation stack
 
 `backend/tests/federation/docker-compose.yml` runs the same two roles
 headless, with published ports, and is asserted by `pytest -m docker`. It has

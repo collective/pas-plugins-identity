@@ -1,4 +1,4 @@
-"""Gate S3: this package federating with itself.
+"""This package federating with itself.
 
 :mod:`tests.federation.test_handlers` runs in process against the integration
 site and covers what the demo *handlers* do — the client, the provider, the

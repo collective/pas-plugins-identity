@@ -1,4 +1,4 @@
-"""Gate S3: this package federating with itself.
+"""This package federating with itself.
 
 Two Plone sites in containers, sharing no process and no code path at runtime.
 Site A is ``core + profile + server`` and is an OpenID Connect provider; site B

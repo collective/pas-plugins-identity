@@ -2,4 +2,4 @@ Fixed the token endpoint refusing most OAuth clients. It read `client_id` and `c
 
 The endpoint now accepts both, and discovery advertises `client_secret_basic` alongside the form. Credentials sent by both means at once are refused rather than reconciled, as §2.3 requires, and a `client_id` in the form that disagrees with the one in the header is refused rather than resolved in either direction. A Basic header that cannot be decoded refuses the request instead of falling through to the form, which would authenticate a request whose header could not be read. The header is taken off `request._auth`, because ZPublisher moves it there and out of the environment during request construction.
 
-Found by Gate S3, standing two of these sites up and pointing one at the other. Neither end was wrong on its own; they simply could not agree. @ericof
+Found by the federation stack, standing two of these sites up and pointing one at the other. Neither end was wrong on its own; they simply could not agree. @ericof

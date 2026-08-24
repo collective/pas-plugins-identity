@@ -1,4 +1,4 @@
-# Gate S3: this package federating with itself.
+# This package federating with itself.
 #
 # Two Plone sites, one image. Site A applies the server layer and registers a
 # client; site B applies core and points an oidc-generic provider at A's

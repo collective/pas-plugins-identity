@@ -5,7 +5,7 @@
 #   plone.localhost   site B -- core, with the generic OIDC driver pointed at A.
 #
 # Deliberately separate from tests/federation/docker-compose.yml, which is the
-# hermetic Gate S3 stack: that one has to run in CI, so it is headless, gets no
+# hermetic federation stack: that one has to run in CI, so it is headless, gets no
 # real provider and publishes ports directly. This one exists for exactly what
 # CI cannot do -- a real browser, real cross-origin cookies between sibling
 # .localhost hosts, Volto's real login route and its real callback route.

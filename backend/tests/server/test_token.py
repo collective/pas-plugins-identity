@@ -378,8 +378,8 @@ class TestGrantRegistration:
 
 class TestBasicClientAuthentication:
     """RFC 6749 §2.3.1 requires the token endpoint to accept HTTP Basic and
-    makes the form optional. This server took only the form until Gate S3
-    stood two of these sites up and the relying party -- authlib, whose
+    makes the form optional. This server took only the form until the
+    federation stack stood two of these sites up and the relying party -- authlib, whose
     default is client_secret_basic -- was refused with invalid_client by its
     own authorization server."""
 

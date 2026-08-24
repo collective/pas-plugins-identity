@@ -209,7 +209,7 @@ stack-rm:  ## Local Stack: Remove Services and Volumes
 ###########################################
 # Two full Plone sites in a browser: id.localhost is an OpenID provider and
 # plone.localhost signs users in against it. Distinct from `stack-*`, which is
-# the one-site development stack, and from the hermetic Gate S3 stack in
+# the one-site development stack, and from the hermetic federation stack in
 # backend/tests/federation, which is headless and runs in CI.
 DEMO_COMPOSE_FILE=docker-compose.demo.yml
 
