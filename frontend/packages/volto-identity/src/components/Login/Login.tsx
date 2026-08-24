@@ -2,7 +2,7 @@
  * Login container: store, routing, and the redirect out to the provider.
  * @module components/Login/Login
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 
@@ -22,6 +22,9 @@ const Login: React.FC = () => {
   const dispatch = useDispatch();
   const location = useLocation();
   const [redirecting, setRedirecting] = useState(false);
+  // The session as it was when this page loaded. Only a token that appears
+  // *after* that is somebody signing in here.
+  const sessionOnArrival = useRef<string | undefined>(undefined);
 
   const providers = useSelector((state: any) => state.loginProviders);
   const started = useSelector((state: any) => state.providerLogin);
@@ -60,11 +63,26 @@ const Login: React.FC = () => {
     [dispatch],
   );
 
+  useEffect(() => {
+    if (sessionOnArrival.current === undefined) {
+      sessionOnArrival.current = userSession?.token ?? '';
+    }
+  }, [userSession?.token]);
+
   // Volto stores the token and its own AppExtras redirects; all this has to
   // do is get the user back to where the flow started, which for an
   // authorization request is the whole request.
+  //
+  // Only for a token that appeared while this page was open. Arriving here
+  // *already* carrying one means whatever sent us here would not accept it,
+  // because this page is only reached when something refused the session --
+  // so bouncing straight back is an infinite redirect, and the sign-in
+  // options never stay on screen long enough to be clicked. Showing the form
+  // instead lets the visitor sign in as somebody the flow will accept.
   useEffect(() => {
-    if (userSession?.token) {
+    const token = userSession?.token;
+    const arrived = sessionOnArrival.current;
+    if (token && arrived !== undefined && token !== arrived) {
       window.location.href = returnUrl(location.search, location.pathname);
     }
   }, [userSession?.token, location.search, location.pathname]);

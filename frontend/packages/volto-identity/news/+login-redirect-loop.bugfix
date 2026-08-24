@@ -1,0 +1,7 @@
+Fixed an infinite redirect on `/login` that made the sign-in buttons impossible to click.
+
+The page redirected to `came_from` whenever a session token was present, including one the visitor already had on arrival. But this page is only *reached* because something refused that session -- an authorization endpoint that will not accept the principal -- so going straight back to it is a loop: authorize refuses, redirects here, this redirects back, forever. The providers rendered and vanished on every pass, so no button could be clicked.
+
+It now redirects only for a token that appears while the page is open, which is somebody signing in here. Arriving with a session the flow already rejected shows the sign-in options instead, which is the one thing that lets the visitor continue -- by signing in as somebody the flow will accept.
+
+Hit in the two-site demo: a browser signed in to the identity provider as the Zope root user, which is not a member of that site, loops forever on its login page. @ericof
