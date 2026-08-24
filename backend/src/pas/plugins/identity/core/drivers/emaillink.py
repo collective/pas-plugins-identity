@@ -22,6 +22,10 @@ class EmailDriver(BaseDriver):
     title = "Email"
     subject_keys = ("email",)
 
+    # A mailbox asserts an address and nothing else, so seeding a fullname
+    # mapping would only ever resolve to nothing.
+    default_propertymap = {"email": "email"}  # noqa: RUF012
+
     def config_schema(self) -> JSONDict:
         """Return the configuration schema for magic-link login.
 

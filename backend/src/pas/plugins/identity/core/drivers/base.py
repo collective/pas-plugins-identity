@@ -49,8 +49,13 @@ OAUTH_FIELDS: dict[str, JSONDict] = {
         "order": 30,
     },
     "scope": {
-        "type": "string",
+        "type": "list",
         "title": "Scope",
+        "description": (
+            "One permission per entry. They are joined with spaces when the "
+            "authorize URL is built, which is the encoding OAuth 2 defines "
+            "-- a scope containing a space is not one scope."
+        ),
         "required": False,
         "secret": False,
         "order": 40,
@@ -69,14 +74,32 @@ class BaseDriver:
     driver_id: str = ""
     title: str = ""
 
-    #: Default value for the ``scope`` config field.
-    default_scope: str = ""
+    #: Default value for the ``scope`` config field, one token per entry.
+    #:
+    #: A tuple rather than the space-joined string OAuth 2 puts on the wire:
+    #: a scope is a list of permissions, and typing them into one text box is
+    #: how a trailing space or a comma becomes a scope of its own that the
+    #: provider then rejects as unknown.
+    default_scope: tuple[str, ...] = ()
 
     #: Keys tried, in order, to find the provider-side subject.
     subject_keys: tuple[str, ...] = ("sub",)
 
     #: Extra config fields beyond :data:`OAUTH_FIELDS`.
     extra_fields: dict[str, JSONDict] = {}  # noqa: RUF012
+
+    #: Seeded into a new provider's attribute mapping.
+    #:
+    #: Written against the *normalized* claim names rather than any one
+    #: provider's -- ``resolve_claim`` tries those before the raw payload, so
+    #: ``fullname`` reaches GitHub's ``login`` fallback and an OIDC
+    #: ``preferred_username`` alike without either being named here. Only the
+    #: two fields ``IUserDataSchema`` actually declares are mapped: a stock
+    #: site has no ``username`` member field for a third to be written to.
+    default_propertymap: dict[str, str] = {  # noqa: RUF012
+        "email": "email",
+        "fullname": "fullname",
+    }
 
     def config_schema(self) -> JSONDict:
         """Return the configuration schema for this driver.
@@ -85,7 +108,7 @@ class BaseDriver:
             flagged so every API surface can mask them.
         """
         schema: JSONDict = {k: dict(v) for k, v in OAUTH_FIELDS.items()}
-        schema["scope"]["default"] = self.default_scope
+        schema["scope"]["default"] = list(self.default_scope)
         # Off by default, and even when on it is only ever honoured against
         # this package's own magic-link-verified addresses -- never against
         # another provider's word for it.

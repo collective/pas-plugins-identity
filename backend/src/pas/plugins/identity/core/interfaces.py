@@ -53,6 +53,13 @@ class IDriver(Interface):
 
     title = Attribute("Human readable title shown in the control panel.")
 
+    default_propertymap = Attribute(
+        "Claim path to user field, seeded into a new provider's mapping. "
+        "Written against the normalized claim names where it can be, so a "
+        "driver only names a raw claim for something normalization does not "
+        "already produce."
+    )
+
     def config_schema() -> JSONDict:
         """Return the configuration schema for this driver.
 
@@ -204,6 +211,7 @@ class DriverProtocol(Protocol):
 
     driver_id: str
     title: str
+    default_propertymap: dict[str, str]
 
     def config_schema(self) -> JSONDict: ...
 

@@ -19,6 +19,7 @@ from pas.plugins.identity.core.drivers.google import GoogleDriver
 from pas.plugins.identity.core.drivers.oidc import GenericOIDCDriver
 from pas.plugins.identity.core.interfaces import ClaimsError
 from pas.plugins.identity.core.interfaces import IDriver
+from plone.app.users.schema import IUserDataSchema
 from zope.interface.verify import verifyObject
 
 import pytest
@@ -60,6 +61,30 @@ class TestDriverContract:
         orders = [d["order"] for d in factory().config_schema().values()]
 
         assert len(orders) == len(set(orders))
+
+    @pytest.mark.parametrize("factory", ALL_DRIVERS)
+    def test_default_propertymap_targets_real_member_fields(
+        self, factory: type[BaseDriver]
+    ):
+        """A seeded mapping writes somewhere a stock site actually has.
+
+        The vocabulary the control panel offers is built from the site's live
+        member schema, which a site may extend -- but a *default* may only
+        name what ``IUserDataSchema`` declares on its own, since that is all
+        a fresh site has. A default naming ``username`` would look right in
+        the form and resolve to nothing on every login.
+        """
+        stock = set(IUserDataSchema.names(all=True))
+
+        for claim, field in factory().default_propertymap.items():
+            assert field in stock, f"{claim} -> {field}"
+
+    @pytest.mark.parametrize("factory", ALL_DRIVERS)
+    def test_default_propertymap_claims_are_paths(self, factory: type[BaseDriver]):
+        """Every key is a non-empty claim path; an empty one resolves to
+        ``None`` for every provider forever."""
+        for claim in factory().default_propertymap:
+            assert claim and claim.strip() == claim
 
     @pytest.mark.parametrize("factory", ALL_DRIVERS)
     def test_driver_ids_are_unique(self, factory: type[BaseDriver]):
