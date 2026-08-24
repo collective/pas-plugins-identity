@@ -1,0 +1,7 @@
+Made a Profile's `userid` genuinely permanent, and its `email` required.
+
+The type's own docstring said the userid was "marked read-only after creation through the `userid` mode in the edit form". There was no such directive anywhere: the field was writable on every path, and a PATCH changed it without complaint. That matters because an identity record, every local role granted on the Profile and the catalog entry the enumeration plugin queries all point at the userid — rewriting it detaches all three at once and leaves a Profile that still looks correct.
+
+Three things now hold it, one per way a field can be written: the edit form renders it read-only (the add form still asks, that being the one moment the answer is undecided), a REST deserializer refuses a *change* while still accepting the value echoed back, and the consistency check already treated a duplicate as an error. The refusal lives in the deserializer rather than on the object because plone.restapi turns what a deserializer raises into a 400 naming the field, while an exception from the assignment escapes as a 500 — the same refusal, reported as a bug in the site.
+
+**`email` is now required**, where it was optional. A Profile exists to be the thing a person is reached and recognised by, and the enumeration plugin, the property map and the magic-link join all read the address. Existing Profiles are not migrated: nothing rewrites them, and one stored without an address keeps working until somebody edits it through a form or the API, at which point it asks for one. @ericof

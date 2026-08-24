@@ -7,17 +7,29 @@ becomes catalog *metadata*, and metadata that nobody serves is dead weight in
 every brain.
 
 ``userid`` is the join to :mod:`pas.plugins.identity.core.store` and is
-permanent. Nothing in this layer rewrites it; the field is marked
-read-only after creation through the ``userid`` mode in the edit form, and the
-consistency check in :mod:`pas.plugins.identity.profile.doctor` treats a
-duplicate as an error rather than a merge.
+permanent -- an identity, a local role assignment and a catalog entry all
+point at it, and changing it silently detaches every one of them. Three
+things keep it that way, because there are three ways to write a field:
+
+* the edit form renders it read-only, so nobody retypes it by hand;
+* :class:`~pas.plugins.identity.profile.deserializer.UseridIsPermanent`
+  refuses a change over the REST API with a 400 rather than a traceback;
+* :mod:`pas.plugins.identity.profile.doctor` treats a duplicate as an error
+  rather than a merge, for the ones that got in before any of this.
+
+``email`` is required. A Profile exists to be the thing a person is reached
+and recognised by, and the enumeration plugin, the property map and the
+magic-link join all read it; a Profile without one is a record that cannot
+do its job.
 """
 
 from pas.plugins.identity import _
+from plone.autoform.directives import mode
 from plone.autoform.directives import read_permission
 from plone.autoform.directives import write_permission
 from plone.dexterity.content import Container
 from plone.supermodel import model
+from z3c.form.interfaces import IEditForm
 from zope import schema
 from zope.interface import implementer
 
@@ -47,7 +59,8 @@ class IProfileSchema(model.Schema):
 
     email = schema.TextLine(
         title=_("Email"),
-        required=False,
+        description=_("Required: this is what the user is reached and matched by."),
+        required=True,
     )
 
     home_page = schema.TextLine(
@@ -76,6 +89,11 @@ class IProfileSchema(model.Schema):
         missing_value=(),
         default=(),
     )
+    # Shown, never editable: an edit form offering it is an invitation to
+    # detach a Profile from the identity it belongs to. The add form still
+    # asks, because that is the one moment the answer is not yet decided.
+    mode(IEditForm, userid="display")
+
     write_permission(
         userid="pas.plugins.identity.profile.edit",
         login="pas.plugins.identity.profile.edit",
