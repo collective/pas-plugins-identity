@@ -1,0 +1,3 @@
+Offered `@login-providers` as a plone.restapi expandable component. The sign-in buttons are wanted alongside something else more often than on their own — the identities page lists what a user has linked *and* what they could link next, which was two round-trips for one screen. `?expand=login-providers` now answers both in one, and `@identities` carries the component.
+
+The listing itself moved out of the service into a function both call, so a button rendered from the expansion cannot drift from one rendered by the endpoint. Unexpanded the component costs a URL, which is the contract every other component follows: a client that does not ask still learns where to look. @ericof

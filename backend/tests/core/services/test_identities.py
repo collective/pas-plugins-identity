@@ -141,6 +141,33 @@ class TestListing(IdentitiesCase):
         # A member with a real password can always unlink.
         assert self.listing()["items"][0]["can_unlink"] is True
 
+    def test_offers_the_login_providers_component(self):
+        """Unexpanded, a caller still learns where to look."""
+        result = self.listing()
+
+        component = result["@components"]["login-providers"]
+        assert component["@id"].endswith("/@login-providers")
+        assert "items" not in component
+
+    def test_expands_the_login_providers(self):
+        """The page lists what is linked *and* what could be linked next, so
+        asking for both in one request is the whole point of the component."""
+        self.request.form["expand"] = "login-providers"
+
+        component = self.listing()["@components"]["login-providers"]
+
+        assert [item["id"] for item in component["items"]] == ["dex"]
+
+    def test_the_expansion_is_the_endpoint_s_own_answer(self):
+        """Two renderings of the same buttons must not be able to differ."""
+        from pas.plugins.identity.core.services.login import provider_listing
+
+        self.request.form["expand"] = "login-providers"
+
+        assert self.listing()["@components"]["login-providers"] == provider_listing(
+            self.portal
+        )
+
     def test_shows_only_your_own(self):
         """Somebody else's identity is not yours to see."""
         self.plugin().link("another-userid", "dex", "someone-elses-subject", {})

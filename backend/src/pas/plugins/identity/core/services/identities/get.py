@@ -3,6 +3,7 @@
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.services.identities import IdentitiesBase
+from plone.restapi.serializer.expansion import expandable_elements
 
 
 class IdentitiesGet(IdentitiesBase):
@@ -37,4 +38,10 @@ class IdentitiesGet(IdentitiesBase):
                     userid, record.provider, record.subject
                 ),
             })
-        return {"@id": base, "items": items}
+        # The page that reads this also offers what is *not* linked yet, so
+        # `?expand=login-providers` answers the whole screen in one request.
+        return {
+            "@id": base,
+            "items": items,
+            **expandable_elements(self.context, self.request),
+        }

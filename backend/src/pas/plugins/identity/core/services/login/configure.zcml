@@ -4,6 +4,13 @@
     i18n_domain="pas.plugins.identity"
     >
 
+  <!-- The same listing, offered to anything that expands components.
+       Anonymous like the endpoint: this is the login page's data. -->
+  <adapter
+      factory=".expander.LoginProviders"
+      name="login-providers"
+      />
+
   <!-- Listing and flow start. Anonymous by design: this is the login page.
        No secrets and no provider configuration leave here. -->
   <plone:service

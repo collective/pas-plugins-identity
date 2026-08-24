@@ -14,7 +14,6 @@ Two shapes, deliberately:
 """
 
 from pas.plugins.identity import logger
-from pas.plugins.identity.core.controlpanel import enabled_providers
 from pas.plugins.identity.core.controlpanel import get_callback_url
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.flows import FlowManager
@@ -23,6 +22,7 @@ from pas.plugins.identity.core.flows.session import FlowSession
 from pas.plugins.identity.core.interfaces import FlowError
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.services.base import IdentityService
+from pas.plugins.identity.core.services.login import provider_listing
 from plone import api
 from Products.CMFPlone.Portal import PloneSite
 from zope.interface import implementer
@@ -69,24 +69,9 @@ class LoginProviders(IdentityService):
     def _listing(self) -> JSONDict:
         """Return the providers a user may log in with.
 
-        No secrets and no configuration leave here: a login button needs an
-        id, a label and somewhere to click.
-
         :returns: The listing.
         """
-        base = f"{self.context.absolute_url()}/@login-providers"
-        return {
-            "@id": base,
-            "items": [
-                {
-                    "@id": f"{base}/{provider.provider_id}",
-                    "id": provider.provider_id,
-                    "title": provider.title,
-                    "driver": provider.driver_id,
-                }
-                for provider in enabled_providers()
-            ],
-        }
+        return provider_listing(self.context)
 
     # ------------------------------------------------------------------
     # GET @login-providers/<id>
