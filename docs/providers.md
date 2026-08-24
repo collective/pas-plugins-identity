@@ -57,6 +57,14 @@ gone as well, remove them first.
 `oidc-generic`
 : Any OpenID Connect provider, configured with its discovery URL.
 
+`plone-identity`
+: Another Plone site running this package's `[server]` layer. The generic
+  OIDC driver underneath — a peer is a conforming OIDC provider and gets no
+  special path through the flow — carrying the configuration a peer can be
+  known in advance to want: the `address` scope, an attribute mapping for
+  every claim the peer actually releases, and the remote `sub` as the local
+  userid, so one person keeps one id across the federation.
+
 `email`
 : Magic-link sign-in. No external provider at all; the site emails a
   single-use signed token. See below.
