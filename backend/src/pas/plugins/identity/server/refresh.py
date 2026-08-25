@@ -196,6 +196,27 @@ class RefreshTokenStore(Persistent):
             del self._tokens[token]
         return len(doomed)
 
+    def revoke_for_client(self, subject: str, client_id: str) -> int:
+        """Revoke one user's live tokens for one client.
+
+        What withdrawing consent reaches. Narrower than
+        :meth:`revoke_for_subject` on purpose: the user said no to *this*
+        application, and ending their sessions with every other one would be
+        answering a question they did not ask.
+
+        :param subject: The Plone userid.
+        :param client_id: The client to cut off.
+        :returns: How many live tokens were revoked.
+        """
+        doomed = [
+            t
+            for t, v in self._tokens.items()
+            if v.subject == subject and v.client_id == client_id
+        ]
+        for token in doomed:
+            del self._tokens[token]
+        return len(doomed)
+
     def rotate(self, token: str, client_id: str) -> tuple[str, RefreshToken]:
         """Redeem a refresh token and issue its replacement.
 
