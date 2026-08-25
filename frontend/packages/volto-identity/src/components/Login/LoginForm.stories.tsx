@@ -13,6 +13,7 @@ const meta: Meta<typeof LoginForm> = {
     magicLinkSent: false,
     magicLinkLoading: false,
     passwordLoading: false,
+    showPloneLogin: true,
     onSelectProvider: () => {},
     onSendMagicLink: () => {},
     onPasswordLogin: () => {},
@@ -37,6 +38,33 @@ export const Loading: Story = { args: { loading: true } };
  * there is no way in at all.
  */
 export const NoProviders: Story = { args: { providers: [] } };
+
+/** A site that has providers and wants no password beside them. */
+export const ProvidersOnly: Story = {
+  args: { showPloneLogin: false },
+};
+
+/**
+ * One provider and nothing else: the picker is skipped and the flow starts
+ * on its own, so what is on screen is where it is going.
+ */
+export const TheOnlyWayIn: Story = {
+  args: { showPloneLogin: false, providers: [PROVIDERS[0]] },
+};
+
+/** The same site, after that provider turned out to be unreachable. */
+export const TheOnlyWayInFailed: Story = {
+  args: {
+    showPloneLogin: false,
+    providers: [PROVIDERS[0]],
+    error: FAILED.error,
+  },
+};
+
+/** A site whose only way in is a link in the post. */
+export const MagicLinkOnly: Story = {
+  args: { showPloneLogin: false, providers: [EMAIL] },
+};
 
 export const Redirecting: Story = { args: { starting: true } };
 

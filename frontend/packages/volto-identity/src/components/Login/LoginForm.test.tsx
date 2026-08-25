@@ -37,6 +37,9 @@ function renderForm(
         magicLinkSent={false}
         magicLinkLoading={false}
         passwordLoading={false}
+        // The default here, not the product's: most of these are about the
+        // picker, and a picker needs something to pick between.
+        showPloneLogin
         onSelectProvider={onSelectProvider}
         onSendMagicLink={onSendMagicLink}
         onPasswordLogin={onPasswordLogin}
@@ -174,6 +177,68 @@ describe('LoginForm', () => {
     renderForm({ error: { status: 502 } });
 
     expect(screen.getByRole('alert').textContent).toContain('not available');
+  });
+
+  it('offers no password button when the site turned it off', () => {
+    renderForm({ showPloneLogin: false, providers: [DEX, EMAIL] });
+
+    expect(screen.queryByText('Sign in with a password')).toBeNull();
+    expect(screen.getByText('Dex')).toBeTruthy();
+  });
+
+  it('still offers the password when nothing else is configured', () => {
+    // The setting decides whether a password sits *beside* the providers. A
+    // fresh install has the add-on on and no provider yet, and must not be a
+    // site with no way in at all.
+    renderForm({ showPloneLogin: false, providers: [] });
+
+    expect(screen.getByLabelText(/Login Name/i)).toBeTruthy();
+  });
+
+  it('goes straight to the only provider there is', () => {
+    // One button asking somebody to confirm the only thing that can happen
+    // is a click that carries no decision.
+    const { onSelectProvider } = renderForm({
+      showPloneLogin: false,
+      providers: [DEX],
+    });
+
+    expect(onSelectProvider).toHaveBeenCalledWith(DEX);
+  });
+
+  it('says where it is taking them rather than flashing a button', () => {
+    renderForm({ showPloneLogin: false, providers: [DEX] });
+
+    expect(screen.getByRole('status').textContent).toContain('Dex');
+  });
+
+  it('does not redirect when there is a choice to make', () => {
+    const { onSelectProvider } = renderForm({
+      showPloneLogin: false,
+      providers: [DEX, { ...DEX, id: 'github', title: 'GitHub' }],
+    });
+
+    expect(onSelectProvider).not.toHaveBeenCalled();
+  });
+
+  it('does not redirect past a provider that just failed', () => {
+    // Otherwise an unreachable provider is an unbreakable loop: start, fail,
+    // render, start again.
+    const { onSelectProvider } = renderForm({
+      showPloneLogin: false,
+      providers: [DEX],
+      error: new Error('nope'),
+    });
+
+    expect(onSelectProvider).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toBeTruthy();
+  });
+
+  it('is just the magic-link form when that is the only way in', () => {
+    renderForm({ showPloneLogin: false, providers: [EMAIL] });
+
+    expect(screen.queryByText('Sign in with a password')).toBeNull();
+    expect(document.querySelector('.identity-providers')).toBeNull();
   });
 
   it('keeps the email provider out of the button list', () => {

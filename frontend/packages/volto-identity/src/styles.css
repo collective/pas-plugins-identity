@@ -123,6 +123,17 @@
   opacity: 0.6;
 }
 
+/** The affirmative one, where a screen asks a yes-or-no question. */
+.identity-button--primary {
+  background: var(--identity-accent);
+  color: var(--identity-surface-bg);
+}
+
+.identity-button--primary:hover:not(:disabled) {
+  background: var(--identity-accent);
+  opacity: 0.9;
+}
+
 /** The irreversible ones say so. */
 .identity-button--danger {
   border-color: var(--identity-danger);

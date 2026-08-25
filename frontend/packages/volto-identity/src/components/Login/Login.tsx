@@ -13,6 +13,7 @@ import {
   startProviderLogin,
 } from '../../actions';
 import { login } from '@plone/volto/actions/userSession/userSession';
+import config from '@plone/volto/registry';
 
 import { returnUrl } from '../../helpers/returnUrl';
 import type { LoginProvider } from '../../types';
@@ -132,6 +133,7 @@ const Login: React.FC = () => {
         onSendMagicLink={onSendMagicLink}
         passwordLoading={Boolean(userSession?.login?.loading)}
         passwordError={userSession?.login?.error}
+        showPloneLogin={Boolean(config.settings.identityShowPloneLogin)}
         onPasswordLogin={onPasswordLogin}
       />
     </LoginPanel>

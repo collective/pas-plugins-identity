@@ -19,10 +19,12 @@ import { Provider } from 'react-redux';
 
 import type {
   ConfiguredProvider,
+  ConsentRequest,
   Driver,
   Identity,
   LoginProvider,
   OAuthClient,
+  OAuthGrants,
   SigningKeyRing,
   UserProfile,
 } from '../types';
@@ -209,6 +211,60 @@ export const MINTED_CLIENT: OAuthClient = {
   secret: 'Yb3nT7qk-2sV1pE0xR8wL4mZ6aQ9cJ5dN0gH2fK1uS',
   notice:
     'This secret is shown once and is not recoverable. Store it before leaving this page.',
+};
+
+/** The applications a user has authorized, as `@oauth-grants` lists them. */
+export const GRANTS: OAuthGrants = {
+  '@id': 'http://id.localhost/@oauth-grants',
+  access_token_ttl: 900,
+  items: [
+    {
+      '@id': 'http://id.localhost/@oauth-grants/demo-rp',
+      client_id: 'demo-rp',
+      title: 'Plone Content Site',
+      registered: true,
+      enabled: true,
+      granted_at: '2026-08-24T09:15:00+00:00',
+      scopes: [
+        { id: 'openid', claims: [] },
+        {
+          id: 'profile',
+          claims: ['name', 'preferred_username', 'picture', 'description'],
+        },
+        { id: 'email', claims: ['email', 'email_verified'] },
+      ],
+    },
+    {
+      '@id': 'http://id.localhost/@oauth-grants/reporting',
+      client_id: 'reporting',
+      title: 'Nightly reporting job',
+      registered: true,
+      enabled: true,
+      granted_at: '2026-06-02T22:40:00+00:00',
+      scopes: [{ id: 'openid', claims: [] }],
+    },
+  ],
+};
+
+/** A pending authorization request, as `@oauth-consent` describes one. */
+export const CONSENT_REQUEST: ConsentRequest = {
+  '@id': 'http://id.localhost/@oauth-consent',
+  client: { id: 'demo-rp', title: 'Plone Content Site' },
+  user: { id: 'alice', label: 'Alice Liddell' },
+  scopes: [
+    { id: 'openid', claims: [] },
+    { id: 'profile', claims: ['name', 'preferred_username', 'picture'] },
+    { id: 'email', claims: ['email', 'email_verified'] },
+  ],
+  authorize_url: 'http://id.localhost/@@oauth-authorize',
+  params: {
+    response_type: 'code',
+    client_id: 'demo-rp',
+    redirect_uri: 'http://plone.localhost/login-identity',
+    scope: 'openid profile email',
+    state: 'a1b2c3',
+  },
+  authenticator: 'a-plone-protect-token',
 };
 
 export const KEYRING: SigningKeyRing = {

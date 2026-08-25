@@ -1,79 +1,21 @@
 /**
  * The OAuth client control panel.
  *
- * Structural only. The card, its padding and its title come from the
- * container, which puts this inside the same raised Segment the providers
- * panel uses; these are the three sections within it.
+ * Almost nothing, for the same reason the providers panel is almost nothing:
+ * the table, the form and the toolbar are Volto's own, and styling them here
+ * is how a control panel stops looking like the others. What is left is the
+ * key ring, which is a list rather than a table.
  */
-.identity-clients {
-  section + section {
-    padding-top: var(--identity-gap);
-    border-top: var(--identity-border);
-    margin-top: 2rem;
-  }
-
-  h2 {
-    margin: 0 0 var(--identity-gap);
-    font-size: 16px;
-    font-weight: 500;
-  }
-
+.identity-clients__keys {
   ul {
     padding: 0;
-    margin: 0;
+    margin: 0 0 var(--identity-gap);
     list-style: none;
   }
-}
-
-.identity-clients__actions {
-  display: flex;
-  margin-top: 0.5rem;
-  gap: 0.5rem;
 }
 
 .identity-clients__disabled,
 .identity-clients__keys-warning {
   margin-top: 0.5rem;
   font-size: 0.875rem;
-}
-
-.identity-clients__new {
-  form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--identity-gap);
-  }
-
-  label {
-    display: block;
-    margin-bottom: 1rem;
-    font-size: 14px;
-    font-weight: 500;
-  }
-
-  small {
-    display: block;
-    color: var(--identity-muted);
-    font-weight: 400;
-  }
-
-  input[type='text'],
-  textarea {
-    width: 100%;
-    padding: 8px 6px;
-    border: 0;
-    border-bottom: 1px solid var(--identity-field-border);
-    background: transparent;
-    font: inherit;
-    font-size: 16px;
-
-    &:focus {
-      border-bottom-color: var(--identity-accent);
-      outline: none;
-    }
-  }
-
-  button[type='submit'] {
-    align-self: flex-start;
-  }
 }

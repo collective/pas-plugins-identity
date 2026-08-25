@@ -3,35 +3,30 @@
  * @module components/UserMenu/IdentitiesMenuItem
  */
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { defineMessages, useIntl } from 'react-intl';
-import Icon from '@plone/volto/components/theme/Icon/Icon';
 import { Plug } from '@plone/volto/components/manage/Pluggable';
-import rightArrowSVG from '@plone/volto/icons/right-key.svg';
 
 import { IDENTITIES_PATH } from '../../config/routes';
+import MenuItem from './MenuItem';
 
 const messages = defineMessages({
   title: { id: 'Sign-in methods', defaultMessage: 'Sign-in methods' },
 });
 
 /**
- * Volto's `PersonalTools` ends its menu list with a `toolbar-user-menu`
- * pluggable, which is the supported way to add an entry without shadowing the
- * component. The plug renders an `<li>` because it lands inside that list's
- * `<ul>`, and carries the same right-arrow icon as the entries beside it so it
- * does not read as a different kind of thing.
+ * Ordered right after Preferences, because it is one: this is where a person
+ * adds a way of getting in or drops one they no longer use. See
+ * :mod:`components/UserMenu/UserMenuPlugs` for the whole ordering.
  */
 const IdentitiesMenuItem: React.FC = () => {
   const intl = useIntl();
   return (
-    <Plug pluggable="toolbar-user-menu" id="identities">
-      <li>
-        <Link id="toolbar-identities" to={IDENTITIES_PATH}>
-          {intl.formatMessage(messages.title)}
-          <Icon name={rightArrowSVG} size="24px" />
-        </Link>
-      </li>
+    <Plug pluggable="toolbar-user-menu" id="identities" order={30}>
+      <MenuItem
+        id="toolbar-identities"
+        label={intl.formatMessage(messages.title)}
+        to={IDENTITIES_PATH}
+      />
     </Plug>
   );
 };

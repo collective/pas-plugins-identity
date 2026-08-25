@@ -1,0 +1,59 @@
+/**
+ * The authorized-applications list, and one application's details.
+ *
+ * Structural only: the card, its padding and its title come from the
+ * container, and the table is Volto's own. What is left is the detail view,
+ * which is the part this page draws for itself.
+ */
+.identity-applications {
+  .identity-note {
+    margin: 0;
+    font-size: 0.875rem;
+  }
+
+  h2 {
+    margin: 0 0 0.25rem;
+    font-size: 18px;
+    font-weight: 500;
+  }
+
+  h3 {
+    margin: 1.5rem 0 0.5rem;
+    font-size: 14px;
+    font-weight: 500;
+  }
+}
+
+/** The way back, above the details it leaves. */
+.identity-applications__back {
+  display: flex;
+  padding: 0;
+  border: 0;
+  margin-bottom: var(--identity-gap);
+  background: transparent;
+  color: var(--identity-accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.875rem;
+  gap: 0.25rem;
+}
+
+.identity-applications__claims {
+  padding-left: 1.25rem;
+  margin: 0 0 0.5rem;
+
+  li {
+    margin-bottom: 0.25rem;
+  }
+}
+
+/**
+ * What withdrawing cannot reach. Once per view rather than per row: it is
+ * one fact about this site, not a property of any one application.
+ */
+.identity-applications__lingering {
+  padding-top: var(--identity-gap);
+  border-top: var(--identity-border);
+  margin-top: 2rem;
+  font-size: 0.875rem;
+}

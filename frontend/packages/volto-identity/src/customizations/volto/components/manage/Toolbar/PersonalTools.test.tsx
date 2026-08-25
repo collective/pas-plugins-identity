@@ -12,7 +12,10 @@ import { MemoryRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import React from 'react';
 
-import { PluggablesProvider } from '@plone/volto/components/manage/Pluggable';
+import {
+  Plug,
+  PluggablesProvider,
+} from '@plone/volto/components/manage/Pluggable';
 import PersonalTools from './PersonalTools';
 
 const ALICE = {
@@ -25,6 +28,7 @@ function renderMenu(
   user: unknown = ALICE,
   props: Record<string, unknown> = {},
   actions: unknown[] = [],
+  plugs: React.ReactNode = null,
 ) {
   const store = {
     getState: () => ({
@@ -38,6 +42,7 @@ function renderMenu(
     <Provider store={store as never}>
       <MemoryRouter>
         <PluggablesProvider>
+          {plugs}
           <PersonalTools
             loadComponent={vi.fn()}
             unloadComponent={vi.fn()}
@@ -52,14 +57,52 @@ function renderMenu(
 }
 
 describe('PersonalTools', () => {
-  it('gives the Profile link a stable id', () => {
-    // Upstream uses the *translated* label as the DOM id, so the id is
-    // `Profile` in English and `Perfil` in Portuguese -- anything keying on
-    // it works in one language and silently not in the next.
-    renderMenu();
+  it('writes no entry of its own into the list', () => {
+    // Upstream writes three and puts the pluggable after them, so an add-on
+    // can only append. Every entry is a plug now -- what they are and what
+    // order they come in is `UserMenuPlugs`' test -- and this component's
+    // share of it is an empty list waiting for them.
+    const { container } = renderMenu();
 
-    expect(document.querySelector('#toolbar-profile')).toBeTruthy();
-    expect(document.querySelector('#Profile')).toBeNull();
+    expect(container.querySelector('.pastanaga-menu-list ul')).toBeTruthy();
+    expect(container.querySelectorAll('.pastanaga-menu-list li')).toHaveLength(
+      0,
+    );
+  });
+
+  it('renders whatever plugged into the user menu', () => {
+    renderMenu(
+      ALICE,
+      {},
+      [],
+      <Plug pluggable="toolbar-user-menu" id="probe">
+        <li id="probe-entry">Probe</li>
+      </Plug>,
+    );
+
+    expect(document.querySelector('#probe-entry')).toBeTruthy();
+  });
+
+  it('hands the plugs the prop only it has', () => {
+    // `loadComponent` belongs to this component; the Preferences entry is a
+    // plug and would otherwise have no way to reach it.
+    const loadComponent = vi.fn();
+    renderMenu(
+      ALICE,
+      { loadComponent },
+      [],
+      <Plug pluggable="toolbar-user-menu" id="probe">
+        {({ loadComponent: given }: { loadComponent: () => void }) => (
+          <li>
+            <button onClick={() => given()}>Probe</button>
+          </li>
+        )}
+      </Plug>,
+    );
+
+    screen.getByRole('button', { name: 'Probe' }).click();
+
+    expect(loadComponent).toHaveBeenCalled();
   });
 
   it('names the user from the store this package fills', () => {
@@ -103,14 +146,6 @@ describe('PersonalTools', () => {
 
     expect(screen.getByRole('button', { name: /back/i })).toBeTruthy();
     expect(screen.getByRole('link', { name: /logout/i })).toBeTruthy();
-  });
-
-  it('offers Site Setup only to somebody who has that action', () => {
-    renderMenu(ALICE, {}, []);
-    expect(screen.queryByText('Site Setup')).toBeNull();
-
-    renderMenu(ALICE, {}, [{ id: 'plone_setup' }]);
-    expect(screen.getByText('Site Setup')).toBeTruthy();
   });
 
   it('renders no avatar block', () => {

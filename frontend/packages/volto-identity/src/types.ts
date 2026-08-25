@@ -152,6 +152,62 @@ export interface OAuthClient {
   notice?: string;
 }
 
+/**
+ * A pending authorization request, as `@oauth-consent` describes it.
+ *
+ * Nothing here is a decision. The answer goes back to `authorize_url` with
+ * `params` and the `authenticator`, and the authorization endpoint re-runs
+ * every check before acting on it.
+ */
+export interface ConsentRequest {
+  '@id': string;
+  /** The application asking. */
+  client: { id: string; title: string };
+  /** Who would be agreeing, so a forgotten session is visible. */
+  user: { id: string; label: string };
+  /** What is being asked for, in the order the client asked. */
+  scopes: { id: string; claims: string[] }[];
+  /** Where the answer goes. */
+  authorize_url: string;
+  /** The authorization request, to hand back unchanged. */
+  params: Record<string, string>;
+  /** plone.protect's token, bound to this user. */
+  authenticator: string;
+}
+
+/**
+ * One application a user has authorized, as `@oauth-grants` lists them.
+ *
+ * The mirror image of an `Identity`: that is a provider they sign in *with*,
+ * this is an application they signed in *to*.
+ */
+export interface OAuthGrant {
+  '@id': string;
+  client_id: string;
+  /** What the consent screen called it; the id when nothing else is left. */
+  title: string;
+  /** Whether the client is still registered on this site. */
+  registered: boolean;
+  enabled: boolean;
+  /** ISO 8601, when the agreement was last given. */
+  granted_at: string;
+  /** What was agreed to, and what each scope releases. */
+  scopes: { id: string; claims: string[] }[];
+}
+
+/** What `@oauth-grants` answers with. */
+export interface OAuthGrants {
+  '@id': string;
+  items: OAuthGrant[];
+  /**
+   * Seconds an access token already minted may still be accepted.
+   *
+   * Withdrawing consent cannot reach one: they are self-encoded with no
+   * denylist. The screen says so rather than implying a cutoff.
+   */
+  access_token_ttl: number;
+}
+
 /** One key in the signing ring. Metadata only; never key material. */
 export interface SigningKey {
   kid: string;

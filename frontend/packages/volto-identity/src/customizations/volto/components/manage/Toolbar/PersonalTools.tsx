@@ -14,6 +14,15 @@
  *
  * WHAT DIFFERS FROM UPSTREAM, and why:
  *
+ * - **The menu list is nothing but the pluggable.** Upstream writes Profile,
+ *   Preferences and Site Setup into the list and puts `toolbar-user-menu`
+ *   after them, so an add-on can only append: wanting an entry *between* two
+ *   of Volto's, or wanting one of them gone, meant shadowing this component
+ *   again. All three are plugs now -- see
+ *   `components/UserMenu/UserMenuPlugs` -- so the menu is one ordered list a
+ *   site composes. `loadComponent` reaches the Preferences entry through the
+ *   pluggable's `params`, which is what that mechanism is for.
+ *
  * - **The avatar block is gone.** It drew a 96px portrait, or a camera icon
  *   for the many users who have never uploaded one -- the same picture for
  *   everybody, saying "no image here" rather than "this is you". Who is
@@ -25,8 +34,9 @@
  *   *translated* label: `id="Profile"` in English, `id="Perfil"` in
  *   Portuguese. Anything keying on it -- a test, a stylesheet, an
  *   integration -- works in one language and silently not in the next. It is
- *   `id="toolbar-profile"` here, matching `toolbar-logout` two lines below
- *   it, which upstream already spells that way.
+ *   `id="toolbar-profile"` in the plug that now renders it, matching the
+ *   `toolbar-logout` in the header here, which upstream already spells that
+ *   way.
  *
  * - **It does not fetch the user.** Upstream decodes the JWT and dispatches
  *   `getUser` on mount. This add-on already holds the signed-in user, loaded
@@ -55,20 +65,17 @@ import React from 'react';
 import type { RefObject } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, useLocation } from 'react-router-dom';
-import { FormattedMessage, useIntl, defineMessages } from 'react-intl';
+import { useIntl, defineMessages } from 'react-intl';
 
 import Icon from '@plone/volto/components/theme/Icon/Icon';
 import { Pluggable } from '@plone/volto/components/manage/Pluggable';
 import { getBaseUrl } from '@plone/volto/helpers/Url/Url';
 import logoutSVG from '@plone/volto/icons/log-out.svg';
-import rightArrowSVG from '@plone/volto/icons/right-key.svg';
 import backSVG from '@plone/volto/icons/back.svg';
 
 const messages = defineMessages({
   back: { id: 'Back', defaultMessage: 'Back' },
   logout: { id: 'Logout', defaultMessage: 'Logout' },
-  preferences: { id: 'Preferences', defaultMessage: 'Preferences' },
-  profile: { id: 'Profile', defaultMessage: 'Profile' },
 });
 
 export interface PersonalToolsProps {
@@ -108,10 +115,11 @@ const PersonalTools: React.FC<PersonalToolsProps> = ({
   const intl = useIntl();
   const { pathname } = useLocation();
   const user = useSelector((state: any) => state.userProfile?.data) ?? {};
-  const siteSetupAction = useSelector((state: any) =>
-    state.actions?.actions?.user?.find(
-      (action: { id?: string }) => action?.id === 'plone_setup',
-    ),
+  // Memoized because `Pluggable` memoizes its render on the params object: a
+  // fresh one every render would rebuild every entry on every render.
+  const pluggableParams = React.useMemo(
+    () => ({ loadComponent }),
+    [loadComponent],
   );
 
   return (
@@ -159,31 +167,7 @@ const PersonalTools: React.FC<PersonalToolsProps> = ({
       </header>
       <div className="pastanaga-menu-list">
         <ul>
-          <li>
-            <Link id="toolbar-profile" to="/personal-information">
-              <FormattedMessage id="Profile" defaultMessage="Profile" />
-              <Icon name={rightArrowSVG} size="24px" />
-            </Link>
-          </li>
-          <li>
-            <button
-              id="toolbar-preferences"
-              aria-label={intl.formatMessage(messages.preferences)}
-              onClick={() => loadComponent('preferences')}
-            >
-              <FormattedMessage id="Preferences" defaultMessage="Preferences" />
-              <Icon name={rightArrowSVG} size="24px" />
-            </button>
-          </li>
-          {siteSetupAction && (
-            <li>
-              <Link id="toolbar-site-setup" to="/controlpanel">
-                <FormattedMessage id="Site Setup" defaultMessage="Site Setup" />
-                <Icon name={rightArrowSVG} size="24px" />
-              </Link>
-            </li>
-          )}
-          <Pluggable name="toolbar-user-menu" />
+          <Pluggable name="toolbar-user-menu" params={pluggableParams} />
         </ul>
       </div>
     </div>

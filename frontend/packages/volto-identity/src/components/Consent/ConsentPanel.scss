@@ -1,0 +1,37 @@
+/**
+ * The consent screen.
+ *
+ * Sized like the login card, because it is the same moment of the same
+ * journey: a person is being asked one question and should see one column of
+ * text, not a page-wide layout. The card, the note and the button come from
+ * the root stylesheet.
+ */
+.identity-consent {
+  width: var(--identity-login-width);
+  max-width: 100%;
+  margin: 3rem auto;
+  line-height: 1.5;
+
+  h1 {
+    margin-top: 0;
+    font-size: 1.25rem;
+  }
+}
+
+.identity-consent__who {
+  margin-top: -0.5rem;
+}
+
+.identity-consent__claims {
+  padding-left: 1.25rem;
+
+  li {
+    margin-bottom: 0.25rem;
+  }
+}
+
+.identity-consent__actions {
+  display: flex;
+  margin-top: 1.5rem;
+  gap: 0.75rem;
+}

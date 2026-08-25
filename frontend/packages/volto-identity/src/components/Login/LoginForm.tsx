@@ -6,7 +6,7 @@
  * while a redirect is in flight, and what a failure says.
  * @module components/Login/LoginForm
  */
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Container } from '@plone/components';
 import { defineMessages, useIntl } from 'react-intl';
 
@@ -34,6 +34,10 @@ const messages = defineMessages({
     id: 'Back to sign-in options',
     defaultMessage: 'Back to sign-in options',
   },
+  redirecting: {
+    id: 'Taking you to {provider}…',
+    defaultMessage: 'Taking you to {provider}…',
+  },
 });
 
 interface LoginFormProps {
@@ -48,6 +52,14 @@ interface LoginFormProps {
   passwordLoading: boolean;
   /** Whether the last password sign-in was refused. */
   passwordError?: unknown;
+  /**
+   * Whether Plone's own password form is one of the ways in.
+   *
+   * A prop rather than a read of `config.settings` here, so this component
+   * stays renderable without the registry and the decision is visible in
+   * one place.
+   */
+  showPloneLogin: boolean;
   onSelectProvider: (provider: LoginProvider) => void;
   onSendMagicLink: (email: string) => void;
   onPasswordLogin: (username: string, password: string) => void;
@@ -74,6 +86,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
   magicLinkError,
   passwordLoading,
   passwordError,
+  showPloneLogin,
   onSelectProvider,
   onSendMagicLink,
   onPasswordLogin,
@@ -86,6 +99,30 @@ const LoginForm: React.FC<LoginFormProps> = ({
   const [password, setPassword] = useState(false);
   const buttons = providers.filter((p) => p.driver !== EMAIL_DRIVER);
   const hasMagicLink = providers.some((p) => p.driver === EMAIL_DRIVER);
+  // With nothing configured the password form is the login page whatever the
+  // setting says. The setting decides whether a password is offered *beside*
+  // the providers; it is not a way to leave a site with no way in, which is
+  // what a fresh install -- add-on on, no provider configured yet -- would
+  // otherwise be.
+  const hasPassword = showPloneLogin || !providers.length;
+  // Every way in, counted the same way whatever kind it is: this is what
+  // decides whether there is a choice to present at all.
+  const ways = buttons.length + (hasMagicLink ? 1 : 0) + (hasPassword ? 1 : 0);
+  const onlyProvider = ways === 1 && buttons.length === 1 ? buttons[0] : null;
+
+  // A single provider and nothing else: the picker would be one button asking
+  // the user to confirm the only thing that can happen. Sent once per mount
+  // and never while a failure is on screen -- an unreachable provider would
+  // otherwise be an unbreakable redirect loop rather than a message with a
+  // button under it.
+  const startedRef = useRef(false);
+  useEffect(() => {
+    if (!onlyProvider || error || starting || startedRef.current) {
+      return;
+    }
+    startedRef.current = true;
+    onSelectProvider(onlyProvider);
+  }, [onlyProvider, error, starting, onSelectProvider]);
 
   if (loading) {
     return (
@@ -95,12 +132,12 @@ const LoginForm: React.FC<LoginFormProps> = ({
     );
   }
 
-  if (!providers.length) {
-    // Not an error: a site can legitimately have none configured yet, and an
-    // authorization server may never have any -- its users are local. So the
-    // password form is the login page, shown outright rather than behind a
-    // disclosure, and nothing announces the absence: the panel's description
-    // already says the account is one on this site. This is what
+  if (ways === 1 && hasPassword) {
+    // Not an error: a site can legitimately have no providers configured yet,
+    // and an authorization server may never have any -- its users are local.
+    // So the password form is the login page, shown outright rather than
+    // behind a disclosure, and nothing announces the absence: the panel's
+    // description already says the account is one on this site. This is what
     // `volto-authomatic` renders when it has no providers either.
     return (
       <div className="identity-login identity-login--empty">
@@ -109,6 +146,33 @@ const LoginForm: React.FC<LoginFormProps> = ({
           error={passwordError}
           onSubmit={onPasswordLogin}
         />
+      </div>
+    );
+  }
+
+  if (ways === 1 && hasMagicLink) {
+    // The same argument as the password form above: one way in is not a
+    // choice, so it is not presented as one.
+    return (
+      <div className="identity-login identity-login--empty">
+        <MagicLinkForm
+          sent={magicLinkSent}
+          loading={magicLinkLoading}
+          error={magicLinkError}
+          onSend={onSendMagicLink}
+        />
+      </div>
+    );
+  }
+
+  if (onlyProvider && !error) {
+    // The redirect is already on its way from the effect above. Saying so
+    // beats a flash of a button nobody is meant to press.
+    return (
+      <div className="identity-login" role="status">
+        {intl.formatMessage(messages.redirecting, {
+          provider: onlyProvider.title || onlyProvider.id,
+        })}
       </div>
     );
   }
@@ -135,8 +199,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
   return (
     <div className="identity-login">
       {/* The password is one of the ways in, so it is one of these buttons
-          rather than a line of text under them. The list is therefore never
-          empty here, even on a site whose only provider is the magic link. */}
+          rather than a line of text under them -- when it is offered at all.
+          A site that turned it off and has only the magic link renders an
+          empty list here and the form below it. */}
       <ul className="identity-providers">
         {buttons.map((provider) => (
           <li key={provider.id}>
@@ -149,14 +214,16 @@ const LoginForm: React.FC<LoginFormProps> = ({
             />
           </li>
         ))}
-        <li>
-          <ProviderButton
-            driver={PASSWORD_DRIVER}
-            label={intl.formatMessage(messages.usePassword)}
-            disabled={starting}
-            onSelect={() => setPassword(true)}
-          />
-        </li>
+        {hasPassword ? (
+          <li>
+            <ProviderButton
+              driver={PASSWORD_DRIVER}
+              label={intl.formatMessage(messages.usePassword)}
+              disabled={starting}
+              onSelect={() => setPassword(true)}
+            />
+          </li>
+        ) : null}
       </ul>
 
       {error ? (

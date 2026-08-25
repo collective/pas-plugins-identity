@@ -1,5 +1,9 @@
 import type { ConfigType } from '@plone/registry';
+import appsSVG from '@plone/volto/icons/apps.svg';
+import worldSVG from '@plone/volto/icons/world.svg';
+import Applications from '../components/Applications/Applications';
 import Callback from '../components/Callback/Callback';
+import Consent from '../components/Consent/Consent';
 import FirstLogin from '../components/FirstLogin/FirstLogin';
 import ClientsControlPanel from '../components/ControlPanel/ClientsControlPanel';
 import ProvidersControlPanel from '../components/ControlPanel/ProvidersControlPanel';
@@ -15,6 +19,26 @@ export const FIRST_LOGIN_PATH = '/first-login';
 /** Where a signed-in user manages their own sign-in methods. */
 export const IDENTITIES_PATH = '/identities';
 
+/**
+ * Where a signed-in user sees the applications they have authorized.
+ *
+ * The other direction from `IDENTITIES_PATH`: that page is the providers
+ * they sign in *with*, this one the applications they signed in *to*. Only
+ * a site running the `[server]` layer has any, and only that layer publishes
+ * the endpoint behind it.
+ */
+export const APPLICATIONS_PATH = '/applications';
+
+/**
+ * Where a user is asked whether they agree to an authorization request.
+ *
+ * Only reached on a site running the `[server]` layer, and only when that
+ * layer's `server_consent_url` names it: the authorization endpoint renders
+ * a standalone page of its own otherwise. The route exists regardless, since
+ * a frontend cannot be configured as the consent screen before it has one.
+ */
+export const CONSENT_PATH = '/oauth-consent';
+
 /** Where a Manager configures providers. */
 export const CONTROLPANEL_PATH = '/controlpanel/identity-providers';
 
@@ -27,6 +51,8 @@ export default function install(config: ConfigType) {
     new RegExp(`^${CALLBACK_PATH}$`),
     new RegExp(`^${FIRST_LOGIN_PATH}$`),
     new RegExp(`^${IDENTITIES_PATH}$`),
+    new RegExp(`^${CONSENT_PATH}$`),
+    new RegExp(`^${APPLICATIONS_PATH}$`),
   ];
   config.addonRoutes = [
     ...(config.addonRoutes ?? []),
@@ -35,6 +61,8 @@ export default function install(config: ConfigType) {
     { path: '/login', exact: true, component: Login },
     { path: '/**/login', exact: true, component: Login },
     { path: IDENTITIES_PATH, exact: true, component: Identities },
+    { path: CONSENT_PATH, exact: true, component: Consent },
+    { path: APPLICATIONS_PATH, exact: true, component: Applications },
     { path: CONTROLPANEL_PATH, exact: true, component: ProvidersControlPanel },
     {
       path: CLIENTS_CONTROLPANEL_PATH,
@@ -42,5 +70,23 @@ export default function install(config: ConfigType) {
       component: ClientsControlPanel,
     },
   ];
+
+  // Keyed by configlet id, which is the last segment of each panel's route
+  // and what the backend's `controlpanel.xml` calls it. Without an entry
+  // Volto draws its generic placeholder, and a control-panel listing where
+  // this add-on's two panels are the only unlabelled tiles reads as two
+  // things that did not finish installing.
+  //
+  // A globe for the providers, because every one of them is somewhere else;
+  // the apps grid for the clients, because that panel is a list of
+  // applications this site issues tokens to. Both are Volto's own icons
+  // rather than anything drawn here: a control panel that looks like the
+  // control panels beside it is the whole point.
+  config.settings.controlPanelsIcons = {
+    ...config.settings.controlPanelsIcons,
+    'identity-providers': worldSVG,
+    'identity-clients': appsSVG,
+  };
+
   return config;
 }

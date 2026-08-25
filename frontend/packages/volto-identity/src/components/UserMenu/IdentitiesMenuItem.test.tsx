@@ -80,9 +80,10 @@ describe('the menu install step', () => {
 
     install(config);
 
-    // The loader is one of them, and renders nothing: the entries below it
-    // read the user it puts in the store.
-    expect(config.settings.appExtras).toHaveLength(3);
+    // The loader, plus one per menu entry -- including the three Volto used
+    // to write into the list itself. The loader renders nothing: the entries
+    // beside it read the user it puts in the store.
+    expect(config.settings.appExtras).toHaveLength(7);
     expect(config.settings.appExtras.every((e: any) => e.match === '')).toBe(
       true,
     );
@@ -96,7 +97,7 @@ describe('the menu install step', () => {
 
     install(config);
 
-    expect(config.settings.appExtras).toHaveLength(4);
+    expect(config.settings.appExtras).toHaveLength(8);
     expect(config.settings.appExtras[0].component).toBe(other);
   });
 });

@@ -18,12 +18,14 @@ msgstr ""
 "X-Is-Fallback-For: es-ar es-bo es-cl es-co es-cr es-do es-ec es-es es-sv es-gt es-hn es-mx es-ni es-pa es-py es-pe es-pr es-us es-uy es-ve\n"
 "X-Generator: Poedit 2.2.1\n"
 
-#. Default: "A browser or native app, which cannot keep a secret. PKCE is required for these and no secret is issued."
-#: components/ControlPanel/ClientsPanel
-msgid "A browser or native app, which cannot keep a secret."
+#. Default: "Access withdrawn"
+#: components/Applications/Applications
+msgid "Access withdrawn"
 msgstr ""
 
 #. Default: "Actions"
+#: components/Applications/ApplicationsPanel
+#: components/ControlPanel/ClientsPanel
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Actions"
 msgstr ""
@@ -38,7 +40,39 @@ msgstr ""
 msgid "Add provider"
 msgstr ""
 
+#. Default: "Allow"
+#: components/Consent/ConsentPanel
+msgid "Allow"
+msgstr ""
+
+#. Default: "Allow {client} to use your account?"
+#: components/Consent/ConsentPanel
+msgid "Allow {client} to use your account?"
+msgstr ""
+
+#. Default: "Application"
+#: components/Applications/ApplicationsPanel
+msgid "Application"
+msgstr ""
+
+#. Default: "Applications"
+#: components/Applications/Applications
+#: components/UserMenu/ApplicationsMenuItem
+msgid "Applications"
+msgstr ""
+
+#. Default: "Authorize"
+#: components/Consent/Consent
+msgid "Authorize"
+msgstr ""
+
+#. Default: "Authorized"
+#: components/Applications/ApplicationsPanel
+msgid "Authorized"
+msgstr ""
+
 #. Default: "Back"
+#: components/Applications/Applications
 #: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ProvidersControlPanel
 #: components/Identities/Identities
@@ -50,12 +84,19 @@ msgstr ""
 msgid "Back to sign-in options"
 msgstr ""
 
+#. Default: "Back to the list"
+#: components/Applications/ApplicationsPanel
+msgid "Back to the list"
+msgstr ""
+
 #. Default: "Cancel"
+#: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Cancel"
 msgstr ""
 
 #. Default: "Changes saved"
+#: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Changes saved"
 msgstr ""
@@ -78,6 +119,11 @@ msgstr ""
 #. Default: "Client secret for {clientId}"
 #: components/ControlPanel/SecretReveal
 msgid "Client secret for {clientId}"
+msgstr ""
+
+#. Default: "Client unregistered"
+#: components/ControlPanel/ClientsControlPanel
+msgid "Client unregistered"
 msgstr ""
 
 #. Default: "Confidential"
@@ -105,9 +151,14 @@ msgstr ""
 msgid "Delete this provider?"
 msgstr ""
 
-#. Default: "Disable"
-#: components/ControlPanel/ClientsPanel
-msgid "Disable"
+#. Default: "Deny"
+#: components/Consent/ConsentPanel
+msgid "Deny"
+msgstr ""
+
+#. Default: "Details"
+#: components/Applications/ApplicationsPanel
+msgid "Details"
 msgstr ""
 
 #. Default: "Disabled. Its existing access tokens are refused as well: the audience is checked against this registry on every request."
@@ -121,6 +172,7 @@ msgid "Driver"
 msgstr ""
 
 #. Default: "Edit"
+#: components/ControlPanel/ClientsPanel
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Edit"
 msgstr ""
@@ -135,17 +187,15 @@ msgstr ""
 msgid "Email me a link"
 msgstr ""
 
-#. Default: "Enable"
-#: components/ControlPanel/ClientsPanel
-msgid "Enable"
-msgstr ""
-
 #. Default: "Enabled"
+#: components/ControlPanel/ClientsPanel
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Enabled"
 msgstr ""
 
 #. Default: "Error"
+#: components/Applications/Applications
+#: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Error"
 msgstr ""
@@ -175,6 +225,16 @@ msgstr ""
 msgid "If that address can sign in here"
 msgstr ""
 
+#. Default: "It can read:"
+#: components/Applications/ApplicationsPanel
+msgid "It can read:"
+msgstr ""
+
+#. Default: "It will be able to read:"
+#: components/Consent/ConsentPanel
+msgid "It will be able to read:"
+msgstr ""
+
 #. Default: "Loading clients…"
 #: components/ControlPanel/ClientsPanel
 msgid "Loading clients"
@@ -188,6 +248,16 @@ msgstr ""
 #. Default: "Loading sign-in options…"
 #: components/Login/LoginForm
 msgid "Loading sign-in options"
+msgstr ""
+
+#. Default: "Loading the applications you have authorized…"
+#: components/Applications/ApplicationsPanel
+msgid "Loading the applications you have authorized"
+msgstr ""
+
+#. Default: "Loading the request…"
+#: components/Consent/ConsentPanel
+msgid "Loading the request"
 msgstr ""
 
 #. Default: "Loading your sign-in methods…"
@@ -207,12 +277,8 @@ msgstr ""
 msgid "Login name"
 msgstr ""
 
-#. Default: "My profile"
-#: components/UserMenu/ProfileMenuItem
-msgid "My profile"
-msgstr ""
-
 #. Default: "No"
+#: components/ControlPanel/ClientsPanel
 #: components/ControlPanel/ProvidersControlPanel
 msgid "No"
 msgstr ""
@@ -237,6 +303,16 @@ msgstr ""
 msgid "No providers are configured yet."
 msgstr ""
 
+#. Default: "Nothing"
+#: components/Applications/ApplicationsPanel
+msgid "Nothing"
+msgstr ""
+
+#. Default: "Nothing beyond the fact that you signed in."
+#: components/Applications/ApplicationsPanel
+msgid "Nothing beyond the fact that you signed in."
+msgstr ""
+
 #. Default: "OAuth clients"
 #: components/ControlPanel/ClientsControlPanel
 msgid "OAuth clients"
@@ -247,14 +323,20 @@ msgstr ""
 msgid "Older keys stay in the ring so tokens already issued keep verifying."
 msgstr ""
 
-#. Default: "One per line. Matched exactly — a trailing slash or an extra query parameter is a different URI."
-#: components/ControlPanel/ClientsPanel
-msgid "One per line. Matched exactly."
-msgstr ""
-
 #. Default: "Password"
 #: components/Login/PasswordForm
 msgid "Password"
+msgstr ""
+
+#. Default: "Preferences"
+#: components/UserMenu/UserMenuPlugs
+msgid "Preferences"
+msgstr ""
+
+#. Default: "Profile"
+#: components/UserMenu/ProfileMenuItem
+#: components/UserMenu/UserMenuPlugs
+msgid "Profile"
 msgstr ""
 
 #. Default: "Provider deleted"
@@ -267,11 +349,6 @@ msgstr ""
 msgid "Public (PKCE required)"
 msgstr ""
 
-#. Default: "Public client"
-#: components/ControlPanel/ClientsPanel
-msgid "Public client"
-msgstr ""
-
 #. Default: "Reached {endpoint}"
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Reached {endpoint}"
@@ -282,17 +359,13 @@ msgstr ""
 msgid "Reached {endpoint} (no key set published)"
 msgstr ""
 
-#. Default: "Redirect URIs"
-#: components/ControlPanel/ClientsPanel
-msgid "Redirect URIs"
-msgstr ""
-
-#. Default: "Register"
-#: components/ControlPanel/ClientsPanel
-msgid "Register"
+#. Default: "Reads"
+#: components/Applications/ApplicationsPanel
+msgid "Reads"
 msgstr ""
 
 #. Default: "Register a client"
+#: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ClientsPanel
 msgid "Register a client"
 msgstr ""
@@ -318,6 +391,7 @@ msgid "Rotate signing key"
 msgstr ""
 
 #. Default: "Save"
+#: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Save"
 msgstr ""
@@ -325,6 +399,11 @@ msgstr ""
 #. Default: "Scope"
 #: components/ControlPanel/ClientsPanel
 msgid "Scope"
+msgstr ""
+
+#. Default: "Scopes agreed to"
+#: components/Applications/ApplicationsPanel
+msgid "Scopes agreed to"
 msgstr ""
 
 #. Default: "Secret for {clientId}"
@@ -363,7 +442,13 @@ msgstr ""
 msgid "Signing in"
 msgstr ""
 
+#. Default: "Signing key rotated"
+#: components/ControlPanel/ClientsControlPanel
+msgid "Signing key rotated"
+msgstr ""
+
 #. Default: "Signing keys"
+#: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ClientsPanel
 msgid "Signing keys"
 msgstr ""
@@ -374,9 +459,14 @@ msgstr ""
 msgid "Signing you in"
 msgstr ""
 
-#. Default: "Space separated, for example “openid profile email”."
-#: components/ControlPanel/ClientsPanel
-msgid "Space separated, for example “openid profile email”."
+#. Default: "Site Setup"
+#: components/UserMenu/UserMenuPlugs
+msgid "Site Setup"
+msgstr ""
+
+#. Default: "Taking you to {provider}…"
+#: components/Login/LoginForm
+msgid "Taking you to {provider}…"
 msgstr ""
 
 #. Default: "Test connection"
@@ -392,6 +482,11 @@ msgstr ""
 #. Default: "That did not work. Please try again."
 #: components/Identities/IdentitiesList
 msgid "That did not work. Please try again."
+msgstr ""
+
+#. Default: "That list could not be loaded."
+#: components/Applications/ApplicationsPanel
+msgid "That list could not be loaded."
 msgstr ""
 
 #. Default: "That login name and password did not match."
@@ -417,6 +512,21 @@ msgstr ""
 #. Default: "The site settings could not be read, so they cannot be edited here. The most likely cause is a settings field with no registry record, which happens when the add-on gained one and its profile has not been reapplied since."
 #: components/ControlPanel/ProvidersControlPanel
 msgid "The site settings could not be read"
+msgstr ""
+
+#. Default: "This application is disabled and is being refused already."
+#: components/Applications/ApplicationsPanel
+msgid "This application is disabled and is being refused already."
+msgstr ""
+
+#. Default: "This application is no longer registered on this site. It cannot ask for anything, and you can remove the record."
+#: components/Applications/ApplicationsPanel
+msgid "This application is no longer registered on this site."
+msgstr ""
+
+#. Default: "This authorization request cannot be shown. It may have been sent by an application this site does not know, or it may have expired — start again from the application you were signing in to."
+#: components/Consent/ConsentPanel
+msgid "This authorization request cannot be shown."
 msgstr ""
 
 #. Default: "This is the only time this secret is shown. It is stored hashed and cannot be read back; if it is lost, rotate it."
@@ -450,9 +560,40 @@ msgstr ""
 msgid "Unregister"
 msgstr ""
 
+#. Default: "Unregister this client? Every token already minted for it stops being accepted at once."
+#: components/ControlPanel/ClientsPanel
+msgid "Unregister this client?"
+msgstr ""
+
+#. Default: "Withdraw access"
+#: components/Applications/ApplicationsPanel
+msgid "Withdraw access"
+msgstr ""
+
+#. Default: "Withdraw access for {client}? It will be signed out everywhere and will have to ask you again next time."
+#: components/Applications/Applications
+msgid "Withdraw access for {client}?"
+msgstr ""
+
+#. Default: "Withdrawing signs an application out everywhere and makes it ask you again next time. An access token it already holds keeps working for up to {minutes, plural, one {# minute} other {# minutes}} — this site cannot recall one that was already issued."
+#: components/Applications/ApplicationsPanel
+msgid "Withdrawing signs it out and makes it ask again."
+msgstr ""
+
 #. Default: "Yes"
+#: components/ControlPanel/ClientsPanel
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Yes"
+msgstr ""
+
+#. Default: "You are signed in as {user}."
+#: components/Consent/ConsentPanel
+msgid "You are signed in as {user}."
+msgstr ""
+
+#. Default: "You authorized this application on {date}."
+#: components/Applications/ApplicationsPanel
+msgid "You authorized this application on {date}."
 msgstr ""
 
 #. Default: "You have no external sign-in methods linked yet."
@@ -460,9 +601,19 @@ msgstr ""
 msgid "You have no external sign-in methods linked yet."
 msgstr ""
 
+#. Default: "You have not authorized any application. Anything you sign in to with this account will ask you first, and appear here afterwards."
+#: components/Applications/ApplicationsPanel
+msgid "You have not authorized any application."
+msgstr ""
+
 #. Default: "Forgot your password?"
 #: components/Login/PasswordForm
 msgid "box_forgot_password_option"
+msgstr ""
+
+#. Default: "nothing beyond the fact that you signed in"
+#: components/Consent/ConsentPanel
+msgid "nothing beyond the fact that you signed in"
 msgstr ""
 
 #. Default: "signing"
@@ -478,6 +629,11 @@ msgstr ""
 #. Default: "verifying only"
 #: components/ControlPanel/ClientsPanel
 msgid "verifying only"
+msgstr ""
+
+#. Default: "{count, plural, one {# field} other {# fields}}"
+#: components/Applications/ApplicationsPanel
+msgid "{count, plural, one {# field} other {# fields}}"
 msgstr ""
 
 #. Default: "{total} of {size} in the ring, signing with {algorithm}. Public keys are published at {jwks}."

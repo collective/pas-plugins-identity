@@ -1,10 +1,27 @@
 /**
  * The OAuth client control panel, without store or routing.
+ *
+ * Shaped after the providers panel, which is itself shaped after Volto's
+ * own: a table of what exists, the add and save actions in the toolbar
+ * rather than inline, and the form rendered by Volto's `Form` from a schema.
+ * Nothing here lays out an input.
+ *
+ * Which of the three views is on screen is the container's decision, because
+ * the toolbar buttons that switch between them live there. This renders the
+ * one it is given.
  * @module components/ControlPanel/ClientsPanel
  */
-import React, { useState } from 'react';
+import React from 'react';
 import { FormattedMessage, defineMessages, useIntl } from 'react-intl';
+import { Button, Segment, Table } from 'semantic-ui-react';
 
+import Icon from '@plone/volto/components/theme/Icon/Icon';
+import { Form } from '@plone/volto/components/manage/Form';
+import deleteSVG from '@plone/volto/icons/delete.svg';
+import pencilSVG from '@plone/volto/icons/pencil.svg';
+import refreshSVG from '@plone/volto/icons/refresh.svg';
+
+import { clientSchema, toFormData } from '../../helpers/clientSchema';
 import type { OAuthClient, SigningKeyRing } from '../../types';
 import SecretReveal from './SecretReveal';
 
@@ -23,43 +40,33 @@ const messages = defineMessages({
   },
   confidential: { id: 'Confidential', defaultMessage: 'Confidential' },
   grants: { id: 'Grants', defaultMessage: 'Grants' },
-  redirectUris: { id: 'Redirect URIs', defaultMessage: 'Redirect URIs' },
   scope: { id: 'Scope', defaultMessage: 'Scope' },
-  enable: { id: 'Enable', defaultMessage: 'Enable' },
-  disable: { id: 'Disable', defaultMessage: 'Disable' },
+  edit: { id: 'Edit', defaultMessage: 'Edit' },
   rotateSecret: { id: 'Rotate secret', defaultMessage: 'Rotate secret' },
   unregister: { id: 'Unregister', defaultMessage: 'Unregister' },
+  confirmDelete: {
+    id: 'Unregister this client?',
+    defaultMessage:
+      'Unregister this client? Every token already minted for it stops ' +
+      'being accepted at once.',
+  },
+  noClients: {
+    id: 'No clients are registered yet.',
+    defaultMessage: 'No clients are registered yet.',
+  },
+  add: { id: 'Register a client', defaultMessage: 'Register a client' },
+  columnTitle: { id: 'Title', defaultMessage: 'Title' },
+  columnId: { id: 'Client ID', defaultMessage: 'Client ID' },
+  columnEnabled: { id: 'Enabled', defaultMessage: 'Enabled' },
+  columnActions: { id: 'Actions', defaultMessage: 'Actions' },
+  yes: { id: 'Yes', defaultMessage: 'Yes' },
+  no: { id: 'No', defaultMessage: 'No' },
   disabledNotice: {
     id: 'Disabled. Its existing access tokens are refused as well.',
     defaultMessage:
       'Disabled. Its existing access tokens are refused as well: the ' +
       'audience is checked against this registry on every request.',
   },
-  noClients: {
-    id: 'No clients are registered yet.',
-    defaultMessage: 'No clients are registered yet.',
-  },
-  register: { id: 'Register a client', defaultMessage: 'Register a client' },
-  clientId: { id: 'Client ID', defaultMessage: 'Client ID' },
-  title: { id: 'Title', defaultMessage: 'Title' },
-  redirectUrisHelp: {
-    id: 'One per line. Matched exactly.',
-    defaultMessage:
-      'One per line. Matched exactly — a trailing slash or an extra query ' +
-      'parameter is a different URI.',
-  },
-  scopeHelp: {
-    id: 'Space separated, for example “openid profile email”.',
-    defaultMessage: 'Space separated, for example “openid profile email”.',
-  },
-  publicClientLabel: { id: 'Public client', defaultMessage: 'Public client' },
-  publicClientHelp: {
-    id: 'A browser or native app, which cannot keep a secret.',
-    defaultMessage:
-      'A browser or native app, which cannot keep a secret. PKCE is ' +
-      'required for these and no secret is issued.',
-  },
-  submit: { id: 'Register', defaultMessage: 'Register' },
   signingKeys: { id: 'Signing keys', defaultMessage: 'Signing keys' },
   ring: {
     id: '{total} of {size} in the ring, signing with {algorithm}.',
@@ -86,6 +93,9 @@ const messages = defineMessages({
   loadingKeys: { id: 'Loading keys', defaultMessage: 'Loading keys…' },
 });
 
+/** Which of the panel's three views is on screen. */
+export type ClientsView = 'list' | 'add' | 'edit' | 'keys';
+
 interface ClientsPanelProps {
   clients: OAuthClient[];
   keys: SigningKeyRing | null;
@@ -93,25 +103,24 @@ interface ClientsPanelProps {
   busy: boolean;
   /** The client whose secret was just minted, if any. */
   minted: OAuthClient | null;
-  onCreate: (data: Record<string, unknown>) => void;
-  onToggle: (clientId: string, enabled: boolean) => void;
+  view: ClientsView;
+  /** The client being edited, when the view is `edit`. */
+  editing: string | null;
+  /** Handed to `Form`, so the toolbar's Save can submit it. */
+  formRef: React.RefObject<any>;
+  /** A failed request, rendered by `Form` above the fields. */
+  error?: unknown;
+  onSubmit: (data: Record<string, unknown>) => void;
+  onCancel: () => void;
+  onEdit: (clientId: string) => void;
   onRotateSecret: (clientId: string) => void;
   onDelete: (clientId: string) => void;
   onRotateKey: () => void;
   onDismissSecret: () => void;
 }
 
-/** What a `<dd>` shows when the client has nothing for that field. */
+/** What a cell shows when the client has nothing for that column. */
 const NOTHING = '—';
-
-/** A registration form's starting state. */
-const BLANK = {
-  client_id: '',
-  title: '',
-  redirect_uris: '',
-  scope: '',
-  public: false,
-};
 
 const ClientsPanel: React.FC<ClientsPanelProps> = ({
   clients,
@@ -119,234 +128,229 @@ const ClientsPanel: React.FC<ClientsPanelProps> = ({
   loading,
   busy,
   minted,
-  onCreate,
-  onToggle,
+  view,
+  editing,
+  formRef,
+  error,
+  onSubmit,
+  onCancel,
+  onEdit,
   onRotateSecret,
   onDelete,
   onRotateKey,
   onDismissSecret,
 }) => {
   const intl = useIntl();
-  const [draft, setDraft] = useState({ ...BLANK });
+  const current = editing
+    ? clients.find((client) => client.client_id === editing)
+    : undefined;
+  const adding = view === 'add';
 
-  if (loading) {
+  const confirmDelete = (clientId: string) => {
+    // eslint-disable-next-line no-alert
+    if (!window.confirm(intl.formatMessage(messages.confirmDelete))) {
+      return;
+    }
+    onDelete(clientId);
+  };
+
+  if (view === 'keys') {
     return (
-      <div className="identity-clients" role="status">
-        {intl.formatMessage(messages.loading)}
-      </div>
+      <Segment.Group raised className="identity-clients">
+        <Segment className="primary">
+          {intl.formatMessage(messages.signingKeys)}
+        </Segment>
+        <Segment className="identity-clients__keys">
+          {keys ? (
+            <>
+              <p>
+                <FormattedMessage
+                  {...messages.ring}
+                  values={{
+                    total: keys.items_total,
+                    size: keys.ring_size,
+                    algorithm: keys.algorithm,
+                    jwks: <a href={keys.jwks_uri}>{keys.jwks_uri}</a>,
+                  }}
+                />
+              </p>
+              <ul>
+                {keys.items.map((key) => (
+                  <li key={key.kid} data-kid={key.kid}>
+                    <code>{key.kid}</code>
+                    {key.active ? (
+                      <strong> — {intl.formatMessage(messages.signing)}</strong>
+                    ) : (
+                      ` — ${intl.formatMessage(messages.verifyingOnly)}`
+                    )}
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                className="identity-button"
+                disabled={busy}
+                onClick={onRotateKey}
+              >
+                {intl.formatMessage(messages.rotateKey)}
+              </button>
+              <p className="identity-clients__keys-warning identity-note">
+                {intl.formatMessage(messages.ringWarning, {
+                  size: keys.ring_size,
+                })}
+              </p>
+            </>
+          ) : (
+            <p role="status">{intl.formatMessage(messages.loadingKeys)}</p>
+          )}
+        </Segment>
+      </Segment.Group>
     );
   }
 
-  const submit = (event: React.FormEvent) => {
-    event.preventDefault();
-    onCreate({
-      client_id: draft.client_id.trim(),
-      title: draft.title.trim(),
-      // One per line is what an operator can paste from a provider's own
-      // configuration screen. Matching is exact on the backend, so blank
-      // lines and stray whitespace have to go.
-      redirect_uris: draft.redirect_uris
-        .split('\n')
-        .map((uri) => uri.trim())
-        .filter(Boolean),
-      scope: draft.scope.trim(),
-      public: draft.public,
-    });
-    setDraft({ ...BLANK });
-  };
+  if (view === 'add' || view === 'edit') {
+    return (
+      <Form
+        ref={formRef}
+        // An add form and an edit form ask for different fields, and `Form`
+        // seeds an add form's defaults in its constructor -- once, from the
+        // schema it mounted with. Keyed so switching between them remounts
+        // rather than carrying the previous form's state into the next.
+        key={adding ? 'add' : editing ?? 'edit'}
+        title={
+          adding
+            ? intl.formatMessage(messages.add)
+            : current?.title || current?.client_id
+        }
+        schema={clientSchema(adding)}
+        formData={toFormData(adding ? undefined : current)}
+        requestError={error}
+        onSubmit={onSubmit}
+        onCancel={onCancel}
+        hideActions
+      />
+    );
+  }
 
   return (
-    <div className="identity-clients">
-      {minted ? (
-        <SecretReveal client={minted} onDismiss={onDismissSecret} />
-      ) : null}
-
-      <section className="identity-clients__list">
-        <h2>{intl.formatMessage(messages.registered)}</h2>
-        {clients.length ? (
-          <ul>
-            {clients.map((client) => (
-              <li key={client['@id']} data-client={client.client_id}>
-                <h3>
-                  {client.title || client.client_id}{' '}
-                  <small>
+    <Segment.Group raised className="identity-clients">
+      <Segment className="primary">
+        {intl.formatMessage(messages.registered)}
+      </Segment>
+      <Segment>
+        {minted ? (
+          <SecretReveal client={minted} onDismiss={onDismissSecret} />
+        ) : null}
+        {loading ? (
+          <p role="status">{intl.formatMessage(messages.loading)}</p>
+        ) : clients.length ? (
+          <Table selectable compact>
+            <Table.Header>
+              <Table.Row>
+                <Table.HeaderCell>
+                  {intl.formatMessage(messages.columnTitle)}
+                </Table.HeaderCell>
+                <Table.HeaderCell>
+                  {intl.formatMessage(messages.columnId)}
+                </Table.HeaderCell>
+                <Table.HeaderCell>
+                  {intl.formatMessage(messages.type)}
+                </Table.HeaderCell>
+                <Table.HeaderCell>
+                  {intl.formatMessage(messages.grants)}
+                </Table.HeaderCell>
+                <Table.HeaderCell>
+                  {intl.formatMessage(messages.scope)}
+                </Table.HeaderCell>
+                <Table.HeaderCell>
+                  {intl.formatMessage(messages.columnEnabled)}
+                </Table.HeaderCell>
+                <Table.HeaderCell textAlign="right">
+                  {intl.formatMessage(messages.columnActions)}
+                </Table.HeaderCell>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              {clients.map((client) => (
+                <Table.Row key={client['@id']} data-client={client.client_id}>
+                  <Table.Cell>
+                    {client.title || client.client_id}
+                    {client.enabled ? null : (
+                      <p
+                        className="identity-clients__disabled identity-note"
+                        role="status"
+                      >
+                        {intl.formatMessage(messages.disabledNotice)}
+                      </p>
+                    )}
+                  </Table.Cell>
+                  <Table.Cell>
                     <code>{client.client_id}</code>
-                  </small>
-                </h3>
-                <dl>
-                  <dt>{intl.formatMessage(messages.type)}</dt>
-                  <dd>
+                  </Table.Cell>
+                  <Table.Cell>
                     {intl.formatMessage(
                       client.public
                         ? messages.publicClient
                         : messages.confidential,
                     )}
-                  </dd>
-                  <dt>{intl.formatMessage(messages.grants)}</dt>
-                  <dd>{client.grant_types.join(', ') || NOTHING}</dd>
-                  <dt>{intl.formatMessage(messages.redirectUris)}</dt>
-                  <dd>{client.redirect_uris.join(', ') || NOTHING}</dd>
-                  <dt>{intl.formatMessage(messages.scope)}</dt>
-                  <dd>{client.scope || NOTHING}</dd>
-                </dl>
-                <div className="identity-clients__actions">
-                  <button
-                    type="button"
-                    className="identity-button"
-                    disabled={busy}
-                    onClick={() => onToggle(client.client_id, !client.enabled)}
-                  >
+                  </Table.Cell>
+                  <Table.Cell>
+                    {client.grant_types.join(', ') || NOTHING}
+                  </Table.Cell>
+                  <Table.Cell>{client.scope || NOTHING}</Table.Cell>
+                  <Table.Cell>
                     {intl.formatMessage(
-                      client.enabled ? messages.disable : messages.enable,
+                      client.enabled ? messages.yes : messages.no,
                     )}
-                  </button>
-                  {client.public ? null : (
-                    <button
-                      type="button"
-                      className="identity-button"
+                  </Table.Cell>
+                  <Table.Cell textAlign="right">
+                    <Button
+                      basic
+                      icon
                       disabled={busy}
-                      onClick={() => onRotateSecret(client.client_id)}
+                      aria-label={intl.formatMessage(messages.edit)}
+                      title={intl.formatMessage(messages.edit)}
+                      onClick={() => onEdit(client.client_id)}
                     >
-                      {intl.formatMessage(messages.rotateSecret)}
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    className="identity-button identity-button--danger"
-                    data-action="delete"
-                    disabled={busy}
-                    onClick={() => onDelete(client.client_id)}
-                  >
-                    {intl.formatMessage(messages.unregister)}
-                  </button>
-                </div>
-                {client.enabled ? null : (
-                  <p
-                    className="identity-clients__disabled identity-note"
-                    role="status"
-                  >
-                    {intl.formatMessage(messages.disabledNotice)}
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
+                      <Icon name={pencilSVG} size="20px" />
+                    </Button>
+                    {/* A public client has no secret to rotate: PKCE is
+                        what stands in for one. */}
+                    {client.public ? null : (
+                      <Button
+                        basic
+                        icon
+                        disabled={busy}
+                        aria-label={intl.formatMessage(messages.rotateSecret)}
+                        title={intl.formatMessage(messages.rotateSecret)}
+                        onClick={() => onRotateSecret(client.client_id)}
+                      >
+                        <Icon name={refreshSVG} size="20px" />
+                      </Button>
+                    )}
+                    <Button
+                      basic
+                      icon
+                      data-action="delete"
+                      disabled={busy}
+                      aria-label={intl.formatMessage(messages.unregister)}
+                      title={intl.formatMessage(messages.unregister)}
+                      onClick={() => confirmDelete(client.client_id)}
+                    >
+                      <Icon name={deleteSVG} size="20px" />
+                    </Button>
+                  </Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
+          </Table>
         ) : (
           <p className="identity-clients__empty identity-note">
             {intl.formatMessage(messages.noClients)}
           </p>
         )}
-      </section>
-
-      <section className="identity-clients__new">
-        <h2>{intl.formatMessage(messages.register)}</h2>
-        <form onSubmit={submit}>
-          <label>
-            {intl.formatMessage(messages.clientId)}
-            <input
-              type="text"
-              required
-              value={draft.client_id}
-              onChange={(event) =>
-                setDraft({ ...draft, client_id: event.target.value })
-              }
-            />
-          </label>
-          <label>
-            {intl.formatMessage(messages.title)}
-            <input
-              type="text"
-              value={draft.title}
-              onChange={(event) =>
-                setDraft({ ...draft, title: event.target.value })
-              }
-            />
-          </label>
-          <label>
-            {intl.formatMessage(messages.redirectUris)}
-            <textarea
-              rows={3}
-              value={draft.redirect_uris}
-              onChange={(event) =>
-                setDraft({ ...draft, redirect_uris: event.target.value })
-              }
-            />
-            <small>{intl.formatMessage(messages.redirectUrisHelp)}</small>
-          </label>
-          <label>
-            {intl.formatMessage(messages.scope)}
-            <input
-              type="text"
-              value={draft.scope}
-              onChange={(event) =>
-                setDraft({ ...draft, scope: event.target.value })
-              }
-            />
-            <small>{intl.formatMessage(messages.scopeHelp)}</small>
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={draft.public}
-              onChange={(event) =>
-                setDraft({ ...draft, public: event.target.checked })
-              }
-            />
-            {intl.formatMessage(messages.publicClientLabel)}
-            <small>{intl.formatMessage(messages.publicClientHelp)}</small>
-          </label>
-          <button type="submit" className="identity-button" disabled={busy}>
-            {intl.formatMessage(messages.submit)}
-          </button>
-        </form>
-      </section>
-
-      <section className="identity-clients__keys">
-        <h2>{intl.formatMessage(messages.signingKeys)}</h2>
-        {keys ? (
-          <>
-            <p>
-              <FormattedMessage
-                {...messages.ring}
-                values={{
-                  total: keys.items_total,
-                  size: keys.ring_size,
-                  algorithm: keys.algorithm,
-                  jwks: <a href={keys.jwks_uri}>{keys.jwks_uri}</a>,
-                }}
-              />
-            </p>
-            <ul>
-              {keys.items.map((key) => (
-                <li key={key.kid} data-kid={key.kid}>
-                  <code>{key.kid}</code>
-                  {key.active ? (
-                    <strong> — {intl.formatMessage(messages.signing)}</strong>
-                  ) : (
-                    ` — ${intl.formatMessage(messages.verifyingOnly)}`
-                  )}
-                </li>
-              ))}
-            </ul>
-            <button
-              type="button"
-              className="identity-button"
-              disabled={busy}
-              onClick={onRotateKey}
-            >
-              {intl.formatMessage(messages.rotateKey)}
-            </button>
-            <p className="identity-clients__keys-warning identity-note">
-              {intl.formatMessage(messages.ringWarning, {
-                size: keys.ring_size,
-              })}
-            </p>
-          </>
-        ) : (
-          <p role="status">{intl.formatMessage(messages.loadingKeys)}</p>
-        )}
-      </section>
-    </div>
+      </Segment>
+    </Segment.Group>
   );
 };
 

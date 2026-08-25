@@ -39,12 +39,19 @@ const KEYS: SigningKeyRing = {
   ],
 };
 
+/**
+ * The `add` and `edit` views are not rendered here: they are Volto's `Form`,
+ * which needs a store and a router this renderer does not provide. What they
+ * put on the wire is `helpers/clientSchema`'s own test, and how they look is
+ * the stories'.
+ */
 function renderPanel(
   props: Partial<React.ComponentProps<typeof ClientsPanel>> = {},
 ) {
   const handlers = {
-    onCreate: vi.fn(),
-    onToggle: vi.fn(),
+    onSubmit: vi.fn(),
+    onCancel: vi.fn(),
+    onEdit: vi.fn(),
     onRotateSecret: vi.fn(),
     onDelete: vi.fn(),
     onRotateKey: vi.fn(),
@@ -57,11 +64,19 @@ function renderPanel(
       loading={false}
       busy={false}
       minted={null}
+      view="list"
+      editing={null}
+      formRef={React.createRef()}
       {...handlers}
       {...props}
     />,
   );
   return handlers;
+}
+
+/** Accept the delete confirmation without a real dialog. */
+function confirming(answer: boolean) {
+  return vi.spyOn(window, 'confirm').mockReturnValue(answer);
 }
 
 describe('ClientsPanel', () => {
@@ -91,36 +106,33 @@ describe('ClientsPanel', () => {
     expect(screen.getByText('Confidential')).toBeTruthy();
   });
 
+  it('shows what a client may do, not only what it is called', () => {
+    renderPanel();
+
+    expect(screen.getByText('authorization_code')).toBeTruthy();
+    expect(screen.getByText('openid profile')).toBeTruthy();
+  });
+
+  it('opens the edit form for a client', () => {
+    const { onEdit } = renderPanel();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+
+    expect(onEdit).toHaveBeenCalledWith('app');
+  });
+
   it('offers no secret rotation for a public client', () => {
     renderPanel({ clients: [PUBLIC_CLIENT] });
 
-    expect(screen.queryByText('Rotate secret')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Rotate secret' })).toBeNull();
   });
 
   it('rotates a confidential client secret', () => {
     const { onRotateSecret } = renderPanel();
 
-    fireEvent.click(screen.getByText('Rotate secret'));
+    fireEvent.click(screen.getByRole('button', { name: 'Rotate secret' }));
 
     expect(onRotateSecret).toHaveBeenCalledWith('app');
-  });
-
-  it('disables an enabled client', () => {
-    const { onToggle } = renderPanel();
-
-    fireEvent.click(screen.getByText('Disable'));
-
-    expect(onToggle).toHaveBeenCalledWith('app', false);
-  });
-
-  it('enables a disabled one', () => {
-    const { onToggle } = renderPanel({
-      clients: [{ ...CLIENT, enabled: false }],
-    });
-
-    fireEvent.click(screen.getByText('Enable'));
-
-    expect(onToggle).toHaveBeenCalledWith('app', true);
   });
 
   it('warns that disabling also refuses existing tokens', () => {
@@ -129,86 +141,27 @@ describe('ClientsPanel', () => {
     expect(screen.getByText(/existing access tokens are refused/)).toBeTruthy();
   });
 
-  it('unregisters a client', () => {
+  it('unregisters a client once it is confirmed', () => {
+    const confirm = confirming(true);
     const { onDelete } = renderPanel();
 
-    fireEvent.click(screen.getByText('Unregister'));
+    fireEvent.click(screen.getByRole('button', { name: 'Unregister' }));
 
     expect(onDelete).toHaveBeenCalledWith('app');
+    confirm.mockRestore();
   });
 
-  it('registers a client, splitting redirect URIs by line', () => {
-    const { onCreate } = renderPanel();
+  it('unregisters nothing when the confirmation is declined', () => {
+    const confirm = confirming(false);
+    const { onDelete } = renderPanel();
 
-    fireEvent.change(screen.getByLabelText(/Client ID/), {
-      target: { value: 'new-app' },
-    });
-    fireEvent.change(screen.getByLabelText(/Redirect URIs/), {
-      target: {
-        value: 'https://a.example.org/cb\n\n https://b.example.org/cb ',
-      },
-    });
-    fireEvent.click(screen.getByText('Register'));
+    fireEvent.click(screen.getByRole('button', { name: 'Unregister' }));
 
-    expect(onCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        client_id: 'new-app',
-        redirect_uris: ['https://a.example.org/cb', 'https://b.example.org/cb'],
-      }),
-    );
+    expect(onDelete).not.toHaveBeenCalled();
+    confirm.mockRestore();
   });
 
-  it('registers a public client when asked', () => {
-    const { onCreate } = renderPanel();
-
-    fireEvent.change(screen.getByLabelText(/Client ID/), {
-      target: { value: 'spa' },
-    });
-    fireEvent.click(screen.getByLabelText(/Public client/));
-    fireEvent.click(screen.getByText('Register'));
-
-    expect(onCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ public: true }),
-    );
-  });
-
-  it('describes the signing ring without any key material', () => {
-    renderPanel();
-
-    expect(screen.getByText('newest-kid')).toBeTruthy();
-    expect(screen.getByText(/2 of 3 in the ring/)).toBeTruthy();
-  });
-
-  it('says which key is signing', () => {
-    renderPanel();
-
-    expect(screen.getByText(/— signing/)).toBeTruthy();
-    expect(screen.getByText(/verifying only/)).toBeTruthy();
-  });
-
-  it('warns what rotating past the ring bound costs', () => {
-    renderPanel();
-
-    expect(
-      screen.getByText(/invalidate tokens\s+still in flight/),
-    ).toBeTruthy();
-  });
-
-  it('rotates the signing key', () => {
-    const { onRotateKey } = renderPanel();
-
-    fireEvent.click(screen.getByText('Rotate signing key'));
-
-    expect(onRotateKey).toHaveBeenCalled();
-  });
-
-  it('does not render the key section before it has loaded', () => {
-    renderPanel({ keys: null });
-
-    expect(screen.getByText(/Loading keys/)).toBeTruthy();
-  });
-
-  it('shows a freshly minted secret', () => {
+  it('shows a freshly minted secret over the listing', () => {
     renderPanel({ minted: { ...CLIENT, secret: 's3cr3t' } });
 
     expect(screen.getByRole('alertdialog')).toBeTruthy();
@@ -224,9 +177,57 @@ describe('ClientsPanel', () => {
   it('disables every action while a request is in flight', () => {
     renderPanel({ busy: true });
 
-    expect((screen.getByText('Unregister') as HTMLButtonElement).disabled).toBe(
-      true,
-    );
+    expect(
+      (screen.getByRole('button', { name: 'Unregister' }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+  });
+
+  it('keeps the key ring out of the listing', () => {
+    renderPanel();
+
+    expect(screen.queryByText('newest-kid')).toBeNull();
+  });
+
+  it('describes the signing ring without any key material', () => {
+    renderPanel({ view: 'keys' });
+
+    expect(screen.getByText('newest-kid')).toBeTruthy();
+    expect(screen.getByText(/2 of 3 in the ring/)).toBeTruthy();
+  });
+
+  it('says which key is signing', () => {
+    renderPanel({ view: 'keys' });
+
+    expect(screen.getByText(/— signing/)).toBeTruthy();
+    expect(screen.getByText(/verifying only/)).toBeTruthy();
+  });
+
+  it('warns what rotating past the ring bound costs', () => {
+    renderPanel({ view: 'keys' });
+
+    expect(
+      screen.getByText(/invalidate tokens\s+still in flight/),
+    ).toBeTruthy();
+  });
+
+  it('rotates the signing key', () => {
+    const { onRotateKey } = renderPanel({ view: 'keys' });
+
+    fireEvent.click(screen.getByText('Rotate signing key'));
+
+    expect(onRotateKey).toHaveBeenCalled();
+  });
+
+  it('does not render the key section before it has loaded', () => {
+    renderPanel({ view: 'keys', keys: null });
+
+    expect(screen.getByText(/Loading keys/)).toBeTruthy();
+  });
+
+  it('does not offer a rotation while one is in flight', () => {
+    renderPanel({ view: 'keys', busy: true });
+
     expect(
       (screen.getByText('Rotate signing key') as HTMLButtonElement).disabled,
     ).toBe(true);

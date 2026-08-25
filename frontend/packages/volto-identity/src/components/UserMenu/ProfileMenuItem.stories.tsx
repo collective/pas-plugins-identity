@@ -30,11 +30,27 @@ const inTheMenu = () => (
   </PluggablesProvider>
 );
 
-/** A site running the `[profile]` layer, for a user who has a Profile. */
-export const WithAProfile: Story = {
+/** A user whose account *is* a Profile content object. */
+export const StoredAsAProfile: Story = {
   render: inTheMenu,
   decorators: [
     withUser({ profile_url: 'https://example.org/identity-profiles/alice' }),
+  ],
+};
+
+/**
+ * A user who *has* a Profile but is not stored as one.
+ *
+ * Their account lives in `source_users`, so `/personal-information` is still
+ * where their fields are edited and Volto's own Profile entry keeps the slot.
+ */
+export const StoredElsewhere: Story = {
+  render: inTheMenu,
+  decorators: [
+    withUser({
+      source: 'source_users',
+      profile_url: 'https://example.org/identity-profiles/alice',
+    }),
   ],
 };
 

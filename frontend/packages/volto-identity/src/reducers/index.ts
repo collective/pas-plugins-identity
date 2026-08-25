@@ -13,7 +13,10 @@ import {
   CREATE_PROVIDER,
   DELETE_CLIENT,
   DELETE_PROVIDER,
+  GET_CONSENT_REQUEST,
   GET_MY_PROFILE,
+  LIST_GRANTS,
+  WITHDRAW_GRANT,
   LIST_CLIENTS,
   LIST_DRIVERS,
   LIST_KEYS,
@@ -34,6 +37,7 @@ import {
 import type {
   AuthorizeRedirect,
   ConfiguredProvider,
+  ConsentRequest,
   ConnectionCheck,
   Driver,
   Identity,
@@ -41,6 +45,7 @@ import type {
   MyProfile,
   UserProfile,
   OAuthClient,
+  OAuthGrants,
   RequestState,
   SigningKeyRing,
   TokenResponse,
@@ -239,6 +244,24 @@ export const clientDelete = requestReducer<boolean>(
   false,
 );
 
+export const oauthGrants = requestReducer<OAuthGrants | null>(
+  LIST_GRANTS,
+  (result) => result ?? null,
+  null,
+);
+
+export const grantWithdraw = requestReducer<Record<string, unknown> | null>(
+  WITHDRAW_GRANT,
+  (result) => result ?? null,
+  null,
+);
+
+export const consentRequest = requestReducer<ConsentRequest | null>(
+  GET_CONSENT_REQUEST,
+  (result) => result ?? null,
+  null,
+);
+
 export const signingKeys = requestReducer<SigningKeyRing | null>(
   LIST_KEYS,
   (result) => result ?? null,
@@ -275,6 +298,9 @@ const reducers = {
   clientSecretRotate,
   signingKeys,
   keyRotate,
+  consentRequest,
+  oauthGrants,
+  grantWithdraw,
 };
 
 export default reducers;
