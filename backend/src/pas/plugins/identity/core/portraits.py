@@ -2,10 +2,17 @@
 
 ``picture_url`` is copied into the standard portrait storage on login, with
 no custom adapter -- ``portal_memberdata``, the same place a portrait
-uploaded through user preferences goes. That is deliberately *not* the
-``[profile]`` layer's Dexterity type, which has no image field: portraits
-belong to the member, so they work the same whether or not that layer is
-installed. It is **off by default**, which is worth explaining.
+uploaded through user preferences goes. It stays there rather than moving to
+the ``[profile]`` layer's Dexterity type, because a portrait synced from a
+provider has to work the same whether or not that optional layer is
+installed.
+
+The ``[profile]`` type *does* have a picture field now, and it **wins** where
+a user has filled it in: a picture somebody chose beats one a provider
+supplied. See :func:`pas.plugins.identity.core.serializer.portrait_of`, which
+is where the precedence lives. What is written here is the fallback.
+
+Syncing is **off by default**, which is worth explaining.
 
 **Why off by default.** ``picture_url`` is a claim, and at plenty of providers
 a claim is whatever the user typed. Turning it into a server-side fetch makes

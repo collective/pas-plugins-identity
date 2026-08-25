@@ -6,13 +6,24 @@ break. This is the other half.
 """
 
 from . import PROFILE_ID
+from pas.plugins.identity.core.serializer import portrait_of
 from pas.plugins.identity.core.serializer import profile_url_of
 from pas.plugins.identity.core.serializer import source_of
 from plone import api
+from plone.namedfile.file import NamedBlobImage
 from plone.restapi.interfaces import ISerializeToJson
 from zope.component import getMultiAdapter
 
 import pytest
+
+
+#: The smallest valid PNG, so a test never carries a binary fixture file.
+PNG = (
+    b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00"
+    b"\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\n"
+    b"IDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00"
+    b"\x00IEND\xaeB`\x82"
+)
 
 
 pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
@@ -49,6 +60,33 @@ class TestProfileUrl:
         Profile is minted at first login, so an account that has never
         logged in through a provider has no Profile yet."""
         assert profile_url_of("nobody-at-all") is None
+
+    def test_a_profile_without_a_picture_falls_back(self):
+        """No picture chosen, so whatever the member portrait holds stands --
+        which is where a provider-synced avatar lands."""
+        assert portrait_of("alice") is None
+
+    def test_the_profile_picture_wins(self):
+        """A picture somebody uploaded beats one a provider supplied."""
+        self.profile.picture = NamedBlobImage(
+            data=PNG, filename="face.png", contentType="image/png"
+        )
+
+        assert portrait_of("alice") == (
+            f"{self.profile.absolute_url()}/@@images/picture"
+        )
+
+    def test_the_payload_carries_the_profile_picture(self):
+        """Through the serializer, which is what the avatar reads."""
+        self.profile.picture = NamedBlobImage(
+            data=PNG, filename="face.png", contentType="image/png"
+        )
+
+        assert self.serialize("alice")["portrait"].endswith("/@@images/picture")
+
+    def test_a_user_with_no_profile_has_no_picture(self):
+        """The layer being installed does not give everybody a Profile."""
+        assert portrait_of("nobody-at-all") is None
 
     def test_the_source_is_our_own_plugin(self):
         """A profile-backed userid is enumerated by the profile plugin, and

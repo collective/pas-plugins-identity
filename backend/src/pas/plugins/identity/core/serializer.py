@@ -70,6 +70,43 @@ def identities_of(userid: str) -> list[JSONDict]:
     ]
 
 
+def portrait_of(userid: str) -> str | None:
+    """Return the picture to represent a user with, if there is one.
+
+    The Profile's own picture wins over the member portrait. A picture on the
+    Profile is one somebody chose and uploaded; the member portrait is where
+    a provider-synced avatar lands, and a claim a provider supplied should
+    not overwrite a decision a person made. Neither existing is a real answer
+    too -- the frontend draws the user's initials rather than a placeholder
+    everybody shares.
+
+    :param userid: Canonical Plone userid.
+    :returns: An absolute URL, or ``None`` when the user has no picture at
+        all. The member portrait is already ``None`` for the default image,
+        which is what makes "no picture" distinguishable here.
+    """
+    profile = _profile_for(userid)
+    picture = getattr(profile, "picture", None) if profile is not None else None
+    if picture is not None:
+        # `@@images` rather than `@@download` so a caller may ask for a scale.
+        return f"{profile.absolute_url()}/@@images/picture"
+    return None
+
+
+def _profile_for(userid: str):
+    """Return a user's Profile, or ``None``.
+
+    :param userid: Canonical Plone userid.
+    :returns: The Profile, or ``None`` when the ``[profile]`` layer is absent
+        or the user has none.
+    """
+    try:
+        from pas.plugins.identity.profile.subscribers import get_profile
+    except ImportError:  # pragma: no cover - the extra is always importable
+        return None
+    return get_profile(userid)
+
+
 def profile_url_of(userid: str) -> str | None:
     """Return the URL of a user's Profile, when there is one.
 
@@ -77,11 +114,7 @@ def profile_url_of(userid: str) -> str | None:
     :returns: The absolute URL, or ``None`` when the ``[profile]`` layer is
         not installed or the user has no Profile yet.
     """
-    try:
-        from pas.plugins.identity.profile.subscribers import get_profile
-    except ImportError:  # pragma: no cover - the extra is always importable
-        return None
-    profile = get_profile(userid)
+    profile = _profile_for(userid)
     return profile.absolute_url() if profile is not None else None
 
 
@@ -100,4 +133,10 @@ class SerializeIdentityUserToJson(SerializeUserToJson):
         data["source"] = source_of(userid)
         data["identities"] = identities_of(userid)
         data["profile_url"] = profile_url_of(userid)
+        # Only when the Profile has one: `portrait` already holds the member
+        # portrait, and overwriting it with `None` would take away the
+        # provider-synced avatar this is meant to take precedence over.
+        picture = portrait_of(userid)
+        if picture is not None:
+            data["portrait"] = picture
         return data
