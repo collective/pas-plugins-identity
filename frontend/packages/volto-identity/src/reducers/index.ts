@@ -267,6 +267,7 @@ const reducers = {
   providerDelete,
   providerTest,
   myProfile,
+  userProfile,
   oauthClients,
   clientCreate,
   clientUpdate,
