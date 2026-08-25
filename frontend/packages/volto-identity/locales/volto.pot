@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Plone\n"
-"POT-Creation-Date: 2026-08-24T15:04:49.055Z\n"
+"POT-Creation-Date: 2026-08-25T00:07:02.796Z\n"
 "Last-Translator: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Language-Team: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -200,6 +200,11 @@ msgstr ""
 #. Default: "Login name"
 #: components/Login/PasswordForm
 msgid "Login name"
+msgstr ""
+
+#. Default: "My profile"
+#: components/UserMenu/ProfileMenuItem
+msgid "My profile"
 msgstr ""
 
 #. Default: "No"

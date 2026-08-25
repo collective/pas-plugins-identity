@@ -15,6 +15,7 @@ import {
   DELETE_CLIENT,
   DELETE_PROVIDER,
   GET_MY_PROFILE,
+  GET_USER_PROFILE,
   LIST_CLIENTS,
   LIST_DRIVERS,
   LIST_KEYS,
@@ -107,6 +108,25 @@ export function confirmMagicLink(token: string) {
       path: '/@magic-link-confirm',
       data: { token },
     },
+  };
+}
+
+/**
+ * Read a user, with what this add-on knows about them.
+ *
+ * `@users/<userid>` is Plone's own endpoint; this package's serializer adds
+ * `identities`, `source` and `profile_url` to it, which is what the toolbar
+ * and the profile links read. Held separately from Volto's `state.users.user`
+ * on purpose: that one is fetched when the user menu opens and cleared
+ * around it, and the avatar has to survive a page the menu was never opened
+ * on.
+ *
+ * @param userid The user to read.
+ */
+export function getUserProfile(userid: string) {
+  return {
+    type: GET_USER_PROFILE,
+    request: { op: 'get', path: `/@users/${userid}` },
   };
 }
 

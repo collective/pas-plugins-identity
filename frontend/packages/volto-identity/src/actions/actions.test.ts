@@ -12,6 +12,7 @@ import {
   rotateClientSecret,
   rotateKey,
   sendMagicLink,
+  getUserProfile,
   listIdentities,
   startProviderLogin,
   updateClient,
@@ -35,6 +36,14 @@ describe('listIdentities', () => {
     expect(listIdentities(true).request.path).toBe(
       '/@identities?expand=login-providers',
     );
+  });
+});
+
+describe('getUserProfile', () => {
+  it("reads Plone's own user endpoint", () => {
+    // Not an endpoint of this package's own: the serializer adds fields to
+    // the one Plone already serves rather than inventing a parallel view.
+    expect(getUserProfile('alice').request.path).toBe('/@users/alice');
   });
 });
 

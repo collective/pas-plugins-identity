@@ -17,6 +17,7 @@ import {
   LIST_CLIENTS,
   LIST_DRIVERS,
   LIST_KEYS,
+  GET_USER_PROFILE,
   LIST_IDENTITIES,
   LIST_LOGIN_PROVIDERS,
   LIST_PROVIDERS,
@@ -38,6 +39,7 @@ import type {
   Identity,
   LoginProvider,
   MyProfile,
+  UserProfile,
   OAuthClient,
   RequestState,
   SigningKeyRing,
@@ -134,6 +136,12 @@ export const magicLinkSend = requestReducer<boolean>(
 
 export const magicLinkConfirm = requestReducer<TokenResponse | null>(
   CONFIRM_MAGIC_LINK,
+  (result) => result ?? null,
+  null,
+);
+
+export const userProfile = requestReducer<UserProfile | null>(
+  GET_USER_PROFILE,
   (result) => result ?? null,
   null,
 );

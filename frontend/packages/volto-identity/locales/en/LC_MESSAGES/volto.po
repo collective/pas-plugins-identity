@@ -200,6 +200,11 @@ msgstr ""
 msgid "Login name"
 msgstr ""
 
+#. Default: "My profile"
+#: components/UserMenu/ProfileMenuItem
+msgid "My profile"
+msgstr ""
+
 #. Default: "No"
 #: components/ControlPanel/ProvidersControlPanel
 msgid "No"

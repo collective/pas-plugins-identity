@@ -65,9 +65,27 @@ describe('the menu install step', () => {
 
     install(config);
 
-    expect(config.settings.appExtras).toHaveLength(1);
-    expect(config.settings.appExtras[0].match).toBe('');
-    expect(config.settings.appExtras[0].component).toBe(IdentitiesMenuItem);
+    const entry = config.settings.appExtras.find(
+      (e: any) => e.component === IdentitiesMenuItem,
+    );
+    expect(entry).toBeTruthy();
+    // Volto hands `match` to `matchPath`, and an empty path matches every
+    // route -- which is what makes the plug reachable wherever the user
+    // menu is opened.
+    expect(entry.match).toBe('');
+  });
+
+  it('registers everything the menu needs on every path', () => {
+    const config = { settings: { appExtras: [] } } as any;
+
+    install(config);
+
+    // The loader is one of them, and renders nothing: the entries below it
+    // read the user it puts in the store.
+    expect(config.settings.appExtras).toHaveLength(3);
+    expect(config.settings.appExtras.every((e: any) => e.match === '')).toBe(
+      true,
+    );
   });
 
   it('keeps whatever another add-on already registered', () => {
@@ -78,7 +96,7 @@ describe('the menu install step', () => {
 
     install(config);
 
-    expect(config.settings.appExtras).toHaveLength(2);
+    expect(config.settings.appExtras).toHaveLength(4);
     expect(config.settings.appExtras[0].component).toBe(other);
   });
 });

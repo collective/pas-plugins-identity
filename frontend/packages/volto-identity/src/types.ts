@@ -107,6 +107,27 @@ export interface MyProfile {
   review_state: string | null;
 }
 
+/**
+ * A user as `@users/<userid>` describes them once this add-on is installed.
+ *
+ * Only the fields this package adds or reads are named; the endpoint carries
+ * the whole of Plone's own user representation alongside them.
+ */
+export interface UserProfile {
+  '@id': string;
+  id: string;
+  fullname?: string;
+  email?: string;
+  /** Portrait URL, when the user has uploaded one. */
+  portrait?: string | null;
+  /** The PAS plugin the userid came from, as PAS itself resolved it. */
+  source: string | null;
+  /** External identities linked to this account. */
+  identities: Identity[];
+  /** The user's Profile, when the `[profile]` layer has minted one. */
+  profile_url: string | null;
+}
+
 /** One registered OAuth client: who may log in *to* this site. */
 export interface OAuthClient {
   '@id': string;
