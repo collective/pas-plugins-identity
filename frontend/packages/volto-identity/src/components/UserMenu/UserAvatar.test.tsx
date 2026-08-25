@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '../../testing';
+import { fireEvent, render, screen } from '../../testing';
 import { Provider } from 'react-redux';
 import React from 'react';
 
@@ -82,6 +82,32 @@ describe('UserAvatar', () => {
     // Nothing to read: announcing an empty circle as "user avatar" is noise.
     expect(avatar?.getAttribute('aria-hidden')).toBe('true');
     expect(avatar?.getAttribute('role')).toBeNull();
+  });
+
+  it('falls back to initials when the portrait fails to load', () => {
+    // A deleted portrait, or a stale URL after a rename. The browser's
+    // broken-image glyph reads as a bug in the site rather than as a
+    // missing photograph.
+    const { container } = renderAvatar({
+      id: 'alice',
+      fullname: 'Alice Liddell',
+      portrait: '/gone.png',
+    });
+
+    fireEvent.error(screen.getByRole('img', { name: /user avatar/i }));
+
+    expect(container.querySelector('img')).toBeNull();
+    expect(
+      container.querySelector('.identity-avatar--initials')?.textContent,
+    ).toBe('AL');
+  });
+
+  it('accepts extra classes without losing its own', () => {
+    const { container } = renderAvatar({ id: 'alice' }, { className: 'mine' });
+
+    const avatar = container.querySelector('.identity-avatar');
+    expect(avatar?.className).toContain('identity-avatar--initials');
+    expect(avatar?.className).toContain('mine');
   });
 
   it('takes the size it is given', () => {
