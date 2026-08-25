@@ -68,21 +68,19 @@ class TestProfileUrl:
 
     def test_the_profile_picture_wins(self):
         """A picture somebody uploaded beats one a provider supplied."""
-        self.profile.picture = NamedBlobImage(
+        self.profile.image = NamedBlobImage(
             data=PNG, filename="face.png", contentType="image/png"
         )
 
-        assert portrait_of("alice") == (
-            f"{self.profile.absolute_url()}/@@images/picture"
-        )
+        assert portrait_of("alice") == (f"{self.profile.absolute_url()}/@@images/image")
 
     def test_the_payload_carries_the_profile_picture(self):
         """Through the serializer, which is what the avatar reads."""
-        self.profile.picture = NamedBlobImage(
+        self.profile.image = NamedBlobImage(
             data=PNG, filename="face.png", contentType="image/png"
         )
 
-        assert self.serialize("alice")["portrait"].endswith("/@@images/picture")
+        assert self.serialize("alice")["portrait"].endswith("/@@images/image")
 
     def test_a_user_with_no_profile_has_no_picture(self):
         """The layer being installed does not give everybody a Profile."""

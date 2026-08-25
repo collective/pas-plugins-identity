@@ -113,4 +113,17 @@
       name="@users"
       />
 
+  <!-- The read side of the same decision. plone.restapi's @portrait reads
+       portal_memberdata only, so it answered 404 for a user whose picture is
+       on their Profile - including when the [server] layer publishes this
+       URL as the OIDC picture claim and a relying party fetches it. -->
+  <plone:service
+      method="GET"
+      factory=".services.users.ProfilePortraitGet"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer=".interfaces.IIdentityProfileLayer"
+      name="@portrait"
+      />
+
 </configure>

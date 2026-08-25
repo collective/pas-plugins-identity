@@ -9,6 +9,7 @@ that basis would export the problem rather than solve it, so it is true only
 when this site verified the address itself.
 """
 
+from ..profile import PROFILE_ID as PROFILE_LAYER_ID
 from . import PROFILE_ID
 from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
@@ -25,6 +26,14 @@ pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
 
 USERID = "alice"
 ADDRESS = "alice@example.org"
+
+#: The smallest valid PNG, so a test never carries a binary fixture file.
+PNG = (
+    b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00"
+    b"\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\n"
+    b"IDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00"
+    b"\x00IEND\xaeB`\x82"
+)
 
 
 @pytest.fixture
@@ -201,6 +210,57 @@ class TestPicture:
 
     def test_it_is_not_released_without_the_profile_scope(self, portrait):
         assert "picture" not in claims_for(USERID, "email")
+
+
+@pytest.mark.portal(profiles=[PROFILE_ID, PROFILE_LAYER_ID])
+class TestPictureOnASiteWithProfiles:
+    """The same claim, on a site where the picture is not in memberdata.
+
+    This is the configuration the federation demo runs, and the one that was
+    broken: ``portrait_url`` asked ``portal_memberdata`` directly, which is
+    the *fallback* store once the ``[profile]`` layer is installed. A user
+    with a picture on their Profile got no ``picture`` claim at all -- and an
+    omitted claim is indistinguishable downstream from a user who never
+    uploaded one, so the relying party had nothing to report either.
+
+    The ``[server]`` layer must not learn which store answered. It asks
+    :func:`pas.plugins.identity.core.portraits.has_picture`, and the URL it
+    publishes is ``@portrait`` either way.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, user) -> None:
+        from pas.plugins.identity.profile.catalog import PROFILE_PORTAL_TYPE
+        from pas.plugins.identity.profile.subscribers import get_container
+        from plone.namedfile.file import NamedBlobImage
+
+        self.portal = portal
+        api.portal.set_registry_record(ISSUER_RECORD, "http://id.example.org")
+        with api.env.adopt_roles(["Manager"]):
+            self.profile = api.content.create(
+                container=get_container(create=True),
+                type=PROFILE_PORTAL_TYPE,
+                id=USERID,
+                userid=USERID,
+                login=ADDRESS,
+                email=ADDRESS,
+            )
+        self.profile.image = NamedBlobImage(
+            data=PNG, contentType="image/png", filename="me.png"
+        )
+
+    def test_the_claim_is_released(self):
+        """The bug: empty, because only memberdata was consulted."""
+        assert claims_for(USERID, "profile")["picture"] == (
+            "http://id.example.org/@portrait/alice"
+        )
+
+    def test_it_is_absent_when_the_profile_has_no_picture(self):
+        """A Profile is not itself a picture. With neither store holding one
+        the claim still has to be omitted."""
+        self.profile.image = None
+
+        assert "picture" not in claims_for(USERID, "profile")
 
 
 class TestEmailVerified:

@@ -77,6 +77,17 @@ def portrait_url(userid: str) -> str:
     ``picture`` claim that every user shares would tell a relying party that
     everybody uploaded the same photograph.
 
+    Which store holds it is not this layer's business, so the question goes
+    to :func:`pas.plugins.identity.core.portraits.has_picture`, which asks
+    both. Asking ``portal_memberdata`` directly was correct only while every
+    avatar landed there; once a site's Profiles started winning, this
+    returned an empty string for users who plainly had a picture and the
+    claim was dropped without a word.
+
+    The URL is always ``@portrait``, whichever store answers. It is a public
+    endpoint by design -- a relying party fetches it server to server with no
+    credentials -- and it does not disclose where a Profile lives.
+
     Built from the configured issuer rather than from the portal URL, for the
     reason the issuer is configured at all: the portal URL is whatever the
     request came in on, and this URL is handed to another site to fetch.
@@ -84,11 +95,10 @@ def portrait_url(userid: str) -> str:
     :param userid: Canonical Plone userid.
     :returns: An absolute URL, or an empty string.
     """
+    from pas.plugins.identity.core.portraits import has_picture
     from pas.plugins.identity.server.tokens import ISSUER_RECORD
 
-    memberdata = api.portal.get_tool("portal_memberdata")
-    membership = api.portal.get_tool("portal_membership")
-    if memberdata._getPortrait(membership._getSafeMemberId(userid)) is None:
+    if not has_picture(userid):
         return ""
 
     issuer = (api.portal.get_registry_record(ISSUER_RECORD, default="") or "").strip()

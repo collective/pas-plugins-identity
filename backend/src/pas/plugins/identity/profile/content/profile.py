@@ -22,7 +22,7 @@ and recognised by, and the enumeration plugin, the property map and the
 magic-link join all read it; a Profile without one is a record that cannot
 do its job.
 
-``picture`` is where this layer *does* own the user's image, and it wins over
+``image`` is where this layer *does* own the user's image, and it wins over
 the member portrait when it is set -- see
 :func:`pas.plugins.identity.core.serializer.portrait_of` for the precedence
 and why it runs that way round. It is not in
@@ -86,7 +86,7 @@ class IProfileSchema(model.Schema):
         required=False,
     )
 
-    picture = NamedBlobImage(
+    image = NamedBlobImage(
         title=_("Picture"),
         description=_(
             "Shown wherever this user is represented. When it is empty the "
@@ -120,7 +120,7 @@ class IProfileSchema(model.Schema):
         home_page="pas.plugins.identity.profile.edit",
         description="pas.plugins.identity.profile.edit",
         location="pas.plugins.identity.profile.edit",
-        picture="pas.plugins.identity.profile.edit",
+        image="pas.plugins.identity.profile.edit",
         group_ids="pas.plugins.identity.profile.edit",
     )
     read_permission(
@@ -131,7 +131,7 @@ class IProfileSchema(model.Schema):
         home_page="pas.plugins.identity.profile.view",
         description="pas.plugins.identity.profile.view",
         location="pas.plugins.identity.profile.view",
-        picture="pas.plugins.identity.profile.view",
+        image="pas.plugins.identity.profile.view",
         group_ids="pas.plugins.identity.profile.view",
     )
 

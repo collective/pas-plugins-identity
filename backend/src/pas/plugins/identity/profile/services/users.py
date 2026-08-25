@@ -1,4 +1,4 @@
-"""``PATCH @users/<id>`` -- write a portrait to the Profile that owns it.
+"""``@users`` and ``@portrait``, pointed at the Profile that owns the picture.
 
 The ``[profile]`` layer decided that a user's picture lives on their Profile
 and that the member portrait is the fallback -- see
@@ -15,6 +15,23 @@ around, so everything else about updating a user -- passwords, login names,
 the permission checks, the error bodies -- stays exactly what the rest of
 Plone does; the single overridden method is where the bytes land.
 
+``GET @portrait/<id>`` is the same decision on the other side, and it was
+missing for longer. That endpoint reads ``getPersonalPortrait``, which only
+ever sees ``portal_memberdata``, so it answered 404 for a user whose picture
+was on their Profile. It matters more than a missing image on a page: it is
+the URL the ``[server]`` layer publishes as the OIDC ``picture`` claim, and a
+relying party fetches it server to server. A 404 there is a federation that
+silently loses everybody's photograph.
+
+``@portrait`` is public, and serving a Profile's picture through it makes
+that picture publicly readable at a stable URL even when the Profile itself
+is not -- ``incomplete`` Profiles are not anonymously viewable, and the image
+field carries a read permission. That is deliberate and it is what the member
+portrait has always done: a portrait is the one part of a user record Plone
+publishes, and a claim a relying party cannot fetch is not a claim. The
+Profile's own URL is never handed out, so this discloses no more than stock
+Plone did.
+
 Registered for :class:`~pas.plugins.identity.profile.interfaces.IIdentityProfileLayer`,
 so a site without this optional layer keeps stock behaviour and there is no
 Profile to be authoritative in the first place.
@@ -23,8 +40,12 @@ Profile to be authoritative in the first place.
 from io import BytesIO
 from pas.plugins.identity.profile.subscribers import get_profile
 from pas.plugins.identity.profile.subscribers import remember_picture_url
+from plone import api
 from plone.namedfile.file import NamedBlobImage
+from plone.namedfile.utils import stream_data
+from plone.restapi.services.users.get import PortraitGet
 from plone.restapi.services.users.update import UsersPatch
+from Products.PlonePAS.utils import decleanId
 from Products.PlonePAS.utils import scale_image
 from zope.lifecycleevent import modified
 
@@ -74,14 +95,14 @@ class ProfileUsersPatch(UsersPatch):
             return
 
         if portrait is None:
-            if getattr(profile, "picture", None) is not None:
-                profile.picture = None
+            if getattr(profile, "image", None) is not None:
+                profile.image = None
                 # Nothing there for a provider to own any more either.
                 remember_picture_url(profile, "")
                 modified(profile)
             return
 
-        profile.picture = _as_image(portrait)
+        profile.image = _as_image(portrait)
         # This picture is theirs, so a provider may not replace it at the
         # next login. Handing ownership back is what turns "the provider put
         # this here" into "the user chose this".
@@ -100,7 +121,7 @@ def _as_image(portrait: dict) -> NamedBlobImage:
 
     :param portrait: Mapping with ``data`` and optionally ``encoding``,
         ``content-type``, ``filename`` and ``scale``.
-    :returns: The image to assign to the Profile's ``picture`` field.
+    :returns: The image to assign to the Profile's ``image`` field.
     """
     data = portrait.get("data")
     if isinstance(data, str):
@@ -121,3 +142,68 @@ def _as_image(portrait: dict) -> NamedBlobImage:
 
 
 __all__ = ["ProfileUsersPatch"]
+
+
+class ProfilePortraitGet(PortraitGet):
+    """Serve a user's picture from their Profile, or from the member.
+
+    The read counterpart of :class:`ProfileUsersPatch`, and the same
+    precedence: the Profile answers when it has a picture, and everything
+    else falls through to ``plone.restapi``'s own implementation, which
+    covers the users this layer does not serve -- the site's ``admin``, an
+    account created before the layer was installed, anyone with no Profile.
+
+    Carries an explicit ``__init__`` for the same reason
+    :class:`ProfileUsersPatch` does, and sets what the base class's own
+    ``__init__`` sets: ``plone.rest`` mixes ``BrowserView`` into the class it
+    publishes, so the registered service is constructible either way while
+    the factory class on its own is not.
+    """
+
+    def __init__(self, context, request) -> None:
+        """Bind the service to its context and request.
+
+        :param context: The context the service was traversed on.
+        :param request: The current request.
+        """
+        self.context = context
+        self.request = request
+        self.params = []
+        self.portal = api.portal.get()
+        self.portal_membership = api.portal.get_tool("portal_membership")
+
+    def render(self):
+        """Return the picture bytes, or defer to the base implementation.
+
+        :returns: The streamed image, or whatever the base class returns
+            when no Profile holds a picture for this user.
+        """
+        image = self._profile_image()
+        if image is None:
+            return super().render()
+
+        self.request.response.setStatus(200)
+        self.request.response.setHeader("Content-Type", image.contentType)
+        return stream_data(image)
+
+    def _profile_image(self):
+        """Return the picture held on this request's user's Profile.
+
+        Reads the same ``params`` the base class does, including the empty
+        case that means "my own portrait", so the two implementations cannot
+        disagree about which user is being asked for.
+
+        :returns: The image, or ``None`` when there is no Profile or it has
+            no picture.
+        """
+        if len(self.params) == 1:
+            userid = decleanId(self.params[0])
+        elif not self.params:
+            userid = self.portal_membership.getAuthenticatedMember().getId()
+        else:
+            # Let the base class raise: the message is its to write, and
+            # duplicating it here is a second thing to keep in step.
+            return None
+
+        profile = get_profile(userid)
+        return None if profile is None else getattr(profile, "image", None)

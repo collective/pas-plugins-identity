@@ -66,8 +66,8 @@ class TestAUserWithAProfile:
         reader consults first -- kept showing an empty field."""
         self.store()
 
-        assert self.profile.picture is not None
-        assert self.profile.picture.data == PNG
+        assert self.profile.image is not None
+        assert self.profile.image.data == PNG
 
     def test_it_does_not_also_write_the_member(self):
         """One store per user. Two pictures are two things to disagree."""
@@ -80,16 +80,14 @@ class TestAUserWithAProfile:
         the test goes all the way to the read path."""
         self.store()
 
-        assert portrait_of("alice") == (
-            f"{self.profile.absolute_url()}/@@images/picture"
-        )
+        assert portrait_of("alice") == (f"{self.profile.absolute_url()}/@@images/image")
 
     def test_the_media_type_is_read_from_the_bytes(self):
         """A blob served back as ``application/octet-stream`` is a download
         rather than a picture."""
         self.store()
 
-        assert self.profile.picture.contentType == "image/png"
+        assert self.profile.image.contentType == "image/png"
 
     def test_the_provider_may_replace_its_own_picture(self):
         """Changing your avatar at the provider should change it here."""
@@ -97,23 +95,23 @@ class TestAUserWithAProfile:
 
         self.store(OTHER_PNG, "https://cdn/b.png")
 
-        assert self.profile.picture.data == OTHER_PNG
+        assert self.profile.image.data == OTHER_PNG
 
     def test_it_never_replaces_a_picture_the_user_chose(self):
         """The precedence this layer has always claimed, now enforced
         against the writer that could break it."""
-        self.profile.picture = NamedBlobImage(
+        self.profile.image = NamedBlobImage(
             data=PNG, contentType="image/png", filename="mine.png"
         )
 
         self.store(OTHER_PNG)
 
-        assert self.profile.picture.data == PNG
+        assert self.profile.image.data == PNG
 
     def test_a_refused_picture_still_becomes_the_member_portrait(self):
         """Refusing is not an error: the avatar is kept where it went before
         this layer existed, as the fallback nobody sees."""
-        self.profile.picture = NamedBlobImage(
+        self.profile.image = NamedBlobImage(
             data=PNG, contentType="image/png", filename="mine.png"
         )
 
@@ -137,7 +135,7 @@ class TestAUserWithAProfile:
 
         assert remembered_picture_url(self.profile) == ""
         self.store(PNG, "https://cdn/c.png")
-        assert self.profile.picture.data == OTHER_PNG
+        assert self.profile.image.data == OTHER_PNG
 
     def test_clearing_it_lets_a_provider_fill_it_again(self):
         """Removing your picture is not a refusal of every future one."""
@@ -152,7 +150,7 @@ class TestAUserWithAProfile:
 
         self.store(OTHER_PNG)
 
-        assert self.profile.picture.data == OTHER_PNG
+        assert self.profile.image.data == OTHER_PNG
 
 
 class TestAUserWithoutAProfile:

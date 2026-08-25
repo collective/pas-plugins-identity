@@ -89,6 +89,34 @@ class PortraitRefused(ValueError):
     """The URL or its answer did not satisfy the guards."""
 
 
+def has_picture(userid: str) -> bool:
+    """Report whether a user has a picture in either store.
+
+    The question the ``[server]`` layer needs before it publishes a
+    ``picture`` claim, and it has to be asked of both stores for the same
+    reason :func:`pas.plugins.identity.core.serializer.portrait_of` reads
+    both: which one holds a given user's picture depends on whether that
+    user has a Profile, and the server layer is not allowed to know.
+
+    Asking ``portal_memberdata`` alone is what this replaced. It was correct
+    only while every avatar landed there, so it went wrong the moment the
+    Profile started winning -- the claim was silently dropped, and a relying
+    party cannot tell "this user has no picture" from "the server looked in
+    the wrong place".
+
+    :param userid: Canonical Plone userid.
+    :returns: Whether a picture exists anywhere for this user.
+    """
+    support = queryUtility(IProfileSupport)
+    if support is not None and support.picture_url(userid) is not None:
+        return True
+
+    memberdata = api.portal.get_tool("portal_memberdata")
+    membership = api.portal.get_tool("portal_membership")
+    safe_id = membership._getSafeMemberId(userid)
+    return memberdata._getPortrait(safe_id) is not None
+
+
 def enabled() -> bool:
     """Report whether portrait syncing is switched on for this site.
 
@@ -189,6 +217,7 @@ __all__ = [
     "ENABLED_RECORD",
     "PortraitRefused",
     "enabled",
+    "has_picture",
     "store",
     "sync_portrait",
 ]

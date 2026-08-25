@@ -52,10 +52,10 @@ class ProfileSupport:
             Profile".
         """
         profile = get_profile(userid)
-        if profile is None or getattr(profile, "picture", None) is None:
+        if profile is None or getattr(profile, "image", None) is None:
             return None
         # `@@images` rather than `@@download` so a caller may ask for a scale.
-        return f"{profile.absolute_url()}/@@images/picture"
+        return f"{profile.absolute_url()}/@@images/image"
 
     def store_provider_picture(self, userid: str, data: bytes, url: str) -> bool:
         """Store a provider's avatar on a user's Profile, if it may.
@@ -80,13 +80,13 @@ class ProfileSupport:
         if profile is None:
             return False
 
-        current = getattr(profile, "picture", None)
+        current = getattr(profile, "image", None)
         if current is not None and not remembered_picture_url(profile):
             # Theirs. Untouched, and the provider does not acquire it by
             # being the next writer.
             return False
 
-        profile.picture = NamedBlobImage(
+        profile.image = NamedBlobImage(
             data=data,
             contentType=_content_type(data),
             filename=PROVIDER_FILENAME,
