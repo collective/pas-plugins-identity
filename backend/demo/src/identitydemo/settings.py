@@ -52,6 +52,13 @@ OPT_IN_ENV = "IDENTITY_DEMO"
 #: publishes one, and the relying party compares it as a string.
 IDP_PUBLIC_URL = _url("DEMO_IDP_URL", "http://id.localhost:8080/Plone")
 
+#: Where the identity provider asks a user to approve an authorization
+#: request. The frontend route, so the question is rendered in the site's own
+#: look rather than by the standalone page the server falls back to. Derived
+#: from the issuer because in this stack Volto and the backend answer on the
+#: same host; a deployment where they do not would configure it separately.
+IDP_CONSENT_URL = f"{IDP_PUBLIC_URL.rstrip('/')}/oauth-consent"
+
 #: Where the RP is reachable from the browser.
 RP_PUBLIC_URL = _url("DEMO_RP_URL", "http://plone.localhost:8081/Plone")
 
@@ -72,7 +79,7 @@ DEMO_REDIRECT_URI = _url(
 
 #: The client the RP authenticates as.
 DEMO_CLIENT_ID = "demo-rp"
-DEMO_CLIENT_TITLE = "Demo relying party"
+DEMO_CLIENT_TITLE = "Plone Content Site"
 
 #: Fixed, and therefore worthless outside this stack. The server stores only a
 #: scrypt hash of it, so the IdP profile hashes this literal at install time

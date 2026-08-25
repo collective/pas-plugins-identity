@@ -80,12 +80,16 @@ def _apply_deployment_urls() -> None:
         providers.append(
             ProviderConfig(
                 provider_id=settings.DEMO_PROVIDER_ID,
-                driver_id="oidc-generic",
-                title="Sign in with the demo IdP",
+                driver_id="plone-identity",
+                title="id.localhost",
                 config={
                     "client_id": settings.DEMO_CLIENT_ID,
                     "client_secret": settings.DEMO_CLIENT_SECRET,
                     "scope": ("openid", "email", "profile", "address"),
+                    # Two containers on a laptop, with no certificate between
+                    # them. See core/portraits.py for why this is never a
+                    # default.
+                    "picture_over_http": True,
                 },
             )
         )

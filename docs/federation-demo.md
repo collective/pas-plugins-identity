@@ -29,7 +29,18 @@ at runtime. Nothing about the provider is special-cased anywhere.
 Things worth doing once it is up:
 
 - **Sign in again.** The consent screen appears once per user and client. The
-  second time you are redirected straight back.
+  second time you are redirected straight back. It is rendered by the
+  provider's own frontend, in the site's look — the standalone page the
+  server falls back to is what a site gets when `Consent screen URL` is
+  empty.
+- **Sign in with a magic link**, on the provider. It needs no account
+  anywhere: type an address and the link is written to the log rather than
+  posted, because the stack has no mail server and
+  `Products.PrintingMailHost` is switched on. `make demo-stack-logs` is
+  where to read it.
+- **Look at the relying party's login page.** It offers exactly one way in
+  and does not ask you to click it: `RAZZLE_IDENTITY_SHOW_PLONE_LOGIN` is
+  `false` there, so no local password sits beside the federated sign-in.
 - **Look at `/identities` on the relying party.** The federated identity is
   listed there, and can be unlinked.
 - **Look at `/controlpanel/identity-clients` on the provider**, as `admin`.

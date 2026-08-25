@@ -22,6 +22,7 @@ from identitydemo import logger
 from identitydemo import settings
 from pas.plugins.identity.server.clients import get_clients
 from pas.plugins.identity.server.clients import set_clients
+from pas.plugins.identity.server.consent_screen import CONSENT_URL_RECORD
 from pas.plugins.identity.server.tokens import ISSUER_RECORD
 from pathlib import Path
 from plone import api
@@ -50,19 +51,24 @@ def install_idp(context: SetupTool) -> None:
 
 
 def _apply_deployment_urls() -> None:
-    """Write the two values that depend on where this demo is deployed.
+    """Write the values that depend on where this demo is deployed.
 
     Everything else about the authorization server is in the profile's
-    registry XML, including the client and its hashed secret. These two are
-    not, and cannot be: there are two demo deployments, they do not agree on
-    their URLs, and XML cannot read an environment variable.
+    registry XML, including the client and its hashed secret. These are not,
+    and cannot be: there are two demo deployments, they do not agree on their
+    URLs, and XML cannot read an environment variable.
 
-    Both are compared as strings and never parsed -- the issuer by the relying
-    party against the one discovery publishes, the redirect URI byte for byte
-    at the token endpoint -- so a value that is merely equivalent is a login
-    that fails with nothing useful to say.
+    The first two are compared as strings and never parsed -- the issuer by
+    the relying party against the one discovery publishes, the redirect URI
+    byte for byte at the token endpoint -- so a value that is merely
+    equivalent is a login that fails with nothing useful to say.
+
+    The consent URL is different in kind: it is only ever a place to send a
+    browser, and setting it is what makes this demo exercise the frontend
+    consent screen rather than the server's standalone fallback.
     """
     api.portal.set_registry_record(ISSUER_RECORD, settings.IDP_PUBLIC_URL)
+    api.portal.set_registry_record(CONSENT_URL_RECORD, settings.IDP_CONSENT_URL)
 
     clients = list(get_clients())
     for client in clients:

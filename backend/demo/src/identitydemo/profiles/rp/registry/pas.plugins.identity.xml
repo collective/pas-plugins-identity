@@ -25,9 +25,12 @@
        Claim paths on the left of the property map, Plone fields on the right,
        never the other way round. What this identity provider actually
        publishes is decided by server.claims.SCOPE_CLAIMS: name,
-       preferred_username, website, email, email_verified and address. There
-       is no biography claim and no picture claim, so nothing maps to
-       description or portrait.
+       preferred_username, website, picture, description, email,
+       email_verified and address.
+
+       The map is written against the *normalized* claim names where
+       normalization produces one (name arrives as fullname, picture as
+       picture_url), and against the raw claim where it does not.
 
        address.formatted is the dotted path this package's property map exists
        for: the provider sends address as an object, and the formatted member
@@ -35,16 +38,17 @@
   <records interface="pas.plugins.identity.core.controlpanel.interfaces.IProviderRecords"
            prefix="pas.plugins.identity.providers.demo-idp"
   >
-    <value key="driver">oidc-generic</value>
-    <value key="title">Sign in with the demo IdP</value>
+    <value key="driver">plone-identity</value>
+    <value key="title">id.localhost</value>
     <value key="enabled">True</value>
     <value key="order">0</value>
     <value key="propertymap">
       <element key="fullname">fullname</element>
       <element key="email">email</element>
       <element key="website">home_page</element>
+      <element key="description">description</element>
       <element key="address.formatted">location</element>
-      <element key="picture">portrait</element>
+      <element key="picture_url">portrait</element>
     </value>
   </records>
 
@@ -71,6 +75,24 @@
       <element>profile</element>
       <element>address</element>
     </value>
+  </record>
+  <!-- The demo stack has no certificate, so the portrait the identity
+       provider publishes is on a plain-HTTP URL. Every reason not to do this
+       is in core/portraits.py; none of them apply to two containers on a
+       laptop, and without it the portrait half of the federation cannot be
+       exercised at all. -->
+
+  <record name="pas.plugins.identity.providers.demo-idp.config.picture_over_http">
+    <field type="plone.registry.field.Bool">
+      <required>False</required>
+    </field>
+    <value>True</value>
+  </record>
+  <record name="pas.plugins.identity.providers.demo-idp.config.userid_source">
+    <field type="plone.registry.field.TextLine">
+      <required>False</required>
+    </field>
+    <value>username</value>
   </record>
 
 </registry>

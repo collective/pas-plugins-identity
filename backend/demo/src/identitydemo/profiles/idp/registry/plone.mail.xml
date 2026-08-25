@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<registry>
+
+  <!-- Mail settings, so magic-link login works in a stack with no mail
+       server in it.
+
+       Nothing is delivered. Products.PrintingMailHost is installed and the
+       idp-backend service sets ENABLE_PRINTING_MAILHOST, which patches
+       MailHost to write the message to the log instead of opening an SMTP
+       connection; `make demo-stack-logs` is where the link is.
+
+       The records are still needed, and that is the part worth writing down:
+       plone.api.portal.send_email refuses to run at all while the overview
+       control panel would show a "MailHost is not configured" warning, and
+       that check reads these *registry* records rather than asking the
+       MailHost whether it can send. Without them the magic-link endpoint
+       fails before the patched MailHost is ever reached, and the failure
+       reads as a bug in the login flow rather than as missing configuration.
+
+       No field elements: these records are part of Plone's own IMailSchema
+       and exist in every site, so this only writes values. -->
+  <record name="plone.smtp_host">
+    <value>localhost</value>
+  </record>
+  <record name="plone.email_from_address">
+    <value>id@localhost</value>
+  </record>
+  <record name="plone.email_from_name">
+    <value>id.localhost</value>
+  </record>
+
+</registry>

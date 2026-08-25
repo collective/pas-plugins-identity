@@ -2,6 +2,16 @@
 ARG VOLTO_VERSION=latest
 FROM plone/frontend-builder:${VOLTO_VERSION} AS builder
 
+# Whether Plone's own password form is offered on the login page.
+#
+# A build argument rather than a runtime variable, and it has to be: Razzle
+# substitutes `process.env.RAZZLE_*` into the browser bundle with webpack's
+# DefinePlugin while `pnpm build` runs below, so a value supplied afterwards
+# reaches the node process and never the browser. Setting it in a compose
+# `environment:` block looks like it works and does nothing.
+ARG RAZZLE_IDENTITY_SHOW_PLONE_LOGIN=false
+ENV RAZZLE_IDENTITY_SHOW_PLONE_LOGIN=${RAZZLE_IDENTITY_SHOW_PLONE_LOGIN}
+
 COPY --chown=node packages/volto-identity /app/packages/volto-identity
 COPY --chown=node volto.config.js /app/
 COPY --chown=node package.json /app/package.json.temp

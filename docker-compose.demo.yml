@@ -81,7 +81,23 @@ services:
   # id.localhost -- the identity provider
   # ------------------------------------------------------------------
   idp-frontend:
-    build: *frontend-build
+    build:
+      <<: *frontend-build
+      ## The merge key replaces `args` wholesale, so the shared one is
+      ## restated rather than added to.
+      args:
+        - VOLTO_VERSION=${VOLTO_VERSION}
+        ## This site's users *are* local: it is where people sign in in
+        ## order to sign in elsewhere, and the consent screen is reached by
+        ## having a session here. Without the password form it has no way in
+        ## at all except the magic link.
+        ##
+        ## A build argument, not an environment variable. Razzle bakes
+        ## RAZZLE_* into the browser bundle at build time; supplied at
+        ## runtime it would reach the node process and never the browser,
+        ## which looks like it works and does nothing. The two frontends
+        ## therefore build two images rather than sharing one.
+        - RAZZLE_IDENTITY_SHOW_PLONE_LOGIN=true
     environment:
       RAZZLE_INTERNAL_API_PATH: http://idp-backend:8080/Plone
     depends_on:
@@ -101,6 +117,12 @@ services:
       <<: *demo-env
       DEMO_PROFILE: identitydemo:idp
       ZEO_ADDRESS: 'idp-zeo:8100'
+      ## Magic-link login is switched on here and there is no mail server in
+      ## this stack. Products.PrintingMailHost patches MailHost to write the
+      ## message to the log instead of opening an SMTP connection, so the
+      ## link is in `make demo-stack-logs`. Only on the provider, which is
+      ## the site that sends anything.
+      ENABLE_PRINTING_MAILHOST: 'true'
     depends_on:
       - idp-zeo
     labels:
@@ -171,7 +193,16 @@ services:
   # plone.localhost -- the relying party
   # ------------------------------------------------------------------
   rp-frontend:
-    build: *frontend-build
+    build:
+      <<: *frontend-build
+      args:
+        - VOLTO_VERSION=${VOLTO_VERSION}
+        ## The relying party has exactly one way in, and it is the identity
+        ## provider. Offering a local password beside it would be offering a
+        ## second way into the same account, which is the whole thing this
+        ## federation exists to avoid. Stated rather than left to the
+        ## default, because this is the site the point is about.
+        - RAZZLE_IDENTITY_SHOW_PLONE_LOGIN=false
     environment:
       RAZZLE_INTERNAL_API_PATH: http://rp-backend:8080/Plone
     depends_on:

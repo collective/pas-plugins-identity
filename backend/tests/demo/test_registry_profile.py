@@ -16,6 +16,7 @@ against is entirely in the XML.
 
 from identitydemo import settings
 from pas.plugins.identity.core.controlpanel import get_provider
+from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.server.claims import SCOPE_CLAIMS
 from pas.plugins.identity.server.clients import get_client
 from pas.plugins.identity.server.clients import verify_secret
@@ -44,7 +45,17 @@ class TestDemoIdPRegistry:
         """A record that imports untyped reads back as a string, and every
         boolean in the file would then be true."""
         assert self.registry["pas.plugins.identity.providers.github.enabled"] is True
-        assert self.registry["pas.plugins.identity.providers.github.order"] == 0
+        assert self.registry["pas.plugins.identity.providers.github.order"] == 1
+        assert self.registry["pas.plugins.identity.providers.email.order"] == 0
+
+    def test_the_magic_link_is_offered_first(self):
+        """It is the one way into this demo that needs nothing configured
+        anywhere else: no OAuth client, no secret, no third-party account.
+
+        ``get_providers`` answers in stored order, which is the order of the
+        buttons on the login page.
+        """
+        assert [p.provider_id for p in get_providers()] == ["email", "github"]
 
     def test_the_property_map_is_a_mapping(self):
         """Written as a Python ``repr`` it imports as one long string, and the
@@ -96,7 +107,7 @@ class TestDemoRPRegistry:
     def test_provider_is_readable_through_the_api(self):
         provider = get_provider("demo-idp")
         assert provider is not None
-        assert provider.driver_id == "oidc-generic"
+        assert provider.driver_id == "plone-identity"
         assert provider.config["client_id"] == "demo-rp"
 
     def test_the_issuer_is_left_to_the_install_handler(self):
@@ -109,7 +120,8 @@ class TestDemoRPRegistry:
         nothing, and does so silently."""
         published = set(SCOPE_CLAIMS["profile"]) | set(SCOPE_CLAIMS["email"])
         published |= {"address.formatted"}
-        # ``fullname`` is this package's own normalized claim, which the map
-        # may address directly; everything else has to be a real claim.
-        published |= {"fullname"}
+        # ``fullname`` and ``picture_url`` are this package's own normalized
+        # names for ``name`` and ``picture``, which the map may address
+        # directly; everything else has to be a real claim.
+        published |= {"fullname", "picture_url"}
         assert set(get_provider("demo-idp").propertymap) <= published
