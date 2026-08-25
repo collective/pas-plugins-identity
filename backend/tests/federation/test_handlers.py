@@ -144,12 +144,20 @@ class TestInstallRP:
         assert get_provider(settings.DEMO_PROVIDER_ID) is None
 
     def test_registers_the_provider(self):
+        """With the peer driver, not the generic one.
+
+        A Plone site federating against another Plone site is what
+        ``plone-identity`` exists for, so the demo has to be the thing it
+        claims to demonstrate. The driver subclasses the generic OIDC one and
+        takes no special path through the flow; what it carries is the
+        configuration a peer can be known in advance to want.
+        """
         install_rp(self.setup_tool)
 
         provider = get_provider(settings.DEMO_PROVIDER_ID)
 
         assert provider is not None
-        assert provider.driver_id == "oidc-generic"
+        assert provider.driver_id == "plone-identity"
 
     def test_the_issuer_is_the_public_url(self):
         """Not the compose service name. Discovery publishes one issuer and

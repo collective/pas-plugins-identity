@@ -27,6 +27,37 @@ import time
 #: endpoint at all without one.
 JSON_HEADERS = {"Accept": "application/json"}
 
+
+@pytest.fixture(autouse=True)
+def _no_importer_commits(monkeypatch):
+    """Stop ``plone.exportimport`` committing inside an integration test.
+
+    The demo handlers import their payload through ``plone.exportimport``,
+    whose importers commit for real: ``IMPORTER_COMMIT_DISABLE`` is off by
+    default, so ``intermediate_commits`` is true and the content importer
+    ends with an unconditional ``transaction.commit()``. That is right for
+    the thing it was written for -- a long import that must not hold one
+    transaction open over thousands of objects -- and wrong here.
+
+    A commit escapes the per-test rollback ``plone.app.testing`` does, so
+    everything ``install_idp`` wrote stayed in the site for the rest of the
+    session: the demo user most visibly, since ``tests.profile`` then tried
+    to create its own ``alice`` and got ``Duplicate user ID``. That is a
+    failure in a module which does not import the demo, hundreds of tests
+    after the one that caused it, blaming a fixture that was innocent -- and
+    it is invisible to anyone running either module on its own.
+
+    Patched on ``BaseImporter`` rather than set through the environment
+    because ``plone.exportimport.settings`` reads ``os.environ`` at import
+    time, which makes an environment variable a race with import order.
+
+    :param monkeypatch: pytest's patcher.
+    """
+    from plone.exportimport.importers.base import BaseImporter
+
+    monkeypatch.setattr(BaseImporter, "intermediate_commits", False)
+
+
 #: Compose project name. Distinct from the default, which is the directory
 #: name, so this stack cannot collide with a hand-started one.
 PROJECT = "identity-federation-tests"
