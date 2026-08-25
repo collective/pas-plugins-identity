@@ -470,6 +470,11 @@ msgstr ""
 msgid "signing"
 msgstr ""
 
+#. Default: "user avatar"
+#: components/UserMenu/UserAvatar
+msgid "user avatar"
+msgstr ""
+
 #. Default: "verifying only"
 #: components/ControlPanel/ClientsPanel
 msgid "verifying only"

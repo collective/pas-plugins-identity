@@ -1,0 +1,23 @@
+.identity-avatar {
+  display: inline-flex;
+  overflow: hidden;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.identity-avatar--picture {
+  object-fit: cover;
+}
+
+.identity-avatar--initials {
+  color: #fff;
+  font-weight: 600;
+  // The initials are drawn, not read as text: selecting them out of a
+  // toolbar button is never what somebody meant to do.
+  letter-spacing: 0.02em;
+  line-height: 1;
+  user-select: none;
+}
