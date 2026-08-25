@@ -24,6 +24,7 @@ import type {
   LoginProvider,
   OAuthClient,
   SigningKeyRing,
+  UserProfile,
 } from '../types';
 
 /** A request that has finished with data. */
@@ -238,4 +239,52 @@ export function withStore(state: Record<string, unknown>) {
     <Provider store={store as never}>{Story()}</Provider>
   );
   return Decorator;
+}
+
+/**
+ * A portrait, inline.
+ *
+ * A data URI rather than a URL: a story has to render the same whether or
+ * not Storybook can reach the network, and a portrait that silently 404s
+ * would show the fallback while claiming to show the picture.
+ */
+export const PORTRAIT =
+  'data:image/svg+xml;utf8,' +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+       <rect width="96" height="96" fill="#0083be"/>
+       <circle cx="48" cy="36" r="18" fill="#bfe3f2"/>
+       <path d="M12 96c0-20 16-32 36-32s36 12 36 32z" fill="#bfe3f2"/>
+     </svg>`,
+  );
+
+/** The signed-in user, as `@users/<userid>` describes them. */
+export const USER: UserProfile = {
+  '@id': 'https://example.org/@users/alice',
+  id: 'alice',
+  username: 'alice@example.org',
+  fullname: 'Alice Liddell',
+  email: 'alice@example.org',
+  portrait: null,
+  source: 'identity_profile',
+  identities: [],
+  profile_url: 'https://example.org/identity-profiles/alice',
+};
+
+/**
+ * Wrap a story in a store holding one signed-in user.
+ *
+ * The common case for anything in the user menu, which is why it is here
+ * rather than repeated per story.
+ *
+ * @param user The user, or null for an anonymous visitor.
+ * @returns A Storybook decorator.
+ */
+export function withUser(user: Partial<UserProfile> | null) {
+  return withStore({
+    userProfile: {
+      ...LOADED,
+      data: user === null ? null : { ...USER, ...user },
+    },
+  });
 }

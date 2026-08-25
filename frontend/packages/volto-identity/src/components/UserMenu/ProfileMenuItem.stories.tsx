@@ -1,0 +1,57 @@
+import type { Meta, StoryObj } from '@storybook/react';
+import React from 'react';
+
+import {
+  Pluggable,
+  PluggablesProvider,
+} from '@plone/volto/components/manage/Pluggable';
+import ProfileMenuItem from './ProfileMenuItem';
+import { withUser } from '../../stories/fixtures';
+
+const meta: Meta<typeof ProfileMenuItem> = {
+  title: 'Identity/UserMenu/ProfileMenuItem',
+  component: ProfileMenuItem,
+};
+export default meta;
+
+type Story = StoryObj<typeof ProfileMenuItem>;
+
+/**
+ * The plug renders nothing on its own -- it registers a renderer -- so every
+ * story has to include the pluggable that consumes it, the way Volto's user
+ * menu does.
+ */
+const inTheMenu = () => (
+  <PluggablesProvider>
+    <ProfileMenuItem />
+    <ul>
+      <Pluggable name="toolbar-user-menu" />
+    </ul>
+  </PluggablesProvider>
+);
+
+/** A site running the `[profile]` layer, for a user who has a Profile. */
+export const WithAProfile: Story = {
+  render: inTheMenu,
+  decorators: [
+    withUser({ profile_url: 'https://example.org/identity-profiles/alice' }),
+  ],
+};
+
+/**
+ * No Profile: the entry is absent rather than disabled.
+ *
+ * Either the `[profile]` layer is not installed, or first login has not
+ * minted one for this user yet. A menu entry leading nowhere is worse than
+ * no menu entry, which is why this renders an empty list.
+ */
+export const WithoutAProfile: Story = {
+  render: inTheMenu,
+  decorators: [withUser({ profile_url: null })],
+};
+
+/** Before the user has loaded, there is nothing to decide on yet. */
+export const Anonymous: Story = {
+  render: inTheMenu,
+  decorators: [withUser(null)],
+};

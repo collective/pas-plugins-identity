@@ -116,6 +116,8 @@ export interface MyProfile {
 export interface UserProfile {
   '@id': string;
   id: string;
+  /** The name this user signs in with; not the same as the userid. */
+  username?: string | null;
   fullname?: string;
   email?: string;
   /** Portrait URL, when the user has uploaded one. */
