@@ -156,6 +156,42 @@ def _provider_may_write(
     return current == (remembered.get(field) or "")
 
 
+#: Key under which the provider's picture URL is remembered.
+#:
+#: In the same mapping as the text fields, because it is the same rule: the
+#: provider may replace only what it put there. What is remembered is the
+#: *URL* rather than the bytes -- comparing blobs to decide ownership would
+#: read the whole image on every login, and the URL answers the question just
+#: as well.
+PICTURE_FIELD = "picture"
+
+
+def remembered_picture_url(profile: Profile) -> str:
+    """Return the picture URL the provider last wrote, if any.
+
+    :param profile: The Profile.
+    :returns: The URL, or the empty string when the picture on this Profile
+        is not the provider's -- which includes a Profile whose picture the
+        user uploaded, and one that has never had a picture at all.
+    """
+    return str(_remembered(profile).get(PICTURE_FIELD) or "")
+
+
+def remember_picture_url(profile: Profile, url: str) -> None:
+    """Record that the provider supplied this Profile's picture.
+
+    :param profile: The Profile.
+    :param url: The ``picture_url`` claim, or the empty string to hand
+        ownership back -- which is what a user uploading their own picture
+        does, and what stops a provider from replacing it later.
+    """
+    remembered = _remembered(profile)
+    if url:
+        remembered[PICTURE_FIELD] = url
+    else:
+        remembered.pop(PICTURE_FIELD, None)
+
+
 def sync_claims(profile: Profile, claims: Claims, provider_id: str = "") -> list[str]:
     """Write the provider's claims onto the fields it still owns.
 

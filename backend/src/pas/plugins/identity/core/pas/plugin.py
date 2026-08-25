@@ -298,7 +298,7 @@ class IdentityPlugin(BasePlugin):
         # Every login, not just the first: a name or address changed at the
         # provider should reach Plone without the user being recreated.
         self._apply_property_map(userid, provider, claims)
-        self._sync_portrait(userid, claims, previous_picture)
+        self._sync_portrait(userid, provider, claims, previous_picture)
 
         notify(
             ExternalIdentityAuthenticated(
@@ -324,7 +324,9 @@ class IdentityPlugin(BasePlugin):
             return ""
         return str(record.claims.get("picture_url") or "")
 
-    def _sync_portrait(self, userid: str, claims: Claims, previous: str) -> None:
+    def _sync_portrait(
+        self, userid: str, provider_id: str, claims: Claims, previous: str
+    ) -> None:
         """Copy the provider's avatar into portrait storage when it changed.
 
         Off unless the site switched it on -- see
@@ -334,6 +336,8 @@ class IdentityPlugin(BasePlugin):
         provider offers a different one.
 
         :param userid: Canonical Plone userid.
+        :param provider_id: The provider, whose configuration decides whether
+            a plain-HTTP URL may be fetched at all.
         :param claims: Normalized claims.
         :param previous: The URL synced last time, if any.
         """
@@ -342,7 +346,21 @@ class IdentityPlugin(BasePlugin):
         url = str(claims.get("picture_url") or "")
         if not url or url == previous:
             return
-        sync_portrait(userid, url)
+        sync_portrait(userid, url, allow_http=self._picture_over_http(provider_id))
+
+    def _picture_over_http(self, provider_id: str) -> bool:
+        """Whether this provider may have its avatar fetched over plain HTTP.
+
+        :param provider_id: The provider.
+        :returns: Whether it is configured to allow it; false when the
+            provider is gone or says nothing, which is the safe answer.
+        """
+        from pas.plugins.identity.core.controlpanel import get_provider
+
+        config = get_provider(provider_id)
+        if config is None:
+            return False
+        return bool(config.config.get("picture_over_http"))
 
     def _userid_source(self, provider_id: str) -> str:
         """Return the userid strategy configured for a provider.

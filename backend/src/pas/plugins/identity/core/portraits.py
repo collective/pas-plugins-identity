@@ -31,6 +31,27 @@ claims is an image. None of this makes fetching a user-supplied URL safe --
 a hostile URL can still name a public host that resolves internally -- which
 is why the flag exists rather than a longer list of guards.
 
+**Where it lands depends on the site.** On one running the ``[profile]``
+layer the picture goes on the user's Profile, because that is where that site
+keeps a person's fields and a picture in the other store would leave the
+content object showing an empty one. Everywhere else it is
+``portal_memberdata``. One store per user either way, and the same one a
+preferences upload uses -- see
+:class:`pas.plugins.identity.profile.services.users.ProfileUsersPatch` for
+the other writer. A picture the user chose is never overwritten: the Profile
+remembers which URL the provider supplied, and a provider may replace only
+its own.
+
+**Plain HTTP is a per-provider decision.** A provider can be configured to
+allow it, and nothing else can: it is a field on the provider rather than a
+second site-wide record, because "this one issuer is a container on my own
+machine that has no certificate" is a statement about that issuer and not
+about the site. It exists because a demo or development stack over plain HTTP
+otherwise cannot exercise this path at all, and a feature nobody can run is a
+feature nobody has tested. It is off unless somebody sets it, and the whole of
+the paragraph above is why it should stay off anywhere a stranger can pick
+the URL.
+
 **Failures never break a login.** Every error here is logged and swallowed. An
 avatar that would not load is a missing picture, and refusing the login over
 it would be a far worse bug than the missing picture.
@@ -39,9 +60,11 @@ it would be a far worse bug than the missing picture.
 from io import BytesIO
 from OFS.Image import Image
 from pas.plugins.identity import logger
+from pas.plugins.identity.core.interfaces import IProfileSupport
 from plone import api
 from Products.PlonePAS.utils import scale_image
 from urllib.parse import urlparse
+from zope.component import queryUtility
 
 import requests
 
@@ -74,16 +97,21 @@ def enabled() -> bool:
     return bool(api.portal.get_registry_record(ENABLED_RECORD, default=False))
 
 
-def _fetch(url: str) -> bytes:
+def _fetch(url: str, allow_http: bool = False) -> bytes:
     """Fetch an avatar, refusing anything that fails a guard.
 
     :param url: The ``picture_url`` claim.
+    :param allow_http: Whether the provider is configured to allow plain
+        HTTP. Never a default: see the module docstring.
     :returns: The image bytes.
     :raises PortraitRefused: If any guard rejects the URL or the answer.
     """
     parsed = urlparse(url)
-    if parsed.scheme != "https":
-        raise PortraitRefused(f"{parsed.scheme or 'relative'} is not https")
+    allowed = {"https", "http"} if allow_http else {"https"}
+    if parsed.scheme not in allowed:
+        raise PortraitRefused(
+            f"{parsed.scheme or 'relative'} is not {' or '.join(sorted(allowed))}"
+        )
 
     response = requests.get(url, timeout=TIMEOUT, stream=True)
     if response.status_code != 200:
@@ -101,16 +129,31 @@ def _fetch(url: str) -> bytes:
     return data
 
 
-def store(userid: str, data: bytes) -> None:
-    """Put image bytes into Plone's portrait storage for a user.
+def store(userid: str, data: bytes, url: str = "") -> None:
+    """Put image bytes wherever this user's picture lives.
 
-    Scaled through Plone's own helper rather than stored raw, so the result is
-    the same shape as a portrait uploaded through the user's preferences and
-    an oversized image is not kept at full resolution.
+    On a site running the ``[profile]`` layer that is the Profile, for the
+    same reason a portrait uploaded through preferences goes there: the
+    Profile is where that site keeps a person's fields, and a picture in the
+    other store would leave the content object showing an empty one. Without
+    the layer -- or for a user who has no Profile, or who put a picture on it
+    themselves -- it is ``portal_memberdata``, exactly as before.
+
+    Scaled through Plone's own helper rather than stored raw for the member
+    portrait, so the result is the same shape as one uploaded through
+    preferences and an oversized image is not kept at full resolution. The
+    Profile keeps the bytes: it is a Dexterity image field with scales of its
+    own, and pre-scaling would throw away the resolution those want.
 
     :param userid: Canonical Plone userid.
     :param data: The image bytes.
+    :param url: The claim they came from, remembered by the Profile so a
+        later sync can tell its own picture from one the user chose.
     """
+    support = queryUtility(IProfileSupport)
+    if support is not None and support.store_provider_picture(userid, data, url):
+        return
+
     memberdata = api.portal.get_tool("portal_memberdata")
     membership = api.portal.get_tool("portal_membership")
     safe_id = membership._getSafeMemberId(userid)
@@ -118,17 +161,19 @@ def store(userid: str, data: bytes) -> None:
     memberdata._setPortrait(Image(id=safe_id, file=scaled, title=""), safe_id)
 
 
-def sync_portrait(userid: str, url: str) -> bool:
+def sync_portrait(userid: str, url: str, allow_http: bool = False) -> bool:
     """Copy a provider avatar into portrait storage, if allowed and possible.
 
     :param userid: Canonical Plone userid.
     :param url: The ``picture_url`` claim.
+    :param allow_http: Whether the provider that sent the URL allows plain
+        HTTP. The site-wide switch still has to be on as well.
     :returns: Whether a portrait was stored.
     """
     if not url or not enabled():
         return False
     try:
-        store(userid, _fetch(url))
+        store(userid, _fetch(url, allow_http), url)
     except PortraitRefused as refused:
         logger.info("Refused portrait for %s: %s", userid, refused)
         return False

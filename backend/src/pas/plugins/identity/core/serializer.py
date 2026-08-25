@@ -18,6 +18,7 @@ search, so ``alice`` would otherwise also match ``alice2`` and the source
 reported would be whichever record came back first.
 """
 
+from pas.plugins.identity.core.interfaces import IProfileSupport
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.interfaces import IBrowserLayer
@@ -26,6 +27,7 @@ from plone.restapi.interfaces import ISerializeToJson
 from plone.restapi.serializer.user import SerializeUserToJson
 from Products.CMFCore.interfaces._tools import IMemberData
 from zope.component import adapter
+from zope.component import queryUtility
 from zope.interface import implementer
 
 
@@ -85,26 +87,21 @@ def portrait_of(userid: str) -> str | None:
         all. The member portrait is already ``None`` for the default image,
         which is what makes "no picture" distinguishable here.
     """
-    profile = _profile_for(userid)
-    picture = getattr(profile, "picture", None) if profile is not None else None
-    if picture is not None:
-        # `@@images` rather than `@@download` so a caller may ask for a scale.
-        return f"{profile.absolute_url()}/@@images/picture"
-    return None
+    support = _profile_support()
+    return support.picture_url(userid) if support is not None else None
 
 
-def _profile_for(userid: str):
-    """Return a user's Profile, or ``None``.
+def _profile_support():
+    """Return the ``[profile]`` layer's bridge, when it is installed.
 
-    :param userid: Canonical Plone userid.
-    :returns: The Profile, or ``None`` when the ``[profile]`` layer is absent
-        or the user has none.
+    A utility lookup rather than an import inside a function. The import was
+    a contract violation that looked like a way of avoiding one:
+    import-linter reads function bodies, so ``core`` was importing the
+    optional layer in fact while appearing not to.
+
+    :returns: The utility, or ``None`` on a site without the extra.
     """
-    try:
-        from pas.plugins.identity.profile.subscribers import get_profile
-    except ImportError:  # pragma: no cover - the extra is always importable
-        return None
-    return get_profile(userid)
+    return queryUtility(IProfileSupport)
 
 
 def profile_url_of(userid: str) -> str | None:
@@ -114,8 +111,8 @@ def profile_url_of(userid: str) -> str | None:
     :returns: The absolute URL, or ``None`` when the ``[profile]`` layer is
         not installed or the user has no Profile yet.
     """
-    profile = _profile_for(userid)
-    return profile.absolute_url() if profile is not None else None
+    support = _profile_support()
+    return support.profile_url(userid) if support is not None else None
 
 
 @implementer(ISerializeToJson)

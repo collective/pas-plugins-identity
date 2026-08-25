@@ -218,3 +218,55 @@ class DriverProtocol(Protocol):
     def normalize_claims(self, payload: JSONDict) -> Claims: ...
 
     def subject(self, payload: JSONDict) -> str: ...
+
+
+class IProfileSupport(Interface):
+    """What the optional ``[profile]`` layer answers for core.
+
+    Core may not import that layer -- an import-linter contract says so, and
+    the reason is that ``core`` has to install and run without it. But core
+    genuinely has three questions whose answer *changes* when the layer is
+    there: where a user's Profile is, which picture represents them, and
+    where a picture should be stored.
+
+    A utility rather than a soft import inside a function. That was how the
+    first two were answered, and it broke the contract: import-linter reads
+    function bodies too, so the boundary was violated in fact while looking
+    like it was being respected. This is the same shape the back-channel
+    logout already uses to reach the ``[server]`` layer -- core declares
+    what it needs, the layer registers something that provides it, and the
+    dependency points the way the contract requires.
+
+    Absent on a site without the extra, and
+    :func:`~zope.component.queryUtility` returning ``None`` is the answer
+    "there is no profile layer here" -- which is exactly what the soft
+    import's ``ImportError`` used to mean.
+    """
+
+    def profile_url(userid: str) -> str | None:
+        """Return the URL of a user's Profile.
+
+        :param userid: Canonical Plone userid.
+        :returns: The absolute URL, or ``None`` when the user has none.
+        """
+
+    def picture_url(userid: str) -> str | None:
+        """Return the URL of the picture held on a user's Profile.
+
+        :param userid: Canonical Plone userid.
+        :returns: An absolute URL, or ``None`` when the Profile has no
+            picture -- which is what makes the member portrait the fallback
+            rather than something this has to know about.
+        """
+
+    def store_provider_picture(userid: str, data: bytes, url: str) -> bool:
+        """Store a provider's avatar on a user's Profile.
+
+        :param userid: Canonical Plone userid.
+        :param data: The image bytes, already fetched and vetted.
+        :param url: The ``picture_url`` claim they came from, remembered so
+            a later sync can tell its own picture from one the user chose.
+        :returns: Whether it was stored. ``False`` means the user has no
+            Profile, or has a picture of their own there -- and in both
+            cases the caller stores the member portrait instead.
+        """

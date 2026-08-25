@@ -80,6 +80,11 @@
        than assigned, so there is nothing to keep in step. -->
   <adapter factory=".localroles.ProfileSelfRole" />
 
+  <!-- What core is allowed to ask this layer, without importing it. Core
+       looks the utility up and gets None on a site without the extra, which
+       is the answer "there is no profile layer here". -->
+  <utility factory=".support.ProfileSupport" />
+
   <!-- One text-line deserializer for the whole type, because that is the
        narrowest registration there is: it refuses a userid change and hands
        every other field straight to the default. -->
@@ -94,6 +99,18 @@
       permission="zope2.View"
       layer=".interfaces.IIdentityProfileLayer"
       name="@my-profile"
+      />
+
+  <!-- plone.restapi's own @users PATCH, with the portrait written to the
+       Profile that owns it rather than to portal_memberdata. Registered for
+       this layer, so the override exists exactly where a Profile does. -->
+  <plone:service
+      method="PATCH"
+      factory=".services.users.ProfileUsersPatch"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer=".interfaces.IIdentityProfileLayer"
+      name="@users"
       />
 
 </configure>

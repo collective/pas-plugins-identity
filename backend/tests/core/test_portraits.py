@@ -123,6 +123,20 @@ def sign_in(plugin, subject="s1", **claims) -> str:
     return userid
 
 
+def _member_portrait(userid: str):
+    """Return the stored member portrait, or ``None`` for the default one.
+
+    :param userid: The user to look at.
+    :returns: The image, or ``None``.
+    """
+    from Products.PlonePAS.tools.membership import default_portrait
+
+    portrait = api.portal.get_tool("portal_membership").getPersonalPortrait(userid)
+    if portrait is None or portrait.getId() == default_portrait.split("/")[-1]:
+        return None
+    return portrait
+
+
 class TestOffByDefault:
     @pytest.fixture(autouse=True)
     def _setup(self, portal, answers) -> None:
@@ -167,6 +181,28 @@ class TestGuards:
         calls = self.answers(FakeResponse(_png()))
 
         assert portraits.sync_portrait("alice", "file:///etc/passwd") is False
+        assert calls == []
+
+    def test_plain_http_when_the_provider_asked_for_it(self):
+        """A demo or development issuer with no certificate. It is a decision
+        per provider, never a default, and the module docstring says why."""
+        calls = self.answers(FakeResponse(_png()))
+
+        assert (
+            portraits.sync_portrait("alice", "http://idp/a.png", allow_http=True)
+            is True
+        )
+        assert calls == ["http://idp/a.png"]
+
+    def test_allowing_http_does_not_allow_anything_else(self):
+        """The relaxation is one scheme wide. ``file://`` still reads the
+        backend's disk, and turning on a demo option must not open it."""
+        calls = self.answers(FakeResponse(_png()))
+
+        assert (
+            portraits.sync_portrait("alice", "file:///etc/passwd", allow_http=True)
+            is False
+        )
         assert calls == []
 
     def test_non_200_is_refused(self):
@@ -242,6 +278,29 @@ class TestStoring:
         assert portraits.sync_portrait("alice", "https://cdn/b.png") is True
 
 
+class TestWhereItLands:
+    """Which store answers for a user, with no [profile] layer installed.
+
+    The layer's own half is ``tests/profile/test_provider_picture.py``: this
+    is the site that has never heard of it, and has to keep working exactly
+    as it did.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, answers, on) -> None:
+        self.portal = portal
+        self.answers = answers
+        self.on = on
+
+    def test_it_goes_to_the_member_without_the_layer(self):
+        """Which is where it always went, and where it still goes for a site
+        that never installed the extra."""
+        self.answers(FakeResponse(_png()))
+
+        assert portraits.sync_portrait("alice", "https://cdn/a.png") is True
+        assert _member_portrait("alice") is not None
+
+
 class TestThroughTheSync:
     """Signing in: when a fetch is attempted at all. No [profile] layer here
     -- portraits belong to the member, so they work without it."""
@@ -292,6 +351,35 @@ class TestThroughTheSync:
         # or not the fetch worked, so a URL that failed once is not tried
         # again on every login.
         assert calls == ["https://cdn/a.png"]
+
+    def test_a_plain_http_avatar_is_refused_by_default(self):
+        """The provider the sign-in names has said nothing about it, which is
+        the same as saying no."""
+        calls = self.answers(FakeResponse(_png()))
+
+        sign_in(self.plugin, picture_url="http://idp/a.png")
+
+        # Attempted and refused before the request, not fetched and discarded.
+        assert calls == []
+
+    def test_the_provider_can_ask_for_plain_http(self):
+        """A demo stack is two containers with no certificate between them,
+        and this is the only way that half of it is ever exercised."""
+        from pas.plugins.identity.core.controlpanel import ProviderConfig
+        from pas.plugins.identity.core.controlpanel import set_providers
+
+        set_providers([
+            ProviderConfig(
+                provider_id="dex",
+                driver_id="oidc-generic",
+                config={"picture_over_http": True},
+            )
+        ])
+        calls = self.answers(FakeResponse(_png()))
+
+        sign_in(self.plugin, picture_url="http://idp/a.png")
+
+        assert calls == ["http://idp/a.png"]
 
     def test_no_picture_claim_is_a_no_op(self):
         """Most providers send none."""
