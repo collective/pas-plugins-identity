@@ -295,11 +295,6 @@ class IdentityPlugin(BasePlugin):
         else:
             self._store.touch(provider, subject, claims)
 
-        # Every login, not just the first: a name or address changed at the
-        # provider should reach Plone without the user being recreated.
-        self._apply_property_map(userid, provider, claims)
-        self._sync_portrait(userid, provider, claims, previous_picture)
-
         notify(
             ExternalIdentityAuthenticated(
                 userid=userid,
@@ -310,6 +305,28 @@ class IdentityPlugin(BasePlugin):
                 is_new_identity=is_new_identity,
             )
         )
+
+        # After the event, and that ordering is load-bearing.
+        #
+        # Both of these writes are *fallbacks*: they put a value in core's own
+        # store only for a user nobody else claims. `_apply_property_map` asks
+        # `_properties_owned_elsewhere` and `_sync_portrait` asks
+        # `IProfileSupport`, and on a first login neither question has an
+        # honest answer yet -- the thing that would claim the user is created
+        # by a subscriber to the event above. Asked too early, both were told
+        # "nobody owns this user" and wrote into `portal_memberdata`, leaving
+        # the claimed store empty on exactly the login that mattered. Then
+        # nothing corrected it: the property map skips a field that already
+        # has a value, and the avatar is refetched only when the provider
+        # changes its URL, so one badly-timed answer became permanent.
+        #
+        # A fallback runs after everyone entitled to claim has been told. That
+        # is the rule, and it names no layer.
+        #
+        # Every login, not just the first: a name or address changed at the
+        # provider should reach Plone without the user being recreated.
+        self._apply_property_map(userid, provider, claims)
+        self._sync_portrait(userid, provider, claims, previous_picture)
         return (userid, userid)
 
     def _remembered_picture(self, provider: str, subject: str) -> str:
