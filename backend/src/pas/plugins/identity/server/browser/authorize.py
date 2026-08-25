@@ -29,6 +29,7 @@ from AccessControl import Unauthorized
 from pas.plugins.identity.server.clients import get_client
 from pas.plugins.identity.server.codes import ChallengeError
 from pas.plugins.identity.server.codes import check_challenge
+from pas.plugins.identity.server.consent_screen import consent_screen_url
 from pas.plugins.identity.server.pas import PLUGIN_ID
 from plone import api
 from plone.protect.authenticator import AuthenticatorView
@@ -160,7 +161,20 @@ class AuthorizeView(BrowserView):
                 # The user is being asked. Nothing has been issued, nothing
                 # has been recorded, and the client hears from us when they
                 # answer.
-                return self.consent_form()
+                elsewhere = consent_screen_url()
+                if not elsewhere:
+                    return self.consent_form()
+                # A frontend renders the question instead, in the site's own
+                # look. The request travels in the query string exactly as it
+                # travels through the hidden fields of the form below, and
+                # the answer comes back to this same endpoint: whichever
+                # screen asked, the decision is made in one place and every
+                # check runs again on the way out.
+                self.request.response.redirect(
+                    f"{elsewhere}?{urlencode(self.carried_params())}",
+                    status=302,
+                )
+                return ""
 
         self.request.response.redirect(location, status=302)
         return ""
@@ -355,18 +369,25 @@ class AuthorizeView(BrowserView):
         """
         return f"{self.context.absolute_url()}/@@oauth-authorize"
 
+    def carried_params(self) -> dict[str, str]:
+        """Return the authorization request, for a round trip through a screen.
+
+        :returns: One entry per parameter that was actually sent. Absent
+            parameters are left absent rather than carried as empty: an empty
+            ``code_challenge`` is not the same request as no
+            ``code_challenge``, and PKCE turns on that difference.
+        """
+        return {name: self._param(name) for name in CARRIED_PARAMS if self._param(name)}
+
     def form_fields(self) -> list[dict]:
         """Return the authorization request, as hidden form fields.
 
-        :returns: One mapping per parameter that was actually sent. Absent
-            parameters are left absent rather than posted back empty: an
-            empty ``code_challenge`` is not the same request as no
-            ``code_challenge``, and PKCE turns on that difference.
+        :returns: One mapping per carried parameter, in the shape the
+            template's ``<input type="hidden">`` loop wants.
         """
         return [
-            {"name": name, "value": self._param(name)}
-            for name in CARRIED_PARAMS
-            if self._param(name)
+            {"name": name, "value": value}
+            for name, value in self.carried_params().items()
         ]
 
     def authenticator_token(self) -> str:

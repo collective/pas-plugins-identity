@@ -31,14 +31,22 @@ from urllib.parse import quote
 #: asks for an identity, and ``sub`` is not scope-gated.
 OPENID_SCOPE = "openid"
 
-#: Scope to the registered claims it releases.
+#: Scope to the claims it releases.
 #:
-#: ``description`` is the one Plone property with no home here. There is no
-#: registered claim for a free-text biography, and putting it in a private one
-#: would emit something no other relying party can read -- so it stays behind
-#: until a site asks for it and a private scope is designed on purpose.
+#: All registered claims but one. ``description`` -- Plone's free-text
+#: biography -- has no registered claim to be, and is released under
+#: ``profile`` anyway rather than under a private scope of its own: it is the
+#: same kind of thing the rest of that scope is, a relying party that does not
+#: know the name ignores an unrecognised claim, and a scope only this server's
+#: own peers would ever ask for buys nothing but a second thing to configure.
 SCOPE_CLAIMS: dict[str, tuple[str, ...]] = {
-    "profile": ("name", "preferred_username", "website", "picture"),
+    "profile": (
+        "name",
+        "preferred_username",
+        "website",
+        "picture",
+        "description",
+    ),
     "email": ("email", "email_verified"),
     "address": ("address",),
 }
@@ -57,6 +65,7 @@ CLAIM_SOURCES = {
     "email": lambda user: user.getProperty("email", ""),
     "address": lambda user: user.getProperty("location", ""),
     "picture": lambda user: portrait_url(user.getId()),
+    "description": lambda user: user.getProperty("description", ""),
 }
 
 

@@ -9,6 +9,9 @@
   <record name="pas.plugins.identity.server_issuer"
           remove="True"
   />
+  <record name="pas.plugins.identity.server_consent_url"
+          remove="True"
+  />
   <record name="pas.plugins.identity.server_access_token_ttl"
           remove="True"
   />

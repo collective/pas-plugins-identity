@@ -91,6 +91,21 @@ class IServerSettings(Interface):
         default="",
     )
 
+    server_consent_url = schema.TextLine(
+        title=_("Consent screen URL"),
+        description=_(
+            "Where to send the browser to ask a user whether they agree to "
+            "an authorization request. Set it to the frontend route that "
+            "renders the consent screen, and the question is asked in the "
+            "site's own look; leave it empty and the server renders a "
+            "standalone page of its own. The authorization request is "
+            "appended as the query string, and the screen sends the browser "
+            "back to the authorization endpoint with the answer."
+        ),
+        required=False,
+        default="",
+    )
+
     server_refresh_token_ttl = schema.Int(
         title=_("Refresh token lifetime (seconds)"),
         description=_(

@@ -87,6 +87,7 @@ class TestScopeRelease:
             "preferred_username",
             "website",
             "picture",
+            "description",
         ]
 
     def test_email_releases_the_address_and_its_status(self):
@@ -141,12 +142,14 @@ class TestClaims:
         guessing."""
         assert claims_for(USERID, "address")["address"] == {"formatted": "Oxford"}
 
-    def test_description_is_not_emitted(self):
-        """There is no registered claim for a free-text biography, and a
-        private one would emit something no other relying party can read."""
-        claims = claims_for(USERID, "openid profile email address")
+    def test_the_biography_rides_on_the_profile_scope(self):
+        """OIDC has no registered claim for a free-text biography, and this
+        one is released under ``profile`` rather than a private scope of its
+        own: a relying party that does not know the name ignores it."""
+        assert claims_for(USERID, "profile")["description"] == "Curious."
 
-        assert "Curious." not in str(claims)
+    def test_the_biography_needs_that_scope_like_any_other_claim(self):
+        assert "description" not in claims_for(USERID, "openid email address")
 
     def test_an_empty_property_is_omitted_not_blank(self):
         """OIDC asks that a claim with no value be absent, so a relying party
