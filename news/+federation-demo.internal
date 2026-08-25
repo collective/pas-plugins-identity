@@ -4,4 +4,4 @@ The provider is a Volto-first identity provider, which is what it should look li
 
 The relying party uses the `plone-identity` driver rather than the generic OIDC one, since that is the driver a Plone-to-Plone federation is meant to use and the one whose defaults the demo should be proving, and it allows the avatar to be fetched over plain HTTP because two containers on a laptop have no certificate between them. `RAZZLE_IDENTITY_SHOW_PLONE_LOGIN` is set per frontend — as a build argument, since Razzle bakes those into the browser bundle and a runtime one would never reach it: on for the provider, whose users are local, and off for the relying party, where a local password beside the federated sign-in would be a second way into the same account. The two frontends therefore build two images rather than sharing one.
 
-Documented in `docs/federation-demo.md`. @ericof
+Documented in `docs/docs/tutorials/federation-demo.md`, with the design reasoning in `docs/docs/concepts/federation.md`. @ericof

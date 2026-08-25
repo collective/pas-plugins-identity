@@ -8,7 +8,7 @@ Multi-provider external authentication for Plone, built on [authlib](https://aut
 
 One canonical Plone user id maps to many external identities — GitHub, Google, ORCID, a generic OIDC provider, an emailed magic link — for the same human, without running a separate identity broker.
 
-📖 **[Read the documentation](./docs/index.md)**
+📖 **[Read the documentation](./docs/docs/index.md)**
 
 ## Features
 
@@ -26,7 +26,7 @@ One canonical Plone user id maps to many external identities — GitHub, Google,
 
 [`pas.plugins.oidc`](https://github.com/collective/pas.plugins.oidc) does one OIDC provider, and does it well. If that is what you need, it is the smaller and more mature dependency; there is no reason to move.
 
-The difference is linking. Neither of the above maps several external identities onto one canonical Plone user id, and that mapping is what this package is arranged around. Migrations from both have shipped: they are dry-run by default, idempotent, and report what they would do before you let them do it. See [Migrating from another package](docs/migration.md) for what each can and cannot recover.
+The difference is linking. Neither of the above maps several external identities onto one canonical Plone user id, and that mapping is what this package is arranged around. Migrations from both have shipped: they are dry-run by default, idempotent, and report what they would do before you let them do it. See [Migrating from `pas.plugins.authomatic`](docs/docs/how-to-guides/migrate-from-authomatic.md) and [Migrating from `pas.plugins.oidc`](docs/docs/how-to-guides/migrate-from-oidc.md) for what each can and cannot recover.
 
 ## Why not Products.membrane / dexterity.membrane
 

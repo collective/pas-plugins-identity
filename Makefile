@@ -56,11 +56,11 @@ debug-settings:  ## Debug settings
 .PHONY: docs-install
 docs-install:  ## Install the documentation toolchain
 	@echo "$(GREEN)==> Install documentation requirements$(RESET)"
-	uv pip install --system -r docs/requirements.txt
+	$(MAKE) -C "./docs/" install
 
 .PHONY: docs-build
 docs-build:  ## Build the documentation, warnings as errors
-	$(MAKE) -C "./docs/" html
+	$(MAKE) -C "./docs/" html SPHINXOPTS="-W"
 
 .PHONY: docs-clean
 docs-clean:  ## Remove the documentation build

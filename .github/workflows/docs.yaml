@@ -18,21 +18,25 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup Python
-        uses: actions/setup-python@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: ${{ inputs.python-version }}
-          cache: pip
-          cache-dependency-path: docs/requirements.txt
+          enable-cache: true
+          cache-dependency-glob: docs/uv.lock
+
+      - name: Setup Python
+        run: uv python install ${{ inputs.python-version }}
+        working-directory: docs
 
       - name: Install
-        run: pip install -r docs/requirements.txt
+        run: uv sync
+        working-directory: docs
 
       # -W turns a warning into an error, so a dead cross reference, an
       # orphaned page or a malformed directive fails here rather than
       # shipping. The event contract page has to be part of this build.
       - name: Build
-        run: make -C docs html
+        run: make docs-build
 
       - name: Upload
         uses: actions/upload-artifact@v4

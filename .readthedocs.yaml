@@ -1,17 +1,11 @@
-# Read the Docs build. Deliberately the same command CI runs, so a build that
-# is green here is green there: a docs site that only builds on one of the two
-# is a docs site nobody trusts.
+# Read the Docs build. Deliberately the same builder and the same strictness
+# CI runs, so a build that is green here is green there: a docs site that only
+# builds on one of the two is a docs site nobody trusts.
 version: 2
 
 build:
   os: ubuntu-24.04
   tools:
     python: "3.13"
-
-sphinx:
-  configuration: docs/conf.py
-  fail_on_warning: true
-
-python:
-  install:
-    - requirements: docs/requirements.txt
+  commands:
+    - make -C docs rtd-pr-preview SPHINXOPTS="-W"

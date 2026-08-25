@@ -1,6 +1,0 @@
-# Pinned loosely on purpose: the docs build is a check on the prose, not a
-# reproducibility target, and a hard pin here becomes a dependabot chore.
-sphinx>=8
-myst-parser>=4
-furo>=2024.8
-linkify-it-py>=2
