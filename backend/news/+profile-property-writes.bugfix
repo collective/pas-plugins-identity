@@ -1,7 +1,0 @@
-Fixed every write to a user property being silently discarded on a site running the `[profile]` layer. Changing a name through the user's own preferences form, through the `@users` control panel, or on the login path returned successfully and changed nothing.
-
-`MemberData.setMemberProperties` walks the ordered property sheets and, for each key, stops at the first sheet that *has* it — writing through that sheet when it is mutable, and breaking out of the loop when it is not. No exception, no log line. This layer's plugin is deliberately first in the order, because a Profile has to win the *read* against `mutable_properties`; its sheet being immutable meant it also won every write and threw it away.
-
-The sheet is now a `MutablePropertySheet` and the plugin implements `setPropertiesForUser`, which writes the changed fields onto the Profile and reindexes it — the catalog is this layer's only read path, so a write nobody reindexed is a write nobody can see. The write runs unrestricted: who may edit a Profile is decided on the Profile by the workflow, and PAS has already resolved who is asking by the time a property write arrives.
-
-Core stands aside for these users rather than writing the same fields twice. A plugin declares `IOwnsUserProperties` to say that its sheet is the authoritative one and that it applies the provider's property map itself; core's own property-map pass then leaves alone any user such a plugin serves. Asked per user, because a site can run the layer and still have users it does not serve. @ericof

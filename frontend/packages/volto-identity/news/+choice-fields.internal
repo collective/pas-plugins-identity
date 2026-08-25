@@ -1,1 +1,0 @@
-A driver's `choice` field renders as a select over the options the driver names, rather than falling through to a text input. The frontend still knows nothing about what any particular option means. @ericof

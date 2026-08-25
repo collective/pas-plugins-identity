@@ -1,3 +1,0 @@
-Made the login callback URL reachable from the providers control panel. It lives in the site-wide settings rather than on a provider -- it is one frontend route, registered identically with every provider -- and the Volto panel never exposed it, so a provider configured entirely through the UI still could not complete a sign-in. It failed at the last step with `No login callback URL is configured`, a message only the backend log shows.
-
-The panel now has a Settings action in the toolbar, editing the schema the backend already serves for the Classic form, and says so up front when the URL is unset instead of leaving it to be discovered on the first failed login. @ericof

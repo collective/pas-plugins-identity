@@ -1,7 +1,0 @@
-Registered the `userProfile` reducer, which was exported but never mounted.
-
-`reducers/index.ts` exports each reducer *and* collects them into a map written out by hand, and that map is what `config.addonReducers` receives. `userProfile` was added to the exports and not to the map, so the store had no such slice: the request for `@users/<userid>` fired, was answered correctly — full name, portrait, `profile_url`, identities, all present — and the result landed nowhere.
-
-It failed as three unrelated-looking bugs, because every consumer of that slice broke at once: the toolbar avatar had no portrait to show, then no initials to fall back to either, so it drew an empty circle; and the personal-tools menu showed a blank name where the user's full name belongs. Nothing in the network traffic looked wrong, which is what made it hard to see.
-
-A test now asserts every reducer this module exports appears in the map, so the next one added to one and not the other fails a test instead of shipping. @ericof

@@ -1,1 +1,0 @@
-Listed the `plone-identity` driver among the drivers the package ships, and said what it carries over the generic OIDC one it subclasses. @ericof

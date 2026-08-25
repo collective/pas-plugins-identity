@@ -1,3 +1,0 @@
-Fixed the login form looking unlike `volto-authomatic`'s despite carrying the same markup and the same class names. `@plone/components` ships its components and their CSS separately, and `PloneForm` imports `@plone/components/src/styles/basic/TextField.css` explicitly; this package never did, so every `TextField` rendered with only the handful of overrides in this add-on's stylesheet on top of nothing at all.
-
-The stylesheet is now imported the same way, and the missing "Forgot your password?" link is back between the fields and the actions, where `volto-authomatic` puts it. @ericof

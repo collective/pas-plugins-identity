@@ -1,3 +1,0 @@
-Gave every component real styling rather than the structural minimum it had. The stylesheet used to leave typography, buttons and form controls to inherit from the site theme, on the reasoning that the add-on should look like part of the site; in practice that meant the identities page, both control panels and the secret reveal rendered as unstyled markup.
-
-They now share the surface the login card uses, which is `volto-authomatic`'s and therefore Volto's: a bordered panel with a shadow, a titled header on a heavier rule, fields with a single underline, and buttons in the accent colour with the irreversible ones in red. Everything is still scoped under the classes the components already carried, so no component changed to get it. @ericof

@@ -1,0 +1,5 @@
+Added the CI pipeline. The backend test suite runs in all four supported dependency configurations — core, `+profile`, `+server`, all — across Python 3.12, 3.13 and 3.14, with the layer-boundary contract checked as a job of its own.
+
+Three checks exist because the alternative is a gate that quietly stops meaning anything. `make check-clean-install` installs the package with no extras into a throwaway virtualenv and imports it, so a runtime dependency that only the test extra happens to supply cannot pass unnoticed. `make check-pragmas` requires a same-line justification on every `# pragma: no cover`. And the Docker-backed flow tests are mandatory in CI: without `PAS_IDENTITY_REQUIRE_DOCKER` a machine with no Docker skips them, which is right for a laptop and quietly wrong for a pipeline.
+
+The documentation is built with warnings as errors. @ericof

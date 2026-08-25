@@ -1,5 +1,0 @@
-A provider can now mint readable userids instead of a random one. `Userid taken from` chooses between a random id (the default, and unchanged behaviour), the provider's username, the email address, or the provider's subject — so a GitHub account can arrive in Plone as `ericof` rather than 32 hex characters, which matters wherever a person has to be recognised by userid.
-
-It is per provider, because the trade-off is per provider. A random id leaks nothing and never has to change; the others are claims, which means they are free text, they can be absent, and two providers can offer the same one. All three are handled: the value is normalized into something usable as an id, an empty one falls back to a random id rather than minting something unusable, and a userid that is already taken gets a numeric suffix.
-
-That last one is the part worth stating plainly. Availability is checked against **every** PAS source, not just this plugin's records: otherwise a provider account called `admin` would be handed the site's `admin` userid and inherit its roles. A userid is still minted once and stored, so a later claim change never moves an account. @ericof

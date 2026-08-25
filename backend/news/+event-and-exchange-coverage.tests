@@ -1,1 +1,0 @@
-Covered the event contract and the callback half of the authorization-code flow. The token exchange is now tested against a genuine RS256 `id_token`, so signature, issuer, audience, expiry and nonce validation are exercised without a provider in the loop. @ericof

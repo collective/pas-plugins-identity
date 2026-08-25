@@ -1,1 +1,0 @@
-Documented the authorization server's admin API: the endpoints, why a client secret appears exactly once and cannot be read back, what a PATCH refuses to change and why, that deleting or disabling a client is this server's only revocation, and what key rotation does to tokens already in flight.

@@ -1,3 +1,0 @@
-Added the `pas.plugins.identity.UserFields` vocabulary, listing the member fields a provider claim can be mapped onto. It is built from `getFromBaseSchema(IUserDataSchema)`, which merges Plone's member schema with the one edited through the web — so a site that added a field in the **User Schema** control panel can map a claim onto it without this package knowing it exists.
-
-`plone.app.users` already ships `plone.app.users.user_registration_fields`, but that one is built from `ICombinedRegisterSchema` and includes `password`, `password_ctl` and `mail_me`. Those are registration mechanics, and a provider claim must never be written to a password field. @ericof

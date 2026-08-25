@@ -1,0 +1,7 @@
+Added the documentation site: Sphinx with MyST, built in CI with warnings as errors and published from `docs/`.
+
+It covers installing the package and configuring providers; the audit log and its privacy defaults; the `[profile]` extra; both migrations, including what each refuses to do and why, how to read a migration report, and why no authomatic-compatible callback route was added; the `[server]` layer's claims contract, OpenID Connect discovery, admin API and back-channel logout; the federation demo; and the event contract this package treats as its public API.
+
+Writing a driver has a guide and a worked GitLab example, carrying the three rules a driver author has to follow: every config field declares an `order` and no two share one, `default_scope` is a tuple of permissions rather than the space-delimited string that goes on the wire, and `default_propertymap` is written against the normalized claim names and names only member fields a stock site has.
+
+The README carries the feature summary, the relationship to `pas.plugins.oidc` and `pas.plugins.authomatic`, and a "why not `Products.membrane`" section that says what was actually read rather than what was assumed: membrane's `getPropertiesForUser` adapts `brain._unrestrictedGetObject()`, so a property lookup wakes the content object, while its user enumeration is unaffected and stays on the brains. `SECURITY.md` records how to report a vulnerability and what this package guarantees. @ericof

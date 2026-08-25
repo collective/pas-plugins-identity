@@ -1,3 +1,0 @@
-Made it possible to configure a provider from the control panel. The panel listed and edited providers that already existed, but nothing dispatched the `createProvider` action the package already shipped — so on a fresh site, which has none, the panel was a dead end: "No providers are configured yet" and no way to make one.
-
-It now has an **Add a provider** form: id, a driver select, title, enabled, and the chosen driver's own schema fields. Changing the driver clears config typed against the previous schema, since the fields no longer mean the same thing. Title and enabled became editable on existing providers too — the backend had always accepted them on `PATCH`. A site with no drivers installed is told so rather than shown an empty form. @ericof

@@ -1,3 +1,0 @@
-Filled in the two things the add-provider form used to leave for the operator to invent. The provider ID is now named after the driver — the slugified driver title, following it for as long as nobody types an id of their own, and never overwriting one that has been typed. The attribute mapping is seeded from what the driver declares, so a provider created without touching it still syncs the address and the name onto the Plone user.
-
-Both follow the driver rather than surviving it: choosing a different driver renames the suggestion and reseeds the mapping, since a mapping is written in the claim names of the driver it was chosen for. The scope is rendered as a token widget, one permission per entry, which is what the field now is. @ericof

@@ -1,1 +1,0 @@
-Overrode the Plone constraints' `pytest-plone==1.0.0` pin with `>=1.0.0` in `mx.ini`, so the suite runs on 1.1.0. The full backend run drops from roughly 45 seconds to 3. @ericof

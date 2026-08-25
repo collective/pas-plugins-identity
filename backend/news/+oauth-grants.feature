@@ -1,0 +1,9 @@
+A person can now see which applications use their data, and cut one off. `GET @oauth-grants` lists the caller's own standing agreements — the application, when they agreed, and what each scope actually releases — and `DELETE @oauth-grants/<client_id>` withdraws one.
+
+It is the mirror image of `@identities`, and the gap it closes was a real one: a user could see the providers they sign in *with* and unlink one, and had no way at all to see the applications they had signed in *to*. The consent store has recorded exactly this since the consent screen shipped; nothing could read it back, and nothing could forget an entry.
+
+Not the admin API. `@identity-clients` is the operator asking "who may log in to this site" and needs `Manage portal`; this is a person asking "who did I let in", and needs only that they are the caller.
+
+Withdrawing does two things, because either alone would be a lie. Forgetting the agreement decides what happens the next time that client asks — it is prompted, as it was the first time; it is not blocked, which is a different thing and an operator's to do. Revoking that client's refresh tokens for that user is what ends the access it already has, and it is narrower than the revocation a back-channel logout performs: the user said no to *this* application, and ending their sessions with every other one would answer a question they did not ask.
+
+What it cannot reach is reported rather than hidden. Access tokens are self-encoded with no denylist, so one already minted lives out its lifetime whatever anybody withdraws; both endpoints return `access_token_ttl` so a screen can say how long that is instead of implying a cutoff this server cannot deliver. An agreement with a client the operator has since unregistered is still listed and still withdrawable — the record outlived the registration, and hiding it would leave something the user can neither see nor undo. @ericof

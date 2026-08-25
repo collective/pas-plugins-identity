@@ -1,1 +1,0 @@
-Pinned the event contract's firing discipline: every action fires exactly one event, and a refused one fires none. A double-fire duplicates audit entries and runs subscribers' side effects twice, while a missing fire makes an action invisible to every integrator — and neither shows up in an ordinary test, because both leave the identity store correct. @ericof

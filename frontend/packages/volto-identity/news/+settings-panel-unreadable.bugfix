@@ -1,5 +1,0 @@
-The providers control panel no longer crashes when the backend cannot serve the site settings. Volto's `Form` reads `schema.fieldsets` on its first render, so opening Settings against a control panel the backend refused took the whole page down with a type error rather than showing anything.
-
-It now says what happened, and names the likely cause: a settings field with no registry record, which is what a site gets when the add-on gains one and its profile has not been reapplied since. The backend's own message is shown underneath when there is one. Save is hidden for a form that is not there; Cancel stays, so the error is not a dead end.
-
-The request state is read separately from the value, because the reducer clears `controlpanel` to null while pending *and* on failure — the value alone cannot tell "still loading" from "the backend refused". @ericof

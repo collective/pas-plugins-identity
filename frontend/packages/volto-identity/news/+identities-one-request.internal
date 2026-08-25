@@ -1,3 +1,0 @@
-Loaded the identities page in one request instead of two. It dispatched `listIdentities()` and `listLoginProviders()` on every visit, for one screen that needs both; `listIdentities(true)` now expands the providers as a component of the identities listing.
-
-The providers reducer accepts either source. The expanded component only ever *fills* it: the request carrying it belongs to the identities listing, so its pending and failure states say nothing about the providers, and a response without the component leaves what is there alone — which is what the refresh after an unlink relies on, since the buttons would otherwise blank for a moment on every removal. @ericof

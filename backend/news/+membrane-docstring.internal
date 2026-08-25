@@ -1,1 +1,0 @@
-Updated the `[profile]` PAS plugin's module docstring, which still said the comparison with `Products.membrane` had not been verified. It has been, and the docstring now states what was found and how narrow it is: membrane wakes content objects on the properties path but not on enumeration. @ericof

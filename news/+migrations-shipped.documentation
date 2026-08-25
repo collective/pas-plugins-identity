@@ -1,1 +1,0 @@
-Corrected the README, which still said migration paths from `pas.plugins.authomatic` and `pas.plugins.oidc` were planned and had not shipped. Both shipped. @ericof

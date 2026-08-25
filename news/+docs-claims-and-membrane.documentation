@@ -1,5 +1,0 @@
-Documented the claims contract for sites acting as an authorization server, covering where each claim's value comes from, what each scope releases, and what `email_verified` does and does not assert.
-
-Corrected the `Products.membrane` comparison in the profiles documentation, which still carried the "we have not measured it" hedge after that claim was verified and the README was corrected. It now states what membrane actually does — `getPropertiesForUser` adapts `brain._unrestrictedGetObject()`, so a property lookup loads the content object, while enumeration stays on the brains — scoped to properties, attributed to the version read, and explicit that it comes from source rather than measurement.
-
-Fixed the documentation build, which would have failed on a fresh clone. `conf.py` sets `html_static_path = ["_static"]`, git cannot track an empty directory, and the build runs with `-W`, so the missing directory was an error rather than a warning. Latent only because CI has never run.

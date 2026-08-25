@@ -1,0 +1,3 @@
+Added identity linking. `GET @identities` lists the identities you own, `POST @identities` starts a flow attaching another provider to your account, and `DELETE @identities/<provider>/<subject>` unlinks one — unless it is your last way in, which is refused rather than allowed to lock somebody out of their own account.
+
+`@users` now reports `identities`, `source` and `profile_url` for a user. An administrator looking at an account could see its roles and its groups but not the one thing this package exists for: which external identities resolve to it, and which PAS plugin the userid actually came from. @ericof

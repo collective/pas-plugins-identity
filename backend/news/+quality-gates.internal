@@ -1,1 +1,3 @@
-Wired the quality gates: an enforced 100% branch coverage floor, an import-linter contract keeping `core` free of any dependency on the optional `profile` and `server` layers and those two independent of each other, and a `make install-extras` target that layers the optional extras on top of the core-only install for the CI matrix. @ericof
+Wired the quality gates. An enforced 100% branch coverage floor; an import-linter contract keeping `core` free of any dependency on the optional `profile` and `server` layers and those two independent of each other; and a coverage pragma policy requiring a same-line justification on every `# pragma: no cover`, since an unjustified pragma is how a coverage gate quietly stops meaning anything.
+
+The Plone constraints' `pytest-plone==1.0.0` pin is overridden with `>=1.0.0` in `mx.ini`, which takes the full backend run from roughly 45 seconds to 3. @ericof

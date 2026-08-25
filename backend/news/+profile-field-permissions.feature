@@ -1,5 +1,0 @@
-Said who may read and write each field of a Profile. The schema declares a `read_permission` and a `write_permission` on every field, and until now this package declared them and granted them to nobody — which does not mean nobody has them: an unmentioned permission is whatever the Profile acquires from wherever it happens to be filed, so the answer changed with the container.
-
-Three permissions now exist, granted in `rolemap.xml` as a site-wide floor and mapped per state by `identity_profile_workflow`: `Edit Profile`, `View Profile`, and `View Personal Identifiable Information`. A user holds the local role `Editor` on their own Profile and nothing on anybody else's, so self-service falls out of the workflow rather than out of a special case. `Member` reaches a `complete` Profile's ordinary fields — enough for a Sharing-tab search to show a name — and never reaches the email address, which is what the third permission is for. A `deactivated` Profile is readable only by managers.
-
-The add permission was renamed from `pas.plugins.identity.AddProfile` to `pas.plugins.identity.profile.add`, so all four sit under one dotted prefix. @ericof

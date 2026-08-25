@@ -1,1 +1,0 @@
-Added the Gate 0 backend CI matrix: the test suite now runs in all four supported dependency configurations (core, +profile, +server, all), the layer-boundary contract is checked as its own job, and the Python and Plone versions tested were corrected to the package's declared floor of Python 3.12 and Plone 6.2. @ericof

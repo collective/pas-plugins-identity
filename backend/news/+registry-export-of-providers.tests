@@ -1,3 +1,0 @@
-Pinned what a GenericSetup registry export carries for a provider. Providers are records created at runtime rather than declared on an interface, so nothing guaranteed the exporter would describe them well enough to read back; it does, carrying each record's field type and value, which is what makes exporting a provider configured through the control panel and pasting it into a profile a workable way to ship one.
-
-One of those tests asserts that a client secret is exported in the clear. That is not a leak to fix -- a registry export is a backup of the registry -- but it is the reason an export is not something to paste into a public repository without reading it first. @ericof

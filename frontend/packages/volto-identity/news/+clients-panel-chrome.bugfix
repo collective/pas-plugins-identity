@@ -1,3 +1,0 @@
-Gave the OAuth clients control panel the page chrome every other control panel has. It rendered its sections and nothing else — no title, no container, and no toolbar, so `/controlpanel/identity-clients` had no way back to the control-panel listing at all. It now has the same shape the providers panel does: a centred container, a raised panel titled with the configlet's own name, and a toolbar whose back button is a route rather than a page load.
-
-The three sections inside it dropped the card each was drawing for itself, since the panel around them is now the card. @ericof
