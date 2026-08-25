@@ -42,11 +42,21 @@ DRIVER_ISSUERS: dict[str, str] = {
     "google": "https://accounts.google.com",
 }
 
-#: Drivers whose issuer the operator supplies. Kept separate from
-#: :data:`DRIVER_ISSUERS` so that a driver with neither -- ``email``, whose
-#: magic link never leaves the site -- is refused rather than sent to
-#: discovery with an empty URL.
-CONFIGURED_ISSUER_DRIVERS = frozenset({"oidc-generic"})
+#: The config field a driver declares when the operator supplies its issuer.
+#:
+#: Asked of the driver rather than looked up in a list of driver ids, which
+#: is what this used to be. A list is wrong here for the reason driver
+#: frameworks exist: ``plone-identity`` is a ``GenericOIDCDriver`` subclass,
+#: it discovers its metadata exactly as its parent does, and naming only the
+#: parent meant it was refused for having "no authorization endpoints" --
+#: an error about a driver that plainly had one. Any driver that asks an
+#: operator for an issuer is discovered from it, including one this package
+#: has never heard of.
+#:
+#: The distinction the old list was keeping is kept: a driver that declares
+#: no issuer field -- ``email``, whose magic link never leaves the site --
+#: is refused rather than sent to discovery with an empty URL.
+ISSUER_FIELD = "issuer"
 
 #: Where an OIDC issuer publishes its metadata (RFC 8414).
 DISCOVERY_PATH = "/.well-known/openid-configuration"
@@ -102,7 +112,7 @@ def issuer_for(provider: ProviderConfig) -> str:
     fixed = DRIVER_ISSUERS.get(provider.driver_id)
     if fixed is not None:
         return fixed
-    if provider.driver_id not in CONFIGURED_ISSUER_DRIVERS:
+    if not _asks_for_an_issuer(provider):
         raise FlowError(
             f"{provider.provider_id}: driver {provider.driver_id!r} has no "
             "authorization endpoints"
@@ -111,6 +121,19 @@ def issuer_for(provider: ProviderConfig) -> str:
     if not issuer:
         raise FlowError(f"{provider.provider_id}: no issuer configured")
     return issuer
+
+
+def _asks_for_an_issuer(provider: ProviderConfig) -> bool:
+    """Whether this provider's driver takes an issuer from the operator.
+
+    :param provider: The configured provider.
+    :returns: Whether the driver declares an ``issuer`` config field. False
+        for a driver whose metadata is fixed or absent, and for a provider
+        whose driver has been uninstalled -- which is the same answer as
+        "nowhere to discover from", and the right one.
+    """
+    driver = provider.driver
+    return driver is not None and ISSUER_FIELD in driver.config_schema()
 
 
 def discover(issuer: str) -> JSONDict:

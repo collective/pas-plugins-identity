@@ -18,6 +18,18 @@ class GitHubDriver(BaseDriver):
     default_scope = ("read:user", "user:email")
     subject_keys = ("id", "node_id")
 
+    #: The GitHub login, rather than a random id.
+    #:
+    #: A GitHub login is already the name the person is known by wherever
+    #: this site's users talk about each other, and it is unique across the
+    #: provider -- so mirroring it produces a Plone userid a human can
+    #: recognise instead of 32 hex characters. It is a claim rather than the
+    #: subject, so it can change and it can collide with a userid this site
+    #: already holds; both are handled where the userid is minted, and the
+    #: numeric ``id`` remains the key the identity is stored under either
+    #: way.
+    default_userid_source = "username"
+
     def normalize_claims(self, payload: JSONDict) -> Claims:
         """Normalize a GitHub ``/user`` payload.
 

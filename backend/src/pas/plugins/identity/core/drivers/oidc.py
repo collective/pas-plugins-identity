@@ -23,4 +23,20 @@ class GenericOIDCDriver(BaseDriver):
             # provider is read from what the issuer discovers.
             "order": 10,
         },
+        "picture_over_http": {
+            "type": "bool",
+            "title": "Allow the avatar to be fetched over plain HTTP",
+            "required": False,
+            "secret": False,
+            "default": False,
+            "description": (
+                "Only for a provider on a network you control -- a demo or "
+                "development stack with no certificate. Portrait syncing "
+                "fetches a URL the provider supplies, and over plain HTTP "
+                "that fetch can be aimed at an internal service and read "
+                "back through the portrait. Leave this off for any provider "
+                "on the public internet."
+            ),
+            "order": 70,
+        },
     }

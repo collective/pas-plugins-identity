@@ -353,7 +353,7 @@ class TestProviderConfig:
         assert self.provider.config == {
             "scope": ("read:user", "user:email"),
             "auto_link_by_email": False,
-            "userid_source": "uuid",
+            "userid_source": "username",
         }
 
     def test_a_supplied_value_wins(self):

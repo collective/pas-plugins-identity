@@ -31,14 +31,15 @@ class TestPloneIdentityDriver:
         the mapping below resolves to nothing without it."""
         assert "address" in self.driver.config_schema()["scope"]["default"]
 
-    def test_userid_defaults_to_the_remote_subject(self):
-        """One person keeps one id across the federation.
+    def test_userid_defaults_to_the_peers_username(self):
+        """One person is known by one name across the federation.
 
-        A peer mints an opaque, stable userid and puts it in ``sub``, which
-        is the whole reason to federate rather than have each site invent its
-        own name for the same human.
+        The peer releases ``preferred_username`` under the ``profile`` scope
+        this driver already asks for, so the readable name travels; ``sub``
+        would only be readable when the peer happened to mint readable
+        userids of its own.
         """
-        assert self.driver.config_schema()["userid_source"]["default"] == "subject"
+        assert self.driver.config_schema()["userid_source"]["default"] == "username"
 
     def test_the_generic_driver_still_defaults_to_a_random_id(self):
         """The premise of the test above: this is a decision about a *peer*,
@@ -77,6 +78,7 @@ class TestPloneIdentityDriver:
         assert self.driver.default_propertymap["address.formatted"] == "location"
         assert claims["raw"]["address"] == {"formatted": "São Paulo, Brazil"}
 
-    def test_nothing_maps_to_description(self):
-        """There is no biography claim to write there."""
-        assert "description" not in self.driver.default_propertymap.values()
+    def test_the_biography_maps_across(self):
+        """A peer publishes ``description`` under ``profile``, which OIDC has
+        no registered claim for and this server layer releases anyway."""
+        assert self.driver.default_propertymap["description"] == "description"

@@ -24,15 +24,18 @@ class PloneIdentityDriver(GenericOIDCDriver):
     #: the mapping below resolve to anything.
     default_scope = ("openid", "email", "profile", "address")
 
-    #: The remote userid, rather than a fresh random one.
+    #: The peer's login name, rather than a fresh random one.
     #:
-    #: A peer running this package mints an opaque, stable userid and puts it
-    #: in ``sub``, so mirroring it means one person keeps one id across the
-    #: federation -- which is the point of federating rather than each site
-    #: inventing its own name for the same human. A userid already taken
-    #: locally is still never handed out; that collision gets a suffix like
-    #: any other.
-    default_userid_source = "subject"
+    #: A peer running this package releases ``preferred_username`` under the
+    #: ``profile`` scope this driver already asks for, and that is the name
+    #: the person is known by on the other site -- so mirroring it means one
+    #: person is recognisable by the same name across the federation rather
+    #: than each site inventing its own. ``sub`` would be stable where a
+    #: username is not, but it is only readable when the peer happened to
+    #: mint readable userids of its own; the collision case is identical
+    #: either way, since a userid already taken locally is never handed out
+    #: and gets a numeric suffix instead.
+    default_userid_source = "username"
 
     #: Everything the peer's ``SCOPE_CLAIMS`` actually releases.
     #:
@@ -42,12 +45,17 @@ class PloneIdentityDriver(GenericOIDCDriver):
     #: dotted path this package's property map exists for: the claim is an
     #: object and the formatted member is the readable line.
     #:
-    #: There is no biography claim and no group claim to map, so nothing
-    #: writes to ``description``.
+    #: ``description`` is in there because a peer publishes it: OIDC has no
+    #: registered claim for a biography, and the server layer releases one
+    #: under ``profile`` regardless. It resolves off the raw payload, since
+    #: normalization has no name of its own for it.
+    #:
+    #: There is no group claim to map, so nothing writes to a group.
     default_propertymap = {  # noqa: RUF012
         "email": "email",
         "fullname": "fullname",
         "website": "home_page",
+        "description": "description",
         "address.formatted": "location",
         "picture_url": "portrait",
     }

@@ -210,6 +210,49 @@ class TestIssuerResolution:
         with pytest.raises(FlowError, match="no issuer configured"):
             md.issuer_for(provider)
 
+    def test_a_driver_subclass_discovers_like_its_parent(self):
+        """``plone-identity`` *is* the generic OIDC driver with defaults on
+        top, and it went a whole release refused for having "no
+        authorization endpoints" -- because the resolver kept a list of
+        driver ids and only the parent was on it."""
+        provider = ProviderConfig.deserialize({
+            "id": "peer",
+            "driver": "plone-identity",
+            "config": {"issuer": ISSUER},
+        })
+
+        assert md.issuer_for(provider) == ISSUER
+
+    @pytest.mark.parametrize(
+        ("driver_id", "asks"),
+        [("oidc-generic", True), ("plone-identity", True), ("email", False)],
+    )
+    def test_the_driver_is_asked_rather_than_a_list_consulted(self, driver_id, asks):
+        """The mechanism, not one driver of it. A driver declares an
+        ``issuer`` field or it does not, and a driver this package has never
+        heard of gets the same answer as one it ships -- which is what a
+        list of driver ids could not do."""
+        provider = ProviderConfig.deserialize({
+            "id": "p",
+            "driver": driver_id,
+            "config": {},
+        })
+
+        assert md._asks_for_an_issuer(provider) is asks
+
+    def test_a_provider_whose_driver_is_gone_is_refused(self):
+        """Uninstalling the add-on that registered a driver leaves the
+        provider behind. There is nowhere to discover from, and that is the
+        same answer as a driver that never had one."""
+        provider = ProviderConfig.deserialize({
+            "id": "orphan",
+            "driver": "no-such-driver",
+            "config": {"issuer": ISSUER},
+        })
+
+        with pytest.raises(FlowError, match="no authorization endpoints"):
+            md.issuer_for(provider)
+
     def test_driver_without_endpoints_is_refused(self):
         """The email driver's magic link never leaves the site, so asking it
         for an authorize endpoint is a programming error, not a fetch."""
