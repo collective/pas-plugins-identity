@@ -7,6 +7,7 @@ test too. These damage the catalog on purpose, one mode at a time.
 
 from . import PROFILE_ID
 from pas.plugins.identity.profile import doctor
+from plone import api
 
 import pytest
 
@@ -97,9 +98,21 @@ class TestDrift:
         assert doctor.check() == []
 
     def test_duplicate_userid_is_reported(self):
-        """Two Profiles for one userid is never legitimate."""
+        """Two Profiles for one userid is never legitimate.
+
+        Reachable only from separate containers now that the userid is the
+        object id: one container cannot hold two objects called ``alice``.
+        The catalog is not scoped to the configured container, though, so a
+        Profile filed somewhere else still counts -- which is exactly the
+        case this check is left in place for.
+        """
+        elsewhere = api.content.create(
+            container=self.portal, type="Folder", id="elsewhere"
+        )
         self.make_profile("alice", id="alice")
-        self.make_profile("alice", id="alice-again", login="other@example.com")
+        self.make_profile(
+            "alice", id="alice", container=elsewhere, login="other@example.com"
+        )
 
         assert doctor.DUPLICATE_USERID in kinds(doctor.check())
 
@@ -149,9 +162,15 @@ class TestGroups:
         assert doctor.STALE in kinds(doctor.check())
 
     def test_duplicate_group_ids_are_reported(self):
-        """Two groups answering to one id is never legitimate."""
+        """Two groups answering to one id is never legitimate.
+
+        As with a duplicate userid, this now takes two containers.
+        """
+        elsewhere = api.content.create(
+            container=self.portal, type="Folder", id="elsewhere-groups"
+        )
         self.make_group("editors", id="editors")
-        self.make_group("editors", id="editors-again")
+        self.make_group("editors", id="editors", container=elsewhere)
 
         assert doctor.DUPLICATE_GROUP_ID in kinds(doctor.check())
 

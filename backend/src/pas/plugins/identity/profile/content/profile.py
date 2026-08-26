@@ -31,14 +31,14 @@ from catalog metadata, and a blob has no business in a brain.
 """
 
 from pas.plugins.identity import _
+from pas.plugins.identity import logger
 from pas.plugins.identity.core.interfaces import IUserContent
-from plone.autoform.directives import mode
+from pas.plugins.identity.core.vocabularies.groups import GROUPS_VOCABULARY
 from plone.autoform.directives import read_permission
 from plone.autoform.directives import write_permission
 from plone.dexterity.content import Container
 from plone.namedfile.field import NamedBlobImage
 from plone.supermodel import model
-from z3c.form.interfaces import IEditForm
 from zope import schema
 from zope.interface import implementer
 
@@ -58,15 +58,6 @@ class IProfileSchema(model.Schema, IUserContent):
     returned, for its own reason -- an opaque userid never changes, so the
     object never has to be renamed and no bookmark is ever stranded.
     """
-
-    userid = schema.TextLine(
-        title=_("User ID"),
-        description=_(
-            "The canonical Plone user id this profile belongs to. "
-            "Assigned once and never changed."
-        ),
-        required=True,
-    )
 
     login = schema.TextLine(
         title=_("Login name"),
@@ -113,22 +104,20 @@ class IProfileSchema(model.Schema, IUserContent):
     group_ids = schema.Tuple(
         title=_("Groups"),
         description=_(
-            "Ids of the groups this user belongs to. Membership is kept on "
-            "the member rather than on the group, so editing this field and "
+            "The groups this user belongs to. Membership is kept on the "
+            "member rather than on the group, so editing this field and "
             "calling api.group.add_user are two ways to the same place."
         ),
-        value_type=schema.TextLine(),
+        # A vocabulary rather than free text. The value is a group id and
+        # nothing checked that it named a group: the groups plugin filters an
+        # unknown id out rather than failing, so a typo produced a membership
+        # that silently granted nothing.
+        value_type=schema.Choice(vocabulary=GROUPS_VOCABULARY),
         required=False,
         missing_value=(),
         default=(),
     )
-    # Shown, never editable: an edit form offering it is an invitation to
-    # detach a Profile from the identity it belongs to. The add form still
-    # asks, because that is the one moment the answer is not yet decided.
-    mode(IEditForm, userid="display")
-
     write_permission(
-        userid="pas.plugins.identity.profile.edit",
         login="pas.plugins.identity.profile.edit",
         fullname="pas.plugins.identity.profile.edit",
         email="pas.plugins.identity.profile.edit",
@@ -139,7 +128,6 @@ class IProfileSchema(model.Schema, IUserContent):
         group_ids="pas.plugins.identity.profile.edit",
     )
     read_permission(
-        userid="pas.plugins.identity.profile.view",
         login="pas.plugins.identity.profile.view",
         fullname="pas.plugins.identity.profile.view",
         email="pas.plugins.identity.profile.viewpii",
@@ -159,6 +147,51 @@ class Profile(Container):
     a portrait, an attachment, a personal folder -- without needing a second
     content type. Nothing in this layer puts anything inside one.
     """
+
+    @property
+    def userid(self) -> str:
+        """Return the canonical userid, which is the object's own id.
+
+        Computed rather than stored, and that is a correctness fix rather
+        than tidiness. It used to be both: a required field *and* the id the
+        object is filed under, with nothing keeping the two equal. They are
+        read by different code -- :meth:`_content_user` traverses
+        ``container.get(userid)`` while the catalog indexes the field -- so a
+        rename left enumeration working and every write silently addressed to
+        nothing. One value cannot disagree with itself.
+
+        The schema no longer declares it, so no form offers it and no
+        deserializer can set it; :class:`IUserContent` promises the
+        *attribute*, which this is.
+
+        :returns: The userid.
+        """
+        return self.getId()
+
+    @userid.setter
+    def userid(self, value: str) -> None:
+        """Accept a write of the derived id, and discard it.
+
+        Nothing may change this value -- it is the object's id -- but a
+        great deal of code writes it: Dexterity's factory setattrs every
+        keyword it is handed, and every payload exported before it became
+        derived still carries the key. Raising would turn each of those into
+        a failed creation or a failed import for a value that was already
+        correct.
+
+        A write that *disagrees* with the id is a different matter, and is
+        logged: it is somebody trying to reassign a principal, which is
+        exactly what this property exists to make impossible.
+
+        :param value: The value being written, which is ignored.
+        """
+        if value and value != self.getId():
+            logger.warning(
+                "Ignoring an attempt to set a userid to %r on %r; it is "
+                "derived from the object id",
+                value,
+                self.getId(),
+            )
 
     def Title(self) -> str:
         """Return the display title.

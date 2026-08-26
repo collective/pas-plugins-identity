@@ -85,10 +85,6 @@
        is the answer "there is no profile layer here". -->
   <utility factory=".support.ProfileSupport" />
 
-  <!-- One text-line deserializer for the whole type, because that is the
-       narrowest registration there is: it refuses a userid change and hands
-       every other field straight to the default. -->
-  <adapter factory=".deserializer.ProfileTextLineDeserializer" />
 
   <!-- Volto's first-login routing question. Authenticated-only, checked in
        the service so the refusal is a JSON body rather than a login form. -->

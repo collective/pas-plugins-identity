@@ -141,7 +141,7 @@ def make_group(portal):
 
     def factory(group_id: str, title: str | None = None, **kwargs) -> object:
         return api.content.create(
-            container=portal["identity-profiles"],
+            container=kwargs.pop("container", portal["identity-profiles"]),
             type=GROUP_PORTAL_TYPE,
             id=kwargs.pop("id", group_id),
             group_id=group_id,

@@ -1,0 +1,5 @@
+Made a Profile's `userid` and a Group's `group_id` the object's own id rather than a field stored beside it.
+
+They were two values that had to be equal with nothing making them so, and they were read by different code: the PAS plugin traverses `container.get(userid)` while the catalog indexes the field. A rename changed one and not the other, after which enumeration still found the principal and every write was addressed to an object that no longer answered to that name — no error anywhere. Deriving one from the other makes that state unreachable.
+
+No form offers the value and no deserializer can write it; the property accepts a write and discards it, because Dexterity's factory sets every keyword it is handed and payloads exported earlier still carry the key, but a write that *disagrees* with the id is logged. `UseridIsPermanent` is gone with the field it guarded. Renaming is still allowed and the principal id follows the new name — what the old id was written into, from identity records to sharing entries, does not follow it. @ericof

@@ -6,4 +6,10 @@
       component=".userfields.UserFieldsVocabularyFactory"
       />
 
+  <utility
+      provides="zope.schema.interfaces.IVocabularyFactory"
+      name="pas.plugins.identity.Groups"
+      component=".groups.GroupsVocabularyFactory"
+      />
+
 </configure>

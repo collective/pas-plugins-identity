@@ -18,6 +18,7 @@ brains stops being a single lookup.
 """
 
 from pas.plugins.identity import _
+from pas.plugins.identity import logger
 from pas.plugins.identity.core.interfaces import IGroupContent
 from plone.dexterity.content import Container
 from plone.supermodel import model
@@ -35,15 +36,6 @@ class IGroupSchema(model.Schema, IGroupContent):
     placement clause the user side does -- the object's id within its
     container is the group id.
     """
-
-    group_id = schema.TextLine(
-        title=_("Group ID"),
-        description=_(
-            "The id Plone knows this group by. Assigned once and never "
-            "changed: it is what local roles and sharing settings store."
-        ),
-        required=True,
-    )
 
     title = schema.TextLine(
         title=_("Title"),
@@ -64,6 +56,45 @@ class Group(Container):
     Folderish for the same reason a Profile is: a deployment may want to file
     content under a group. Nothing in this layer puts anything inside one.
     """
+
+    @property
+    def group_id(self) -> str:
+        """Return the canonical group id, which is the object's own id.
+
+        Computed rather than stored, for the reason a Profile's ``userid``
+        is: two values that had to be equal, with nothing making them so.
+        Local roles and sharing settings store this id, so a group whose
+        field and object id had drifted apart kept its sharing entries and
+        stopped being findable by the plugin that has to remove it.
+
+        :returns: The group id.
+        """
+        return self.getId()
+
+    @group_id.setter
+    def group_id(self, value: str) -> None:
+        """Accept a write of the derived id, and discard it.
+
+        Nothing may change this value -- it is the object's id -- but a
+        great deal of code writes it: Dexterity's factory setattrs every
+        keyword it is handed, and every payload exported before it became
+        derived still carries the key. Raising would turn each of those into
+        a failed creation or a failed import for a value that was already
+        correct.
+
+        A write that *disagrees* with the id is a different matter, and is
+        logged: it is somebody trying to reassign a principal, which is
+        exactly what this property exists to make impossible.
+
+        :param value: The value being written, which is ignored.
+        """
+        if value and value != self.getId():
+            logger.warning(
+                "Ignoring an attempt to set a group id to %r on %r; it is "
+                "derived from the object id",
+                value,
+                self.getId(),
+            )
 
     def Title(self) -> str:
         """Return the display title.
