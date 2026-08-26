@@ -17,7 +17,9 @@ For why the layer is built this way, see {doc}`/concepts/profiles-and-groups`.
 ## Content types
 
 `Profile`
-:   Carries exactly the PAS property sheet: full name, email, home page, biography, and location.
+:   Carries the PAS property sheet -- full name, email, home page, biography, and location -- plus a picture in the `image` field.
+    It also carries `userid`, `login`, and `group_ids`, which are what make the object a user rather than a page about one.
+    `userid` is displayed and never editable on the edit form: an edit detaching a `Profile` from its identity is not an edit anybody means to make.
     Governed by a three-state workflow.
 
 `IdentityGroup`
@@ -122,11 +124,31 @@ They are kept apart so that the check can be scheduled read-only.
 ## Limits in version 1
 
 ```{note}
-There is no write API for group membership.
-Membership changes by editing a `Profile` and by nothing else.
-
 Group nesting is out of scope.
 A group whose members are groups makes `getGroupsForPrincipal` recursive, and a recursive answer computed from brains stops being a single lookup.
+So it is refused rather than stored.
+```
+
+## Managing membership
+
+Membership is stored in the `group_ids` field of each `Profile`.
+
+Two paths write it, and they reach the same place.
+
+`api.group.add_user` and `api.group.remove_user`
+:   The ordinary Plone API, and the {guilabel}`Users and Groups` control panel that calls it.
+    These reach the identity plugin through PlonePAS's group tool.
+
+Editing the `Profile`
+:   The `Groups` field on the edit form.
+
+Removing a group does not edit a single `Profile`.
+A `Profile` naming a group that no longer exists grants nothing, and the consistency check reports it.
+Recreating the group restores exactly the membership it had.
+
+```{note}
+Adding a group to a group is refused.
+See {ref}`reference-user-content` for why.
 ```
 
 ## Coexistence with the stock plugins

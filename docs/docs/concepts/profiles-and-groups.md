@@ -16,6 +16,7 @@ That is fine until you want a member directory, an editable profile page, or a g
 The `[profile]` extra backs users with content instead, while keeping the thing that usually goes wrong from going wrong.
 
 For the states, records, and endpoints, see {doc}`/reference/profiles`.
+For the core mechanism this extra plugs into, see {doc}`/concepts/users-as-content`.
 
 ## The thing that usually goes wrong
 

@@ -1,0 +1,3 @@
+Covered group membership through `api.group.add_user` and `api.group.remove_user` rather than through the plugin.
+
+`addPrincipalToGroup` was exercised only by calling it directly, which cannot tell whether PlonePAS's group tool ever reaches this plugin — the half that has already been wrong twice. The new tests go the way Plone goes, and one of them asserts the membership is visible to `api.group.get_groups` rather than merely written to the Profile, because recording it where nothing reads it would satisfy the other. @ericof

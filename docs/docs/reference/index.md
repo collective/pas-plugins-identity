@@ -23,6 +23,7 @@ events
 audit-log
 claims
 profiles
+user-content
 migration-reports
 security-guarantees
 ```

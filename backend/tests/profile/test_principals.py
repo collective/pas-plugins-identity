@@ -180,6 +180,44 @@ class TestTheWholePoint:
         assert "editors" in self.container
         assert self.container["editors"].portal_type == GROUP_PORTAL_TYPE
 
+    def test_api_group_add_user_records_membership(self):
+        """Through ``api.group.add_user``, not ``addPrincipalToGroup``.
+
+        The plugin-level tests in ``tests/core/pas/test_groupmanager.py``
+        cannot tell whether PlonePAS's ``GroupTool`` ever reaches this
+        plugin, which is the half that has already been wrong twice.
+        """
+        with api.env.adopt_roles(["Manager"]):
+            api.user.create(username="alice", email="alice@example.org")
+            api.group.create(groupname="editors", title="Editors")
+            api.group.add_user(groupname="editors", username="alice")
+
+        assert self.container["alice"].group_ids == ("editors",)
+
+    def test_the_membership_is_visible_to_plone(self):
+        """Written to the Profile *and* answered by the groups plugin.
+
+        Recording it where nothing reads it would pass the test above.
+        """
+        with api.env.adopt_roles(["Manager"]):
+            api.user.create(username="alice", email="alice@example.org")
+            api.group.create(groupname="editors", title="Editors")
+            api.group.add_user(groupname="editors", username="alice")
+
+        groups = [g.id for g in api.group.get_groups(username="alice")]
+
+        assert "editors" in groups
+
+    def test_api_group_remove_user_takes_it_away(self):
+        with api.env.adopt_roles(["Manager"]):
+            api.user.create(username="alice", email="alice@example.org")
+            api.group.create(groupname="editors", title="Editors")
+            api.group.add_user(groupname="editors", username="alice")
+            api.group.remove_user(groupname="editors", username="alice")
+
+        assert self.container["alice"].group_ids == ()
+        assert "editors" not in [g.id for g in api.group.get_groups(username="alice")]
+
 
 @pytest.mark.no_profile_container
 class TestTheGapThatIsLeft:

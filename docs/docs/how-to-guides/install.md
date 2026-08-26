@@ -26,7 +26,8 @@ pip install pas.plugins.identity
 
 Then install the add-on in your site, either through the add-ons control panel or by applying the `pas.plugins.identity:default` GenericSetup profile.
 
-If you want content-backed profiles and groups, install the extra as well:
+If you want content-backed profiles and groups, install the extra as well.
+It sets the four registry records described in {doc}`/reference/user-content` and points them at its own container, so there is nothing further to configure.
 
 ```shell
 pip install "pas.plugins.identity[profile]"

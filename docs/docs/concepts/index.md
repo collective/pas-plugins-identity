@@ -22,6 +22,7 @@ identities
 layers
 email-verification
 secrets
+users-as-content
 profiles-and-groups
 federation
 ```

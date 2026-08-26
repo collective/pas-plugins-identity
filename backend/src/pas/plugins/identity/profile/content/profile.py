@@ -113,8 +113,9 @@ class IProfileSchema(model.Schema, IUserContent):
     group_ids = schema.Tuple(
         title=_("Groups"),
         description=_(
-            "Ids of the groups this user belongs to. Editing this field is "
-            "the only way membership changes; there is no write API."
+            "Ids of the groups this user belongs to. Membership is kept on "
+            "the member rather than on the group, so editing this field and "
+            "calling api.group.add_user are two ways to the same place."
         ),
         value_type=schema.TextLine(),
         required=False,

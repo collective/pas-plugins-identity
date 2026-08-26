@@ -1,0 +1,3 @@
+Corrected the `Groups` field description on the `Profile` edit form, which told users something that had stopped being true.
+
+It said that editing the field was the only way membership changed and that there was no write API. `IGroupManagement` made that false: `api.group.add_user` and the {guilabel}`Users and Groups` control panel reach the identity plugin and write the same field. The description was wrong in the place most likely to be read, and the reference documentation carried the same sentence. Both now say the two paths reach the same place. @ericof
