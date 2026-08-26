@@ -221,7 +221,7 @@ demo-stack-start:  ## Demo Stack: Start the two-site federation scenario
 	@echo "  Relying party:     http://plone.localhost"
 	@echo "  Identity provider: http://id.localhost"
 	@echo ""
-	@echo "  Sign in at plone.localhost as alice / alice-demo-password."
+	@echo "  Sign in at plone.localhost as dana / dana-demo-password."
 	@echo "  She exists only on id.localhost."
 
 .PHONY: demo-stack-status

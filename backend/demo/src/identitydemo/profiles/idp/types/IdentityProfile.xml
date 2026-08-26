@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<object meta_type="Dexterity FTI"
+        name="IdentityProfile"
+>
+  <!-- The demo provider keeps its users' passwords on their own Profile.
+
+       Off in the shipped type, and rightly: source_users is where Plone has
+       always kept a credential and where twenty years of scrutiny has been
+       aimed, so a site opts in deliberately. This site is the one that has
+       to, because it is the site demonstrating that a user is a content
+       object. With the credential left in source_users, every demo user
+       would exist twice over -- as the Profile the demo is about, and as a
+       row in the store the demo says it does not need.
+
+       purge="False": this adds to the behaviors the type already ships
+       rather than replacing them, which would drop plone.shortname. -->
+  <property name="behaviors"
+            purge="False"
+  >
+    <element value="pas.plugins.identity.password" />
+  </property>
+</object>

@@ -3,10 +3,10 @@
 One module per profile, each holding only what cannot be stated as data:
 :mod:`identitydemo.setuphandlers.idp` and :mod:`identitydemo.setuphandlers.rp`.
 Registry settings live in each profile's ``registry`` XML and each site's
-principals and content are a ``plone.exportimport`` payload, so what is left
-in Python is the handful of URLs that come from the environment -- the two
-demo deployments do not agree on them, and XML cannot read an environment
-variable.
+content is a ``plone.exportimport`` payload, so what is left in Python is the
+handful of URLs that come from the environment -- the two demo deployments do
+not agree on them, and XML cannot read an environment variable -- and the
+provider's demo user, whose password is an annotation no export carries.
 
 What stays here is the one thing both profiles share.
 """

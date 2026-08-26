@@ -14,6 +14,7 @@ the automated end-to-end flow test is blocked on the token-endpoint
 authentication mismatch that bringing it up for the first time uncovered.
 """
 
+from ..conftest import DEMO_PROFILES
 from . import SERVER_PROFILE_ID
 from identitydemo import settings
 from identitydemo.setuphandlers import DemoRefused
@@ -22,10 +23,17 @@ from identitydemo.setuphandlers.idp import install_idp
 from identitydemo.setuphandlers.rp import install_rp
 from pas.plugins.identity.core.controlpanel import CALLBACK_URL_RECORD
 from pas.plugins.identity.core.controlpanel import get_provider
+from pas.plugins.identity.core.interfaces import ICredentialStorage
+from pas.plugins.identity.profile.catalog import PROFILE_PORTAL_TYPE
+from pas.plugins.identity.profile.container import TYPE_RECORD as CONTAINER_TYPE_RECORD
+from pas.plugins.identity.profile.subscribers import get_profile
 from pas.plugins.identity.server.clients import get_client
 from pas.plugins.identity.server.clients import get_clients
 from pas.plugins.identity.server.tokens import ISSUER_RECORD
 from plone import api
+from plone.app.testing import setRoles
+from plone.app.testing import TEST_USER_ID
+from tests.profile import PROFILE_ID
 
 import pytest
 
@@ -68,9 +76,13 @@ class TestInstallIdP:
         demo_registry("idp")
 
     def test_creates_the_demo_user(self):
-        """From ``principals.json``, not from four keyword arguments: the
-        payload is the shape ``plone-exporter`` writes, so the way to change
-        what the demo ships is to configure a site and export it."""
+        """Through ``api.user.create``, the seat every user goes through.
+
+        They were a ``principals.json`` payload, and the principals importer
+        creates users the way Plone always has -- which on the provider meant
+        a ``source_users`` row in the site whose point is that a user is a
+        content object.
+        """
         install_idp(self.setup_tool)
 
         user = api.user.get(userid=settings.DEMO_USER_ID)
@@ -126,6 +138,74 @@ class TestInstallIdP:
 
         assert len(get_clients()) == 1
         assert api.user.get(userid=settings.DEMO_USER_ID) is not None
+
+
+@pytest.mark.portal(profiles=[PROFILE_ID, SERVER_PROFILE_ID])
+class TestTheDemoUserIsContent:
+    """What the provider profile is *for*: a user who is a content object.
+
+    The demo user used to be imported as principals, which put them in
+    ``source_users`` -- in the one site whose whole point is that a site does
+    not need that store. This asserts the end state the profile aims at, on
+    the layers the profile depends on.
+
+    The password behavior is enabled here by hand, because the demo's own
+    ``types/IdentityProfile.xml`` cannot be applied to this site -- see the
+    ``demo_registry`` fixture for why the same compromise is made for the
+    registry. :meth:`test_the_demo_profile_enables_the_behavior` is what keeps
+    the hand-written half honest.
+    """
+
+    BEHAVIOR = "pas.plugins.identity.password"
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, monkeypatch, demo_registry):
+        monkeypatch.setenv(settings.OPT_IN_ENV, "1")
+        self.portal = portal
+        self.setup_tool = portal.portal_setup
+        setRoles(portal, TEST_USER_ID, ["Manager"])
+        demo_registry("idp")
+        # The demo keeps its Profiles in a Document, which is a container
+        # only because the demo runs plone.volto. This site does not, so the
+        # container type is the one detail of that registry this test has to
+        # disagree with -- what is under test is where the *user* lands.
+        api.portal.set_registry_record(CONTAINER_TYPE_RECORD, "Folder")
+        fti = portal.portal_types[PROFILE_PORTAL_TYPE]
+        fti.behaviors = (*fti.behaviors, self.BEHAVIOR)
+        install_idp(self.setup_tool)
+
+    def test_the_demo_user_has_a_profile(self):
+        assert get_profile(settings.DEMO_USER_ID) is not None
+
+    def test_the_demo_user_is_not_in_source_users(self):
+        """The row that turned up in the ZMI beside every demo user.
+
+        ``getUserIds`` rather than ``getUserById``: that manager answers for
+        a principal it does not hold, so it cannot show an absence.
+        """
+        assert (
+            settings.DEMO_USER_ID not in self.portal.acl_users.source_users.getUserIds()
+        )
+
+    def test_the_password_is_on_the_profile(self):
+        profile = get_profile(settings.DEMO_USER_ID)
+
+        assert ICredentialStorage(profile).check_password(settings.DEMO_USER_PASSWORD)
+
+    def test_they_can_still_sign_in(self):
+        """All of the above is only worth having if the credential still
+        works from the login form."""
+        assert self.portal.acl_users.authenticate(
+            settings.DEMO_USER_ID, settings.DEMO_USER_PASSWORD, self.portal.REQUEST
+        )
+
+    def test_the_demo_profile_enables_the_behavior(self):
+        """The half this test site cannot apply. Without it the demo would
+        keep its passwords in ``source_users`` and nothing here would say
+        so."""
+        xml = (DEMO_PROFILES / "idp/types/IdentityProfile.xml").read_text()
+
+        assert self.BEHAVIOR in xml
 
 
 class TestInstallRP:
@@ -210,14 +290,6 @@ class TestSettingsReachTheSite:
             api.portal.get_registry_record(CALLBACK_URL_RECORD)
             == settings.DEMO_REDIRECT_URI
         )
-
-
-class TestTheDemoPassword:
-    """The one field that cannot come out of the payload: an export carries
-    the hash, and a hash is not something a reader can type."""
-
-    def test_the_documented_password_is_the_one_installed(self):
-        assert settings.demo_password_matches_the_payload()
 
 
 class TestDeploymentURLs:

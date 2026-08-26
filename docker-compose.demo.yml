@@ -16,7 +16,9 @@
 #
 #   make demo-stack-start     then open http://plone.localhost
 #
-# Sign in with alice / alice-demo-password. She exists only on id.localhost.
+# Sign in with dana / dana-demo-password. They exist only on id.localhost,
+# as an IdentityProfile: this stack keeps its users, and their passwords,
+# as content rather than in source_users.
 
 name: pas-plugins-identity-demo
 

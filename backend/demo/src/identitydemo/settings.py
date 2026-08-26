@@ -23,9 +23,6 @@ between two handlers in one install would be a demo that half agrees with
 itself.
 """
 
-from pathlib import Path
-
-import json
 import os
 
 
@@ -91,33 +88,20 @@ DEMO_CLIENT_SECRET = "demo-secret-not-for-any-real-site"  # noqa: S105
 #: provider: doing so silently re-points every stored identity.
 DEMO_PROVIDER_ID = "demo-idp"
 
-#: The demo user, read from the ``plone.exportimport`` payload that creates
-#: them rather than restated here. They exist on the IdP only; the RP learns
-#: about them through the flow, which is the thing being demonstrated.
-_DEMO_MEMBER = json.loads(
-    (Path(__file__).parent / "setuphandlers/idpcontent/principals.json").read_text()
-)["members"][0]
-
-DEMO_USER_ID = _DEMO_MEMBER["username"]
-DEMO_USER_EMAIL = _DEMO_MEMBER["email"]
-DEMO_USER_FULLNAME = _DEMO_MEMBER["fullname"]
-
-#: What a reader is told to type, and therefore the one field that cannot come
-#: out of the payload: an export carries the *hash*. It round-trips correctly
-#: -- PAS re-encrypts nothing that is already encrypted -- but a hash is not
-#: something anybody can log in with, and the flow test types this.
+#: The demo user. They exist on the IdP only; the relying party learns about
+#: them through the flow, which is the thing being demonstrated.
 #:
-#: The two are kept honest by :func:`demo_password_matches_the_payload`, which
-#: the test suite asserts: re-exporting the IdP after changing Alice's
-#: password would otherwise leave this line quietly wrong.
-DEMO_USER_PASSWORD = "alice-demo-password"  # noqa: S105
+#: Four literals rather than a ``plone.exportimport`` payload, which is what
+#: this was. A payload cannot carry the one thing this user needs: their
+#: password lives in an annotation on their Profile, and an annotation is
+#: exactly what an export does not serialize -- which is the point of keeping
+#: a credential there rather than in a field. Importing them as principals
+#: instead is what the old payload did, and that is how the provider ended up
+#: with its demo user in ``source_users``: the store this demo exists to show
+#: a site does not need.
+DEMO_USER_ID = "dana"
+DEMO_USER_EMAIL = "dana@id.localhost"
+DEMO_USER_FULLNAME = "Dana Example"
 
-
-def demo_password_matches_the_payload() -> bool:
-    """Whether :data:`DEMO_USER_PASSWORD` is the one the payload installs.
-
-    :returns: Whether the stored hash validates the documented password.
-    """
-    from AccessControl import AuthEncoding
-
-    return bool(AuthEncoding.pw_validate(_DEMO_MEMBER["password"], DEMO_USER_PASSWORD))
+#: What a reader is told to type, and what the flow test types.
+DEMO_USER_PASSWORD = "dana-demo-password"  # noqa: S105

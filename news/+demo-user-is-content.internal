@@ -1,0 +1,1 @@
+Renamed the demo stack's sign-in user to `dana`, whose password lives on their own Profile rather than in `source_users`. @ericof

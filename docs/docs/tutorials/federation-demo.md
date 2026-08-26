@@ -50,8 +50,8 @@ Sign in as:
 
 | Field | Value |
 | --- | --- |
-| Username | `alice` |
-| Password | `alice-demo-password` |
+| Username | `dana` |
+| Password | `dana-demo-password` |
 
 A consent screen appears, rendered by the provider's own frontend in the provider's own look.
 It names the relying party and lists what that party is asking for.
