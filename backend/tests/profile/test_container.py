@@ -176,12 +176,17 @@ class TestContainerTypeFallback:
     def test_the_configured_type_is_used_when_it_is_allowed(self):
         """The ordinary case, and the only one on a site whose structure
         somebody has thought about."""
-        assert container._creatable_type(self.portal, "Folder") == "Folder"
+        assert (
+            container._creatable_type(self.portal, "Folder", container.TYPE_RECORD)
+            == "Folder"
+        )
 
     def test_a_disallowed_type_falls_back_to_one_the_parent_takes(self):
         """``Document`` is first in the fallback order because it is the
         folderish type a Volto site has."""
-        chosen = container._creatable_type(self.portal, "NoSuchType")
+        chosen = container._creatable_type(
+            self.portal, "NoSuchType", container.TYPE_RECORD
+        )
 
         assert chosen == "Document"
 
@@ -199,4 +204,4 @@ class TestContainerTypeFallback:
                 return ("", "Plone")
 
         with pytest.raises(container.ContainerNotFound, match="container_type"):
-            container._creatable_type(NoTypesAllowed(), "Folder")
+            container._creatable_type(NoTypesAllowed(), "Folder", container.TYPE_RECORD)

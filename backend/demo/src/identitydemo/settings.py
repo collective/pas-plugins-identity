@@ -105,21 +105,3 @@ DEMO_USER_FULLNAME = "Dana Example"
 
 #: What a reader is told to type, and what the flow test types.
 DEMO_USER_PASSWORD = "dana-demo-password"  # noqa: S105
-
-#: The demo group, and the role it carries.
-#:
-#: A group here is a content object, the same bargain the demo user is: it
-#: lives beside the Profiles rather than in ``source_groups``, and membership
-#: is a field on the *member* rather than a list on the group. Created through
-#: ``api.group.create`` for the reason the user is created through
-#: ``api.user.create`` -- a principals payload would import it the way Plone
-#: has always made groups, into the store this demo exists to show a site
-#: does not need.
-#:
-#: It carries a role so that belonging to it *does* something. A group with no
-#: role demonstrates that groups can exist, which is not the interesting
-#: claim; this one is why the demo user can edit the provider's own content.
-DEMO_GROUP_ID = "site-editors"
-DEMO_GROUP_TITLE = "Site Editors"
-DEMO_GROUP_DESCRIPTION = "Demo group: its members may edit this site."
-DEMO_GROUP_ROLES = ("Editor",)

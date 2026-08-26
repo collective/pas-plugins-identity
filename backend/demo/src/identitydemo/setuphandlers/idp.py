@@ -44,7 +44,7 @@ IDP_CONTENT = Path(__file__).parent / "idpcontent"
 
 
 def install_idp(context: SetupTool) -> None:
-    """Create the demo principals and import the identity provider's content.
+    """Create the demo user and import the identity provider's content.
 
     Idempotent, so re-running the profile against a warm volume is safe: the
     user is created only when they are not there, and the content importer
@@ -62,7 +62,6 @@ def install_idp(context: SetupTool) -> None:
     """
     _ensure_profile_container()
     _create_demo_user()
-    _create_demo_group()
 
     importer = importers.get_importer(api.portal.get())
     for line in importer.import_site(IDP_CONTENT):
@@ -91,59 +90,6 @@ def _create_demo_user() -> None:
         properties={"fullname": settings.DEMO_USER_FULLNAME},
     )
     logger.info("Created the demo user %s", settings.DEMO_USER_ID)
-
-
-def _create_demo_group() -> None:
-    """Create the demo group and put the demo user in it.
-
-    Through ``api.group.create``, for the reason the user goes through
-    ``api.user.create``: PAS's adder chain reaches this package's plugin,
-    which creates the group as content beside the Profiles. A principals
-    payload would have made it a ``source_groups`` row instead -- the store
-    this site exists to demonstrate doing without.
-
-    The group carries a role, and the membership is written to the *member*:
-    ``addPrincipalToGroup`` appends to the Profile's ``group_ids``, because
-    ``getGroupsForPrincipal`` is the question Plone actually asks, and asking
-    it of the member answers it in one lookup.
-
-    Idempotent in three separate steps rather than one, since a warm volume
-    may have any of them already: the group, the role grant, and the
-    membership are each checked before being written.
-    """
-    if api.group.get(groupname=settings.DEMO_GROUP_ID) is None:
-        api.group.create(
-            groupname=settings.DEMO_GROUP_ID,
-            title=settings.DEMO_GROUP_TITLE,
-            description=settings.DEMO_GROUP_DESCRIPTION,
-        )
-        logger.info("Created the demo group %s", settings.DEMO_GROUP_ID)
-
-    group = api.group.get(groupname=settings.DEMO_GROUP_ID)
-    if group is None:
-        # The adder declined and nothing else claimed it. Worth saying out
-        # loud: the demo still works, but the one thing this group is here to
-        # show -- a group that is content -- is not what the site has.
-        logger.warning(
-            "Demo group %s was not created; skipping its role and membership",
-            settings.DEMO_GROUP_ID,
-        )
-        return
-
-    granted = set(api.group.get_roles(group=group))
-    missing = [role for role in settings.DEMO_GROUP_ROLES if role not in granted]
-    if missing:
-        api.group.grant_roles(group=group, roles=missing)
-        logger.info("Granted %s to %s", missing, settings.DEMO_GROUP_ID)
-
-    user = api.user.get(userid=settings.DEMO_USER_ID)
-    if user is None:
-        return
-    # `get_groups` answers with GroupData objects, not ids.
-    member_of = {group.getId() for group in api.group.get_groups(user=user)}
-    if settings.DEMO_GROUP_ID not in member_of:
-        api.group.add_user(group=group, user=user)
-        logger.info("Added %s to %s", settings.DEMO_USER_ID, settings.DEMO_GROUP_ID)
 
 
 def _ensure_profile_container() -> None:

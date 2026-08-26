@@ -92,6 +92,44 @@ class IProfileSettings(Interface):
         default="Folder",
     )
 
+    group_container_parent = schema.TextLine(
+        title=_("Group container parent"),
+        description=_(
+            "Path of the folder the group container lives in, relative to "
+            "the site root. Only read when a group container id is set."
+        ),
+        required=False,
+        default="",
+    )
+
+    group_container_id = schema.TextLine(
+        title=_("Group container id"),
+        description=_(
+            "Id of the folder holding groups. Empty means groups are filed "
+            "with the profiles, which is what a site that has not thought "
+            "about it wants."
+        ),
+        required=False,
+        default="",
+    )
+
+    group_container_title = schema.TextLine(
+        title=_("Group container title"),
+        description=_(
+            "Title given to the group container when this add-on creates it. "
+            "Changing it later does not rename an existing folder."
+        ),
+        required=False,
+        default="Groups",
+    )
+
+    group_container_type = schema.TextLine(
+        title=_("Group container type"),
+        description=_("Portal type used when this add-on creates the group container."),
+        required=False,
+        default="Folder",
+    )
+
     profile_enumeration_states = schema.Tuple(
         title=_("Enumeration-active states"),
         description=_(

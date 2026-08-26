@@ -1,0 +1,34 @@
+{
+  "@id": "/groups/foundation-members",
+  "@type": "IdentityGroup",
+  "UID": "2ba7e8383b1840ddb3c427e5220626c1",
+  "allow_discussion": null,
+  "created": "2026-08-26T19:29:17+00:00",
+  "description": "Members of our Foundation",
+  "exportimport.constrains": {},
+  "exportimport.conversation": [],
+  "group_id": "foundation-members",
+  "id": "foundation-members",
+  "is_folderish": true,
+  "language": "##DEFAULT##",
+  "layout": "view",
+  "lock": {},
+  "modified": "2026-08-26T19:29:17+00:00",
+  "review_state": "active",
+  "title": "Foundation Members",
+  "type_title": "Identity Group",
+  "version": "current",
+  "workflow_history": {
+    "identity_group_workflow": [
+      {
+        "action": null,
+        "actor": "admin",
+        "comments": "",
+        "review_state": "active",
+        "time": "2026-08-26T19:29:17+00:00"
+      }
+    ]
+  },
+  "working_copy": null,
+  "working_copy_of": null
+}

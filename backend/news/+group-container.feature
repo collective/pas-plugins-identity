@@ -1,0 +1,3 @@
+Added a container of their own for groups. `group_container_id` and its three companions mirror the profile container's records, and they default to the profile container — so a site that has not asked for anything keeps filing principals together, with no migration and nothing to set.
+
+Core is now told about the two separately: users resolve through the profile container's path and groups through the group container's. Until this, both records were pointed at one derived path, and a site that put its groups anywhere else got a half-working result rather than a refusal — enumeration reads the catalog, which is not scoped to a container, so the groups listed correctly and every write to one failed. @ericof

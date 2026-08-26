@@ -1,4 +1,4 @@
-"""Where Profiles are stored, and who decides.
+"""Where Profiles and Groups are stored, and who decides.
 
 The add-on does not get to dictate the site's structure, so the container's
 parent, id, title and type are all registry records rather than constants. A
@@ -14,6 +14,13 @@ anybody.
 
 What the container *is* for is answering "where does a new Profile go" --
 asked at install and at first login and nowhere else.
+
+Groups get their own four records, and they default to the Profile
+container's. A site that wants principals filed together sets nothing and
+gets exactly what it had; a site that wants ``/groups`` beside ``/profiles``
+sets ``group_container_id`` and core follows. The defaulting is what keeps
+this from being a migration: an existing site has no group records set, and
+the group container it resolves to is the one its groups are already in.
 """
 
 from pas.plugins.identity import logger
@@ -41,6 +48,37 @@ TITLE_RECORD = f"{PREFIX}.profile_container_title"
 #: ``portal_type`` used when this package creates the container.
 TYPE_RECORD = f"{PREFIX}.profile_container_type"
 
+#: The two kinds of principal container this layer knows about. A kind names
+#: the record set to read; everything else about them is identical.
+PROFILE = "profile"
+GROUP = "group"
+
+#: Where a group container's parent lives. Empty falls back to the Profile
+#: container's parent, as do the three below -- see the module docstring.
+GROUP_PARENT_RECORD = f"{PREFIX}.group_container_parent"
+
+#: Id of the group container within its parent. This is the record that
+#: decides whether groups have a container of their own at all: empty means
+#: they share the Profile container.
+GROUP_ID_RECORD = f"{PREFIX}.group_container_id"
+
+#: Title given to the group container when this package creates it.
+GROUP_TITLE_RECORD = f"{PREFIX}.group_container_title"
+
+#: ``portal_type`` used when this package creates the group container.
+GROUP_TYPE_RECORD = f"{PREFIX}.group_container_type"
+
+#: Record names per kind, in the order :func:`settings` reads them.
+RECORDS = {
+    PROFILE: (PARENT_RECORD, ID_RECORD, TITLE_RECORD, TYPE_RECORD),
+    GROUP: (
+        GROUP_PARENT_RECORD,
+        GROUP_ID_RECORD,
+        GROUP_TITLE_RECORD,
+        GROUP_TYPE_RECORD,
+    ),
+}
+
 #: Types tried, in order, when the configured one may not be added where the
 #: container goes. ``Document`` is first because it is the folderish type a
 #: Volto site has, and Volto is the distribution that makes the default
@@ -52,38 +90,54 @@ class ContainerNotFound(LookupError):
     """The configured parent path does not resolve to a folder in this site."""
 
 
-def settings() -> dict[str, str]:
-    """Read the four container settings from the registry.
+def settings(kind: str = PROFILE) -> dict[str, str]:
+    """Read a container's four settings from the registry.
 
+    A group container with no id of its own *is* the Profile container, and
+    the fallback is whole rather than per-record: a site that names a group
+    container but no parent for it means "beside the Profiles", not "at the
+    portal root". Mixing the two record sets would make the group container's
+    location depend on which of its four records happened to be set.
+
+    :param kind: :data:`PROFILE` or :data:`GROUP`.
     :returns: Mapping with ``parent``, ``id``, ``title`` and ``type``.
     """
+    parent_record, id_record, title_record, type_record = RECORDS[kind]
+    if (
+        kind == GROUP
+        and not (api.portal.get_registry_record(id_record, default="") or "").strip()
+    ):
+        return settings(PROFILE)
     return {
-        "parent": (api.portal.get_registry_record(PARENT_RECORD) or "").strip("/"),
-        "id": api.portal.get_registry_record(ID_RECORD),
-        "title": api.portal.get_registry_record(TITLE_RECORD),
-        "type": api.portal.get_registry_record(TYPE_RECORD),
+        "parent": (
+            api.portal.get_registry_record(parent_record, default="") or ""
+        ).strip("/"),
+        "id": api.portal.get_registry_record(id_record),
+        "title": api.portal.get_registry_record(title_record),
+        "type": api.portal.get_registry_record(type_record),
     }
 
 
-def get_parent() -> PloneSite | Container:
-    """Return the object the container lives in.
+def get_parent(kind: str = PROFILE) -> PloneSite | Container:
+    """Return the object a container lives in.
 
+    :param kind: :data:`PROFILE` or :data:`GROUP`.
     :returns: The portal root, or the folder named by the parent record.
     :raises ContainerNotFound: If the configured path does not resolve.
     """
     portal = api.portal.get()
-    path = settings()["parent"]
+    path = settings(kind)["parent"]
     if not path:
         return portal
     parent = portal.unrestrictedTraverse(path, None)
     if parent is None:
         raise ContainerNotFound(
-            f"{PARENT_RECORD} points at {path!r}, which does not exist in this site."
+            f"{RECORDS[kind][0]} points at {path!r}, which does not exist in this site."
         )
     return parent
 
 
-def _creatable_type(parent, configured: str) -> str:
+def _creatable_type(parent, configured: str, type_record: str) -> str:
     """Return a container type that may actually be added to ``parent``.
 
     The configured type is used whenever the parent allows it, which is the
@@ -98,8 +152,9 @@ def _creatable_type(parent, configured: str) -> str:
     package ships, that is not an edge case to document.
 
     :param parent: The object the container will be created in.
-    :param configured: The type named by the ``profile_container_type``
-        record.
+    :param configured: The type named by the container's type record.
+    :param type_record: That record's name, so the message names the record
+        an operator would actually change.
     :returns: The configured type, or the first allowed fallback.
     :raises ContainerNotFound: When nothing addable here can hold Profiles.
     """
@@ -110,9 +165,9 @@ def _creatable_type(parent, configured: str) -> str:
     for fallback in CONTAINER_TYPE_FALLBACKS:
         if fallback in allowed:
             logger.info(
-                "%s is %r, which %s does not allow; creating the Profile "
+                "%s is %r, which %s does not allow; creating the "
                 "container as %r instead. Set the record to silence this.",
-                TYPE_RECORD,
+                type_record,
                 configured,
                 "/".join(parent.getPhysicalPath()),
                 fallback,
@@ -120,31 +175,33 @@ def _creatable_type(parent, configured: str) -> str:
             return fallback
 
     raise ContainerNotFound(
-        f"{TYPE_RECORD} is {configured!r}, which cannot be added to "
+        f"{type_record} is {configured!r}, which cannot be added to "
         f"{'/'.join(parent.getPhysicalPath())}, and none of "
         f"{CONTAINER_TYPE_FALLBACKS} can either. Allowed here: {allowed}."
     )
 
 
-def get_container(create: bool = False) -> Container | None:
-    """Return the configured Profile container.
+def get_container(create: bool = False, kind: str = PROFILE) -> Container | None:
+    """Return a configured principal container.
 
     :param create: Create the container when it is missing. Off by default so
         that read paths -- the consistency check, the control panel -- can ask
         without a side effect.
+    :param kind: :data:`PROFILE` or :data:`GROUP`. Defaulted, and left as the
+        second argument, so every existing caller keeps working unchanged.
     :returns: The container, or ``None`` when it does not exist and ``create``
         is false.
     :raises ContainerNotFound: If the configured parent path does not resolve.
     """
-    parent = get_parent()
-    config = settings()
+    parent = get_parent(kind)
+    config = settings(kind)
     container = parent.get(config["id"])
     if container is not None or not create:
         return container
 
     container = api.content.create(
         container=parent,
-        type=_creatable_type(parent, config["type"]),
+        type=_creatable_type(parent, config["type"], RECORDS[kind][3]),
         id=config["id"],
         title=config["title"],
     )
@@ -158,7 +215,9 @@ def get_container(create: bool = False) -> Container | None:
         container.exclude_from_nav = True
         container.reindexObject(idxs=["exclude_from_nav"])
     logger.info(
-        "Created profile container at %s", "/".join(container.getPhysicalPath())
+        "Created %s container at %s",
+        kind,
+        "/".join(container.getPhysicalPath()),
     )
     return container
 

@@ -1,0 +1,80 @@
+{
+  "@id": "/groups",
+  "@type": "Document",
+  "UID": "70421372580d42948e63f41bd392df69",
+  "allow_discussion": null,
+  "blocks": {
+    "1496a737-808a-4525-996a-b709d74a61c7": {
+      "@type": "description"
+    },
+    "768914a6-dd53-4679-b1c9-864222fb9fd9": {
+      "@type": "title"
+    },
+    "92f682f9-3837-4742-a851-6be1c6390327": {
+      "@type": "slate"
+    },
+    "b77b2c4a-4488-4d91-9161-8efd16d42f37": {
+      "@type": "listing",
+      "headlineTag": "h2",
+      "variation": "default"
+    }
+  },
+  "blocks_layout": {
+    "items": [
+      "768914a6-dd53-4679-b1c9-864222fb9fd9",
+      "1496a737-808a-4525-996a-b709d74a61c7",
+      "b77b2c4a-4488-4d91-9161-8efd16d42f37",
+      "92f682f9-3837-4742-a851-6be1c6390327"
+    ]
+  },
+  "changeNote": "",
+  "contributors": [],
+  "created": "2026-08-26T19:27:49+00:00",
+  "creators": [
+    "admin"
+  ],
+  "description": "Groups management",
+  "effective": "2026-08-26T19:27:52+00:00",
+  "exclude_from_nav": false,
+  "expires": null,
+  "exportimport.constrains": {},
+  "exportimport.conversation": [],
+  "id": "groups",
+  "is_folderish": true,
+  "language": "##DEFAULT##",
+  "layout": "document_view",
+  "lock": {
+    "locked": false,
+    "stealable": true
+  },
+  "modified": "2026-08-26T19:31:32+00:00",
+  "nav_title": null,
+  "preview_caption_link": null,
+  "review_state": "published",
+  "rights": "",
+  "subjects": [],
+  "title": "Groups",
+  "type_title": "Page",
+  "version": "current",
+  "versioning_enabled": true,
+  "workflow_history": {
+    "simple_publication_workflow": [
+      {
+        "action": null,
+        "actor": "admin",
+        "comments": "",
+        "review_state": "private",
+        "time": "2026-08-26T19:27:49+00:00"
+      },
+      {
+        "action": "publish",
+        "actor": "admin",
+        "comments": "",
+        "review_state": "published",
+        "time": "2026-08-26T19:27:52+00:00"
+      }
+    ]
+  },
+  "working_copy": null,
+  "working_copy_of": null
+}

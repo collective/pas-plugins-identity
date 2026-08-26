@@ -1,12 +1,23 @@
 {
   "__version__": "1.0.0",
-  "_blob_files_": [],
+  "_blob_files_": [
+  ],
   "_data_files_": [
     "plone_site_root/data.json",
-    "f2fbfb7fe7f84769949330ee4bc0742b/data.json"
+    "70421372580d42948e63f41bd392df69/data.json",
+    "8faf22ec110d4741b630f9bfd928668b/data.json",
+    "2ba7e8383b1840ddb3c427e5220626c1/data.json",
+    "968a46f9de13413ba2b811a004fe8284/data.json",
+    "f2fbfb7fe7f84769949330ee4bc0742b/data.json",
+    "6b157a7d054948568fb8c6c148593f7b/data.json"
   ],
   "default_page": {},
   "local_permissions": {
+    "2ba7e8383b1840ddb3c427e5220626c1": {},
+    "6b157a7d054948568fb8c6c148593f7b": {},
+    "70421372580d42948e63f41bd392df69": {},
+    "8faf22ec110d4741b630f9bfd928668b": {},
+    "968a46f9de13413ba2b811a004fe8284": {},
     "f2fbfb7fe7f84769949330ee4bc0742b": {},
     "plone_site_root": {
       "Add portal member": {
@@ -90,6 +101,48 @@
     }
   },
   "local_roles": {
+    "2ba7e8383b1840ddb3c427e5220626c1": {
+      "local_roles": {
+        "admin": [
+          "Owner"
+        ]
+      }
+    },
+    "6b157a7d054948568fb8c6c148593f7b": {
+      "local_roles": {
+        "admin": [
+          "Owner"
+        ]
+      }
+    },
+    "70421372580d42948e63f41bd392df69": {
+      "local_roles": {
+        "admin": [
+          "Owner"
+        ]
+      }
+    },
+    "8faf22ec110d4741b630f9bfd928668b": {
+      "local_roles": {
+        "admin": [
+          "Owner"
+        ]
+      }
+    },
+    "968a46f9de13413ba2b811a004fe8284": {
+      "local_roles": {
+        "admin": [
+          "Owner"
+        ]
+      }
+    },
+    "f2fbfb7fe7f84769949330ee4bc0742b": {
+      "local_roles": {
+        "admin": [
+          "Owner"
+        ]
+      }
+    },
     "plone_site_root": {
       "local_roles": {
         "admin": [
@@ -99,6 +152,11 @@
     }
   },
   "ordering": {
+    "2ba7e8383b1840ddb3c427e5220626c1": 1,
+    "6b157a7d054948568fb8c6c148593f7b": 0,
+    "70421372580d42948e63f41bd392df69": 43,
+    "8faf22ec110d4741b630f9bfd928668b": 2,
+    "968a46f9de13413ba2b811a004fe8284": 0,
     "f2fbfb7fe7f84769949330ee4bc0742b": 42
   },
   "relations": []

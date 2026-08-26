@@ -35,27 +35,37 @@ from pas.plugins.identity.core.pas.plugin import USER_CONTAINER_PATH_RECORD
 from pas.plugins.identity.core.pas.plugin import USER_CONTENT_TYPE_RECORD
 from pas.plugins.identity.profile.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.profile.catalog import PROFILE_PORTAL_TYPE
+from pas.plugins.identity.profile.container import GROUP
+from pas.plugins.identity.profile.container import GROUP_ID_RECORD
+from pas.plugins.identity.profile.container import GROUP_PARENT_RECORD
 from pas.plugins.identity.profile.container import ID_RECORD
 from pas.plugins.identity.profile.container import PARENT_RECORD
+from pas.plugins.identity.profile.container import PROFILE
 from pas.plugins.identity.profile.container import settings
 from plone import api
 
 
 #: The records whose value the container path is derived from. A change to
 #: either one has to be followed.
-WATCHED_RECORDS = frozenset({PARENT_RECORD, ID_RECORD})
+WATCHED_RECORDS = frozenset({
+    PARENT_RECORD,
+    ID_RECORD,
+    GROUP_PARENT_RECORD,
+    GROUP_ID_RECORD,
+})
 
 
-def container_path() -> str:
-    """Return the Profile container's path, relative to the site root.
+def container_path(kind: str = PROFILE) -> str:
+    """Return a principal container's path, relative to the site root.
 
     Derived rather than stored, so it cannot drift from the settings it comes
     from. Names where the container *will* be when it does not exist yet,
     which is what lets core decline cleanly instead of guessing.
 
+    :param kind: :data:`PROFILE` or :data:`GROUP`.
     :returns: The path, without a leading slash.
     """
-    config = settings()
+    config = settings(kind)
     parent = (config["parent"] or "").strip("/")
     container_id = (config["id"] or "").strip("/")
     if not container_id:
@@ -66,17 +76,27 @@ def container_path() -> str:
 def sync_core_records() -> None:
     """Point core's four principal records at this layer.
 
-    Idempotent, and safe to call before the container exists.
+    Users and groups are pointed separately now that they may be filed apart.
+    On a site that has not asked for that they resolve to the same path, which
+    is what the group settings falling back to the Profile ones buys: nothing
+    to migrate, and one place to look when they differ.
+
+    Idempotent, and safe to call before either container exists.
     """
-    path = container_path()
+    profile_path = container_path(PROFILE)
+    group_path = container_path(GROUP)
     for record, value in (
         (USER_CONTENT_TYPE_RECORD, PROFILE_PORTAL_TYPE),
-        (USER_CONTAINER_PATH_RECORD, path),
+        (USER_CONTAINER_PATH_RECORD, profile_path),
         (GROUP_CONTENT_TYPE_RECORD, GROUP_PORTAL_TYPE),
-        (GROUP_CONTAINER_PATH_RECORD, path),
+        (GROUP_CONTAINER_PATH_RECORD, group_path),
     ):
         api.portal.set_registry_record(record, value)
-    logger.info("Core principal records now point at %r", path)
+    logger.info(
+        "Core principal records now point at %r for users and %r for groups",
+        profile_path,
+        group_path,
+    )
 
 
 def clear_core_records() -> None:

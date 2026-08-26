@@ -1,0 +1,42 @@
+{
+  "@id": "/profiles/dana",
+  "@type": "IdentityProfile",
+  "UID": "6b157a7d054948568fb8c6c148593f7b",
+  "allow_discussion": null,
+  "created": "2026-08-26T19:14:41+00:00",
+  "description": "",
+  "email": "dana@id.localhost",
+  "exportimport.constrains": {},
+  "exportimport.conversation": [],
+  "fullname": "Dana Example",
+  "group_ids": [
+    "site-editors"
+  ],
+  "home_page": null,
+  "id": "dana",
+  "image": null,
+  "is_folderish": true,
+  "language": "##DEFAULT##",
+  "layout": "view",
+  "location": null,
+  "lock": {},
+  "login": "dana",
+  "modified": "2026-08-26T19:15:59+00:00",
+  "review_state": "incomplete",
+  "type_title": "Identity Profile",
+  "userid": "dana",
+  "version": "current",
+  "workflow_history": {
+    "identity_profile_workflow": [
+      {
+        "action": null,
+        "actor": "admin",
+        "comments": "",
+        "review_state": "incomplete",
+        "time": "2026-08-26T19:14:41+00:00"
+      }
+    ]
+  },
+  "working_copy": null,
+  "working_copy_of": null
+}

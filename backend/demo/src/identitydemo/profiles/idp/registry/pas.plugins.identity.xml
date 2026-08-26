@@ -15,6 +15,9 @@
     <value key="group_enumeration_states">
       <element>active</element>
     </value>
+    <value key="group_container_id">groups</value>
+    <value key="group_container_title">Groups</value>
+    <value key="group_container_type">Document</value>
     <value key="profile_container_id">profiles</value>
     <value key="profile_container_parent" />
     <value key="profile_container_title">Profiles</value>
