@@ -23,11 +23,13 @@ from pas.plugins.identity.profile.interfaces import IProfileSettings
 from pas.plugins.identity.profile.pas import IdentityProfilePlugin
 from pas.plugins.identity.profile.pas import PLUGIN_ID
 from pas.plugins.identity.profile.pas import PLUGIN_TITLE
+from pas.plugins.identity.profile.principals import clear_core_records
+from pas.plugins.identity.profile.principals import sync_core_records
 from pas.plugins.identity.setuphandlers import register_settings
 from plone import api
 from Products.GenericSetup.tool import SetupTool
-from Products.PluggableAuthService.interfaces.plugins import IGroupEnumerationPlugin
 from Products.PlonePAS.interfaces.group import IGroupIntrospection
+from Products.PluggableAuthService.interfaces.plugins import IGroupEnumerationPlugin
 from Products.PluggableAuthService.interfaces.plugins import IGroupsPlugin
 from Products.PluggableAuthService.interfaces.plugins import IPropertiesPlugin
 from Products.PluggableAuthService.interfaces.plugins import IUserEnumerationPlugin
@@ -191,6 +193,10 @@ def post_install(context: SetupTool) -> None:
     add_indexes(catalog)
     add_metadata(catalog)
     install_plugin(api.portal.get_tool("acl_users"))
+    # The subscriber in `.principals` has already run for any container
+    # setting this profile's registry.xml wrote. Doing it again here covers
+    # the site that reinstalls without changing one, and costs a write.
+    sync_core_records()
 
 
 def rebuild_catalog(context: SetupTool) -> None:
@@ -225,4 +231,7 @@ def post_uninstall(context: SetupTool) -> None:
     :param context: The setup tool running the import.
     """
     uninstall_plugin(api.portal.get_tool("acl_users"))
+    # Adding users and groups goes back to the stock plugins. The content
+    # stays, so a reinstall finds it again.
+    clear_core_records()
     logger.info("Uninstalled the profile layer; Profile content was left in place.")

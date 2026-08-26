@@ -113,6 +113,15 @@
       name="@users"
       />
 
+  <!-- Where Profiles live is configurable and set late. A layered profile
+       may move the container after this package's handler has run, so the
+       core record naming it is derived and re-derived rather than written
+       once. See .principals. -->
+  <subscriber
+      for="plone.registry.interfaces.IRecordModifiedEvent"
+      handler=".principals.on_container_setting_changed"
+      />
+
   <!-- The read side of the same decision. plone.restapi's @portrait reads
        portal_memberdata only, so it answered 404 for a user whose picture is
        on their Profile - including when the [server] layer publishes this

@@ -6,9 +6,11 @@ in: ``getGroupsForPrincipal`` is called constantly and
 ``getGroupMembers`` rarely, so keeping membership on the member means the hot
 question is answered by one brain and the rare one by a catalog query.
 
-Membership is changed by editing a Profile and nothing else. ``IGroupManagement``
-is explicitly out of scope for v1, so there is no write API here and no
-way to acquire one by accident.
+Membership lives on the Profile, and a group is never edited to change it.
+Core implements ``IGroupManagement`` over this type -- creating and removing
+the content, and writing membership to the *user* -- so a group can be added
+through ``api.group.create`` like any other. What core will not do is nest
+one group inside another, for the reason below.
 
 No nesting in v1 either: a group whose members are groups makes
 ``getGroupsForPrincipal`` recursive, and a recursive answer computed from
@@ -16,14 +18,23 @@ brains stops being a single lookup.
 """
 
 from pas.plugins.identity import _
+from pas.plugins.identity.core.interfaces import IGroupContent
 from plone.dexterity.content import Container
 from plone.supermodel import model
 from zope import schema
 from zope.interface import implementer
 
 
-class IGroupSchema(model.Schema):
-    """Schema of the Group content type."""
+class IGroupSchema(model.Schema, IGroupContent):
+    """Schema of the Group content type.
+
+    Extends :class:`~pas.plugins.identity.core.interfaces.IGroupContent`,
+    which is how core knows objects of this type are groups and may create
+    and remove them. ``group_id`` was already declared here; claiming the
+    marker states the contract rather than adding to it, and carries the
+    placement clause the user side does -- the object's id within its
+    container is the group id.
+    """
 
     group_id = schema.TextLine(
         title=_("Group ID"),

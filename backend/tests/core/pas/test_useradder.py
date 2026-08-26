@@ -135,6 +135,28 @@ class TestAConfiguredSite:
 
         assert api.user.get(userid="alice") is not None
 
+    def test_the_password_reaches_source_users(self):
+        """Otherwise adding a user through the ordinary API would produce
+        somebody who cannot sign in, which is a regression dressed as a
+        feature."""
+        self.plugin.doAddUser("alice", "hunter2")
+
+        assert (
+            self.portal.acl_users.source_users.authenticateCredentials({
+                "login": "alice",
+                "password": "hunter2",
+            })
+            is not None
+        )
+
+    def test_no_credential_is_stored_without_a_password(self):
+        """An externally authenticated user has none, and a blank string is
+        not a credential."""
+        self.plugin.doAddUser("bob", "")
+
+        assert "bob" not in self.portal.acl_users.source_users.getUserIds()
+        assert "bob" in self.portal[USERS]
+
     def test_the_password_is_not_stored_on_the_content(self):
         """Core creates the record a user *is*. Where a credential lives is
         a separate decision, and a content object is not the default answer."""

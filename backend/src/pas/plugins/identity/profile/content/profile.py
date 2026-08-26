@@ -31,6 +31,7 @@ from catalog metadata, and a blob has no business in a brain.
 """
 
 from pas.plugins.identity import _
+from pas.plugins.identity.core.interfaces import IUserContent
 from plone.autoform.directives import mode
 from plone.autoform.directives import read_permission
 from plone.autoform.directives import write_permission
@@ -42,8 +43,21 @@ from zope import schema
 from zope.interface import implementer
 
 
-class IProfileSchema(model.Schema):
-    """Schema of the Profile content type."""
+class IProfileSchema(model.Schema, IUserContent):
+    """Schema of the Profile content type.
+
+    Extends :class:`~pas.plugins.identity.core.interfaces.IUserContent`,
+    which is how core knows objects of this type are users and may create
+    them. The three attributes that interface promises -- ``userid``,
+    ``login`` and ``group_ids`` -- are declared below and were already here;
+    claiming the marker states the contract rather than adding to it.
+
+    The fourth clause is about placement rather than fields: the object's id
+    within its container is the userid. That is what
+    :func:`~pas.plugins.identity.profile.subscribers._profile_id` has always
+    returned, for its own reason -- an opaque userid never changes, so the
+    object never has to be renamed and no bookmark is ever stranded.
+    """
 
     userid = schema.TextLine(
         title=_("User ID"),

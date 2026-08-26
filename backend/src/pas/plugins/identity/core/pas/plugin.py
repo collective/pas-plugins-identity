@@ -413,8 +413,42 @@ class IdentityPlugin(BasePlugin):
                 userid=login,
                 login=login,
             )
+        self._delegate_credential(login, password)
         logger.info("Created %s %r for %s", portal_type, login, login)
         return True
+
+    def _delegate_credential(self, login: str, password: str) -> None:
+        """Put the password where a password can live.
+
+        Not on the content object. A Dexterity field holding a credential is
+        serialized by ``plone.restapi``, exported by GenericSetup, indexable
+        and snapshotted by versioning -- four separate paths that each fail by
+        disclosing it. So the content object is the record a user *is*, and
+        ``source_users`` stays the credential store.
+
+        This is not a compromise reached here: it is what
+        :meth:`_create_plone_user` already does for externally authenticated
+        users, who get a content-free ``source_users`` account holding a
+        placeholder. The two paths agree, and a site adding a user through
+        the ordinary API ends up with someone who can actually sign in.
+
+        A site that would rather keep credentials on the content type opts
+        into a behavior that does so, and this step then has nothing to do.
+
+        :param login: The login name, which is also the userid.
+        :param password: The password PAS was given. Nothing is stored when
+            it is empty -- an externally authenticated user has none, and a
+            blank one is not a credential.
+        """
+        if not password:
+            return
+        try:
+            self._source_users().addUser(login, login, password)
+        except KeyError:
+            # Already there. PAS asked us to add a user it does not think
+            # exists, so the content object is the new half; refusing the
+            # whole thing over an existing credential would be worse.
+            logger.info("%s already has a source_users credential", login)
 
     def _container(self, path: str):
         """Resolve a configured container, or ``None``.
