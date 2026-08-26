@@ -1,0 +1,3 @@
+Added a group to the identity provider demo. `Site Editors` is an `IdentityGroup` living beside the Profiles, `dana` belongs to it, and it carries the `Editor` role — so belonging to it does something rather than merely existing.
+
+The demo shipped content-backed users and no groups at all, which left the group half of the layer with nothing on screen. The group is created through `api.group.create`, for the reason the demo user goes through `api.user.create`: a principals payload would import it the way Plone has always made groups, into the `source_groups` store this demo exists to show a site does not need. @ericof
