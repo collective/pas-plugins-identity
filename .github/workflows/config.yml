@@ -115,7 +115,7 @@ jobs:
           echo "path-root=." >> "$GITHUB_OUTPUT"
           echo "storybook-deploy=${{ github.event.repository.private == false }}" >> $GITHUB_OUTPUT
 
-      - uses: dorny/paths-filter@v4.0.1
+      - uses: dorny/paths-filter@v4.0.3
         id: filter
         with:
           filters: |
