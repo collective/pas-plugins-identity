@@ -40,6 +40,54 @@ class IIdentitySettings(Interface):
         default="/login-identity",
     )
 
+    user_content_type = schema.TextLine(
+        title=_("User content type"),
+        description=_(
+            "Portal type created when somebody adds a user, on a site that "
+            "keeps its users as content. Empty -- the default -- means this "
+            "package adds no users and Plone's own source_users does it, "
+            "exactly as before. The type must provide IUserContent, and one "
+            "that does not is refused rather than created."
+        ),
+        required=False,
+        default="",
+    )
+
+    user_container_path = schema.TextLine(
+        title=_("User container path"),
+        description=_(
+            "Where those objects are created, as a path relative to the "
+            "site root. Required alongside the type: a type with nowhere to "
+            "go would fail at the moment somebody adds a user, which is the "
+            "worst time to discover a configuration gap."
+        ),
+        required=False,
+        default="",
+    )
+
+    group_content_type = schema.TextLine(
+        title=_("Group content type"),
+        description=_(
+            "Portal type created when somebody adds a group, on a site that "
+            "keeps its groups as content. Empty -- the default -- means "
+            "Plone's own source_groups does it, exactly as before. The type "
+            "must provide IGroupContent."
+        ),
+        required=False,
+        default="",
+    )
+
+    group_container_path = schema.TextLine(
+        title=_("Group container path"),
+        description=_(
+            "Where those objects are created, as a path relative to the "
+            "site root. Required alongside the type, for the reason the "
+            "user container path is."
+        ),
+        required=False,
+        default="",
+    )
+
     sync_portraits = schema.Bool(
         title=_("Copy provider avatars into portrait storage"),
         description=_(

@@ -14,9 +14,11 @@ from plone import api
 from plone.base.interfaces.installable import INonInstallable
 from plone.registry.interfaces import IRegistry
 from Products.GenericSetup.tool import SetupTool
+from Products.PlonePAS.interfaces.group import IGroupManagement
 from Products.PluggableAuthService.interfaces.plugins import IAuthenticationPlugin
 from Products.PluggableAuthService.interfaces.plugins import ICredentialsResetPlugin
 from Products.PluggableAuthService.interfaces.plugins import IExtractionPlugin
+from Products.PluggableAuthService.interfaces.plugins import IUserAdderPlugin
 from Products.PluggableAuthService.PluggableAuthService import PluggableAuthService
 from zope.component import getUtility
 from zope.interface import implementer
@@ -25,10 +27,41 @@ from zope.interface import Interface
 
 #: PAS interfaces the plugin is activated for on install. ``IChallengePlugin``
 #: is deliberately absent -- it is opt-in.
+#:
+#: ``IUserAdderPlugin`` and ``IGroupManagement`` are here even though they do
+#: nothing on a site that has not configured a content type for users or
+#: groups: the plugin declines, and PAS moves on to ``source_users`` or
+#: ``source_groups``. Activating them lazily would mean a site had to
+#: reinstall the add-on after setting a registry record, which is the kind of
+#: step nobody remembers and nothing reports.
+#:
+#: ``IGroupManagement`` is PlonePAS's rather than PAS's -- there is no
+#: ``IGroupAdderPlugin`` -- but PlonePAS registers it as a plugin type, so it
+#: activates the same way.
 ACTIVATED_INTERFACES = (
     IExtractionPlugin,
     IAuthenticationPlugin,
     ICredentialsResetPlugin,
+    IUserAdderPlugin,
+    IGroupManagement,
+)
+
+#: Interfaces where being asked *first* is the whole point, so the plugin is
+#: moved to the top of each on install.
+#:
+#: Both work by refusal: PAS and PlonePAS walk their plugins and stop at the
+#: first that returns true, and this plugin returns false whenever the site
+#: has not been configured to keep users or groups as content. Registered
+#: below ``source_users`` or ``source_groups`` it would never be reached,
+#: because those never decline -- and the failure is silent. Every unit test
+#: calling the plugin directly still passes while the feature does nothing
+#: through ``api.user.create``, which is how this was found.
+#:
+#: Ordering is load-bearing rather than cosmetic, exactly as it is for the
+#: ``[profile]`` layer's place in ``IPropertiesPlugin``.
+FIRST_REFUSAL_INTERFACES = (
+    IUserAdderPlugin,
+    IGroupManagement,
 )
 
 
@@ -111,6 +144,8 @@ def install_plugin(acl_users: PluggableAuthService) -> IdentityPlugin:
     for interface in ACTIVATED_INTERFACES:
         if PLUGIN_ID not in plugins.listPluginIds(interface):
             plugins.activatePlugin(interface, PLUGIN_ID)
+    for interface in FIRST_REFUSAL_INTERFACES:
+        plugins.movePluginsTop(interface, [PLUGIN_ID])
     return plugin
 
 

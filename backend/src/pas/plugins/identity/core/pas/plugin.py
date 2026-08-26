@@ -20,8 +20,10 @@ from pas.plugins.identity.core.events import IdentityLinked
 from pas.plugins.identity.core.events import IdentityUnlinked
 from pas.plugins.identity.core.flows.magiclink import MagicLinkStore
 from pas.plugins.identity.core.interfaces import Claims
+from pas.plugins.identity.core.interfaces import IGroupContent
 from pas.plugins.identity.core.interfaces import IIdentityPlugin
 from pas.plugins.identity.core.interfaces import IOwnsUserProperties
+from pas.plugins.identity.core.interfaces import IUserContent
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.interfaces import LockoutRefused
 from pas.plugins.identity.core.logout import LogoutJTIStore
@@ -32,11 +34,13 @@ from pas.plugins.identity.core.pas import PLUGIN_TITLE
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from pas.plugins.identity.core.store import IdentityRecord
 from pas.plugins.identity.core.store import IdentityStore
+from Products.PlonePAS.interfaces.group import IGroupManagement
 from Products.PluggableAuthService.interfaces.plugins import IAuthenticationPlugin
 from Products.PluggableAuthService.interfaces.plugins import IChallengePlugin
 from Products.PluggableAuthService.interfaces.plugins import ICredentialsResetPlugin
 from Products.PluggableAuthService.interfaces.plugins import IExtractionPlugin
 from Products.PluggableAuthService.interfaces.plugins import IPropertiesPlugin
+from Products.PluggableAuthService.interfaces.plugins import IUserAdderPlugin
 from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
 from Products.PluggableAuthService.plugins.ZODBUserManager import ZODBUserManager
 from Products.PluggableAuthService.utils import classImplements
@@ -141,6 +145,45 @@ def mint_userid(
     while not _available(f"{normalized}-{counter}"):
         counter += 1
     return f"{normalized}-{counter}"
+
+
+#: Portal type created for a new user, on a site keeping users as content.
+#: Empty means this plugin adds nobody and ``source_users`` does it.
+USER_CONTENT_TYPE_RECORD = "pas.plugins.identity.user_content_type"
+
+#: Where those objects go, relative to the site root.
+USER_CONTAINER_PATH_RECORD = "pas.plugins.identity.user_container_path"
+
+#: Portal type created for a new group, on a site keeping groups as content.
+GROUP_CONTENT_TYPE_RECORD = "pas.plugins.identity.group_content_type"
+
+#: Where those objects go, relative to the site root.
+GROUP_CONTAINER_PATH_RECORD = "pas.plugins.identity.group_container_path"
+
+
+def _reindex(obj) -> None:
+    """Announce a write to whatever indexes this object.
+
+    A membership change nobody reindexed is a membership change nobody can
+    see: the layer serving these objects answers out of catalog metadata,
+    which is the whole reason it never wakes one.
+
+    :param obj: The object that changed.
+    """
+    from zope.lifecycleevent import modified
+
+    modified(obj)
+
+
+def _record(name: str) -> str:
+    """Read a string registry record, tolerating a site that has none.
+
+    :param name: Full dotted record name.
+    :returns: The value, or an empty string.
+    """
+    from plone import api
+
+    return (api.portal.get_registry_record(name, default="") or "").strip()
 
 
 @implementer(IIdentityPlugin)
@@ -328,6 +371,276 @@ class IdentityPlugin(BasePlugin):
         self._apply_property_map(userid, provider, claims)
         self._sync_portrait(userid, provider, claims, previous_picture)
         return (userid, userid)
+
+    # -- IUserAdderPlugin --------------------------------------------------
+
+    def doAddUser(self, login: str, password: str) -> bool:
+        """Create the configured content object for a new user, if there is one.
+
+        PAS walks every registered adder and stops at the first that returns
+        true -- ``ZODBUserManager.doAddUser`` returns ``False`` on a duplicate
+        id, so declining is the protocol rather than something invented here.
+        This one declines whenever the site has not been configured to keep
+        its users as content, which is every site until somebody sets the two
+        records, and ``source_users`` then adds the user exactly as before.
+
+        The password is **not** stored here. This plugin creates the record a
+        user *is*; where a credential lives is a separate decision, and on a
+        site that has not made it the credential still belongs to
+        ``source_users`` -- which is what already happens for externally
+        authenticated users, who get a content-free placeholder there. So a
+        site running this creates both, and neither store is guessing about
+        the other.
+
+        :param login: The login name, already transformed by PAS.
+        :param password: The password PAS was given. Ignored, deliberately.
+        :returns: Whether this plugin created the user.
+        """
+        configured = self._configured(
+            USER_CONTENT_TYPE_RECORD, USER_CONTAINER_PATH_RECORD, IUserContent
+        )
+        if configured is None:
+            return False
+        container, portal_type = configured
+
+        from plone import api
+
+        with api.env.adopt_roles(["Manager"]):
+            api.content.create(
+                container=container,
+                type=portal_type,
+                id=login,
+                userid=login,
+                login=login,
+            )
+        logger.info("Created %s %r for %s", portal_type, login, login)
+        return True
+
+    def _container(self, path: str):
+        """Resolve a configured container, or ``None``.
+
+        :param path: Path relative to the site root.
+        :returns: The container, or ``None`` when the path names nothing.
+        """
+        from plone import api
+
+        portal = api.portal.get()
+        return portal.unrestrictedTraverse(path.strip("/"), None)
+
+    def _provides(self, portal_type: str, marker) -> bool:
+        """Report whether a portal type's schema provides a marker.
+
+        Asked of the FTI rather than of an instance, because the answer has
+        to be known before anything is created. A record naming a type that
+        is not a user, or not a group, is a misconfiguration, and creating
+        the object anyway would leave every later query having to tolerate
+        it.
+
+        :param portal_type: The type to check.
+        :param marker: :class:`IUserContent` or :class:`IGroupContent`.
+        :returns: Whether objects of that type satisfy the marker.
+        """
+        from plone import api
+        from plone.dexterity.interfaces import IDexterityFTI
+
+        fti = getattr(api.portal.get_tool("portal_types"), portal_type, None)
+        if not IDexterityFTI.providedBy(fti):
+            return False
+        try:
+            schema = fti.lookupSchema()
+        except (AttributeError, ImportError):
+            # A type whose schema will not load is not one to create in, and
+            # a broken FTI must not break adding a user or a group.
+            return False
+        return schema.isOrExtends(marker)
+
+    def _configured(self, type_record: str, path_record: str, marker):
+        """Return where to create, or ``None`` when this is not our job.
+
+        One place for the four ways a site declines: no type, no container, a
+        container that does not resolve, and a type that is not what the
+        marker requires.
+
+        :param type_record: Registry record naming the portal type.
+        :param path_record: Registry record naming the container path.
+        :param marker: The interface the type has to provide.
+        :returns: ``(container, portal_type)``, or ``None``.
+        """
+        portal_type = _record(type_record)
+        container_path = _record(path_record)
+        if not portal_type or not container_path:
+            return None
+
+        container = self._container(container_path)
+        if container is None:
+            logger.warning("%r does not resolve to a container", container_path)
+            return None
+
+        if not self._provides(portal_type, marker):
+            logger.warning("%r does not provide %s", portal_type, marker.__name__)
+            return None
+        return container, portal_type
+
+    def _content_user(self, userid: str):
+        """Return the content object that *is* this user, if there is one.
+
+        One traversal rather than a search, which is what the
+        ``IUserContent`` contract's "the object id is the userid" clause
+        buys.
+
+        :param userid: Canonical Plone userid.
+        :returns: The object, or ``None``.
+        """
+        configured = self._configured(
+            USER_CONTENT_TYPE_RECORD, USER_CONTAINER_PATH_RECORD, IUserContent
+        )
+        if configured is None:
+            return None
+        container, portal_type = configured
+        obj = container.get(userid)
+        return obj if getattr(obj, "portal_type", None) == portal_type else None
+
+    # -- IGroupManagement --------------------------------------------------
+    #
+    # PAS has no IGroupAdderPlugin. Group creation goes through PlonePAS's
+    # GroupTool, which loops over IGroupManagement plugins with the same
+    # "stop at the first that returns true" semantics the user adder relies
+    # on, so declining works the same way here.
+    #
+    # Of the six methods the interface declares, PlonePAS's tool calls four:
+    # addGroup, removeGroup, addPrincipalToGroup and removePrincipalFromGroup.
+    # `updateGroup` and `setRolesForGroup` are declared and never reached --
+    # the tool handles the first itself through the group object and routes
+    # the second to a role manager. They are implemented as honest refusals
+    # rather than as silent successes.
+
+    def addGroup(self, id: str, **kw) -> bool:
+        """Create the configured content object for a new group.
+
+        :param id: The group id, which is also the object's id.
+        :param kw: ``title`` and ``description``, as the tool sends them.
+        :returns: Whether this plugin created the group.
+        """
+        configured = self._configured(
+            GROUP_CONTENT_TYPE_RECORD, GROUP_CONTAINER_PATH_RECORD, IGroupContent
+        )
+        if configured is None:
+            return False
+        container, portal_type = configured
+
+        from plone import api
+
+        with api.env.adopt_roles(["Manager"]):
+            api.content.create(
+                container=container,
+                type=portal_type,
+                id=id,
+                group_id=id,
+                title=kw.get("title") or id,
+                description=kw.get("description", ""),
+            )
+        logger.info("Created %s %r", portal_type, id)
+        return True
+
+    def removeGroup(self, group_id: str) -> bool:
+        """Delete a group this plugin owns.
+
+        Declines for a group it did not create, so a site running both this
+        and ``source_groups`` does not have one deleting the other's.
+
+        :param group_id: The group to remove.
+        :returns: Whether it was removed.
+        """
+        group = self._content_group(group_id)
+        if group is None:
+            return False
+
+        from plone import api
+
+        with api.env.adopt_roles(["Manager"]):
+            api.content.delete(obj=group, check_linkintegrity=False)
+        logger.info("Removed group %r", group_id)
+        return True
+
+    def addPrincipalToGroup(self, principal_id: str, group_id: str) -> bool:
+        """Record that a user belongs to a group.
+
+        Written to the *user*, because that is the direction Plone asks the
+        question in: ``getGroupsForPrincipal`` runs on every permission check
+        touching a local role, and listing a group's members does not.
+
+        Refuses to nest a group inside a group. A recursive membership answer
+        computed from catalog metadata stops being a single lookup, which is
+        the property the whole design rests on.
+
+        :param principal_id: The user to add.
+        :param group_id: The group to add them to.
+        :returns: Whether the membership was recorded.
+        """
+        if self._content_group(principal_id) is not None:
+            logger.info("Refusing to nest group %r inside %r", principal_id, group_id)
+            return False
+
+        user = self._content_user(principal_id)
+        if user is None or self._content_group(group_id) is None:
+            return False
+
+        current = tuple(getattr(user, "group_ids", ()) or ())
+        if group_id not in current:
+            user.group_ids = (*current, group_id)
+            _reindex(user)
+        return True
+
+    def removePrincipalFromGroup(self, principal_id: str, group_id: str) -> bool:
+        """Remove a user from a group.
+
+        :param principal_id: The user to remove.
+        :param group_id: The group to remove them from.
+        :returns: Whether the membership was removed.
+        """
+        user = self._content_user(principal_id)
+        if user is None:
+            return False
+
+        current = tuple(getattr(user, "group_ids", ()) or ())
+        if group_id not in current:
+            return False
+        user.group_ids = tuple(g for g in current if g != group_id)
+        _reindex(user)
+        return True
+
+    def updateGroup(self, id: str, **kw) -> bool:
+        """Refuse: PlonePAS edits a group through the group object instead.
+
+        :param id: The group id.
+        :param kw: Ignored.
+        :returns: Always ``False``.
+        """
+        return False
+
+    def setRolesForGroup(self, group_id: str, roles=()) -> bool:
+        """Refuse: PlonePAS routes roles to a role manager, not here.
+
+        :param group_id: The group id.
+        :param roles: Ignored.
+        :returns: Always ``False``.
+        """
+        return False
+
+    def _content_group(self, group_id: str):
+        """Return the content object that *is* this group, if there is one.
+
+        :param group_id: The group id.
+        :returns: The object, or ``None``.
+        """
+        configured = self._configured(
+            GROUP_CONTENT_TYPE_RECORD, GROUP_CONTAINER_PATH_RECORD, IGroupContent
+        )
+        if configured is None:
+            return None
+        container, portal_type = configured
+        obj = container.get(group_id)
+        return obj if getattr(obj, "portal_type", None) == portal_type else None
 
     def _remembered_picture(self, provider: str, subject: str) -> str:
         """Return the avatar URL stored the last time this identity signed in.
@@ -725,6 +1038,8 @@ classImplements(
     IAuthenticationPlugin,
     ICredentialsResetPlugin,
     IChallengePlugin,
+    IUserAdderPlugin,
+    IGroupManagement,
 )
 
 InitializeClass(IdentityPlugin)

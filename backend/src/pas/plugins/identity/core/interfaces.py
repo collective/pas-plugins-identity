@@ -182,6 +182,69 @@ class IOwnsUserProperties(Interface):
     """
 
 
+class IUserContent(Interface):
+    """Marker for a Dexterity content type whose objects *are* users.
+
+    Declared in core and provided by an optional layer's content type, which
+    is the direction the import-linter contract allows and the only one that
+    works: core has to be able to create such an object on a site whose type
+    it has never heard of.
+
+    A type claiming this promises three attributes and one thing about
+    where its objects live, and core reads nothing else.
+
+    ``userid`` is the canonical Plone userid, assigned once and never
+    changed, because an identity, a local role assignment and a catalog
+    entry all point at it. ``login`` is the name the person signs in with.
+    ``group_ids`` names the groups the user belongs to -- membership lives on
+    the *member*, because ``getGroupsForPrincipal`` runs on every permission
+    check that touches a local role while listing a group's members does not.
+
+    The object's **id within its container is the userid**. That is what lets
+    core find a user in one traversal instead of a scan, and it is not a
+    constraint invented for this interface: an opaque userid never changes,
+    so the object never has to be renamed, and a rename is the one operation
+    that strands a URL somebody bookmarked.
+
+    A layer that stores membership some other way should implement
+    ``IGroupManagement`` itself rather than claim this.
+
+    Core checks the marker before creating anything, so a registry record
+    naming a ``Document`` is refused rather than producing an object that
+    every user-facing query would then have to tolerate.
+
+    Providing this does *not* make a type a credential store. Where the
+    password lives is a separate question with a separate answer -- see
+    :attr:`~pas.plugins.identity.core.controlpanel.interfaces.IIdentitySettings.user_content_type`.
+    """
+
+    userid = Attribute("The canonical Plone userid. Assigned once.")
+    login = Attribute("The name this user signs in with.")
+    group_ids = Attribute("Ids of the groups this user belongs to.")
+
+
+class IGroupContent(Interface):
+    """Marker for a Dexterity content type whose objects *are* groups.
+
+    The counterpart of :class:`IUserContent`, and the same bargain: core
+    declares it, an optional layer's type provides it, and core creates and
+    deletes such objects without knowing what they are.
+
+    ``group_id`` is the canonical group id, and as with a user the object's
+    id within its container is that value.
+
+    A group does **not** carry its members. They are named by each user's
+    ``group_ids``, which is the direction Plone asks the question in.
+
+    Group nesting is out of scope, and core refuses it rather than storing
+    something it cannot answer: a group whose members are groups makes
+    ``getGroupsForPrincipal`` recursive, and a recursive answer computed from
+    catalog metadata stops being a single lookup.
+    """
+
+    group_id = Attribute("The canonical group id. Assigned once.")
+
+
 class IIdentityPlugin(Interface):
     """Marker for the PAS plugin provided by this package."""
 

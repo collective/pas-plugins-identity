@@ -8,8 +8,14 @@
   >
     <!-- ``callback_url`` is not listed: an empty <value> imports as None,
          while leaving it out takes the ``/login-identity`` default the
-         schema declares. Everything else is stated here so the shipped
-         defaults are visible without reading the interface. -->
+         schema declares. The same applies to ``user_content_type`` and
+         ``user_container_path``, whose default is the empty string that
+         means "this site does not keep its users as content" - listing them
+         would import None and the plugin would have to treat two spellings
+         of absent. The records still exist either way, because the
+         ``interface`` attribute above creates every field it declares.
+         The numeric and boolean records are stated so the shipped defaults
+         are visible without reading the interface. -->
     <value key="audit_max_entries">500</value>
     <value key="audit_max_days">180</value>
     <value key="audit_record_pii">False</value>

@@ -1,0 +1,11 @@
+Added the ability to keep a site's users and groups as content, without core knowing what content.
+
+`IUserContent` and `IGroupContent` are markers a Dexterity type provides, declared in core and implemented by whichever layer owns users — the direction every extension point in this package runs in. A user type promises `userid`, `login` and `group_ids`; a group type promises `group_id`; and for both the object's id within its container *is* that identifier, which is what lets core find one in a single traversal rather than a search. Four registry records say which portal type and which container, so `IdentityProfile` and `/identity-profiles` are values rather than code.
+
+The identity PAS plugin then implements `IUserAdderPlugin` and PlonePAS's `IGroupManagement`. There is no `IGroupAdderPlugin` — groups go through a different interface in a different package — but both loop over their plugins and stop at the first that returns true, so both halves work by *declining*. With no type configured, which is every site until somebody sets the records, the plugin returns false and `source_users` or `source_groups` does the job exactly as before.
+
+That makes being asked first load-bearing rather than cosmetic: registered below the stock plugins this one is never reached, because they never decline. The plugin is moved to the top of both interfaces on install, for the same reason the `[profile]` layer sits at the top of `IPropertiesPlugin`.
+
+Membership is written to the **user**, not to the group, because that is the direction Plone asks the question in: `getGroupsForPrincipal` runs on every permission check that touches a local role, while listing a group's members does not. Nesting a group inside a group is refused rather than stored — a recursive membership answer computed from catalog metadata stops being a single lookup, which is the property this design rests on.
+
+Core creates; it does not enumerate. Answering "which users match this?" without waking every object needs a catalog, and that is what the `[profile]` extra is for. The two are not independent: PAS looks a principal straight back up after adding it, so a site that configures the records without a layer that enumerates gets a user that cannot be found. The record descriptions say so. @ericof
