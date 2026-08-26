@@ -416,3 +416,39 @@ class TestCoexistenceWithStockPlugins:
         groups = api.user.get(userid="alice").getGroups()
 
         assert "AuthenticatedUsers" in groups
+
+
+class TestGroupsAreVisibleThroughPlone:
+    """Through the tool, not just through the plugin.
+
+    The plugin implemented ``IGroupIntrospection`` and the install handler
+    never activated it, so ``PlonePAS.pas.getGroup`` -- which walks exactly
+    that interface -- found only ``source_groups`` and answered ``None`` for
+    every IdentityGroup. Anything reaching a group the ordinary way saw
+    nothing: ``api.group.get``, ``portal_groups``, the sharing tab.
+
+    Every other test in this module called the plugin's methods directly and
+    passed throughout. These go the way Plone goes.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, acl_users, make_group) -> None:
+        self.portal = portal
+        self.acl_users = acl_users
+        make_group("editors", title="Editors")
+
+    def test_pas_finds_it(self):
+        assert self.acl_users.getGroup("editors") is not None
+
+    def test_the_api_finds_it(self):
+        assert api.group.get(groupname="editors") is not None
+
+    def test_the_tool_finds_it(self):
+        tool = api.portal.get_tool("portal_groups")
+
+        assert tool.getGroupById("editors") is not None
+
+    def test_it_is_listed(self):
+        """A group nobody can enumerate through the tool is a group that
+        cannot be granted anything in the sharing tab."""
+        assert "editors" in api.portal.get_tool("portal_groups").getGroupIds()

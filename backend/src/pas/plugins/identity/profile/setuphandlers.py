@@ -27,6 +27,7 @@ from pas.plugins.identity.setuphandlers import register_settings
 from plone import api
 from Products.GenericSetup.tool import SetupTool
 from Products.PluggableAuthService.interfaces.plugins import IGroupEnumerationPlugin
+from Products.PlonePAS.interfaces.group import IGroupIntrospection
 from Products.PluggableAuthService.interfaces.plugins import IGroupsPlugin
 from Products.PluggableAuthService.interfaces.plugins import IPropertiesPlugin
 from Products.PluggableAuthService.interfaces.plugins import IUserEnumerationPlugin
@@ -54,6 +55,7 @@ ACTIVATED_INTERFACES = (
     IUserEnumerationPlugin,
     IGroupsPlugin,
     IGroupEnumerationPlugin,
+    IGroupIntrospection,
 )
 
 #: ``extra`` record for the ZCTextIndex, mirroring ``portal_catalog``.
