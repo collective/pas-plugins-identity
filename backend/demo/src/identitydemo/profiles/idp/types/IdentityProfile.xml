@@ -9,7 +9,7 @@
        aimed, so a site opts in deliberately. This site is the one that has
        to, because it is the site demonstrating that a user is a content
        object. With the credential left in source_users, every demo user
-       would exist twice over -- as the Profile the demo is about, and as a
+       would exist twice over — as the Profile the demo is about, and as a
        row in the store the demo says it does not need.
 
        purge="False": this adds to the behaviors the type already ships
