@@ -304,9 +304,12 @@ class IdentityPlugin(BasePlugin):
     def authenticateCredentials(self, credentials: JSONDict) -> tuple[str, str] | None:
         """Resolve external credentials to a Plone principal.
 
-        On first sight of an identity a userid is minted and a
-        matching ``source_users`` account is created, so the rest of Plone
-        sees an ordinary user.
+        On first sight of an identity a userid is minted and a user record is
+        created for it, so the rest of Plone sees an ordinary user: a
+        ``source_users`` account on an ordinary site, and on a site that
+        keeps its users as content, the content object -- created by whatever
+        the site configured to claim it, in a subscriber to the event fired
+        below.
 
         :param credentials: Mapping from :meth:`extractCredentials`.
         :returns: ``(userid, login)`` on success, ``None`` otherwise.
@@ -350,6 +353,9 @@ class IdentityPlugin(BasePlugin):
             )
         )
 
+        if is_new_user and self._keeps_users_as_content():
+            self._warn_if_unclaimed(userid)
+
         # After the event, and that ordering is load-bearing.
         #
         # Both of these writes are *fallbacks*: they put a value in core's own
@@ -388,10 +394,10 @@ class IdentityPlugin(BasePlugin):
         The password is **not** stored here. This plugin creates the record a
         user *is*; where a credential lives is a separate decision, and on a
         site that has not made it the credential still belongs to
-        ``source_users`` -- which is what already happens for externally
-        authenticated users, who get a content-free placeholder there. So a
-        site running this creates both, and neither store is guessing about
-        the other.
+        ``source_users``. So a site running this creates a content object and
+        a credential, and neither store is guessing about the other. An
+        externally authenticated user has neither a password nor a
+        ``source_users`` row -- see :meth:`_create_plone_user`.
 
         :param login: The login name, already transformed by PAS.
         :param password: The password PAS was given. Ignored, deliberately.
@@ -427,11 +433,11 @@ class IdentityPlugin(BasePlugin):
         disclosing it. So the content object is the record a user *is*, and
         ``source_users`` stays the credential store.
 
-        This is not a compromise reached here: it is what
-        :meth:`_create_plone_user` already does for externally authenticated
-        users, who get a content-free ``source_users`` account holding a
-        placeholder. The two paths agree, and a site adding a user through
-        the ordinary API ends up with someone who can actually sign in.
+        A site adding a user through the ordinary API therefore ends up with
+        someone who can actually sign in. An externally authenticated user
+        needs none of this -- they have no password to put anywhere, and
+        :meth:`_create_plone_user` writes no ``source_users`` row for them on
+        a site that keeps its users as content.
 
         A site that would rather keep credentials on the content type opts
         into something providing
@@ -1023,12 +1029,63 @@ class IdentityPlugin(BasePlugin):
         -- the userid is recorded in :attr:`_placeholder_passwords` so that the
         lockout guard does not mistake it for one.
 
+        **Not on a site that keeps its users as content.** There the content
+        object *is* the account: this plugin enumerates it, and
+        :meth:`_authenticate_content_password` signs in against a password
+        held on it, so a ``source_users`` row would be a second record of the
+        same person -- the one that turns up in
+        {menuselection}`acl_users --> source_users --> Users`, that nothing
+        keeps in step, and that outlives the object it shadows. Creating the
+        content half is the site's own business, the same way it is for a
+        user added through :meth:`doAddUser`; core declines here exactly as
+        it declines there.
+
         :param userid: The freshly minted userid.
         :param claims: Normalized claims used to seed the property sheet.
         """
+        if self._keeps_users_as_content():
+            return
+
         self._source_users().addUser(userid, userid, secrets.token_urlsafe(32))
         self._placeholder_passwords.insert(userid)
         self._seed_properties(userid, claims)
+
+    def _warn_if_unclaimed(self, userid: str) -> None:
+        """Say so when a new user ended up with no record at all.
+
+        A site that keeps its users as content has told core not to mint a
+        ``source_users`` account, and something else -- the ``[profile]``
+        layer's subscriber, or a site's own -- creates the object instead. If
+        nothing did, the login still succeeds and returns a principal that
+        does not exist: no properties, no roles, invisible to every search.
+        That is a configuration this cannot fix from here, and the one thing
+        worse than it is finding out weeks later, so it is said once, at the
+        moment it becomes true, naming the consequence.
+
+        :param userid: The userid just minted.
+        """
+        if self._content_user(userid) is not None:
+            return
+        logger.warning(
+            "No user object was created for %s: this site keeps its users as "
+            "content, so nothing wrote a %s -- the account exists as an "
+            "identity and as nothing else",
+            userid,
+            _record(USER_CONTENT_TYPE_RECORD),
+        )
+
+    def _keeps_users_as_content(self) -> bool:
+        """Report whether this site's users are content objects.
+
+        :returns: Whether a type and a container are configured, and the type
+            is one this plugin may create a user in.
+        """
+        return (
+            self._configured(
+                USER_CONTENT_TYPE_RECORD, USER_CONTAINER_PATH_RECORD, IUserContent
+            )
+            is not None
+        )
 
     def _seed_properties(self, userid: str, claims: Claims) -> None:
         """Write the claims Plone knows how to display onto the user.

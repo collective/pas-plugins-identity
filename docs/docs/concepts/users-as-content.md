@@ -75,9 +75,12 @@ A Dexterity field holding a credential is serialized by `plone.restapi`, exporte
 Those are four separate disclosure paths, and each one has to be remembered separately by everyone who ever touches the schema.
 So the content object is the record a user *is*, and `source_users` stays the credential store.
 
-That is not a compromise reached reluctantly.
-It is already what happens for externally authenticated users, who get a content-free `source_users` account holding a placeholder.
-The two paths agree, and a user added through the ordinary API ends up as somebody who can actually sign in.
+A user added through the ordinary API therefore ends up as somebody who can actually sign in, with the password where Plone has always kept one.
+
+An externally authenticated user gets no `source_users` account at all.
+They have no password to store, and the content object is already the record they are: the plugin enumerates it, and a site that opted into {ref}`credential-storage` authenticates against it.
+A row beside it would be a second record of the same person, kept in step by nothing.
+On a site that has *not* configured user content, the `source_users` account is still created for them, because there it is the only record they have.
 
 A site that would rather keep the credential with the rest of the user opts into `ICredentialStorage`, takes on those four questions deliberately, and core then has nothing to delegate.
 The `[profile]` extra ships that as an opt-in behavior which keeps a hash in an annotation rather than in a field.
