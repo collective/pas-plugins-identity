@@ -175,6 +175,15 @@ class ProfilePortraitGet(PortraitGet):
     def render(self):
         """Return the picture bytes, or defer to the base implementation.
 
+        ``Content-Length`` is set here rather than left to the publisher.
+        ``stream_data`` answers with the bytes for an image whose blob is
+        still uncommitted and with a ``filestream_range_iterator`` once it is
+        on disk, and the publisher can only measure the first: it calls
+        ``len()`` on whatever it is handed, so a stored picture -- every one
+        that matters, in a running site -- came back as a 500 while a test
+        that had just set the field passed. Length is the one thing this has
+        to say for itself.
+
         :returns: The streamed image, or whatever the base class returns
             when no Profile holds a picture for this user.
         """
@@ -184,6 +193,7 @@ class ProfilePortraitGet(PortraitGet):
 
         self.request.response.setStatus(200)
         self.request.response.setHeader("Content-Type", image.contentType)
+        self.request.response.setHeader("Content-Length", image.getSize())
         return stream_data(image)
 
     def _profile_image(self):

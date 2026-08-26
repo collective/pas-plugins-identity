@@ -88,6 +88,15 @@ def portrait_url(userid: str) -> str:
     endpoint by design -- a relying party fetches it server to server with no
     credentials -- and it does not disclose where a Profile lives.
 
+    Under ``++api++``, which is not decoration. ``@portrait`` is a
+    ``plone.restapi`` service, and ``plone.rest`` only takes over traversal
+    for a request that asks for JSON: published bare, the URL answered 404
+    for every client that did not claim to want a JSON document -- our own
+    fetcher, any relying party that is not a Plone site, and a browser
+    rendering the claim in an ``<img>``. The namespace is what makes the URL
+    resolve for all of them, and it is already public on any site that serves
+    a REST API at all.
+
     Built from the configured issuer rather than from the portal URL, for the
     reason the issuer is configured at all: the portal URL is whatever the
     request came in on, and this URL is handed to another site to fetch.
@@ -104,7 +113,7 @@ def portrait_url(userid: str) -> str:
     issuer = (api.portal.get_registry_record(ISSUER_RECORD, default="") or "").strip()
     if not issuer:
         return ""
-    return f"{issuer.rstrip('/')}/@portrait/{quote(userid)}"
+    return f"{issuer.rstrip('/')}/++api++/@portrait/{quote(userid)}"
 
 
 def released(scope: str) -> list[str]:

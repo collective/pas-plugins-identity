@@ -190,7 +190,7 @@ class TestPicture:
 
     def test_present_once_a_portrait_is_stored(self, portrait):
         assert claims_for(USERID, "profile")["picture"] == (
-            "http://id.example.org/@portrait/alice"
+            "http://id.example.org/++api++/@portrait/alice"
         )
 
     def test_it_is_built_from_the_issuer(self, portrait):
@@ -199,7 +199,7 @@ class TestPicture:
         api.portal.set_registry_record(ISSUER_RECORD, "http://elsewhere.example.org/")
 
         assert claims_for(USERID, "profile")["picture"] == (
-            "http://elsewhere.example.org/@portrait/alice"
+            "http://elsewhere.example.org/++api++/@portrait/alice"
         )
 
     def test_absent_without_an_issuer(self, portrait):
@@ -207,6 +207,17 @@ class TestPicture:
         api.portal.set_registry_record(ISSUER_RECORD, "")
 
         assert "picture" not in claims_for(USERID, "profile")
+
+    def test_it_is_released_under_the_rest_api_namespace(self, portrait):
+        """``@portrait`` is a ``plone.restapi`` service, and ``plone.rest``
+        only takes over traversal for a request asking for JSON. Published
+        bare, this URL answered 404 for every client that did not claim to
+        want a JSON document -- this package's own fetcher among them, and
+        any browser rendering the claim in an ``<img>``. Asserted on its own
+        because the rest of the URL can be read without noticing that the
+        namespace is what makes it resolve.
+        """
+        assert "/++api++/@portrait/" in claims_for(USERID, "profile")["picture"]
 
     def test_it_is_not_released_without_the_profile_scope(self, portrait):
         assert "picture" not in claims_for(USERID, "email")
@@ -252,7 +263,7 @@ class TestPictureOnASiteWithProfiles:
     def test_the_claim_is_released(self):
         """The bug: empty, because only memberdata was consulted."""
         assert claims_for(USERID, "profile")["picture"] == (
-            "http://id.example.org/@portrait/alice"
+            "http://id.example.org/++api++/@portrait/alice"
         )
 
     def test_it_is_absent_when_the_profile_has_no_picture(self):

@@ -84,6 +84,22 @@ class TestAUserWithAProfilePicture:
 
         assert self.service.request.response.getHeader("Content-Type") == "image/png"
 
+    def test_it_sends_the_content_length(self):
+        """The publisher cannot work it out for itself.
+
+        ``stream_data`` hands back the bytes while the blob is uncommitted
+        and a ``filestream_range_iterator`` once it is on disk, and the
+        publisher calls ``len()`` on what it gets. Without this header a
+        picture that had actually been stored -- every one in a running site
+        -- answered 500, while this suite, which sets the field and reads it
+        back in the same transaction, saw bytes and passed.
+        """
+        self.service.render()
+
+        length = self.service.request.response.getHeader("Content-Length")
+
+        assert int(length) == len(PNG)
+
 
 class TestAUserWithoutAProfilePicture:
     @pytest.fixture(autouse=True)
