@@ -127,6 +127,8 @@ services:
       ENABLE_PRINTING_MAILHOST: 'true'
     depends_on:
       - idp-zeo
+    volumes:
+      - ./backend/demo/src/identitydemo/setuphandlers/idpcontent:/example-content
     labels:
       - traefik.enable=true
       - traefik.constraint-label=public
@@ -226,6 +228,8 @@ services:
       ZEO_ADDRESS: 'rp-zeo:8100'
     depends_on:
       - rp-zeo
+    volumes:
+      - ./backend/demo/src/identitydemo/setuphandlers/rpcontent:/example-content
     labels:
       - traefik.enable=true
       - traefik.constraint-label=public

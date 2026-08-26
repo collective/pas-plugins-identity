@@ -31,6 +31,7 @@ LABEL maintainer="Érico Andrei <ericof@plone.org>" \
 
 # Copy /app from builder
 COPY --from=builder /app /app
+COPY container/docker-entrypoint.sh /app/docker-entrypoint.sh
 
 RUN <<EOT
     set -e

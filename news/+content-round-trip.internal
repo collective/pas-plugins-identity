@@ -1,0 +1,3 @@
+Made the demo stack's example content something that can be exported back out of it. Each backend mounts its payload directory at `/example-content`, and the image carries an entrypoint with `import` and `export` verbs the upstream one does not have.
+
+The setup handlers already told anyone reading them to "configure a site, run `plone-exporter`, and commit what comes out". This is what makes that possible without a checkout inside the container. @ericof

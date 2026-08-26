@@ -45,6 +45,7 @@ COPY --from=builder /app /app
 # express "this image is the identity provider and that one is the relying
 # party". DEMO_PROFILE decides, and has no default.
 COPY demo/scripts/create_site.py /app/scripts/create_site.py
+COPY container/docker-entrypoint.sh /app/docker-entrypoint.sh
 
 RUN <<EOT
     set -e
