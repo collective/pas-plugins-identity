@@ -54,6 +54,14 @@ A different answer would be an account-existence oracle.
 A magic-link sign-in is the only email verification this package trusts for linking decisions.
 See {doc}`/concepts/email-verification`.
 
+The driver serves two flows, and a link is minted for one or the other.
+A sign-in link signs its holder in.
+A confirmation link, asked for from {guilabel}`Sign-in methods`, adds the address to the account that asked for it and signs nobody in.
+Each endpoint accepts only the purpose it handles, so neither link can be redeemed as the other.
+
+A confirmation link has to be opened while the account that asked for it is still signed in.
+Opening it as somebody else, or as nobody, is refused, and the link is spent either way.
+
 (reference-backchannel-logout)=
 
 ## The back-channel logout endpoint

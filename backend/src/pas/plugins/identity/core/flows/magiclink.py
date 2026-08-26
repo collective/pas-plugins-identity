@@ -36,6 +36,18 @@ import secrets
 #: the same Plone site, and there is nothing for a third party to check.
 ALGORITHM = "HS256"
 
+#: A token minted to sign somebody in.
+PURPOSE_LOGIN = "magic-link"
+
+#: A token minted to prove a mailbox belongs to somebody already signed in.
+#:
+#: Kept apart from :data:`PURPOSE_LOGIN` deliberately. The two are minted from
+#: the same key and look identical on the wire, so without the distinction a
+#: link mailed to confirm an address would sign its holder in as whoever owns
+#: that address -- which is precisely the account takeover the linking flow's
+#: same-session check exists to prevent.
+PURPOSE_LINK = "identity-link"
+
 #: Default lifetime, in seconds. Capped at fifteen minutes; see
 #: :data:`MAX_TTL`.
 DEFAULT_TTL = 900
@@ -84,11 +96,23 @@ def ttl_for(seconds: int | None) -> int:
     return min(int(seconds), MAX_TTL)
 
 
-def issue(address: str, ttl: int | None = None) -> tuple[str, str]:
+def issue(
+    address: str,
+    ttl: int | None = None,
+    *,
+    purpose: str = PURPOSE_LOGIN,
+    link_for: str | None = None,
+) -> tuple[str, str]:
     """Mint a magic-link token for an address.
 
     :param address: The address being proven; stored lowercased.
     :param ttl: Lifetime in seconds; clamped by :func:`ttl_for`.
+    :param purpose: What the token may be redeemed for; one of
+        :data:`PURPOSE_LOGIN` or :data:`PURPOSE_LINK`.
+    :param link_for: Userid the link was minted for, when the purpose is
+        :data:`PURPOSE_LINK`. Carried in the token rather than in the flow
+        cookie because the mail may well be opened in another browser, where
+        no cookie of ours exists.
     :returns: The encoded token and its ``jti``.
     """
     from authlib.jose import JsonWebToken
@@ -101,13 +125,15 @@ def issue(address: str, ttl: int | None = None) -> tuple[str, str]:
         "jti": jti,
         "iat": int(now.timestamp()),
         "exp": int((now + timedelta(seconds=lifetime)).timestamp()),
-        "purpose": "magic-link",
+        "purpose": purpose,
     }
+    if link_for is not None:
+        payload["link_for"] = link_for
     token = JsonWebToken([ALGORITHM]).encode({"alg": ALGORITHM}, payload, _key())
     return token.decode("utf-8"), jti
 
 
-def verify(token: str) -> JSONDict:
+def verify(token: str, purposes: tuple[str, ...] = (PURPOSE_LOGIN,)) -> JSONDict:
     """Validate a magic-link token and return its claims.
 
     Signature, expiry and purpose are all checked here; the ``jti`` burn is
@@ -115,9 +141,12 @@ def verify(token: str) -> JSONDict:
     guards actually went through.
 
     :param token: The encoded token.
+    :param purposes: Purposes the caller is willing to accept. A caller that
+        handles only one names only one: accepting both and branching
+        afterwards is how a link token ends up signing somebody in.
     :returns: The validated claims.
     :raises FlowError: When the token is malformed, unsigned by us, expired,
-        or was minted for something other than a magic link.
+        or was minted for something the caller does not accept.
     """
     from authlib.jose import JsonWebToken
     from authlib.jose.errors import JoseError
@@ -129,10 +158,10 @@ def verify(token: str) -> JSONDict:
             claims.validate()
         except JoseError:
             continue
-        if claims.get("purpose") != "magic-link":
-            # A token minted for something else must not be usable as a login,
+        if claims.get("purpose") not in purposes:
+            # A token minted for something else must not be usable here,
             # however impeccably it is signed.
-            raise FlowError("Token was not issued for a magic link")
+            raise FlowError("Token was not issued for this purpose")
         return dict(claims)
     raise FlowError("Magic link is invalid or has expired")
 

@@ -8,8 +8,8 @@ Neither shows up in an ordinary test, because both leave the *store* correct.
 
 from .. import body
 from ..services import DEX_METADATA
+from ..services import EMAIL_PROVIDER_RECORD
 from ..services import USERINFO
-from ..services.test_magiclink import EMAIL_PROVIDER_RECORD
 from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers

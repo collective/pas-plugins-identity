@@ -49,7 +49,7 @@ class TestMisconfiguredSite:
         """Same answer as the OAuth callback gives: the site is misconfigured,
         not the request."""
         from .. import body
-        from .test_magiclink import EMAIL_PROVIDER_RECORD
+        from . import EMAIL_PROVIDER_RECORD
         from pas.plugins.identity.core.controlpanel import get_providers
         from pas.plugins.identity.core.controlpanel import ProviderConfig
         from pas.plugins.identity.core.controlpanel import set_providers

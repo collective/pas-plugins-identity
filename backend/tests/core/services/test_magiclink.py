@@ -3,9 +3,15 @@
 Mail is captured in process by ``collective.MockMailHost``, so the whole
 round trip -- request a link, read it out of the message, redeem it -- runs
 without a mail server anywhere.
+
+Linking an address to an account that is already signed in is the same token
+machinery pointed at a different outcome, and lives in
+``test_email_linking.py``.
 """
 
 from .. import body
+from . import ADDRESS
+from . import token_from
 from datetime import datetime
 from datetime import timedelta
 from datetime import UTC
@@ -13,70 +19,14 @@ from pas.plugins.identity.core.audit import MAGIC_LINK_CONFIRMED
 from pas.plugins.identity.core.audit import MAGIC_LINK_REFUSED
 from pas.plugins.identity.core.audit import MAGIC_LINK_SENT
 from pas.plugins.identity.core.controlpanel import get_providers
-from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.flows import magiclink
 from pas.plugins.identity.core.services.magiclink.confirm import MagicLinkConfirm
 from pas.plugins.identity.core.services.magiclink.post import MagicLinkSend
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from plone import api
-from urllib.parse import parse_qs
-from urllib.parse import urlparse
 
-import email
 import pytest
-
-
-#: The address the tests log in as.
-ADDRESS = "erico@plone.org"
-
-#: The email provider record.
-EMAIL_PROVIDER_RECORD = {
-    "id": "email",
-    "driver": "email",
-    "title": "Email",
-    "enabled": True,
-    "config": {"token_ttl": 900, "rate_limit_per_hour": 5},
-}
-
-
-@pytest.fixture
-def email_configured(portal, configured):
-    """Add the email provider alongside the Dex fixture."""
-    set_providers([
-        *get_providers(),
-        ProviderConfig.deserialize(EMAIL_PROVIDER_RECORD),
-    ])
-
-
-@pytest.fixture
-def mailbox(portal):
-    """Return a reader over the captured mail, emptied first."""
-    mailhost = api.portal.get_tool("MailHost")
-    mailhost.reset()
-
-    def read() -> list:
-        """Return the captured messages, parsed.
-
-        :returns: Parsed messages, oldest first.
-        """
-        return [
-            email.message_from_bytes(raw, policy=email.policy.default)
-            for raw in mailhost.messages
-        ]
-
-    return read
-
-
-def token_from(messages) -> str:
-    """Pull the magic-link token out of a captured message.
-
-    :param messages: Parsed messages.
-    :returns: The token.
-    """
-    text = messages[-1].get_content()
-    url = next(word for word in text.split() if "magic_link=" in word)
-    return parse_qs(urlparse(url).query)["magic_link"][0]
 
 
 class MagicLinkCase:
