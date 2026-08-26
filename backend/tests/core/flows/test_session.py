@@ -30,6 +30,12 @@ import json
 import pytest
 
 
+#: Largest cookie a browser is required to store, from RFC 6265bis: name and
+#: value together. Over this, the cookie is discarded rather than truncated,
+#: and nothing tells the server.
+BROWSER_COOKIE_LIMIT = 4096
+
+
 def sign(payload: bytes, key: bytes) -> str:
     """Render a payload and signature as a cookie value.
 
@@ -282,6 +288,32 @@ class TestRoundTripWithTheFlowManager:
 
         with pytest.raises(FlowError):
             FlowManager(FlowSession(self.request), PORTAL_URL).pop(state)
+
+    def test_the_cookie_stays_within_what_a_browser_will_store(self):
+        """The defect this guards: every browser discards a ``Set-Cookie``
+        over 4096 bytes without a word.
+
+        Each pending attempt encodes to roughly 450 bytes, so the ninth one
+        crossed the line. The browser kept the eight-attempt version, the
+        newest ``state`` was never stored, and every login after that was
+        refused as unknown -- with nothing in any log to say a cookie had
+        been dropped. Asserted across requests, carrying the cookie forward
+        the way a browser does, because a single response never showed it.
+        """
+        state = ""
+        for _ in range(12):
+            session = FlowSession(self.request)
+            url = FlowManager(session, PORTAL_URL).start(
+                self.provider, REDIRECT_URI, DEX_METADATA
+            )
+            state = parse_qs(urlparse(url).query)["state"][0]
+            value = self.request.response.cookies[COOKIE_NAME]["value"]
+            assert len(COOKIE_NAME) + len(value) <= BROWSER_COOKIE_LIMIT
+            # What the browser sends on the next request.
+            self.request.cookies[COOKIE_NAME] = value
+
+        # And the last flow started is still the one that can be finished.
+        assert FlowManager(FlowSession(self.request), PORTAL_URL).pop(state)
 
     def test_popping_clears_the_cookie(self):
         """Once the only attempt is consumed there is nothing left to keep."""

@@ -36,6 +36,15 @@ ATTEMPT_TTL = timedelta(minutes=10)
 #: PKCE method. ``plain`` is never offered: it defeats the point.
 CODE_CHALLENGE_METHOD = "S256"
 
+#: How many unfinished attempts a session keeps. The attempts live in a
+#: cookie, and every browser discards a ``Set-Cookie`` over 4096 bytes without
+#: a word: one attempt encodes to roughly 450 bytes, so the ninth pending one
+#: pushed the cookie past the limit, the browser kept the eight-attempt
+#: version, and every login from then on was refused with an unknown ``state``
+#: until the pending ones aged out. Five is a fifth of the budget, and more
+#: parallel sign-ins than a person has tabs.
+MAX_PENDING_ATTEMPTS = 5
+
 
 class FlowAttempt:
     """One in-flight authorization attempt.
@@ -201,12 +210,27 @@ class FlowManager:
         return live
 
     def _store(self, attempt: FlowAttempt) -> None:
-        """Persist an attempt against the session.
+        """Persist an attempt against the session, newest first.
+
+        Never more than :data:`MAX_PENDING_ATTEMPTS` of them: see that
+        constant for what happens when the cookie outgrows what a browser
+        will store. The oldest is dropped, because the newest is the flow the
+        person is in right now -- evicting that one to keep an abandoned
+        attempt would refuse the login they are actually attempting.
 
         :param attempt: The attempt to remember.
         """
         attempts = self._attempts()
         attempts[attempt.state] = attempt.serialize()
+
+        while len(attempts) > MAX_PENDING_ATTEMPTS:
+            oldest = min(
+                attempts,
+                key=lambda state: FlowAttempt.deserialize(attempts[state]).created,
+            )
+            del attempts[oldest]
+            logger.info("Dropped the oldest pending flow attempt to fit the cookie")
+
         self.session[SESSION_KEY] = attempts
 
     def peek(self, state: str) -> FlowAttempt:

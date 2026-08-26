@@ -16,6 +16,7 @@ from pas.plugins.identity.core.flows import ATTEMPT_TTL
 from pas.plugins.identity.core.flows import CODE_CHALLENGE_METHOD
 from pas.plugins.identity.core.flows import FlowAttempt
 from pas.plugins.identity.core.flows import FlowManager
+from pas.plugins.identity.core.flows import MAX_PENDING_ATTEMPTS
 from pas.plugins.identity.core.flows import SESSION_KEY
 from pas.plugins.identity.core.flows import validate_came_from
 from pas.plugins.identity.core.interfaces import FlowError
@@ -181,6 +182,65 @@ class TestStart:
             self.manager.start(
                 self.provider, REDIRECT_URI, {"issuer": "http://dex:5556/dex"}
             )
+
+
+class TestPendingAttemptCap:
+    """The attempts live in a cookie, so there cannot be unboundedly many.
+
+    Nine of them pushed the ``Set-Cookie`` past 4096 bytes, which every
+    browser discards in silence: the browser kept the eight-attempt version,
+    the newest ``state`` was never stored, and every login from then on was
+    refused as unknown until the pending attempts aged out. Found by starting
+    a login nine times in the demo stack, which is what a person testing a
+    demo does.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(
+        self, manager: FlowManager, provider: ProviderConfig, session: dict
+    ) -> None:
+        self.manager = manager
+        self.provider = provider
+        self.session = session
+
+    def start(self) -> str:
+        """Start a flow and return its state.
+
+        :returns: The state of the attempt just started.
+        """
+        url = self.manager.start(self.provider, REDIRECT_URI, DEX_METADATA)
+        return _query(url)["state"]
+
+    def test_it_never_holds_more_than_the_cap(self):
+        for _ in range(MAX_PENDING_ATTEMPTS + 4):
+            self.start()
+
+        assert len(self.session[SESSION_KEY]) == MAX_PENDING_ATTEMPTS
+
+    def test_the_newest_attempt_is_the_one_kept(self):
+        """The flow the person is in right now. Evicting this one to keep an
+        abandoned attempt would refuse the login actually being attempted."""
+        for _ in range(MAX_PENDING_ATTEMPTS + 4):
+            state = self.start()
+
+        assert self.manager.pop(state).state == state
+
+    def test_the_oldest_attempt_is_the_one_dropped(self):
+        oldest = self.start()
+        for _ in range(MAX_PENDING_ATTEMPTS):
+            self.start()
+
+        with pytest.raises(FlowError):
+            self.manager.pop(oldest)
+
+    def test_an_uncrowded_session_keeps_everything(self):
+        """The cap is a ceiling, not a queue length: two parallel sign-ins in
+        two tabs both have to be redeemable."""
+        first = self.start()
+        second = self.start()
+
+        assert self.manager.pop(first).state == first
+        assert self.manager.pop(second).state == second
 
 
 class TestStatePopping:
