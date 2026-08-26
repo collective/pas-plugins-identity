@@ -1,0 +1,3 @@
+Created the Profile container before importing principals in the demo identity provider, so the demo user gets a Profile.
+
+`plone.exportimport` runs `plone.importer.principals` before `plone.importer.content`, and the container is created lazily, so `addMember` ran at a moment when nothing resolved at the configured path. The user adder declined exactly as it is designed to, the demo user landed in `source_users` with no Profile, and the container then arrived with the content import — so everybody created afterwards got one. That is what made it easy to miss: the mechanism looks correct the moment you test it by hand, and only the imported user is wrong. The install log had been saying `'profiles' does not resolve to a container` the whole time. @ericof

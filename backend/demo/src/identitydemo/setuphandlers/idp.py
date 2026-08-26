@@ -20,6 +20,7 @@ way and refusing to create it protects nobody.
 
 from identitydemo import logger
 from identitydemo import settings
+from pas.plugins.identity.profile.container import get_container
 from pas.plugins.identity.server.clients import get_clients
 from pas.plugins.identity.server.clients import set_clients
 from pas.plugins.identity.server.consent_screen import CONSENT_URL_RECORD
@@ -41,13 +42,49 @@ def install_idp(context: SetupTool) -> None:
     principals importer skips a user that already exists, and the content
     importer matches on UID.
 
+    The Profile container is created *first*, and that ordering is the whole
+    reason this line exists. ``plone.exportimport`` runs
+    ``plone.importer.principals`` before ``plone.importer.content``, and the
+    container is created lazily -- so without this, ``addMember`` runs at a
+    moment when nothing resolves at the configured path, the user adder
+    declines, and the demo user lands in ``source_users`` with no Profile.
+    Everyone created afterwards gets one, which is what makes the failure so
+    easy to miss: the mechanism looks fine the moment you test it by hand,
+    and only the imported user is wrong.
+
     :param context: The setup tool running the import.
     """
+    _ensure_profile_container()
+
     importer = importers.get_importer(api.portal.get())
     for line in importer.import_site(IDP_CONTENT):
         logger.info(line)
 
     _apply_deployment_urls()
+
+
+def _ensure_profile_container() -> None:
+    """Create the Profile container, and say so plainly when it cannot be.
+
+    Best effort rather than fatal. A site whose parent forbids every container
+    type this package will try -- which is any site with no addable types, as
+    a bare test fixture is -- must still get its principals and its content;
+    refusing the whole import over the container would trade a demo user
+    without a Profile for no demo at all.
+
+    But it is logged at warning, with the consequence spelled out, because the
+    silent version of this is exactly the bug it was added to fix.
+    """
+    from pas.plugins.identity.profile.container import ContainerNotFound
+
+    try:
+        get_container(create=True)
+    except ContainerNotFound as exc:
+        logger.warning(
+            "No Profile container (%s). The demo user will be created in "
+            "source_users with no Profile.",
+            exc,
+        )
 
 
 def _apply_deployment_urls() -> None:
