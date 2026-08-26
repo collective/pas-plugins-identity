@@ -934,7 +934,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'test'" },
     { name = "pytest-cov", marker = "extra == 'test'" },
     { name = "pytest-docker", marker = "extra == 'test'" },
-    { name = "pytest-plone", marker = "extra == 'test'", specifier = ">=1.0.0" },
+    { name = "pytest-plone", marker = "extra == 'test'", specifier = ">=1.1.0" },
     { name = "requests" },
     { name = "requests", marker = "extra == 'test'" },
 ]
