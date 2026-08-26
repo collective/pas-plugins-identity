@@ -158,3 +158,65 @@ describe('Callback', () => {
     expect(screen.getByRole('alert').textContent).toContain('refused');
   });
 });
+
+describe('Callback and a confirmation link', () => {
+  beforeEach(() => {
+    delete (window as any).location;
+    (window as any).location = { href: '' };
+  });
+
+  it('sends the user back to their identities', () => {
+    // A confirmation link arrives on the same route, carrying the same
+    // `magic_link` parameter as a login link. Only the answer says which one
+    // it was -- and without this branch the page sat on "Signing you in…"
+    // waiting for a token that is never issued.
+    renderCallback(
+      {
+        identityCallback: {},
+        magicLinkConfirm: {
+          loaded: true,
+          data: { linked: { provider: 'email', subject: 'erico@plone.org' } },
+        },
+      },
+      '?magic_link=a-token',
+    );
+
+    expect((window as any).location.href).toBe('/identities');
+  });
+
+  it('does not sign anybody in', () => {
+    // The caller already had a session, and answering a confirmation with a
+    // fresh one would turn a stolen link into a login.
+    const { dispatched } = renderCallback(
+      {
+        identityCallback: {},
+        magicLinkConfirm: {
+          loaded: true,
+          data: { linked: { provider: 'email', subject: 'erico@plone.org' } },
+        },
+      },
+      '?magic_link=a-token',
+    );
+
+    expect(dispatched.some((a: any) => a.type === `${LOGIN}_SUCCESS`)).toBe(
+      false,
+    );
+  });
+
+  it('says what it is doing while confirming', () => {
+    renderCallback(
+      {
+        identityCallback: {},
+        magicLinkConfirm: {
+          loaded: true,
+          data: { linked: { provider: 'email', subject: 'erico@plone.org' } },
+        },
+      },
+      '?magic_link=a-token',
+    );
+
+    expect(screen.getByRole('status').textContent).toContain(
+      'Confirming your address',
+    );
+  });
+});

@@ -14,6 +14,7 @@ import {
   sendMagicLink,
   getUserProfile,
   listIdentities,
+  startLinking,
   startProviderLogin,
   updateClient,
 } from './index';
@@ -178,5 +179,30 @@ describe('the signing key ring', () => {
 
     expect(op).toBe('post');
     expect(path).toBe('/@identity-keys/rotate');
+  });
+});
+
+describe('startLinking', () => {
+  it('names the provider to link', () => {
+    expect(startLinking('github', '/identities').request.data).toEqual({
+      provider: 'github',
+      came_from: '/identities',
+    });
+  });
+
+  it('sends no address for a redirect provider', () => {
+    // The backend takes none, and an empty one would be a malformed request
+    // rather than an omitted field.
+    expect(startLinking('github').request.data).not.toHaveProperty('email');
+  });
+
+  it('carries the address for the email provider', () => {
+    expect(
+      startLinking('email', '/identities', 'erico@plone.org').request.data,
+    ).toEqual({
+      provider: 'email',
+      came_from: '/identities',
+      email: 'erico@plone.org',
+    });
   });
 });

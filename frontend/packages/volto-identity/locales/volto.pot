@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Plone\n"
-"POT-Creation-Date: 2026-08-25T18:41:58.222Z\n"
+"POT-Creation-Date: 2026-08-26T17:59:15.348Z\n"
 "Last-Translator: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Language-Team: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -25,6 +25,16 @@ msgstr ""
 msgid "Actions"
 msgstr ""
 
+#. Default: "Add"
+#: components/Toolbar/Toolbar
+msgid "Add"
+msgstr ""
+
+#. Default: "Add an email address"
+#: components/Identities/EmailLinkForm
+msgid "Add an email address"
+msgstr ""
+
 #. Default: "Add another"
 #: components/Identities/IdentitiesList
 msgid "Add another"
@@ -33,6 +43,11 @@ msgstr ""
 #. Default: "Add provider"
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Add provider"
+msgstr ""
+
+#. Default: "We will email a link to confirm the address belongs to you. Once confirmed, you can sign in with it."
+#: components/Identities/EmailLinkForm
+msgid "Adding an address lets you sign in with a link"
 msgstr ""
 
 #. Default: "Allow"
@@ -71,6 +86,8 @@ msgstr ""
 #: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ProvidersControlPanel
 #: components/Identities/Identities
+#: components/Toolbar/PersonalTools
+#: components/Toolbar/Toolbar
 msgid "Back"
 msgstr ""
 
@@ -94,6 +111,11 @@ msgstr ""
 #: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Changes saved"
+msgstr ""
+
+#. Default: "Check that inbox. The link works once, and only for a few minutes, and it has to be opened while you are still signed in here."
+#: components/Identities/EmailLinkForm
+msgid "Check that inbox for a confirmation link"
 msgstr ""
 
 #. Default: "Choose how you would like to sign in."
@@ -121,9 +143,24 @@ msgstr ""
 msgid "Client unregistered"
 msgstr ""
 
+#. Default: "Collection"
+#: components/Toolbar/Toolbar
+msgid "Collection"
+msgstr ""
+
 #. Default: "Confidential"
 #: components/ControlPanel/ClientsPanel
 msgid "Confidential"
+msgstr ""
+
+#. Default: "Confirming your address…"
+#: components/Callback/Callback
+msgid "Confirming your address"
+msgstr ""
+
+#. Default: "Contents"
+#: components/Toolbar/Toolbar
+msgid "Contents"
 msgstr ""
 
 #. Default: "Copied"
@@ -138,6 +175,7 @@ msgstr ""
 
 #. Default: "Delete"
 #: components/ControlPanel/ProvidersControlPanel
+#: components/ControlPanel/RenderUsers
 msgid "Delete"
 msgstr ""
 
@@ -169,10 +207,13 @@ msgstr ""
 #. Default: "Edit"
 #: components/ControlPanel/ClientsPanel
 #: components/ControlPanel/ProvidersControlPanel
+#: components/ControlPanel/RenderUsers
+#: components/Toolbar/Toolbar
 msgid "Edit"
 msgstr ""
 
 #. Default: "Email address"
+#: components/Identities/EmailLinkForm
 #: components/Login/MagicLinkForm
 msgid "Email address"
 msgstr ""
@@ -193,6 +234,21 @@ msgstr ""
 #: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Error"
+msgstr ""
+
+#. Default: "Expand toolbar"
+#: components/Toolbar/Toolbar
+msgid "Expand toolbar"
+msgstr ""
+
+#. Default: "File"
+#: components/Toolbar/Toolbar
+msgid "File"
+msgstr ""
+
+#. Default: "Focus on"
+#: components/Toolbar/Toolbar
+msgid "Focus on"
 msgstr ""
 
 #. Default: "Grants"
@@ -228,6 +284,11 @@ msgstr ""
 #. Default: "It will be able to read:"
 #: components/Consent/ConsentPanel
 msgid "It will be able to read:"
+msgstr ""
+
+#. Default: "Link"
+#: components/Toolbar/Toolbar
+msgid "Link"
 msgstr ""
 
 #. Default: "Loading clients…"
@@ -270,6 +331,31 @@ msgstr ""
 #. Default: "Login name"
 #: components/Login/PasswordForm
 msgid "Login name"
+msgstr ""
+
+#. Default: "Logout"
+#: components/Toolbar/PersonalTools
+msgid "Logout"
+msgstr ""
+
+#. Default: "Menu closed"
+#: components/Toolbar/Toolbar
+msgid "Menu closed"
+msgstr ""
+
+#. Default: "Menu opened"
+#: components/Toolbar/Toolbar
+msgid "Menu opened"
+msgstr ""
+
+#. Default: "More"
+#: components/Toolbar/Toolbar
+msgid "More"
+msgstr ""
+
+#. Default: "News Item"
+#: components/Toolbar/Toolbar
+msgid "News Item"
 msgstr ""
 
 #. Default: "No"
@@ -318,9 +404,29 @@ msgstr ""
 msgid "Older keys stay in the ring so tokens already issued keep verifying."
 msgstr ""
 
+#. Default: "Page"
+#: components/Toolbar/Toolbar
+msgid "Page"
+msgstr ""
+
 #. Default: "Password"
 #: components/Login/PasswordForm
 msgid "Password"
+msgstr ""
+
+#. Default: "Personal Information"
+#: components/Toolbar/Toolbar
+msgid "Personal Information"
+msgstr ""
+
+#. Default: "Personal Preferences"
+#: components/Toolbar/Toolbar
+msgid "Personal Preferences"
+msgstr ""
+
+#. Default: "Personal tools"
+#: components/Toolbar/Toolbar
+msgid "Personal tools"
 msgstr ""
 
 #. Default: "Preferences"
@@ -406,9 +512,19 @@ msgstr ""
 msgid "Secret for {clientId}"
 msgstr ""
 
+#. Default: "Send confirmation link"
+#: components/Identities/EmailLinkForm
+msgid "Send confirmation link"
+msgstr ""
+
 #. Default: "Settings"
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Settings"
+msgstr ""
+
+#. Default: "Shrink toolbar"
+#: components/Toolbar/Toolbar
+msgid "Shrink toolbar"
 msgstr ""
 
 #. Default: "Sign in"
@@ -548,6 +664,11 @@ msgstr ""
 #. Default: "Type"
 #: components/ControlPanel/ClientsPanel
 msgid "Type"
+msgstr ""
+
+#. Default: "Unlock"
+#: components/Toolbar/Toolbar
+msgid "Unlock"
 msgstr ""
 
 #. Default: "Unregister"

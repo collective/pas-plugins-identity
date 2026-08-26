@@ -6,6 +6,8 @@ import React from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 
 import type { Identity, LoginProvider } from '../../types';
+import { splitLinkable } from '../../helpers/identities';
+import EmailLinkForm from './EmailLinkForm';
 
 import './IdentitiesList.scss';
 
@@ -37,7 +39,10 @@ interface IdentitiesListProps {
   loading: boolean;
   busy: boolean;
   error?: unknown;
+  /** Whether a confirmation mail has gone out for the email provider. */
+  emailSent: boolean;
   onLink: (provider: LoginProvider) => void;
+  onLinkEmail: (provider: LoginProvider, email: string) => void;
   onUnlink: (identity: Identity) => void;
 }
 
@@ -47,10 +52,17 @@ const IdentitiesList: React.FC<IdentitiesListProps> = ({
   loading,
   busy,
   error,
+  emailSent,
   onLink,
+  onLinkEmail,
   onUnlink,
 }) => {
   const intl = useIntl();
+  // Not every provider is a button. The email one proves a mailbox, which
+  // means asking which mailbox first -- rendering it as a button posted a
+  // link request for a provider with no authorize URL, and the page died on
+  // the refusal.
+  const { redirect, email } = splitLinkable(available);
 
   if (loading) {
     return (
@@ -96,11 +108,11 @@ const IdentitiesList: React.FC<IdentitiesListProps> = ({
         </p>
       ) : null}
 
-      {available.length ? (
+      {redirect.length ? (
         <div className="identity-identities__add">
           <h3>{intl.formatMessage(messages.addAnother)}</h3>
           <ul>
-            {available.map((provider) => (
+            {redirect.map((provider) => (
               <li key={provider.id}>
                 <button
                   type="button"
@@ -115,6 +127,14 @@ const IdentitiesList: React.FC<IdentitiesListProps> = ({
             ))}
           </ul>
         </div>
+      ) : null}
+
+      {email ? (
+        <EmailLinkForm
+          sent={emailSent}
+          loading={busy}
+          onSend={(address) => onLinkEmail(email, address)}
+        />
       ) : null}
 
       {error ? (

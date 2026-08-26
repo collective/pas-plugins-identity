@@ -50,6 +50,10 @@ const Identities: React.FC = () => {
     }
   }, [redirecting, linking]);
 
+  // The email provider answers `sent` instead of an authorize URL, and the
+  // page stays where it is to say so.
+  const emailSent = Boolean(linking?.loaded && linking?.data?.sent);
+
   useEffect(() => {
     if (removing?.loaded) {
       // The list is stale the moment an unlink succeeds, and can_unlink may
@@ -62,6 +66,16 @@ const Identities: React.FC = () => {
     (provider: LoginProvider) => {
       setRedirecting(true);
       dispatch(startLinking(provider.id, location.pathname));
+    },
+    [dispatch, location.pathname],
+  );
+
+  const onLinkEmail = useCallback(
+    (provider: LoginProvider, email: string) => {
+      // No `setRedirecting` here: nothing is going to navigate. The flow
+      // continues when the link in the message is clicked, which may well be
+      // in another browser entirely.
+      dispatch(startLinking(provider.id, location.pathname, email));
     },
     [dispatch, location.pathname],
   );
@@ -88,9 +102,15 @@ const Identities: React.FC = () => {
             identities={mine?.data ?? []}
             available={linkable(offered?.data ?? [], mine?.data ?? [])}
             loading={Boolean(mine?.loading)}
-            busy={redirecting || Boolean(removing?.loading)}
+            busy={
+              redirecting ||
+              Boolean(removing?.loading) ||
+              Boolean(linking?.loading)
+            }
             error={linking?.error ?? removing?.error}
+            emailSent={emailSent}
             onLink={onLink}
+            onLinkEmail={onLinkEmail}
             onUnlink={onUnlink}
           />
         </Segment>

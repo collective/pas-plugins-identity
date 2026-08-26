@@ -1,0 +1,3 @@
+Added an address field to {guilabel}`Sign-in methods`, so an email address can be confirmed and used to sign in. Clicking the emailed link returns to the page with the address added.
+
+Before this the email provider was rendered as an ordinary provider button, and pressing it started a redirect flow for a provider that has no URL to redirect to: the request was refused, and the page reported that something had gone wrong. Which providers are buttons and which need an address is now decided in one place that both the login page and this one read, rather than in a string each of them kept its own copy of. @ericof

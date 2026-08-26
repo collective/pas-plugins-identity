@@ -21,6 +21,7 @@ import { LOGIN } from '@plone/volto/constants/ActionTypes';
 
 import { completeCallback, confirmMagicLink } from '../../actions';
 import { readCallback } from '../../helpers/callback';
+import { IDENTITIES_PATH } from '../../config/routes';
 import LoginPanel from '../Login/LoginPanel';
 
 import './Callback.scss';
@@ -30,6 +31,10 @@ const messages = defineMessages({
   // word, and one translation covers both.
   title: { id: 'Log in', defaultMessage: 'Log in' },
   working: { id: 'Signing you in', defaultMessage: 'Signing you in…' },
+  linking: {
+    id: 'Confirming your address',
+    defaultMessage: 'Confirming your address…',
+  },
   refused: {
     id: 'The provider refused the sign-in.',
     defaultMessage: 'The provider refused the sign-in.',
@@ -87,6 +92,21 @@ const Callback: React.FC<CallbackProps> = ({ onToken }) => {
 
   const answered = callback?.loaded ? callback : magic?.loaded ? magic : null;
 
+  // A confirmation link carries the same `magic_link` parameter as a login
+  // link -- the difference is in the token, so it is the answer that reveals
+  // which one arrived.
+  const linked = Boolean(answered?.data?.linked);
+
+  useEffect(() => {
+    if (!linked) {
+      return;
+    }
+    // Back to where the flow was started from. A full load rather than a
+    // router push: the identities list was fetched before this address
+    // existed, and the page has to be told about it.
+    window.location.href = IDENTITIES_PATH;
+  }, [linked]);
+
   useEffect(() => {
     const token = answered?.data?.token;
     if (!token) {
@@ -130,7 +150,7 @@ const Callback: React.FC<CallbackProps> = ({ onToken }) => {
         </p>
       ) : (
         <p className="identity-callback" role="status">
-          {intl.formatMessage(messages.working)}
+          {intl.formatMessage(linked ? messages.linking : messages.working)}
         </p>
       )}
     </LoginPanel>

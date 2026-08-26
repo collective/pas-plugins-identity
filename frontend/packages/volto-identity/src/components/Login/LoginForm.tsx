@@ -11,6 +11,7 @@ import { Container } from '@plone/components';
 import { defineMessages, useIntl } from 'react-intl';
 
 import type { LoginProvider } from '../../types';
+import { EMAIL_DRIVER } from '../../helpers/identities';
 import MagicLinkForm from './MagicLinkForm';
 import PasswordForm from './PasswordForm';
 import ProviderButton from './ProviderButton';
@@ -64,9 +65,6 @@ interface LoginFormProps {
   onSendMagicLink: (email: string) => void;
   onPasswordLogin: (username: string, password: string) => void;
 }
-
-/** Providers handled by the magic-link form rather than a button. */
-const EMAIL_DRIVER = 'email';
 
 /**
  * The driver the local password button wears the colours of.

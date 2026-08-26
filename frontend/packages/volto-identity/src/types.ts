@@ -23,6 +23,31 @@ export interface TokenResponse {
   came_from?: string;
 }
 
+/**
+ * Answer from `POST @identities` for a provider with no authorize URL.
+ *
+ * The email provider's "provider" is a mailbox, so there is nowhere to send
+ * the browser: the flow continues when the link in the message is clicked.
+ */
+export interface EmailLinkSent {
+  provider: string;
+  sent: true;
+}
+
+/** Either shape `POST @identities` answers with. */
+export type LinkStarted = AuthorizeRedirect | EmailLinkSent;
+
+/** Answer from `@magic-link-confirm` when the token was minted for linking. */
+export interface IdentityLinked {
+  linked: {
+    provider: string;
+    subject: string;
+  };
+}
+
+/** Everything `@magic-link-confirm` can answer with. */
+export type ConfirmResponse = TokenResponse | IdentityLinked;
+
 /** Reducer state shared by every request this add-on makes. */
 export interface RequestState {
   loading: boolean;

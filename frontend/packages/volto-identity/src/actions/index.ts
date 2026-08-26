@@ -153,16 +153,25 @@ export function listIdentities(withProviders = false) {
 /**
  * Start a flow that attaches another provider to the caller's account.
  *
+ * Answers one of two shapes. A redirect provider gives back an
+ * `authorize_url` to follow; the email provider gives back `sent`, because
+ * its flow continues in a mailbox rather than in this tab.
+ *
  * @param providerId Provider to link.
  * @param cameFrom Where to send the user afterwards.
+ * @param email Address to confirm, for the email provider only.
  */
-export function startLinking(providerId: string, cameFrom = '') {
+export function startLinking(providerId: string, cameFrom = '', email = '') {
   return {
     type: START_LINKING,
     request: {
       op: 'post',
       path: '/@identities',
-      data: { provider: providerId, came_from: cameFrom },
+      // Sent only when there is one: the backend requires an address for the
+      // email provider and takes none for any other.
+      data: email
+        ? { provider: providerId, came_from: cameFrom, email }
+        : { provider: providerId, came_from: cameFrom },
     },
   };
 }
