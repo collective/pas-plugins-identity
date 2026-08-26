@@ -3,14 +3,14 @@ import React from 'react';
 
 import { PluggablesProvider } from '@plone/volto/components/manage/Pluggable';
 import PersonalTools from './PersonalTools';
-import IdentitiesMenuItem from '../../../../../components/UserMenu/IdentitiesMenuItem';
-import ProfileMenuItem from '../../../../../components/UserMenu/ProfileMenuItem';
+import IdentitiesMenuItem from '../UserMenu/IdentitiesMenuItem';
+import ProfileMenuItem from '../UserMenu/ProfileMenuItem';
 import {
   PersonalInformationMenuItem,
   PreferencesMenuItem,
   SiteSetupMenuItem,
-} from '../../../../../components/UserMenu/UserMenuPlugs';
-import { LOADED, USER, withStore } from '../../../../../stories/fixtures';
+} from '../UserMenu/UserMenuPlugs';
+import { LOADED, USER, withStore } from '../../stories/fixtures';
 
 /**
  * The shadowed personal-tools menu.

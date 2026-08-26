@@ -7,7 +7,7 @@
  * of them fails here instead of in somebody's browser.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '../../../../../testing';
+import { render, screen } from '../../testing';
 import { MemoryRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import React from 'react';
