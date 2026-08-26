@@ -19,6 +19,7 @@ from pas.plugins.identity import logger
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.interfaces import FlowError
 from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity.core.interfaces import ProviderUnusable
 from urllib.parse import urlparse
 
 import requests
@@ -92,8 +93,9 @@ def metadata_for(provider: ProviderConfig) -> JSONDict:
     :returns: Metadata carrying at least an ``authorization_endpoint`` and a
         ``token_endpoint``; OIDC providers additionally carry ``issuer`` and
         ``jwks``.
-    :raises FlowError: When the driver has no metadata source, the issuer is
-        unconfigured, or discovery fails.
+    :raises ProviderUnusable: When the driver has no metadata source or the
+        issuer is unconfigured.
+    :raises FlowError: When discovery itself fails.
     """
     static = STATIC_METADATA.get(provider.driver_id)
     if static is not None:
@@ -106,20 +108,22 @@ def issuer_for(provider: ProviderConfig) -> str:
 
     :param provider: The configured provider.
     :returns: The issuer URL, without a trailing slash.
-    :raises FlowError: When the driver discovers nothing, or the operator has
-        not configured an issuer.
+    :raises ProviderUnusable: When the driver discovers nothing, or the
+        operator has not configured an issuer. Both are permanent, which is
+        why they are not the plain :class:`FlowError` a failed discovery
+        raises.
     """
     fixed = DRIVER_ISSUERS.get(provider.driver_id)
     if fixed is not None:
         return fixed
     if not _asks_for_an_issuer(provider):
-        raise FlowError(
+        raise ProviderUnusable(
             f"{provider.provider_id}: driver {provider.driver_id!r} has no "
             "authorization endpoints"
         )
     issuer = (provider.config.get("issuer") or "").strip().rstrip("/")
     if not issuer:
-        raise FlowError(f"{provider.provider_id}: no issuer configured")
+        raise ProviderUnusable(f"{provider.provider_id}: no issuer configured")
     return issuer
 
 

@@ -45,3 +45,33 @@ USERINFO = {
     "email": "erico@plone.org",
     "email_verified": True,
 }
+
+
+#: The address the magic-link tests prove control of.
+ADDRESS = "erico@plone.org"
+
+#: The email provider record. Shared by the login tests and the linking
+#: tests, which mail the same kind of link for two different purposes: a
+#: second copy would let one of them keep passing against a provider the
+#: other no longer configures.
+EMAIL_PROVIDER_RECORD = {
+    "id": "email",
+    "driver": "email",
+    "title": "Email",
+    "enabled": True,
+    "config": {"token_ttl": 900, "rate_limit_per_hour": 5},
+}
+
+
+def token_from(messages) -> str:
+    """Pull the magic-link token out of a captured message.
+
+    :param messages: Parsed messages.
+    :returns: The token.
+    """
+    from urllib.parse import parse_qs
+    from urllib.parse import urlparse
+
+    text = messages[-1].get_content()
+    url = next(word for word in text.split() if "magic_link=" in word)
+    return parse_qs(urlparse(url).query)["magic_link"][0]

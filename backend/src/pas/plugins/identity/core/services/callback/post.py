@@ -24,6 +24,7 @@ from pas.plugins.identity.core.interfaces import ClaimsError
 from pas.plugins.identity.core.interfaces import FlowError
 from pas.plugins.identity.core.interfaces import IdentityCollision
 from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity.core.interfaces import ProviderUnusable
 from pas.plugins.identity.core.pas import CREDENTIALS_KEY
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.services.base import IdentityService
@@ -81,6 +82,14 @@ class IdentityCallback(IdentityService):
             attempt, payload = self._exchange(provider, data["state"], data["code"])
             subject = provider.driver.subject(payload)
             claims = provider.driver.normalize_claims(payload)
+        except ProviderUnusable as exc:
+            # Not an authentication failure: nothing was wrong with the
+            # credential, the provider simply cannot take part in this flow.
+            # Answering 401 here would send a caller looking for a forged
+            # state at what is really a configuration problem.
+            logger.info("Unusable provider %r: %s", provider.provider_id, exc)
+            self._audit_failure(provider.provider_id, audit.FLOW_REFUSED, exc)
+            return self._error(400, "Provider cannot start this flow", str(exc))
         except FlowError as exc:
             # A bad state, a replayed code or a rejected id_token all land
             # here, and all read the same to the caller. They do not read the

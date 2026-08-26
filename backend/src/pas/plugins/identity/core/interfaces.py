@@ -297,6 +297,17 @@ class FlowError(Exception):
     """An OAuth/OIDC flow failed a security precondition."""
 
 
+class ProviderUnusable(FlowError):
+    """A provider cannot start a redirect flow at all.
+
+    Distinct from its parent, and from a network failure, because the
+    condition is permanent: the driver publishes no authorization endpoint,
+    or the operator has configured no issuer to discover one from. Retrying
+    changes nothing, so a caller must not be told the provider is
+    temporarily unavailable.
+    """
+
+
 class RateLimited(Exception):
     """A rate-limited endpoint refused the request."""
 

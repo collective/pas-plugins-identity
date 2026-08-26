@@ -20,6 +20,7 @@ from pas.plugins.identity import logger
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.interfaces import FlowError
 from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity.core.interfaces import ProviderUnusable
 from urllib.parse import urlparse
 
 import secrets
@@ -455,11 +456,13 @@ class FlowManager:
 
         :param provider: The configured provider.
         :returns: The client id.
-        :raises FlowError: When the provider has no client id configured.
+        :raises ProviderUnusable: When the provider has no client id
+            configured. Permanent until an operator fixes it, so not the
+            retry-worthy failure a plain :class:`FlowError` describes.
         """
         client_id = provider.config.get("client_id", "")
         if not client_id:
-            raise FlowError(f"{provider.provider_id}: no client_id configured")
+            raise ProviderUnusable(f"{provider.provider_id}: no client_id configured")
         return client_id
 
     @staticmethod

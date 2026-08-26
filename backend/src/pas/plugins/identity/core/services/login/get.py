@@ -21,6 +21,7 @@ from pas.plugins.identity.core.flows.metadata import metadata_for
 from pas.plugins.identity.core.flows.session import FlowSession
 from pas.plugins.identity.core.interfaces import FlowError
 from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity.core.interfaces import ProviderUnusable
 from pas.plugins.identity.core.services.base import IdentityService
 from pas.plugins.identity.core.services.login import provider_listing
 from plone import api
@@ -97,6 +98,15 @@ class LoginProviders(IdentityService):
                 metadata,
                 came_from=came_from,
             )
+        except ProviderUnusable as exc:
+            # Permanent, so not an outage: this provider will never have an
+            # authorization endpoint to send the browser to. The email driver
+            # arrives here whenever a client renders it as a button instead
+            # of the address form magic-link login actually needs.
+            logger.info(
+                "Refusing to start a flow for %r: %s", provider.provider_id, exc
+            )
+            return self._error(400, "Provider cannot start this flow", str(exc))
         except FlowError as exc:
             logger.info(
                 "Refusing to start a flow for %r: %s", provider.provider_id, exc

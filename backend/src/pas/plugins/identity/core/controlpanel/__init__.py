@@ -33,8 +33,8 @@ from pas.plugins.identity import logger
 from pas.plugins.identity.core.controlpanel.interfaces import IProviderRecords
 from pas.plugins.identity.core.drivers import get_driver
 from pas.plugins.identity.core.drivers.base import BaseDriver
-from pas.plugins.identity.core.interfaces import FlowError
 from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity.core.interfaces import ProviderUnusable
 from plone import api
 from plone.registry import field as registry_field
 from plone.registry.interfaces import IRegistry
@@ -462,8 +462,8 @@ def get_callback_url() -> str:
     registered with the provider byte for byte.
 
     :returns: The absolute URL to hand the provider.
-    :raises FlowError: When the configured value is neither a path nor an
-        absolute URL, which a provider would reject opaquely.
+    :raises ProviderUnusable: When the configured value is neither a path
+        nor an absolute URL, which a provider would reject opaquely.
     """
     url = (
         api.portal.get_registry_record(CALLBACK_URL_RECORD, default="") or ""
@@ -472,7 +472,7 @@ def get_callback_url() -> str:
     if url.startswith("/"):
         return f"{api.portal.get().absolute_url()}{url}"
     if "://" not in url:
-        raise FlowError(
+        raise ProviderUnusable(
             f"{CALLBACK_URL_RECORD} is {url!r}, which is neither a path "
             "starting with '/' nor an absolute URL"
         )

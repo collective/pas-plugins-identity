@@ -157,6 +157,17 @@ class TestStart:
         assert self.request.response.getStatus() == 404
         assert result["error"]["type"] == "Unknown provider"
 
+    def test_a_driver_with_no_endpoints_is_not_an_outage(self, email_configured):
+        """The email provider is magic-link only: its "provider" is a
+        mailbox, so there is no authorization endpoint and there never will
+        be. Reporting that as a bad gateway told a client to try again at
+        something that cannot work, which is how a broken button survives.
+        """
+        result = self.start("email")
+
+        assert self.request.response.getStatus() == 400
+        assert result["error"]["type"] == "Provider cannot start this flow"
+
     def test_unreachable_provider_is_a_bad_gateway(self):
         """A provider that is down is the provider's fault, not the caller's."""
         self.stub_metadata(FlowError("dex: could not fetch discovery"))
@@ -181,11 +192,16 @@ class TestStart:
 
     def test_a_malformed_callback_url_is_reported(self):
         """Neither a path nor an absolute URL: the provider would answer an
-        opaque rejection long after the useful moment."""
+        opaque rejection long after the useful moment.
+
+        Not a bad gateway, which is what this used to answer: no provider was
+        ever contacted, and no number of retries will fix a registry record.
+        """
         self.stub_metadata()
         api.portal.set_registry_record(CALLBACK_URL_RECORD, "login-identity")
 
         result = self.start()
 
-        assert self.request.response.getStatus() == 502
+        assert self.request.response.getStatus() == 400
+        assert result["error"]["type"] == "Provider cannot start this flow"
         assert "callback_url" in result["error"]["message"]
