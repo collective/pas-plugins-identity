@@ -20,6 +20,7 @@ from pas.plugins.identity.core.events import IdentityLinked
 from pas.plugins.identity.core.events import IdentityUnlinked
 from pas.plugins.identity.core.flows.magiclink import MagicLinkStore
 from pas.plugins.identity.core.interfaces import Claims
+from pas.plugins.identity.core.interfaces import ICredentialStorage
 from pas.plugins.identity.core.interfaces import IGroupContent
 from pas.plugins.identity.core.interfaces import IIdentityPlugin
 from pas.plugins.identity.core.interfaces import IOwnsUserProperties
@@ -311,7 +312,7 @@ class IdentityPlugin(BasePlugin):
         :returns: ``(userid, login)`` on success, ``None`` otherwise.
         """
         if credentials.get("extractor") != EXTRACTOR:
-            return None
+            return self._authenticate_content_password(credentials)
 
         provider = credentials["provider"]
         subject = credentials["subject"]
@@ -406,18 +407,18 @@ class IdentityPlugin(BasePlugin):
         from plone import api
 
         with api.env.adopt_roles(["Manager"]):
-            api.content.create(
+            obj = api.content.create(
                 container=container,
                 type=portal_type,
                 id=login,
                 userid=login,
                 login=login,
             )
-        self._delegate_credential(login, password)
+        self._delegate_credential(obj, login, password)
         logger.info("Created %s %r for %s", portal_type, login, login)
         return True
 
-    def _delegate_credential(self, login: str, password: str) -> None:
+    def _delegate_credential(self, obj, login: str, password: str) -> None:
         """Put the password where a password can live.
 
         Not on the content object. A Dexterity field holding a credential is
@@ -433,8 +434,11 @@ class IdentityPlugin(BasePlugin):
         the ordinary API ends up with someone who can actually sign in.
 
         A site that would rather keep credentials on the content type opts
-        into a behavior that does so, and this step then has nothing to do.
+        into something providing
+        :class:`~pas.plugins.identity.core.interfaces.ICredentialStorage`,
+        and this step then has nothing to do.
 
+        :param obj: The content object just created, asked first.
         :param login: The login name, which is also the userid.
         :param password: The password PAS was given. Nothing is stored when
             it is empty -- an externally authenticated user has none, and a
@@ -442,6 +446,12 @@ class IdentityPlugin(BasePlugin):
         """
         if not password:
             return
+
+        storage = ICredentialStorage(obj, None)
+        if storage is not None:
+            storage.set_password(password)
+            return
+
         try:
             self._source_users().addUser(login, login, password)
         except KeyError:
@@ -675,6 +685,66 @@ class IdentityPlugin(BasePlugin):
         container, portal_type = configured
         obj = container.get(group_id)
         return obj if getattr(obj, "portal_type", None) == portal_type else None
+
+    def _authenticate_content_password(
+        self, credentials: JSONDict
+    ) -> tuple[str, str] | None:
+        """Authenticate against a password kept on the user's own object.
+
+        Answers only where a site both keeps its users as content *and* has
+        opted something into
+        :class:`~pas.plugins.identity.core.interfaces.ICredentialStorage`.
+        Neither is the default, so on an ordinary site the adaptation fails
+        and ``source_users`` answers exactly as it always did.
+
+        This lives here rather than in the ``[profile]`` layer on purpose.
+        That layer serves properties, enumeration and groups and must never
+        become a way to log in -- there is a test named for it -- because the
+        plugin that authenticates a userid is the one ``@users`` reports as
+        its source, and a site's answer to "where did this account come
+        from" should not change with an optional property store. Core already
+        authenticates; this is one more thing it authenticates against.
+
+        The login is resolved through PAS rather than by guessing that it
+        equals the userid. Enumeration is the layer's job, and asking it is
+        what makes a login name that differs from the userid work.
+
+        :param credentials: PAS's extracted credentials.
+        :returns: ``(userid, login)`` on success, or ``None``.
+        """
+        login = credentials.get("login")
+        password = credentials.get("password")
+        if not login or not password:
+            return None
+
+        userid = self._userid_for_login(login)
+        if userid is None:
+            return None
+
+        obj = self._content_user(userid)
+        if obj is None:
+            return None
+
+        storage = ICredentialStorage(obj, None)
+        if storage is None or not storage.check_password(password):
+            return None
+        return (userid, login)
+
+    def _userid_for_login(self, login: str) -> str | None:
+        """Return the userid behind a login name, asking PAS.
+
+        ``exact_match`` is not optional: ``searchUsers`` matches substrings,
+        so ``alice`` would otherwise also find ``alice2`` and this would
+        authenticate whichever record came back first.
+
+        :param login: The login name offered.
+        :returns: The userid, or ``None`` when nothing matches.
+        """
+        for record in self._getPAS().searchUsers(login=login, exact_match=True):
+            found = record.get("id")
+            if found:
+                return found
+        return None
 
     def _remembered_picture(self, provider: str, subject: str) -> str:
         """Return the avatar URL stored the last time this identity signed in.

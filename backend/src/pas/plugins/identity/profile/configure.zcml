@@ -113,6 +113,25 @@
       name="@users"
       />
 
+  <!-- Off unless a site enables it on a type. Without it a new user's
+       password goes to source_users, which is where Plone has always kept
+       one. See .behaviors for the four ways a Dexterity field holding a
+       credential leaks it, and why the hash is an annotation. -->
+  <plone:behavior
+      name="pas.plugins.identity.password"
+      title="Password storage"
+      description="Keep this user's password on the object rather than in source_users."
+      factory=".behaviors.PasswordStorage"
+      provides="pas.plugins.identity.core.interfaces.ICredentialStorage"
+      for="pas.plugins.identity.core.interfaces.IUserContent"
+      />
+
+  <subscriber
+      for="pas.plugins.identity.core.interfaces.IUserContent
+           zope.lifecycleevent.interfaces.IObjectCopiedEvent"
+      handler=".behaviors.clear_on_copy"
+      />
+
   <!-- Where Profiles live is configurable and set late. A layered profile
        may move the container after this package's handler has run, so the
        core record naming it is derived and re-derived rather than written

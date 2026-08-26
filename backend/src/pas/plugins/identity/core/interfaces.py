@@ -223,6 +223,38 @@ class IUserContent(Interface):
     group_ids = Attribute("Ids of the groups this user belongs to.")
 
 
+class ICredentialStorage(Interface):
+    """An object that can hold its own password.
+
+    Optional, and off unless a site opts in. Core writes a new user's
+    password to ``source_users`` by default, because a Dexterity *field*
+    holding a credential is serialized by ``plone.restapi``, exported by
+    GenericSetup, indexable, and snapshotted by versioning -- four separate
+    paths that each fail by disclosing it, and each of which has to be
+    remembered separately.
+
+    A layer that would rather keep the credential with the rest of the user
+    provides this instead, takes on those four questions deliberately, and
+    core then has nothing to delegate.
+
+    Adapted from the created object, so a site decides per content type
+    rather than globally.
+    """
+
+    def set_password(password: str) -> None:
+        """Store a password, hashed.
+
+        :param password: The plaintext, as PAS was given it.
+        """
+
+    def check_password(password: str) -> bool:
+        """Report whether a password matches the stored one.
+
+        :param password: The plaintext to check.
+        :returns: Whether it matches. False when nothing is stored.
+        """
+
+
 class IGroupContent(Interface):
     """Marker for a Dexterity content type whose objects *are* groups.
 
