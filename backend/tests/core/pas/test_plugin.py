@@ -17,6 +17,7 @@ from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.pas.plugin import IdentityPlugin
 from pas.plugins.identity.core.pas.plugin import mint_userid
 from pas.plugins.identity.setuphandlers import ACTIVATED_INTERFACES
+from pas.plugins.identity.setuphandlers import FIRST_REFUSAL_INTERFACES
 from pas.plugins.identity.setuphandlers import install_plugin
 from pas.plugins.identity.setuphandlers import uninstall_plugin
 from plone import api
@@ -91,6 +92,25 @@ class TestInstallation:
     def test_challenge_not_activated(self):
         """Challenge is opt-in and stays off."""
         assert PLUGIN_ID not in self.acl_users.plugins.listPluginIds(IChallengePlugin)
+
+    @pytest.mark.parametrize("interface", FIRST_REFUSAL_INTERFACES)
+    def test_asked_before_the_stock_plugin(self, interface):
+        """Position, not just presence.
+
+        Both interfaces here work by refusal, and ``source_users`` and
+        ``source_groups`` never decline. Registered below either of them this
+        plugin is never reached, and nothing reports it -- every unit test
+        calling the plugin directly still passes while the feature does
+        nothing through ``api.user.create``. Asserting presence, which is what
+        :meth:`test_interfaces_activated` does, cannot see the difference.
+
+        :param interface: A first-refusal interface.
+        """
+        registered = self.acl_users.plugins.listPluginIds(interface)
+
+        # Being first is only meaningful if there is something to be ahead of.
+        assert len(registered) > 1
+        assert registered[0] == PLUGIN_ID
 
     def test_install_is_idempotent(self):
         """Re-running install keeps the same object -- and its store."""
