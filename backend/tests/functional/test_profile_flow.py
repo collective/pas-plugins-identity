@@ -37,7 +37,7 @@ def profile_portal(portal):
     :param portal: The portal with both Dex clients configured.
     :returns: The Plone site.
     """
-    applyProfile(portal, f"{PACKAGE_NAME}:profile")
+    applyProfile(portal, f"{PACKAGE_NAME}.content:default")
     transaction.commit()
     return portal
 

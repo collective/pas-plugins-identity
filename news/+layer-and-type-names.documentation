@@ -1,0 +1,3 @@
+Renamed the layer and its two content types throughout the documentation and the demo stack. The optional extra is `[content]` rather than `[profile]`, `IdentityProfile` is now `UserProfile` and `IdentityGroup` is now `UserGroup`.
+
+Each layer is also installed by its own GenericSetup profile now — `pas.plugins.identity.content:default` and `pas.plugins.identity.server:default` — so the add-ons control panel lists all three layers as separate entries. The install guide and the layers concept page say so, including why the two optional entries show no version. @ericof

@@ -24,6 +24,17 @@ The package ships as a core plus two optional extras.
 Core never imports from either optional layer.
 The two optional layers never import from each other.
 
+Each layer is switched on by its own GenericSetup profile, named after the package that declares it.
+
+```text
+pas.plugins.identity:default
+pas.plugins.identity.content:default
+pas.plugins.identity.server:default
+```
+
+The add-ons control panel lists all three, so a layer is installed and uninstalled where every other add-on is.
+The two optional entries show no version, because they are named after packages rather than distributions and there is no package metadata to read.
+
 ## Why the boundary is more than tidiness
 
 Three layers that import freely are one layer with three names.

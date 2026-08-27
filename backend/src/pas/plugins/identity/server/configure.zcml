@@ -5,6 +5,8 @@
     i18n_domain="pas.plugins.identity"
     >
 
+  <include file="profiles.zcml" />
+
   <!-- Nothing is registered here yet beyond the layer itself. The endpoints
        arrive with the rest of Gate S1 and will every one of them be bound to
        ``.interfaces.IIdentityServerLayer``: an /authorize endpoint in a site

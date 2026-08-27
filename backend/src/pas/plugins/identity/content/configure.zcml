@@ -5,6 +5,8 @@
     i18n_domain="pas.plugins.identity"
     >
 
+  <include file="profiles.zcml" />
+
   <class class=".group.UserGroup">
     <implements interface=".interfaces.IUserGroup" />
   </class>

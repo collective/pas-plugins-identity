@@ -19,4 +19,4 @@ from pas.plugins.identity import PACKAGE_NAME
 
 #: The ``[server]`` profile, which the identity-provider side needs before
 #: there is a client registry to register anything in.
-SERVER_PROFILE_ID = f"{PACKAGE_NAME}:server"
+SERVER_PROFILE_ID = f"{PACKAGE_NAME}.server:default"

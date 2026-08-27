@@ -3,7 +3,7 @@
   <version>1000</version>
   <dependencies>
     <dependency>profile-pas.plugins.identity:default</dependency>
-    <dependency>profile-pas.plugins.identity:profile</dependency>
-    <dependency>profile-pas.plugins.identity:server</dependency>
+    <dependency>profile-pas.plugins.identity.content:default</dependency>
+    <dependency>profile-pas.plugins.identity.server:default</dependency>
   </dependencies>
 </metadata>

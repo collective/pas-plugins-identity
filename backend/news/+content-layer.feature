@@ -1,4 +1,4 @@
-Added the `[content]` extra: users backed by content objects, installed by its own `pas.plugins.identity:profile` GenericSetup profile.
+Added the `[content]` extra: users backed by content objects, installed by its own `pas.plugins.identity.content:default` GenericSetup profile.
 
 An `UserProfile` Dexterity type, a three-state workflow (`incomplete` / `complete` / `deactivated`), and a dedicated `portal_identity_catalog` carrying the whole PAS property sheet as metadata. Where Profiles live is configuration rather than a constant — the container's parent, id, title and type are four registry records — and the catalog indexes a Profile wherever it actually is, so reorganising content is not a deauthentication. Drift is reported by a read-only consistency check and repaired by a re-runnable import step, kept apart so the check can be scheduled without a side effect. Uninstalling removes the catalog, the type and the workflow and leaves every Profile untouched: uninstalling an add-on is a configuration change, not an instruction to delete accounts.
 

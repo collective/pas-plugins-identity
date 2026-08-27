@@ -61,7 +61,7 @@ def server_site(functional):
     :returns: The portal.
     """
     portal = functional["portal"]
-    applyProfile(portal, f"{PACKAGE_NAME}:server")
+    applyProfile(portal, f"{PACKAGE_NAME}.server:default")
     api.portal.set_registry_record(ISSUER_RECORD, ISSUER)
     add_client(
         "app",
@@ -89,7 +89,7 @@ def service_site(functional):
         the only moment it exists.
     """
     portal = functional["portal"]
-    applyProfile(portal, f"{PACKAGE_NAME}:server")
+    applyProfile(portal, f"{PACKAGE_NAME}.server:default")
     api.portal.set_registry_record(ISSUER_RECORD, ISSUER)
     with api.env.adopt_roles(["Manager"]):
         api.user.create(

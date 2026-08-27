@@ -33,10 +33,12 @@ It sets the four registry records described in {doc}`/reference/user-content` an
 pip install "pas.plugins.identity[content]"
 ```
 
-Then apply its profile:
+Each optional layer is its own entry in the add-ons control panel, with its own install and uninstall button.
+The panel shows no version beside it, because the entry is named after a package rather than a distribution.
+To apply it from a setup profile instead, name it in full:
 
 ```text
-pas.plugins.identity:profile
+pas.plugins.identity.content:default
 ```
 
 If you want the site to act as an authorization server that other applications sign in against, install that extra and apply its profile:
@@ -46,14 +48,14 @@ pip install "pas.plugins.identity[server]"
 ```
 
 ```text
-pas.plugins.identity:server
+pas.plugins.identity.server:default
 ```
 
 Every profile has a matching uninstall profile, and uninstalling is tested.
 The test installs, uninstalls, and asserts that the site still works with no plugin, registry key, or tool left behind.
 
 ```{note}
-Uninstalling the `profile` extra removes the catalog, the content types, and the workflows.
+Uninstalling the `content` extra removes the catalog, the content types, and the workflows.
 It leaves every `UserProfile` object and its data exactly where it is.
 Uninstalling an add-on is a configuration change, not an instruction to delete everyone's account data.
 ```

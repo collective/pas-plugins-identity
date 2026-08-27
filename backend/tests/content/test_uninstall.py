@@ -47,7 +47,7 @@ def uninstalled(portal, profile_with_data):
     :returns: That path.
     """
     setup = api.portal.get_tool("portal_setup")
-    setup.runAllImportStepsFromProfile(f"profile-{PACKAGE_NAME}:uninstall-profile")
+    setup.runAllImportStepsFromProfile(f"profile-{PACKAGE_NAME}.content:uninstall")
     return profile_with_data
 
 

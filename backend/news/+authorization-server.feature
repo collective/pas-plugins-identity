@@ -1,4 +1,4 @@
-Added the `[server]` extra: this site as an OAuth 2.1 authorization server, installed by its own `pas.plugins.identity:server` GenericSetup profile, which also registers the browser layer everything in the layer binds to — a site that never applied it does not publish the endpoints at all.
+Added the `[server]` extra: this site as an OAuth 2.1 authorization server, installed by its own `pas.plugins.identity.server:default` GenericSetup profile, which also registers the browser layer everything in the layer binds to — a site that never applied it does not publish the endpoints at all.
 
 Clients are registry-backed records, exportable through GenericSetup like providers are, but their secrets are stored hashed with scrypt rather than masked: this package is the server here, so nothing ever needs the plaintext again. A secret is returned once when minted or rotated and cannot be read back. Redirect URIs match exactly, public clients are flagged as requiring PKCE, and an unknown client id costs the same work as a wrong secret so the two cannot be told apart.
 

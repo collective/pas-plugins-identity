@@ -2,6 +2,6 @@
 <metadata>
   <version>1000</version>
   <dependencies>
-    <dependency>profile-pas.plugins.identity:profile</dependency>
+    <dependency>profile-pas.plugins.identity.content:default</dependency>
   </dependencies>
 </metadata>

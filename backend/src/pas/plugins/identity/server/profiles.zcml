@@ -1,0 +1,31 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <!-- Declared here rather than in the distribution's own profiles.zcml, so
+       the profile id is built from this package: the layer installs as
+       ``pas.plugins.identity.server:default`` and appears in the add-ons
+       control panel as its own entry. See the sibling file in ``content``
+       for the reasoning and for what the panel cannot show. -->
+
+  <genericsetup:registerProfile
+      name="default"
+      title="pas.plugins.identity: Authorization server"
+      description="Plone as an OAuth 2.1 / OIDC provider."
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      directory="profiles/default"
+      post_handler=".setuphandlers.post_install"
+      />
+
+  <genericsetup:registerProfile
+      name="uninstall"
+      title="pas.plugins.identity: Uninstall the authorization server"
+      description="Remove the authorization server's settings and browser layer."
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      directory="profiles/uninstall"
+      post_handler=".setuphandlers.post_uninstall"
+      />
+
+</configure>

@@ -137,7 +137,7 @@ def portal(functional, keycloak):
     that a logout upstream ends the sessions downstream.
     """
     site = functional["portal"]
-    applyProfile(site, f"{PACKAGE_NAME}:server")
+    applyProfile(site, f"{PACKAGE_NAME}.server:default")
     set_providers([ProviderConfig.deserialize(keycloak)])
     api.portal.set_registry_record(CALLBACK_URL_RECORD, CALLBACK_URL)
     transaction.commit()

@@ -76,8 +76,8 @@ class HiddenProfiles:
         """
         return [
             f"{PACKAGE_NAME}:uninstall",
-            f"{PACKAGE_NAME}:uninstall-profile",
-            f"{PACKAGE_NAME}:uninstall-server",
+            f"{PACKAGE_NAME}.content:uninstall",
+            f"{PACKAGE_NAME}.server:uninstall",
         ]
 
     def getNonInstallableProducts(self) -> list[str]:

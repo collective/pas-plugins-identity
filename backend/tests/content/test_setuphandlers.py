@@ -100,7 +100,7 @@ class TestRebuild:
         run during every add-on installation in the site, and clearing an
         innocent catalog is not something to leave to a marker file."""
         setup_tool = api.portal.get_tool("portal_setup")
-        profile_id = "pas.plugins.identity:rebuild-profile-catalog"
+        profile_id = "pas.plugins.identity.content:rebuild-catalog"
 
         assert setup_tool.getProfileInfo(profile_id)
 
@@ -108,7 +108,7 @@ class TestRebuild:
         """What made the marker file necessary in the first place."""
         setup_tool = api.portal.get_tool("portal_setup")
 
-        assert "pas.plugins.identity.rebuild-profile-catalog" not in (
+        assert "pas.plugins.identity.content.rebuild-catalog" not in (
             setup_tool.getSortedImportSteps()
         )
 

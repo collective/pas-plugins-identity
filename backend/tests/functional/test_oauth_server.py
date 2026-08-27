@@ -59,7 +59,7 @@ def server(functional):
     :returns: Mapping of the portal URL and the registered client's secret.
     """
     portal = functional["portal"]
-    applyProfile(portal, f"{PACKAGE_NAME}:server")
+    applyProfile(portal, f"{PACKAGE_NAME}.server:default")
     api.portal.set_registry_record(ISSUER_RECORD, portal.absolute_url())
     with api.env.adopt_roles(["Manager"]):
         api.user.create(

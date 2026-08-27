@@ -1,7 +1,6 @@
 <configure
     xmlns="http://namespaces.zope.org/zope"
     xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
-    xmlns:zcml="http://namespaces.zope.org/zcml"
     i18n_domain="pas.plugins.identity"
     >
 
@@ -23,78 +22,14 @@
       post_handler=".setuphandlers.post_uninstall"
       />
 
-  <!-- Hide Uninstall Profile -->
+  <!-- Hide the uninstall profiles of all three layers. One utility is
+       enough: the add-ons control panel collects every INonInstallable it
+       can find and merges what they hide, so the name this is registered
+       under has nothing to do with which package a hidden profile is in. -->
   <utility
       factory=".setuphandlers.HiddenProfiles"
       name="pas.plugins.identity"
       />
-
-  <!-- The [content] extra's profiles. Declared here rather than in
-       the layer's own configure.zcml because GenericSetup builds a profile id
-       from the package the directive appears in: declared next to the code,
-       these would install as ``pas.plugins.identity.content:profile``, which
-       is not a name anybody would guess. -->
-  <configure zcml:condition="installed plone.app.dexterity">
-
-    <genericsetup:registerProfile
-        name="profile"
-        title="pas.plugins.identity: Profiles"
-        description="Content-backed user profiles, with a dedicated catalog."
-        provides="Products.GenericSetup.interfaces.EXTENSION"
-        directory="profiles/profile"
-        post_handler=".content.setuphandlers.post_install"
-        />
-
-    <!-- A profile rather than a site-wide import step. An import step is
-         registered once for the whole site and runs during *every* add-on
-         installation, so keeping it from clearing an innocent catalog needed
-         a marker file in the profile directory and a guard reading it. A
-         profile runs when somebody applies it and never otherwise, which is
-         the behaviour that guard was reconstructing. -->
-    <genericsetup:registerProfile
-        name="rebuild-profile-catalog"
-        title="pas.plugins.identity: Rebuild the Profile catalog"
-        description="Clear the dedicated Profile catalog and index every Profile in the site again. Re-runnable, and safe to run at any time."
-        provides="Products.GenericSetup.interfaces.EXTENSION"
-        directory="profiles/rebuild-profile-catalog"
-        post_handler=".content.setuphandlers.rebuild_catalog"
-        />
-
-    <genericsetup:registerProfile
-        name="uninstall-profile"
-        title="pas.plugins.identity: Uninstall profiles"
-        description="Remove the Profile catalog and content type registrations."
-        provides="Products.GenericSetup.interfaces.EXTENSION"
-        directory="profiles/uninstall-profile"
-        post_handler=".content.setuphandlers.post_uninstall"
-        />
-
-  </configure>
-
-  <!-- The [server] extra's profiles. Declared here for the same reason as
-       the [content] ones above: GenericSetup builds the profile id from the
-       package the directive appears in. -->
-  <configure zcml:condition="installed cryptography">
-
-    <genericsetup:registerProfile
-        name="server"
-        title="pas.plugins.identity: Authorization server"
-        description="Plone as an OAuth 2.1 / OIDC provider."
-        provides="Products.GenericSetup.interfaces.EXTENSION"
-        directory="profiles/server"
-        post_handler=".server.setuphandlers.post_install"
-        />
-
-    <genericsetup:registerProfile
-        name="uninstall-server"
-        title="pas.plugins.identity: Uninstall authorization server"
-        description="Remove the authorization server's settings and browser layer."
-        provides="Products.GenericSetup.interfaces.EXTENSION"
-        directory="profiles/uninstall-server"
-        post_handler=".server.setuphandlers.post_uninstall"
-        />
-
-  </configure>
 
   <include package=".upgrades" />
 
