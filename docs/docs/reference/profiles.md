@@ -84,10 +84,27 @@ The two permissions are separate so that a site filing groups apart from users c
 
 ## Permissions on a profile
 
-A user gets `Editor` on their own `UserProfile`, and nothing on anybody else's.
+A user gets `Owner` on their own `UserProfile`, and nothing on anybody else's.
+The role is computed by a local role provider rather than assigned when the profile is created, so there is nothing to keep in step.
 
-Not `Owner`.
-`Owner` carries the right to delete, and a user deleting their own `UserProfile` would break their account while their sign-in kept working.
+In Plone, `Owner` is the role that says an object belongs to a user, and it is the role the sharing tab and every other add-on already understand.
+
+It also carries more than editing.
+Stock Plone grants `Owner` sixteen permissions with acquisition on, and the workflow states the ones that matter so they stop at the site administrator:
+
+```text
+Delete objects
+Add portal content
+Add portal folders
+Manage properties
+Modify constrain types
+Modify view template
+Undo changes
+View management screens
+```
+
+`Delete objects` is the one to keep in mind.
+A user deleting their own `UserProfile` would break their account while their sign-in kept working.
 
 ## Endpoints
 

@@ -8,10 +8,10 @@ whatever the Profile happened to acquire from wherever it was filed.
 
 The roles that matter here:
 
-``Editor``
+``Owner``
     The local role a user holds on their *own* Profile, computed by
     :mod:`pas.plugins.identity.content.localroles`. Not a site role: alice is
-    Editor on alice's Profile and nothing on bob's, which is what makes these
+    Owner of alice's Profile and nothing on bob's, which is what makes these
     tests about self-service rather than about privilege.
 
 ``Member``
@@ -68,6 +68,48 @@ def _may(userid: str, permission: str, obj) -> bool:
     """
     with api.env.adopt_user(username=userid):
         return bool(getSecurityManager().checkPermission(permission, obj))
+
+
+#: What stock Plone hands ``Owner`` site-wide with acquisition on, and what
+#: ``user_profile_workflow`` therefore has to manage. Owning your own Profile
+#: means being able to edit it, and these are the things it must not also
+#: come to mean.
+OWNER_WOULD_ACQUIRE = (
+    "Delete objects",
+    "Add portal content",
+    "Add portal folders",
+    "Manage properties",
+    "Modify constrain types",
+    "Modify view template",
+    "Undo changes",
+    "View management screens",
+)
+
+
+class TestOwningYourProfileIsNotOwningPlone:
+    """The cost of using ``Owner`` for the self-role, and the fence around it.
+
+    ``Editor`` holds nothing site-wide, so granting it locally granted exactly
+    what the workflow said. ``Owner`` holds sixteen permissions with
+    acquisition on, and every one the workflow does not manage would land on
+    the user whose Profile it is.
+
+    The one that matters most is ``Delete objects``: a user deleting their own
+    Profile keeps a login that succeeds and an account whose properties and
+    enumeration have stopped working. The rest are smaller and the same shape.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, profiles) -> None:
+        self.profiles = profiles
+
+    @pytest.mark.parametrize("permission", OWNER_WOULD_ACQUIRE)
+    def test_the_owner_does_not_hold_it(self, permission: str):
+        assert not _may("alice", permission, self.profiles["alice"])
+
+    def test_but_they_may_still_edit_it(self):
+        """The half being kept. If this goes red the fence is too high."""
+        assert _may("alice", EDIT, self.profiles["alice"])
 
 
 class TestIncomplete:

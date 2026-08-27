@@ -39,8 +39,17 @@ class TestRolesAreComputed:
     def _setup(self, make_profile) -> None:
         self.profile = make_profile("alice")
 
-    def test_owner_gets_editor(self):
-        """The self-Editor role."""
+    def test_the_role_is_owner(self):
+        """Named here rather than only through the constant.
+
+        Every other assertion in this module reads ``SELF_ROLE``, so all of
+        them would keep passing if the role changed. Plone, the Sharing tab
+        and every add-on that asks "is this yours" mean ``Owner``, and that is
+        a decision worth one test that fails when somebody reverses it.
+        """
+        assert SELF_ROLE == "Owner"
+
+    def test_the_user_gets_it_on_their_own_profile(self):
         assert ProfileSelfRole(self.profile).getRoles("alice") == (SELF_ROLE,)
 
     def test_somebody_else_gets_nothing(self):
