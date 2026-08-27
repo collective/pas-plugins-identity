@@ -45,6 +45,11 @@
          type. Listing values here would freeze today's answer into every
          site that installs this profile. -->
 
+    <!-- The gate itself is on, and is not listed here for the same reason:
+         the schema default is True and stating it again would be a second
+         place to change it. Turn it off in the registry to make an
+         incomplete profile a suggestion rather than a redirect. -->
+
     <!-- Portraits. Off by default: picture_url is a claim, and at plenty of
          providers a claim is whatever the user typed. Turning it into a
          server-side fetch makes the login path a request forger, so no site

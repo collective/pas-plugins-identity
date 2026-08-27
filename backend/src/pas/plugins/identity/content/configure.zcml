@@ -167,6 +167,16 @@
       handler=".behaviors.clear_on_copy"
       />
 
+  <!-- The required-information gate. Registered for the publication event
+       rather than around a view, because what it enforces is that there is no
+       page to reach instead. It excludes far more than it catches, and each
+       exclusion is a way the gate would otherwise break the escape it depends
+       on; see .gate. -->
+  <subscriber
+      for="ZPublisher.interfaces.IPubAfterTraversal"
+      handler=".gate.on_after_traversal"
+      />
+
   <!-- Where Profiles live is configurable and set late. A layered profile
        may move the container after this package's handler has run, so the
        core record naming it is derived and re-derived rather than written

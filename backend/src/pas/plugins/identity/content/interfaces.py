@@ -141,6 +141,19 @@ class IProfileSettings(Interface):
         default=("incomplete", "complete"),
     )
 
+    enforce_required_profile_fields = schema.Bool(
+        title=_("Hold users on their profile until it is complete"),
+        description=_(
+            "While a profile is missing required information, every page its "
+            "owner asks for is answered with a redirect to its edit form. "
+            "Managers and site administrators are never held, so that a "
+            "required field nobody can supply cannot lock the site. Turn "
+            "this off to make the profile a suggestion rather than a gate."
+        ),
+        required=False,
+        default=True,
+    )
+
     required_profile_fields = schema.Tuple(
         title=_("Required profile fields"),
         description=_(

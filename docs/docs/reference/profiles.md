@@ -100,6 +100,31 @@ Without that the two would disagree in the worst direction: the flow would hold 
 The record only ever adds.
 A field the type marks required stays required whatever the record says, because the type is the one that cannot store an empty value.
 
+### What happens while a profile is incomplete
+
+Every page its owner asks for is answered with a redirect to its edit form.
+
+```text
+pas.plugins.identity.enforce_required_profile_fields
+```
+
+On, which is how it ships.
+Turn it off to make an incomplete profile a suggestion rather than a gate.
+
+Two things are never held, and both exist so that a required field nobody can supply cannot lock the site:
+
+Managers and site administrators
+:   Somebody has to be able to reach the settings that would undo the requirement, and it cannot be somebody who has to get past the gate first.
+
+The profile itself
+:   Its edit form, its widgets, and its save. Redirecting the target of the redirect is a loop no configuration escapes.
+
+Three other things pass through, for reasons that are about the request rather than about the user:
+
+-   Requests `plone.restapi` answers. Volto fetches the edit form over the API, so gating those would break the page the user is being sent to. The frontend does its own routing.
+-   Anything that is not a browser asking for a page. Only `GET` for `text/html` is a navigation; a gate on every request is a gate on every stylesheet.
+-   Signing out. A user who would rather leave than fill the form in may.
+
 ## Group states
 
 A group has two states.
