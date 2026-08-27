@@ -1,0 +1,3 @@
+Fixed deleting a group returning a 503 and leaving the group in place.
+
+`GroupsTool.removeGroup` loops every `IGroupManagement` plugin without guarding the call, and `source_groups` raises `KeyError` for a group it never had. This plugin deleted its content object, the stock one raised on the same id, and the successful delete rolled back with the transaction. The tool now tolerates a plugin that declines by raising, which is the idiom `addGroup` fifteen lines above already used. @ericof

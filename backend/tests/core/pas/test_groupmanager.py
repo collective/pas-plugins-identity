@@ -132,6 +132,58 @@ class TestCreatingAndRemoving:
         assert self.plugin.removeGroup("administrators") is False
 
 
+class TestDeletingThroughTheTool:
+    """Deletion as Plone performs it, rather than as the plugin performs it.
+
+    Every test above calls ``plugin.removeGroup`` directly, and that is what
+    let a plain 503 through review: ``GroupsTool.removeGroup`` loops *every*
+    ``IGroupManagement`` plugin without stopping, and ``source_groups`` raises
+    ``KeyError`` for a group it never had. Ours deleted the content object,
+    the stock plugin raised on the same id, and the whole transaction rolled
+    back -- so the caller saw a 503 and the group was still there.
+
+    :mod:`pas.plugins.identity.core.patches` repairs the tool. These tests
+    assert the *behavior*, not the patch, so they keep passing on the day
+    PlonePAS ships the fix and the patch is dropped.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, configured, acl_users) -> None:
+        self.portal = configured
+        self.plugin = acl_users[PLUGIN_ID]
+        self.tool = api.portal.get_tool("portal_groups")
+
+    def test_it_deletes_a_content_group(self):
+        with api.env.adopt_roles(["Manager"]):
+            api.group.create(groupname="editors", title="Editors")
+        assert "editors" in self.portal[GROUPS]
+
+        with api.env.adopt_roles(["Manager"]):
+            api.group.delete(groupname="editors")
+
+        assert "editors" not in self.portal[GROUPS]
+
+    def test_it_reports_the_removal(self):
+        """False here reads as 'nothing was deleted' to every caller."""
+        with api.env.adopt_roles(["Manager"]):
+            api.group.create(groupname="editors", title="Editors")
+
+            assert api.group.delete(groupname="editors") is True
+
+    def test_a_source_groups_group_still_deletes(self):
+        """The repair must not cost the stock plugin its own deletions."""
+        with api.env.adopt_roles(["Manager"]):
+            self.portal.acl_users.source_groups.addGroup("reviewers")
+
+            assert api.group.delete(groupname="reviewers") is True
+        assert "reviewers" not in self.portal.acl_users.source_groups.listGroupIds()
+
+    def test_a_group_no_plugin_has_is_not_an_error(self):
+        """Every manager declines, so nothing was removed and nothing raised."""
+        with api.env.adopt_roles(["Manager"]):
+            assert api.group.delete(groupname="nobody-has-this") is False
+
+
 class TestMembership:
     @pytest.fixture(autouse=True)
     def _setup(self, configured, acl_users) -> None:
