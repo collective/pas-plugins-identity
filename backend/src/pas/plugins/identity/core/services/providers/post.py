@@ -63,6 +63,7 @@ class ProvidersPost(ProvidersService):
             enabled=bool(data.get("enabled", True)),
             config=data.get("config", {}),
             propertymap=data.get("propertymap", {}),
+            groupmap=data.get("groupmap", {}),
         )
         set_providers([*get_providers(), provider])
         self.request.response.setStatus(201)

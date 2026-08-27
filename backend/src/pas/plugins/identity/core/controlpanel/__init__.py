@@ -13,6 +13,7 @@ The records for one provider are::
     ...providers.<id>.enabled         whether it is offered
     ...providers.<id>.order           position among the providers
     ...providers.<id>.propertymap     claim path to user field
+    ...providers.<id>.groupmap        provider group name to local group id
     ...providers.<id>.config.<key>    one per field the driver declares
 
 ``order`` exists because records live in a BTree and therefore read back in
@@ -146,6 +147,10 @@ class ProviderConfig:
     :ivar config: Driver-specific settings.
     :ivar propertymap: Claim path to Plone user field. Applied on every
         login -- see :mod:`pas.plugins.identity.core.propertymap`.
+    :ivar groupmap: Provider-side group name to local group id. Applied on
+        every login -- see :mod:`pas.plugins.identity.core.groupmap`. Empty
+        by default, which is what makes a provider grant no groups at all
+        until somebody says otherwise.
     """
 
     def __init__(
@@ -156,6 +161,7 @@ class ProviderConfig:
         enabled: bool = True,
         config: JSONDict | None = None,
         propertymap: dict[str, str] | None = None,
+        groupmap: dict[str, str] | None = None,
     ) -> None:
         """Build a provider configuration.
 
@@ -165,6 +171,7 @@ class ProviderConfig:
         :param enabled: Whether the provider is offered.
         :param config: Driver-specific settings.
         :param propertymap: Claim path to Plone user field.
+        :param groupmap: Provider-side group name to local group id.
         """
         self.provider_id = provider_id
         self.driver_id = driver_id
@@ -172,6 +179,7 @@ class ProviderConfig:
         self.enabled = enabled
         self.config = _with_driver_defaults(driver_id, config or {})
         self.propertymap = dict(propertymap or {})
+        self.groupmap = dict(groupmap or {})
 
     @property
     def config(self) -> JSONDict:
@@ -223,6 +231,7 @@ class ProviderConfig:
             "enabled": self.enabled,
             "config": config,
             "propertymap": dict(self.propertymap),
+            "groupmap": dict(self.groupmap),
         }
 
     @classmethod
@@ -239,6 +248,7 @@ class ProviderConfig:
             enabled=data.get("enabled", True),
             config=data.get("config", {}),
             propertymap=data.get("propertymap", {}),
+            groupmap=data.get("groupmap", {}),
         )
 
     def __repr__(self) -> str:
@@ -408,6 +418,7 @@ def _read_provider(provider_id: str) -> tuple[ProviderConfig, int]:
         enabled=bool(own.get("enabled", True)),
         config=config,
         propertymap=dict(own.get("propertymap") or {}),
+        groupmap=dict(own.get("groupmap") or {}),
     )
     return provider, int(own.get("order") or 0)
 
@@ -505,7 +516,8 @@ def get_provider_record(provider_id: str, field: str, default: object = None) ->
 
     :param provider_id: The provider.
     :param field: The record below it -- one of ``driver``, ``title``,
-        ``enabled``, ``order``, ``propertymap``, or ``config.<key>`` for a
+        ``enabled``, ``order``, ``propertymap``, ``groupmap``, or
+        ``config.<key>`` for a
         driver setting.
     :param default: Returned when no such record exists.
     :returns: The stored value, or ``default``.
@@ -552,6 +564,7 @@ def _write_provider(provider: ProviderConfig, order: int) -> None:
     registry[f"{prefix}enabled"] = bool(provider.enabled)
     registry[f"{prefix}order"] = int(order)
     registry[f"{prefix}propertymap"] = dict(provider.propertymap)
+    registry[f"{prefix}groupmap"] = dict(provider.groupmap)
 
     for key, value in provider.config.items():
         registry.records[f"{prefix}{CONFIG_SEGMENT}{key}"] = Record(

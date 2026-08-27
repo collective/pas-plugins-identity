@@ -65,7 +65,16 @@ class IdentityRecord(Persistent):
     :ivar created: When the identity was first linked.
     :ivar last_login: When it was last used to authenticate, or ``None``.
     :ivar claims: Snapshot of the normalized claims from the last refresh.
+    :ivar groups: Local group ids this provider granted at the last login.
+        The fence: a login only ever takes back what the same provider gave,
+        so a group an administrator granted by hand is never touched, and a
+        group revoked at the provider goes away without anyone editing
+        anything. A class attribute so a record written before this existed
+        reads as "granted nothing" rather than needing an upgrade step.
     """
+
+    #: See :attr:`groups` in the class docstring.
+    groups: tuple[str, ...] = ()
 
     def __init__(self, provider: str, subject: str, claims: Claims) -> None:
         """Create a record.
@@ -93,6 +102,7 @@ class IdentityRecord(Persistent):
             "created": self.created.isoformat(),
             "last_login": self.last_login.isoformat() if self.last_login else None,
             "claims": dict(self.claims),
+            "groups": list(self.groups),
         }
 
     def __repr__(self) -> str:

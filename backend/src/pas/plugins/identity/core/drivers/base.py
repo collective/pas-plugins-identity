@@ -93,6 +93,22 @@ class BaseDriver:
     #: Keys tried, in order, to find the provider-side subject.
     subject_keys: tuple[str, ...] = ("sub",)
 
+    #: Claim this provider's groups arrive in, or ``""`` for none.
+    #:
+    #: Empty on the base class, and that is what switches the whole feature
+    #: off for a driver: no ``group_claim`` field appears in the config
+    #: schema, so an operator is not offered a mapping for a provider that
+    #: has no groups to map. GitHub organisations and a magic link are both
+    #: this case.
+    default_group_claim: str = ""
+
+    #: Seeded into a new provider's group map.
+    #:
+    #: Almost always empty, and honestly so: group names are a fact about one
+    #: deployment's directory, not about a driver. A driver only fills this in
+    #: when it knows the far end ships a group by that name.
+    default_groupmap: dict[str, str] = {}  # noqa: RUF012
+
     #: Extra config fields beyond :data:`OAUTH_FIELDS`.
     extra_fields: dict[str, JSONDict] = {}  # noqa: RUF012
 
@@ -162,6 +178,24 @@ class BaseDriver:
                 ["subject", "The provider's subject identifier"],
             ],
         }
+        if self.default_group_claim:
+            schema["group_claim"] = {
+                "type": "string",
+                "title": "Groups arrive in the claim",
+                "description": (
+                    "Which claim carries the group names this provider "
+                    "asserts. A dotted path reaches into a nested claim, so "
+                    "a provider putting them under realm_access.roles is "
+                    "reachable without a driver of its own. What the names "
+                    "then grant is the group map, which is empty until an "
+                    "operator fills it in -- an unmapped group grants "
+                    "nothing and is never created here."
+                ),
+                "required": False,
+                "secret": False,
+                "default": self.default_group_claim,
+                "order": 80,
+            }
         for name, descriptor in self.extra_fields.items():
             schema[name] = dict(descriptor)
         return schema

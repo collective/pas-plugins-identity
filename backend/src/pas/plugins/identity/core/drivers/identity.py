@@ -49,8 +49,6 @@ class PloneIdentityDriver(GenericOIDCDriver):
     #: registered claim for a biography, and the server layer releases one
     #: under ``profile`` regardless. It resolves off the raw payload, since
     #: normalization has no name of its own for it.
-    #:
-    #: There is no group claim to map, so nothing writes to a group.
     default_propertymap = {  # noqa: RUF012
         "email": "email",
         "fullname": "fullname",
@@ -59,6 +57,14 @@ class PloneIdentityDriver(GenericOIDCDriver):
         "address.formatted": "location",
         "picture_url": "portrait",
     }
+
+    #: A peer releases ``groups`` under the ``profile`` scope this driver
+    #: already asks for, so the claim arrives without extra configuration.
+    #: What it *grants* still does not: the map below is empty, and stays
+    #: empty until an operator says which of the peer's groups mean something
+    #: here. Two Plone sites in a federation do not have the same groups just
+    #: because they run the same package.
+    default_groupmap = {}  # noqa: RUF012
 
     extra_fields = {  # noqa: RUF012
         "issuer": {

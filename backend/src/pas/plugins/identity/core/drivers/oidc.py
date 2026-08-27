@@ -1,6 +1,7 @@
 """The generic OpenID Connect driver."""
 
 from pas.plugins.identity.core.drivers.base import BaseDriver
+from pas.plugins.identity.core.groupmap import DEFAULT_GROUP_CLAIM
 
 
 class GenericOIDCDriver(BaseDriver):
@@ -10,6 +11,11 @@ class GenericOIDCDriver(BaseDriver):
     title = "OpenID Connect"
     default_scope = ("openid", "email", "profile")
     subject_keys = ("sub",)
+
+    #: The de-facto name. Not registered by OIDC, but what Keycloak, Okta and
+    #: Entra all emit, so it is the right thing to try before an operator
+    #: reaches for the dotted path.
+    default_group_claim = DEFAULT_GROUP_CLAIM
 
     extra_fields = {  # noqa: RUF012
         "issuer": {

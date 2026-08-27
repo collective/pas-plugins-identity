@@ -60,6 +60,19 @@ class IDriver(Interface):
         "already produce."
     )
 
+    default_group_claim = Attribute(
+        'Claim the provider\'s groups arrive in, or ``""`` when it has '
+        "none. Empty switches the feature off for the driver: no "
+        "``group_claim`` field is offered, so nobody is asked to map groups "
+        "for a provider that has none."
+    )
+
+    default_groupmap = Attribute(
+        "Provider group name to local group id, seeded into a new provider's "
+        "map. Almost always empty: group names are a fact about one "
+        "deployment's directory, not about a driver."
+    )
+
     def config_schema() -> JSONDict:
         """Return the configuration schema for this driver.
 
@@ -318,6 +331,8 @@ class DriverProtocol(Protocol):
     driver_id: str
     title: str
     default_propertymap: dict[str, str]
+    default_group_claim: str
+    default_groupmap: dict[str, str]
 
     def config_schema(self) -> JSONDict: ...
 

@@ -276,9 +276,21 @@ class TestSerialize:
             "created",
             "last_login",
             "claims",
+            "groups",
         }
         assert payload["provider"] == "github"
         assert payload["last_login"] is None
+
+    def test_a_record_grants_no_groups_until_a_login_says_so(self):
+        """``groups`` is what this provider granted, not what the user is in.
+
+        A class attribute, so a record written before the field existed reads
+        as an empty grant rather than needing an upgrade step.
+        """
+        record = self.store.get(*GITHUB)
+
+        assert record.groups == ()
+        assert record.serialize()["groups"] == []
 
     def test_serialize_after_login(self):
         """``last_login`` becomes an ISO timestamp once the identity is used."""

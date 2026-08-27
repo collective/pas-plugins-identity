@@ -205,6 +205,22 @@ class IProviderRecords(Interface):
         default={},
     )
 
+    groupmap = schema.Dict(
+        title=_("Group map"),
+        description=_(
+            "Provider-side group name to local group id, applied on every "
+            "login. Empty by default: a provider grants no group until "
+            "somebody says which of its groups mean something here, and a "
+            "name with no entry grants nothing rather than creating a group. "
+            "A login only ever takes back a group the same provider granted, "
+            "so a group given to somebody by hand survives."
+        ),
+        key_type=schema.TextLine(title=_("Provider group")),
+        value_type=schema.TextLine(title=_("Local group")),
+        required=False,
+        default={},
+    )
+
 
 class IIdentityControlpanel(IControlpanel):
     """Marker for this package's control panel."""

@@ -70,6 +70,34 @@ Add a provider using the `email` driver, and the sign-in option appears on the l
 The token lives for at most fifteen minutes whatever you configure, and it is burned server-side after one use.
 The send endpoint is rate limited per address and per IP, and answers identically whether or not the address belongs to an account.
 
+## Map the provider's groups to local groups
+
+A provider that asserts group membership can grant local groups.
+Nothing happens until you say which of its groups mean something here: the group map starts empty, and an empty map grants nothing.
+
+Set **Groups arrive in the claim** to the claim the provider puts them in.
+`groups` is the default and what Keycloak, Okta, Entra, and a Plone site running this package's `[server]` layer all emit.
+Use a dotted path for a provider that nests them, such as `realm_access.roles`.
+
+Then fill in the group map: one row per provider-side group name, each pointing at a local group id.
+
+Three rules make this safe to leave running.
+
+A name with no row grants nothing, and no group is ever created.
+A group claim is whatever the provider's own directory happens to be called, so minting local groups from it would let anyone who can name a group at the far end create one here.
+A row pointing at a group this site does not have is skipped and logged.
+
+Every login reconciles, so a membership revoked at the provider stops granting anything here without anyone editing the site.
+
+A login only ever takes back what that same provider granted.
+The identity record remembers each provider's own grant, so a group you granted by hand survives every sign-in, and two providers cannot revoke each other's grants.
+
+```{note}
+Clearing a map does **not** strip the groups it had granted.
+Clearing is at least as likely to mean "I am rewriting this" as "revoke everything", so a provider with an empty map touches no membership at all.
+To take its grants back, empty the map's *values* rather than the map, and let one login reconcile.
+```
+
 ## Next steps
 
 -   {doc}`enable-back-channel-logout`, so a sign-out at the provider ends the session here.

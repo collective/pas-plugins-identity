@@ -25,6 +25,7 @@ class DriversGet(ControlPanelService):
                     "title": driver.title,
                     "schema": driver.config_schema(),
                     "default_propertymap": dict(driver.default_propertymap),
+                    "default_groupmap": dict(driver.default_groupmap),
                 }
                 for _name, driver in sorted(all_drivers().items())
             ],

@@ -377,6 +377,7 @@ class IdentityPlugin(BasePlugin):
         # provider should reach Plone without the user being recreated.
         self._apply_property_map(userid, provider, claims)
         self._sync_portrait(userid, provider, claims, previous_picture)
+        self._sync_federated_groups(userid, provider, subject, claims)
         return (userid, userid)
 
     # -- IUserAdderPlugin --------------------------------------------------
@@ -763,6 +764,91 @@ class IdentityPlugin(BasePlugin):
         if record is None:
             return ""
         return str(record.claims.get("picture_url") or "")
+
+    def _sync_federated_groups(
+        self, userid: str, provider: str, subject: str, claims: Claims
+    ) -> None:
+        """Reconcile the groups a provider grants this user.
+
+        Runs on every login, because a membership revoked at the provider has
+        to go away here too, and nobody is going to notice that by hand.
+
+        The reconciliation is fenced. What the provider granted last time is
+        on the identity record, so this adds what is newly granted and removes
+        only what *this provider* granted before and no longer does. A group
+        an administrator granted locally was never in that set and is never
+        touched; neither is a group granted by a second provider, which keeps
+        its own record.
+
+        A provider with an empty map returns immediately rather than
+        reconciling against nothing. Otherwise clearing a map would silently
+        strip every group it had granted, at the next login, with no other
+        sign -- and an operator clearing a map is at least as likely to be
+        rewriting it. Removing the provider's grants is a thing to ask for
+        explicitly.
+
+        Membership is written through PlonePAS's group tool rather than to any
+        store of ours, so it lands wherever this site keeps membership: a
+        Profile's ``group_ids`` on a site that keeps users as content, and
+        ``source_groups`` on one that does not. That also means
+        ``getGroupsForPrincipal`` stays exactly as cheap as it was.
+
+        :param userid: The user signing in.
+        :param provider: Provider id.
+        :param subject: Provider-side subject identifier.
+        :param claims: The claims of this login.
+        """
+        from pas.plugins.identity.core.controlpanel import get_provider
+        from pas.plugins.identity.core.groupmap import claimed_groups
+        from pas.plugins.identity.core.groupmap import map_groups
+        from plone import api
+
+        config = get_provider(provider)
+        if config is None or not config.groupmap:
+            return
+
+        claim_path = (config.config.get("group_claim") or "").strip() or getattr(
+            config.driver, "default_group_claim", ""
+        )
+        if not claim_path:
+            # The driver says this provider has no groups, so the config
+            # schema offered no field to name one. A map stored against it
+            # anyway -- by an import, or by a driver that was swapped out --
+            # grants nothing rather than guessing at a claim name.
+            return
+        granted = map_groups(config.groupmap, claimed_groups(claim_path, claims))
+
+        record = self._store.get(provider, subject)
+        if record is None:  # pragma: no cover - can't-happen: just stored above
+            return
+        previous = set(record.groups)
+        if granted == previous:
+            return
+
+        with api.env.adopt_roles(["Manager"]):
+            for group_id in sorted(previous - granted):
+                if api.group.get(groupname=group_id) is not None:
+                    api.group.remove_user(groupname=group_id, username=userid)
+            # A group named in the map but absent from the site is skipped
+            # rather than created. The map is edited by hand and a typo in it
+            # must not mint a group, and `addPrincipalToGroup` would decline
+            # anyway -- recording it as granted would then make the next login
+            # try to take away something never given.
+            actually_granted = set()
+            for group_id in sorted(granted):
+                if api.group.get(groupname=group_id) is None:
+                    logger.warning(
+                        "Provider %r maps a group to %r, which this site does "
+                        "not have; %r was not added to it",
+                        provider,
+                        group_id,
+                        userid,
+                    )
+                    continue
+                api.group.add_user(groupname=group_id, username=userid)
+                actually_granted.add(group_id)
+
+        record.groups = tuple(sorted(actually_granted))
 
     def _sync_portrait(
         self, userid: str, provider_id: str, claims: Claims, previous: str
