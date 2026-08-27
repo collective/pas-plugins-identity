@@ -371,6 +371,25 @@ class IProfileSupport(Interface):
         :returns: The absolute URL, or ``None`` when the user has none.
         """
 
+    def incomplete_profile_url(userid: str) -> str | None:
+        """Return where a user must go to finish their profile, if anywhere.
+
+        The question the authorization endpoint asks before it will issue
+        anything: a site that insists on an email address should not release
+        claims about a user who has not supplied one, and an identity provider
+        is exactly the place that insistence belongs.
+
+        Asked through this utility rather than answered in the ``[server]``
+        layer, because completeness is the ``[content]`` layer's idea and the
+        two layers may not import each other. A site without that layer has no
+        utility, and no utility is the answer "nothing here is incomplete".
+
+        :param userid: Canonical Plone userid.
+        :returns: The absolute URL of the profile's edit form when it is
+            missing something the site requires, and ``None`` when it is not,
+            when the user has no profile, or when nothing is being enforced.
+        """
+
     def picture_url(userid: str) -> str | None:
         """Return the URL of the picture held on a user's Profile.
 

@@ -135,6 +135,21 @@ pas.plugins.identity.gate_exempt_paths
 Matched against the last segment of the path, like the built-in exemptions.
 This is for a browser-based flow another add-on publishes, which would otherwise be interrupted halfway.
 
+### Authorizing another application
+
+The authorization endpoint enforces this itself, rather than relying on the gate.
+
+A federated sign-in touches only exempt routes, so the gate never fires during one: the browser goes to `@@oauth-authorize`, to a login page, to the callback, and to the consent screen, and every one of those has to stay reachable.
+That left the enforcement with nothing to enforce.
+A user could complete a whole federation with a profile the site had declared incomplete, and the relying party received an account missing the same field.
+
+So `@@oauth-authorize` pauses the request at the profile's edit form and passes the authorization request along as `return_url`, resuming it once the profile is complete.
+The client is told nothing in the meantime; the request is paused, exactly as it is while the user signs in.
+With `prompt=none`, where the specification forbids interacting with the user, the client is told `interaction_required` instead.
+
+This is the provider's decision to make and nobody else's: a relying party cannot enforce what the provider requires, and should not have to.
+Turning `enforce_required_profile_fields` off turns this off with it.
+
 ## Group states
 
 A group has two states.

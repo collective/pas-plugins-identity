@@ -1,0 +1,1 @@
+Documented that the authorization endpoint enforces profile completeness itself, why the gate cannot do it during a federated sign-in, and what a client is told while the request is paused. @ericof

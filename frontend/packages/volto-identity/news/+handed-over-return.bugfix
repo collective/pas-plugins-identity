@@ -1,0 +1,3 @@
+Taught the profile gate to honour a destination handed over by the backend. When the authorization endpoint pauses a federated sign-in at the profile form, it passes the request to resume as `return_url`; the gate takes that into the same memory it uses for its own interruptions, so there is one way back rather than two.
+
+Resuming it is a real navigation rather than a route change, because the target is a backend view: asking the router for `@@oauth-authorize` renders a Volto page that does not exist. Only same-origin targets are accepted — honouring an arbitrary `return_url` with a real navigation is an open redirect, and a link to somebody's profile carrying one would otherwise bounce a signed-in user anywhere. @ericof

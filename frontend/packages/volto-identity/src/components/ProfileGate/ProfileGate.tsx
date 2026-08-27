@@ -30,6 +30,12 @@
  *    destination is remembered before redirecting and restored the moment the
  *    profile stops being incomplete.
  *
+ * The destination is not always this app's to remember. When the backend's
+ * authorization endpoint pauses a federated sign-in at this form, it hands
+ * the request to resume over as `return_url`, and that target is a backend
+ * view rather than a route — so it is taken into the same memory on arrival
+ * and resumed with a real navigation.
+ *
  * The decision itself lives in `helpers/profileGate`, where it is tested
  * without a store.
  * @module components/ProfileGate/ProfileGate
@@ -43,6 +49,8 @@ import { addMessage } from '@plone/volto/actions';
 import { getMyProfile } from '../../actions';
 import {
   gateTarget,
+  goTo,
+  handedOverReturn,
   rememberReturn,
   takeReturn,
 } from '../../helpers/profileGate';
@@ -105,6 +113,14 @@ const ProfileGate: React.FC<ProfileGateProps> = ({ apiPath = '' }) => {
     // instead is an infinite loop: the gate sends the user to their profile,
     // and being on their profile makes `gateTarget` answer null, which reads
     // as "they finished" and sends them straight back.
+    // A destination handed over by the backend. The authorization endpoint
+    // pauses its own request at this form and passes it as `return_url`;
+    // taking it into the same memory means one way back rather than two.
+    const handedOver = handedOverReturn(location.search);
+    if (handedOver) {
+      rememberReturn(handedOver);
+    }
+
     const held =
       !!profile.data?.profile && profile.data.review_state === 'incomplete';
 
@@ -113,7 +129,7 @@ const ProfileGate: React.FC<ProfileGateProps> = ({ apiPath = '' }) => {
       // moment they completed it, so send them on to where they were going.
       const back = takeReturn();
       if (back && back !== location.pathname) {
-        history.replace(back);
+        goTo(back, history.replace);
       }
       return;
     }

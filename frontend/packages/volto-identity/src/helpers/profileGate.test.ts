@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { editPath, gateTarget } from './profileGate';
+import { editPath, gateTarget, goTo, handedOverReturn } from './profileGate';
 import type { MyProfile } from '../types';
 
 const PROFILE_URL = 'http://backend:8080/Plone/identity-profiles/alice';
@@ -110,5 +110,58 @@ describe('gateTarget', () => {
     expect(gateTarget(profile(), '', api)).toBe(
       '/identity-profiles/alice/edit',
     );
+  });
+});
+
+describe('handedOverReturn', () => {
+  // The backend's authorization endpoint pauses its request at the profile
+  // form and hands the request to resume over in the query string. Honouring
+  // it is a real navigation, so an unchecked value here is an open redirect:
+  // a link to somebody's profile carrying a `return_url` would bounce a
+  // signed-in user anywhere.
+
+  it('takes a site-relative path', () => {
+    expect(
+      handedOverReturn('?return_url=%2F%40%40oauth-authorize%3Fx%3D1'),
+    ).toBe('/@@oauth-authorize?x=1');
+  });
+
+  it('is nothing when there is none', () => {
+    expect(handedOverReturn('')).toBe(null);
+    expect(handedOverReturn('?other=1')).toBe(null);
+  });
+
+  it('refuses a protocol-relative target', () => {
+    // "//evil.example" is not site-relative, however much it looks it.
+    expect(handedOverReturn('?return_url=%2F%2Fevil.example%2Fx')).toBe(null);
+  });
+
+  it('refuses another origin', () => {
+    expect(handedOverReturn('?return_url=https%3A%2F%2Fevil.example%2Fx')).toBe(
+      null,
+    );
+  });
+});
+
+describe('goTo', () => {
+  it('lets the router handle a path it owns', () => {
+    const seen: string[] = [];
+
+    goTo('/news', (path) => seen.push(path));
+
+    expect(seen).toEqual(['/news']);
+  });
+
+  it('does not hand an absolute URL to the router', () => {
+    // `@@oauth-authorize` is a backend view, not a route. Asking the router
+    // for it renders a Volto page that does not exist, which is how a
+    // resumed sign-in turns into a 404.
+    const seen: string[] = [];
+
+    goTo('http://id.example.org/@@oauth-authorize?x=1', (path) =>
+      seen.push(path),
+    );
+
+    expect(seen).toEqual([]);
   });
 });

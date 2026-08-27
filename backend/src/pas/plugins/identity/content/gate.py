@@ -99,7 +99,7 @@ ALLOWED_PREFIXES = ("@@oauth-",)
 EXEMPT_RECORD = f"{PREFIX}.gate_exempt_paths"
 
 
-def _enforcing() -> bool:
+def enforcing() -> bool:
     """Return whether the gate is switched on in this site.
 
     :returns: The record's value, and ``False`` when the layer's settings are
@@ -208,7 +208,7 @@ def redirect_target(request) -> str | None:
     user = api.user.get_current()
     if BYPASS_ROLES & set(user.getRoles()):
         return None
-    if not _enforcing():
+    if not enforcing():
         return None
 
     brain = _incomplete_profile(user.getId())
@@ -244,6 +244,7 @@ __all__ = [
     "BYPASS_ROLES",
     "ENFORCE_RECORD",
     "EXEMPT_RECORD",
+    "enforcing",
     "on_after_traversal",
     "redirect_target",
 ]

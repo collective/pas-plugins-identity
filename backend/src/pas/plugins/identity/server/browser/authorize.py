@@ -26,10 +26,12 @@ any later request for a scope not already agreed to.
 """
 
 from AccessControl import Unauthorized
+from pas.plugins.identity.core.interfaces import IProfileSupport
 from pas.plugins.identity.server.clients import get_client
 from pas.plugins.identity.server.codes import ChallengeError
 from pas.plugins.identity.server.codes import check_challenge
 from pas.plugins.identity.server.consent_screen import consent_screen_url
+from pas.plugins.identity.server.discovery import AUTHORIZE_VIEW
 from pas.plugins.identity.server.pas import PLUGIN_ID
 from plone import api
 from plone.protect.authenticator import AuthenticatorView
@@ -39,6 +41,7 @@ from Products.Five.browser import BrowserView
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from urllib.parse import urlencode
 from zExceptions import Forbidden
+from zope.component import queryUtility
 from zope.interface import alsoProvides
 
 import html
@@ -186,7 +189,9 @@ class AuthorizeView(BrowserView):
         :param redirect_uri: The verified redirect URI.
         :returns: The URL to redirect the browser to, or ``None`` when the
             user still has to be asked and the consent form should be
-            rendered instead.
+            rendered instead. That URL is usually the client's redirect URI,
+            and is the user's own profile when the request cannot proceed
+            until they have finished it.
         :raises AuthorizationError: For any failure the client should be told
             about at its redirect URI.
         :raises Unauthorized: When the end user is not signed in and the
@@ -213,6 +218,34 @@ class AuthorizeView(BrowserView):
             raise Unauthorized(
                 "The end user must authenticate before authorizing a client."
             )
+
+        # Before consent, not after. A site that requires an email address
+        # should not release claims about a user who has not given one, and an
+        # identity provider is where that insistence belongs -- the relying
+        # party cannot enforce it and should not have to.
+        #
+        # Asked through the utility core declares, so this layer never imports
+        # the one that owns the idea. No utility, or no answer, means nothing
+        # here is incomplete.
+        support = queryUtility(IProfileSupport)
+        elsewhere = (
+            support.incomplete_profile_url(user.getId())
+            if support is not None
+            else None
+        )
+        if elsewhere:
+            if quiet:
+                raise AuthorizationError(
+                    "interaction_required",
+                    "The end user must complete their profile before this "
+                    "request can be authorized, and prompt=none forbids "
+                    "asking them.",
+                )
+            # Paused, exactly as it is while they sign in: the client is told
+            # nothing yet and hears from us when the browser comes back. The
+            # return trip is the whole request, carried the same way the
+            # consent screen carries it.
+            return f"{elsewhere}?{urlencode({'return_url': self.request_url()})}"
 
         plugin = api.portal.get_tool("acl_users")[PLUGIN_ID]
         decision = self._consent_decision(plugin, user.getId(), client, scope)
@@ -368,6 +401,19 @@ class AuthorizeView(BrowserView):
         :returns: The endpoint URL.
         """
         return f"{self.context.absolute_url()}/@@oauth-authorize"
+
+    def request_url(self) -> str:
+        """Return this authorization request, as a URL to come back to.
+
+        Rebuilt from the carried parameters rather than read off the request,
+        for the reason :meth:`carried_params` exists: the browser is going to
+        be sent somewhere else and has to be able to resume *this* request,
+        and a parameter dropped on the way is a different request.
+
+        :returns: An absolute URL.
+        """
+        query = urlencode(self.carried_params())
+        return f"{self.context.absolute_url()}/{AUTHORIZE_VIEW}?{query}"
 
     def carried_params(self) -> dict[str, str]:
         """Return the authorization request, for a round trip through a screen.

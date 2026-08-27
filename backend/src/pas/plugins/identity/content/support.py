@@ -13,6 +13,9 @@ core imports nothing of this. It is the same shape the back-channel logout
 uses to reach the ``[server]`` layer.
 """
 
+from pas.plugins.identity.content.catalog import query_catalog
+from pas.plugins.identity.content.completeness import INCOMPLETE
+from pas.plugins.identity.content.gate import enforcing
 from pas.plugins.identity.content.subscribers import get_profile
 from pas.plugins.identity.content.subscribers import remember_picture_url
 from pas.plugins.identity.content.subscribers import remembered_picture_url
@@ -41,6 +44,33 @@ class ProfileSupport:
         """
         profile = get_profile(userid)
         return profile.absolute_url() if profile is not None else None
+
+    def incomplete_profile_url(self, userid: str) -> str | None:
+        """Return where a user must go to finish their profile, if anywhere.
+
+        Answered from a catalog brain and from the same registry record the
+        gate reads, so the authorization endpoint asking this on every request
+        costs no object load and cannot disagree with the rest of the flow.
+
+        Honours the enforcement switch. A site that has turned the gate off
+        has said that an incomplete profile is a suggestion, and an
+        authorization endpoint refusing to proceed would not be a suggestion.
+
+        :param userid: Canonical Plone userid.
+        :returns: The absolute URL of the edit form, or ``None``.
+        """
+        if not enforcing():
+            return None
+        catalog = query_catalog()
+        if catalog is None:
+            return None
+        brains = catalog.unrestrictedSearchResults(userid=userid)
+        if not brains:
+            return None
+        brain = brains[0]
+        if brain.review_state != INCOMPLETE:
+            return None
+        return f"{brain.getURL()}/edit"
 
     def picture_url(self, userid: str) -> str | None:
         """Return the URL of the picture held on a user's Profile.

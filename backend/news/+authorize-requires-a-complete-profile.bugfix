@@ -1,0 +1,7 @@
+Made the authorization endpoint insist on a complete profile, so that the required-information flow actually reaches a federated sign-in.
+
+It did not. Every route such a sign-in touches — `@@oauth-authorize`, the login page, the callback, the consent screen — is exempt from the gate, each for a good reason, and together they added up to no enforcement at all. A user could sign in to a relying party through this provider with a profile the provider had declared incomplete, and the relying party received an account missing the same field. Found by Érico signing in with a GitHub account that keeps its address private: he was never shown the profile form at all.
+
+`@@oauth-authorize` now pauses the request at the profile's edit form and carries the authorization request along as `return_url`, resuming it once the profile is complete. The client is told nothing in the meantime — the request is paused, exactly as it is while the user signs in — except under `prompt=none`, where interacting with the user is forbidden and the client is told `interaction_required` instead.
+
+Asked through the `IProfileSupport` utility rather than by importing the `[content]` layer, which the import-linter contract forbids: completeness is that layer's idea, and a site without it has no utility and enforces nothing. `enforce_required_profile_fields` turns this off with the rest of the gate. @ericof

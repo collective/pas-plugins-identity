@@ -68,6 +68,62 @@ export function rememberReturn(path: string): void {
 }
 
 /**
+ * Read a destination handed over in the query string, if it is safe to use.
+ *
+ * The backend's authorization endpoint pauses a request at the profile form
+ * and passes the request to resume as `return_url`. Volto knows nothing about
+ * that URL — `@@oauth-authorize` is a backend view, not a route — so it has
+ * to be carried across rather than recomputed.
+ *
+ * Only same-origin targets survive. Honouring an arbitrary `return_url` with
+ * a real navigation is an open redirect, and this one *is* a real navigation:
+ * a link to a profile with a `return_url` on it would otherwise be a way to
+ * bounce a signed-in user anywhere.
+ *
+ * @param search The location's query string.
+ * @returns The destination, or null.
+ */
+export function handedOverReturn(search: string): string | null {
+  const requested = new URLSearchParams(search).get('return_url');
+  if (!requested) {
+    return null;
+  }
+  if (requested.startsWith('/') && !requested.startsWith('//')) {
+    return requested;
+  }
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  try {
+    const url = new URL(requested, window.location.origin);
+    return url.origin === window.location.origin ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Send the browser to a remembered destination.
+ *
+ * A site-relative path is a route this app owns, so the router handles it and
+ * the page never reloads. An absolute URL is not: the one this exists for is
+ * `@@oauth-authorize`, a backend view, and asking the router for it would
+ * render a Volto page that does not exist. That case needs a real navigation.
+ *
+ * @param target Where to go.
+ * @param replace The router's replace, for the paths it owns.
+ */
+export function goTo(target: string, replace: (path: string) => void): void {
+  if (target.startsWith('/') && !target.startsWith('//')) {
+    replace(target);
+    return;
+  }
+  if (typeof window !== 'undefined') {
+    window.location.href = target;
+  }
+}
+
+/**
  * Take the remembered destination, clearing it.
  *
  * Reading and clearing together, so a return can never fire twice: the second
