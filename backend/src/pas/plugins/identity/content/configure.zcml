@@ -48,6 +48,27 @@
       handler=".indexing.profile_modified"
       />
 
+  <!-- Keep the workflow state honest about what the profile carries. Bound to
+       the Profile marker rather than to the catalog one: a Group has no
+       required-information flow, and firing a transition it does not have
+       would be an error rather than a no-op.
+
+       Added as well as modified. A profile created with everything already in
+       it (by api.user.create, by @users POST, by an import) fires no
+       modification event at all, and would otherwise sit in incomplete
+       waiting for a write that never comes. -->
+  <subscriber
+      for=".interfaces.IUserProfile
+           zope.lifecycleevent.interfaces.IObjectAddedEvent"
+      handler=".subscribers.on_profile_modified"
+      />
+
+  <subscriber
+      for=".interfaces.IUserProfile
+           zope.lifecycleevent.interfaces.IObjectModifiedEvent"
+      handler=".subscribers.on_profile_modified"
+      />
+
   <!-- Both indexers fold or narrow what the field literally holds; see the
        module for why. -->
   <adapter

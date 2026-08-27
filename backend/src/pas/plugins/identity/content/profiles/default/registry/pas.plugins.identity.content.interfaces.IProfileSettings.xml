@@ -39,6 +39,12 @@
       <element>active</element>
     </value>
 
+    <!-- Fields a profile must carry to count as complete. Not listed, and
+         deliberately so: an empty tuple means "whatever the type marks
+         required", which stays right when somebody swaps in their own user
+         type. Listing values here would freeze today's answer into every
+         site that installs this profile. -->
+
     <!-- Portraits. Off by default: picture_url is a claim, and at plenty of
          providers a claim is whatever the user typed. Turning it into a
          server-side fetch makes the login path a request forger, so no site

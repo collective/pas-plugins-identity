@@ -46,6 +46,7 @@ that could edit it could grant itself roles.
 from pas.plugins.identity import logger
 from pas.plugins.identity.content.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.content.catalog import query_catalog
+from pas.plugins.identity.content.completeness import reconcile
 from pas.plugins.identity.content.container import get_container
 from pas.plugins.identity.content.profile import UserProfile
 from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
@@ -313,6 +314,28 @@ def _handle(userid: str, claims: Claims, provider_id: str) -> None:
     if profile is None:
         return
     sync_claims(profile, claims, provider_id)
+    # After the claims, not before: a provider that has just supplied the
+    # missing email completes the profile in the same login rather than in the
+    # next one.
+    reconcile(profile)
+
+
+def on_profile_modified(profile: UserProfile, event) -> None:
+    """Re-examine a profile whenever anything writes to it.
+
+    The other half of the login-time reconciliation. Without this a user who
+    has just filled the form in stays ``incomplete`` until their next sign-in
+    and is sent straight back to the form they have already completed, which
+    is the shape of loop the whole flow exists to avoid.
+
+    Covers every writer for the same reason: the edit form, ``@users`` PATCH,
+    user preferences, an import, and a site administrator fixing something by
+    hand all end in a modification event.
+
+    :param profile: The profile that was written to.
+    :param event: The modification event, unused.
+    """
+    reconcile(profile)
 
 
 def on_authenticated(event: ExternalIdentityAuthenticated) -> None:

@@ -60,6 +60,39 @@ stateDiagram-v2
 Reactivating returns a profile to `incomplete` rather than to `complete`.
 Whatever made an account worth deactivating is worth looking at again before it is enumerated.
 
+### What the states mean
+
+`incomplete` means the profile is missing information the site requires of it.
+`complete` means it is not.
+
+Nothing asks a user to press a button.
+The add-on moves a profile between the two states itself, whenever the profile is written to and whenever its owner signs in.
+
+A provider is not obliged to send anything.
+GitHub withholds an email address the user has marked private, a bare OIDC provider may release nothing beyond `sub`, and a magic link knows only the address it was sent to.
+So a profile minted at first login is routinely missing something, and the site has to be able to insist.
+
+`deactivated` is never entered or left by any of this.
+That state is a decision about an account, and "nothing is missing" is not an argument against it.
+
+### Which fields are required
+
+```text
+pas.plugins.identity.required_profile_fields
+```
+
+Empty, which is how it ships, means the fields the profile type itself marks required.
+That is `login` and `email` for the type in this package, and the right answer for a site running its own user type or a behavior that adds a field.
+
+Set it to name fields explicitly:
+
+```text
+('email', 'fullname', 'location')
+```
+
+A field counts as filled when it holds something other than `None`, an empty string, whitespace, or an empty collection.
+`0` and `False` are answers somebody gave, and are not missing.
+
 ## Group states
 
 A group has two states.

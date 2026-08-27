@@ -80,9 +80,14 @@ class TestProfileIsMinted:
         """Where new Profiles go is the container setting, not a constant."""
         assert aq_parent(self.profile).getId() == "identity-profiles"
 
-    def test_it_starts_incomplete(self):
-        """Which is what the frontend routes on."""
-        assert api.content.get_state(self.profile) == "incomplete"
+    def test_a_provider_that_sent_everything_completes_it(self):
+        """The state describes the profile rather than its age.
+
+        These claims carry an email, which is the one field the shipped type
+        requires and a provider can withhold. Nothing is missing, so nothing
+        should be asked of the user.
+        """
+        assert api.content.get_state(self.profile) == "complete"
 
     def test_the_id_is_the_userid(self):
         """Opaque and permanent, so the Profile is never renamed."""

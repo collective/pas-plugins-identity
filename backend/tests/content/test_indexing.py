@@ -46,7 +46,9 @@ class TestIndexingLifecycle:
 
         assert brain.fullname == "Alice Liddell"
         assert brain.email == "alice@example.com"
-        assert brain.review_state == "incomplete"
+        # Complete rather than incomplete: this profile carries an email, and
+        # the completeness subscriber reconciles the state when it is added.
+        assert brain.review_state == "complete"
 
     def test_login_is_folded(self):
         """Login names are case-insensitive; FieldIndex is not."""

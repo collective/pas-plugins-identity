@@ -141,6 +141,21 @@ class IProfileSettings(Interface):
         default=("incomplete", "complete"),
     )
 
+    required_profile_fields = schema.Tuple(
+        title=_("Required profile fields"),
+        description=_(
+            "Fields a user must fill in before their profile counts as "
+            "complete. Empty means the fields the profile type itself marks "
+            "required, which is the right answer for a site that has not "
+            "thought about it and for a site with its own user type. Naming "
+            "a field here that the type does not require will keep asking "
+            "for something the edit form does not insist on."
+        ),
+        value_type=schema.TextLine(),
+        required=False,
+        default=(),
+    )
+
     group_enumeration_states = schema.Tuple(
         title=_("Enumeration-active group states"),
         description=_(
