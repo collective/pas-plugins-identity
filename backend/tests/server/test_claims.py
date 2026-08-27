@@ -9,7 +9,7 @@ that basis would export the problem rather than solve it, so it is true only
 when this site verified the address itself.
 """
 
-from ..profile import PROFILE_ID as PROFILE_LAYER_ID
+from ..content import PROFILE_ID as PROFILE_LAYER_ID
 from . import PROFILE_ID
 from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
@@ -230,7 +230,7 @@ class TestPictureOnASiteWithProfiles:
 
     This is the configuration the federation demo runs, and the one that was
     broken: ``portrait_url`` asked ``portal_memberdata`` directly, which is
-    the *fallback* store once the ``[profile]`` layer is installed. A user
+    the *fallback* store once the ``[content]`` layer is installed. A user
     with a picture on their Profile got no ``picture`` claim at all -- and an
     omitted claim is indistinguishable downstream from a user who never
     uploaded one, so the relying party had nothing to report either.
@@ -242,8 +242,8 @@ class TestPictureOnASiteWithProfiles:
 
     @pytest.fixture(autouse=True)
     def _setup(self, portal, user) -> None:
-        from pas.plugins.identity.profile.catalog import PROFILE_PORTAL_TYPE
-        from pas.plugins.identity.profile.subscribers import get_container
+        from pas.plugins.identity.content.catalog import PROFILE_PORTAL_TYPE
+        from pas.plugins.identity.content.subscribers import get_container
         from plone.namedfile.file import NamedBlobImage
 
         self.portal = portal

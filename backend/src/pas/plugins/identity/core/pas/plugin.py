@@ -704,7 +704,7 @@ class IdentityPlugin(BasePlugin):
         Neither is the default, so on an ordinary site the adaptation fails
         and ``source_users`` answers exactly as it always did.
 
-        This lives here rather than in the ``[profile]`` layer on purpose.
+        This lives here rather than in the ``[content]`` layer on purpose.
         That layer serves properties, enumeration and groups and must never
         become a way to log in -- there is a test named for it -- because the
         plugin that authenticates a userid is the one ``@users`` reports as
@@ -1140,7 +1140,7 @@ class IdentityPlugin(BasePlugin):
         """Say so when a new user ended up with no record at all.
 
         A site that keeps its users as content has told core not to mint a
-        ``source_users`` account, and something else -- the ``[profile]``
+        ``source_users`` account, and something else -- the ``[content]``
         layer's subscriber, or a site's own -- creates the object instead. If
         nothing did, the login still succeeds and returns a principal that
         does not exist: no properties, no roles, invisible to every search.
@@ -1203,7 +1203,7 @@ class IdentityPlugin(BasePlugin):
     def _properties_owned_elsewhere(self, userid: str) -> bool:
         """Report whether another plugin owns this user's properties.
 
-        The ``[profile]`` layer's plugin does, for a user who has a Profile:
+        The ``[content]`` layer's plugin does, for a user who has a Profile:
         it serves the property sheet, it applies the same property map, and it
         remembers which fields the provider wrote so a human's edit survives
         the next login. Writing through its sheet from here would defeat that

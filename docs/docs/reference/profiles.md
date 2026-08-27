@@ -1,8 +1,8 @@
 ---
 myst:
   html_meta:
-    "description": "Content types, workflow states, registry records, and maintenance steps in the profile layer."
-    "property=og:description": "Content types, workflow states, registry records, and maintenance steps in the profile layer."
+    "description": "Content types, workflow states, registry records, and maintenance steps in the content layer."
+    "property=og:description": "Content types, workflow states, registry records, and maintenance steps in the content layer."
     "property=og:title": "Profiles and groups reference"
 ---
 
@@ -10,7 +10,7 @@ myst:
 
 # Profiles and groups reference
 
-This page describes the `[profile]` extra.
+This page describes the `[content]` extra.
 
 For why the layer is built this way, see {doc}`/concepts/profiles-and-groups`.
 

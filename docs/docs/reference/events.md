@@ -11,7 +11,7 @@ myst:
 # Events and the claims schema
 
 The core layer fires five events.
-They are the public API of this package: the audit log, the profile layer, and any integration you write are all consumers of the same contract, and none of them reaches into the code that fires them.
+They are the public API of this package: the audit log, the content layer, and any integration you write are all consumers of the same contract, and none of them reaches into the code that fires them.
 
 ```{important}
 This contract is versioned.

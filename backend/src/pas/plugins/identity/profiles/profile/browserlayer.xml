@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layers>
-  <layer interface="pas.plugins.identity.profile.interfaces.IIdentityProfileLayer"
-         name="pas.plugins.identity.profile"
+  <layer interface="pas.plugins.identity.content.interfaces.IIdentityContentLayer"
+         name="pas.plugins.identity.content"
   />
 </layers>

@@ -4,7 +4,7 @@
        class; its indexes and metadata are built by the post_install handler,
        because the ``catalog`` import step only ever addresses
        ``portal_catalog``. -->
-  <required class="pas.plugins.identity.profile.catalog.IdentityProfileCatalog"
+  <required class="pas.plugins.identity.content.catalog.IdentityProfileCatalog"
             tool_id="portal_identity_catalog"
   />
 </tool-setup>

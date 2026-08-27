@@ -15,7 +15,7 @@
  *
  * - **Edit goes to the Profile, for a user who has one.** Upstream always
  *   opens a modal bound to `@userschema` — the member-properties form, which
- *   writes through `portal_memberdata`. On a site running the `[profile]`
+ *   writes through `portal_memberdata`. On a site running the `[content]`
  *   extra that form is the *wrong* form for anyone whose fields live in a
  *   Profile: it shows the subset of fields the schema happens to name,
  *   nothing that type added, and it edits a store which is not where that

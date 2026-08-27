@@ -15,7 +15,7 @@ Plone keeps users in `source_users` and groups in `source_groups`, as records in
 A site that wants a member directory, an editable profile page, or a reviewable group wants those to be content instead.
 Core makes that possible without ever knowing what the content is.
 
-The `[profile]` extra is one answer to that question, and the reason the mechanism exists.
+The `[content]` extra is one answer to that question, and the reason the mechanism exists.
 It is not the only permitted answer, which is why the mechanism lives in core and the content types do not.
 For what the extra itself does with it, read {doc}`/concepts/profiles-and-groups`.
 
@@ -57,7 +57,7 @@ A plugin that declines has to be asked before a plugin that never declines.
 
 `source_users` and `source_groups` always succeed.
 Registered below either of them, this plugin is never reached, and nothing reports it: the site simply keeps creating stock users while every test that calls the plugin directly stays green.
-So install moves the plugin to the top of both interfaces, for the same reason the `[profile]` layer sits at the top of `IPropertiesPlugin`.
+So install moves the plugin to the top of both interfaces, for the same reason the `[content]` layer sits at the top of `IPropertiesPlugin`.
 
 This is the failure mode the design is most exposed to, and it is silent in both directions.
 The test suite therefore asserts the plugin's *position*, not merely that it is registered.
@@ -83,7 +83,7 @@ A row beside it would be a second record of the same person, kept in step by not
 On a site that has *not* configured user content, the `source_users` account is still created for them, because there it is the only record they have.
 
 A site that would rather keep the credential with the rest of the user opts into `ICredentialStorage`, takes on those four questions deliberately, and core then has nothing to delegate.
-The `[profile]` extra ships that as an opt-in behavior which keeps a hash in an annotation rather than in a field.
+The `[content]` extra ships that as an opt-in behavior which keeps a hash in an annotation rather than in a field.
 
 ## Where a user is created is a setting, not a parameter
 
@@ -127,11 +127,11 @@ PAS looks a principal straight back up after adding it, so a site that sets the 
 
 ```{important}
 Do not point the registry records at a content type unless something on the site enumerates that type.
-The `[profile]` extra does this for you, and points the records at itself.
+The `[content]` extra does this for you, and points the records at itself.
 ```
 
 ```{seealso}
 {doc}`/reference/user-content` for the records and the contracts.
-{doc}`/concepts/profiles-and-groups` for what the `[profile]` extra builds on top.
+{doc}`/concepts/profiles-and-groups` for what the `[content]` extra builds on top.
 {doc}`/concepts/layers` for why core declares an interface an extra provides.
 ```

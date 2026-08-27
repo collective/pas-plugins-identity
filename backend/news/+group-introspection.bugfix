@@ -1,5 +1,5 @@
 Fixed IdentityGroups being invisible to every group lookup except the plugin's own.
 
-The `[profile]` plugin implements `IGroupIntrospection` and the install handler never activated it. `PlonePAS.pas.getGroup` walks exactly that interface, so it found only `source_groups` and answered `None` for every IdentityGroup — and with it `api.group.get`, `portal_groups.getGroupById` and anything reaching a group the way Plone reaches one, including the sharing tab.
+The `[content]` plugin implements `IGroupIntrospection` and the install handler never activated it. `PlonePAS.pas.getGroup` walks exactly that interface, so it found only `source_groups` and answered `None` for every IdentityGroup — and with it `api.group.get`, `portal_groups.getGroupById` and anything reaching a group the way Plone reaches one, including the sharing tab.
 
 The group tests all passed throughout, because every one of them called the plugin's methods directly. The ones added here go through the tool instead. @ericof

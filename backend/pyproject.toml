@@ -40,7 +40,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-profile = [
+content = [
     "plone.app.dexterity",
 ]
 server = [
@@ -191,10 +191,10 @@ preview = true
 "src/pas/plugins/identity/core/pas/plugin.py" = ["A002"]
 # A002: ``object`` is CMFCore's parameter name for the indexing methods we
 # override. Renaming it would break every keyword caller in Zope.
-"src/pas/plugins/identity/profile/catalog.py" = ["A002"]
+"src/pas/plugins/identity/content/catalog.py" = ["A002"]
 # A002: ``id``, ``login`` and friends are the IUserEnumerationPlugin
 # signature, and ``id``/``title`` the Zope factory signature.
-"src/pas/plugins/identity/profile/pas.py" = ["A002"]
+"src/pas/plugins/identity/content/pas.py" = ["A002"]
 # A002: ``id``/``title`` are the Zope factory signature here too.
 "src/pas/plugins/identity/server/pas.py" = ["A002"]
 "src/pas/plugins/identity/server/session.py" = ["A002"]
@@ -203,7 +203,7 @@ preview = true
 "tests/core/pas/stubs.py" = ["A002"]
 # S311: the churn sequences are randomized for coverage of orderings, not
 # for unpredictability; the seeds are fixed precisely so they repeat.
-"tests/profile/test_churn.py" = ["S311"]
+"tests/content/test_churn.py" = ["S311"]
 
 [tool.check-manifest]
 ignore = [
@@ -248,7 +248,7 @@ name = "Core never imports the optional layers"
 type = "forbidden"
 source_modules = ["pas.plugins.identity.core"]
 forbidden_modules = [
-  "pas.plugins.identity.profile",
+  "pas.plugins.identity.content",
   "pas.plugins.identity.server",
 ]
 
@@ -256,6 +256,6 @@ forbidden_modules = [
 name = "The optional layers are independent of each other"
 type = "independence"
 modules = [
-  "pas.plugins.identity.profile",
+  "pas.plugins.identity.content",
   "pas.plugins.identity.server",
 ]

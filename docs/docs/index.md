@@ -60,7 +60,7 @@ The package installs in three layers, and you choose how many.
     Sign in with one or more external providers, link and unlink identities, an audit log of authentication events, and a control panel.
     Core works on its own with no extras.
 
-`pas.plugins.identity[profile]`
+`pas.plugins.identity[content]`
 :   Content-backed user profiles and groups.
     This layer adds a `Profile` content type with a workflow, a dedicated catalog, and PAS plugins that serve user properties, user enumeration, and group membership from that catalog.
     See {doc}`concepts/profiles-and-groups`.

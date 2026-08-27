@@ -30,7 +30,7 @@ If you want content-backed profiles and groups, install the extra as well.
 It sets the four registry records described in {doc}`/reference/user-content` and points them at its own container, so there is nothing further to configure.
 
 ```shell
-pip install "pas.plugins.identity[profile]"
+pip install "pas.plugins.identity[content]"
 ```
 
 Then apply its profile:

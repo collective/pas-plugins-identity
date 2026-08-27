@@ -280,7 +280,7 @@ export function testProvider(providerId: string) {
  *
  * Used for first-login routing: a user whose Profile is still `incomplete`
  * should be asked to fill it in before being sent on their way. Answers
- * usably in a site without the `[profile]` extra, so the caller does not have
+ * usably in a site without the `[content]` extra, so the caller does not have
  * to know whether it is installed.
  */
 export function getMyProfile() {

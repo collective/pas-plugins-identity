@@ -4,7 +4,7 @@
  * This asked `source === 'identity_profile'` first, and that was wrong: on a
  * real site it is never true. `source` is the PAS plugin the *account* came
  * from, and every account this package creates is a `source_users` one — the
- * `[profile]` layer's plugin serves properties and enumeration, it does not
+ * `[content]` layer's plugin serves properties and enumeration, it does not
  * authenticate. So a user with a Profile at `/profiles/ericof` still reports
  * `"source": "source_users"`, and keying the menu on that hid the entry for
  * everybody.

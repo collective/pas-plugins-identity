@@ -21,9 +21,9 @@
        is allowed to do everything else. -->
   <property name="global_allow">True</property>
   <property name="icon_expr">string:person</property>
-  <property name="klass">pas.plugins.identity.profile.content.profile.Profile</property>
-  <property name="schema">pas.plugins.identity.profile.content.profile.IProfileSchema</property>
-  <property name="add_permission">pas.plugins.identity.profile.add</property>
+  <property name="klass">pas.plugins.identity.content.profile.Profile</property>
+  <property name="schema">pas.plugins.identity.content.profile.IProfileSchema</property>
+  <property name="add_permission">pas.plugins.identity.content.add</property>
   <property name="link_target" />
   <property name="model_source" />
   <property name="model_file" />

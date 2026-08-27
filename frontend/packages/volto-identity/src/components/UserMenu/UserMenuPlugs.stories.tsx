@@ -61,7 +61,7 @@ const menu = () => (
 );
 
 /**
- * A member of a site running the `[profile]` layer.
+ * A member of a site running the `[content]` layer.
  *
  * "My profile" holds the first slot instead of Volto's Profile link, and
  * "Sign-in methods" comes straight after Preferences because choosing how
@@ -76,7 +76,7 @@ export const Manager: Story = {
 };
 
 /**
- * A site without the `[profile]` layer.
+ * A site without the `[content]` layer.
  *
  * Volto's Profile link takes its slot back, leading to the member form at
  * `/personal-information`.

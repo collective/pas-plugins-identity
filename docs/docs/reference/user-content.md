@@ -12,7 +12,7 @@ myst:
 
 This page describes the core mechanism.
 For why it is built this way, read {doc}`/concepts/users-as-content`.
-For the content types the `[profile]` extra provides, read {doc}`/reference/profiles`.
+For the content types the `[content]` extra provides, read {doc}`/reference/profiles`.
 
 ## Registry records
 
@@ -42,7 +42,7 @@ A type with nowhere to go would fail at the moment somebody adds a user, which i
 You can edit all four in {menuselection}`Site Setup --> Identity`.
 
 ```{note}
-Installing the `[profile]` extra sets all four for you and keeps them pointed at its own container.
+Installing the `[content]` extra sets all four for you and keeps them pointed at its own container.
 It derives them from the container settings through a subscriber, so moving the container in the control panel does not require a reinstall.
 ```
 
@@ -131,14 +131,14 @@ An empty password is never stored anywhere.
 An externally authenticated user has no password, and a blank one is not a credential.
 
 Nor does an externally authenticated user get a `source_users` account of their own.
-On a site that keeps its users as content, whatever the site configured to claim the login creates the record: the `[profile]` extra's subscriber, or your own.
+On a site that keeps its users as content, whatever the site configured to claim the login creates the record: the `[content]` extra's subscriber, or your own.
 Core writes nothing.
 If nothing claims it, the login succeeds and the principal exists as an identity and as nothing else; core logs a warning naming the type that was not created, because it cannot create it for you.
 
 ```{warning}
 Never store a credential in a Dexterity field.
 A field is serialized by `plone.restapi`, exported by GenericSetup, indexed by the catalog, and snapshotted by versioning.
-The `[profile]` extra's password behavior keeps a hash in an annotation for this reason.
+The `[content]` extra's password behavior keeps a hash in an annotation for this reason.
 ```
 
 ## What core does not do
@@ -151,7 +151,7 @@ PAS looks a principal back up immediately after adding it.
 
 ```{important}
 A site that sets these records without running a layer that enumerates the named type gets a user that cannot be found.
-The `[profile]` extra provides that layer.
+The `[content]` extra provides that layer.
 ```
 
 ## Refusals

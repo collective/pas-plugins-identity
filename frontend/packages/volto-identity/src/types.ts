@@ -165,7 +165,7 @@ export interface UserProfile {
   source: string | null;
   /** External identities linked to this account. */
   identities: Identity[];
-  /** The user's Profile, when the `[profile]` layer has minted one. */
+  /** The user's Profile, when the `[content]` layer has minted one. */
   profile_url: string | null;
 }
 

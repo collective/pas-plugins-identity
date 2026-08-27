@@ -1,8 +1,8 @@
 ---
 myst:
   html_meta:
-    "description": "Why the profile layer backs users with content without ever waking a content object."
-    "property=og:description": "Why the profile layer backs users with content without ever waking a content object."
+    "description": "Why the content layer backs users with content without ever waking a content object."
+    "property=og:description": "Why the content layer backs users with content without ever waking a content object."
     "property=og:title": "About profiles and groups"
 ---
 
@@ -13,7 +13,7 @@ myst:
 Plone's stock user storage keeps properties in a BTree and knows nothing about workflow, permissions, or the catalog.
 
 That is fine until you want a member directory, an editable profile page, or a group whose membership somebody can review.
-The `[profile]` extra backs users with content instead, while keeping the thing that usually goes wrong from going wrong.
+The `[content]` extra backs users with content instead, while keeping the thing that usually goes wrong from going wrong.
 
 For the states, records, and endpoints, see {doc}`/reference/profiles`.
 For the core mechanism this extra plugs into, see {doc}`/concepts/users-as-content`.

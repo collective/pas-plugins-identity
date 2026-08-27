@@ -16,8 +16,8 @@ One canonical Plone user id maps to many external identities — GitHub, Google,
 - **Providers configured through the web.** A control panel with a form generated from each driver's published schema. Client secrets are write-only through every API surface, including GenericSetup export.
 - **Magic-link sign-in.** Single-use signed tokens, at most fifteen minutes, rate limited per address *and* per IP, answering identically for known and unknown addresses.
 - **An audit log.** Successes and refusals, per user or site-wide, bounded and purged on write. IP and user agent are off by default.
-- **A documented event contract**, which is what the audit log, the profile layer and your own integrations all consume. Nothing reaches into anything else.
-- **Optional content-backed profiles and groups** (`[profile]`), with user properties, enumeration and group membership served entirely from a dedicated catalog — no content object is woken to answer them, and the test suite asserts that rather than claiming it.
+- **A documented event contract**, which is what the audit log, the content layer and your own integrations all consume. Nothing reaches into anything else.
+- **Optional content-backed profiles and groups** (`[content]`), with user properties, enumeration and group membership served entirely from a dedicated catalog — no content object is woken to answer them, and the test suite asserts that rather than claiming it.
 - **Core installs alone.** `pip install pas.plugins.identity` with no extras is a tested configuration, enforced in CI by an import-linter contract.
 
 ## Relationship to pas.plugins.oidc and pas.plugins.authomatic
@@ -34,11 +34,11 @@ The difference is linking. Neither of the above maps several external identities
 
 Its published compatibility matrix lists Plone 6.0 and 6.1, not 6.2. That is a fact about the current release rather than a judgement, and it may well change.
 
-The other reason is narrower: serving user properties and enumeration without waking a content object is the property the `[profile]` layer exists to provide, so it has to be something this package can assert about its own code on every CI run. It does, with a test that counts ZODB object activations and requires zero.
+The other reason is narrower: serving user properties and enumeration without waking a content object is the property the `[content]` layer exists to provide, so it has to be something this package can assert about its own code on every CI run. It does, with a test that counts ZODB object activations and requires zero.
 
 Membrane does wake them, and it is worth being precise about where. Its `MembranePropertyManager.getPropertiesForUser` collects property providers through `findMembraneUserAspect`, which adapts `brain._unrestrictedGetObject()` — so answering a property lookup loads the content object, one per matching brain. The plugin inherits `OFS.Cache.Cacheable`, but that path never calls it, so there is no cache in front of the load. Its *user enumeration* is not affected: that goes through `findImplementations`, which stays on the brains.
 
-This is architecture, not oversight. Membrane's property values live on the content object and are read through an adapter on it, so a brain genuinely cannot answer; the `[profile]` layer copies the values it serves into catalog metadata instead, which is what lets a brain answer and what the zero-wake test measures. The trade is real in both directions — metadata has to be kept honest, and this package ships a consistency check and a rebuild step precisely because of that.
+This is architecture, not oversight. Membrane's property values live on the content object and are read through an adapter on it, so a brain genuinely cannot answer; the `[content]` layer copies the values it serves into catalog metadata instead, which is what lets a brain answer and what the zero-wake test measures. The trade is real in both directions — metadata has to be kept honest, and this package ships a consistency check and a rebuild step precisely because of that.
 
 Verified against `Products.membrane` 7.0.1.dev0 (`plugins/propertymanager.py`, `utils.py`) by reading the source, not by measurement — membrane is not a dependency here, and its compatibility matrix would make it awkward to install alongside. Membrane's *design* is nonetheless where this one comes from, and the resemblance is not accidental.
 

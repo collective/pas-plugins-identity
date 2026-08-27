@@ -925,7 +925,7 @@ requires-dist = [
     { name = "pas-plugins-authomatic", marker = "extra == 'test'", specifier = ">=2.0.0" },
     { name = "pas-plugins-oidc", marker = "extra == 'test'", specifier = ">=2.0.0" },
     { name = "plone-api" },
-    { name = "plone-app-dexterity", marker = "extra == 'profile'" },
+    { name = "plone-app-dexterity", marker = "extra == 'content'" },
     { name = "plone-app-testing", marker = "extra == 'test'" },
     { name = "plone-restapi" },
     { name = "plone-restapi", extras = ["test"], marker = "extra == 'test'" },
@@ -938,7 +938,7 @@ requires-dist = [
     { name = "requests" },
     { name = "requests", marker = "extra == 'test'" },
 ]
-provides-extras = ["profile", "server", "test"]
+provides-extras = ["content", "server", "test"]
 
 [[package]]
 name = "pas-plugins-identity-docs"

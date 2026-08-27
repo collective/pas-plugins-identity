@@ -2,7 +2,7 @@
 
 Three things a site with external identities needs and Plone has no place to
 put: which identities a user has linked, which PAS plugin the userid actually
-came from, and where the user's Profile lives when the ``[profile]`` layer is
+came from, and where the user's Profile lives when the ``[content]`` layer is
 installed.
 
 **How the source is decided.** PAS stamps it. ``searchUsers`` aggregates the
@@ -92,7 +92,7 @@ def portrait_of(userid: str) -> str | None:
 
 
 def _profile_support():
-    """Return the ``[profile]`` layer's bridge, when it is installed.
+    """Return the ``[content]`` layer's bridge, when it is installed.
 
     A utility lookup rather than an import inside a function. The import was
     a contract violation that looked like a way of avoiding one:
@@ -108,7 +108,7 @@ def profile_url_of(userid: str) -> str | None:
     """Return the URL of a user's Profile, when there is one.
 
     :param userid: Canonical Plone userid.
-    :returns: The absolute URL, or ``None`` when the ``[profile]`` layer is
+    :returns: The absolute URL, or ``None`` when the ``[content]`` layer is
         not installed or the user has no Profile yet.
     """
     support = _profile_support()

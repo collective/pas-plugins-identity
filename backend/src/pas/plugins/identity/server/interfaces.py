@@ -15,7 +15,7 @@ class IIdentityServerLayer(IDefaultBrowserLayer):
 
     Registrations that must not exist in a site which has not switched the
     authorization server on are bound to this layer. That matters more here
-    than for the ``[profile]`` layer: an unwanted ``/authorize`` endpoint is
+    than for the ``[content]`` layer: an unwanted ``/authorize`` endpoint is
     an attack surface, not merely an unused feature.
     """
 

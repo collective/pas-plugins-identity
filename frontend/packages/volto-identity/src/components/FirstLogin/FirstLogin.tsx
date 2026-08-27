@@ -18,7 +18,7 @@
  * ```
  *
  * It is a separate route rather than logic inside `Callback` so that a site
- * without the `[profile]` extra can simply not use it, and so the decision is
+ * without the `[content]` extra can simply not use it, and so the decision is
  * reachable from a magic-link sign-in as well as an OAuth one.
  * @module components/FirstLogin/FirstLogin
  */

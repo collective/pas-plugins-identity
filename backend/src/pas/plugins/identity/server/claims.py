@@ -6,8 +6,8 @@ and where their values come from.
 
 The important design decision is the source. Claims are read from **Plone user
 properties**, never from a Profile. That is what keeps the ``[server]`` layer
-independent of the ``[profile]`` layer, which the import-linter contract
-requires -- but it is also simply correct: the profile layer serves its fields
+independent of the ``[content]`` layer, which the import-linter contract
+requires -- but it is also simply correct: the content layer serves its fields
 *as* a property sheet through its ``IPropertiesPlugin``, so asking PAS for a
 property gets Profile-backed data on a site that installed that layer and
 stock ``mutable_properties`` data on one that did not. The federation scenario

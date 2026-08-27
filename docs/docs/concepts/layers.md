@@ -15,7 +15,7 @@ The package ships as a core plus two optional extras.
 `pas.plugins.identity`
 :   Sign in with external providers, link and unlink identities, an audit log, and a control panel.
 
-`pas.plugins.identity[profile]`
+`pas.plugins.identity[content]`
 :   Content-backed user profiles and groups.
 
 `pas.plugins.identity[server]`
@@ -27,7 +27,7 @@ The two optional layers never import from each other.
 ## Why the boundary is more than tidiness
 
 Three layers that import freely are one layer with three names.
-The moment core reaches into the profile layer for something convenient, `pip install pas.plugins.identity` with no extras stops working, and it stops working at import time on somebody else's site rather than in CI.
+The moment core reaches into the content layer for something convenient, `pip install pas.plugins.identity` with no extras stops working, and it stops working at import time on somebody else's site rather than in CI.
 
 An add-on that ships extras is making a promise about what each combination does.
 The only way to keep that promise is to test the combinations, and the only way to keep the combinations meaningfully separate is to forbid the imports that would collapse them.
@@ -50,7 +50,7 @@ Moving an import inside a function does not dodge the contract, and it should no
 
 Core reaches the optional layers through the component architecture.
 
-The profile layer registers an `IProfileSupport` utility.
+The content layer registers an `IProfileSupport` utility.
 Core looks that utility up, and gets `None` on a site that never installed the extra.
 No import crosses the boundary in either direction, and the branch is a lookup rather than a `try`/`except ImportError`.
 
@@ -62,13 +62,13 @@ A layer publishes a utility, and anything that wants it asks the registry.
 This is the sharpest example, because the two layers are genuinely related.
 
 When the site acts as an authorization server, it releases claims about a user.
-On a site with the `[profile]` extra, those values live on a `Profile` content object.
+On a site with the `[content]` extra, those values live on a `Profile` content object.
 On a site without it, they live in `mutable_properties`.
 
 The server layer branches on neither.
 It asks PAS for a user property.
 
-The profile layer serves its fields as a property sheet, through an `IPropertiesPlugin` registered above `mutable_properties`.
+The content layer serves its fields as a property sheet, through an `IPropertiesPlugin` registered above `mutable_properties`.
 So the same call returns Profile-backed values where a Profile exists and stock values where one does not, and the server layer never learns which site it is on.
 
 That is what the contract buys.
@@ -76,5 +76,5 @@ Not just a cleaner dependency graph, but a server layer with no configuration br
 
 ## Where to go next
 
--   {doc}`profiles-and-groups` for what the profile layer does with the fields it owns.
+-   {doc}`profiles-and-groups` for what the content layer does with the fields it owns.
 -   {doc}`/reference/claims` for what the server layer releases.

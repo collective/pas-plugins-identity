@@ -6,7 +6,7 @@
  *
  * WHY IT IS SHADOWED. The row's {guilabel}`Edit` action is built inline and
  * Volto has no extension point in it, so where that action leads cannot be
- * changed without replacing the component. On a site running the `[profile]`
+ * changed without replacing the component. On a site running the `[content]`
  * extra it led to the wrong form on the wrong store for every user whose
  * fields live in a Profile.
  *

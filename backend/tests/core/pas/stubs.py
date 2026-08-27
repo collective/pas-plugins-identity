@@ -3,7 +3,7 @@
 Core creates users and groups as content without knowing what type they are.
 It deliberately does **not** enumerate them: answering "which users match
 this?" without waking every object needs a catalog, and a catalog is what the
-``[profile]`` extra exists to provide. Core creating and a layer enumerating
+``[content]`` extra exists to provide. Core creating and a layer enumerating
 is the split, and it is not optional in either direction -- PAS looks a
 principal straight back up after adding it, so creation with nothing to find
 it afterwards fails at ``setMemberProperties`` rather than producing a user.

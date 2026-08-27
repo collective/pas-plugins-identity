@@ -7,7 +7,7 @@ token wrote, a site serving API traffic would be committing a transaction per
 request, and the token endpoint's write frequency would follow *API call*
 frequency rather than *human login* frequency.
 
-Measured, not asserted, in the same shape as the ``[profile]`` layer's
+Measured, not asserted, in the same shape as the ``[content]`` layer's
 zero-wake test:
 
 * a **write counter** patched over ``ZODB.Connection.register``, the single

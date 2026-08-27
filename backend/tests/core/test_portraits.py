@@ -279,9 +279,9 @@ class TestStoring:
 
 
 class TestWhereItLands:
-    """Which store answers for a user, with no [profile] layer installed.
+    """Which store answers for a user, with no [content] layer installed.
 
-    The layer's own half is ``tests/profile/test_provider_picture.py``: this
+    The layer's own half is ``tests/content/test_provider_picture.py``: this
     is the site that has never heard of it, and has to keep working exactly
     as it did.
     """
@@ -302,7 +302,7 @@ class TestWhereItLands:
 
 
 class TestThroughTheSync:
-    """Signing in: when a fetch is attempted at all. No [profile] layer here
+    """Signing in: when a fetch is attempted at all. No [content] layer here
     -- portraits belong to the member, so they work without it."""
 
     @pytest.fixture(autouse=True)

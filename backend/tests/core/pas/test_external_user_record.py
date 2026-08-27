@@ -16,8 +16,8 @@ stores at once.
 
 Nothing here creates the content object for core. That is the site's job, the
 same way it is for :meth:`doAddUser`, and the subscriber below is this
-module's stand-in for the ``[profile]`` layer's -- see
-``tests.profile.test_external_user_record`` for the shipped one.
+module's stand-in for the ``[content]`` layer's -- see
+``tests.content.test_external_user_record`` for the shipped one.
 """
 
 from . import CLAIMS
@@ -89,7 +89,7 @@ def configured(site):
 def claiming(configured):
     """Register a subscriber that creates the user object, and remove it after.
 
-    What the ``[profile]`` layer does, reduced to the one line this module
+    What the ``[content]`` layer does, reduced to the one line this module
     cares about. Registered here rather than assumed, because "core declines
     and somebody else creates" is the whole contract under test: without a
     claimant there is no account, which is the case its own test covers.

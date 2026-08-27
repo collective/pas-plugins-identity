@@ -58,7 +58,7 @@ export interface UserMenuParams {
  *
  * Absent for a user whose fields are held in a Profile, where
  * `ProfileMenuItem` takes this slot under the same name. It keeps the slot
- * on a site without the `[profile]` layer and for a user first login has not
+ * on a site without the `[content]` layer and for a user first login has not
  * minted a Profile for -- who are exactly the users whose fields really are
  * edited at `/personal-information`.
  */

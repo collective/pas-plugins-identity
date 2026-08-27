@@ -3,11 +3,11 @@
 ``picture_url`` is copied into the standard portrait storage on login, with
 no custom adapter -- ``portal_memberdata``, the same place a portrait
 uploaded through user preferences goes. It stays there rather than moving to
-the ``[profile]`` layer's Dexterity type, because a portrait synced from a
+the ``[content]`` layer's Dexterity type, because a portrait synced from a
 provider has to work the same whether or not that optional layer is
 installed.
 
-The ``[profile]`` type *does* have a picture field now, and it **wins** where
+The ``[content]`` type *does* have a picture field now, and it **wins** where
 a user has filled it in: a picture somebody chose beats one a provider
 supplied. See :func:`pas.plugins.identity.core.serializer.portrait_of`, which
 is where the precedence lives. What is written here is the fallback.
@@ -31,13 +31,13 @@ claims is an image. None of this makes fetching a user-supplied URL safe --
 a hostile URL can still name a public host that resolves internally -- which
 is why the flag exists rather than a longer list of guards.
 
-**Where it lands depends on the site.** On one running the ``[profile]``
+**Where it lands depends on the site.** On one running the ``[content]``
 layer the picture goes on the user's Profile, because that is where that site
 keeps a person's fields and a picture in the other store would leave the
 content object showing an empty one. Everywhere else it is
 ``portal_memberdata``. One store per user either way, and the same one a
 preferences upload uses -- see
-:class:`pas.plugins.identity.profile.services.users.ProfileUsersPatch` for
+:class:`pas.plugins.identity.content.services.users.ProfileUsersPatch` for
 the other writer. A picture the user chose is never overwritten: the Profile
 remembers which URL the provider supplied, and a provider may replace only
 its own.
@@ -160,7 +160,7 @@ def _fetch(url: str, allow_http: bool = False) -> bytes:
 def store(userid: str, data: bytes, url: str = "") -> None:
     """Put image bytes wherever this user's picture lives.
 
-    On a site running the ``[profile]`` layer that is the Profile, for the
+    On a site running the ``[content]`` layer that is the Profile, for the
     same reason a portrait uploaded through preferences goes there: the
     Profile is where that site keeps a person's fields, and a picture in the
     other store would leave the content object showing an empty one. Without

@@ -5,7 +5,7 @@
  * leads. A user whose fields live in a Profile is edited on that Profile; a
  * user whose fields live in `portal_memberdata` still gets Volto's modal.
  * Both halves matter — the second is every site that does not run the
- * `[profile]` extra, and the site's own `admin` on every site that does.
+ * `[content]` extra, and the site's own `admin` on every site that does.
  */
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '../../testing';
@@ -75,7 +75,7 @@ describe('profileEditUrl', () => {
   it('is nothing for a user with no Profile', () => {
     // Which is what leaves Volto's member-properties modal in place for
     // them: the site's own admin, and every user on a site without the
-    // `[profile]` extra.
+    // `[content]` extra.
     expect(profileEditUrl(null)).toBeNull();
     expect(profileEditUrl(undefined)).toBeNull();
     expect(profileEditUrl('')).toBeNull();

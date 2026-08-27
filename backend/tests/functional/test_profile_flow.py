@@ -4,7 +4,7 @@ Everything in ``test_first_login`` fires the events by hand, which is the
 right way to test the subscriber and no way at all to prove the subscriber is
 *wired*. This drives the whole thing: Dex issues a real authorization code
 against a real end-user session, core authenticates it and fires the contract
-event, and the ``[profile]`` layer -- which core knows nothing about -- ends up
+event, and the ``[content]`` layer -- which core knows nothing about -- ends up
 with a Profile the user can edit and complete.
 
 The sequence the gate asks for, in one test: fresh Dex user logs in, Profile
@@ -14,8 +14,8 @@ exists in ``incomplete``, the user edits their own Profile, transitions it to
 
 from ..conftest import DEX_USER
 from pas.plugins.identity import PACKAGE_NAME
-from pas.plugins.identity.profile.catalog import all_brains
-from pas.plugins.identity.profile.catalog import query_catalog
+from pas.plugins.identity.content.catalog import all_brains
+from pas.plugins.identity.content.catalog import query_catalog
 from plone import api
 from plone.app.testing import applyProfile
 
@@ -28,7 +28,7 @@ pytestmark = pytest.mark.docker
 
 @pytest.fixture
 def profile_portal(portal):
-    """The functional portal with the ``[profile]`` extra installed.
+    """The functional portal with the ``[content]`` extra installed.
 
     Applied on top of the flow fixture rather than from a layer of its own:
     the functional layer stacks a DemoStorage per test, so the commit below is

@@ -58,7 +58,7 @@ ACTIVATED_INTERFACES = (
 #: through ``api.user.create``, which is how this was found.
 #:
 #: Ordering is load-bearing rather than cosmetic, exactly as it is for the
-#: ``[profile]`` layer's place in ``IPropertiesPlugin``.
+#: ``[content]`` layer's place in ``IPropertiesPlugin``.
 FIRST_REFUSAL_INTERFACES = (
     IUserAdderPlugin,
     IGroupManagement,

@@ -342,7 +342,7 @@ class DriverProtocol(Protocol):
 
 
 class IProfileSupport(Interface):
-    """What the optional ``[profile]`` layer answers for core.
+    """What the optional ``[content]`` layer answers for core.
 
     Core may not import that layer -- an import-linter contract says so, and
     the reason is that ``core`` has to install and run without it. But core
@@ -360,7 +360,7 @@ class IProfileSupport(Interface):
 
     Absent on a site without the extra, and
     :func:`~zope.component.queryUtility` returning ``None`` is the answer
-    "there is no profile layer here" -- which is exactly what the soft
+    "there is no content layer here" -- which is exactly what the soft
     import's ``ImportError`` used to mean.
     """
 

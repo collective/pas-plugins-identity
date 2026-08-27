@@ -63,11 +63,11 @@ jobs:
           - name: core
             extras: ''
           - name: +profile
-            extras: 'profile'
+            extras: 'content'
           - name: +server
             extras: 'server'
           - name: all
-            extras: 'profile,server'
+            extras: 'content,server'
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}

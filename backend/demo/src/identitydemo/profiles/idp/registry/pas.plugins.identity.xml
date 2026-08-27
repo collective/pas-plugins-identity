@@ -9,7 +9,7 @@
     <value key="callback_url">/login-identity</value>
     <value key="sync_portraits">True</value>
   </records>
-  <records interface="pas.plugins.identity.profile.interfaces.IProfileSettings"
+  <records interface="pas.plugins.identity.content.interfaces.IProfileSettings"
            prefix="pas.plugins.identity"
   >
     <value key="group_enumeration_states">

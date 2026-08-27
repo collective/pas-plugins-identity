@@ -13,7 +13,7 @@ mine" -- ``ZODBUserManager.doAddUser`` already returns ``False`` on a
 duplicate id. An unconfigured site therefore behaves exactly as it did
 before, and that is what most of this module asserts.
 
-The stub type is built here rather than borrowed from the ``[profile]``
+The stub type is built here rather than borrowed from the ``[content]``
 extra on purpose: core must be able to do this for a type it has never heard
 of, and a test that used ``Profile`` would prove only that core works with
 the one type this package happens to ship.

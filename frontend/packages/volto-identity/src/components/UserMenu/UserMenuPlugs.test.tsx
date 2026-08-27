@@ -148,7 +148,7 @@ describe('the personal-tools menu', () => {
 
   it('does not care which plugin authenticated the account', () => {
     // Every account this package creates is a `source_users` one -- the
-    // `[profile]` layer serves properties, it does not authenticate -- so a
+    // `[content]` layer serves properties, it does not authenticate -- so a
     // rule keyed on that hid the entry for everybody.
     const { ids } = renderMenu({
       profileUrl: 'http://site/profiles/alice',
@@ -160,7 +160,7 @@ describe('the personal-tools menu', () => {
   });
 
   it('falls back to the member form when there is no Profile', () => {
-    // A site without the [profile] layer, or a user whose first login has
+    // A site without the [content] layer, or a user whose first login has
     // not minted one yet.
     const { ids } = renderMenu();
 

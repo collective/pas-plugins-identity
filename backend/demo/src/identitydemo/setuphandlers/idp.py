@@ -28,7 +28,7 @@ create them protects nobody.
 
 from identitydemo import logger
 from identitydemo import settings
-from pas.plugins.identity.profile.container import get_container
+from pas.plugins.identity.content.container import get_container
 from pas.plugins.identity.server.clients import get_clients
 from pas.plugins.identity.server.clients import set_clients
 from pas.plugins.identity.server.consent_screen import CONSENT_URL_RECORD
@@ -104,7 +104,7 @@ def _ensure_profile_container() -> None:
     But it is logged at warning, with the consequence spelled out, because the
     silent version of this is exactly the bug it was added to fix.
     """
-    from pas.plugins.identity.profile.container import ContainerNotFound
+    from pas.plugins.identity.content.container import ContainerNotFound
 
     try:
         get_container(create=True)

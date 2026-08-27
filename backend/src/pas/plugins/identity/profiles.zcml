@@ -29,10 +29,10 @@
       name="pas.plugins.identity"
       />
 
-  <!-- The [profile] extra's profiles. Declared here rather than in
+  <!-- The [content] extra's profiles. Declared here rather than in
        the layer's own configure.zcml because GenericSetup builds a profile id
        from the package the directive appears in: declared next to the code,
-       these would install as ``pas.plugins.identity.profile:profile``, which
+       these would install as ``pas.plugins.identity.content:profile``, which
        is not a name anybody would guess. -->
   <configure zcml:condition="installed plone.app.dexterity">
 
@@ -42,7 +42,7 @@
         description="Content-backed user profiles, with a dedicated catalog."
         provides="Products.GenericSetup.interfaces.EXTENSION"
         directory="profiles/profile"
-        post_handler=".profile.setuphandlers.post_install"
+        post_handler=".content.setuphandlers.post_install"
         />
 
     <!-- A profile rather than a site-wide import step. An import step is
@@ -57,7 +57,7 @@
         description="Clear the dedicated Profile catalog and index every Profile in the site again. Re-runnable, and safe to run at any time."
         provides="Products.GenericSetup.interfaces.EXTENSION"
         directory="profiles/rebuild-profile-catalog"
-        post_handler=".profile.setuphandlers.rebuild_catalog"
+        post_handler=".content.setuphandlers.rebuild_catalog"
         />
 
     <genericsetup:registerProfile
@@ -66,13 +66,13 @@
         description="Remove the Profile catalog and content type registrations."
         provides="Products.GenericSetup.interfaces.EXTENSION"
         directory="profiles/uninstall-profile"
-        post_handler=".profile.setuphandlers.post_uninstall"
+        post_handler=".content.setuphandlers.post_uninstall"
         />
 
   </configure>
 
   <!-- The [server] extra's profiles. Declared here for the same reason as
-       the [profile] ones above: GenericSetup builds the profile id from the
+       the [content] ones above: GenericSetup builds the profile id from the
        package the directive appears in. -->
   <configure zcml:condition="installed cryptography">
 

@@ -54,7 +54,7 @@ describe('ProfileMenuItem', () => {
   });
 
   it('renders nothing when the user has no Profile', () => {
-    // A site without the [profile] layer, or a user first login has not
+    // A site without the [content] layer, or a user first login has not
     // minted one for. An entry leading nowhere is worse than no entry.
     renderInMenu(loaded(null));
 
