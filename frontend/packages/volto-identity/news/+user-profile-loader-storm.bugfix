@@ -1,0 +1,5 @@
+Stopped the signed-in user's profile being requested in a loop when the request fails.
+
+`UserProfileLoader` skipped fetching while a request was in flight and once the user was held, and neither is true after a failure: `loading` goes back to false and nothing was loaded, so the effect fired again on the very next render, for ever. A token that no longer authenticates but still decodes to a userid — which is exactly what a stale token against a rebuilt site is — produced about 150 requests a second against `@users/<id>` in the demo, over a thousand of them, until the tab was closed.
+
+It now asks once per userid, whether the answer arrives or fails, and asks again when the user changes. The regression test oscillates `loading` the way a failing round trip does; a single render cannot show this, and the first version of that test passed with the fix removed. @ericof

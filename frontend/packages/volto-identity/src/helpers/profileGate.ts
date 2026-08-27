@@ -68,12 +68,25 @@ export function rememberReturn(path: string): void {
 }
 
 /**
+ * Query parameter the backend hands a paused request over in.
+ *
+ * Must not be `return_url`: Volto's edit form claims that name.
+ */
+export const RESUME_PARAM = 'identity_resume';
+
+/**
  * Read a destination handed over in the query string, if it is safe to use.
  *
  * The backend's authorization endpoint pauses a request at the profile form
- * and passes the request to resume as `return_url`. Volto knows nothing about
- * that URL — `@@oauth-authorize` is a backend view, not a route — so it has
- * to be carried across rather than recomputed.
+ * and passes the request to resume as `identity_resume`. Volto knows nothing
+ * about that URL — `@@oauth-authorize` is a backend view, not a route — so it
+ * has to be carried across rather than recomputed.
+ *
+ * The name matters. `return_url` is Volto's own: its edit form reads that
+ * parameter and pushes it through the router after a save, and an absolute
+ * URL pushed that way is resolved against the current path. Using it handed
+ * the user a navigation to `/profiles/<id>/http:/host/@@oauth-authorize` and
+ * two 404s before the real redirect caught up.
  *
  * Only same-origin targets survive. Honouring an arbitrary `return_url` with
  * a real navigation is an open redirect, and this one *is* a real navigation:
@@ -84,7 +97,7 @@ export function rememberReturn(path: string): void {
  * @returns The destination, or null.
  */
 export function handedOverReturn(search: string): string | null {
-  const requested = new URLSearchParams(search).get('return_url');
+  const requested = new URLSearchParams(search).get(RESUME_PARAM);
   if (!requested) {
     return null;
   }

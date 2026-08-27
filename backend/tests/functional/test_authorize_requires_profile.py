@@ -143,12 +143,27 @@ class TestAnUnfinishedProfile:
 
         assert not response.headers.get("Location", "").startswith(REDIRECT)
 
+    def test_it_is_not_handed_over_as_return_url(self):
+        """``return_url`` is Volto's name, not ours.
+
+        Its edit form reads that parameter and pushes it through the router
+        after a save. An absolute URL pushed that way is resolved against the
+        current path, so using it navigated the user to
+        ``/profiles/<id>/http:/host/@@oauth-authorize`` and showed them two
+        404s before the real redirect caught up.
+        """
+        response = get(authorize_url(self.url), auth=self.user)
+        query = parse_qs(urlparse(response.headers["Location"]).query)
+
+        assert "identity_resume" in query
+        assert "return_url" not in query
+
     def test_the_whole_request_travels_with_them(self):
         """A parameter dropped here is a different request on the way back,
         and PKCE turns on exactly that difference."""
         response = get(authorize_url(self.url), auth=self.user)
         location = response.headers["Location"]
-        carried = parse_qs(urlparse(location).query)["return_url"][0]
+        carried = parse_qs(urlparse(location).query)["identity_resume"][0]
         params = parse_qs(urlparse(carried).query)
 
         assert params["client_id"] == [CLIENT_ID]

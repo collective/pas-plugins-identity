@@ -4,4 +4,6 @@ It did not. Every route such a sign-in touches — `@@oauth-authorize`, the logi
 
 `@@oauth-authorize` now pauses the request at the profile's edit form and carries the authorization request along as `return_url`, resuming it once the profile is complete. The client is told nothing in the meantime — the request is paused, exactly as it is while the user signs in — except under `prompt=none`, where interacting with the user is forbidden and the client is told `interaction_required` instead.
 
+The request to resume travels as `identity_resume`, not `return_url`. That name belongs to Volto: its edit form reads it and pushes it through the router after a save, and an absolute URL pushed that way is resolved against the current path — so the first version navigated the user to `/profiles/<id>/http:/host/@@oauth-authorize` and showed them two 404s before the real redirect caught up.
+
 Asked through the `IProfileSupport` utility rather than by importing the `[content]` layer, which the import-linter contract forbids: completeness is that layer's idea, and a site without it has no utility and enforces nothing. `enforce_required_profile_fields` turns this off with the rest of the gate. @ericof

@@ -77,6 +77,17 @@ CONSENT_ALLOW = "allow"
 #: *not* to, and those two error codes become unreachable.
 PROMPT_NONE = "none"
 
+#: Query parameter carrying the request to resume once a profile is finished.
+#:
+#: Deliberately **not** ``return_url``. That name belongs to Volto: its edit
+#: form reads it and pushes it through the router after a save, and an
+#: absolute URL pushed that way is resolved against the current path -- so
+#: handing it this request produced a navigation to
+#: ``/profiles/<id>/http:/id.localhost/@@oauth-authorize`` and two 404s in
+#: front of the user before the real redirect caught up. The frontend reads
+#: this name instead and navigates properly.
+RESUME_PARAM = "identity_resume"
+
 #: Returned by the consent check when the user has not been asked yet. A
 #: sentinel rather than ``None`` because ``None`` is already a perfectly good
 #: answer to "did they agree", and confusing "no" with "not yet" here would
@@ -245,7 +256,7 @@ class AuthorizeView(BrowserView):
             # nothing yet and hears from us when the browser comes back. The
             # return trip is the whole request, carried the same way the
             # consent screen carries it.
-            return f"{elsewhere}?{urlencode({'return_url': self.request_url()})}"
+            return f"{elsewhere}?{urlencode({RESUME_PARAM: self.request_url()})}"
 
         plugin = api.portal.get_tool("acl_users")[PLUGIN_ID]
         decision = self._consent_decision(plugin, user.getId(), client, scope)

@@ -122,24 +122,29 @@ describe('handedOverReturn', () => {
 
   it('takes a site-relative path', () => {
     expect(
-      handedOverReturn('?return_url=%2F%40%40oauth-authorize%3Fx%3D1'),
+      handedOverReturn('?identity_resume=%2F%40%40oauth-authorize%3Fx%3D1'),
     ).toBe('/@@oauth-authorize?x=1');
   });
 
   it('is nothing when there is none', () => {
     expect(handedOverReturn('')).toBe(null);
     expect(handedOverReturn('?other=1')).toBe(null);
+    // Volto's own parameter is not ours, and taking it would fight the
+    // edit form for the same navigation.
+    expect(handedOverReturn('?return_url=%2Fnews')).toBe(null);
   });
 
   it('refuses a protocol-relative target', () => {
     // "//evil.example" is not site-relative, however much it looks it.
-    expect(handedOverReturn('?return_url=%2F%2Fevil.example%2Fx')).toBe(null);
+    expect(handedOverReturn('?identity_resume=%2F%2Fevil.example%2Fx')).toBe(
+      null,
+    );
   });
 
   it('refuses another origin', () => {
-    expect(handedOverReturn('?return_url=https%3A%2F%2Fevil.example%2Fx')).toBe(
-      null,
-    );
+    expect(
+      handedOverReturn('?identity_resume=https%3A%2F%2Fevil.example%2Fx'),
+    ).toBe(null);
   });
 });
 
