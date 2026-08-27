@@ -1,0 +1,1 @@
+Added a state diagram for each of the two workflows to the profiles and groups reference, and said which permission guards each transition. The pages already listed the states; what they did not show is which transitions exist between them, or that reactivating a profile returns it to `incomplete` rather than to `complete`. @ericof

@@ -43,6 +43,23 @@ For why the layer is built this way, see {doc}`/concepts/profiles-and-groups`.
 
 Which states count as active is a registry setting.
 
+```{mermaid}
+stateDiagram-v2
+    direction LR
+    [*] --> incomplete
+    incomplete --> complete: complete
+    complete --> incomplete: reopen
+    incomplete --> deactivated: deactivate
+    complete --> deactivated: deactivate
+    deactivated --> incomplete: reactivate
+```
+
+`complete` and `reopen` are guarded by `Modify portal content`, so the user themselves can make both.
+`deactivate` and `reactivate` are guarded by `Manage users`, so they cannot.
+
+Reactivating returns a profile to `incomplete` rather than to `complete`.
+Whatever made an account worth deactivating is worth looking at again before it is enumerated.
+
 ## Group states
 
 A group has two states.
@@ -51,6 +68,16 @@ Deactivating one stops it being enumerated and stops it granting membership, wit
 Reactivating restores exactly the membership it had.
 
 A `UserProfile` naming a group that no longer exists grants nothing, and the consistency check reports it.
+
+```{mermaid}
+stateDiagram-v2
+    direction LR
+    [*] --> active
+    active --> deactivated: deactivate
+    deactivated --> active: reactivate
+```
+
+Both transitions are guarded by `Manage users`.
 
 ## Where profiles are stored
 
