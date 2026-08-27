@@ -47,6 +47,10 @@ export function toAppPath(url: string, apiPath = ''): string {
  * means "carry on where you were going". Diverting on anything else would
  * trap a user with a deliberately sparse profile in a loop they cannot leave.
  *
+ * They land on the **edit form** rather than on the profile. The profile is
+ * missing something the site requires, and a read-only page showing them that
+ * asks for an extra click to reach the only thing they can do about it.
+ *
  * @param profile The `@my-profile` answer, or null before it has loaded.
  * @param fallback Where the user was heading.
  * @param apiPath The backend's base URL, when it differs from the frontend's.
@@ -60,5 +64,5 @@ export function afterLogin(
   if (!profile?.profile || profile.review_state !== 'incomplete') {
     return fallback;
   }
-  return toAppPath(profile.profile, apiPath);
+  return `${toAppPath(profile.profile, apiPath)}/edit`;
 }

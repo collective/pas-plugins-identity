@@ -51,9 +51,12 @@ describe('toAppPath', () => {
 });
 
 describe('afterLogin', () => {
-  it('diverts a user whose profile is incomplete', () => {
+  it('diverts a user whose profile is incomplete to its edit form', () => {
+    // The edit form rather than the profile: it is missing something the
+    // site requires, and the view would ask for one more click to reach the
+    // only thing they can do about that.
     expect(afterLogin(profile(), '/news', 'http://backend:8080/Plone')).toBe(
-      '/identity-profiles/alice-userid',
+      '/identity-profiles/alice-userid/edit',
     );
   });
 

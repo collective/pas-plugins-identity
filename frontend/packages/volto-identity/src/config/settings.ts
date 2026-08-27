@@ -1,4 +1,5 @@
 import type { ConfigType } from '@plone/registry';
+import ProfileGate from '../components/ProfileGate/ProfileGate';
 
 declare module '@plone/types' {
   export interface SettingsConfig {
@@ -54,5 +55,20 @@ export default function install(config: ConfigType) {
     process.env.RAZZLE_IDENTITY_SHOW_PLONE_LOGIN,
     false,
   );
+
+  // The required-information gate, on every route.
+  //
+  // The backend has one too, and it lets `plone.restapi` requests through on
+  // purpose: Volto fetches the edit form over the API, so gating those would
+  // break the page the user is being sent to. Every navigation in this app is
+  // such a request, which means the backend gate never fires here and this is
+  // the one that does.
+  //
+  // An empty `match` mounts it everywhere, which is the point: a gate that
+  // only covers some routes is a list of ways around it.
+  config.settings.appExtras = [
+    ...(config.settings.appExtras ?? []),
+    { match: '', component: ProfileGate },
+  ];
   return config;
 }
