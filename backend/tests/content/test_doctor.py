@@ -44,8 +44,9 @@ class TestClean:
 
 class TestDrift:
     @pytest.fixture(autouse=True)
-    def _setup(self, portal, catalog, make_profile) -> None:
+    def _setup(self, portal, catalog, make_profile, allow_principals) -> None:
         self.portal = portal
+        self.allow_principals = allow_principals
         self.catalog = catalog
         self.make_profile = make_profile
 
@@ -106,8 +107,8 @@ class TestDrift:
         Profile filed somewhere else still counts -- which is exactly the
         case this check is left in place for.
         """
-        elsewhere = api.content.create(
-            container=self.portal, type="Folder", id="elsewhere"
+        elsewhere = self.allow_principals(
+            api.content.create(container=self.portal, type="Folder", id="elsewhere")
         )
         self.make_profile("alice", id="alice")
         self.make_profile(
@@ -135,8 +136,11 @@ class TestGroups:
     """The self.catalog holds both types, so the check has to cover both."""
 
     @pytest.fixture(autouse=True)
-    def _setup(self, portal, catalog, make_group, make_profile) -> None:
+    def _setup(
+        self, portal, catalog, make_group, make_profile, allow_principals
+    ) -> None:
         self.portal = portal
+        self.allow_principals = allow_principals
         self.catalog = catalog
         self.make_group = make_group
         self.make_profile = make_profile
@@ -166,8 +170,10 @@ class TestGroups:
 
         As with a duplicate userid, this now takes two containers.
         """
-        elsewhere = api.content.create(
-            container=self.portal, type="Folder", id="elsewhere-groups"
+        elsewhere = self.allow_principals(
+            api.content.create(
+                container=self.portal, type="Folder", id="elsewhere-groups"
+            )
         )
         self.make_group("editors", id="editors")
         self.make_group("editors", id="editors", container=elsewhere)

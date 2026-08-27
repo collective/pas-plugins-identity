@@ -62,6 +62,26 @@ A project happy with `/identity-profiles` sets none.
 The catalog is not scoped to that container.
 It indexes a `UserProfile` wherever the object actually is, so reorganizing content is not a deauthentication.
 
+## Where profiles may be created
+
+Only in that container.
+
+Each type has its own add permission, and `rolemap.xml` grants both to no role at all.
+What makes either type addable anywhere is a local grant on the container itself, which the add-on writes when it creates the folder, when it installs into a site where the folder already exists, and when a folder appears at the configured path.
+
+```text
+pas.plugins.identity: Add User Profile
+pas.plugins.identity: Add User Group
+```
+
+So nobody can create a `UserProfile` in an ordinary folder, or paste one into it, and that includes a `Manager`.
+Neither type appears in the add menu anywhere else.
+
+To file principals somewhere else as well, grant the permission on that folder.
+That is a deliberate act on a folder you chose, which is the difference between this and granting it site-wide.
+
+The two permissions are separate so that a site filing groups apart from users can open each container to one kind only.
+
 ## Permissions on a profile
 
 A user gets `Editor` on their own `UserProfile`, and nothing on anybody else's.

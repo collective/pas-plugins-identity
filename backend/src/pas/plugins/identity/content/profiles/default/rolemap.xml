@@ -1,15 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <rolemap>
   <permissions>
-    <!-- Profiles are created by the first-login machinery and by
-         site administrators, never by users adding content. ``global_allow``
-         is False as well; this is the second lock. -->
+    <!-- Granted to nobody, on purpose, and this is not an oversight to be
+         tidied up later.
+
+         Both types are addable in exactly one place: the container the
+         registry names for them, where
+         ``pas.plugins.identity.content.container`` grants the permission to
+         Manager and Site Administrator locally. Granting it here as well
+         would make every folder in the site a place a UserProfile can be
+         created, which is the thing being prevented.
+
+         ``acquire="False"`` matters even with no roles listed. A permission
+         nobody mentions is not a permission nobody has: Zope falls back to
+         whatever the object acquires, so the answer would change with where
+         the folder happens to be. -->
     <permission acquire="False"
-                name="pas.plugins.identity: Add Profile"
-    >
-      <role name="Manager" />
-      <role name="Site Administrator" />
-    </permission>
+                name="pas.plugins.identity: Add User Profile"
+    />
+
+    <permission acquire="False"
+                name="pas.plugins.identity: Add User Group"
+    />
 
     <!-- The other three are the field permissions declared on the schema in
          ``profile.content.profile``. Every one of them is also managed by

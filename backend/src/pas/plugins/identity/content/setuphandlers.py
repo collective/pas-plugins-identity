@@ -19,6 +19,7 @@ from pas.plugins.identity.content.catalog import IdentityProfileCatalog
 from pas.plugins.identity.content.catalog import INDEXES
 from pas.plugins.identity.content.catalog import METADATA
 from pas.plugins.identity.content.catalog import query_catalog
+from pas.plugins.identity.content.container import grant_add_permissions
 from pas.plugins.identity.content.interfaces import IProfileSettings
 from pas.plugins.identity.content.pas import IdentityProfilePlugin
 from pas.plugins.identity.content.pas import PLUGIN_ID
@@ -197,6 +198,11 @@ def post_install(context: SetupTool) -> None:
     # setting this profile's registry.xml wrote. Doing it again here covers
     # the site that reinstalls without changing one, and costs a write.
     sync_core_records()
+    # A container an operator made by hand, or one left behind by an earlier
+    # install, has no add permission on it and nothing else would ever give it
+    # one -- the grant otherwise only happens when this package creates the
+    # folder itself.
+    grant_add_permissions()
 
 
 def rebuild_catalog(context: SetupTool) -> None:

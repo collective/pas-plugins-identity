@@ -141,14 +141,17 @@ class TestLookup:
 
 class TestCatalogIsNotScopedToTheContainer:
     @pytest.fixture(autouse=True)
-    def _setup(self, portal, catalog) -> None:
+    def _setup(self, portal, catalog, allow_principals) -> None:
         self.portal = portal
+        self.allow_principals = allow_principals
         self.catalog = catalog
 
     def test_profile_outside_the_container_is_still_indexed(self):
         """Reorganising content is not a deauthentication."""
-        elsewhere = api.content.create(
-            container=self.portal, type="Folder", id="elsewhere", title="Elsewhere"
+        elsewhere = self.allow_principals(
+            api.content.create(
+                container=self.portal, type="Folder", id="elsewhere", title="Elsewhere"
+            )
         )
         api.content.create(
             container=elsewhere,

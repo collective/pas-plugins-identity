@@ -12,18 +12,17 @@
   >Content-backed profile for one Plone user.</property>
   <property name="allowed_content_types" />
   <property name="filter_content_types">True</property>
-  <!-- Addable anywhere, but only by someone holding
-       ``pas.plugins.identity: Add Profile`` — Manager and Site
-       Administrator per rolemap.xml. A permission is the right lock here
-       and a structural one is not: with ``global_allow`` false a Profile
-       cannot be pasted into an ordinary folder at all, which would make
-       reorganising content silently impossible for the administrator who
-       is allowed to do everything else. -->
+  <!-- Structurally addable anywhere; actually addable only where the add
+       permission is granted, which is the container the registry names and
+       nowhere else. The lock is the permission rather than ``global_allow``
+       because a permission is a grant an operator can make: a site that
+       files its users under /intranet/people grants it there, and nothing
+       in this package has to know. -->
   <property name="global_allow">True</property>
   <property name="icon_expr">string:person</property>
   <property name="klass">pas.plugins.identity.content.profile.UserProfile</property>
   <property name="schema">pas.plugins.identity.content.profile.IUserProfileSchema</property>
-  <property name="add_permission">pas.plugins.identity.content.add</property>
+  <property name="add_permission">pas.plugins.identity.userprofile.add</property>
   <property name="link_target" />
   <property name="model_source" />
   <property name="model_file" />

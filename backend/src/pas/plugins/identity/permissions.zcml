@@ -1,14 +1,25 @@
 <configure xmlns="http://namespaces.zope.org/zope">
 
-  <!-- Adding a Profile is not an authoring action: Profiles are minted by the
-       first-login machinery of the ``[content]`` layer and otherwise managed
-       by administrators. The permission is declared here, in core, because
-       ZCML permission ids are global and a permission that only exists when
-       an extra is installed would make the FTI unimportable in a site that
-       later adds the extra. -->
+  <!-- Adding a user or a group is not an authoring action: they are minted by
+       the first-login machinery of the ``[content]`` layer and otherwise
+       managed by administrators. These permissions are declared here, in
+       core, because ZCML permission ids are global and a permission that only
+       exists when an extra is installed would make the FTI unimportable in a
+       site that later adds the extra.
+
+       One per type rather than one for both. They are granted on the
+       container each type is filed in, and a site that files groups
+       separately from users would otherwise have to grant both permissions
+       in both places, which is a lock whose two halves cannot be moved
+       independently, and so not a lock at all. -->
   <permission
-      id="pas.plugins.identity.content.add"
-      title="pas.plugins.identity: Add Profile"
+      id="pas.plugins.identity.userprofile.add"
+      title="pas.plugins.identity: Add User Profile"
+      />
+
+  <permission
+      id="pas.plugins.identity.usergroup.add"
+      title="pas.plugins.identity: Add User Group"
       />
 
   <permission

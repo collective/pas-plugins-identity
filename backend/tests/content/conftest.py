@@ -28,6 +28,9 @@ from pas.plugins.identity.content.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.content.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.content.catalog import query_catalog
 from pas.plugins.identity.content.container import get_container
+from pas.plugins.identity.content.container import grant_add_permission
+from pas.plugins.identity.content.container import GROUP
+from pas.plugins.identity.content.container import PROFILE
 from pas.plugins.identity.content.pas import PLUGIN_ID
 from plone import api
 from plone.app.testing import setRoles
@@ -108,6 +111,31 @@ def plugin(acl_users):
     :returns: The plugin.
     """
     return acl_users[PLUGIN_ID]
+
+
+@pytest.fixture
+def allow_principals():
+    """Return a callable making a folder accept Profiles and Groups.
+
+    Both add permissions are granted to no role site-wide, so a folder that is
+    not one of the configured containers refuses every ``UserProfile`` and
+    ``UserGroup``. That is the lock, and this is the escape hatch it was
+    designed to leave open: an operator who wants principals filed somewhere
+    else grants the permission on the folder they chose.
+
+    The tests that use this are about the catalog, the doctor or the indexing
+    subscribers, none of which is about permissions. They need a second folder
+    that principals may live in, which is what an operator would have made.
+
+    :returns: Callable taking a folder and returning it, now permitted.
+    """
+
+    def grant(folder):
+        for kind in (PROFILE, GROUP):
+            grant_add_permission(folder, kind)
+        return folder
+
+    return grant
 
 
 @pytest.fixture

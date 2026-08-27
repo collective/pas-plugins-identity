@@ -17,6 +17,9 @@ from pas.plugins.identity.content import doctor
 from pas.plugins.identity.content.catalog import all_brains
 from pas.plugins.identity.content.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.content.catalog import PROFILE_PORTAL_TYPE
+from pas.plugins.identity.content.container import grant_add_permission
+from pas.plugins.identity.content.container import GROUP
+from pas.plugins.identity.content.container import PROFILE
 from plone import api
 from zope.lifecycleevent import modified
 
@@ -63,14 +66,19 @@ class Churn:
         self.counter = 0
         self.folders = [portal["identity-profiles"]]
         for index in range(2):
-            self.folders.append(
-                api.content.create(
-                    container=portal,
-                    type="Folder",
-                    id=f"elsewhere-{index}",
-                    title=f"Elsewhere {index}",
-                )
+            elsewhere = api.content.create(
+                container=portal,
+                type="Folder",
+                id=f"elsewhere-{index}",
+                title=f"Elsewhere {index}",
             )
+            # Principals are addable only in the configured container, so a
+            # folder the churn is going to move a Profile into has to be a
+            # folder an operator opened up. The churn is about catalog
+            # consistency, not about permissions.
+            for kind in (PROFILE, GROUP):
+                grant_add_permission(elsewhere, kind)
+            self.folders.append(elsewhere)
 
     def _of_type(self, portal_type: str) -> list:
         """Return the live objects of one type.

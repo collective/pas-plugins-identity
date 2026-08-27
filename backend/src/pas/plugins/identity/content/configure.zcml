@@ -139,6 +139,18 @@
       handler=".principals.on_container_setting_changed"
       />
 
+  <!-- The other half of the same problem. A container this package did not
+       create gets no add permission from the creation path, and neither the
+       install handler nor the settings subscriber ever sees it: one runs too
+       early and the other watches records rather than content. A folder
+       appearing at the configured path is the third case, and the demo hits
+       it on every fresh site. -->
+  <subscriber
+      for="Products.CMFCore.interfaces.IFolderish
+           zope.lifecycleevent.interfaces.IObjectAddedEvent"
+      handler=".principals.on_folder_added"
+      />
+
   <!-- The read side of the same decision. plone.restapi's @portrait reads
        portal_memberdata only, so it answered 404 for a user whose picture is
        on their Profile - including when the [server] layer publishes this

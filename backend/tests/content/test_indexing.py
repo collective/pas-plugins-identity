@@ -21,8 +21,11 @@ def container(portal):
 
 class TestIndexingLifecycle:
     @pytest.fixture(autouse=True)
-    def _setup(self, portal, catalog, container, make_profile) -> None:
+    def _setup(
+        self, portal, catalog, container, make_profile, allow_principals
+    ) -> None:
         self.portal = portal
+        self.allow_principals = allow_principals
         self.catalog = catalog
         self.container = container
         self.make_profile = make_profile
@@ -86,8 +89,10 @@ class TestIndexingLifecycle:
     def test_move_out_of_the_container_keeps_it_indexed(self):
         """The catalog is site-wide: reorganising content is not a logout."""
         profile = self.make_profile("alice")
-        target = api.content.create(
-            container=self.portal, type="Folder", id="elsewhere", title="Elsewhere"
+        target = self.allow_principals(
+            api.content.create(
+                container=self.portal, type="Folder", id="elsewhere", title="Elsewhere"
+            )
         )
         api.content.move(source=profile, target=target)
 

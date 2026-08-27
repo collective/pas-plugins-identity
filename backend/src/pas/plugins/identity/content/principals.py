@@ -31,6 +31,8 @@ whole fix.
 from pas.plugins.identity import logger
 from pas.plugins.identity.content.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.content.catalog import PROFILE_PORTAL_TYPE
+from pas.plugins.identity.content.container import grant_add_permission
+from pas.plugins.identity.content.container import grant_add_permissions
 from pas.plugins.identity.content.container import GROUP
 from pas.plugins.identity.content.container import GROUP_ID_RECORD
 from pas.plugins.identity.content.container import GROUP_PARENT_RECORD
@@ -43,6 +45,7 @@ from pas.plugins.identity.core.pas.plugin import GROUP_CONTENT_TYPE_RECORD
 from pas.plugins.identity.core.pas.plugin import USER_CONTAINER_PATH_RECORD
 from pas.plugins.identity.core.pas.plugin import USER_CONTENT_TYPE_RECORD
 from plone import api
+from plone.api.exc import InvalidParameterError
 
 
 #: The records whose value the container path is derived from. A change to
@@ -129,6 +132,48 @@ def on_container_setting_changed(event) -> None:
     if getattr(event.record, "__name__", None) not in WATCHED_RECORDS:
         return
     sync_core_records()
+    # The folder the records now name is where principals go, so it is the
+    # folder that has to allow them. The old one keeps its grant: it may still
+    # hold Profiles, and revoking it would strand whoever is filing them.
+    grant_add_permissions()
+
+
+def on_folder_added(obj, event) -> None:
+    """Grant the add permissions when a configured container appears.
+
+    The container is not always created by this package. A policy profile
+    layered on top may ship it as content, an operator may make the folder by
+    hand, and the federation demo does both -- and none of those paths goes
+    through :func:`~pas.plugins.identity.content.container.get_container`,
+    which is where the grant otherwise happens.
+
+    Neither of the two other grant points helps there. The install handler
+    only sees a container that already exists, and the settings subscriber
+    only fires when a *record* changes; a folder created afterwards, at the
+    path the records already name, is the case both of them miss. The symptom
+    is a container that looks correct and refuses every user filed into it.
+
+    Fires for every folderish object added anywhere in the site, and answers
+    with two registry reads and a string compare for all but the one that
+    matters.
+
+    :param obj: The object just added.
+    :param event: The object-added event, unused.
+    """
+    try:
+        wanted = {kind: container_path(kind) for kind in (PROFILE, GROUP)}
+    except InvalidParameterError:
+        # A core-only site: the layer's registry records do not exist, so
+        # there is no configured container and nothing to grant. This
+        # subscriber is not bound to a browser layer -- it cannot be, the
+        # objects it fires for carry no request -- so declining here is what
+        # keeps it inert on a site that never installed the extra.
+        return
+    portal_path = api.portal.get().getPhysicalPath()
+    path = "/".join(obj.getPhysicalPath()[len(portal_path) :])
+    for kind, configured in wanted.items():
+        if configured and configured == path:
+            grant_add_permission(obj, kind)
 
 
 __all__ = [
@@ -136,5 +181,6 @@ __all__ = [
     "clear_core_records",
     "container_path",
     "on_container_setting_changed",
+    "on_folder_added",
     "sync_core_records",
 ]

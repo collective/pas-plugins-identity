@@ -1,7 +1,6 @@
 {
   "__version__": "1.0.0",
-  "_blob_files_": [
-  ],
+  "_blob_files_": [],
   "_data_files_": [
     "plone_site_root/data.json",
     "70421372580d42948e63f41bd392df69/data.json",
@@ -55,13 +54,6 @@
         "acquire": false,
         "roles": [
           "Authenticated"
-        ]
-      },
-      "pas.plugins.identity: Add Profile": {
-        "acquire": false,
-        "roles": [
-          "Manager",
-          "Site Administrator"
         ]
       },
       "pas.plugins.identity: Edit Profile": {

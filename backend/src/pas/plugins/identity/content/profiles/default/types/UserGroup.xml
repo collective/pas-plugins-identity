@@ -12,11 +12,12 @@
   >A group, backed by content. Membership is a field on each Profile, not a list here.</property>
   <property name="allowed_content_types" />
   <property name="filter_content_types">True</property>
+  <!-- Same lock as the UserProfile type: see that FTI. -->
   <property name="global_allow">True</property>
   <property name="icon_expr">string:users</property>
   <property name="klass">pas.plugins.identity.content.group.UserGroup</property>
   <property name="schema">pas.plugins.identity.content.group.IUserGroupSchema</property>
-  <property name="add_permission">pas.plugins.identity.content.add</property>
+  <property name="add_permission">pas.plugins.identity.usergroup.add</property>
   <property name="link_target" />
   <property name="model_source" />
   <property name="model_file" />

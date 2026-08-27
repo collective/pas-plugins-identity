@@ -13,7 +13,12 @@ working, because an operator reorganising content has not deauthenticated
 anybody.
 
 What the container *is* for is answering "where does a new Profile go" --
-asked at install and at first login and nowhere else.
+asked at install and at first login and nowhere else. It is also *how* that
+question is answered exclusively: both add permissions are granted to no role
+in ``rolemap.xml`` and granted to administrators on the container itself, so
+a ``UserProfile`` may be created in the folder configured for it and nowhere
+else in the site. Filing them somewhere else is a grant an operator makes
+deliberately, on a folder they chose.
 
 Groups get their own four records, and they default to the Profile
 container's. A site that wants principals filed together sets nothing and
@@ -84,6 +89,24 @@ RECORDS = {
 #: Volto site has, and Volto is the distribution that makes the default
 #: unusable.
 CONTAINER_TYPE_FALLBACKS = ("Document", "Folder")
+
+#: Add permission per kind, by **title** rather than by ZCML id: that is what
+#: ``manage_permission`` and ``rolemap.xml`` both name a permission by.
+ADD_PERMISSIONS = {
+    PROFILE: "pas.plugins.identity: Add User Profile",
+    GROUP: "pas.plugins.identity: Add User Group",
+}
+
+#: Roles that may add a principal *inside a container*. Granted there and
+#: nowhere else -- ``rolemap.xml`` gives these permissions to no role at all,
+#: so this local grant is the only thing that makes either type addable
+#: anywhere in the site.
+#:
+#: ``Manager`` is on the list because every machine path that mints a
+#: principal -- first login, ``api.user.create``, ``api.group.create`` --
+#: elevates to it. Take it off and the layer stops working rather than
+#: becoming stricter.
+ADD_ROLES = ("Manager", "Site Administrator")
 
 
 class ContainerNotFound(LookupError):
@@ -181,6 +204,72 @@ def _creatable_type(parent, configured: str, type_record: str) -> str:
     )
 
 
+def grant_add_permission(container: Container, kind: str = PROFILE) -> bool:
+    """Let the configured roles add this kind of principal in ``container``.
+
+    The site-wide answer is "nobody": ``rolemap.xml`` declares both add
+    permissions with no role and no acquisition, so a ``UserProfile`` is
+    addable in exactly the folders that say so, and a folder says so only
+    because this ran on it. Filing users somewhere else is then a deliberate
+    grant on a deliberate folder rather than a side effect of being an
+    administrator.
+
+    Idempotent, and it checks before it writes: this is called from the
+    install handler and from the settings-changed subscriber as well as at
+    creation, and a permission map rewritten on every registry change is a
+    ZODB write per keystroke in the control panel.
+
+    :param container: The folder principals of this kind are filed in.
+    :param kind: :data:`PROFILE` or :data:`GROUP`.
+    :returns: Whether anything was written.
+    """
+    permission = ADD_PERMISSIONS[kind]
+    granted = {
+        entry["name"]
+        for entry in container.rolesOfPermission(permission)
+        if entry["selected"]
+    }
+    acquired = bool(container.acquiredRolesAreUsedBy(permission))
+    if granted == set(ADD_ROLES) and not acquired:
+        return False
+    container.manage_permission(permission, roles=ADD_ROLES, acquire=0)
+    logger.info(
+        "Granted %r to %s on %s",
+        permission,
+        ", ".join(ADD_ROLES),
+        "/".join(container.getPhysicalPath()),
+    )
+    return True
+
+
+def grant_add_permissions() -> list[str]:
+    """Grant each kind's add permission on the container that holds it.
+
+    Called where the answer may have changed without anything creating a
+    container: after an install, and after somebody points the settings at a
+    different folder. A container that does not exist yet is skipped rather
+    than created -- see
+    :func:`~pas.plugins.identity.content.setuphandlers.post_install` for why
+    creating one eagerly is the mistake this package already made once.
+
+    The two kinds resolve to the same folder on a site that has not separated
+    them, which grants both permissions there and is exactly right.
+
+    :returns: Paths of the containers that were written to.
+    """
+    written = []
+    for kind in (PROFILE, GROUP):
+        try:
+            container = get_container(kind=kind)
+        except ContainerNotFound:
+            continue
+        if container is None:
+            continue
+        if grant_add_permission(container, kind):
+            written.append("/".join(container.getPhysicalPath()))
+    return written
+
+
 def get_container(create: bool = False, kind: str = PROFILE) -> Container | None:
     """Return a configured principal container.
 
@@ -214,6 +303,15 @@ def get_container(create: bool = False, kind: str = PROFILE) -> Container | None
     if IExcludeFromNavigation.providedBy(container):
         container.exclude_from_nav = True
         container.reindexObject(idxs=["exclude_from_nav"])
+    # Nothing may be added here until this runs, including by the machinery
+    # that is about to file the first Profile: the add permissions are granted
+    # to no role site-wide, so the container is the whole lock.
+    #
+    # Both kinds, not just the one asked for. On a site that has not separated
+    # them the two resolve to this same folder, and granting only the kind
+    # that happened to be created first leaves the other unaddable in the one
+    # place it is supposed to go.
+    grant_add_permissions()
     logger.info(
         "Created %s container at %s",
         kind,
