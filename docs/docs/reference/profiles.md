@@ -93,6 +93,13 @@ Set it to name fields explicitly:
 A field counts as filled when it holds something other than `None`, an empty string, whitespace, or an empty collection.
 `0` and `False` are answers somebody gave, and are not missing.
 
+A field named here does not have to be required on the type.
+`@types/UserProfile` reports the site's required fields alongside the type's, so the edit form asks for everything the flow insists on.
+Without that the two would disagree in the worst direction: the flow would hold the profile incomplete while the form accepted a save without the field, and the user would be asked again for something they had already tried to give.
+
+The record only ever adds.
+A field the type marks required stays required whatever the record says, because the type is the one that cannot store an empty value.
+
 ## Group states
 
 A group has two states.

@@ -1,1 +1,1 @@
-Documented what the two working profile states mean now that the add-on keeps them true, and the registry record naming the fields a profile must carry. @ericof
+Documented what the two working profile states mean now that the add-on keeps them true, and the registry record naming the fields a profile must carry. It also records that a required field need not be required on the type, because `@types` reports both. @ericof

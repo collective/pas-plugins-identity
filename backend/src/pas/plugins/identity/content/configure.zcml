@@ -120,6 +120,22 @@
       name="@my-profile"
       />
 
+  <!-- @types, with the site's required profile fields in the schema the edit
+       form is built from. plone.restapi reads ``required`` off the type and
+       nothing else, so a field required by the registry record but optional
+       on the type would hold a profile incomplete while the form accepted a
+       save without it. That is a loop, and the record alone would create it.
+       See .services.types. -->
+  <plone:service
+      method="GET"
+      accept="application/json,application/schema+json"
+      factory=".services.types.ProfileTypesGet"
+      for="*"
+      permission="zope2.View"
+      layer=".interfaces.IIdentityContentLayer"
+      name="@types"
+      />
+
   <!-- plone.restapi's own @users PATCH, with the portrait written to the
        Profile that owns it rather than to portal_memberdata. Registered for
        this layer, so the override exists exactly where a Profile does. -->

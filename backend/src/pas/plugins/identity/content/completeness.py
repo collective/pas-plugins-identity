@@ -59,8 +59,12 @@ TRANSITIONS = {INCOMPLETE: "complete", COMPLETE: "reopen"}
 NEVER_REQUIRED = frozenset({"userid", "id"})
 
 
-def _configured() -> tuple[str, ...]:
+def configured_fields() -> tuple[str, ...]:
     """Return the fields the registry names, if any.
+
+    Public because the ``@types`` service needs the same answer without a
+    profile object to hand: it is correcting a *type's* schema, and the
+    fields the type already marks required are in that schema already.
 
     :returns: Field names, empty when the record is unset or absent.
     """
@@ -98,7 +102,7 @@ def required_fields(profile: UserProfile) -> tuple[str, ...]:
     :param profile: The profile to inspect.
     :returns: Field names.
     """
-    return _configured() or _declared(profile)
+    return configured_fields() or _declared(profile)
 
 
 def _is_empty(value: object) -> bool:
@@ -182,6 +186,7 @@ __all__ = [
     "COMPLETE",
     "INCOMPLETE",
     "REQUIRED_FIELDS_RECORD",
+    "configured_fields",
     "is_complete",
     "missing_fields",
     "reconcile",
