@@ -53,6 +53,22 @@ Group nesting would break this.
 A group whose members are groups makes `getGroupsForPrincipal` recursive, and a recursive answer computed from brains stops being a single lookup.
 So it is out of scope rather than slow.
 
+## A provider can grant membership, and take it back
+
+Group membership is one of the things a provider can assert, and it is the only one that has to be *revoked* rather than merely refreshed.
+A name that stops arriving is a name Plone keeps; a group that stops arriving has to stop granting.
+
+So every sign-in reconciles the groups a provider maps, and the reconciliation is fenced.
+Each identity carries the local group ids its own provider granted, and a sign-in adds what is newly granted and removes only what that same provider granted before.
+
+That fence is what makes the feature safe to leave running.
+Without it, a sign-in would write one provider's answer over the whole of a member's `group_ids`, erasing every group an administrator granted by hand and every group a second provider granted, silently, at the moment somebody logged in.
+
+Membership is written through the group tool rather than to any store of this package's own, so it lands wherever the site keeps membership: `group_ids` on a `Profile` where users are content, and `source_groups` where they are not.
+`getGroupsForPrincipal` stays the single metadata read described above.
+
+See {doc}`federation` for the provider's half, and {doc}`/how-to-guides/configure-a-provider` for the map itself.
+
 ## Claims refresh, and why clearing a field is an edit
 
 On every sign-in, the provider's claims refresh the fields the provider still owns.

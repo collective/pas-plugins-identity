@@ -115,6 +115,18 @@ class TestDemoRPRegistry:
         environment variable."""
         assert "issuer" not in get_provider("demo-idp").config
 
+    def test_the_group_map_is_a_mapping(self):
+        """Written as a Python ``repr`` it imports as one long string, and the
+        sign-in that applies it maps nothing."""
+        assert get_provider("demo-idp").groupmap == {"site-editors": "Reviewers"}
+
+    def test_the_mapped_group_exists_on_this_site(self):
+        """A row pointing at a group this site does not have is skipped and
+        logged, so a typo here is a demo that quietly shows nothing."""
+        from plone import api
+
+        assert api.group.get(groupname="Reviewers") is not None
+
     def test_every_mapped_claim_is_one_this_provider_publishes(self):
         """A map addressed by Plone field name instead of claim path resolves
         nothing, and does so silently."""

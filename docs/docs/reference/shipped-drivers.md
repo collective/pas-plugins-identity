@@ -26,7 +26,8 @@ The following drivers ship with the package.
 `plone-identity`
 :   Another Plone site running this package's `[server]` layer.
     Built on the generic OIDC driver, because a peer is a conforming OIDC provider and gets no special path through the flow.
-    It carries the configuration a peer can be known in advance to want: the `address` scope, an attribute mapping for every claim the peer actually releases, and the remote `sub` as the local userid, so one person keeps one id across the federation.
+    It carries the configuration a peer can be known in advance to want: the `address` scope, an attribute mapping for every claim the peer actually releases, and the peer's `preferred_username` as the local userid, so one person is recognisable by the same name across the federation.
+    `sub` would be stable where a username is not, but it is readable only when the peer happened to mint readable userids of its own, and a userid already taken locally is never handed out either way.
 
 `email`
 :   Magic-link sign-in.
@@ -34,6 +35,24 @@ The following drivers ship with the package.
     The site emails a single-use signed token instead.
 
 To add a driver for a provider not listed here, see {doc}`/how-to-guides/write-a-driver`.
+
+## Which drivers carry groups
+
+A driver declares whether its providers assert group membership, and that declaration is what offers the group map in the control panel.
+
+| Driver | Group claim |
+| --- | --- |
+| `oidc-generic` | `groups`, and configurable |
+| `google` | `groups`, and configurable |
+| `plone-identity` | `groups`, released by the peer under the `profile` scope |
+| `github` | None |
+| `email` | None |
+
+A driver with no group claim offers no field to name one, and a group map stored against such a provider grants nothing rather than guessing at a claim name.
+`groups` is not a registered OIDC claim; it is the name Keycloak, Okta, and Entra all use, and the one this package's own `[server]` layer releases.
+Set a dotted path for a provider that nests them, such as `realm_access.roles`.
+
+Mapping and revocation are covered in {doc}`/how-to-guides/configure-a-provider`.
 
 (reference-magic-link)=
 

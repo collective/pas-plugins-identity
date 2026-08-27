@@ -50,6 +50,19 @@
       <element key="address.formatted">location</element>
       <element key="picture_url">portrait</element>
     </value>
+
+    <!-- Dana is in site-editors on the provider and in nothing here, and the
+         two sites do not agree on what a group is called. That disagreement is
+         why this is a map and not a name match: one sign-in puts her in
+         Reviewers, and taking her out of site-editors over there takes her out
+         of Reviewers here at the next one.
+
+         foundation-members and content-site-editors exist on the provider and
+         are deliberately absent: a provider group with no row grants nothing,
+         and is never created locally. -->
+    <value key="groupmap">
+      <element key="site-editors">Reviewers</element>
+    </value>
   </records>
 
   <record name="pas.plugins.identity.providers.demo-idp.config.client_id">

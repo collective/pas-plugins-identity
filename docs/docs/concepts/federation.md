@@ -80,6 +80,35 @@ The password form is back, controlled by `RAZZLE_IDENTITY_SHOW_PLONE_LOGIN`.
 Setting one at runtime reaches the Node process and never the browser, so the two demo frontends build two images rather than sharing one.
 ```
 
+## Groups cross, but only as far as you let them
+
+A Plone provider releases a `groups` claim, and a relying party can map it onto local groups.
+Neither half assumes the other.
+
+The provider states a fact: these are the groups this person is in over here.
+It has no idea what they mean anywhere else, and it never says what they should grant.
+
+The relying party decides.
+It starts with an empty map, so a peer's groups grant nothing at all until somebody says which of them mean something on this site.
+A provider group with no row grants nothing and is never created here, which matters because a group name is whatever the far end's directory happens to call it: minting local groups from it would let anyone who can name a group over there create one here.
+
+Two sites in a federation do not have the same groups just because they run the same package.
+That is why the `plone-identity` driver ships an empty group map even though it knows the peer releases the claim.
+
+### Revocation is the hard half
+
+Adding a membership is easy; taking one back is where federated group membership differs from local group membership.
+A membership revoked at the provider has to stop granting here, and nobody is going to notice that by hand, so every sign-in reconciles.
+
+A reconciliation that simply wrote what the provider said would also erase every group an administrator granted locally, and every group a second provider granted, silently, on the next sign-in.
+
+So each identity records what its own provider granted.
+A sign-in adds what is newly granted and removes only what that same provider granted before.
+A group granted by hand is never touched, and two providers cannot revoke each other's grants.
+
+One consequence is worth stating: clearing a group map does not take its grants back.
+Clearing is at least as likely to mean that the map is being rewritten as that every grant should be revoked, so a provider with an empty map touches no membership at all.
+
 ## Two stacks, on purpose
 
 The repository has two federation setups, and they are not redundant.

@@ -1,0 +1,3 @@
+Documented group federation across the docs, not only where it is configured: the concept in `federation.md`, the membership half in `profiles-and-groups.md`, which drivers carry a group claim in the drivers reference, two entries in the security guarantees, and a step in the federation tutorial where a group actually crosses.
+
+Corrected two claims that were already stale: the drivers reference said the `plone-identity` driver takes the remote `sub` as the local userid, when it has taken `preferred_username` since it shipped. @ericof

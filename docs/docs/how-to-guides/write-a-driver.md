@@ -97,6 +97,16 @@ The package writes it into a new provider's attribute mapping as a starting poin
 Write it against the normalized claims rather than your provider's own, because `resolve_claim` tries those first, so one default covers every provider.
 Name a raw claim only for something normalization does not already produce.
 
+**Say whether your provider has groups, with `default_group_claim`.**
+Set it to the claim the groups arrive in, usually `groups`, or leave it empty when the provider has none.
+Empty is not a neutral default: it switches the feature off for your driver, so no `group_claim` field appears in the configuration form and nobody is asked to map the groups of a provider that has none.
+A map stored against such a provider grants nothing rather than guessing at a claim name.
+Operators can override the claim with a dotted path, so a provider nesting them under `realm_access.roles` needs no driver of its own.
+
+**Leave `default_groupmap` empty unless you genuinely know the far end's groups.**
+Group names are a fact about one deployment's directory, not about a driver, so seeding this is almost always wrong.
+Even the `plone-identity` driver ships it empty, though it knows its peer releases the claim: two Plone sites do not have the same groups just because they run the same package.
+
 **Make `email_verified` a boolean, and count only `True`.**
 Several providers send the string `"true"`, and several send `1`.
 Normalize it.

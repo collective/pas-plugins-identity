@@ -77,6 +77,26 @@ Your federated identity is listed there, naming the provider it came from.
 You can unlink it from this page.
 Do not unlink it yet, because it is currently your only way in to this site.
 
+## See a group cross
+
+Dana is in a group called `site-editors` on the provider, and she is in nothing on the relying party.
+After that first sign-in she is in `Reviewers` here.
+
+Open <http://plone.localhost/@@usergroup-userprefs> and look her up, or check the provider's side at <http://id.localhost/@@usergroup-userprefs>.
+
+The two names are different on purpose.
+Two sites in a federation do not agree on what their groups are called, which is why this is a mapping and not a name match.
+The relying party's provider was configured with one row, `site-editors` to `Reviewers`, in `backend/demo/src/identitydemo/setuphandlers/rp.py`.
+
+The provider also has `foundation-members` and `content-site-editors`, and neither of them appears here.
+A provider group with no row grants nothing, and is never created locally.
+
+Try taking it away.
+On the provider, remove Dana from `site-editors`, then sign out of the relying party and sign in again.
+She is no longer in `Reviewers`.
+
+Every sign-in reconciles, and it reconciles only what this provider granted: put Dana in `Site Administrators` here by hand and it survives every sign-in, because no provider gave it and no provider can take it away.
+
 ## Sign in with a magic link
 
 Go back to the provider at <http://id.localhost/login> and choose the magic-link option.
@@ -138,6 +158,8 @@ That removes the containers and both databases.
 
 You ran a real federation.
 Two Plone sites, two databases, real cookies between sibling hosts, and a browser that never saw a shortcut.
+
+An account, its profile fields, its avatar, and its group membership all crossed from one site to the other, and the second site decided for itself what any of it was allowed to mean.
 
 ```{important}
 Every credential in this stack is a fixed literal in `backend/demo/src/identitydemo/settings.py`, and therefore public.

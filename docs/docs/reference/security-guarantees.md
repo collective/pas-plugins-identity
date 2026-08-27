@@ -40,6 +40,10 @@ The send endpoint is rate limited per address and per IP, and answers identicall
 **Post-login redirect targets are validated** against the portal, on both the backend and the frontend.
 A target that never reaches the backend cannot be checked by it.
 
+**This package's vocabularies require a permission.**
+`plone.restapi` serves a vocabulary to anonymous callers unless it is named in `plone.app.content.browser.vocabulary.PERMISSIONS`, and `pas.plugins.identity.Groups` lists every group on the site.
+Both of this package's vocabularies are registered at `Modify portal content`.
+
 **Secrets are write-only everywhere**, including GenericSetup export.
 The audit log never records credentials or tokens.
 
@@ -64,6 +68,17 @@ See {doc}`audit-log`.
 
 **The audit log is not a session ledger.**
 It records authentication events, not sessions.
+
+**A relying party granted the `profile` scope receives the group list.**
+`groups` rides on `profile` rather than on a scope of its own, so a client asking for a display scope also learns which groups a user is in.
+`AuthenticatedUsers` is never released, and a user in no other group gets no claim at all.
+If your group names are themselves sensitive, do not grant `profile` to a client you would not grant them to.
+See {doc}`claims`.
+
+**A provider's groups grant nothing until you map them.**
+A group map starts empty, an unmapped provider group grants nothing and is never created locally, and a row pointing at a group this site does not have is skipped and logged.
+Every sign-in reconciles, and it takes back only what that same provider granted, so a group granted by hand or by another provider survives.
+See {doc}`/how-to-guides/configure-a-provider`.
 
 **Access tokens cannot be recalled.**
 They are self-encoded and there is no denylist, so a revoked client's tokens die when they expire, at most the configured access-token TTL.
