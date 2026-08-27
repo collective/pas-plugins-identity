@@ -97,6 +97,7 @@ class TestScopeRelease:
             "website",
             "picture",
             "description",
+            "groups",
         ]
 
     def test_email_releases_the_address_and_its_status(self):
@@ -272,6 +273,68 @@ class TestPictureOnASiteWithProfiles:
         self.profile.image = None
 
         assert "picture" not in claims_for(USERID, "profile")
+
+
+class TestGroups:
+    """The one claim here that is authorization data rather than display data.
+
+    It rides on ``profile`` deliberately -- see the module docstring of
+    :mod:`pas.plugins.identity.server.claims` -- which means every relying
+    party granted a display scope receives it. What the server controls is
+    what goes in it.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, user) -> None:
+        self.portal = portal
+
+    def test_a_user_in_no_group_gets_no_claim(self):
+        """Omitted rather than sent as an empty list.
+
+        Every principal is in ``AuthenticatedUsers``, so without the filter
+        this would be the one claim that is never absent.
+        """
+        assert "groups" not in claims_for(USERID, "openid profile")
+
+    def test_it_carries_the_groups_the_user_is_in(self):
+        with api.env.adopt_roles(["Manager"]):
+            api.group.create(groupname="editors", title="Editors")
+            api.group.add_user(groupname="editors", username=USERID)
+
+        assert claims_for(USERID, "openid profile")["groups"] == ["editors"]
+
+    def test_authenticatedusers_is_never_released(self):
+        """PAS's virtual group says nothing about anybody, and a relying party
+        that mapped it would grant its local counterpart to every federated
+        user."""
+        with api.env.adopt_roles(["Manager"]):
+            api.group.create(groupname="editors", title="Editors")
+            api.group.add_user(groupname="editors", username=USERID)
+
+        assert (
+            "AuthenticatedUsers" not in claims_for(USERID, "openid profile")["groups"]
+        )
+
+    def test_it_is_sorted(self):
+        """A claim that reorders between two logins reads as a change to
+        anything diffing tokens."""
+        with api.env.adopt_roles(["Manager"]):
+            for name in ("reviewers", "authors", "editors"):
+                api.group.create(groupname=name)
+                api.group.add_user(groupname=name, username=USERID)
+
+        assert claims_for(USERID, "openid profile")["groups"] == [
+            "authors",
+            "editors",
+            "reviewers",
+        ]
+
+    def test_it_is_not_released_without_the_profile_scope(self):
+        with api.env.adopt_roles(["Manager"]):
+            api.group.create(groupname="editors", title="Editors")
+            api.group.add_user(groupname="editors", username=USERID)
+
+        assert "groups" not in claims_for(USERID, "openid email")
 
 
 class TestEmailVerified:

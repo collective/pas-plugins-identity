@@ -14,10 +14,22 @@ stock ``mutable_properties`` data on one that did not. The federation scenario
 looks like two hops -- provider to Profile, Profile to the relying party's
 property sheet -- and is one, because both ends already speak properties.
 
-Only registered OIDC claims are emitted. A site with fields of its own has no
-standard claim to put them in, and inventing one would produce something no
-other implementation can read; the extension point is a private scope, and it
-is deliberately not built until somebody needs it.
+Two claims released here are not registered OIDC claims: ``description`` and
+``groups``. Both are emitted under ``profile`` rather than under a private
+scope, because both are read by name elsewhere -- ``groups`` is what
+Keycloak, Okta and Entra all call it -- and a namespaced claim only this
+server's own peers would understand buys nothing but a second thing to
+configure. A relying party that does not know a claim ignores it.
+
+That is the whole of the extension, and it is not a general one: a site with
+fields of its own still has no standard claim to put them in, and inventing
+one per site would produce something no other implementation can read.
+
+``groups`` riding on ``profile`` is a deliberate trade and worth naming.
+``profile`` is granted for display, and group membership is authorization
+data, so every relying party asking for a display scope receives it whether
+it maps groups or not. What the server controls is the *content*: see
+:data:`UNRELEASED_GROUPS`.
 """
 
 from pas.plugins.identity.core.interfaces import JSONDict
@@ -33,12 +45,11 @@ OPENID_SCOPE = "openid"
 
 #: Scope to the claims it releases.
 #:
-#: All registered claims but one. ``description`` -- Plone's free-text
-#: biography -- has no registered claim to be, and is released under
-#: ``profile`` anyway rather than under a private scope of its own: it is the
-#: same kind of thing the rest of that scope is, a relying party that does not
-#: know the name ignores an unrecognised claim, and a scope only this server's
-#: own peers would ever ask for buys nothing but a second thing to configure.
+#: Every registered claim, plus the two unregistered ones the module docstring
+#: accounts for. ``description`` -- Plone's free-text biography -- and
+#: ``groups`` both ride on ``profile``: they are the same kind of thing the
+#: rest of that scope is, and a relying party that does not know a name
+#: ignores an unrecognised claim.
 SCOPE_CLAIMS: dict[str, tuple[str, ...]] = {
     "profile": (
         "name",
@@ -46,6 +57,7 @@ SCOPE_CLAIMS: dict[str, tuple[str, ...]] = {
         "website",
         "picture",
         "description",
+        "groups",
     ),
     "email": ("email", "email_verified"),
     "address": ("address",),
@@ -60,6 +72,7 @@ SCOPE_CLAIMS: dict[str, tuple[str, ...]] = {
 #: another claim rather than a value of its own, and is added afterwards.
 CLAIM_SOURCES = {
     "name": lambda user: user.getProperty("fullname", ""),
+    "groups": lambda user: released_groups(user),
     "preferred_username": lambda user: user.getUserName(),
     "website": lambda user: user.getProperty("home_page", ""),
     "email": lambda user: user.getProperty("email", ""),
@@ -67,6 +80,32 @@ CLAIM_SOURCES = {
     "picture": lambda user: portrait_url(user.getId()),
     "description": lambda user: user.getProperty("description", ""),
 }
+
+
+#: Group ids this server never puts in a ``groups`` claim.
+#:
+#: ``AuthenticatedUsers`` is PAS's virtual group: every principal with a
+#: session is in it, so it says nothing about anybody. Releasing it would
+#: also be actively harmful at the far end, where a relying party that
+#: mapped it would hand its local counterpart to every federated user.
+UNRELEASED_GROUPS = frozenset({"AuthenticatedUsers"})
+
+
+def released_groups(user) -> list[str]:
+    """Return the group ids to release for a user.
+
+    ``PropertiedUser.getGroups`` is what PAS resolved for this principal, so
+    it already includes groups reached through another plugin and through
+    nesting -- which is the answer a relying party wants, rather than the
+    memberships one plugin happens to hold.
+
+    Sorted, because a claim that reorders between two logins looks like a
+    change to anything diffing tokens.
+
+    :param user: The Plone user the token acts for.
+    :returns: Group ids, sorted, minus :data:`UNRELEASED_GROUPS`.
+    """
+    return sorted(set(user.getGroups()) - UNRELEASED_GROUPS)
 
 
 def portrait_url(userid: str) -> str:

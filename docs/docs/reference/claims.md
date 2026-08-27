@@ -76,7 +76,7 @@ A client that did not request `openid` gets no `id_token` at all.
 | Scope | Claims |
 | --- | --- |
 | `openid` | None of its own. `sub` is not scope-gated and is always present. |
-| `profile` | `name`, `preferred_username`, `website` |
+| `profile` | `name`, `preferred_username`, `website`, `picture`, `description`, `groups` |
 | `email` | `email`, `email_verified` |
 | `address` | `address` |
 
@@ -91,6 +91,9 @@ A client that did not request `openid` gets no `id_token` at all.
 | `email` | `email` | |
 | `email_verified` | Computed | Sent only alongside an `email`. See {doc}`/concepts/email-verification`. |
 | `address` | `location`, as `{"formatted": ...}` | Plone's `location` is one free-text line, which is what the OIDC `formatted` member is for. Splitting it into street, locality, and postal code would be guessing. |
+| `picture` | The `@portrait` URL | Only when a portrait is actually stored. Built from the configured issuer, under `++api++`, because a relying party fetches it server to server. |
+| `description` | `description` | Plone's biography. Not a registered OIDC claim. See below. |
+| `groups` | The groups PAS resolved for the principal | Not a registered OIDC claim. Sorted, and never carrying `AuthenticatedUsers`. See below. |
 
 A claim with no value is omitted, never sent as an empty string, so a relying party can tell an unknown value from a blank one.
 
@@ -104,14 +107,36 @@ So asking PAS for a property returns Profile-backed values on a site that has th
 
 See {doc}`/concepts/layers` for the boundary that makes this necessary.
 
-## What is not released
+## The two claims that are not registered
 
-`description`, which is Plone's biography field, has no registered OIDC claim.
-Putting it in a private claim would emit something no other implementation can read, so the server does not emit it at all.
-The same goes for any field a site adds to its `Profile` type.
+`description` and `groups` have no registered OIDC claim to be.
+Both are released under `profile` anyway, rather than under a private scope of their own.
 
+The reasoning is the same for each.
+A relying party that does not recognise a claim ignores it.
+Both names are read as-is elsewhere: `groups` is what Keycloak, Okta, and Entra all call it.
+And a namespaced claim only this server's own peers would understand buys nothing but a second thing to configure at both ends.
+
+That is the whole of the extension, and it is not a general one.
+A field a site adds to its `Profile` type still has no claim to go in, and inventing one per site would emit something no other implementation can read.
 The extension point for that is a private scope releasing namespaced claims.
 It is deliberately not built, because it needs a naming decision that should be made once, by somebody who has a second implementation to be compatible with.
+
+### `groups` rides on a display scope
+
+This is a deliberate trade, and worth stating plainly.
+
+`profile` is a scope a relying party asks for in order to *show* something about a person.
+Group membership is authorization data.
+Releasing it under `profile` means every relying party granted that scope receives the group list, whether it maps groups or not.
+
+What the server does control is the content:
+
+- `AuthenticatedUsers` is never released.
+  Every principal with a session is in it, so it says nothing about anybody, and a relying party that mapped it would grant its local counterpart to every federated user.
+- The claim is omitted entirely for a user in no other group, rather than sent as an empty list.
+
+If your site's group names are themselves sensitive, do not grant `profile` to clients you would not grant the group list to.
 
 ```{note}
 This page describes the contract as of the `[server]` layer's first release.
