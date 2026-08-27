@@ -8,7 +8,12 @@
  * form here with no frontend change.
  * @module helpers/providerSchema
  */
-import { USER_FIELDS_VOCABULARY } from '../constants/vocabularies';
+import {
+  GROUPS_VOCABULARY,
+  USER_FIELDS_VOCABULARY,
+} from '../constants/vocabularies';
+import { fromGroupRows, toGroupRows } from './groupmap';
+import { fromRows, toRows } from './propertymap';
 import type { Driver, DriverField } from '../types';
 
 /** A Volto form schema, as `Form` consumes it. */
@@ -148,6 +153,43 @@ function propertymapProperty(): Record<string, unknown> {
   };
 }
 
+/** The group mapping rows. */
+function groupmapProperty(): Record<string, unknown> {
+  return {
+    title: 'Group mapping',
+    description:
+      "Which of the provider's groups grant a group here. Empty grants " +
+      'nothing. Every sign-in reconciles, so a membership revoked at the ' +
+      'provider stops granting here -- but only groups this provider ' +
+      'granted are ever taken back, so a group you granted by hand is safe.',
+    widget: 'object_list',
+    schema: {
+      title: 'Mapping',
+      fieldsets: [
+        { id: 'default', title: 'Default', fields: ['group', 'local'] },
+      ],
+      properties: {
+        group: {
+          title: 'Provider group',
+          description:
+            "The group's name as the provider sends it. Free text: this " +
+            'site cannot enumerate the far end. A name with no row here ' +
+            'grants nothing, and is never created.',
+          type: 'string',
+        },
+        local: {
+          title: 'Local group',
+          description:
+            'The group it grants on this site. A group that does not exist ' +
+            'here grants nothing.',
+          vocabulary: { '@id': GROUPS_VOCABULARY },
+        },
+      },
+      required: ['group', 'local'],
+    },
+  };
+}
+
 /**
  * Build the schema for adding or editing a provider.
  *
@@ -206,6 +248,17 @@ export function providerSchema(
 
   properties.propertymap = propertymapProperty();
 
+  // Only for a driver that says its providers have groups. The backend
+  // declares that by putting a `group_claim` field in the schema, and it is
+  // the same switch on both ends: a driver with no groups offers no claim to
+  // read them from, and a map stored against one grants nothing. Asking an
+  // operator to map the groups of a magic link would be asking a question
+  // with no answer.
+  const hasGroups = Boolean(driver?.schema?.group_claim);
+  if (hasGroups) {
+    properties.groupmap = groupmapProperty();
+  }
+
   const fieldsets = [
     { id: 'default', title: 'Provider', fields: identity },
     // Only once a driver is chosen: before that there is no honest set of
@@ -219,7 +272,11 @@ export function providerSchema(
           },
         ]
       : []),
-    { id: 'mapping', title: 'Attribute mapping', fields: ['propertymap'] },
+    {
+      id: 'mapping',
+      title: 'Attribute mapping',
+      fields: ['propertymap', ...(hasGroups ? ['groupmap'] : [])],
+    },
   ];
 
   const required = Object.entries(driver?.schema ?? {})
@@ -241,24 +298,30 @@ export function providerSchema(
  * flat; the mapping becomes rows because that is what the list widget edits.
  *
  * @param provider The provider being edited, or undefined when adding.
- * @param toRows Converter for the stored mapping.
- * @param defaultPropertymap The chosen driver's seed mapping, used only when
- *   adding: an existing provider's own mapping is the whole truth about it,
+ * @param defaults The chosen driver's seed mappings, used only when adding:
+ *   an existing provider's own mappings are the whole truth about it,
  *   including the deliberate decision to have none.
  * @returns Form data.
  */
 export function toFormData(
   provider: Record<string, any> | undefined,
-  toRows: (map: Record<string, string> | undefined) => unknown[],
-  defaultPropertymap?: Record<string, string>,
+  defaults?: {
+    propertymap?: Record<string, string>;
+    groupmap?: Record<string, string>;
+  },
 ): Record<string, unknown> {
   if (!provider) {
-    return { enabled: true, propertymap: toRows(defaultPropertymap) };
+    return {
+      enabled: true,
+      propertymap: toRows(defaults?.propertymap),
+      groupmap: toGroupRows(defaults?.groupmap),
+    };
   }
   const data: Record<string, unknown> = {
     title: provider.title ?? '',
     enabled: provider.enabled ?? true,
     propertymap: toRows(provider.propertymap),
+    groupmap: toGroupRows(provider.groupmap),
   };
   for (const [name, value] of Object.entries(provider.config ?? {})) {
     data[`${CONFIG_PREFIX}${name}`] = value;
@@ -270,12 +333,10 @@ export function toFormData(
  * Turn submitted form data back into the API payload.
  *
  * @param formData What the form submitted.
- * @param fromRows Converter for the mapping rows.
  * @returns The body for POST or PATCH.
  */
 export function fromFormData(
   formData: Record<string, any>,
-  fromRows: (rows: any) => Record<string, string>,
 ): Record<string, unknown> {
   const config: Record<string, unknown> = {};
   const payload: Record<string, unknown> = {};
@@ -285,6 +346,8 @@ export function fromFormData(
       config[key.slice(CONFIG_PREFIX.length)] = value;
     } else if (key === 'propertymap') {
       payload.propertymap = fromRows(value);
+    } else if (key === 'groupmap') {
+      payload.groupmap = fromGroupRows(value);
     } else if (!key.startsWith('@')) {
       payload[key] = value;
     }

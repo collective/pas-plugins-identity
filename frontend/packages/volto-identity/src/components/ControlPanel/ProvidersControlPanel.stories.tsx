@@ -6,6 +6,7 @@ import {
   DRIVERS,
   LOADED,
   LOADING,
+  GROUPS_STATE,
   USER_FIELDS_STATE,
   withStore,
 } from '../../stories/fixtures';
@@ -44,7 +45,7 @@ const base = {
   providerUpdate: {},
   providerDelete: {},
   providerTest: {},
-  vocabularies: USER_FIELDS_STATE,
+  vocabularies: { ...USER_FIELDS_STATE, ...GROUPS_STATE },
   controlpanels: { controlpanel: SETTINGS },
 };
 

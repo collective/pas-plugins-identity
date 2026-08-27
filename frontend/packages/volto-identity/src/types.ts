@@ -99,6 +99,13 @@ export interface Driver {
    * anything typed there, and an operator edits or empties it before saving.
    */
   default_propertymap?: Record<string, string>;
+  /**
+   * Provider group name to local group id, seeded into a new provider's map.
+   *
+   * Almost always empty, and honestly so: group names are a fact about one
+   * deployment's directory, not about a driver.
+   */
+  default_groupmap?: Record<string, string>;
 }
 
 /** A configured provider as the control panel sees it. */
@@ -111,6 +118,13 @@ export interface ConfiguredProvider {
   config: Record<string, unknown>;
   /** Claim path to Plone user field, applied on every login. */
   propertymap: Record<string, string>;
+  /**
+   * Provider group name to local group id, applied on every login.
+   *
+   * Empty grants nothing. Only groups this provider granted are ever taken
+   * back, so a group granted locally survives every sign-in.
+   */
+  groupmap: Record<string, string>;
 }
 
 /** Answer from the per-provider connection check. */

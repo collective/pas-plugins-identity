@@ -119,13 +119,31 @@ export const OIDC_DRIVER: Driver = {
       secret: false,
     },
     scope: { type: 'string', title: 'Scope', required: false, secret: false },
+    group_claim: {
+      type: 'string',
+      title: 'Groups arrive in the claim',
+      description: 'Which claim carries the group names this provider asserts.',
+      required: false,
+      secret: false,
+      default: 'groups',
+    },
   },
 };
+
+/**
+ * A driver whose providers have no groups.
+ *
+ * The real GitHub driver is this case, and the difference is worth having in
+ * the fixtures: the group mapping is offered for a driver that declares a
+ * group claim and hidden for one that does not, so a story showing only the
+ * first would never show the second.
+ */
+const { group_claim: _groupClaim, ...NO_GROUPS_SCHEMA } = OIDC_DRIVER.schema;
 
 export const DRIVERS: Driver[] = [
   OIDC_DRIVER,
   { id: 'google', title: 'Google', schema: OIDC_DRIVER.schema },
-  { id: 'github', title: 'GitHub', schema: OIDC_DRIVER.schema },
+  { id: 'github', title: 'GitHub', schema: NO_GROUPS_SCHEMA },
 ];
 
 export const CONFIGURED: ConfiguredProvider[] = [
@@ -145,6 +163,10 @@ export const CONFIGURED: ConfiguredProvider[] = [
       preferred_username: 'username',
       'address.formatted': 'location',
     },
+    groupmap: {
+      'plone-editors': 'Site Administrators',
+      'plone-staff': 'Reviewers',
+    },
   },
   {
     '@id': '/@identity-providers/github',
@@ -154,6 +176,7 @@ export const CONFIGURED: ConfiguredProvider[] = [
     enabled: false,
     config: { client_id: 'Iv1.0123456789abcdef', client_secret: '••••••••' },
     propertymap: {},
+    groupmap: {},
   },
 ];
 
@@ -176,6 +199,26 @@ export const USER_FIELDS_STATE = {
       { value: 'username', label: 'Username' },
     ],
     itemsTotal: 6,
+  },
+};
+
+/**
+ * The vocabulary the group-map editor reads, already loaded.
+ *
+ * Every group PAS knows on the site, which is why the local half of a group
+ * mapping is a picker: a group that does not exist here grants nothing, and
+ * that is a typo worth catching in the form rather than in a log line.
+ */
+export const GROUPS_STATE = {
+  'pas.plugins.identity.Groups': {
+    loaded: true,
+    loading: false,
+    items: [
+      { value: 'Administrators', label: 'Administrators' },
+      { value: 'Reviewers', label: 'Reviewers' },
+      { value: 'Site Administrators', label: 'Site Administrators' },
+    ],
+    itemsTotal: 3,
   },
 };
 

@@ -9,8 +9,10 @@ import {
   providerSchema,
   toFormData,
 } from './providerSchema';
-import { fromRows, toRows } from './propertymap';
-import { USER_FIELDS_VOCABULARY } from '../constants/vocabularies';
+import {
+  GROUPS_VOCABULARY,
+  USER_FIELDS_VOCABULARY,
+} from '../constants/vocabularies';
 import type { Driver } from '../types';
 
 const OIDC: Driver = {
@@ -60,6 +62,26 @@ const OIDC: Driver = {
 };
 
 const GITHUB: Driver = { id: 'github', title: 'GitHub', schema: {} };
+
+/**
+ * A driver whose providers have groups.
+ *
+ * The backend says so by putting a `group_claim` field in the schema, and
+ * that is the same switch the form reads. GITHUB above is the other case.
+ */
+const WITH_GROUPS: Driver = {
+  id: 'keycloak',
+  title: 'Keycloak',
+  schema: {
+    group_claim: {
+      type: 'string',
+      title: 'Groups arrive in the claim',
+      secret: false,
+      default: 'groups',
+      order: 80,
+    },
+  },
+};
 
 describe('propertyFor', () => {
   it('renders a secret with the password widget', () => {
@@ -184,9 +206,8 @@ describe('suggestedProviderId', () => {
 
 describe('toFormData seeding', () => {
   it("seeds a new provider's mapping from the driver", () => {
-    const data = toFormData(undefined, toRows, {
-      email: 'email',
-      fullname: 'fullname',
+    const data = toFormData(undefined, {
+      propertymap: { email: 'email', fullname: 'fullname' },
     });
 
     // The rows also carry the `@id` the list widget keys on; what matters
@@ -198,14 +219,17 @@ describe('toFormData seeding', () => {
   });
 
   it('seeds nothing when the driver declares no mapping', () => {
-    expect(toFormData(undefined, toRows).propertymap).toEqual([]);
+    expect(toFormData(undefined).propertymap).toEqual([]);
   });
 
   it("leaves an existing provider's own mapping alone", () => {
     // Including the deliberate decision to have none: a stored provider is
     // the whole truth about itself, and a seed here would resurrect rows
     // somebody removed on purpose.
-    const data = toFormData({ propertymap: {} }, toRows, { email: 'email' });
+    const data = toFormData(
+      { propertymap: {} },
+      { propertymap: { email: 'email' } },
+    );
 
     expect(data.propertymap).toEqual([]);
   });
@@ -315,26 +339,28 @@ describe('providerSchema', () => {
 
 describe('toFormData', () => {
   it('defaults a new provider to enabled with no mapping', () => {
-    expect(toFormData(undefined, toRows)).toEqual({
+    expect(toFormData(undefined)).toEqual({
       enabled: true,
       propertymap: [],
+      groupmap: [],
     });
   });
 
   it('flattens config onto prefixed keys', () => {
-    const data = toFormData(
-      { title: 'Dex', enabled: true, config: { issuer: 'http://dex' } },
-      toRows,
-    );
+    const data = toFormData({
+      title: 'Dex',
+      enabled: true,
+      config: { issuer: 'http://dex' },
+    });
 
     expect(data[`${CONFIG_PREFIX}issuer`]).toBe('http://dex');
   });
 
   it('turns the stored mapping into rows', () => {
-    const data = toFormData(
-      { config: {}, propertymap: { login: 'username' } },
-      toRows,
-    );
+    const data = toFormData({
+      config: {},
+      propertymap: { login: 'username' },
+    });
 
     expect(data.propertymap).toEqual([
       { '@id': expect.any(String), claim: 'login', field: 'username' },
@@ -344,32 +370,32 @@ describe('toFormData', () => {
 
 describe('fromFormData', () => {
   it('nests the prefixed keys back under config', () => {
-    const payload = fromFormData(
-      { title: 'Dex', enabled: true, [`${CONFIG_PREFIX}issuer`]: 'http://dex' },
-      fromRows,
-    );
+    const payload = fromFormData({
+      title: 'Dex',
+      enabled: true,
+      [`${CONFIG_PREFIX}issuer`]: 'http://dex',
+    });
 
     expect(payload.config).toEqual({ issuer: 'http://dex' });
     expect(payload.title).toBe('Dex');
   });
 
   it('turns rows back into a mapping', () => {
-    const payload = fromFormData(
-      { propertymap: [{ '@id': 'a', claim: 'login', field: 'username' }] },
-      fromRows,
-    );
+    const payload = fromFormData({
+      propertymap: [{ '@id': 'a', claim: 'login', field: 'username' }],
+    });
 
     expect(payload.propertymap).toEqual({ login: 'username' });
   });
 
   it('drops the @id Volto adds to form data', () => {
-    const payload = fromFormData({ '@id': '/somewhere', title: 'X' }, fromRows);
+    const payload = fromFormData({ '@id': '/somewhere', title: 'X' });
 
     expect(payload['@id']).toBeUndefined();
   });
 
   it('trims the id and the title', () => {
-    const payload = fromFormData({ id: '  dex  ', title: '  Dex  ' }, fromRows);
+    const payload = fromFormData({ id: '  dex  ', title: '  Dex  ' });
 
     expect(payload.id).toBe('dex');
     expect(payload.title).toBe('Dex');
@@ -378,11 +404,80 @@ describe('fromFormData', () => {
   it('always sends config, even when the driver has no fields', () => {
     // Otherwise a PATCH would leave the previous config in place rather
     // than reflecting what the form showed.
-    expect(fromFormData({ title: 'X' }, fromRows).config).toEqual({});
+    expect(fromFormData({ title: 'X' }).config).toEqual({});
   });
 
   it('coerces enabled to a boolean', () => {
-    expect(fromFormData({}, fromRows).enabled).toBe(false);
-    expect(fromFormData({ enabled: true }, fromRows).enabled).toBe(true);
+    expect(fromFormData({}).enabled).toBe(false);
+    expect(fromFormData({ enabled: true }).enabled).toBe(true);
+  });
+});
+
+describe('the group mapping', () => {
+  it('is offered for a driver whose providers have groups', () => {
+    const schema = providerSchema([WITH_GROUPS], 'keycloak', false);
+
+    expect(schema.properties.groupmap).toBeTruthy();
+    expect(schema.fieldsets.at(-1).fields).toEqual(['propertymap', 'groupmap']);
+  });
+
+  it('is not offered for a driver that has none', () => {
+    // Asking an operator to map the groups of a magic link is asking a
+    // question with no answer. The backend applies the same switch: a map
+    // stored against such a provider grants nothing.
+    const schema = providerSchema([GITHUB], 'github', false);
+
+    expect(schema.properties.groupmap).toBeUndefined();
+    expect(schema.fieldsets.at(-1).fields).toEqual(['propertymap']);
+  });
+
+  it('is not offered before a driver is chosen', () => {
+    const schema = providerSchema([WITH_GROUPS], undefined, true);
+
+    expect(schema.properties.groupmap).toBeUndefined();
+  });
+
+  it('picks the local group from a vocabulary, and takes the other as text', () => {
+    // The halves are not symmetric. This site cannot enumerate the far end's
+    // directory, but a local group that does not exist grants nothing -- so
+    // the side we can check is the side we make a picker.
+    const { schema } = providerSchema([WITH_GROUPS], 'keycloak', false)
+      .properties.groupmap as any;
+
+    expect(schema.properties.local.vocabulary).toEqual({
+      '@id': GROUPS_VOCABULARY,
+    });
+    expect(schema.properties.group.type).toBe('string');
+    expect(schema.properties.group.vocabulary).toBeUndefined();
+  });
+
+  it('seeds a new provider from the driver', () => {
+    const data = toFormData(undefined, {
+      groupmap: { editors: 'site-editors' },
+    });
+
+    expect(data.groupmap).toMatchObject([
+      { group: 'editors', local: 'site-editors' },
+    ]);
+  });
+
+  it("leaves an existing provider's own map alone", () => {
+    const data = toFormData(
+      { groupmap: {} },
+      { groupmap: { editors: 'site-editors' } },
+    );
+
+    expect(data.groupmap).toEqual([]);
+  });
+
+  it('turns the stored map into rows and back', () => {
+    const data = toFormData({ config: {}, groupmap: { editors: 'staff' } });
+
+    expect(data.groupmap).toEqual([
+      { '@id': expect.any(String), group: 'editors', local: 'staff' },
+    ]);
+    expect(fromFormData({ groupmap: data.groupmap }).groupmap).toEqual({
+      editors: 'staff',
+    });
   });
 });

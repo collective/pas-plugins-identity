@@ -44,7 +44,7 @@ import {
   testProvider,
   updateProvider,
 } from '../../actions';
-import { fromRows, toRows } from '../../helpers/propertymap';
+
 import {
   CONFIG_PREFIX,
   fromFormData,
@@ -260,18 +260,22 @@ const ProvidersControlPanel: React.FC = () => {
   // defaults, which is how the driver's sane values reach the fields.
   const formData = adding
     ? {
-        ...toFormData(
-          undefined,
-          toRows,
-          driverList.find((d) => d.id === draftDriver)?.default_propertymap,
-        ),
+        ...toFormData(undefined, {
+          propertymap: driverList.find((d) => d.id === draftDriver)
+            ?.default_propertymap,
+          groupmap: driverList.find((d) => d.id === draftDriver)
+            ?.default_groupmap,
+        }),
         ...Object.fromEntries(
           Object.entries(draft.current).filter(
             // The mapping goes the way the settings do when the driver
             // changes: it is written in the claim names of the driver that
             // was chosen, so carrying it over would keep a map for a
             // provider that no longer exists.
-            ([key]) => !key.startsWith(CONFIG_PREFIX) && key !== 'propertymap',
+            ([key]) =>
+              !key.startsWith(CONFIG_PREFIX) &&
+              key !== 'propertymap' &&
+              key !== 'groupmap',
           ),
         ),
         // Read on the remount a driver change causes, so the suggestion
@@ -280,10 +284,10 @@ const ProvidersControlPanel: React.FC = () => {
           ? {}
           : { id: suggestedProviderId(driverList, draftDriver) }),
       }
-    : toFormData(current, toRows);
+    : toFormData(current);
 
   const onSubmit = (data: Record<string, unknown>) => {
-    const payload = fromFormData(data, fromRows);
+    const payload = fromFormData(data);
     if (adding) {
       (dispatch(createProvider(payload)) as any)
         .then(() => succeed(intl.formatMessage(messages.saved)))
