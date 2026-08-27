@@ -1,1 +1,1 @@
-Documented what happens while a profile is incomplete: the redirect, the record that turns it off, and every path that is deliberately not held. @ericof
+Documented what happens while a profile is incomplete: the redirect, the record that turns it off, and every path that is deliberately not held., including the OAuth authorization endpoints and the record for naming your own. @ericof

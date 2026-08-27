@@ -14,6 +14,7 @@ from pas.plugins.identity import PACKAGE_NAME
 from pas.plugins.identity.content.completeness import REQUIRED_FIELDS_RECORD
 from pas.plugins.identity.content.container import get_container
 from pas.plugins.identity.content.gate import ENFORCE_RECORD
+from pas.plugins.identity.content.gate import EXEMPT_RECORD
 from plone import api
 from plone.app.testing import applyProfile
 from plone.app.testing import SITE_OWNER_NAME
@@ -163,6 +164,91 @@ class TestWhatIsNotHeld:
         response = get(self.url, auth=self.user)
 
         assert response.status_code == 200
+
+
+@pytest.fixture
+def server_site(site):
+    """The same site, with the authorization server switched on as well.
+
+    Without it ``@@oauth-authorize`` does not exist and every assertion below
+    passes because traversal fails before the gate is ever consulted -- which
+    is how the first version of this class passed with the fix removed.
+
+    :param site: The gated site.
+    :returns: ``(portal, url)``.
+    """
+    portal, url = site
+    applyProfile(portal, f"{PACKAGE_NAME}.server:default")
+    transaction.commit()
+    return portal, url
+
+
+class TestFlowsAreNotInterrupted:
+    """Endpoints that look exactly like a page and must never be redirected.
+
+    Found by running the demo stack, not by this file. ``@@oauth-authorize``
+    is a browser view answering ``text/html`` for a ``GET``, which is every
+    signal the gate uses to recognise a navigation. Redirecting it strands a
+    visitor who was sent to authorize an application, and the relying party
+    that sent them receives neither a code nor an error -- the browser simply
+    lands somewhere else. Federation breaks for every user whose profile is
+    incomplete, which is precisely the population this feature creates.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, server_site) -> None:
+        self.portal, self.url = server_site
+        self.user = (USERID, PASSWORD)
+
+    def test_the_endpoint_exists_at_all(self):
+        """The premise, and the reason this class has its own fixture.
+
+        Without the ``[server]`` layer the authorize view does not exist,
+        traversal fails before the gate is consulted, and every test below
+        passes with the fix taken out.
+        """
+        response = get(f"{self.url}/@@oauth-authorize", auth=self.user)
+
+        assert response.status_code != 404
+
+    def test_the_authorize_endpoint_is_not_redirected(self):
+        response = get(
+            f"{self.url}/@@oauth-authorize?response_type=code&client_id=x",
+            auth=self.user,
+        )
+
+        assert "/edit" not in response.headers.get("Location", "")
+
+    @pytest.mark.parametrize(
+        "view",
+        ["@@oauth-authorize", "@@oauth-token", "@@oauth-jwks", "@@oauth-userinfo"],
+    )
+    def test_the_whole_oauth_namespace_is_exempt(self, view: str):
+        """By prefix rather than by list. The three machine endpoints do not
+        send ``text/html`` and would pass anyway; naming the namespace is what
+        stops the next browser-facing one from being found the way this one
+        was."""
+        response = get(f"{self.url}/{view}", auth=self.user)
+
+        assert "/edit" not in response.headers.get("Location", "")
+
+    def test_a_site_can_exempt_its_own_paths(self):
+        """A site-wide interceptor has to be able to make exceptions without
+        being patched: another add-on's browser-based flow is the same shape
+        as the authorize endpoint."""
+        api.portal.set_registry_record(EXEMPT_RECORD, ("@@some-other-flow",))
+        transaction.commit()
+
+        response = get(f"{self.url}/@@some-other-flow", auth=self.user)
+
+        assert "/edit" not in response.headers.get("Location", "")
+
+    def test_an_ordinary_page_is_still_held(self):
+        """The control. Without it every assertion above passes with the gate
+        switched off entirely."""
+        response = get(f"{self.url}/@@search", auth=self.user)
+
+        assert response.headers["Location"].endswith("/edit")
 
 
 class TestTheEscapes:

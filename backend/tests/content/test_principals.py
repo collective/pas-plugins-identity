@@ -18,11 +18,13 @@ from pas.plugins.identity.content.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.content.container import ID_RECORD
 from pas.plugins.identity.content.container import PARENT_RECORD
 from pas.plugins.identity.content.principals import container_path
+from pas.plugins.identity.content.principals import on_folder_added
 from pas.plugins.identity.core.pas.plugin import GROUP_CONTAINER_PATH_RECORD
 from pas.plugins.identity.core.pas.plugin import GROUP_CONTENT_TYPE_RECORD
 from pas.plugins.identity.core.pas.plugin import USER_CONTAINER_PATH_RECORD
 from pas.plugins.identity.core.pas.plugin import USER_CONTENT_TYPE_RECORD
 from plone import api
+from zope.component.hooks import setSite
 
 import pytest
 
@@ -131,6 +133,37 @@ class TestUninstall:
 
         assert record(USER_CONTENT_TYPE_RECORD) == ""
         assert record(GROUP_CONTAINER_PATH_RECORD) == ""
+
+
+class TestTheSubscriberIsInertBeforeThereIsASite:
+    """A Plone site is itself folderish, so ``on_folder_added`` fires while it
+    is being added to the application root -- before ``plone.app.registry``
+    has been applied and therefore before there is a registry to read.
+
+    This is not hypothetical. It made every site creation fail with a
+    traceback and a 500, in the demo stack, on a subscriber whose own tests
+    were green. ``plone.app.testing`` builds its site in ``PLONE_FIXTURE``,
+    before this package's ZCML is loaded, so the subscriber that breaks site
+    creation is not registered when the suite creates one.
+
+    Clearing the local site manager is what reproduces it: with no site, the
+    registry utility cannot be looked up, which is exactly the state the
+    application root is in.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+        self.folder = api.content.create(
+            container=portal, type="Folder", id="somewhere", title="Somewhere"
+        )
+
+    def test_it_does_not_raise_without_a_site(self):
+        setSite(None)
+        try:
+            on_folder_added(self.folder, None)
+        finally:
+            setSite(self.portal)
 
 
 class TestTheWholePoint:

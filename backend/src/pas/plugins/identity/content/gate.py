@@ -35,6 +35,14 @@ The profile itself
 
 Signing out
     A user who would rather leave than fill the form in must be able to.
+
+``@@oauth-authorize`` and its siblings
+    Found by running the demo, not by testing. The authorization endpoint is
+    a *browser* view answering ``text/html``, so every test above says "page"
+    -- and gating it strands a visitor who was sent here to authorize an
+    application, while the relying party that sent them gets neither a code
+    nor an error. A site may name more of these in
+    ``pas.plugins.identity.gate_exempt_paths``.
 """
 
 from pas.plugins.identity import logger
@@ -69,6 +77,27 @@ ALLOWED = frozenset({
     "@@require_login",
 })
 
+#: View-name prefixes never gated.
+#:
+#: ``@@oauth-authorize`` is a *browser* view, reached by a browser, answering
+#: ``text/html`` -- indistinguishable from a page by every test this module
+#: makes. Gating it redirects a visitor who was sent here to authorize an
+#: application, and the relying party that sent them never gets its code and
+#: never gets an error either: the browser simply lands somewhere else. This
+#: layer knowing that name is not a dependency on the ``[server]`` layer, and
+#: a site without it never matches.
+ALLOWED_PREFIXES = ("@@oauth-",)
+
+#: Registry record naming further paths to leave alone.
+#:
+#: A site-wide interceptor has to be able to make exceptions without being
+#: patched. Any add-on that publishes a browser-based flow of its own -- a
+#: payment return, a signature callback -- is the same shape as
+#: ``@@oauth-authorize``, and the site that installs it should not have to
+#: discover this module to keep it working. Matched against the last path
+#: segment, like :data:`ALLOWED`.
+EXEMPT_RECORD = f"{PREFIX}.gate_exempt_paths"
+
 
 def _enforcing() -> bool:
     """Return whether the gate is switched on in this site.
@@ -95,6 +124,30 @@ def _is_navigation(request) -> bool:
     if request.get("REQUEST_METHOD", "GET") != "GET":
         return False
     return "text/html" in (request.getHeader("Accept") or "")
+
+
+def _exempt_paths() -> tuple[str, ...]:
+    """Return the extra path segments this site leaves alone.
+
+    :returns: Segment names, empty when the record is unset or absent.
+    """
+    try:
+        value = api.portal.get_registry_record(EXEMPT_RECORD, default=())
+    except InvalidParameterError:
+        return ()
+    return tuple(name for name in (value or ()) if name)
+
+
+def _is_allowed_path(request) -> bool:
+    """Return whether this request's own path is never gated.
+
+    :param request: The current request.
+    :returns: Whether to let it through on the strength of its path alone.
+    """
+    segment = request.get("PATH_INFO", "").rstrip("/").rsplit("/", 1)[-1]
+    if segment in ALLOWED or segment in _exempt_paths():
+        return True
+    return segment.startswith(ALLOWED_PREFIXES)
 
 
 def _traversed_paths(request) -> set[str]:
@@ -149,7 +202,7 @@ def redirect_target(request) -> str | None:
         return None
     if api.user.is_anonymous():
         return None
-    if request.get("PATH_INFO", "").rstrip("/").rsplit("/", 1)[-1] in ALLOWED:
+    if _is_allowed_path(request):
         return None
 
     user = api.user.get_current()
@@ -185,4 +238,12 @@ def on_after_traversal(event) -> None:
     raise Redirect(target)
 
 
-__all__ = ["BYPASS_ROLES", "ENFORCE_RECORD", "on_after_traversal", "redirect_target"]
+__all__ = [
+    "ALLOWED",
+    "ALLOWED_PREFIXES",
+    "BYPASS_ROLES",
+    "ENFORCE_RECORD",
+    "EXEMPT_RECORD",
+    "on_after_traversal",
+    "redirect_target",
+]

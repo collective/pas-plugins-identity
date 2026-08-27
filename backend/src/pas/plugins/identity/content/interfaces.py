@@ -141,6 +141,20 @@ class IProfileSettings(Interface):
         default=("incomplete", "complete"),
     )
 
+    gate_exempt_paths = schema.Tuple(
+        title=_("Paths the profile gate leaves alone"),
+        description=_(
+            "Extra view names never redirected while a profile is "
+            "incomplete, matched against the last segment of the path. The "
+            "sign-in, sign-out and OAuth authorization endpoints are already "
+            "exempt; this is for a browser-based flow another add-on "
+            "publishes, which would otherwise be interrupted halfway."
+        ),
+        value_type=schema.TextLine(),
+        required=False,
+        default=(),
+    )
+
     enforce_required_profile_fields = schema.Bool(
         title=_("Hold users on their profile until it is complete"),
         description=_(

@@ -124,6 +124,16 @@ Three other things pass through, for reasons that are about the request rather t
 -   Requests `plone.restapi` answers. Volto fetches the edit form over the API, so gating those would break the page the user is being sent to. The frontend does its own routing.
 -   Anything that is not a browser asking for a page. Only `GET` for `text/html` is a navigation; a gate on every request is a gate on every stylesheet.
 -   Signing out. A user who would rather leave than fill the form in may.
+-   The OAuth authorization endpoints, `@@oauth-*`. `@@oauth-authorize` is a browser view answering `text/html`, so it looks exactly like a page; redirecting it strands a visitor who was sent to authorize an application, and the relying party that sent them receives neither a code nor an error.
+
+Name any other view that must not be interrupted:
+
+```text
+pas.plugins.identity.gate_exempt_paths
+```
+
+Matched against the last segment of the path, like the built-in exemptions.
+This is for a browser-based flow another add-on publishes, which would otherwise be interrupted halfway.
 
 ## Group states
 

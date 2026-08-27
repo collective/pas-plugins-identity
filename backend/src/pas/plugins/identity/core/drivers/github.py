@@ -8,9 +8,22 @@ from pas.plugins.identity.core.interfaces import JSONDict
 class GitHubDriver(BaseDriver):
     """GitHub OAuth2.
 
-    GitHub is not an OIDC provider: the subject is the numeric ``id`` from
-    ``/user``, and verification of the address comes from ``/user/emails``,
-    which the flow merges into the payload as ``email_verified``.
+    GitHub is not an OIDC provider: it issues no ``id_token``, so the flow
+    falls back to the userinfo endpoint and the subject is the numeric ``id``
+    from ``GET /user``.
+
+    **That one call is all this driver gets.** ``/user`` omits the address
+    entirely for a user who has set their email to private, and it carries no
+    ``email_verified`` at all, so a GitHub identity is never treated as having
+    a verified address. ``GET /user/emails`` would answer both -- the scope to
+    call it is already requested -- and nothing calls it. Two consequences
+    worth knowing rather than discovering:
+
+    * a user with a private address arrives with no email claim, so their
+      profile is created ``incomplete`` and the required-information flow asks
+      them for one;
+    * link-by-verified-email never matches a GitHub identity, whatever the
+      account's own verification state.
     """
 
     driver_id = "github"

@@ -45,7 +45,9 @@ from pas.plugins.identity.core.pas.plugin import GROUP_CONTENT_TYPE_RECORD
 from pas.plugins.identity.core.pas.plugin import USER_CONTAINER_PATH_RECORD
 from pas.plugins.identity.core.pas.plugin import USER_CONTENT_TYPE_RECORD
 from plone import api
+from plone.api.exc import CannotGetPortalError
 from plone.api.exc import InvalidParameterError
+from zope.interface.interfaces import ComponentLookupError
 
 
 #: The records whose value the container path is derived from. A change to
@@ -162,14 +164,27 @@ def on_folder_added(obj, event) -> None:
     """
     try:
         wanted = {kind: container_path(kind) for kind in (PROFILE, GROUP)}
-    except InvalidParameterError:
-        # A core-only site: the layer's registry records do not exist, so
-        # there is no configured container and nothing to grant. This
-        # subscriber is not bound to a browser layer -- it cannot be, the
-        # objects it fires for carry no request -- so declining here is what
-        # keeps it inert on a site that never installed the extra.
+        portal_path = api.portal.get().getPhysicalPath()
+    except (InvalidParameterError, ComponentLookupError, CannotGetPortalError):
+        # Two different "not here" answers, and both are ordinary.
+        #
+        # ``InvalidParameterError`` is a core-only site: the layer's records do
+        # not exist, so there is no configured container and nothing to grant.
+        #
+        # ``ComponentLookupError`` is a site that does not exist *yet*. A Plone
+        # site is itself folderish, so this fires while it is being added to
+        # the application root -- before ``plone.app.registry`` has been
+        # applied and therefore before there is a registry to read. Missing
+        # that case made every site creation fail with a traceback and a 500,
+        # and no test caught it: ``plone.app.testing`` builds its site in
+        # ``PLONE_FIXTURE``, before this package's ZCML is loaded, so the
+        # subscriber that breaks site creation is not registered when the test
+        # suite creates one.
+        #
+        # This subscriber is not bound to a browser layer -- it cannot be, the
+        # objects it fires for carry no request -- so declining here is the
+        # only thing keeping it inert where it has no business acting.
         return
-    portal_path = api.portal.get().getPhysicalPath()
     path = "/".join(obj.getPhysicalPath()[len(portal_path) :])
     for kind, configured in wanted.items():
         if configured and configured == path:

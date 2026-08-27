@@ -22,7 +22,7 @@
   "lock": {},
   "login": "dana",
   "modified": "2026-08-26T19:15:59+00:00",
-  "review_state": "incomplete",
+  "review_state": "complete",
   "type_title": "Identity Profile",
   "userid": "dana",
   "version": "current",
@@ -32,7 +32,7 @@
         "action": null,
         "actor": "admin",
         "comments": "",
-        "review_state": "incomplete",
+        "review_state": "complete",
         "time": "2026-08-26T19:14:41+00:00"
       }
     ]
