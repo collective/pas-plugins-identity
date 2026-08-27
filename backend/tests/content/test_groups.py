@@ -65,7 +65,7 @@ class TestInstallation:
         workflows = api.portal.get_tool("portal_workflow")
 
         assert workflows.getChainForPortalType(GROUP_PORTAL_TYPE) == (
-            "identity_group_workflow",
+            "user_group_workflow",
         )
 
     def test_groups_plugin_activated(self):
@@ -424,7 +424,7 @@ class TestGroupsAreVisibleThroughPlone:
     The plugin implemented ``IGroupIntrospection`` and the install handler
     never activated it, so ``PlonePAS.pas.getGroup`` -- which walks exactly
     that interface -- found only ``source_groups`` and answered ``None`` for
-    every IdentityGroup. Anything reaching a group the ordinary way saw
+    every UserGroup. Anything reaching a group the ordinary way saw
     nothing: ``api.group.get``, ``portal_groups``, the sharing tab.
 
     Every other test in this module called the plugin's methods directly and

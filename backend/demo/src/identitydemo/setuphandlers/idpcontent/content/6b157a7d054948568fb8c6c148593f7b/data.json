@@ -1,6 +1,6 @@
 {
   "@id": "/profiles/dana",
-  "@type": "IdentityProfile",
+  "@type": "UserProfile",
   "UID": "6b157a7d054948568fb8c6c148593f7b",
   "allow_discussion": null,
   "created": "2026-08-26T19:14:41+00:00",
@@ -27,7 +27,7 @@
   "userid": "dana",
   "version": "current",
   "workflow_history": {
-    "identity_profile_workflow": [
+    "user_profile_workflow": [
       {
         "action": null,
         "actor": "admin",

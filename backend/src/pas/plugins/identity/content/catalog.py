@@ -54,10 +54,10 @@ CATALOG_ID = "portal_identity_catalog"
 #: ``portal_type`` of the Profile content type. Lives here rather than in
 #: ``content.profile`` because the catalog and the subscribers need it and
 #: neither should have to import the class to get it.
-PROFILE_PORTAL_TYPE = "IdentityProfile"
+PROFILE_PORTAL_TYPE = "UserProfile"
 
 #: ``portal_type`` of the Group content type.
-GROUP_PORTAL_TYPE = "IdentityGroup"
+GROUP_PORTAL_TYPE = "UserGroup"
 
 #: Every type filed in this catalog. Used by the rebuild, which must find
 #: them all, and nowhere else -- see :func:`brains_of_type`.

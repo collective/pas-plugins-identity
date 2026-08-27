@@ -76,7 +76,7 @@ def _create_demo_user() -> None:
     ``api.user.create`` reaches PAS's adder chain, where this package's plugin
     sits first and creates the Profile; the password then goes to whatever
     the Profile adapts to, which on this site is the password behavior the
-    profile's ``types/IdentityProfile.xml`` enables. Nothing here knows any of
+    profile's ``types/UserProfile.xml`` enables. Nothing here knows any of
     that, which is the point: the demo user is created the way a site's users
     are created, and the site's configuration decides where they land.
     """

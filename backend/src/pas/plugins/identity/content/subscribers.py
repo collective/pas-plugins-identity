@@ -47,7 +47,7 @@ from pas.plugins.identity import logger
 from pas.plugins.identity.content.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.content.catalog import query_catalog
 from pas.plugins.identity.content.container import get_container
-from pas.plugins.identity.content.profile import Profile
+from pas.plugins.identity.content.profile import UserProfile
 from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
 from pas.plugins.identity.core.events import IdentityLinked
 from pas.plugins.identity.core.events import UserClaimsRefreshed
@@ -65,7 +65,7 @@ from zope.lifecycleevent import modified
 #: touched by a provider.
 PROVIDER_VALUES_KEY = "pas.plugins.identity.provider_values"
 
-#: Profile fields a provider may ever write, whatever its property map says.
+#: UserProfile fields a provider may ever write, whatever its property map says.
 #: ``userid`` is the join to the identity store and is permanent; ``login`` is
 #: half of the case-folded index the enumeration plugin queries; ``group_ids``
 #: is group membership, and a provider that could edit it could grant itself
@@ -130,7 +130,7 @@ def _scalar(value: object) -> str:
     return str(value)
 
 
-def _remembered(profile: Profile) -> PersistentMapping:
+def _remembered(profile: UserProfile) -> PersistentMapping:
     """Return the mutable record of provider-written values.
 
     :param profile: The Profile.
@@ -143,7 +143,7 @@ def _remembered(profile: Profile) -> PersistentMapping:
 
 
 def _provider_may_write(
-    profile: Profile, field: str, remembered: PersistentMapping
+    profile: UserProfile, field: str, remembered: PersistentMapping
 ) -> bool:
     """Decide whether the provider still owns a field.
 
@@ -166,7 +166,7 @@ def _provider_may_write(
 PICTURE_FIELD = "picture"
 
 
-def remembered_picture_url(profile: Profile) -> str:
+def remembered_picture_url(profile: UserProfile) -> str:
     """Return the picture URL the provider last wrote, if any.
 
     :param profile: The Profile.
@@ -177,7 +177,7 @@ def remembered_picture_url(profile: Profile) -> str:
     return str(_remembered(profile).get(PICTURE_FIELD) or "")
 
 
-def remember_picture_url(profile: Profile, url: str) -> None:
+def remember_picture_url(profile: UserProfile, url: str) -> None:
     """Record that the provider supplied this Profile's picture.
 
     :param profile: The Profile.
@@ -192,7 +192,9 @@ def remember_picture_url(profile: Profile, url: str) -> None:
         remembered.pop(PICTURE_FIELD, None)
 
 
-def sync_claims(profile: Profile, claims: Claims, provider_id: str = "") -> list[str]:
+def sync_claims(
+    profile: UserProfile, claims: Claims, provider_id: str = ""
+) -> list[str]:
     """Write the provider's claims onto the fields it still owns.
 
     :param profile: The Profile.
@@ -235,7 +237,7 @@ def _profile_id(userid: str) -> str:
     return userid
 
 
-def get_profile(userid: str) -> Profile | None:
+def get_profile(userid: str) -> UserProfile | None:
     """Return a user's Profile object, or ``None``.
 
     Wakes the object, so this is for the paths that are going to write to it.
@@ -254,7 +256,7 @@ def get_profile(userid: str) -> Profile | None:
     return brains[0]._unrestrictedGetObject()
 
 
-def ensure_profile(userid: str, login: str, claims: Claims) -> Profile | None:
+def ensure_profile(userid: str, login: str, claims: Claims) -> UserProfile | None:
     """Return the user's Profile, creating it on first login.
 
     Runs unrestricted: the person this Profile is for is mid-login and holds

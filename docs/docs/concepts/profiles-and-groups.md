@@ -33,15 +33,15 @@ It works in development, where there are eleven users, and it collapses on a sit
 Properties, user enumeration, group membership, and group listings are all served from catalog metadata.
 
 The test suite asserts that rather than claiming it.
-It patches ZODB's object activation, exercises the whole surface, and requires the count of woken `Profile` objects to be zero.
+It patches ZODB's object activation, exercises the whole surface, and requires the count of woken `UserProfile` objects to be zero.
 It first proves the objects were ghosts and that the counter registers a real load, because a zero from a broken counter is not evidence.
 
 This is the property the whole layer is arranged around, and it is why the layer looks more elaborate than adding a content type.
 
 ## Membership lives on the member
 
-An `IdentityGroup` does not hold a list of its members.
-Each `Profile` holds a `group_ids` field naming the groups it belongs to.
+An `UserGroup` does not hold a list of its members.
+Each `UserProfile` holds a `group_ids` field naming the groups it belongs to.
 
 That is backwards from how people draw groups, and it is the direction Plone asks questions in.
 
@@ -64,7 +64,7 @@ Each identity carries the local group ids its own provider granted, and a sign-i
 That fence is what makes the feature safe to leave running.
 Without it, a sign-in would write one provider's answer over the whole of a member's `group_ids`, erasing every group an administrator granted by hand and every group a second provider granted, silently, at the moment somebody logged in.
 
-Membership is written through the group tool rather than to any store of this package's own, so it lands wherever the site keeps membership: `group_ids` on a `Profile` where users are content, and `source_groups` where they are not.
+Membership is written through the group tool rather than to any store of this package's own, so it lands wherever the site keeps membership: `group_ids` on a `UserProfile` where users are content, and `source_groups` where they are not.
 `getGroupsForPrincipal` stays the single metadata read described above.
 
 See {doc}`federation` for the provider's half, and {doc}`/how-to-guides/configure-a-provider` for the map itself.
@@ -74,7 +74,7 @@ See {doc}`federation` for the provider's half, and {doc}`/how-to-guides/configur
 On every sign-in, the provider's claims refresh the fields the provider still owns.
 
 The rule is one comparison.
-The `Profile` remembers what the provider last wrote, and the provider may write a field only while the current value still equals that.
+The `UserProfile` remembers what the provider last wrote, and the provider may write a field only while the current value still equals that.
 
 A flag-per-field design gets two cases wrong, and they are the two that matter.
 

@@ -4,8 +4,8 @@
              initial_state="active"
              manager_bypass="False"
              state_variable="review_state"
-             title="Identity Group Workflow"
-             workflow_id="identity_group_workflow"
+             title="User Group Workflow"
+             workflow_id="user_group_workflow"
              i18n:domain="pas.plugins.identity"
 >
   <permission>Access contents information</permission>

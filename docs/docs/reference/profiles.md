@@ -16,16 +16,16 @@ For why the layer is built this way, see {doc}`/concepts/profiles-and-groups`.
 
 ## Content types
 
-`Profile`
+`UserProfile`
 :   Carries the PAS property sheet -- full name, email, home page, biography, and location -- plus a picture in the `image` field.
     It also carries `userid`, `login`, and `group_ids`, which are what make the object a user rather than a page about one.
-    `userid` is displayed and never editable on the edit form: an edit detaching a `Profile` from its identity is not an edit anybody means to make.
+    `userid` is displayed and never editable on the edit form: an edit detaching a `UserProfile` from its identity is not an edit anybody means to make.
     Governed by a three-state workflow.
 
-`IdentityGroup`
+`UserGroup`
 :   A group.
     Membership is not stored here.
-    It is stored on each `Profile`, in the `group_ids` field.
+    It is stored on each `UserProfile`, in the `group_ids` field.
 
 ## Profile workflow states
 
@@ -39,7 +39,7 @@ For why the layer is built this way, see {doc}`/concepts/profiles-and-groups`.
 
 `deactivated`
 :   Excluded from enumeration and from property lookup.
-    The `Profile` and its data are kept.
+    The `UserProfile` and its data are kept.
 
 Which states count as active is a registry setting.
 
@@ -47,10 +47,10 @@ Which states count as active is a registry setting.
 
 A group has two states.
 
-Deactivating one stops it being enumerated and stops it granting membership, without deleting it and without editing a single `Profile`.
+Deactivating one stops it being enumerated and stops it granting membership, without deleting it and without editing a single `UserProfile`.
 Reactivating restores exactly the membership it had.
 
-A `Profile` naming a group that no longer exists grants nothing, and the consistency check reports it.
+A `UserProfile` naming a group that no longer exists grants nothing, and the consistency check reports it.
 
 ## Where profiles are stored
 
@@ -60,20 +60,20 @@ A project that keeps member data under `/intranet/people` sets four values.
 A project happy with `/identity-profiles` sets none.
 
 The catalog is not scoped to that container.
-It indexes a `Profile` wherever the object actually is, so reorganizing content is not a deauthentication.
+It indexes a `UserProfile` wherever the object actually is, so reorganizing content is not a deauthentication.
 
 ## Permissions on a profile
 
-A user gets `Editor` on their own `Profile`, and nothing on anybody else's.
+A user gets `Editor` on their own `UserProfile`, and nothing on anybody else's.
 
 Not `Owner`.
-`Owner` carries the right to delete, and a user deleting their own `Profile` would break their account while their sign-in kept working.
+`Owner` carries the right to delete, and a user deleting their own `UserProfile` would break their account while their sign-in kept working.
 
 ## Endpoints
 
 | Endpoint | Returns |
 | --- | --- |
-| `GET @my-profile` | Where the current user's `Profile` is, and what state it is in. |
+| `GET @my-profile` | Where the current user's `UserProfile` is, and what state it is in. |
 
 The frontend uses `@my-profile` to send a new user to their profile once and never ask again.
 
@@ -82,11 +82,11 @@ The frontend uses `@my-profile` to send a new user to their profile once and nev
 On every sign-in, the provider's claims refresh the fields the provider still owns, and only those.
 
 The rule is one comparison.
-The `Profile` remembers what the provider last wrote, and the provider may write a field only while the current value still equals that.
+The `UserProfile` remembers what the provider last wrote, and the provider may write a field only while the current value still equals that.
 
 | Situation | Written? |
 | --- | --- |
-| Fresh `Profile`, nothing written yet | Yes |
+| Fresh `UserProfile`, nothing written yet | Yes |
 | Provider changed the claim since the last sign-in | Yes |
 | The user edited the field | No |
 | The user cleared the field | No |
@@ -113,7 +113,7 @@ When enabled, the fetch is HTTPS-only, short-timeout, size-capped by counting by
 
 The consistency check
 :   Reports drift and repairs nothing.
-    It reports entries missing, entries whose object is gone, brains that disagree with their object, duplicate user ids or login names, and `Profile` objects naming groups that do not exist.
+    It reports entries missing, entries whose object is gone, brains that disagree with their object, duplicate user ids or login names, and `UserProfile` objects naming groups that do not exist.
 
 The rebuild step
 :   Repairs and reports nothing.
@@ -131,7 +131,7 @@ So it is refused rather than stored.
 
 ## Managing membership
 
-Membership is stored in the `group_ids` field of each `Profile`.
+Membership is stored in the `group_ids` field of each `UserProfile`.
 
 Two paths write it, and they reach the same place.
 
@@ -139,11 +139,11 @@ Two paths write it, and they reach the same place.
 :   The ordinary Plone API, and the {guilabel}`Users and Groups` control panel that calls it.
     These reach the identity plugin through PlonePAS's group tool.
 
-Editing the `Profile`
+Editing the `UserProfile`
 :   The `Groups` field on the edit form.
 
-Removing a group does not edit a single `Profile`.
-A `Profile` naming a group that no longer exists grants nothing, and the consistency check reports it.
+Removing a group does not edit a single `UserProfile`.
+A `UserProfile` naming a group that no longer exists grants nothing, and the consistency check reports it.
 Recreating the group restores exactly the membership it had.
 
 ```{note}

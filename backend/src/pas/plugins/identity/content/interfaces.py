@@ -27,8 +27,8 @@ class IIdentityCatalogued(Interface):
     """
 
 
-class IProfile(IIdentityCatalogued):
-    """Marker for the Profile content type.
+class IUserProfile(IIdentityCatalogued):
+    """Marker for the UserProfile content type.
 
     Applied through the FTI rather than the class so that the catalog
     subscribers can be registered for the marker and stay indifferent to how
@@ -36,8 +36,8 @@ class IProfile(IIdentityCatalogued):
     """
 
 
-class IIdentityGroup(IIdentityCatalogued):
-    """Marker for the Group content type."""
+class IUserGroup(IIdentityCatalogued):
+    """Marker for the UserGroup content type."""
 
 
 class IIdentityProfileCatalog(Interface):

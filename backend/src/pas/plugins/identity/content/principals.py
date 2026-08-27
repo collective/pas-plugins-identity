@@ -3,7 +3,7 @@
 Core can create a user or a group as content without knowing what type that
 is: it reads four registry records naming the portal type and the container,
 and it checks the type provides ``IUserContent`` or ``IGroupContent``. This
-module is what points those records at ``Profile`` and ``IdentityGroup``.
+module is what points those records at ``UserProfile`` and ``UserGroup``.
 
 **Why a subscriber and not a value in ``registry.xml``.** Where Profiles live
 is itself configurable, and

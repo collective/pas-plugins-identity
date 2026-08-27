@@ -1,0 +1,1 @@
+Renamed the two content types in the documentation and in the demo stack: `IdentityProfile` is now `UserProfile` and `IdentityGroup` is now `UserGroup`. @ericof

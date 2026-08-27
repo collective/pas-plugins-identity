@@ -1,4 +1,4 @@
-"""The ``IdentityGroup`` content type.
+"""The ``UserGroup`` content type.
 
 A group is a piece of content, and membership is a field on the *Profile*
 rather than a list on the group. That is the direction Plone asks questions
@@ -26,8 +26,8 @@ from zope import schema
 from zope.interface import implementer
 
 
-class IGroupSchema(model.Schema, IGroupContent):
-    """Schema of the Group content type.
+class IUserGroupSchema(model.Schema, IGroupContent):
+    """Schema of the UserGroup content type.
 
     Extends :class:`~pas.plugins.identity.core.interfaces.IGroupContent`,
     which is how core knows objects of this type are groups and may create
@@ -49,9 +49,9 @@ class IGroupSchema(model.Schema, IGroupContent):
     )
 
 
-@implementer(IGroupSchema)
-class Group(Container):
-    """A Group.
+@implementer(IUserGroupSchema)
+class UserGroup(Container):
+    """A user group.
 
     Folderish for the same reason a Profile is: a deployment may want to file
     content under a group. Nothing in this layer puts anything inside one.

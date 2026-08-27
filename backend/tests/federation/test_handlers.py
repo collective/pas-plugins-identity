@@ -150,7 +150,7 @@ class TestTheDemoUserIsContent:
     the layers the profile depends on.
 
     The password behavior is enabled here by hand, because the demo's own
-    ``types/IdentityProfile.xml`` cannot be applied to this site -- see the
+    ``types/UserProfile.xml`` cannot be applied to this site -- see the
     ``demo_registry`` fixture for why the same compromise is made for the
     registry. :meth:`test_the_demo_profile_enables_the_behavior` is what keeps
     the hand-written half honest.
@@ -203,7 +203,7 @@ class TestTheDemoUserIsContent:
         """The half this test site cannot apply. Without it the demo would
         keep its passwords in ``source_users`` and nothing here would say
         so."""
-        xml = (DEMO_PROFILES / "idp/types/IdentityProfile.xml").read_text()
+        xml = (DEMO_PROFILES / "idp/types/UserProfile.xml").read_text()
 
         assert self.BEHAVIOR in xml
 

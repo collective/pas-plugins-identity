@@ -62,7 +62,7 @@ A layer publishes a utility, and anything that wants it asks the registry.
 This is the sharpest example, because the two layers are genuinely related.
 
 When the site acts as an authorization server, it releases claims about a user.
-On a site with the `[content]` extra, those values live on a `Profile` content object.
+On a site with the `[content]` extra, those values live on a `UserProfile` content object.
 On a site without it, they live in `mutable_properties`.
 
 The server layer branches on neither.

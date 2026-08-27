@@ -1,6 +1,6 @@
 {
   "@id": "/groups/site-editors",
-  "@type": "IdentityGroup",
+  "@type": "UserGroup",
   "UID": "968a46f9de13413ba2b811a004fe8284",
   "allow_discussion": null,
   "created": "2026-08-26T19:14:41+00:00",
@@ -19,7 +19,7 @@
   "type_title": "Identity Group",
   "version": "current",
   "workflow_history": {
-    "identity_group_workflow": [
+    "user_group_workflow": [
       {
         "action": null,
         "actor": "admin",

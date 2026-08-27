@@ -13,8 +13,8 @@ enumeration silently stop working while the login keeps succeeding.
 
 from borg.localrole.interfaces import ILocalRoleProvider
 from collections.abc import Iterator
-from pas.plugins.identity.content.interfaces import IProfile
-from pas.plugins.identity.content.profile import Profile
+from pas.plugins.identity.content.interfaces import IUserProfile
+from pas.plugins.identity.content.profile import UserProfile
 from zope.component import adapter
 from zope.interface import implementer
 
@@ -24,11 +24,11 @@ SELF_ROLE = "Editor"
 
 
 @implementer(ILocalRoleProvider)
-@adapter(IProfile)
+@adapter(IUserProfile)
 class ProfileSelfRole:
     """Grants ``Editor`` on a Profile to the user it belongs to."""
 
-    def __init__(self, context: Profile) -> None:
+    def __init__(self, context: UserProfile) -> None:
         """Bind to the Profile.
 
         :param context: The Profile.

@@ -12,7 +12,7 @@ them as fatal, so validation must not make such a Profile unreadable.
 """
 
 from . import PROFILE_ID
-from pas.plugins.identity.content.profile import IProfileSchema
+from pas.plugins.identity.content.profile import IUserProfileSchema
 from pas.plugins.identity.core.vocabularies.groups import GROUPS_VOCABULARY
 from plone import api
 from zope.component import getUtility
@@ -44,7 +44,7 @@ class TestTheVocabulary:
 
     def test_the_field_uses_it(self):
         """Which is what gives the widget something to offer."""
-        value_type = IProfileSchema["group_ids"].value_type
+        value_type = IUserProfileSchema["group_ids"].value_type
 
         assert value_type.vocabularyName == GROUPS_VOCABULARY
 

@@ -28,7 +28,7 @@
             "i": "portal_type",
             "o": "plone.app.querystring.operation.selection.any",
             "v": [
-              "IdentityProfile"
+              "UserProfile"
             ]
           }
         ],

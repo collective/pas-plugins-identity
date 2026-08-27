@@ -13,7 +13,7 @@
 
     <!-- The other three are the field permissions declared on the schema in
          ``profile.content.profile``. Every one of them is also managed by
-         ``identity_profile_workflow``, which is what decides who may read
+         ``user_profile_workflow``, which is what decides who may read
          and write a Profile in each of its states; these entries are the
          site-wide floor for anywhere the workflow does not reach.
 

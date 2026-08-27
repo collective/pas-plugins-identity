@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <object xmlns:i18n="http://xml.zope.org/namespaces/i18n"
         meta_type="Dexterity FTI"
-        name="IdentityGroup"
+        name="UserGroup"
         i18n:domain="pas.plugins.identity"
 >
   <property name="title"
             i18n:translate=""
-  >Identity Group</property>
+  >User Group</property>
   <property name="description"
             i18n:translate=""
   >A group, backed by content. Membership is a field on each Profile, not a list here.</property>
@@ -14,8 +14,8 @@
   <property name="filter_content_types">True</property>
   <property name="global_allow">True</property>
   <property name="icon_expr">string:users</property>
-  <property name="klass">pas.plugins.identity.content.group.Group</property>
-  <property name="schema">pas.plugins.identity.content.group.IGroupSchema</property>
+  <property name="klass">pas.plugins.identity.content.group.UserGroup</property>
+  <property name="schema">pas.plugins.identity.content.group.IUserGroupSchema</property>
   <property name="add_permission">pas.plugins.identity.content.add</property>
   <property name="link_target" />
   <property name="model_source" />

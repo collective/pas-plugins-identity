@@ -14,8 +14,8 @@ roles and sharing entries all name the old id and do not follow.
 
 from . import PROFILE_ID
 from pas.plugins.identity.content.catalog import query_catalog
-from pas.plugins.identity.content.group import IGroupSchema
-from pas.plugins.identity.content.profile import IProfileSchema
+from pas.plugins.identity.content.group import IUserGroupSchema
+from pas.plugins.identity.content.profile import IUserProfileSchema
 from plone import api
 
 import pytest
@@ -28,11 +28,11 @@ class TestTheFieldIsGone:
     def test_userid_is_not_a_schema_field(self):
         """No form offers it and no deserializer can write it, which is what
         makes the property the only way in."""
-        assert "userid" not in IProfileSchema.names()
+        assert "userid" not in IUserProfileSchema.names()
 
     def test_group_id_is_not_a_schema_field(self):
         """The same, for groups."""
-        assert "group_id" not in IGroupSchema.names()
+        assert "group_id" not in IUserGroupSchema.names()
 
 
 class TestDerivedFromTheId:

@@ -7,7 +7,7 @@ See ``test_derived_ids.py``.
 """
 
 from . import PROFILE_ID
-from pas.plugins.identity.content.profile import IProfileSchema
+from pas.plugins.identity.content.profile import IUserProfileSchema
 
 import pytest
 
@@ -24,4 +24,4 @@ class TestEmailIsRequired:
         """A Profile exists to be the thing a person is reached and
         recognised by; the enumeration plugin, the property map and the
         magic-link join all read the address."""
-        assert IProfileSchema["email"].required is True
+        assert IUserProfileSchema["email"].required is True

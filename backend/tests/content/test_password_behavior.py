@@ -117,10 +117,10 @@ class TestTheStorageIsNotAField:
     def test_it_is_not_in_the_schema(self):
         """So plone.restapi cannot serialize it and GenericSetup cannot
         export it: neither walks annotations."""
-        from pas.plugins.identity.content.profile import IProfileSchema
+        from pas.plugins.identity.content.profile import IUserProfileSchema
 
-        assert "password" not in IProfileSchema.names()
-        assert "hash" not in IProfileSchema.names()
+        assert "password" not in IUserProfileSchema.names()
+        assert "hash" not in IUserProfileSchema.names()
 
     def test_the_rest_api_does_not_publish_it(self):
         from plone.restapi.interfaces import ISerializeToJson

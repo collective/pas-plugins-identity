@@ -2,10 +2,10 @@
 <object meta_type="Plone Types Tool"
         name="portal_types"
 >
-  <object name="IdentityProfile"
+  <object name="UserProfile"
           remove="True"
   />
-  <object name="IdentityGroup"
+  <object name="UserGroup"
           remove="True"
   />
 </object>

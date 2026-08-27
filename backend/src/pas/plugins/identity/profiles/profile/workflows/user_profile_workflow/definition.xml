@@ -4,8 +4,8 @@
              initial_state="incomplete"
              manager_bypass="False"
              state_variable="review_state"
-             title="Identity Profile Workflow"
-             workflow_id="identity_profile_workflow"
+             title="User Profile Workflow"
+             workflow_id="user_profile_workflow"
              i18n:domain="pas.plugins.identity"
 >
   <permission>Access contents information</permission>

@@ -100,7 +100,7 @@ A claim with no value is omitted, never sent as an empty string, so a relying pa
 ## Where claims come from
 
 Claims are read from Plone user properties.
-They are not read from a `Profile`, even on a site that installs the `[content]` extra.
+They are not read from a `UserProfile`, even on a site that installs the `[content]` extra.
 
 The `[content]` extra serves its fields as a property sheet, through its `IPropertiesPlugin`.
 So asking PAS for a property returns Profile-backed values on a site that has that layer, and stock `mutable_properties` values on a site that does not, with no branch in the server layer and without the `[server]` layer importing the `[content]` layer.
@@ -118,7 +118,7 @@ Both names are read as-is elsewhere: `groups` is what Keycloak, Okta, and Entra 
 And a namespaced claim only this server's own peers would understand buys nothing but a second thing to configure at both ends.
 
 That is the whole of the extension, and it is not a general one.
-A field a site adds to its `Profile` type still has no claim to go in, and inventing one per site would emit something no other implementation can read.
+A field a site adds to its `UserProfile` type still has no claim to go in, and inventing one per site would emit something no other implementation can read.
 The extension point for that is a private scope releasing namespaced claims.
 It is deliberately not built, because it needs a naming decision that should be made once, by somebody who has a second implementation to be compatible with.
 

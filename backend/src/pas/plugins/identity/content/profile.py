@@ -1,4 +1,4 @@
-"""The ``Profile`` content type.
+"""The ``UserProfile`` content type.
 
 One Profile per canonical userid. The fields are exactly the PAS property
 sheet the ``[content]`` layer's PAS plugin serves, which is why they are listed
@@ -43,8 +43,8 @@ from zope import schema
 from zope.interface import implementer
 
 
-class IProfileSchema(model.Schema, IUserContent):
-    """Schema of the Profile content type.
+class IUserProfileSchema(model.Schema, IUserContent):
+    """Schema of the UserProfile content type.
 
     Extends :class:`~pas.plugins.identity.core.interfaces.IUserContent`,
     which is how core knows objects of this type are users and may create
@@ -139,9 +139,9 @@ class IProfileSchema(model.Schema, IUserContent):
     )
 
 
-@implementer(IProfileSchema)
-class Profile(Container):
-    """A Profile.
+@implementer(IUserProfileSchema)
+class UserProfile(Container):
+    """A user profile.
 
     Folderish so that a deployment can file per-user content underneath it --
     a portrait, an attachment, a personal folder -- without needing a second

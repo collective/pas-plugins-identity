@@ -54,7 +54,7 @@ The test installs, uninstalls, and asserts that the site still works with no plu
 
 ```{note}
 Uninstalling the `profile` extra removes the catalog, the content types, and the workflows.
-It leaves every `Profile` object and its data exactly where it is.
+It leaves every `UserProfile` object and its data exactly where it is.
 Uninstalling an add-on is a configuration change, not an instruction to delete everyone's account data.
 ```
 

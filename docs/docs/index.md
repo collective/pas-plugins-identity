@@ -62,7 +62,7 @@ The package installs in three layers, and you choose how many.
 
 `pas.plugins.identity[content]`
 :   Content-backed user profiles and groups.
-    This layer adds a `Profile` content type with a workflow, a dedicated catalog, and PAS plugins that serve user properties, user enumeration, and group membership from that catalog.
+    This layer adds a `UserProfile` content type with a workflow, a dedicated catalog, and PAS plugins that serve user properties, user enumeration, and group membership from that catalog.
     See {doc}`concepts/profiles-and-groups`.
 
 `pas.plugins.identity[server]`

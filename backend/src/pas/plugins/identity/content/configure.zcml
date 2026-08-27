@@ -5,15 +5,15 @@
     i18n_domain="pas.plugins.identity"
     >
 
-  <class class=".group.Group">
-    <implements interface=".interfaces.IIdentityGroup" />
+  <class class=".group.UserGroup">
+    <implements interface=".interfaces.IUserGroup" />
   </class>
 
   <!-- The Profile marker is applied to the class rather than through the FTI
        so that the catalog subscribers below bind to it however the object was
        constructed — including by a test that instantiates it directly. -->
-  <class class=".profile.Profile">
-    <implements interface=".interfaces.IProfile" />
+  <class class=".profile.UserProfile">
+    <implements interface=".interfaces.IUserProfile" />
   </class>
 
   <!-- Catalog maintenance. Registered for the marker, so a site

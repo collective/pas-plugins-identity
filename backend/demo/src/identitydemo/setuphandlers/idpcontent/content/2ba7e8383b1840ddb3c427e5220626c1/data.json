@@ -1,6 +1,6 @@
 {
   "@id": "/groups/foundation-members",
-  "@type": "IdentityGroup",
+  "@type": "UserGroup",
   "UID": "2ba7e8383b1840ddb3c427e5220626c1",
   "allow_discussion": null,
   "created": "2026-08-26T19:29:17+00:00",
@@ -19,7 +19,7 @@
   "type_title": "Identity Group",
   "version": "current",
   "workflow_history": {
-    "identity_group_workflow": [
+    "user_group_workflow": [
       {
         "action": null,
         "actor": "admin",

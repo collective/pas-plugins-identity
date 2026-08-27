@@ -40,7 +40,7 @@ class TestProfileInstall:
         """Profiles get the three-state workflow."""
         workflows = api.portal.get_tool("portal_workflow")
         chain = workflows.getChainForPortalType(PROFILE_PORTAL_TYPE)
-        assert chain == ("identity_profile_workflow",)
+        assert chain == ("user_profile_workflow",)
 
     @pytest.mark.no_profile_container
     def test_container_not_created(self):

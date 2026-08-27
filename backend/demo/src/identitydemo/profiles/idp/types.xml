@@ -3,6 +3,6 @@
         name="portal_types"
 >
   <object meta_type="Dexterity FTI"
-          name="IdentityProfile"
+          name="UserProfile"
   />
 </object>

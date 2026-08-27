@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <object xmlns:i18n="http://xml.zope.org/namespaces/i18n"
         meta_type="Dexterity FTI"
-        name="IdentityProfile"
+        name="UserProfile"
         i18n:domain="pas.plugins.identity"
 >
   <property name="title"
             i18n:translate=""
-  >Identity Profile</property>
+  >User Profile</property>
   <property name="description"
             i18n:translate=""
   >Content-backed profile for one Plone user.</property>
@@ -21,8 +21,8 @@
        is allowed to do everything else. -->
   <property name="global_allow">True</property>
   <property name="icon_expr">string:person</property>
-  <property name="klass">pas.plugins.identity.content.profile.Profile</property>
-  <property name="schema">pas.plugins.identity.content.profile.IProfileSchema</property>
+  <property name="klass">pas.plugins.identity.content.profile.UserProfile</property>
+  <property name="schema">pas.plugins.identity.content.profile.IUserProfileSchema</property>
   <property name="add_permission">pas.plugins.identity.content.add</property>
   <property name="link_target" />
   <property name="model_source" />

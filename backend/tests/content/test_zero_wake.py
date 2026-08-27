@@ -19,8 +19,8 @@ deactivation.
 from . import PROFILE_ID
 from pas.plugins.identity.content.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.content.catalog import PROFILE_PORTAL_TYPE
-from pas.plugins.identity.content.group import Group
-from pas.plugins.identity.content.profile import Profile
+from pas.plugins.identity.content.group import UserGroup
+from pas.plugins.identity.content.profile import UserProfile
 from plone import api
 from Products.CMFCore.indexing import processQueue
 
@@ -118,7 +118,9 @@ def profile_loads(recorded: list[str]) -> list[str]:
     :param recorded: Class names recorded by the ``loads`` fixture.
     :returns: Only the entries for content this layer catalogues.
     """
-    return [name for name in recorded if name in (Profile.__name__, Group.__name__)]
+    return [
+        name for name in recorded if name in (UserProfile.__name__, UserGroup.__name__)
+    ]
 
 
 class TestTheFixtureItself:
@@ -136,11 +138,11 @@ class TestTheFixtureItself:
 
     def test_the_counter_sees_a_real_load(self):
         """The counter is wired up: touching a Profile registers."""
-        profile = next(one for one in self.profiles if isinstance(one, Profile))
+        profile = next(one for one in self.profiles if isinstance(one, UserProfile))
 
         profile.fullname  # noqa: B018 - the point is the side effect
 
-        assert Profile.__name__ in profile_loads(self.loads)
+        assert UserProfile.__name__ in profile_loads(self.loads)
 
 
 class TestEnumerationWakesNothing:

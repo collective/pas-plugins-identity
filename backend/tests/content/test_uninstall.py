@@ -74,7 +74,7 @@ class TestRegistrationsRemoved:
     def test_group_type_removed(self):
         """Both content types go, not just the one anybody remembers."""
         types = api.portal.get_tool("portal_types")
-        assert "IdentityGroup" not in types.objectIds()
+        assert "UserGroup" not in types.objectIds()
 
     def test_group_workflow_removed(self):
         """And both workflows."""

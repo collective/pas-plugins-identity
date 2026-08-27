@@ -2,10 +2,10 @@
 <object meta_type="Plone Workflow Tool"
         name="portal_workflow"
 >
-  <object name="identity_profile_workflow"
+  <object name="user_profile_workflow"
           remove="True"
   />
-  <object name="identity_group_workflow"
+  <object name="user_group_workflow"
           remove="True"
   />
 </object>
