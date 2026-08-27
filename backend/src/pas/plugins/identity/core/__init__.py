@@ -16,12 +16,17 @@ from pas.plugins.identity.core.interfaces import IDriver
 from pas.plugins.identity.core.interfaces import IIdentityStore
 from pas.plugins.identity.core.patches import apply_patches
 from pas.plugins.identity.core.store import IdentityRecord
+from pas.plugins.identity.core.vocabularies import protect_vocabularies
 
 
 # PlonePAS's group tool cannot survive a group that only one of its
 # managers knows about, and this package is the second manager. Applied
 # here because this module is imported by the ZCML that loads the layer.
 apply_patches()
+
+# Served under zope2.View unless something says otherwise, and one of them
+# lists every group on the site.
+protect_vocabularies()
 
 __all__ = [
     "EmailVerified",
