@@ -1,4 +1,19 @@
 #!/bin/bash
+#
+# Vendored from plone/plone-backend, skeleton/docker-entrypoint.sh at tag v6.2.1.
+# Upstream: https://github.com/plone/plone-backend/blob/v6.2.1/skeleton/docker-entrypoint.sh
+#
+# Differences from upstream, and why:
+#
+#   * Adds the `import` and `export` verbs, wired to plone-importer and
+#     plone-exporter. Upstream has no equivalent, and the demo stack's content
+#     round trip runs inside the container, without a checkout.
+#   * Drops the `create-classic` and `create-volto` verbs. Nothing here uses
+#     them; `create-site` with TYPE covers both.
+#
+# When bumping PLONE_VERSION in the Dockerfiles, diff this file against the new
+# tag's upstream copy and carry any change across.
+#
 set -e
 export VENVBIN=/app/bin
 
@@ -156,9 +171,9 @@ elif  [[ "$1" == "console" ]]; then
 elif  [[ "$1" == "run" ]]; then
   exec $sudo $VENVBIN/zconsole run etc/${CONF} "${@:2}"
 elif  [[ "$1" == "import" ]]; then
-  exec $sudo $VENVBIN/plone-importer etc/${CONF} "${@:2}" "${@:3}"
+  exec $sudo $VENVBIN/plone-importer etc/${CONF} "${@:2}"
 elif  [[ "$1" == "export" ]]; then
-  exec $sudo $VENVBIN/plone-exporter etc/${CONF} "${@:2}" "${@:3}"
+  exec $sudo $VENVBIN/plone-exporter etc/${CONF} "${@:2}"
 elif  [[ "$1" == "addzopeuser" ]]; then
   exec $sudo $VENVBIN/addzopeuser -c etc/${CONF} "${@:2}"
 elif  [[ "$1" == "pack" ]]; then

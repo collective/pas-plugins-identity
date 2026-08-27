@@ -1,0 +1,1 @@
+Gave the vendored container entrypoint a header naming the Plone version it was taken from and what differs from it, and stopped its `import` and `export` verbs passing their last argument twice. The duplicate was harmless only because `plone.exportimport` parses with `parse_known_args`. @ericof
