@@ -1,0 +1,1 @@
+Moved the Dex configuration and the Keycloak realm into `tests/_resources/`. They are fixture data for the container stack rather than test packages, and sitting at the top level of `tests/` they read as two more suites. @ericof

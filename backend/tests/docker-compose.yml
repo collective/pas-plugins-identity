@@ -9,11 +9,11 @@ services:
     image: ghcr.io/dexidp/dex:${DEX_VERSION:-v2.44.0}
     command: ['dex', 'serve', '/etc/dex/config.yaml']
     volumes:
-      - ./dex/config.yaml:/etc/dex/config.yaml:ro
+      - ./_resources/dex/config.yaml:/etc/dex/config.yaml:ro
     ports:
       # Fixed rather than ephemeral: Dex publishes its issuer in the discovery
       # document and refuses to be reached under any other URL, so the port
-      # has to match the issuer in dex/config.yaml.
+      # has to match the issuer in _resources/dex/config.yaml.
       - 5556:5556
 
   # Keycloak, for the back-channel logout tests and nothing else. Dex is the
@@ -34,7 +34,7 @@ services:
       KC_HEALTH_ENABLED: 'true'
       KC_HTTP_ENABLED: 'true'
     volumes:
-      - ./keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro
+      - ./_resources/keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro
     # So the container can reach a listener on the host: the test stands one
     # up to catch the logout token Keycloak posts, on an ephemeral port.
     # Docker Desktop resolves host.docker.internal already; this is what

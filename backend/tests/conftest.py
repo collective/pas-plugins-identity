@@ -103,7 +103,7 @@ globals().update(
 #: the end-to-end flow must actually run is the one place nobody is watching.
 REQUIRE_DOCKER = "PAS_IDENTITY_REQUIRE_DOCKER"
 
-#: Credentials of the static Dex user; see ``tests/dex/config.yaml``.
+#: Credentials of the static Dex user; see ``tests/_resources/dex/config.yaml``.
 DEX_USER = {
     "email": "erico@plone.org",
     "password": "plone-test-password",
@@ -181,7 +181,7 @@ def dex_service(docker_ip, docker_services) -> str:
 
     # The port is fixed in the compose file rather than ephemeral: Dex
     # publishes its issuer in the discovery document and refuses to be reached
-    # under any other URL, so the host port has to match dex/config.yaml.
+    # under any other URL, so the host port has to match _resources/dex/config.yaml.
     port = docker_services.port_for("dex", 5556)
     issuer = f"http://{docker_ip}:{port}/dex"
     docker_services.wait_until_responsive(
