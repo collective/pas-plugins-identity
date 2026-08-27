@@ -40,6 +40,17 @@
       <role name="Site Administrator" />
     </permission>
 
+    <!-- Never granted to the profile's owner, in any state, which is the
+         whole reason it is a permission of its own: ``group_ids`` decides
+         which groups a user is in, so writing it is granting yourself
+         roles. -->
+    <permission acquire="False"
+                name="pas.plugins.identity: Edit Profile Group Membership"
+    >
+      <role name="Manager" />
+      <role name="Site Administrator" />
+    </permission>
+
     <permission acquire="False"
                 name="pas.plugins.identity: View Profile"
     >

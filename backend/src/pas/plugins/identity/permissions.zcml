@@ -27,6 +27,16 @@
       title="pas.plugins.identity: Edit Profile"
       />
 
+  <!-- Group membership is not a field its owner may write.
+       ``group_ids`` is what grants a user their roles, so a user who can edit
+       it on their own profile can put themselves in any group on the site.
+       The ordinary edit permission is exactly what the owner of a profile
+       holds, which made self-service and self-promotion the same action. -->
+  <permission
+      id="pas.plugins.identity.content.editgroups"
+      title="pas.plugins.identity: Edit Profile Group Membership"
+      />
+
   <permission
       id="pas.plugins.identity.content.view"
       title="pas.plugins.identity: View Profile"

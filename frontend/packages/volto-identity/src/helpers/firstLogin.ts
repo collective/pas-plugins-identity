@@ -7,6 +7,8 @@
  * @module helpers/firstLogin
  */
 
+import { rememberReturn } from './profileGate';
+
 import type { MyProfile } from '../types';
 
 /**
@@ -64,5 +66,11 @@ export function afterLogin(
   if (!profile?.profile || profile.review_state !== 'incomplete') {
     return fallback;
   }
+  // Where they were heading is not thrown away, it is parked. `ProfileGate`
+  // restores it the moment the profile stops being incomplete, which is what
+  // turns "you must fill this in first" into a detour rather than a dead end.
+  // In the demo that dead end was a user stranded on the identity provider,
+  // mid-way through signing in to a different site.
+  rememberReturn(fallback);
   return `${toAppPath(profile.profile, apiPath)}/edit`;
 }

@@ -144,6 +144,13 @@ export interface MyProfile {
   profile: string | null;
   /** Workflow state, or null when the user has no Profile. */
   review_state: string | null;
+  /**
+   * Required fields the Profile has no value for.
+   *
+   * Why `review_state` is `incomplete`, and what the gate tells the user it
+   * wants. Empty for a complete Profile and for a user without one.
+   */
+  missing: string[];
 }
 
 /**

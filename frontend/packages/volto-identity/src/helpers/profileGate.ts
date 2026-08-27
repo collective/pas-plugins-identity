@@ -35,6 +35,62 @@ export const EXEMPT_PATHS = [
 ];
 
 /**
+ * Where the pending destination is kept while the user fills the form in.
+ *
+ * `sessionStorage` rather than the URL, because the URL does not survive the
+ * step that matters: saving the form navigates to the profile's own view and
+ * drops the query string with it. Rather than the redux store, because a
+ * reload mid-detour would lose that too, and a user who reloads a form they
+ * were sent to should still be returned afterwards.
+ */
+export const RETURN_KEY = 'volto-identity:profile-return';
+
+/**
+ * Remember where the user was going before the gate interrupted them.
+ *
+ * Every access is guarded: `sessionStorage` throws outright in a private
+ * window in some browsers, and does not exist at all during server-side
+ * rendering. Losing the return is a worse journey; throwing here would be a
+ * blank page.
+ *
+ * @param path Site-relative path to come back to.
+ */
+export function rememberReturn(path: string): void {
+  if (typeof window === 'undefined' || !path) {
+    return;
+  }
+  try {
+    window.sessionStorage.setItem(RETURN_KEY, path);
+  } catch {
+    // No storage. The user completes their profile and stays there, which is
+    // where they would have stayed before any of this existed.
+  }
+}
+
+/**
+ * Take the remembered destination, clearing it.
+ *
+ * Reading and clearing together, so a return can never fire twice: the second
+ * navigation would send somebody back to a page they had already left.
+ *
+ * @returns The remembered path, or null.
+ */
+export function takeReturn(): string | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  try {
+    const value = window.sessionStorage.getItem(RETURN_KEY);
+    if (value) {
+      window.sessionStorage.removeItem(RETURN_KEY);
+    }
+    return value || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * The path of a profile's edit form.
  *
  * @param profileUrl The absolute URL the backend reported.

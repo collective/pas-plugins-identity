@@ -1,0 +1,5 @@
+Stopped a user from putting themselves in a group by editing their own profile.
+
+`group_ids` was declared with the same write permission as `fullname`, and the owner of a profile holds that permission on their own profile by design — that is what self-service means. It also meant filling in your name and granting yourself roles were the same action, on the same form, and the form is the one every user is now sent to.
+
+Group membership has a permission of its own, `pas.plugins.identity: Edit Profile Group Membership`, granted to `Manager` and `Site Administrator` in every workflow state and never to the profile's owner. Every other field is unchanged. Found by Érico editing his own profile in the demo. @ericof

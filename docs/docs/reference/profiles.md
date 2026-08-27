@@ -82,7 +82,7 @@ pas.plugins.identity.required_profile_fields
 ```
 
 Empty, which is how it ships, means the fields the profile type itself marks required.
-That is `login` and `email` for the type in this package, and the right answer for a site running its own user type or a behavior that adds a field.
+That is `login`, `email` and `fullname` for the type in this package, and the right answer for a site running its own user type or a behavior that adds a field.
 
 Set it to name fields explicitly:
 
@@ -185,6 +185,16 @@ That is a deliberate act on a folder you chose, which is the difference between 
 The two permissions are separate so that a site filing groups apart from users can open each container to one kind only.
 
 ## Permissions on a profile
+
+Group membership is the exception, and it has a permission of its own:
+
+```text
+pas.plugins.identity: Edit Profile Group Membership
+```
+
+`group_ids` decides which groups a user is in, and therefore which roles they hold, so writing it on your own profile is granting yourself those roles.
+It is granted to `Manager` and `Site Administrator`, in every workflow state, and never to the profile's owner.
+Every other field uses the ordinary edit permission, which the owner does hold: filling in your own name is self-service, and promoting yourself is not.
 
 A user gets `Owner` on their own `UserProfile`, and nothing on anybody else's.
 The role is computed by a local role provider rather than assigned when the profile is created, so there is nothing to keep in step.

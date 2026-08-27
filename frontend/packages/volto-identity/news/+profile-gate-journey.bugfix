@@ -1,0 +1,7 @@
+Made the profile gate explain itself and give the user their journey back.
+
+Two things it did not do, both found by signing in to the demo with a GitHub account that keeps its address private. It dropped the user on an edit form with no indication of why, and once they filled it in it left them there — in that case stranded on the identity provider, half way through signing in to a different site, with no way onward.
+
+The gate now shows a warning naming the fields the backend says are missing, remembers where the user was going before it interrupted them, and sends them there the moment their profile stops being incomplete. First-login routing parks its destination the same way instead of discarding it.
+
+The destination is kept in `sessionStorage`, because the step that matters does not preserve a query string: saving the form navigates to the profile's own view. Every access is guarded, since some browsers throw on storage in a private window and there is none at all during server-side rendering; losing the return is a worse journey, throwing would be a blank page. @ericof

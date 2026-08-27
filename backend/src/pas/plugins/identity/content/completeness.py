@@ -31,6 +31,7 @@ missing anything" has no business reversing it.
 
 from pas.plugins.identity import logger
 from pas.plugins.identity.content.container import PREFIX
+from pas.plugins.identity.content.profile import IUserProfileSchema
 from pas.plugins.identity.content.profile import UserProfile
 from plone import api
 from plone.api.exc import InvalidParameterError
@@ -138,6 +139,44 @@ def missing_fields(profile: UserProfile) -> tuple[str, ...]:
     )
 
 
+def missing_from_brain(brain) -> tuple[str, ...]:
+    """Return the required fields a catalog brain shows no value for.
+
+    The same question as :func:`missing_fields`, asked of a brain so that the
+    caller does not have to wake the object. ``@my-profile`` is answered on
+    every page load by the frontend gate, and this package's whole claim about
+    the catalog is that reading a user costs no object load.
+
+    Every field of the shipped type except the picture is catalog metadata, so
+    in practice this answers completely. A configured field that is *not* a
+    metadata column cannot be judged from a brain and is reported as missing:
+    the workflow state is the authority on whether anything is missing at all,
+    and this list only explains it. Saying too much is a worse-worded prompt;
+    saying too little is a prompt that names nothing.
+
+    :param brain: A brain from the identity catalog.
+    :returns: Field names.
+    """
+    names = configured_fields() or _brain_declared()
+    return tuple(name for name in names if _is_empty(getattr(brain, name, None)))
+
+
+def _brain_declared() -> tuple[str, ...]:
+    """Return the required fields of the shipped type, without an object.
+
+    :func:`_declared` reads them off the object through ``iterSchemata``,
+    which is right when there is one. There is not here, and the FTI's own
+    schema is the closest honest answer.
+
+    :returns: Field names, in schema order.
+    """
+    names = []
+    for name, field in getFieldsInOrder(IUserProfileSchema):
+        if field.required and name not in NEVER_REQUIRED:
+            names.append(name)
+    return tuple(names)
+
+
 def is_complete(profile: UserProfile) -> bool:
     """Return whether a profile carries everything the site requires.
 
@@ -189,6 +228,7 @@ __all__ = [
     "configured_fields",
     "is_complete",
     "missing_fields",
+    "missing_from_brain",
     "reconcile",
     "required_fields",
 ]

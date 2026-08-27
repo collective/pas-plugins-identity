@@ -67,7 +67,11 @@ class IUserProfileSchema(model.Schema, IUserContent):
 
     fullname = schema.TextLine(
         title=_("Full name"),
-        required=False,
+        description=_(
+            "Required: it is how this user is named everywhere the site "
+            "shows them, and a provider is not obliged to send one."
+        ),
+        required=True,
     )
 
     email = schema.TextLine(
@@ -125,7 +129,9 @@ class IUserProfileSchema(model.Schema, IUserContent):
         description="pas.plugins.identity.content.edit",
         location="pas.plugins.identity.content.edit",
         image="pas.plugins.identity.content.edit",
-        group_ids="pas.plugins.identity.content.edit",
+        # Not ``.edit``: see permissions.zcml. The owner of a profile holds
+        # the edit permission on it, and this field is what grants roles.
+        group_ids="pas.plugins.identity.content.editgroups",
     )
     read_permission(
         login="pas.plugins.identity.content.view",

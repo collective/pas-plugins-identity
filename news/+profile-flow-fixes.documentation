@@ -1,0 +1,1 @@
+Documented the separate permission that guards group membership on a profile, and that `fullname` is now required. @ericof

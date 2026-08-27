@@ -44,12 +44,14 @@ class TestWhatIsRequired:
     @pytest.fixture(autouse=True)
     def _setup(self, portal, make_profile) -> None:
         self.portal = portal
-        self.profile = make_profile("alice", email="alice@example.com")
+        self.profile = make_profile(
+            "alice", email="alice@example.com", fullname="Alice Liddell"
+        )
 
     def test_it_defaults_to_what_the_type_requires(self):
         """Read off the object, so a site with its own user type or an extra
         behavior gets the answer for the type it actually has."""
-        assert set(required_fields(self.profile)) == {"login", "email"}
+        assert set(required_fields(self.profile)) == {"login", "email", "fullname"}
 
     def test_the_registry_record_wins(self):
         api.portal.set_registry_record(REQUIRED_FIELDS_RECORD, ("email", "location"))
@@ -60,7 +62,7 @@ class TestWhatIsRequired:
         """Empty means "ask the type", not "require nothing"."""
         api.portal.set_registry_record(REQUIRED_FIELDS_RECORD, ())
 
-        assert set(required_fields(self.profile)) == {"login", "email"}
+        assert set(required_fields(self.profile)) == {"login", "email", "fullname"}
 
     def test_the_userid_is_never_required(self):
         """It is the object's own id. Asking a user for it would be asking
@@ -74,7 +76,9 @@ class TestWhatIsMissing:
     @pytest.fixture(autouse=True)
     def _setup(self, portal, make_profile) -> None:
         self.portal = portal
-        self.profile = make_profile("alice", email="alice@example.com")
+        self.profile = make_profile(
+            "alice", email="alice@example.com", fullname="Alice Liddell"
+        )
 
     def test_a_filled_profile_is_missing_nothing(self):
         assert missing_fields(self.profile) == ()
@@ -120,7 +124,9 @@ class TestReconcile:
     @pytest.fixture(autouse=True)
     def _setup(self, portal, make_profile) -> None:
         self.portal = portal
-        self.profile = make_profile("alice", email="alice@example.com")
+        self.profile = make_profile(
+            "alice", email="alice@example.com", fullname="Alice Liddell"
+        )
 
     def test_a_complete_profile_is_completed(self):
         api.content.transition(obj=self.profile, transition="reopen")
@@ -179,7 +185,9 @@ class TestWritingToAProfileReconcilesIt:
     def _setup(self, portal, make_profile) -> None:
         self.portal = portal
         api.portal.set_registry_record(REQUIRED_FIELDS_RECORD, ("email", "location"))
-        self.profile = make_profile("alice", email="alice@example.com")
+        self.profile = make_profile(
+            "alice", email="alice@example.com", fullname="Alice Liddell"
+        )
 
     def test_it_starts_incomplete(self):
         """``location`` is required here and the profile has none."""
