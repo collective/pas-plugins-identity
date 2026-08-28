@@ -1,0 +1,5 @@
+The federation demo maps `content-site-editors`, and dana is now in it.
+
+The relying party's group map is keyed on the *provider's* group ids, and the provider releases whatever its users are members of. Moving the map to `content-site-editors` while the only demo user was still in `site-editors` alone would have granted nothing: the claim arrives without that group, the map finds no row, and the federated sign-in produces a user with no `Reviewers` and no error anywhere. dana is a member of both groups now, so the row matches.
+
+A test keeps it that way. Every key in the demo relying party's map has to be a group at least one exported IdP profile belongs to — the whole failure is silent, so it is checked rather than remembered. @ericof

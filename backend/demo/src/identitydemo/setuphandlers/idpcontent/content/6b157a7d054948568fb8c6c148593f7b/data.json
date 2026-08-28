@@ -10,7 +10,8 @@
   "exportimport.conversation": [],
   "fullname": "Dana Example",
   "group_ids": [
-    "site-editors"
+    "site-editors",
+    "content-site-editors"
   ],
   "home_page": null,
   "id": "dana",

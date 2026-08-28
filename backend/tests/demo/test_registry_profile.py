@@ -118,7 +118,9 @@ class TestDemoRPRegistry:
     def test_the_group_map_is_a_mapping(self):
         """Written as a Python ``repr`` it imports as one long string, and the
         sign-in that applies it maps nothing."""
-        assert get_provider("demo-idp").groupmap == {"site-editors": "Reviewers"}
+        assert get_provider("demo-idp").groupmap == {
+            "content-site-editors": "Reviewers"
+        }
 
     def test_the_mapped_group_exists_on_this_site(self):
         """A row pointing at a group this site does not have is skipped and
@@ -137,3 +139,57 @@ class TestDemoRPRegistry:
         # directly; everything else has to be a real claim.
         published |= {"fullname", "picture_url"}
         assert set(get_provider("demo-idp").propertymap) <= published
+
+
+class TestTheMapNamesGroupsSomebodyIsIn:
+    """A groupmap row is only worth having if the provider ever releases it.
+
+    The relying party's map is keyed on the *provider's* group ids, and the
+    provider releases whatever its users are actually members of. A row keyed
+    on a group nobody belongs to is not an error anywhere: the claim arrives
+    without it, the map finds no row, and the federated user signs in with
+    nothing granted. No exception, no log line, and a demo that looks like it
+    works until somebody checks what roles they got.
+
+    That is exactly what a key rename produced -- the map moved to
+    ``content-site-editors`` while the only demo user was still in
+    ``site-editors`` -- so it is checked rather than remembered.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, demo_registry) -> None:
+        self.portal = portal
+        demo_registry("rp")
+        self.groupmap = get_provider("demo-idp").groupmap
+
+    def released_groups(self) -> set[str]:
+        """Return every group an IdP demo profile belongs to.
+
+        Read off the exported content the demo imports, which is the only
+        statement of who is in what -- the provider builds the claim from it.
+
+        :returns: The group ids at least one profile is a member of.
+        """
+        import json
+        import pathlib
+
+        content = (
+            pathlib.Path(__file__).parent.parent.parent
+            / "demo/src/identitydemo/setuphandlers/idpcontent/content"
+        )
+        released: set[str] = set()
+        for path in content.glob("*/data.json"):
+            record = json.loads(path.read_text())
+            if record.get("@type") == "UserProfile":
+                released.update(record.get("group_ids") or ())
+        return released
+
+    def test_the_demo_content_is_readable(self):
+        """So the check below cannot pass by finding nothing."""
+        assert self.released_groups()
+
+    def test_every_mapped_group_has_a_member(self):
+        assert set(self.groupmap) <= self.released_groups(), (
+            "the relying party maps a provider group no demo user is in, so "
+            "the federated sign-in grants nothing"
+        )
