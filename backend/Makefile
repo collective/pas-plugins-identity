@@ -217,9 +217,14 @@ check-imports: ## Enforce the core/content/server layer boundary
 	@# silently, with a banner and a non-zero exit and no message.
 	@# The contract is a property of this package's own source, so checking it
 	@# in isolation is the more honest thing anyway. --no-deps keeps it quick.
+	@# grimp is pinned below 3.16: that release ships no wheel for the
+	@# Python this venv is built with, so uv falls back to building it
+	@# and maturin fails for want of a Rust toolchain. The failed
+	@# install leaves an empty venv behind, so the symptom is a missing
+	@# `lint-imports` rather than anything mentioning wheels.
 	@rm -rf $(BACKEND_FOLDER)/.venv-imports && \
 	uv venv $(UV_VENV_ARGS) $(BACKEND_FOLDER)/.venv-imports && \
-	VIRTUAL_ENV=$(BACKEND_FOLDER)/.venv-imports uv pip install -q import-linter && \
+	VIRTUAL_ENV=$(BACKEND_FOLDER)/.venv-imports uv pip install -q "grimp<3.16" import-linter && \
 	VIRTUAL_ENV=$(BACKEND_FOLDER)/.venv-imports uv pip install -q --no-deps . && \
 	$(BACKEND_FOLDER)/.venv-imports/bin/lint-imports --config pyproject.toml && \
 	rm -rf $(BACKEND_FOLDER)/.venv-imports
