@@ -33,6 +33,7 @@ this plugin, not an incidental property.
 """
 
 from AccessControl.class_init import InitializeClass
+from pas.plugins.identity import logger
 from pas.plugins.identity.content.catalog import group_brains
 from pas.plugins.identity.content.catalog import profile_brains
 from pas.plugins.identity.content.catalog import PROFILE_PORTAL_TYPE
@@ -206,17 +207,92 @@ class IdentityProfilePlugin(BasePlugin):
         them, from the user's own preferences form, from ``@users``, from the
         login path, returns successfully having done nothing.
 
+        **A field the Profile has no value for is filled from the plugins
+        below.** The sheet still *declares* every field, because that is what
+        routes a write here rather than into ``portal_memberdata`` -- but
+        declaring it with an empty string used to mean the search stopped at
+        this sheet and answered "nothing", which is not the same answer as
+        "this user has no fullname". Every consumer read the empty string:
+        the user listing, the author page, and -- how it was found -- the
+        ``[server]`` layer, which omits an empty claim and so released an
+        ``id_token`` carrying neither ``name`` nor ``email`` for a user who
+        plainly had both.
+
+        Declaring the field and filling it from below is the only combination
+        that gets both halves right. Omitting the field instead reads
+        correctly and then sends the *write* to ``portal_memberdata``, which
+        quietly stops the Profile being the store for every field it does not
+        already hold.
+
         :param user: The PAS user.
-        :param request: The request, unused.
+        :param request: The request, passed to the plugins consulted for a
+            value this Profile does not carry.
         :returns: A property sheet, or ``None`` when the user has no Profile.
         """
         brain = self._brain_for_userid(user.getId())
         if brain is None:
             return None
-        return MutablePropertySheet(
-            self.id,
-            **{field: getattr(brain, field, None) or "" for field in PROPERTY_FIELDS},
-        )
+        values = {field: getattr(brain, field, None) or "" for field in PROPERTY_FIELDS}
+        missing = [field for field, value in values.items() if not value]
+        if missing:
+            values.update(self._inherited(user, request, missing))
+        return MutablePropertySheet(self.id, **values)
+
+    def _inherited(
+        self,
+        user: PropertiedUser,
+        request: HTTPRequest | None,
+        fields: list[str],
+    ) -> dict[str, str]:
+        """Return values for *fields* from the property plugins below this one.
+
+        Asked of the other ``IPropertiesPlugin`` plugins in their configured
+        order, which is the order PAS itself would have consulted had this
+        sheet not declared the field. Self is skipped, so a plugin cannot
+        answer its own question.
+
+        A properties plugin may answer with a property sheet **or** with a
+        plain mapping -- PAS accepts both, and ``PluggableAuthService``'s own
+        ``_findUser`` hands whatever comes back to ``addPropertysheet``
+        without looking. Asking only for ``getProperty`` here raised an
+        ``AttributeError`` from inside ``getUserById``, which surfaces as
+        every user on the site becoming unfetchable rather than as anything
+        about properties.
+
+        :param user: The PAS user.
+        :param request: The request, handed on unchanged.
+        :param fields: Fields this Profile has no value for.
+        :returns: Field to value, holding only the fields something answered.
+        """
+        found: dict[str, str] = {}
+        plugins = self._getPAS()._getOb("plugins")
+        for plugin_id, plugin in plugins.listPlugins(IPropertiesPlugin):
+            if plugin_id == self.id:
+                continue
+            data = plugin.getPropertiesForUser(user, request)
+            if data is None:
+                continue
+            read = data.get if isinstance(data, dict) else data.getProperty
+            for field in fields:
+                if field in found:
+                    continue
+                try:
+                    value = read(field, "")
+                except Exception:
+                    # One misbehaving properties plugin must not make every
+                    # user on the site unfetchable: this runs inside
+                    # `getUserById`.
+                    logger.exception(
+                        "Properties plugin %s failed answering for %s",
+                        plugin_id,
+                        user.getId(),
+                    )
+                    break
+                if value:
+                    found[field] = value
+            if len(found) == len(fields):
+                break
+        return found
 
     def setPropertiesForUser(
         self, user: PropertiedUser, propertysheet: MutablePropertySheet

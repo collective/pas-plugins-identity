@@ -148,15 +148,33 @@ class TestPropertiesAreServed:
         )
         assert api.user.get(userid="bob").getProperty("fullname") == "Bob"
 
-    def test_empty_profile_field_is_served_as_empty(self):
-        """The Profile is the source of truth, including when it is blank.
+    def test_empty_profile_field_falls_through(self):
+        """A blank Profile field is not an answer of its own.
 
-        Falling through to the seeded claim would make a field the user
-        deliberately cleared reappear at the next page load.
+        **This reverses a decision.** It used to assert the opposite -- the
+        Profile as the source of truth including when blank -- on the grounds
+        that falling through would make a field the user deliberately cleared
+        reappear at the next page load. That cost turned out to be much
+        smaller than the one it was paying for.
+
+        PAS stops at the first sheet that *has* a property, not the first with
+        a value for it, and this plugin declares all five on every Profile
+        because that is what routes a write here rather than into
+        ``portal_memberdata``. So "blank means blank" did not stay inside this
+        layer: it erased what ``portal_memberdata`` held from the user
+        listing, the author page and the ``id_token``, for every user whose
+        Profile was minted before it carried the field -- which is every user
+        who existed when the layer was installed, and every federated user
+        whose provider withheld a claim.
+
+        The reappearing-value case is real and is the accepted trade
+        (Érico, 2026-08-28). It needs a user to clear a field through the
+        dexterity edit form, which writes the object rather than the sheet and
+        so leaves ``portal_memberdata`` holding the old value.
         """
         self.make_user("alice", seeded={"fullname": "A. Liddell"})
 
-        assert api.user.get(userid="alice").getProperty("fullname") == ""
+        assert api.user.get(userid="alice").getProperty("fullname") == "A. Liddell"
 
 
 class TestEnumeration:

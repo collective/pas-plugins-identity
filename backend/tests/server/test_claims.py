@@ -17,6 +17,7 @@ from pas.plugins.identity.server.claims import claims_for
 from pas.plugins.identity.server.claims import released
 from pas.plugins.identity.server.tokens import ISSUER_RECORD
 from plone import api
+from zope.lifecycleevent import modified
 
 import base64
 import pytest
@@ -375,3 +376,64 @@ class TestEmailVerified:
 
     def test_it_is_not_released_without_the_email_scope(self):
         assert "email_verified" not in claims_for(USERID, "profile")
+
+
+@pytest.mark.portal(profiles=[PROFILE_ID, PROFILE_LAYER_ID])
+class TestClaimsOnASiteWithProfiles:
+    """The two claims that went missing in the federation demo.
+
+    This is the configuration the demo runs, and until now only ``picture``
+    was covered in it -- ``name`` and ``email`` were tested on a site *without*
+    the ``[content]`` layer, where they come from ``portal_memberdata`` and
+    nothing is in front of them.
+
+    Install that layer and its plugin serves the property sheet. A Profile
+    that does not carry a field used to answer for it anyway, with an empty
+    string, and :func:`claims_for` omits an empty value -- so the ``id_token``
+    went out with neither claim for a user whose account plainly had both, and
+    the relying party seeded an account with no name and no address. Nothing
+    downstream can tell that apart from a user who never supplied one.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, user) -> None:
+        from pas.plugins.identity.content.catalog import PROFILE_PORTAL_TYPE
+        from pas.plugins.identity.content.subscribers import get_container
+
+        self.portal = portal
+        api.portal.set_registry_record(ISSUER_RECORD, "http://id.example.org")
+        with api.env.adopt_roles(["Manager"]):
+            # Minted from claims that carried neither, which is what a
+            # provider withholding an address leaves behind.
+            self.profile = api.content.create(
+                container=get_container(create=True),
+                type=PROFILE_PORTAL_TYPE,
+                id=USERID,
+                userid=USERID,
+                login=USERID,
+            )
+
+    def test_the_name_is_still_released(self):
+        assert claims_for(USERID, "openid profile")["name"] == "Alice Liddell"
+
+    def test_the_address_is_still_released(self):
+        assert claims_for(USERID, "openid email")["email"] == ADDRESS
+
+    def test_the_profile_wins_when_it_carries_the_field(self):
+        """Falling back must not outrank a Profile that has an answer."""
+        with api.env.adopt_roles(["Manager"]):
+            self.profile.fullname = "Alice On Her Profile"
+            modified(self.profile)
+
+        assert claims_for(USERID, "openid profile")["name"] == "Alice On Her Profile"
+
+    def test_a_claim_nobody_has_a_value_for_is_still_omitted(self):
+        """Inheriting a value is not inventing one.
+
+        Cleared in `portal_memberdata` as well, so neither store has an
+        answer and the claim has to stay absent rather than going out empty.
+        """
+        with api.env.adopt_roles(["Manager"]):
+            api.user.get(userid=USERID).setMemberProperties({"location": ""})
+
+        assert "address" not in claims_for(USERID, "openid address")

@@ -20,6 +20,7 @@ from pas.plugins.identity.content.pas import PLUGIN_ID
 from pas.plugins.identity.core.interfaces import IOwnsUserProperties
 from plone import api
 from Products.PlonePAS.interfaces.propertysheets import IMutablePropertySheet
+from zope.lifecycleevent import modified
 
 import pytest
 
@@ -130,3 +131,70 @@ class TestCoreStandsAside:
         core = self.portal.acl_users[CORE_PLUGIN_ID]
 
         assert not core._properties_owned_elsewhere("bob")
+
+
+class TestAFieldTheProfileDoesNotCarry:
+    """An empty Profile field must not erase what the plugins below know.
+
+    The sheet has to *declare* every field or a write stops reaching the
+    Profile -- that is what the rest of this module covers. Declaring a field
+    the Profile has no value for used to mean the sheet answered an empty
+    string and PAS looked no further, because it stops at the first sheet that
+    *has* the property rather than the first that has a value for it.
+
+    So a user with a fullname in ``portal_memberdata`` and a Profile that had
+    never carried one read back as having no fullname at all -- in the user
+    listing, on the author page, and in the ``id_token`` the ``[server]``
+    layer mints, which omits an empty claim and therefore released neither
+    ``name`` nor ``email`` for a user who plainly had both.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, acl_users) -> None:
+        self.portal = portal
+        acl_users.source_users.addUser("bob", "bob", "placeholder-password")
+        self.member = api.user.get(userid="bob")
+        # What `portal_memberdata` holds before there is any Profile.
+        self.member.setMemberProperties({
+            "fullname": "Bob Example",
+            "email": "bob@example.com",
+        })
+        self.profile = api.content.create(
+            container=portal["identity-profiles"],
+            type=PROFILE_PORTAL_TYPE,
+            id="bob",
+            userid="bob",
+            login="bob@example.com",
+        )
+
+    def test_the_value_below_is_still_readable(self):
+        """The bug: an empty string, because this sheet answered first."""
+        assert api.user.get(userid="bob").getProperty("fullname") == "Bob Example"
+
+    def test_the_profile_still_wins_when_it_has_one(self):
+        """Falling back is not deferring: a Profile that carries the field is
+        still the answer, which is the whole reason this plugin is on top."""
+        self.profile.fullname = "Bob On His Profile"
+        modified(self.profile)
+
+        assert (
+            api.user.get(userid="bob").getProperty("fullname") == "Bob On His Profile"
+        )
+
+    def test_a_field_nothing_below_knows_is_still_empty(self):
+        """Inheriting a value is not inventing one."""
+        assert api.user.get(userid="bob").getProperty("location", "") == ""
+
+    def test_the_write_still_lands_on_the_profile(self):
+        """The half that omitting the field would have broken.
+
+        `setMemberProperties` routes to the first sheet that *has* the
+        property, so a sheet that dropped its empty fields would send this
+        write past the Profile and into `portal_memberdata` -- leaving the
+        Profile silently not the store for any field it did not already hold.
+        """
+        api.user.get(userid="bob").setMemberProperties({
+            "home_page": "https://bob.example.org"
+        })
+
+        assert self.profile.home_page == "https://bob.example.org"
