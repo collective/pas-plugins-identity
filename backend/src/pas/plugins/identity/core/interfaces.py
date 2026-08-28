@@ -19,6 +19,23 @@ type JSONValue = (
 type JSONDict = dict[str, JSONValue]
 
 
+class EmailChoice(TypedDict):
+    """One address a provider offers, as something to be chosen between.
+
+    :ivar address: The address itself, lowercased.
+    :ivar verified: Whether the provider says it checked it. Carried so the
+        choice can say so, never so this package can act on it: a provider
+        asserting ``verified`` is not evidence here, and only an address the
+        *site* confirmed with a magic link ever counts as verified.
+    :ivar primary: Whether the provider calls it the account's main address.
+        A hint for ordering the choice, not a decision.
+    """
+
+    address: str
+    verified: bool
+    primary: bool
+
+
 class Claims(TypedDict, total=False):
     """Driver-normalized claims about an external identity.
 
@@ -31,6 +48,14 @@ class Claims(TypedDict, total=False):
     :ivar picture_url: URL of an avatar image.
     :ivar username: Provider-side login name.
     :ivar raw: The untouched provider payload, for driver-specific consumers.
+    :ivar email_choices: Addresses the provider says belong to this account,
+        when it offers more than one and none of them may be picked on the
+        user's behalf. Not a claim any provider sends and not an OIDC name --
+        it is this package's own, which is why nothing maps it onto a profile
+        field and why ``email`` is left empty when it is populated. A
+        provider that offers one address, or none, leaves it empty and fills
+        ``email`` as before. See
+        :class:`~pas.plugins.identity.core.drivers.github.GitHubDriver`.
     """
 
     fullname: str
@@ -39,6 +64,7 @@ class Claims(TypedDict, total=False):
     picture_url: str
     username: str
     raw: JSONDict
+    email_choices: tuple[EmailChoice, ...]
 
 
 class IDriver(Interface):

@@ -103,32 +103,14 @@ class TestTheAddressComesFromASecondCall:
 
         assert self.driver.normalize_claims(merged)["email_verified"] is True
 
-    def test_the_primary_verified_address_wins(self):
-        """An account may hold several."""
+    def test_the_address_is_lowercased(self):
+        """Case-insensitive in practice, and the store keys identities on it."""
         merged = self.driver.merge_enrichment(
             {"id": 1, "login": "ghost"},
-            [
-                {"email": "old@example.com", "primary": False, "verified": True},
-                {"email": "me@example.com", "primary": True, "verified": True},
-            ],
+            [{"email": "Ghost@Example.COM", "primary": True, "verified": True}],
         )
 
-        assert merged["email"] == "me@example.com"
-
-    def test_a_verified_address_beats_an_unverified_primary(self):
-        merged = self.driver.merge_enrichment(
-            {"id": 1, "login": "ghost"},
-            [
-                {
-                    "email": "unconfirmed@example.com",
-                    "primary": True,
-                    "verified": False,
-                },
-                {"email": "real@example.com", "primary": False, "verified": True},
-            ],
-        )
-
-        assert merged["email"] == "real@example.com"
+        assert self.driver.normalize_claims(merged)["email"] == "ghost@example.com"
 
     def test_an_unverified_primary_is_still_used(self):
         """An address is worth having even when nobody will auto-link on it:
@@ -152,3 +134,108 @@ class TestTheAddressComesFromASecondCall:
         payload = {"id": 1, "login": "ghost", "email": "from-user@example.com"}
 
         assert self.driver.merge_enrichment(payload, answer) == payload
+
+
+class TestSeveralAddressesAreAQuestion:
+    """One address is an answer; several are a question.
+
+    Picking the primary, or the first verified one, is a guess made on the
+    user's behalf about which identity they are here as -- and the address
+    decides which existing account a verified-email link would attach to. So
+    an account with more than one usable address has none of them chosen
+    here: the list is carried forward and the user is asked on their profile,
+    which the required-information gate holds them on until they answer.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self) -> None:
+        self.driver = GitHubDriver()
+        self.several = [
+            {"email": "noreply@users.noreply.github.com", "verified": True},
+            {"email": "me@example.com", "primary": True, "verified": True},
+            {"email": "old@example.com", "verified": False},
+        ]
+
+    def claims(self, addresses):
+        """Run a payload and an address list through both steps.
+
+        :param addresses: What ``GET /user/emails`` answered.
+        :returns: The normalized claims.
+        """
+        merged = self.driver.merge_enrichment({"id": 1, "login": "ghost"}, addresses)
+        return self.driver.normalize_claims(merged)
+
+    def test_no_address_is_chosen(self):
+        """The bug this replaces: `me@example.com` used to win here."""
+        assert self.claims(self.several)["email"] == ""
+
+    def test_nothing_is_reported_as_verified_either(self):
+        """An unanswered question cannot satisfy link-by-verified-email."""
+        assert self.claims(self.several)["email_verified"] is False
+
+    def test_every_address_is_offered(self):
+        choices = self.claims(self.several)["email_choices"]
+
+        assert {choice["address"] for choice in choices} == {
+            "me@example.com",
+            "noreply@users.noreply.github.com",
+            "old@example.com",
+        }
+
+    def test_the_primary_is_offered_first(self):
+        """A hint for ordering the choice, not a decision: it is presented
+        first and still has to be picked."""
+        assert self.claims(self.several)["email_choices"][0]["address"] == (
+            "me@example.com"
+        )
+
+    def test_verified_addresses_are_offered_before_unverified(self):
+        choices = self.claims(self.several)["email_choices"]
+
+        assert [choice["verified"] for choice in choices] == [True, True, False]
+
+    def test_the_provider_order_survives_within_a_group(self):
+        """`sorted` is stable, so a list that does not change at the provider
+        does not reorder itself between two logins."""
+        addresses = [
+            {"email": "b@example.com", "verified": True},
+            {"email": "a@example.com", "verified": True},
+        ]
+
+        choices = self.claims(addresses)["email_choices"]
+
+        assert [choice["address"] for choice in choices] == [
+            "b@example.com",
+            "a@example.com",
+        ]
+
+    def test_a_single_address_is_not_a_question(self):
+        """Nothing to decide, so it is used exactly as a provider that sent
+        one address would be -- and the user is never asked."""
+        claims = self.claims([{"email": "only@example.com", "verified": True}])
+
+        assert claims["email"] == "only@example.com"
+        assert claims.get("email_choices", ()) == ()
+
+    def test_a_repeated_address_is_not_a_choice(self):
+        """Offering the same address twice is a question with one answer."""
+        claims = self.claims([
+            {"email": "me@example.com", "primary": True, "verified": True},
+            {"email": "ME@example.com", "verified": False},
+        ])
+
+        assert claims["email"] == "me@example.com"
+        assert claims.get("email_choices", ()) == ()
+
+    def test_the_carrier_key_does_not_leak_into_raw(self):
+        """`raw` is documented as the untouched provider payload, and the key
+        used to carry the list between the two steps is this package's."""
+        raw = self.claims(self.several)["raw"]
+
+        assert GitHubDriver.ADDRESSES_KEY not in raw
+        assert not any(key.startswith("_pas_plugins") for key in raw)
+
+    def test_an_account_with_no_addresses_offers_no_choice(self):
+        claims = self.claims([])
+
+        assert claims.get("email_choices", ()) == ()

@@ -17,10 +17,24 @@ same form. A loop, produced by a registry record and nothing else.
 So the service adds what the site requires to what the type requires. It does
 not remove anything: a field the type marks required stays required whatever
 the record says, because the type is the one that cannot store an empty value.
+
+**It also answers the address question.** A provider that offered several
+addresses had none of them chosen -- see
+:mod:`pas.plugins.identity.content.emailchoices` -- so the profile arrives
+without one and the gate holds its owner on this form. Asking them to retype
+an address the site was handed a list of would be a poor way to end that, so
+while ``email`` is still empty the schema carries the offered addresses and
+Volto renders a choice instead of an empty box.
+
+Advisory rather than binding, and deliberately: the field is a ``TextLine``
+either way, so a ``PATCH`` carrying an address that was never offered is still
+accepted. The list is what the person was handed, not the set of addresses
+they are allowed to have.
 """
 
 from pas.plugins.identity.content.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.content.completeness import configured_fields
+from pas.plugins.identity.content.emailchoices import offered_addresses
 from pas.plugins.identity.core.pas.plugin import USER_CONTENT_TYPE_RECORD
 from plone import api
 from plone.api.exc import InvalidParameterError
@@ -46,6 +60,24 @@ def user_content_type() -> str:
 
 class ProfileTypesGet(TypesGet):
     """``@types``, with the site's required profile fields added."""
+
+    def __init__(self, context, request) -> None:
+        """Bind the service to its context and request.
+
+        ``TypesGet.__init__`` calls ``super().__init__(context, request)``
+        and the chain above it ends at ``object``: ``plone.rest`` injects
+        those attributes through the class it publishes rather than through
+        an ``__init__``, so the factory class on its own cannot be
+        constructed and cannot be tested without standing up the publisher.
+        Same reason and same fix as
+        :class:`~pas.plugins.identity.core.services.base.IdentityService`.
+
+        :param context: The context the service was traversed on.
+        :param request: The current request.
+        """
+        self.context = context
+        self.request = request
+        self.params = []
 
     def reply_for_type(self):
         """Return the type's JSON schema, with ``required`` corrected.
@@ -74,7 +106,70 @@ class ProfileTypesGet(TypesGet):
             if name in properties and name not in required:
                 required.append(name)
         schema["required"] = required
+        self._offer_addresses(properties)
         return schema
+
+    def _offer_addresses(self, properties: dict) -> None:
+        """Put the offered addresses into the ``email`` field's schema.
+
+        Only while the question is open. Once the profile carries an address
+        the person has answered, and turning their own field into a list of
+        somebody else's suggestions would be a worse form than the plain box.
+
+        ``enum``/``enumNames``/``choices`` is the trio ``plone.restapi``
+        emits for a ``Choice`` field, so a widget that renders one of those
+        renders this without being taught anything new.
+
+        :param properties: The schema's properties, edited in place.
+        """
+        email = properties.get("email")
+        if not isinstance(email, dict):
+            return
+        userid = api.user.get_current().getId()
+        if not userid or self._has_address(userid):
+            return
+        offered = offered_addresses(userid)
+        if not offered:
+            return
+        addresses = [choice["address"] for choice in offered]
+        email["enum"] = addresses
+        email["enumNames"] = [self._label(choice) for choice in offered]
+        email["choices"] = [
+            [choice["address"], self._label(choice)] for choice in offered
+        ]
+
+    @staticmethod
+    def _label(choice: dict) -> str:
+        """Describe one offered address to the person choosing.
+
+        Named by the provider that offered it, because somebody with two
+        linked accounts is being shown two lists merged into one and the
+        address alone does not say which is which.
+
+        :param choice: One entry from
+            :func:`~pas.plugins.identity.content.emailchoices.offered_addresses`.
+        :returns: The label.
+        """
+        provider = choice.get("provider") or ""
+        return f"{choice['address']} ({provider})" if provider else choice["address"]
+
+    @staticmethod
+    def _has_address(userid: str) -> bool:
+        """Report whether this user's profile already carries an address.
+
+        Off the catalog brain, like everything else that asks a question about
+        a profile on a request that is not about the profile.
+
+        :param userid: The current user's id.
+        :returns: Whether an address is already recorded.
+        """
+        from pas.plugins.identity.content.catalog import query_catalog
+
+        catalog = query_catalog()
+        if catalog is None:
+            return False
+        brains = catalog.unrestrictedSearchResults(userid=userid)
+        return bool(brains and (getattr(brains[0], "email", "") or "").strip())
 
 
 __all__ = ["ProfileTypesGet", "user_content_type"]

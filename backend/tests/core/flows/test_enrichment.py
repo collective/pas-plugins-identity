@@ -13,6 +13,7 @@ Raising instead would turn a missing address into a failed login.
 """
 
 from pas.plugins.identity.core.controlpanel import ProviderConfig
+from pas.plugins.identity.core.drivers.github import GitHubDriver
 from pas.plugins.identity.core.flows import FlowManager
 
 import pytest
@@ -44,6 +45,9 @@ ADDRESSES = [
     {"email": "old@example.com", "primary": False, "verified": True},
     {"email": "ghost@example.com", "primary": True, "verified": True},
 ]
+
+#: An account with nothing to decide between.
+ONE_ADDRESS = [{"email": "ghost@example.com", "primary": True, "verified": True}]
 
 
 class StubResponse:
@@ -130,9 +134,9 @@ class TestTheAddressIsFetched:
 
         assert client.requested == ["https://api.github.com/user/emails"]
 
-    def test_the_address_reaches_the_payload(self):
+    def test_a_single_address_reaches_the_payload(self):
         """The whole point: `/user` carried `None` for a private address."""
-        client = StubClient(StubResponse(ADDRESSES))
+        client = StubClient(StubResponse(ONE_ADDRESS))
 
         payload = self.manager._enrich(client, self.github, METADATA, USER)
 
@@ -141,11 +145,21 @@ class TestTheAddressIsFetched:
     def test_verification_reaches_the_payload_too(self):
         """`/user` has no `email_verified` key at all, so link-by-verified-
         email could never match a GitHub identity."""
-        client = StubClient(StubResponse(ADDRESSES))
+        client = StubClient(StubResponse(ONE_ADDRESS))
 
         payload = self.manager._enrich(client, self.github, METADATA, USER)
 
         assert payload["email_verified"] is True
+
+    def test_several_addresses_reach_the_payload_unchosen(self):
+        """The flow's job is to fetch and hand over; which address is used --
+        or that none is, and the user is asked -- belongs to the driver."""
+        client = StubClient(StubResponse(ADDRESSES))
+
+        payload = self.manager._enrich(client, self.github, METADATA, USER)
+
+        assert payload.get("email") in (None, "")
+        assert len(payload[GitHubDriver.ADDRESSES_KEY]) == 2
 
     def test_nothing_else_in_the_payload_is_disturbed(self):
         client = StubClient(StubResponse(ADDRESSES))
