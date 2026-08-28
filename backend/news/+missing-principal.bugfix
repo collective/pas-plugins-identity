@@ -1,0 +1,7 @@
+A login that resolves to an account nothing created now says so instead of raising `AttributeError`.
+
+PAS answers with a principal whether or not anything became the record behind it. On an ordinary site core writes a `source_users` row; on a site that keeps its users as content the object *is* the account and creating it is the site's own job. A site with those records set and nothing claiming its users therefore authenticates people into accounts that do not exist, and every later lookup of the userid returns `None`.
+
+The first line to dereference one was the token minting: `AttributeError: 'NoneType' object has no attribute 'getId'`, from a traceback naming neither the user nor the reason. The warning that says exactly what happened was already being logged two lines above it and read as unrelated.
+
+`mint_token` now raises `PrincipalUnavailable`, naming the userid and what to look for. The callback and the magic-link confirmation both answer 500 with a message saying the site has no account for the user, and log the detail. Deliberately not the 501 they answer when the JWT plugin is missing: that one means the site cannot mint tokens at all, and reporting one as the other sends whoever reads it to the wrong control panel. @ericof

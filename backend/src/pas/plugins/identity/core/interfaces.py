@@ -328,6 +328,22 @@ class LockoutRefused(Exception):
     """Unlinking would leave the account with no way to authenticate."""
 
 
+class PrincipalUnavailable(Exception):
+    """Authentication succeeded and produced a userid nothing can serve.
+
+    A login mints a userid and something is supposed to become the account
+    the rest of Plone can see: a ``source_users`` row on an ordinary site,
+    and on a site that keeps its users as content, the object -- created by
+    whatever the site configured to claim it. When nothing does, PAS still
+    answers with a principal and every later lookup of it returns ``None``.
+
+    That state is a site configuration this package cannot fix from inside a
+    login, and it is raised rather than returned because the alternative is
+    what it replaced: an ``AttributeError`` on ``NoneType`` from whichever
+    line happened to touch the user first.
+    """
+
+
 class ClaimsError(ValueError):
     """A provider payload could not be normalized."""
 

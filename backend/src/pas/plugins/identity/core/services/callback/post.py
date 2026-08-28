@@ -24,6 +24,7 @@ from pas.plugins.identity.core.interfaces import ClaimsError
 from pas.plugins.identity.core.interfaces import FlowError
 from pas.plugins.identity.core.interfaces import IdentityCollision
 from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity.core.interfaces import PrincipalUnavailable
 from pas.plugins.identity.core.interfaces import ProviderUnusable
 from pas.plugins.identity.core.pas import CREDENTIALS_KEY
 from pas.plugins.identity.core.pas import PLUGIN_ID
@@ -107,7 +108,36 @@ class IdentityCallback(IdentityService):
             return self._link(attempt.link_for, provider.provider_id, subject, claims)
 
         userid = self._authenticate(provider.provider_id, subject, claims)
-        token = mint_token(userid)
+        token = self._token_for(userid)
+        if isinstance(token, dict):
+            return token
+        return {"token": token, "came_from": attempt.came_from}
+
+    def _token_for(self, userid: str) -> str | JSONDict:
+        """Mint the token, or return the error body that replaces it.
+
+        Two ways this fails and they are not the same answer, so they are not
+        the same status. A site with no JWT plugin could not have logged
+        anybody in by any route; a userid nothing resolves means the login
+        worked and the account it names does not exist.
+
+        :param userid: The userid authentication resolved to.
+        :returns: The encoded token, or an error body to answer with.
+        """
+        try:
+            token = mint_token(userid)
+        except PrincipalUnavailable as exc:
+            # A site configuration, not a bad request, and the operator is
+            # the only one who can fix it -- so it is logged in full and the
+            # caller is told the site is misconfigured rather than that they
+            # failed to authenticate.
+            logger.error("%s", exc)
+            return self._error(
+                500,
+                "Login failed",
+                "Authentication succeeded but this site has no account for "
+                "the user. See the log.",
+            )
         if token is None:
             # Matches what plone.restapi's own @login answers: the site is
             # misconfigured, not the request.
@@ -116,7 +146,7 @@ class IdentityCallback(IdentityService):
                 "Login failed",
                 "JWT authentication plugin not installed.",
             )
-        return {"token": token, "came_from": attempt.came_from}
+        return token
 
     def _link(
         self, link_for: str, provider_id: str, subject: str, claims: Claims

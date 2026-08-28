@@ -15,6 +15,7 @@ from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.core.interfaces import FlowError
 from pas.plugins.identity.core.interfaces import IdentityCollision
 from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity.core.interfaces import PrincipalUnavailable
 from pas.plugins.identity.core.pas import CREDENTIALS_KEY
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.services.base import IdentityService
@@ -93,7 +94,21 @@ class MagicLinkConfirm(IdentityService):
             request=self.request,
         )
 
-        token_value = mint_token(userid)
+        try:
+            token_value = mint_token(userid)
+        except PrincipalUnavailable as exc:
+            # The login worked and the account it names does not exist. A
+            # site configuration, not a bad request, and the operator is the
+            # only one who can fix it -- so it is logged in full and the
+            # caller is told the site is misconfigured rather than that they
+            # failed to authenticate.
+            logger.error("%s", exc)
+            return self._error(
+                500,
+                "Login failed",
+                "Authentication succeeded but this site has no account for "
+                "the user. See the log.",
+            )
         if token_value is None:
             return self._error(
                 501, "Login failed", "JWT authentication plugin not installed."
