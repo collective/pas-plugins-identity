@@ -341,6 +341,7 @@ class IdentityPlugin(BasePlugin):
             self._store.add(provider, subject, userid, claims)
         else:
             self._store.touch(provider, subject, claims)
+            is_new_user = self._restore_missing_account(userid, claims)
 
         notify(
             ExternalIdentityAuthenticated(
@@ -1174,6 +1175,47 @@ class IdentityPlugin(BasePlugin):
     # ------------------------------------------------------------------
     # Decoration of the stock plugins
     # ------------------------------------------------------------------
+
+    def _restore_missing_account(self, userid: str, claims: Claims) -> bool:
+        """Recreate the account behind a known identity that has lost it.
+
+        An identity outlives the account it was minted for -- a user deleted
+        while the identity stayed in the store, an export restored without
+        one half. From then on every login through that identity resolves to
+        a userid nothing can serve: no properties, no roles, invisible to
+        every search, and a traceback from the first line that touches the
+        user. It never recovers on its own, because the identity is found,
+        so nothing is ever created again.
+
+        The **same** userid is restored rather than a fresh one. It is what
+        the identity points at, what anything this person owns is owned by,
+        and what the store would go on resolving to anyway; minting a new one
+        would strand all of it and leave the same dead record behind.
+
+        Says so, because an account reappearing is not what an operator who
+        deleted one expects. Removing the identity as well is what makes the
+        deletion stick.
+
+        Silent on a site that keeps its users as content: there the object is
+        the account, creating it is the site's own business, and
+        :meth:`_warn_if_unclaimed` already reports one that nothing made.
+
+        :param userid: The userid the identity resolved to.
+        :param claims: Normalized claims, to seed a restored account with.
+        :returns: Whether an account was created, so the caller can treat the
+            login as a first one for everything that follows.
+        """
+        if self._getPAS().getUserById(userid) is not None:
+            return False
+        if self._keeps_users_as_content():
+            return False
+        logger.warning(
+            "Identity resolved to %s, which has no account: restoring it. "
+            "Remove the identity as well if the deletion was deliberate.",
+            userid,
+        )
+        self._create_plone_user(userid, claims)
+        return True
 
     def _source_users(self) -> ZODBUserManager:
         """Return the site's ``source_users`` plugin.

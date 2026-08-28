@@ -1,4 +1,4 @@
-"""An email identity that outlived the account it was linked to.
+"""An identity that outlived the account behind it.
 
 Auto-link-by-verified-email attaches a new provider identity to whichever
 account proved that address to this site with a magic link. It looked the
@@ -123,3 +123,89 @@ class TestAdoptingAnAccountThatIsGone:
             self.authenticate()
 
         assert any(ADDRESS in r.getMessage() for r in caplog.records)
+
+
+class TestAKnownIdentityWhoseAccountIsGone:
+    """The state Érico's instance was actually in.
+
+    His store held two userids: `ericof`, with a GitHub identity and a
+    verified address, resolving fine -- and a uuid holding one Google
+    identity and nothing else, with no account anywhere. Auto-linking was
+    off, so the Google identity had been minted fresh and its account had
+    since gone away.
+
+    That never recovers on its own. The identity is *found*, so the branch
+    that creates a user is not taken, and every login through it resolves to
+    a userid nothing can serve. It is not a first login, it is not a link,
+    and nothing else looks.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, plugin) -> None:
+        self.portal = portal
+        self.plugin = plugin
+        set_providers([
+            ProviderConfig(provider_id=PROVIDER, driver_id="oidc-generic", title="Dex")
+        ])
+        # A login that worked once, and an account removed afterwards.
+        self.userid = self.authenticate()
+        with api.env.adopt_roles(["Manager"]):
+            api.user.delete(username=self.userid)
+
+    def authenticate(self) -> str:
+        """Sign in with the provider and return the resolved userid.
+
+        :returns: The Plone userid.
+        """
+        userid, _ = self.plugin.authenticateCredentials({
+            "extractor": EXTRACTOR,
+            "provider": PROVIDER,
+            "subject": SUBJECT,
+            "claims": dict(CLAIMS),
+        })
+        return userid
+
+    def test_the_account_really_is_gone(self):
+        """The premise. Without it everything below passes vacuously."""
+        assert api.user.get(userid=self.userid) is None
+
+    def test_the_identity_is_still_held(self):
+        """Which is why nothing recreates the account: the login is not a
+        first one any more."""
+        assert self.plugin.store.userid_for(PROVIDER, SUBJECT) == self.userid
+
+    def test_signing_in_again_restores_it(self):
+        """The bug: it resolved to the same dead userid for ever."""
+        self.authenticate()
+
+        assert api.user.get(userid=self.userid) is not None
+
+    def test_the_same_userid_is_kept(self):
+        """Not a fresh one: it is what the identity points at and what
+        anything this person owns is owned by."""
+        assert self.authenticate() == self.userid
+
+    def test_the_restored_account_carries_the_claims(self):
+        """Restored, not merely present."""
+        self.authenticate()
+
+        assert api.user.get(userid=self.userid).getProperty("email") == ADDRESS
+
+    def test_it_says_so(self, caplog):
+        """An account reappearing is not what an operator who deleted one
+        expects, and removing the identity is what makes it stick."""
+        with caplog.at_level(logging.WARNING, logger="pas.plugins.identity"):
+            self.authenticate()
+
+        assert any("has no account" in r.getMessage() for r in caplog.records)
+
+    def test_a_live_account_is_left_alone(self, caplog):
+        """The guard must not fire on the ordinary login it sits in front of:
+        it runs on every sign-in through an identity already known."""
+        self.authenticate()
+        caplog.clear()
+
+        with caplog.at_level(logging.WARNING, logger="pas.plugins.identity"):
+            self.authenticate()
+
+        assert not [r for r in caplog.records if "restoring it" in r.getMessage()]

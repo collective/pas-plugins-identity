@@ -1,0 +1,9 @@
+A login through an identity whose account was deleted now restores the account instead of signing nobody in.
+
+An identity outlives the account it was minted for — a user deleted while the identity stayed in the store, an export restored without one half. From then on every login through that identity resolved to a userid nothing could serve: no properties, no roles, invisible to every search, and a traceback from the first line that touched the user.
+
+It never recovered on its own, and that is the part that matters. The identity is *found*, so the branch that creates a user record is not taken; the login is not a first one, not a link, and nothing else looks. The account stayed missing for every sign-in from then on.
+
+The same userid is restored rather than a fresh one: it is what the identity points at, what anything the person owns is owned by, and what the store would go on resolving to anyway — minting a new one would strand all of it and leave the same dead record behind. It is logged at warning level, because an account reappearing is not what an operator who deleted one expects, and removing the identity as well is what makes the deletion stick.
+
+Nothing happens on a site that keeps its users as content: there the object is the account and creating it is the site's own business, which is already reported separately when nothing does. @ericof
