@@ -99,6 +99,16 @@
       handler=".subscribers.on_claims_refreshed"
       />
 
+  <!-- Every other way of logging in. The three events above are fired only
+       by a federated sign-in, so without this the required-information flow
+       reached federated users and nobody else: a source_users account was
+       never minted a Profile and never reconciled, and the gate therefore
+       had nothing to hold it for. -->
+  <subscriber
+      for="Products.PluggableAuthService.interfaces.events.IUserLoggedInEvent"
+      handler=".subscribers.on_logged_in"
+      />
+
   <!-- A user may edit their own Profile and nobody else's. Computed rather
        than assigned, so there is nothing to keep in step. -->
   <adapter factory=".localroles.ProfileSelfRole" />

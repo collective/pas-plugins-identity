@@ -346,6 +346,77 @@ def on_authenticated(event: ExternalIdentityAuthenticated) -> None:
     _handle(event.userid, event.claims, event.provider)
 
 
+#: Profile fields seeded from a member's existing property sheets.
+#:
+#: Only what a stock Plone site already knows about somebody. The Profile is
+#: minted from what the site holds rather than from nothing, so a user who has
+#: had a fullname and an address here for years is not asked to type them in
+#: again the first time they sign in after the layer is installed.
+SEEDED_FROM_MEMBER = ("fullname", "email", "home_page", "description", "location")
+
+
+def _seed_from_member(profile: UserProfile, member) -> None:
+    """Copy what the site already knows onto a newly minted Profile.
+
+    Read through ``getProperty``, which is the ordered sheets and therefore
+    every store the site has -- not ``portal_memberdata`` by name, because a
+    site may have replaced it.
+
+    :param profile: The Profile just created.
+    :param member: The ``MemberData`` wrapper for the same user.
+    """
+    for field in SEEDED_FROM_MEMBER:
+        if getattr(profile, field, None):
+            continue
+        value = member.getProperty(field, "")
+        if value:
+            setattr(profile, field, safe_text(value))
+
+
+def on_logged_in(event) -> None:
+    """Bring a user logging in by any means into the required-information flow.
+
+    Until this existed the flow reached exactly one kind of user. Everything
+    that mints a Profile or reconciles one hangs off
+    ``ExternalIdentityAuthenticated``, which only a federated sign-in fires --
+    so somebody authenticated by ``source_users``, or by any other PAS plugin,
+    never had a Profile minted and was never reconciled. The gate then found
+    nothing to hold them for and let them through, which made
+    ``enforce_required_profile_fields`` a rule about where a user came from
+    rather than about what the site requires of them (Érico, 2026-08-28).
+
+    Minting here is safe on a site that has not asked for users as content:
+    :func:`ensure_profile` answers ``None`` when this layer's catalog is
+    absent, and installing the layer is what points core's principal records
+    at it.
+
+    The Zope root user is skipped. It is not a member of this site -- it lives
+    in the root acl_users and the portal's own PAS cannot resolve it -- and
+    minting a Profile would file the emergency account among the site's users.
+
+    :param event: An ``IUserLoggedInEvent``.
+    """
+    principal = getattr(event, "principal", None)
+    userid = getattr(principal, "getId", lambda: None)()
+    if not userid:
+        return
+    if api.portal.get_tool("acl_users").getUserById(userid) is None:
+        # The Zope root user, or anyone else this site does not hold.
+        return
+
+    member = api.user.get(userid=userid)
+    if member is None:  # pragma: no cover - PAS just resolved this userid
+        return
+
+    profile = get_profile(userid)
+    if profile is None:
+        profile = ensure_profile(userid, safe_text(principal.getUserName()), {})
+        if profile is None:
+            return
+        _seed_from_member(profile, member)
+    reconcile(profile)
+
+
 def on_identity_linked(event: IdentityLinked) -> None:
     """Fill still-provider-owned fields from a newly linked provider.
 
@@ -373,5 +444,6 @@ __all__ = [
     "on_authenticated",
     "on_claims_refreshed",
     "on_identity_linked",
+    "on_logged_in",
     "sync_claims",
 ]
