@@ -1,3 +1,4 @@
+import { testIntl } from '../testing';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -24,7 +25,9 @@ const CLIENT: OAuthClient = {
 
 /** The fields of a fieldset, flattened, in the order they are rendered. */
 function fields(adding: boolean): string[] {
-  return clientSchema(adding).fieldsets.flatMap((fieldset) => fieldset.fields);
+  return clientSchema(adding, testIntl).fieldsets.flatMap(
+    (fieldset) => fieldset.fields,
+  );
 }
 
 describe('clientSchema', () => {
@@ -34,7 +37,7 @@ describe('clientSchema', () => {
   });
 
   it('requires the id it cannot invent', () => {
-    expect(clientSchema(true).required).toEqual(['client_id']);
+    expect(clientSchema(true, testIntl).required).toEqual(['client_id']);
   });
 
   it('asks nothing an edit cannot change', () => {
@@ -64,19 +67,19 @@ describe('clientSchema', () => {
       'refresh_token',
       'client_credentials',
     ]);
-    expect(clientSchema(true).properties.grant_types.choices).toEqual(
+    expect(clientSchema(true, testIntl).properties.grant_types.choices).toEqual(
       GRANT_TYPES,
     );
   });
 
   it('starts a registration on the grant that makes it work', () => {
-    expect(clientSchema(true).properties.grant_types.default).toEqual([
-      'authorization_code',
-    ]);
+    expect(clientSchema(true, testIntl).properties.grant_types.default).toEqual(
+      ['authorization_code'],
+    );
   });
 
   it('edits the repeating values as lists rather than as text', () => {
-    const properties = clientSchema(true).properties;
+    const properties = clientSchema(true, testIntl).properties;
 
     for (const field of ['redirect_uris', 'scope']) {
       expect(properties[field].type).toBe('array');

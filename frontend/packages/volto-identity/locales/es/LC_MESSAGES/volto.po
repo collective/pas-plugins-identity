@@ -18,6 +18,11 @@ msgstr ""
 "X-Is-Fallback-For: es-ar es-bo es-cl es-co es-cr es-do es-ec es-es es-sv es-gt es-hn es-mx es-ni es-pa es-py es-pe es-pr es-us es-uy es-ve\n"
 "X-Generator: Poedit 2.2.1\n"
 
+#. Default: "Access"
+#: helpers/clientSchema
+msgid "Access"
+msgstr ""
+
 #. Default: "Access withdrawn"
 #: components/Applications/Applications
 msgid "Access withdrawn"
@@ -33,6 +38,11 @@ msgstr ""
 #. Default: "Add"
 #: components/Toolbar/Toolbar
 msgid "Add"
+msgstr ""
+
+#. Default: "Add a provider"
+#: helpers/providerSchema
+msgid "Add a provider"
 msgstr ""
 
 #. Default: "Add an email address"
@@ -74,6 +84,11 @@ msgstr ""
 #: components/Applications/Applications
 #: components/UserMenu/ApplicationsMenuItem
 msgid "Applications"
+msgstr ""
+
+#. Default: "Attribute mapping"
+#: helpers/providerSchema
+msgid "Attribute mapping"
 msgstr ""
 
 #. Default: "Authorize"
@@ -133,8 +148,14 @@ msgstr ""
 msgid "Clear"
 msgstr ""
 
+#. Default: "Client"
+#: helpers/clientSchema
+msgid "Client"
+msgstr ""
+
 #. Default: "Client ID"
 #: components/ControlPanel/ClientsPanel
+#: helpers/clientSchema
 msgid "Client ID"
 msgstr ""
 
@@ -151,6 +172,11 @@ msgstr ""
 #. Default: "Collection"
 #: components/Toolbar/Toolbar
 msgid "Collection"
+msgstr ""
+
+#. Default: "Complete your profile"
+#: components/ProfileGate/ProfileGate
+msgid "Complete your profile"
 msgstr ""
 
 #. Default: "Confidential"
@@ -206,6 +232,7 @@ msgstr ""
 
 #. Default: "Driver"
 #: components/ControlPanel/ProvidersControlPanel
+#: helpers/providerSchema
 msgid "Driver"
 msgstr ""
 
@@ -215,6 +242,16 @@ msgstr ""
 #: components/ControlPanel/RenderUsers
 #: components/Toolbar/Toolbar
 msgid "Edit"
+msgstr ""
+
+#. Default: "Edit client"
+#: helpers/clientSchema
+msgid "Edit client"
+msgstr ""
+
+#. Default: "Edit provider"
+#: helpers/providerSchema
+msgid "Edit provider"
 msgstr ""
 
 #. Default: "Email address"
@@ -231,6 +268,8 @@ msgstr ""
 #. Default: "Enabled"
 #: components/ControlPanel/ClientsPanel
 #: components/ControlPanel/ProvidersControlPanel
+#: helpers/clientSchema
+#: helpers/providerSchema
 msgid "Enabled"
 msgstr ""
 
@@ -258,7 +297,13 @@ msgstr ""
 
 #. Default: "Grants"
 #: components/ControlPanel/ClientsPanel
+#: helpers/clientSchema
 msgid "Grants"
+msgstr ""
+
+#. Default: "Group mapping"
+#: helpers/providerSchema
+msgid "Group mapping"
 msgstr ""
 
 #. Default: "I have saved it"
@@ -326,6 +371,11 @@ msgstr ""
 msgid "Loading your sign-in methods"
 msgstr ""
 
+#. Default: "Local group"
+#: helpers/providerSchema
+msgid "Local group"
+msgstr ""
+
 #. Default: "Log in"
 #: components/Callback/Callback
 #: components/FirstLogin/FirstLogin
@@ -341,6 +391,11 @@ msgstr ""
 #. Default: "Logout"
 #: components/Toolbar/PersonalTools
 msgid "Logout"
+msgstr ""
+
+#. Default: "Mapping"
+#: helpers/providerSchema
+msgid "Mapping"
 msgstr ""
 
 #. Default: "Menu closed"
@@ -434,6 +489,11 @@ msgstr ""
 msgid "Personal tools"
 msgstr ""
 
+#. Default: "Please fill in {fields} before you can continue."
+#: components/ProfileGate/ProfileGate
+msgid "Please fill in {fields} before you can continue."
+msgstr ""
+
 #. Default: "Preferences"
 #: components/UserMenu/UserMenuPlugs
 msgid "Preferences"
@@ -445,14 +505,39 @@ msgstr ""
 msgid "Profile"
 msgstr ""
 
+#. Default: "Provider"
+#: helpers/providerSchema
+msgid "Provider"
+msgstr ""
+
+#. Default: "Provider ID"
+#: helpers/providerSchema
+msgid "Provider ID"
+msgstr ""
+
+#. Default: "Provider claim"
+#: helpers/providerSchema
+msgid "Provider claim"
+msgstr ""
+
 #. Default: "Provider deleted"
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Provider deleted"
 msgstr ""
 
+#. Default: "Provider group"
+#: helpers/providerSchema
+msgid "Provider group"
+msgstr ""
+
 #. Default: "Public (PKCE required)"
 #: components/ControlPanel/ClientsPanel
 msgid "Public (PKCE required)"
+msgstr ""
+
+#. Default: "Public client"
+#: helpers/clientSchema
+msgid "Public client"
 msgstr ""
 
 #. Default: "Reached {endpoint}"
@@ -470,9 +555,15 @@ msgstr ""
 msgid "Reads"
 msgstr ""
 
+#. Default: "Redirect URIs"
+#: helpers/clientSchema
+msgid "Redirect URIs"
+msgstr ""
+
 #. Default: "Register a client"
 #: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ClientsPanel
+#: helpers/clientSchema
 msgid "Register a client"
 msgstr ""
 
@@ -504,6 +595,7 @@ msgstr ""
 
 #. Default: "Scope"
 #: components/ControlPanel/ClientsPanel
+#: helpers/clientSchema
 msgid "Scope"
 msgstr ""
 
@@ -522,8 +614,14 @@ msgstr ""
 msgid "Send confirmation link"
 msgstr ""
 
+#. Default: "Service user"
+#: helpers/clientSchema
+msgid "Service user"
+msgstr ""
+
 #. Default: "Settings"
 #: components/ControlPanel/ProvidersControlPanel
+#: helpers/providerSchema
 msgid "Settings"
 msgstr ""
 
@@ -663,6 +761,8 @@ msgstr ""
 #. Default: "Title"
 #: components/ControlPanel/ClientsPanel
 #: components/ControlPanel/ProvidersControlPanel
+#: helpers/clientSchema
+#: helpers/providerSchema
 msgid "Title"
 msgstr ""
 
@@ -684,6 +784,16 @@ msgstr ""
 #. Default: "Unregister this client? Every token already minted for it stops being accepted at once."
 #: components/ControlPanel/ClientsPanel
 msgid "Unregister this client?"
+msgstr ""
+
+#. Default: "User field"
+#: helpers/providerSchema
+msgid "User field"
+msgstr ""
+
+#. Default: "Which integration handles this provider."
+#: helpers/providerSchema
+msgid "Which integration handles this provider."
 msgstr ""
 
 #. Default: "Withdraw access"
@@ -727,14 +837,99 @@ msgstr ""
 msgid "You have not authorized any application."
 msgstr ""
 
+#. Default: "Your profile needs a few more details before you can continue."
+#: components/ProfileGate/ProfileGate
+msgid "Your profile needs a few more details before you can continue."
+msgstr ""
+
+#. Default: "What each provider claim writes onto the Plone user. A field that already has a value locally is left alone."
+#: helpers/providerSchema
+msgid "attribute-mapping-help"
+msgstr ""
+
 #. Default: "Forgot your password?"
 #: components/Login/PasswordForm
 msgid "box_forgot_password_option"
 msgstr ""
 
+#. Default: "A disabled client is refused at every endpoint, and its existing access tokens are refused as well: the audience is checked against this registry on every request."
+#: helpers/clientSchema
+msgid "client-enabled-help"
+msgstr ""
+
+#. Default: "Which flows this client may use. A grant is refused at the token endpoint unless it is listed here."
+#: helpers/clientSchema
+msgid "client-grants-help"
+msgstr ""
+
+#. Default: "Permanent. Every token minted for this client carries it as the audience, so renaming it later would strand them all."
+#: helpers/clientSchema
+msgid "client-id-help"
+msgstr ""
+
+#. Default: "The most this client may ever be granted, one entry per token. A request for more is cut down to this rather than refused."
+#: helpers/clientSchema
+msgid "client-scope-help"
+msgstr ""
+
+#. Default: "What the consent screen calls this client."
+#: helpers/clientSchema
+msgid "client-title-help"
+msgstr ""
+
+#. Default: "Which of the provider's groups grant a group here. Empty grants nothing. Every sign-in reconciles, so a membership revoked at the provider stops granting here -- but only groups this provider granted are ever taken back, so a group you granted by hand is safe."
+#: helpers/providerSchema
+msgid "group-mapping-help"
+msgstr ""
+
+#. Default: "The group it grants on this site. A group that does not exist here grants nothing."
+#: helpers/providerSchema
+msgid "local-group-help"
+msgstr ""
+
 #. Default: "nothing beyond the fact that you signed in"
 #: components/Consent/ConsentPanel
 msgid "nothing beyond the fact that you signed in"
+msgstr ""
+
+#. Default: "Dotted path into the claims, for example email or address.formatted. Normalized claims are tried before the provider's raw payload."
+#: helpers/providerSchema
+msgid "provider-claim-help"
+msgstr ""
+
+#. Default: "A disabled provider is configured but offered to nobody."
+#: helpers/providerSchema
+msgid "provider-enabled-help"
+msgstr ""
+
+#. Default: "The group's name as the provider sends it. Free text: this site cannot enumerate the far end. A name with no row here grants nothing, and is never created."
+#: helpers/providerSchema
+msgid "provider-group-help"
+msgstr ""
+
+#. Default: "Permanent. It is stored on every identity linked through this provider, so renaming it later would orphan them all. Letters, digits, - and _ only."
+#: helpers/providerSchema
+msgid "provider-id-help"
+msgstr ""
+
+#. Default: "What the sign-in button says. Defaults to the driver name."
+#: helpers/providerSchema
+msgid "provider-title-help"
+msgstr ""
+
+#. Default: "A browser or native app, which cannot keep a secret. PKCE is required for these and no secret is issued. Not editable afterwards: turning a confidential client public would leave a stored secret hash that nothing checks."
+#: helpers/clientSchema
+msgid "public-client-help"
+msgstr ""
+
+#. Default: "Matched exactly -- a trailing slash or an extra query parameter is a different URI. A client using the authorization code grant needs at least one."
+#: helpers/clientSchema
+msgid "redirect-uris-help"
+msgstr ""
+
+#. Default: "The Plone userid a client-credentials token acts as. Only that grant uses it; leave it empty for a client that signs people in."
+#: helpers/clientSchema
+msgid "service-user-help"
 msgstr ""
 
 #. Default: "signing"
@@ -745,6 +940,11 @@ msgstr ""
 #. Default: "user avatar"
 #: components/UserMenu/UserAvatar
 msgid "user avatar"
+msgstr ""
+
+#. Default: "Where the value is written on the user's profile."
+#: helpers/providerSchema
+msgid "user-field-help"
 msgstr ""
 
 #. Default: "verifying only"

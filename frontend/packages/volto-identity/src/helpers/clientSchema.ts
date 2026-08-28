@@ -9,6 +9,8 @@
  * Volto `Form`, and no input laid out by hand.
  * @module helpers/clientSchema
  */
+import { defineMessages } from 'react-intl';
+import type { IntlShape } from 'react-intl';
 import type { VoltoSchema } from './providerSchema';
 import type { OAuthClient } from '../types';
 
@@ -53,92 +55,148 @@ export const EDITABLE = [
  *   the permanent id and whether the client is public.
  * @returns The schema.
  */
-export function clientSchema(adding: boolean): VoltoSchema {
+const messages = defineMessages({
+  clientId: { id: 'Client ID', defaultMessage: 'Client ID' },
+  clientIdHelp: {
+    id: 'client-id-help',
+    defaultMessage:
+      'Permanent. Every token minted for this client carries it as the ' +
+      'audience, so renaming it later would strand them all.',
+  },
+  title: { id: 'Title', defaultMessage: 'Title' },
+  titleHelp: {
+    id: 'client-title-help',
+    defaultMessage: 'What the consent screen calls this client.',
+  },
+  publicClient: { id: 'Public client', defaultMessage: 'Public client' },
+  publicClientHelp: {
+    id: 'public-client-help',
+    defaultMessage:
+      'A browser or native app, which cannot keep a secret. PKCE is ' +
+      'required for these and no secret is issued. Not editable ' +
+      'afterwards: turning a confidential client public would leave a ' +
+      'stored secret hash that nothing checks.',
+  },
+  enabled: { id: 'Enabled', defaultMessage: 'Enabled' },
+  enabledHelp: {
+    id: 'client-enabled-help',
+    defaultMessage:
+      'A disabled client is refused at every endpoint, and its existing ' +
+      'access tokens are refused as well: the audience is checked against ' +
+      'this registry on every request.',
+  },
+  grants: { id: 'Grants', defaultMessage: 'Grants' },
+  grantsHelp: {
+    id: 'client-grants-help',
+    defaultMessage:
+      'Which flows this client may use. A grant is refused at the token ' +
+      'endpoint unless it is listed here.',
+  },
+  redirectUris: { id: 'Redirect URIs', defaultMessage: 'Redirect URIs' },
+  redirectUrisHelp: {
+    id: 'redirect-uris-help',
+    defaultMessage:
+      'Matched exactly -- a trailing slash or an extra query parameter is ' +
+      'a different URI. A client using the authorization code grant needs ' +
+      'at least one.',
+  },
+  scope: { id: 'Scope', defaultMessage: 'Scope' },
+  scopeHelp: {
+    id: 'client-scope-help',
+    defaultMessage:
+      'The most this client may ever be granted, one entry per token. A ' +
+      'request for more is cut down to this rather than refused.',
+  },
+  serviceUser: { id: 'Service user', defaultMessage: 'Service user' },
+  serviceUserHelp: {
+    id: 'service-user-help',
+    defaultMessage:
+      'The Plone userid a client-credentials token acts as. Only that ' +
+      'grant uses it; leave it empty for a client that signs people in.',
+  },
+  registerClient: {
+    id: 'Register a client',
+    defaultMessage: 'Register a client',
+  },
+  editClient: { id: 'Edit client', defaultMessage: 'Edit client' },
+  client: { id: 'Client', defaultMessage: 'Client' },
+  access: { id: 'Access', defaultMessage: 'Access' },
+});
+
+export function clientSchema(adding: boolean, intl: IntlShape): VoltoSchema {
   const properties: Record<string, Record<string, unknown>> = {};
   const identity: string[] = [];
 
   if (adding) {
     properties.client_id = {
-      title: 'Client ID',
-      description:
-        'Permanent. Every token minted for this client carries it as the ' +
-        'audience, so renaming it later would strand them all.',
+      title: intl.formatMessage(messages.clientId),
+      description: intl.formatMessage(messages.clientIdHelp),
       type: 'string',
     };
     identity.push('client_id');
   }
 
   properties.title = {
-    title: 'Title',
-    description: 'What the consent screen calls this client.',
+    title: intl.formatMessage(messages.title),
+    description: intl.formatMessage(messages.titleHelp),
     type: 'string',
   };
   identity.push('title');
 
   if (adding) {
     properties.public = {
-      title: 'Public client',
-      description:
-        'A browser or native app, which cannot keep a secret. PKCE is ' +
-        'required for these and no secret is issued. Not editable ' +
-        'afterwards: turning a confidential client public would leave a ' +
-        'stored secret hash that nothing checks.',
+      title: intl.formatMessage(messages.publicClient),
+      description: intl.formatMessage(messages.publicClientHelp),
       type: 'boolean',
     };
     identity.push('public');
   } else {
     properties.enabled = {
-      title: 'Enabled',
-      description:
-        'A disabled client is refused at every endpoint, and its existing ' +
-        'access tokens are refused as well: the audience is checked ' +
-        'against this registry on every request.',
+      title: intl.formatMessage(messages.enabled),
+      description: intl.formatMessage(messages.enabledHelp),
       type: 'boolean',
     };
     identity.push('enabled');
   }
 
   properties.grant_types = {
-    title: 'Grants',
-    description:
-      'Which flows this client may use. A grant is refused at the token ' +
-      'endpoint unless it is listed here.',
+    title: intl.formatMessage(messages.grants),
+    description: intl.formatMessage(messages.grantsHelp),
     type: 'array',
     choices: GRANT_TYPES,
     default: ['authorization_code'],
   };
   properties.redirect_uris = {
-    title: 'Redirect URIs',
-    description:
-      'Matched exactly -- a trailing slash or an extra query parameter is ' +
-      'a different URI. A client using the authorization code grant needs ' +
-      'at least one.',
+    title: intl.formatMessage(messages.redirectUris),
+    description: intl.formatMessage(messages.redirectUrisHelp),
     type: 'array',
     widget: 'token',
   };
   properties.scope = {
-    title: 'Scope',
-    description:
-      'The most this client may ever be granted, one entry per token. A ' +
-      'request for more is cut down to this rather than refused.',
+    title: intl.formatMessage(messages.scope),
+    description: intl.formatMessage(messages.scopeHelp),
     type: 'array',
     widget: 'token',
   };
   properties.service_user = {
-    title: 'Service user',
-    description:
-      'The Plone userid a client-credentials token acts as. Only that ' +
-      'grant uses it; leave it empty for a client that signs people in.',
+    title: intl.formatMessage(messages.serviceUser),
+    description: intl.formatMessage(messages.serviceUserHelp),
     type: 'string',
   };
 
   return {
-    title: adding ? 'Register a client' : 'Edit client',
+    title: intl.formatMessage(
+      adding ? messages.registerClient : messages.editClient,
+    ),
     fieldsets: [
-      { id: 'default', title: 'Client', fields: identity },
+      {
+        id: 'default',
+        title: intl.formatMessage(messages.client),
+        fields: identity,
+      },
       {
         id: 'access',
-        title: 'Access',
+        title: intl.formatMessage(messages.access),
         fields: ['grant_types', 'redirect_uris', 'scope', 'service_user'],
       },
     ],

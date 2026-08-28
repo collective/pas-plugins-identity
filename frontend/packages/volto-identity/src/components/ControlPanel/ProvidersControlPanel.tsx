@@ -247,8 +247,9 @@ const ProvidersControlPanel: React.FC = () => {
         driverList,
         adding ? draftDriver : current?.driver,
         adding,
+        intl,
       ),
-    [driverList, adding, draftDriver, current?.driver],
+    [driverList, adding, draftDriver, current?.driver, intl],
   );
 
   // Not memoized: `Form` reads this once, when it mounts, so recomputing it

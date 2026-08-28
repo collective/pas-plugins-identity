@@ -11,7 +11,7 @@
  */
 import React from 'react';
 import type { ReactElement, ReactNode } from 'react';
-import { IntlProvider } from 'react-intl';
+import { createIntl, IntlProvider } from 'react-intl';
 import {
   render as renderBare,
   type RenderOptions,
@@ -45,5 +45,22 @@ export function render(
 ): RenderResult {
   return renderBare(ui, { wrapper: WithIntl, ...options });
 }
+
+/**
+ * An `IntlShape` for code that formats messages outside a component.
+ *
+ * The schema helpers build form labels in plain modules, so they take an
+ * `intl` rather than calling `useIntl`. Tests need one without rendering
+ * anything, and `createIntl` is how `react-intl` provides it.
+ *
+ * English with no catalogue, exactly as `WithIntl` renders: every message
+ * falls back to its `defaultMessage`, which is what the assertions read.
+ */
+export const testIntl = createIntl({
+  locale: 'en',
+  defaultLocale: 'en',
+  messages: {},
+  onError: () => {},
+});
 
 export * from '@testing-library/react';

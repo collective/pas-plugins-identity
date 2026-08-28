@@ -222,7 +222,7 @@ const ClientsPanel: React.FC<ClientsPanelProps> = ({
             ? intl.formatMessage(messages.add)
             : current?.title || current?.client_id
         }
-        schema={clientSchema(adding)}
+        schema={clientSchema(adding, intl)}
         formData={toFormData(adding ? undefined : current)}
         requestError={error}
         onSubmit={onSubmit}

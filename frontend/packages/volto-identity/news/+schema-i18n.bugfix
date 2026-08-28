@@ -1,0 +1,7 @@
+Every label the control panels write themselves now goes through `react-intl`.
+
+The two schema helpers build Volto forms in plain modules rather than components, so they had no `useIntl` and their labels were English string literals — 17 in the provider form, 10 in the client form: field titles, help text, fieldset names and the form's own title. Every component in the package was already translated; these were the gap, and they are the text an operator reads most.
+
+Both helpers now take an `IntlShape` and format through `defineMessages`. Regenerating the catalogue also picked up ids that had never been extracted, so the shipped `.po` files were stale independently of this.
+
+One limitation is now asserted rather than left to be discovered: a driver's *own* field titles and descriptions arrive from the backend over `@identity-drivers` as plain strings rather than message ids, so nothing on the frontend can translate them. They render as sent. @ericof

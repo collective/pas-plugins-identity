@@ -1,4 +1,6 @@
+import { testIntl } from '../testing';
 import { describe, expect, it } from 'vitest';
+import { createIntl } from 'react-intl';
 
 import {
   CONFIG_PREFIX,
@@ -237,8 +239,8 @@ describe('toFormData seeding', () => {
 
 describe('providerSchema', () => {
   it('asks for an id and a driver only when adding', () => {
-    const adding = providerSchema([OIDC], 'oidc-generic', true);
-    const editing = providerSchema([OIDC], 'oidc-generic', false);
+    const adding = providerSchema([OIDC], 'oidc-generic', true, testIntl);
+    const editing = providerSchema([OIDC], 'oidc-generic', false, testIntl);
 
     expect(adding.properties.id).toBeTruthy();
     expect(adding.required).toContain('id');
@@ -246,7 +248,7 @@ describe('providerSchema', () => {
   });
 
   it('offers every installed driver as a choice', () => {
-    const schema = providerSchema([OIDC, GITHUB], undefined, true);
+    const schema = providerSchema([OIDC, GITHUB], undefined, true, testIntl);
 
     expect(schema.properties.driver.choices).toEqual([
       ['oidc-generic', 'Generic OIDC'],
@@ -256,7 +258,7 @@ describe('providerSchema', () => {
 
   it('asks which driver before asking anything about it', () => {
     // The driver decides which fields the rest of the form has at all.
-    const schema = providerSchema([OIDC], 'oidc-generic', true);
+    const schema = providerSchema([OIDC], 'oidc-generic', true, testIntl);
 
     expect(schema.fieldsets[0].fields).toEqual([
       'driver',
@@ -267,7 +269,7 @@ describe('providerSchema', () => {
   });
 
   it("renders the driver's settings in the order it asked for", () => {
-    const schema = providerSchema([OIDC], 'oidc-generic', true);
+    const schema = providerSchema([OIDC], 'oidc-generic', true, testIntl);
     const settings = schema.fieldsets.find((f) => f.id === 'settings');
 
     expect(settings?.fields).toEqual([
@@ -282,7 +284,7 @@ describe('providerSchema', () => {
   });
 
   it('renders the chosen driver fields, namespaced', () => {
-    const schema = providerSchema([OIDC], 'oidc-generic', true);
+    const schema = providerSchema([OIDC], 'oidc-generic', true, testIntl);
 
     expect(schema.properties[`${CONFIG_PREFIX}issuer`]).toBeTruthy();
     // Namespaced so a driver cannot collide with title or enabled.
@@ -290,7 +292,7 @@ describe('providerSchema', () => {
   });
 
   it('carries the driver required flags into the schema', () => {
-    const schema = providerSchema([OIDC], 'oidc-generic', false);
+    const schema = providerSchema([OIDC], 'oidc-generic', false, testIntl);
 
     expect(schema.required).toContain(`${CONFIG_PREFIX}issuer`);
     expect(schema.required).not.toContain(`${CONFIG_PREFIX}timeout`);
@@ -298,19 +300,19 @@ describe('providerSchema', () => {
 
   it('shows no settings fieldset before a driver is chosen', () => {
     // An empty fieldset reads as a broken form.
-    const schema = providerSchema([OIDC], undefined, true);
+    const schema = providerSchema([OIDC], undefined, true, testIntl);
 
     expect(schema.fieldsets.map((f) => f.id)).toEqual(['default', 'mapping']);
   });
 
   it('shows no settings fieldset for a driver that declares none', () => {
-    const schema = providerSchema([GITHUB], 'github', true);
+    const schema = providerSchema([GITHUB], 'github', true, testIntl);
 
     expect(schema.fieldsets.map((f) => f.id)).toEqual(['default', 'mapping']);
   });
 
   it('titles the settings fieldset after the driver', () => {
-    const schema = providerSchema([OIDC], 'oidc-generic', true);
+    const schema = providerSchema([OIDC], 'oidc-generic', true, testIntl);
 
     expect(schema.fieldsets[1]).toMatchObject({
       id: 'settings',
@@ -319,7 +321,7 @@ describe('providerSchema', () => {
   });
 
   it('takes the user field from the vocabulary', () => {
-    const schema = providerSchema([OIDC], 'oidc-generic', true);
+    const schema = providerSchema([OIDC], 'oidc-generic', true, testIntl);
     const rows = schema.properties.propertymap as any;
 
     expect(rows.widget).toBe('object_list');
@@ -331,7 +333,7 @@ describe('providerSchema', () => {
   });
 
   it('survives a driver that is not installed', () => {
-    const schema = providerSchema([], 'gone', false);
+    const schema = providerSchema([], 'gone', false, testIntl);
 
     expect(schema.fieldsets.map((f) => f.id)).toEqual(['default', 'mapping']);
   });
@@ -415,7 +417,7 @@ describe('fromFormData', () => {
 
 describe('the group mapping', () => {
   it('is offered for a driver whose providers have groups', () => {
-    const schema = providerSchema([WITH_GROUPS], 'keycloak', false);
+    const schema = providerSchema([WITH_GROUPS], 'keycloak', false, testIntl);
 
     expect(schema.properties.groupmap).toBeTruthy();
     expect(schema.fieldsets.at(-1).fields).toEqual(['propertymap', 'groupmap']);
@@ -425,14 +427,14 @@ describe('the group mapping', () => {
     // Asking an operator to map the groups of a magic link is asking a
     // question with no answer. The backend applies the same switch: a map
     // stored against such a provider grants nothing.
-    const schema = providerSchema([GITHUB], 'github', false);
+    const schema = providerSchema([GITHUB], 'github', false, testIntl);
 
     expect(schema.properties.groupmap).toBeUndefined();
     expect(schema.fieldsets.at(-1).fields).toEqual(['propertymap']);
   });
 
   it('is not offered before a driver is chosen', () => {
-    const schema = providerSchema([WITH_GROUPS], undefined, true);
+    const schema = providerSchema([WITH_GROUPS], undefined, true, testIntl);
 
     expect(schema.properties.groupmap).toBeUndefined();
   });
@@ -441,8 +443,12 @@ describe('the group mapping', () => {
     // The halves are not symmetric. This site cannot enumerate the far end's
     // directory, but a local group that does not exist grants nothing -- so
     // the side we can check is the side we make a picker.
-    const { schema } = providerSchema([WITH_GROUPS], 'keycloak', false)
-      .properties.groupmap as any;
+    const { schema } = providerSchema(
+      [WITH_GROUPS],
+      'keycloak',
+      false,
+      testIntl,
+    ).properties.groupmap as any;
 
     expect(schema.properties.local.vocabulary).toEqual({
       '@id': GROUPS_VOCABULARY,
@@ -479,5 +485,61 @@ describe('the group mapping', () => {
     expect(fromFormData({ groupmap: data.groupmap }).groupmap).toEqual({
       editors: 'staff',
     });
+  });
+});
+
+describe('the schema is translatable', () => {
+  // Proof rather than inspection: a catalogue that overrides the ids gives
+  // different labels back. Reading the English out again would pass just as
+  // well with every string hardcoded, which is what this replaces.
+  const pt = createIntl({
+    locale: 'pt-BR',
+    defaultLocale: 'en',
+    onError: () => {},
+    messages: {
+      Title: 'Título',
+      Mapping: 'Mapeamento',
+      'Add a provider': 'Adicionar um provedor',
+      'Attribute mapping': 'Mapeamento de atributos',
+      'Provider claim': 'Claim do provedor',
+    },
+  });
+
+  it('translates a field title', () => {
+    const schema = providerSchema([OIDC], 'oidc-generic', true, pt);
+
+    expect(schema.properties.title.title).toBe('Título');
+  });
+
+  it('translates the form title', () => {
+    const schema = providerSchema([OIDC], 'oidc-generic', true, pt);
+
+    expect(schema.title).toBe('Adicionar um provedor');
+  });
+
+  it('translates a fieldset title', () => {
+    const schema = providerSchema([OIDC], 'oidc-generic', true, pt);
+    const mapping = schema.fieldsets.find((f) => f.id === 'mapping');
+
+    expect(mapping?.title).toBe('Mapeamento');
+  });
+
+  it('translates the mapping widget and its rows', () => {
+    const schema = providerSchema([OIDC], 'oidc-generic', true, pt);
+    const propertymap = schema.properties.propertymap as any;
+
+    expect(propertymap.title).toBe('Mapeamento de atributos');
+    expect(propertymap.schema.properties.claim.title).toBe('Claim do provedor');
+  });
+
+  it("leaves a driver's own field labels as the backend sent them", () => {
+    // They arrive over `@identity-drivers` as plain strings rather than
+    // message ids, so nothing here can translate them. Asserted so the
+    // limitation is visible rather than discovered.
+    const schema = providerSchema([OIDC], 'oidc-generic', true, pt);
+
+    expect(schema.properties[`${CONFIG_PREFIX}issuer`].title).toBe(
+      OIDC.schema.issuer.title,
+    );
   });
 });

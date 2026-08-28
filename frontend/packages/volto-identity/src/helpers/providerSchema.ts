@@ -15,6 +15,93 @@ import {
 import { fromGroupRows, toGroupRows } from './groupmap';
 import { fromRows, toRows } from './propertymap';
 import type { Driver, DriverField } from '../types';
+import { defineMessages } from 'react-intl';
+import type { IntlShape } from 'react-intl';
+
+/**
+ * Every label this module writes itself.
+ *
+ * A driver's *own* fields are not here: their titles and descriptions arrive
+ * from the backend over `@identity-drivers`, as plain strings rather than
+ * message ids, so they are rendered as sent. See `propertyFor`.
+ */
+const messages = defineMessages({
+  driver: { id: 'Driver', defaultMessage: 'Driver' },
+  driverHelp: {
+    id: 'Which integration handles this provider.',
+    defaultMessage: 'Which integration handles this provider.',
+  },
+  providerId: { id: 'Provider ID', defaultMessage: 'Provider ID' },
+  providerIdHelp: {
+    id: 'provider-id-help',
+    defaultMessage:
+      'Permanent. It is stored on every identity linked through this ' +
+      'provider, so renaming it later would orphan them all. Letters, ' +
+      'digits, - and _ only.',
+  },
+  title: { id: 'Title', defaultMessage: 'Title' },
+  titleHelp: {
+    id: 'provider-title-help',
+    defaultMessage:
+      'What the sign-in button says. Defaults to the driver name.',
+  },
+  enabled: { id: 'Enabled', defaultMessage: 'Enabled' },
+  enabledHelp: {
+    id: 'provider-enabled-help',
+    defaultMessage: 'A disabled provider is configured but offered to nobody.',
+  },
+  settings: { id: 'Settings', defaultMessage: 'Settings' },
+  provider: { id: 'Provider', defaultMessage: 'Provider' },
+  mapping: { id: 'Mapping', defaultMessage: 'Mapping' },
+  addProvider: { id: 'Add a provider', defaultMessage: 'Add a provider' },
+  editProvider: { id: 'Edit provider', defaultMessage: 'Edit provider' },
+  attributeMapping: {
+    id: 'Attribute mapping',
+    defaultMessage: 'Attribute mapping',
+  },
+  attributeMappingHelp: {
+    id: 'attribute-mapping-help',
+    defaultMessage:
+      'What each provider claim writes onto the Plone user. A field that ' +
+      'already has a value locally is left alone.',
+  },
+  providerClaim: { id: 'Provider claim', defaultMessage: 'Provider claim' },
+  providerClaimHelp: {
+    id: 'provider-claim-help',
+    defaultMessage:
+      'Dotted path into the claims, for example email or address.formatted. ' +
+      "Normalized claims are tried before the provider's raw payload.",
+  },
+  userField: { id: 'User field', defaultMessage: 'User field' },
+  userFieldHelp: {
+    id: 'user-field-help',
+    defaultMessage: "Where the value is written on the user's profile.",
+  },
+  groupMapping: { id: 'Group mapping', defaultMessage: 'Group mapping' },
+  groupMappingHelp: {
+    id: 'group-mapping-help',
+    defaultMessage:
+      "Which of the provider's groups grant a group here. Empty grants " +
+      'nothing. Every sign-in reconciles, so a membership revoked at the ' +
+      'provider stops granting here -- but only groups this provider ' +
+      'granted are ever taken back, so a group you granted by hand is safe.',
+  },
+  providerGroup: { id: 'Provider group', defaultMessage: 'Provider group' },
+  providerGroupHelp: {
+    id: 'provider-group-help',
+    defaultMessage:
+      "The group's name as the provider sends it. Free text: this site " +
+      'cannot enumerate the far end. A name with no row here grants ' +
+      'nothing, and is never created.',
+  },
+  localGroup: { id: 'Local group', defaultMessage: 'Local group' },
+  localGroupHelp: {
+    id: 'local-group-help',
+    defaultMessage:
+      'The group it grants on this site. A group that does not exist here ' +
+      'grants nothing.',
+  },
+});
 
 /** A Volto form schema, as `Form` consumes it. */
 export interface VoltoSchema {
@@ -121,30 +208,25 @@ export function propertyFor(field: DriverField): Record<string, unknown> {
 }
 
 /** The mapping rows, edited with Volto's DataGridField equivalent. */
-function propertymapProperty(): Record<string, unknown> {
+function propertymapProperty(intl: IntlShape): Record<string, unknown> {
   return {
-    title: 'Attribute mapping',
-    description:
-      'What each provider claim writes onto the Plone user. A field that ' +
-      'already has a value locally is left alone.',
+    title: intl.formatMessage(messages.attributeMapping),
+    description: intl.formatMessage(messages.attributeMappingHelp),
     widget: 'object_list',
     schema: {
-      title: 'Mapping',
+      title: intl.formatMessage(messages.mapping),
       fieldsets: [
         { id: 'default', title: 'Default', fields: ['claim', 'field'] },
       ],
       properties: {
         claim: {
-          title: 'Provider claim',
-          description:
-            'Dotted path into the claims, for example email or ' +
-            'address.formatted. Normalized claims are tried before the ' +
-            "provider's raw payload.",
+          title: intl.formatMessage(messages.providerClaim),
+          description: intl.formatMessage(messages.providerClaimHelp),
           type: 'string',
         },
         field: {
-          title: 'User field',
-          description: "Where the value is written on the user's profile.",
+          title: intl.formatMessage(messages.userField),
+          description: intl.formatMessage(messages.userFieldHelp),
           vocabulary: { '@id': USER_FIELDS_VOCABULARY },
         },
       },
@@ -154,34 +236,25 @@ function propertymapProperty(): Record<string, unknown> {
 }
 
 /** The group mapping rows. */
-function groupmapProperty(): Record<string, unknown> {
+function groupmapProperty(intl: IntlShape): Record<string, unknown> {
   return {
-    title: 'Group mapping',
-    description:
-      "Which of the provider's groups grant a group here. Empty grants " +
-      'nothing. Every sign-in reconciles, so a membership revoked at the ' +
-      'provider stops granting here -- but only groups this provider ' +
-      'granted are ever taken back, so a group you granted by hand is safe.',
+    title: intl.formatMessage(messages.groupMapping),
+    description: intl.formatMessage(messages.groupMappingHelp),
     widget: 'object_list',
     schema: {
-      title: 'Mapping',
+      title: intl.formatMessage(messages.mapping),
       fieldsets: [
         { id: 'default', title: 'Default', fields: ['group', 'local'] },
       ],
       properties: {
         group: {
-          title: 'Provider group',
-          description:
-            "The group's name as the provider sends it. Free text: this " +
-            'site cannot enumerate the far end. A name with no row here ' +
-            'grants nothing, and is never created.',
+          title: intl.formatMessage(messages.providerGroup),
+          description: intl.formatMessage(messages.providerGroupHelp),
           type: 'string',
         },
         local: {
-          title: 'Local group',
-          description:
-            'The group it grants on this site. A group that does not exist ' +
-            'here grants nothing.',
+          title: intl.formatMessage(messages.localGroup),
+          description: intl.formatMessage(messages.localGroupHelp),
           vocabulary: { '@id': GROUPS_VOCABULARY },
         },
       },
@@ -204,6 +277,7 @@ export function providerSchema(
   drivers: Driver[],
   driverId: string | undefined,
   adding: boolean,
+  intl: IntlShape,
 ): VoltoSchema {
   const driver = drivers.find((d) => d.id === driverId);
   const properties: Record<string, Record<string, unknown>> = {};
@@ -213,29 +287,26 @@ export function providerSchema(
     // Driver before id: it decides which fields the rest of the form even
     // has, so answering it first is the only order that reads forwards.
     properties.driver = {
-      title: 'Driver',
-      description: 'Which integration handles this provider.',
+      title: intl.formatMessage(messages.driver),
+      description: intl.formatMessage(messages.driverHelp),
       choices: drivers.map((d) => [d.id, d.title]),
     };
     properties.id = {
-      title: 'Provider ID',
-      description:
-        'Permanent. It is stored on every identity linked through this ' +
-        'provider, so renaming it later would orphan them all. Letters, ' +
-        'digits, - and _ only.',
+      title: intl.formatMessage(messages.providerId),
+      description: intl.formatMessage(messages.providerIdHelp),
       type: 'string',
     };
     identity.push('driver', 'id');
   }
 
   properties.title = {
-    title: 'Title',
-    description: 'What the sign-in button says. Defaults to the driver name.',
+    title: intl.formatMessage(messages.title),
+    description: intl.formatMessage(messages.titleHelp),
     type: 'string',
   };
   properties.enabled = {
-    title: 'Enabled',
-    description: 'A disabled provider is configured but offered to nobody.',
+    title: intl.formatMessage(messages.enabled),
+    description: intl.formatMessage(messages.enabledHelp),
     type: 'boolean',
   };
   identity.push('title', 'enabled');
@@ -246,7 +317,7 @@ export function providerSchema(
     return key;
   });
 
-  properties.propertymap = propertymapProperty();
+  properties.propertymap = propertymapProperty(intl);
 
   // Only for a driver that says its providers have groups. The backend
   // declares that by putting a `group_claim` field in the schema, and it is
@@ -256,25 +327,29 @@ export function providerSchema(
   // with no answer.
   const hasGroups = Boolean(driver?.schema?.group_claim);
   if (hasGroups) {
-    properties.groupmap = groupmapProperty();
+    properties.groupmap = groupmapProperty(intl);
   }
 
   const fieldsets = [
-    { id: 'default', title: 'Provider', fields: identity },
+    {
+      id: 'default',
+      title: intl.formatMessage(messages.provider),
+      fields: identity,
+    },
     // Only once a driver is chosen: before that there is no honest set of
     // fields to show, and an empty fieldset reads as a broken form.
     ...(settings.length
       ? [
           {
             id: 'settings',
-            title: driver?.title ?? 'Settings',
+            title: driver?.title ?? intl.formatMessage(messages.settings),
             fields: settings,
           },
         ]
       : []),
     {
       id: 'mapping',
-      title: 'Attribute mapping',
+      title: intl.formatMessage(messages.mapping),
       fields: ['propertymap', ...(hasGroups ? ['groupmap'] : [])],
     },
   ];
@@ -284,7 +359,9 @@ export function providerSchema(
     .map(([name]) => `${CONFIG_PREFIX}${name}`);
 
   return {
-    title: adding ? 'Add a provider' : 'Edit provider',
+    title: intl.formatMessage(
+      adding ? messages.addProvider : messages.editProvider,
+    ),
     fieldsets,
     properties,
     required: adding ? ['id', 'driver', ...required] : required,
