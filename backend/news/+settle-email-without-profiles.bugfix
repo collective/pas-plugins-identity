@@ -1,0 +1,7 @@
+An offered address list no longer leaves a site without profiles holding no address at all.
+
+A driver offered several addresses picks none of them and carries the list, so the user can say which is theirs on their profile. That only works on a site that has profiles: without the `[content]` extra there is no profile, no form and no gate, so nobody is ever asked — and a GitHub sign-in produced an account with no email and nothing anywhere requesting one, which is worse than the guess the choice replaced.
+
+The question is now asked only where it can be answered. A site that keeps its users as content leaves the list alone and the required-information flow holds the user on the form. Anywhere else the first offer is taken, which is the address the driver ordered first: the account's primary verified one where there is one.
+
+The test for "can this site ask" is deliberately not the one used before creating a user, which also insists the container resolves. The container is created while the first profile is minted — in a subscriber to the event fired later in the same login — so on the very first sign-in to a fresh site it does not exist yet, and the stricter question would have answered "no profiles" for the one user most likely to be handed a list. @ericof

@@ -319,7 +319,7 @@ class IdentityPlugin(BasePlugin):
 
         provider = credentials["provider"]
         subject = credentials["subject"]
-        claims: Claims = credentials.get("claims", {})
+        claims: Claims = self._settle_email(credentials.get("claims", {}))
 
         userid = self._store.userid_for(provider, subject)
         is_new_identity = userid is None
@@ -901,6 +901,70 @@ class IdentityPlugin(BasePlugin):
         if config is None:
             return "uuid"
         return str(config.config.get("userid_source") or "uuid")
+
+    def _users_are_content(self) -> bool:
+        """Report whether this site intends its users to be content objects.
+
+        Deliberately narrower than :meth:`_keeps_users_as_content`, which
+        also insists the container resolves. That is the right question
+        before *creating* something and the wrong one before deciding whether
+        anybody will be able to answer a question later: the container is
+        made while the first profile is minted, so it is absent on exactly
+        the login this is asked about.
+
+        :returns: Whether a user content type is configured and is one this
+            plugin may create a user in.
+        """
+        portal_type = _record(USER_CONTENT_TYPE_RECORD)
+        return bool(portal_type) and self._provides(portal_type, IUserContent)
+
+    def _settle_email(self, claims: Claims) -> Claims:
+        """Choose an offered address when nothing here can ask for one.
+
+        A driver that was offered several addresses picks none of them and
+        carries the list instead, so the user can say which is theirs on
+        their profile. That only works on a site that *has* profiles: with
+        the ``[content]`` layer absent there is no profile, no form and no
+        gate, so nobody is ever asked and the account simply has no address
+        -- worse than the guess the choice replaced, because the guess was at
+        least usually right.
+
+        So the question is asked only where it can be answered. On a site
+        that keeps its users as content the list is left alone and the flow
+        holds the user on the form. Anywhere else the first offer is taken,
+        which is the address the driver ordered first: the account's primary
+        verified one where there is one.
+
+        Asked with :meth:`_users_are_content` rather than
+        :meth:`_keeps_users_as_content`, and the difference matters exactly
+        once. The latter also requires the *container* to resolve, and the
+        container is created while the first profile is minted -- in a
+        subscriber to the event fired further down this method. On the very
+        first login to a fresh site it therefore does not exist yet, and
+        asking that question here would answer "no profiles" for the one
+        user most likely to be offered a list.
+
+        :param claims: Normalized claims from the driver.
+        :returns: The claims, with ``email`` filled in when this site has no
+            way of asking. Unchanged in every other case, including when the
+            driver sent an address of its own.
+        """
+        choices = claims.get("email_choices") or ()
+        if not choices or claims.get("email"):
+            return claims
+        if self._users_are_content():
+            return claims
+        chosen = choices[0]
+        logger.info(
+            "No profile to ask on: taking %s of %d offered addresses",
+            chosen.get("address", ""),
+            len(choices),
+        )
+        return {
+            **claims,
+            "email": chosen.get("address", ""),
+            "email_verified": chosen.get("verified") is True,
+        }
 
     def _adopt_by_verified_email(self, provider: str, claims: Claims) -> str | None:
         """Find an existing account to attach this identity to.
