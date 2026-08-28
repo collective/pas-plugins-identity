@@ -1,0 +1,5 @@
+Added `/fallback_login`, which renders Volto's own login form and nothing this add-on owns.
+
+This package takes over `/login` completely, so anything that stops its Login rendering — a provider list that fails to load, a misconfigured add-on, a JavaScript error in a component shipped here — is a site nobody can sign in to, including the administrator who would go and fix it. Every route out of that is a page this package draws, which is exactly what is not working. The escape has to be somewhere that shares none of it.
+
+The name is `volto-authomatic`'s, which ships the same escape at `/fallback_login` and `/failsafe_login`, so a site migrating from it keeps a URL its operators already know. It is registered as a non-content route in its own right: Volto's own `/login` entry does not cover it, because those entries are tested as unanchored regular expressions and `/login` does not occur in `/fallback_login` — without that, Volto asks the backend for a content object at the path and renders a 404 over a page that works. @ericof

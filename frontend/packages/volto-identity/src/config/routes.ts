@@ -9,6 +9,7 @@ import ClientsControlPanel from '../components/ControlPanel/ClientsControlPanel'
 import ProvidersControlPanel from '../components/ControlPanel/ProvidersControlPanel';
 import Identities from '../components/Identities/Identities';
 import Login from '../components/Login/Login';
+import VoltoLogin from '@plone/volto/components/theme/Login/Login';
 
 /** The frontend route the provider redirects back to. */
 export const CALLBACK_PATH = '/login-identity';
@@ -39,6 +40,23 @@ export const APPLICATIONS_PATH = '/applications';
  */
 export const CONSENT_PATH = '/oauth-consent';
 
+/**
+ * Where Volto's own login form stays reachable.
+ *
+ * This add-on takes over `/login` entirely, and its Login already carries a
+ * password form beside the provider list -- so this is not the way to sign in
+ * with a password. It is the way in when that page cannot be rendered at all:
+ * a provider list that fails to load, a misconfigured add-on, a JavaScript
+ * error in a component this package owns. Every one of those locks out the
+ * administrator who would go and fix it, and none of them are reachable
+ * through a page this package draws.
+ *
+ * The name is `volto-authomatic`'s, which ships the same escape at
+ * `/fallback_login` and `/failsafe_login`. A site migrating from it keeps the
+ * URL its operators already know.
+ */
+export const FALLBACK_LOGIN_PATH = '/fallback_login';
+
 /** Where a Manager configures providers. */
 export const CONTROLPANEL_PATH = '/controlpanel/identity-providers';
 
@@ -53,11 +71,16 @@ export default function install(config: ConfigType) {
     new RegExp(`^${IDENTITIES_PATH}$`),
     new RegExp(`^${CONSENT_PATH}$`),
     new RegExp(`^${APPLICATIONS_PATH}$`),
+    // Not covered by Volto's own `/login` entry: `nonContentRoutes`
+    // strings are tested as unanchored regexes, and `/login` does not
+    // occur in `/fallback_login`.
+    new RegExp(`^${FALLBACK_LOGIN_PATH}$`),
   ];
   config.addonRoutes = [
     ...(config.addonRoutes ?? []),
     { path: CALLBACK_PATH, exact: true, component: Callback },
     { path: FIRST_LOGIN_PATH, exact: true, component: FirstLogin },
+    { path: FALLBACK_LOGIN_PATH, exact: true, component: VoltoLogin },
     { path: '/login', exact: true, component: Login },
     { path: '/**/login', exact: true, component: Login },
     { path: IDENTITIES_PATH, exact: true, component: Identities },
