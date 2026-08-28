@@ -28,6 +28,12 @@ x-backend-build: &backend-build
   args:
     - PLONE_VERSION=${PLONE_VERSION:-6.2.1}
 
+# One frontend image for both sites. They differ only in their environment
+# now: the password-form switch is read at run time through Volto's
+# `runtimeConfig`, so it is no longer baked into the bundle and no longer a
+# reason to build twice.
+x-frontend-image: &frontend-image pas-plugins-identity-demo-frontend
+
 x-frontend-build: &frontend-build
   context: ./frontend
   args:
@@ -83,25 +89,22 @@ services:
   # id.localhost -- the identity provider
   # ------------------------------------------------------------------
   idp-frontend:
-    build:
-      <<: *frontend-build
-      ## The merge key replaces `args` wholesale, so the shared one is
-      ## restated rather than added to.
-      args:
-        - VOLTO_VERSION=${VOLTO_VERSION}
-        ## This site's users *are* local: it is where people sign in in
-        ## order to sign in elsewhere, and the consent screen is reached by
-        ## having a session here. Without the password form it has no way in
-        ## at all except the magic link.
-        ##
-        ## A build argument, not an environment variable. Razzle bakes
-        ## RAZZLE_* into the browser bundle at build time; supplied at
-        ## runtime it would reach the node process and never the browser,
-        ## which looks like it works and does nothing. The two frontends
-        ## therefore build two images rather than sharing one.
-        - RAZZLE_IDENTITY_SHOW_PLONE_LOGIN=true
+    build: *frontend-build
+    ## Named so the relying party can run the same image instead of building
+    ## a second one. The two frontends differ only in their environment now
+    ## -- see RAZZLE_IDENTITY_SHOW_PLONE_LOGIN below.
+    image: *frontend-image
     environment:
       RAZZLE_INTERNAL_API_PATH: http://idp-backend:8080/Plone
+      ## This site's users *are* local: it is where people sign in in order
+      ## to sign in elsewhere, and the consent screen is reached by having a
+      ## session here. Without the password form it has no way in except the
+      ## magic link.
+      ##
+      ## Runtime, not a build argument. It is read through Volto's
+      ## `runtimeConfig`, which resolves `process.env` on the server and
+      ## `window.env` on the client, so one image answers either way.
+      RAZZLE_IDENTITY_SHOW_PLONE_LOGIN: 'true'
     depends_on:
       - idp-backend
     labels:
@@ -197,20 +200,22 @@ services:
   # plone.localhost -- the relying party
   # ------------------------------------------------------------------
   rp-frontend:
-    build:
-      <<: *frontend-build
-      args:
-        - VOLTO_VERSION=${VOLTO_VERSION}
-        ## The relying party has exactly one way in, and it is the identity
-        ## provider. Offering a local password beside it would be offering a
-        ## second way into the same account, which is the whole thing this
-        ## federation exists to avoid. Stated rather than left to the
-        ## default, because this is the site the point is about.
-        - RAZZLE_IDENTITY_SHOW_PLONE_LOGIN=false
+    ## No `build:` -- the image is the one idp-frontend builds. `depends_on`
+    ## names it so Compose has built it before this service starts; without
+    ## that, `docker compose up` on a clean machine races an image that does
+    ## not exist yet.
+    image: *frontend-image
     environment:
       RAZZLE_INTERNAL_API_PATH: http://rp-backend:8080/Plone
+      ## The relying party has exactly one way in, and it is the identity
+      ## provider. Offering a local password beside it would be offering a
+      ## second way into the same account, which is the whole thing this
+      ## federation exists to avoid. Stated rather than left to the default,
+      ## because this is the site the point is about.
+      RAZZLE_IDENTITY_SHOW_PLONE_LOGIN: 'false'
     depends_on:
       - rp-backend
+      - idp-frontend
     labels:
       - traefik.enable=true
       - traefik.constraint-label=public

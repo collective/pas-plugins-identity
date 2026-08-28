@@ -37,24 +37,19 @@ export default function install(config: ConfigType) {
   //
   // An identity provider built on this package is the case that wants it on:
   // its users *are* local, and it is the site people sign in to in order to
-  // sign in elsewhere. That is a deployment fact rather than a code one, so
-  // it is an environment variable and not a different bundle.
+  // sign in elsewhere.
   //
-  // `RAZZLE_`-prefixed because that is the only prefix Volto's build passes
-  // through to the browser bundle, and written out literally because the
-  // build substitutes the exact text `process.env.RAZZLE_...`: read through a
-  // variable it is `undefined` on the client, and the setting would then
-  // differ between the server-rendered page and the one React takes over.
+  // **This is only the default.** The deployment answer is
+  // `RAZZLE_IDENTITY_SHOW_PLONE_LOGIN`, read at *run* time by the Login
+  // component -- see `showPloneLogin` there. It is not read here, and that is
+  // the whole point: written out literally, `process.env.RAZZLE_...` is
+  // substituted into the browser bundle by webpack's DefinePlugin while
+  // `pnpm build` runs, which makes the value a property of the image. Two
+  // sites wanting two answers then need two images.
   //
-  // It is read at **build** time. Razzle substitutes these with webpack's
-  // DefinePlugin while the bundle is built, so a value supplied to the
-  // running container reaches the node process and never the browser --
-  // which looks like it works and does nothing. In Docker it is a build
-  // argument; see `frontend/Dockerfile`.
-  config.settings.identityShowPloneLogin = asBoolean(
-    process.env.RAZZLE_IDENTITY_SHOW_PLONE_LOGIN,
-    false,
-  );
+  // A project that wants a different default overrides this setting in its
+  // own configuration, and the environment still wins over it.
+  config.settings.identityShowPloneLogin = false;
 
   // The required-information gate, on every route.
   //

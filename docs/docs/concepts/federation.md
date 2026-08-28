@@ -76,8 +76,8 @@ An identity provider has no providers of its own, so it showed "no sign-in optio
 The password form is back, controlled by `RAZZLE_IDENTITY_SHOW_PLONE_LOGIN`.
 
 ```{note}
-`RAZZLE_` variables are substituted into the browser bundle when the frontend is built.
-Setting one at runtime reaches the Node process and never the browser, so the two demo frontends build two images rather than sharing one.
+`process.env.RAZZLE_SOMETHING`, written out literally, is substituted into the browser bundle when the frontend is built, so a value supplied to a running container reaches the Node process and never the browser.
+This setting is read through Volto's `runtimeConfig` instead, which resolves `process.env` on the server and `window.env` on the client, so it is an ordinary environment variable and both demo sites run the same image.
 ```
 
 ## Groups cross, but only as far as you let them

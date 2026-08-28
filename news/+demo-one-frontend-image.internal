@@ -1,0 +1,5 @@
+The demo stack builds one frontend image instead of two.
+
+Both sites ran the same frontend and always had; they differed only in `RAZZLE_IDENTITY_SHOW_PLONE_LOGIN`, which was a build argument because the value was substituted into the browser bundle. Now that it is read at run time, the difference is an environment variable and the second build had nothing left to do. `idp-frontend` builds the image and names it, `rp-frontend` runs the same one and waits on it so a clean `docker compose up` cannot race an image that does not exist yet.
+
+The documentation said `RAZZLE_` variables are substituted into the bundle when the frontend is built, and therefore that the demo builds two images. The first half is true only of `process.env.RAZZLE_SOMETHING` written out literally; both halves are corrected. @ericof

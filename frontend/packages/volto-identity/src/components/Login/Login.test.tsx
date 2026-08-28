@@ -5,6 +5,7 @@ import { Provider } from 'react-redux';
 import React from 'react';
 
 import Login from './Login';
+import * as showPloneLoginModule from '../../helpers/showPloneLogin';
 
 /**
  * Replace `window.location` so a navigation can be observed instead of
@@ -91,6 +92,29 @@ describe('Login', () => {
     renderLogin('an-existing-token');
 
     expect(document.body.textContent).toContain('GitHub');
+  });
+
+  it('asks at render time whether to offer the password form', () => {
+    // Not read from the settings at install: the answer arrives in the
+    // container's environment, so one image serves a site that wants the
+    // password form and one that does not. Severing this wiring is invisible
+    // to every other test here, which is why it has one of its own.
+    const decide = vi
+      .spyOn(showPloneLoginModule, 'showPloneLogin')
+      .mockReturnValue(true);
+
+    renderLogin('an-existing-token');
+
+    expect(decide).toHaveBeenCalled();
+    expect(document.body.textContent).toContain('Sign in with a password');
+  });
+
+  it('hides the password form when the environment says to', () => {
+    vi.spyOn(showPloneLoginModule, 'showPloneLogin').mockReturnValue(false);
+
+    renderLogin('an-existing-token');
+
+    expect(document.body.textContent).not.toContain('Sign in with a password');
   });
 
   it('does not redirect an anonymous visitor either', () => {

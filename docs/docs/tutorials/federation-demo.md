@@ -38,7 +38,7 @@ When it finishes, both sites are listening.
 
 Open <http://plone.localhost> in a browser.
 Notice that the login page offers exactly one way in, and does not wait for you to click it.
-That site has no local password form, because the demo builds its frontend with `RAZZLE_IDENTITY_SHOW_PLONE_LOGIN` set to `false`.
+That site has no local password form, because the demo runs its frontend with `RAZZLE_IDENTITY_SHOW_PLONE_LOGIN` set to `false`.
 
 ## Sign in as somebody who does not exist here
 
