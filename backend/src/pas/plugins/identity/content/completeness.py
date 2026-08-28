@@ -1,10 +1,10 @@
 """Whether a profile carries the information the site requires of it.
 
-A provider is not obliged to tell us anything. GitHub will withhold an email
-address the user has marked private, a bare OIDC provider may release nothing
-beyond ``sub``, and a magic link knows only the address it was sent to. So a
-profile minted at first login is routinely missing something the site needs,
-and the site has to be able to insist.
+A provider is not obliged to tell us anything. A bare OIDC provider may release
+nothing beyond ``sub``, a magic link knows only the address it was sent to, and
+a provider that does send an address is not obliged to say whether anybody ever
+checked it. So a profile minted at first login is routinely missing something
+the site needs, and the site has to be able to insist.
 
 **The workflow state is the answer, not a second store.** ``incomplete`` means
 "missing something required" and ``complete`` means "not missing anything".

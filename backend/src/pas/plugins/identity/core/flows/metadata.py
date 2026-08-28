@@ -33,6 +33,9 @@ STATIC_METADATA: dict[str, JSONDict] = {
         "authorization_endpoint": "https://github.com/login/oauth/authorize",
         "token_endpoint": "https://github.com/login/oauth/access_token",
         "userinfo_endpoint": "https://api.github.com/user",
+        # `/user` omits the address of anybody who marked it private and
+        # carries no `email_verified` at all. This is where both live.
+        "emails_endpoint": "https://api.github.com/user/emails",
     },
 }
 

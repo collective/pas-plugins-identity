@@ -52,3 +52,103 @@ class TestGitHubDriver:
         claims = self.driver.normalize_claims(GITHUB_USER_NO_NAME)
 
         assert claims["fullname"] == "anon-dev"
+
+
+class TestTheAddressComesFromASecondCall:
+    """``/user`` is not the whole story, and this is the half that fixes it.
+
+    GitHub omits the address of anybody who marked it private and never sends
+    ``email_verified`` at all, so on ``/user`` alone a GitHub identity arrives
+    with no address and can never be auto-linked by one. ``GET /user/emails``
+    answers both, and the ``user:email`` scope needed to call it has always
+    been requested.
+
+    The driver still performs no I/O: it names the endpoint and merges the
+    answer, and :mod:`pas.plugins.identity.core.flows` does the fetching.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self) -> None:
+        self.driver = GitHubDriver()
+        self.metadata = {"emails_endpoint": "https://api.github.com/user/emails"}
+
+    def test_the_endpoint_is_named(self):
+        assert self.driver.enrichment_endpoint(self.metadata) == (
+            "https://api.github.com/user/emails"
+        )
+
+    def test_no_endpoint_without_it_in_the_metadata(self):
+        """A provider whose metadata predates this must not be asked for a
+        URL the driver invented."""
+        assert self.driver.enrichment_endpoint({}) == ""
+
+    def test_a_private_address_arrives(self):
+        """The case the driver could not serve before: `/user` carried no
+        address at all."""
+        payload = {"id": 1, "login": "ghost"}
+
+        merged = self.driver.merge_enrichment(
+            payload, [{"email": "ghost@example.com", "primary": True, "verified": True}]
+        )
+
+        assert self.driver.normalize_claims(merged)["email"] == "ghost@example.com"
+
+    def test_a_verified_address_is_reported_as_verified(self):
+        """Which is what link-by-verified-email reads, and what a GitHub
+        identity could never satisfy before."""
+        merged = self.driver.merge_enrichment(
+            {"id": 1, "login": "ghost"},
+            [{"email": "ghost@example.com", "primary": True, "verified": True}],
+        )
+
+        assert self.driver.normalize_claims(merged)["email_verified"] is True
+
+    def test_the_primary_verified_address_wins(self):
+        """An account may hold several."""
+        merged = self.driver.merge_enrichment(
+            {"id": 1, "login": "ghost"},
+            [
+                {"email": "old@example.com", "primary": False, "verified": True},
+                {"email": "me@example.com", "primary": True, "verified": True},
+            ],
+        )
+
+        assert merged["email"] == "me@example.com"
+
+    def test_a_verified_address_beats_an_unverified_primary(self):
+        merged = self.driver.merge_enrichment(
+            {"id": 1, "login": "ghost"},
+            [
+                {
+                    "email": "unconfirmed@example.com",
+                    "primary": True,
+                    "verified": False,
+                },
+                {"email": "real@example.com", "primary": False, "verified": True},
+            ],
+        )
+
+        assert merged["email"] == "real@example.com"
+
+    def test_an_unverified_primary_is_still_used(self):
+        """An address is worth having even when nobody will auto-link on it:
+        it is what stops the profile being minted incomplete."""
+        merged = self.driver.merge_enrichment(
+            {"id": 1, "login": "ghost"},
+            [{"email": "unconfirmed@example.com", "primary": True, "verified": False}],
+        )
+
+        assert merged["email"] == "unconfirmed@example.com"
+        assert self.driver.normalize_claims(merged)["email_verified"] is False
+
+    @pytest.mark.parametrize(
+        "answer",
+        [[], {}, None, "not a list", [{"verified": True}], [{"email": "   "}]],
+        ids=["empty", "object", "null", "string", "no-address", "blank-address"],
+    )
+    def test_an_unusable_answer_leaves_the_payload_alone(self, answer):
+        """A surprising shape must cost nothing rather than raise in the
+        middle of a login."""
+        payload = {"id": 1, "login": "ghost", "email": "from-user@example.com"}
+
+        assert self.driver.merge_enrichment(payload, answer) == payload

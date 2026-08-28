@@ -219,6 +219,31 @@ class BaseDriver:
             f"(tried {', '.join(self.subject_keys)})"
         )
 
+    def enrichment_endpoint(self, metadata: JSONDict) -> str:
+        """Return a second endpoint whose answer completes the payload.
+
+        Some providers do not put everything on their userinfo endpoint.
+        A driver names the extra endpoint here and merges its answer in
+        :meth:`merge_enrichment`; the fetch itself belongs to
+        :mod:`pas.plugins.identity.core.flows`, because a driver performs no
+        I/O -- that is what lets every driver be tested against a recorded
+        payload with no provider in the loop.
+
+        :param metadata: The provider's resolved metadata.
+        :returns: An absolute URL, or an empty string for the providers whose
+            userinfo endpoint is the whole story.
+        """
+        return ""
+
+    def merge_enrichment(self, payload: JSONDict, data: object) -> JSONDict:
+        """Fold the enrichment answer into the payload.
+
+        :param payload: The userinfo payload.
+        :param data: Whatever :meth:`enrichment_endpoint` answered, decoded.
+        :returns: The payload to normalize claims from.
+        """
+        return payload
+
     def normalize_claims(self, payload: JSONDict) -> Claims:
         """Map a provider payload onto the documented claims schema.
 

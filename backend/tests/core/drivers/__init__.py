@@ -34,11 +34,11 @@ CLAIM_KEYS = {"fullname", "email", "email_verified", "picture_url", "username", 
 
 #: ``GET /user`` on GitHub.
 #:
-#: ``email_verified`` is **not** part of that payload: nothing calls
-#: ``GET /user/emails``, and ``/user`` has no such key. It is here so the
-#: normalizer is exercised against a payload that has one, which is the shape
-#: every OIDC provider sends. See :class:`GitHubDriver` for what the real
-#: payload omits and what that costs.
+#: ``email_verified`` is **not** part of that payload -- ``/user`` has no such
+#: key. It is here so the normalizer is exercised against a payload that has
+#: one, which is the shape every OIDC provider sends, and which is also the
+#: shape the driver builds once it has merged ``GET /user/emails``. See
+#: :class:`GitHubDriver` for where the real payload's address comes from.
 GITHUB_USER = {
     "id": 1234567,
     "node_id": "MDQ6VXNlcjEyMzQ1Njc=",

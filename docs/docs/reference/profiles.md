@@ -69,7 +69,7 @@ Nothing asks a user to press a button.
 The add-on moves a profile between the two states itself, whenever the profile is written to and whenever its owner signs in.
 
 A provider is not obliged to send anything.
-GitHub withholds an email address the user has marked private, a bare OIDC provider may release nothing beyond `sub`, and a magic link knows only the address it was sent to.
+A bare OIDC provider may release nothing beyond `sub`, a magic link knows only the address it was sent to, and a provider that sends an address is not obliged to say whether anyone checked it.
 So a profile minted at first login is routinely missing something, and the site has to be able to insist.
 
 `deactivated` is never entered or left by any of this.

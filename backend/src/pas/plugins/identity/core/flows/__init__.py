@@ -397,7 +397,53 @@ class FlowManager:
             raise FlowError("Provider returned no id_token and exposes no userinfo")
         response = client.get(userinfo_endpoint)
         response.raise_for_status()
-        return response.json()
+        return self._enrich(client, provider, metadata, response.json())
+
+    def _enrich(
+        self,
+        client: OAuth2Session,
+        provider: ProviderConfig,
+        metadata: JSONDict,
+        payload: JSONDict,
+    ) -> JSONDict:
+        """Complete a userinfo payload from a driver's second endpoint.
+
+        Some providers keep part of the answer somewhere else -- GitHub holds
+        every address, and their verification state, on ``/user/emails``
+        rather than on ``/user``. The driver names the endpoint and merges the
+        answer; the fetch is here because a driver performs no I/O.
+
+        **Best-effort, deliberately.** The extra call is an improvement on the
+        payload, not a precondition for signing in, and the ways it fails are
+        all things a site should survive: an operator who narrowed the scope
+        gets a 403, a provider having a bad afternoon gets a 5xx. Either way
+        the payload is exactly what userinfo gave, which is what this had
+        before the second call existed. Raising instead would turn a missing
+        email address into a failed login.
+
+        :param client: The authlib client holding the token.
+        :param provider: The configured provider.
+        :param metadata: Provider metadata.
+        :param payload: The userinfo payload.
+        :returns: The payload to normalize claims from.
+        """
+        driver = provider.driver
+        endpoint = driver.enrichment_endpoint(metadata) if driver else ""
+        if not endpoint:
+            return payload
+        try:
+            response = client.get(endpoint)
+            response.raise_for_status()
+            data = response.json()
+        except Exception as exc:
+            logger.info(
+                "Could not read %s for provider %r: %s",
+                endpoint,
+                provider.provider_id,
+                exc,
+            )
+            return payload
+        return driver.merge_enrichment(payload, data)
 
     def _id_token_claims(
         self,

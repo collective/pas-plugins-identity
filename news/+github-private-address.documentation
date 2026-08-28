@@ -1,0 +1,1 @@
+Stopped citing GitHub as the provider that withholds an address, now that the add-on reads one from `GET /user/emails`. The reasons a profile arrives incomplete are stated without it. @ericof
