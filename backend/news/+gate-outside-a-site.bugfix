@@ -1,0 +1,5 @@
+Fixed a 500 on every URL outside a Plone site, including the ZMI.
+
+`IPubAfterTraversal` fires for every published request, and a Zope instance serves more than one site's worth of them: `/manage`, the root `acl_users`, anything mounted beside the site. The gate asked `api.user.is_anonymous()` before establishing that the request had reached a Plone site at all, and with no portal in the acquisition chain that raises `CannotGetPortalError` — so the traceback named a question about the *user* on a request that never got near one.
+
+The effect was worse than a broken page. `/manage` and the root user folder are where an operator goes to fix a site they cannot otherwise reach, and installing the `[content]` extra closed both. The gate now answers "nothing to say" for any request without a portal, and still gates every request that has one. @ericof

@@ -288,3 +288,50 @@ class TestTheEscapes:
     def test_it_is_on_by_default(self):
         """Shipping it off would make this the flow the package already had."""
         assert api.portal.get_registry_record(ENFORCE_RECORD) is True
+
+
+class TestRequestsThatNeverReachedASite:
+    """The gate has nothing to say about a URL outside any Plone site.
+
+    ``IPubAfterTraversal`` fires for every published request, and a Zope
+    instance serves more than one site's worth of them: the ZMI at
+    ``/manage``, the root ``acl_users``, anything mounted beside the site.
+    There is no portal on those, so every ``plone.api`` call in the gate
+    raises -- ``api.user.is_anonymous`` first, which is why the traceback
+    named a question about the *user* on a request that had not reached a
+    site at all.
+
+    Found by Érico installing the backend on its own and opening the ZMI
+    (2026-08-28). No test could have caught it: every one here starts from a
+    portal, which is the one condition the failing requests do not meet.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, site) -> None:
+        self.portal, self.url = site
+        self.root = self.url.rsplit("/", 1)[0]
+        self.owner = (SITE_OWNER_NAME, SITE_OWNER_PASSWORD)
+
+    def test_the_zmi_is_reachable(self):
+        """The report: a 500 with `CannotGetPortalError` from inside the
+        gate. Anything but a 500 means the subscriber let it past."""
+        response = get(f"{self.root}/manage", auth=self.owner)
+
+        assert response.status_code != 500
+
+    def test_the_zope_root_is_reachable(self):
+        response = get(f"{self.root}/", auth=self.owner)
+
+        assert response.status_code != 500
+
+    def test_the_root_user_folder_is_reachable(self):
+        """Where an operator goes to fix a site they cannot log in to."""
+        response = get(f"{self.root}/acl_users/manage_main", auth=self.owner)
+
+        assert response.status_code != 500
+
+    def test_the_site_itself_still_gates(self):
+        """The guard says "no portal here", not "never gate anything"."""
+        response = get(self.url, auth=(USERID, PASSWORD))
+
+        assert response.status_code == 302

@@ -50,6 +50,7 @@ from pas.plugins.identity.content.catalog import query_catalog
 from pas.plugins.identity.content.completeness import INCOMPLETE
 from pas.plugins.identity.content.container import PREFIX
 from plone import api
+from plone.api.exc import CannotGetPortalError
 from plone.api.exc import InvalidParameterError
 from plone.rest.interfaces import IAPIRequest
 from zExceptions import Redirect
@@ -187,6 +188,29 @@ def _incomplete_profile(userid: str):
     return brain if brain.review_state == INCOMPLETE else None
 
 
+def _in_a_plone_site() -> bool:
+    """Report whether this request reached a Plone site at all.
+
+    ``IPubAfterTraversal`` fires for **every** published request, and a Zope
+    instance serves more than one Plone site's worth of URLs: the ZMI at
+    ``/manage``, the root ``acl_users``, anything mounted beside the site. On
+    those there is no portal, and every ``plone.api`` call below raises --
+    ``api.user.is_anonymous`` first, which is why the traceback named a
+    question about the *user* on a request that had not reached a site.
+
+    A subscriber that cannot answer for a request has nothing to say about
+    it. This is the first thing asked that needs a site, and everything after
+    it may assume one.
+
+    :returns: Whether a portal can be resolved from the current site.
+    """
+    try:
+        api.portal.get()
+    except CannotGetPortalError:
+        return False
+    return True
+
+
 def redirect_target(request) -> str | None:
     """Return where this request should be sent, or ``None`` to let it pass.
 
@@ -199,6 +223,8 @@ def redirect_target(request) -> str | None:
     if IAPIRequest.providedBy(request):
         return None
     if not _is_navigation(request):
+        return None
+    if not _in_a_plone_site():
         return None
     if api.user.is_anonymous():
         return None
