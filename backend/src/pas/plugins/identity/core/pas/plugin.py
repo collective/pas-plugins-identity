@@ -993,10 +993,25 @@ class IdentityPlugin(BasePlugin):
         if not address:
             return None
         owner = self._store.userid_for(EMAIL_PROVIDER, address)
-        if owner is not None:
-            logger.info(
-                "Attaching %s identity to %s by verified email", provider, owner
+        if owner is None:
+            return None
+        if self._getPAS().getUserById(owner) is None:
+            # The identity outlived the account. Adopting it would sign this
+            # person into a userid nothing resolves: no properties, no roles,
+            # invisible to every search, and a traceback from the first line
+            # that touches the user. A fresh account is not what the operator
+            # configured, but it is a working login and it is recoverable --
+            # the stale identity is a `remove` away from letting the next one
+            # link properly.
+            logger.warning(
+                "Not attaching %s identity to %s: the verified address %r is "
+                "held for a userid this site has no account for",
+                provider,
+                owner,
+                address,
             )
+            return None
+        logger.info("Attaching %s identity to %s by verified email", provider, owner)
         return owner
 
     # ------------------------------------------------------------------

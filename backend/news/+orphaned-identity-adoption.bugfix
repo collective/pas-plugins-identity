@@ -1,0 +1,7 @@
+Auto-link-by-verified-email no longer attaches a login to an account that no longer exists.
+
+The feature attaches a new provider identity to whichever account proved that address to this site with a magic link. It looked the owner up and adopted it, and nothing asked whether that account was still there.
+
+When it is not — deleted after its address was verified, or a store restored beside a different one — the login *succeeded* and returned a userid nothing resolves: no properties, no roles, invisible to every search, and a traceback from whichever line touched the user first. Signing in with Google after verifying an address produced exactly that, and the callback died in `mint_token`.
+
+The adoption now checks the account resolves and declines when it does not, saying so at warning level and naming the address so the stale identity can be found. The sign-in then mints a fresh account as it would for any unrecognised identity — not what the operator configured, but a working login, and recoverable: removing the stale identity lets the next attempt link properly. @ericof
