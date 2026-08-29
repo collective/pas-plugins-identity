@@ -24,6 +24,7 @@ class DriversGet(ControlPanelService):
                     "id": driver.driver_id,
                     "title": driver.title,
                     "schema": driver.config_schema(),
+                    "supports_manual_link": driver.supports_manual_link,
                     "default_propertymap": dict(driver.default_propertymap),
                     "default_groupmap": dict(driver.default_groupmap),
                 }

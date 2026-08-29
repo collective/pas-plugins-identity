@@ -175,6 +175,89 @@ class TestListing(IdentitiesCase):
         assert self.listing()["items"] == []
 
 
+class TestAvailableProviders(IdentitiesCase):
+    """``available`` is what this caller could still attach to their account.
+
+    Availability rather than login visibility: a provider an operator has
+    taken off the login screen is still one an existing user may link.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_, member, configured) -> None:
+        self.portal = portal
+        self.request = request_
+        self.member = member
+
+    def _ids(self) -> list[str]:
+        """Return the ids offered to this caller.
+
+        :returns: Provider ids.
+        """
+        return [item["id"] for item in self.listing()["available"]]
+
+    def test_offers_an_unlinked_provider(self):
+        """The ordinary case."""
+        assert "dex" in self._ids()
+
+    def test_does_not_offer_one_already_linked(self):
+        """Offering it again is offering something that cannot succeed: the
+        store is keyed on provider and subject, and this user already has a
+        subject there."""
+        self.plugin().link(self.member, "dex", USERINFO["sub"], {})
+
+        assert "dex" not in self._ids()
+
+    def test_offers_a_provider_hidden_from_the_login_screen(self):
+        """The point of ``show_in_login`` being its own setting."""
+        set_providers([
+            *get_providers(),
+            ProviderConfig.deserialize({**SECOND_PROVIDER, "show_in_login": False}),
+        ])
+
+        assert "dex-second" in self._ids()
+
+    def test_does_not_offer_a_disabled_provider(self):
+        """Disabled means unusable, not merely unadvertised."""
+        set_providers([
+            *get_providers(),
+            ProviderConfig.deserialize({**SECOND_PROVIDER, "enabled": False}),
+        ])
+
+        assert "dex-second" not in self._ids()
+
+    def test_does_not_offer_the_email_provider(self):
+        """Magic link takes no form here: the addresses this site will verify
+        are the ones on your profile, not one typed into a box."""
+        from . import EMAIL_PROVIDER_RECORD
+
+        set_providers([
+            *get_providers(),
+            ProviderConfig.deserialize(EMAIL_PROVIDER_RECORD),
+        ])
+
+        assert "email" not in self._ids()
+
+    def test_a_linked_email_identity_is_still_listed(self):
+        """Seeing what is attached to your account is a different question
+        from being offered another one."""
+        from . import ADDRESS
+        from . import EMAIL_PROVIDER_RECORD
+
+        set_providers([
+            *get_providers(),
+            ProviderConfig.deserialize(EMAIL_PROVIDER_RECORD),
+        ])
+        self.plugin().link(self.member, "email", ADDRESS, {})
+
+        assert "email" in [item["provider"] for item in self.listing()["items"]]
+
+    def test_an_entry_carries_the_style(self):
+        """The identities page draws the same buttons the login page does."""
+        item = next(i for i in self.listing()["available"] if i["id"] == "dex")
+
+        assert set(item) >= {"icon", "background_color", "foreground_color"}
+
+
 class TestStartLinking(IdentitiesCase):
     @pytest.fixture(autouse=True)
     def _setup(self, portal, request_, member, two_providers, stub_metadata) -> None:

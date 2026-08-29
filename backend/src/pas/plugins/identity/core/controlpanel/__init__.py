@@ -8,13 +8,23 @@ registry editor can reach any single value.
 
 The records for one provider are::
 
-    ...providers.<id>.driver          the driver that handles it
-    ...providers.<id>.title           label on the login button
-    ...providers.<id>.enabled         whether it is offered
-    ...providers.<id>.order           position among the providers
-    ...providers.<id>.propertymap     claim path to user field
-    ...providers.<id>.groupmap        provider group name to local group id
-    ...providers.<id>.config.<key>    one per field the driver declares
+    ...providers.<id>.driver            the driver that handles it
+    ...providers.<id>.title             label on the login button
+    ...providers.<id>.enabled           whether it may be used at all
+    ...providers.<id>.show_in_login     whether the login screen offers it
+    ...providers.<id>.order             position among the providers
+    ...providers.<id>.icon              SVG source, sanitized on the way in
+    ...providers.<id>.background_color  button background, as a hex value
+    ...providers.<id>.foreground_color  button foreground, as a hex value
+    ...providers.<id>.propertymap       claim path to user field
+    ...providers.<id>.groupmap          provider group name to local group id
+    ...providers.<id>.config.<key>      one per field the driver declares
+
+``enabled`` and ``show_in_login`` are two questions rather than one. The first
+is whether the provider works at all; the second is whether the login screen
+advertises it. A provider that is enabled but not shown is still linkable from
+a user's own identities page and still signs in an account already linked to
+it, which is what a staff-only or invitation-only provider looks like.
 
 ``order`` exists because records live in a BTree and therefore read back in
 alphabetical order. Provider order is visible -- it is the order of the
@@ -36,6 +46,7 @@ from pas.plugins.identity.core.drivers import get_driver
 from pas.plugins.identity.core.drivers.base import BaseDriver
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.interfaces import ProviderUnusable
+from pas.plugins.identity.core.svg import sanitize as sanitize_svg
 from plone import api
 from plone.registry import field as registry_field
 from plone.registry.interfaces import IRegistry
@@ -72,6 +83,34 @@ DEFAULT_CALLBACK_PATH = "/login-identity"
 #: What a secret looks like once it has left the backend. A PATCH that sends
 #: this back means "leave the stored value alone".
 SECRET_SENTINEL = "•" * 8
+
+#: What a stored colour may look like. Three, four, six or eight hex digits
+#: behind a hash -- the CSS forms -- and nothing else. Anything looser would
+#: let a colour field carry a CSS expression into the style attribute the
+#: frontend builds from it.
+HEX_COLOR_PATTERN = re.compile(r"^#(?:[0-9A-Fa-f]{3,4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$")
+
+
+class InvalidColor(ValueError):
+    """Raised when a colour is not a hex value this package will store."""
+
+
+def normalize_color(value: str) -> str:
+    """Return a colour as it is stored, or refuse it.
+
+    :param value: The colour as supplied, with or without its leading hash.
+    :returns: The colour lowercased and hashed, or the empty string when
+        nothing was supplied -- clearing a colour is a normal edit.
+    :raises InvalidColor: When the value is not a CSS hex colour.
+    """
+    text = (value or "").strip()
+    if not text:
+        return ""
+    if not text.startswith("#"):
+        text = f"#{text}"
+    if not HEX_COLOR_PATTERN.match(text):
+        raise InvalidColor(f"{value!r} is not a hex colour such as #24292f")
+    return text.lower()
 
 
 def _stored_types(driver_id: str, config: JSONDict) -> JSONDict:
@@ -143,7 +182,12 @@ class ProviderConfig:
         silently re-point every stored identity.
     :ivar driver_id: Which driver handles it.
     :ivar title: Label shown on the login button.
-    :ivar enabled: Whether it appears in ``@login-providers``.
+    :ivar enabled: Whether it may be used at all -- to sign in, and to link.
+    :ivar show_in_login: Whether the login screen offers it. Only meaningful
+        while ``enabled``: a disabled provider is offered nowhere.
+    :ivar icon: SVG source for the login button, sanitized on assignment.
+    :ivar background_color: Button background as a hex value, or empty.
+    :ivar foreground_color: Button foreground as a hex value, or empty.
     :ivar config: Driver-specific settings.
     :ivar propertymap: Claim path to Plone user field. Applied on every
         login -- see :mod:`pas.plugins.identity.core.propertymap`.
@@ -162,24 +206,113 @@ class ProviderConfig:
         config: JSONDict | None = None,
         propertymap: dict[str, str] | None = None,
         groupmap: dict[str, str] | None = None,
+        show_in_login: bool = True,
+        icon: str = "",
+        background_color: str = "",
+        foreground_color: str = "",
     ) -> None:
         """Build a provider configuration.
 
         :param provider_id: Site-unique provider id.
         :param driver_id: Driver that handles this provider.
         :param title: Label for the login button; defaults to the driver's.
-        :param enabled: Whether the provider is offered.
+        :param enabled: Whether the provider may be used at all.
         :param config: Driver-specific settings.
         :param propertymap: Claim path to Plone user field.
         :param groupmap: Provider-side group name to local group id.
+        :param show_in_login: Whether the login screen offers it.
+        :param icon: SVG source for the login button.
+        :param background_color: Button background as a hex value.
+        :param foreground_color: Button foreground as a hex value.
+        :raises InvalidSVG: When the icon is not a storable SVG document.
+        :raises InvalidColor: When a colour is not a hex value.
         """
         self.provider_id = provider_id
         self.driver_id = driver_id
         self.title = title
         self.enabled = enabled
+        self.show_in_login = show_in_login
+        self.icon = icon
+        self.background_color = background_color
+        self.foreground_color = foreground_color
         self.config = _with_driver_defaults(driver_id, config or {})
         self.propertymap = dict(propertymap or {})
         self.groupmap = dict(groupmap or {})
+
+    @property
+    def icon(self) -> str:
+        """Return the SVG source for this provider's button.
+
+        :returns: The sanitized document, or the empty string.
+        """
+        return self._icon
+
+    @icon.setter
+    def icon(self, value: str) -> None:
+        """Sanitize and store an icon.
+
+        On assignment rather than on render, so what is stored is what is
+        served: an icon sanitized on the way out would leave the dangerous
+        version in the registry, in a GenericSetup export, and in whatever
+        else reads a record directly.
+
+        :param value: The SVG document as supplied.
+        :raises InvalidSVG: When it is not a storable SVG document.
+        """
+        self._icon = sanitize_svg(value)
+
+    @property
+    def background_color(self) -> str:
+        """Return the button background.
+
+        :returns: A hex colour, or the empty string.
+        """
+        return self._background_color
+
+    @background_color.setter
+    def background_color(self, value: str) -> None:
+        """Normalize and store the button background.
+
+        :param value: The colour as supplied.
+        :raises InvalidColor: When it is not a hex colour.
+        """
+        self._background_color = normalize_color(value)
+
+    @property
+    def foreground_color(self) -> str:
+        """Return the button foreground.
+
+        :returns: A hex colour, or the empty string.
+        """
+        return self._foreground_color
+
+    @foreground_color.setter
+    def foreground_color(self, value: str) -> None:
+        """Normalize and store the button foreground.
+
+        :param value: The colour as supplied.
+        :raises InvalidColor: When it is not a hex colour.
+        """
+        self._foreground_color = normalize_color(value)
+
+    @property
+    def usable(self) -> bool:
+        """Report whether anything may sign in or link through this provider.
+
+        :returns: Whether it is enabled and its driver is registered. A
+            provider whose driver is gone is not usable however it is
+            configured -- the add-on that knew how to talk to it was removed.
+        """
+        return bool(self.enabled) and self.driver is not None
+
+    @property
+    def offered_at_login(self) -> bool:
+        """Report whether the login screen should draw a button for this.
+
+        :returns: Whether it is usable *and* the operator asked for it to be
+            shown.
+        """
+        return self.usable and bool(self.show_in_login)
 
     @property
     def config(self) -> JSONDict:
@@ -229,9 +362,29 @@ class ProviderConfig:
             "driver": self.driver_id,
             "title": self.title or (self.driver.title if self.driver else ""),
             "enabled": self.enabled,
+            "show_in_login": self.show_in_login,
+            "icon": self.icon,
+            "background_color": self.background_color,
+            "foreground_color": self.foreground_color,
             "config": config,
             "propertymap": dict(self.propertymap),
             "groupmap": dict(self.groupmap),
+        }
+
+    def style(self) -> JSONDict:
+        """Render just what a client needs to draw the button.
+
+        Separate from :meth:`serialize`, which is the control panel's view and
+        needs ``Manage portal``. This is public by construction -- it is on
+        every login page -- so it carries the three presentation values and
+        nothing else.
+
+        :returns: JSON-ready mapping of icon and colours.
+        """
+        return {
+            "icon": self.icon,
+            "background_color": self.background_color,
+            "foreground_color": self.foreground_color,
         }
 
     @classmethod
@@ -246,6 +399,13 @@ class ProviderConfig:
             driver_id=data["driver"],
             title=data.get("title", ""),
             enabled=data.get("enabled", True),
+            # Absent means shown. Every provider stored before this setting
+            # existed was offered at login, and a new key must not silently
+            # take a site's login buttons away.
+            show_in_login=data.get("show_in_login", True),
+            icon=data.get("icon", "") or "",
+            background_color=data.get("background_color", "") or "",
+            foreground_color=data.get("foreground_color", "") or "",
             config=data.get("config", {}),
             propertymap=data.get("propertymap", {}),
             groupmap=data.get("groupmap", {}),
@@ -416,6 +576,10 @@ def _read_provider(provider_id: str) -> tuple[ProviderConfig, int]:
         driver_id=own.get("driver") or "",
         title=own.get("title") or "",
         enabled=bool(own.get("enabled", True)),
+        show_in_login=bool(own.get("show_in_login", True)),
+        icon=own.get("icon") or "",
+        background_color=own.get("background_color") or "",
+        foreground_color=own.get("foreground_color") or "",
         config=config,
         propertymap=dict(own.get("propertymap") or {}),
         groupmap=dict(own.get("groupmap") or {}),
@@ -449,14 +613,30 @@ def get_provider(provider_id: str) -> ProviderConfig | None:
 
 
 def enabled_providers() -> list[ProviderConfig]:
-    """Return the providers a user may actually log in with.
+    """Return the providers that may be used at all.
 
-    A provider whose driver is missing is skipped: offering a login button
-    that cannot work is worse than not offering it.
+    A provider whose driver is missing is skipped: it cannot work however it
+    is configured, because the add-on that knew how to talk to it is gone.
 
-    :returns: Enabled providers with a registered driver.
+    This is *availability*, not visibility. It is what the identities page
+    offers to link, and what a sign-in through an already-linked identity is
+    checked against. The login screen asks :func:`login_providers` instead.
+
+    :returns: Enabled providers with a registered driver, in stored order.
     """
-    return [p for p in get_providers() if p.enabled and p.driver is not None]
+    return [p for p in get_providers() if p.usable]
+
+
+def login_providers() -> list[ProviderConfig]:
+    """Return the providers the login screen should offer.
+
+    The usable ones the operator also asked to show. Everything enabled and
+    hidden stays reachable through ``@identities`` -- that is the whole point
+    of the two settings being two settings.
+
+    :returns: Providers to draw login buttons for, in stored order.
+    """
+    return [p for p in get_providers() if p.offered_at_login]
 
 
 def get_callback_url() -> str:
@@ -516,9 +696,9 @@ def get_provider_record(provider_id: str, field: str, default: object = None) ->
 
     :param provider_id: The provider.
     :param field: The record below it -- one of ``driver``, ``title``,
-        ``enabled``, ``order``, ``propertymap``, ``groupmap``, or
-        ``config.<key>`` for a
-        driver setting.
+        ``enabled``, ``show_in_login``, ``order``, ``icon``,
+        ``background_color``, ``foreground_color``, ``propertymap``,
+        ``groupmap``, or ``config.<key>`` for a driver setting.
     :param default: Returned when no such record exists.
     :returns: The stored value, or ``default``.
     """
@@ -562,7 +742,11 @@ def _write_provider(provider: ProviderConfig, order: int) -> None:
     registry[f"{prefix}driver"] = provider.driver_id
     registry[f"{prefix}title"] = provider.title
     registry[f"{prefix}enabled"] = bool(provider.enabled)
+    registry[f"{prefix}show_in_login"] = bool(provider.show_in_login)
     registry[f"{prefix}order"] = int(order)
+    registry[f"{prefix}icon"] = provider.icon
+    registry[f"{prefix}background_color"] = provider.background_color
+    registry[f"{prefix}foreground_color"] = provider.foreground_color
     registry[f"{prefix}propertymap"] = dict(provider.propertymap)
     registry[f"{prefix}groupmap"] = dict(provider.groupmap)
 

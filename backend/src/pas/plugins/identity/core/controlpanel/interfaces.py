@@ -177,10 +177,61 @@ class IProviderRecords(Interface):
     enabled = schema.Bool(
         title=_("Enabled"),
         description=_(
-            "A disabled provider keeps its settings and its stored identities."
+            "Whether this provider can be used at all. A disabled provider "
+            "keeps its settings and its stored identities, and nothing may "
+            "sign in or link through it. Whether it is *offered* on the login "
+            "screen is a separate setting."
         ),
         required=False,
         default=True,
+    )
+
+    show_in_login = schema.Bool(
+        title=_("Show on the login screen"),
+        description=_(
+            "Whether the login screen offers a button for this provider. An "
+            "enabled provider that is not shown still works: it stays "
+            "linkable from a user's own identities page, and an account "
+            "already linked to it still signs in through it. That is what a "
+            "staff-only provider looks like -- usable, but not advertised to "
+            "everybody who reaches the login form."
+        ),
+        required=False,
+        default=True,
+    )
+
+    icon = schema.Text(
+        title=_("Icon"),
+        description=_(
+            "An SVG document, stored as its source. Empty means no icon, and "
+            "the frontend then draws the title alone rather than a "
+            "placeholder every provider shares. What is stored is sanitized "
+            "on the way in -- see "
+            "pas.plugins.identity.core.svg -- because this is markup a site "
+            "renders inline."
+        ),
+        required=False,
+        default="",
+    )
+
+    background_color = schema.TextLine(
+        title=_("Background colour"),
+        description=_(
+            "The login button's background, as a hex value such as #24292f. "
+            "Empty leaves the frontend's own styling alone."
+        ),
+        required=False,
+        default="",
+    )
+
+    foreground_color = schema.TextLine(
+        title=_("Foreground colour"),
+        description=_(
+            "The login button's text and icon colour, as a hex value. Empty "
+            "leaves the frontend's own styling alone."
+        ),
+        required=False,
+        default="",
     )
 
     order = schema.Int(

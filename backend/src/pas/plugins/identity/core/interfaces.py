@@ -99,6 +99,14 @@ class IDriver(Interface):
         "deployment's directory, not about a driver."
     )
 
+    supports_manual_link = Attribute(
+        "Whether a user may start a link against this provider from a form "
+        "on their identities page. True for every redirect flow; false for a "
+        "driver whose subject is something the user types, since a free-text "
+        "box there verifies any value rather than one already known to be "
+        "theirs."
+    )
+
     def config_schema() -> JSONDict:
         """Return the configuration schema for this driver.
 

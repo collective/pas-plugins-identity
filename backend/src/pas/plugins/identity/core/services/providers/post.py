@@ -3,6 +3,7 @@
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.controlpanel import get_providers
+from pas.plugins.identity.core.controlpanel import InvalidColor
 from pas.plugins.identity.core.controlpanel import InvalidProviderId
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
@@ -13,6 +14,7 @@ from pas.plugins.identity.core.interfaces import FlowError
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.services.providers import ProvidersService
 from pas.plugins.identity.core.services.providers import TEST_ACTION
+from pas.plugins.identity.core.svg import InvalidSVG
 from plone.restapi.deserializer import json_body
 
 
@@ -56,15 +58,22 @@ class ProvidersPost(ProvidersService):
                 409, "Already configured", f"{provider_id!r} already exists."
             )
 
-        provider = ProviderConfig(
-            provider_id=provider_id,
-            driver_id=driver_id,
-            title=data.get("title", ""),
-            enabled=bool(data.get("enabled", True)),
-            config=data.get("config", {}),
-            propertymap=data.get("propertymap", {}),
-            groupmap=data.get("groupmap", {}),
-        )
+        try:
+            provider = ProviderConfig(
+                provider_id=provider_id,
+                driver_id=driver_id,
+                title=data.get("title", ""),
+                enabled=bool(data.get("enabled", True)),
+                show_in_login=bool(data.get("show_in_login", True)),
+                icon=data.get("icon", "") or "",
+                background_color=data.get("background_color", "") or "",
+                foreground_color=data.get("foreground_color", "") or "",
+                config=data.get("config", {}),
+                propertymap=data.get("propertymap", {}),
+                groupmap=data.get("groupmap", {}),
+            )
+        except (InvalidSVG, InvalidColor) as error:
+            return self._error(400, "Invalid style", str(error))
         set_providers([*get_providers(), provider])
         self.request.response.setStatus(201)
         return self._render(provider)

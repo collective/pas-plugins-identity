@@ -38,6 +38,7 @@ from plone.autoform.directives import read_permission
 from plone.autoform.directives import write_permission
 from plone.dexterity.content import Container
 from plone.namedfile.field import NamedBlobImage
+from plone.schema import Email
 from plone.supermodel import model
 from zope import schema
 from zope.interface import implementer
@@ -74,7 +75,7 @@ class IUserProfileSchema(model.Schema, IUserContent):
         required=True,
     )
 
-    email = schema.TextLine(
+    email = Email(
         title=_("Email"),
         description=_("Required: this is what the user is reached and matched by."),
         required=True,

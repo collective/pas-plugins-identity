@@ -22,6 +22,16 @@ class EmailDriver(BaseDriver):
     title = "Email"
     subject_keys = ("email",)
 
+    #: No link form on the identities page.
+    #:
+    #: The address a magic link proves is whatever was typed into the box, so
+    #: a free-text field there is a way to attach *any* mailbox to your
+    #: account -- including one you merely have momentary access to. The
+    #: addresses this site will verify are the ones already listed on your
+    #: profile, and ``POST @identities`` enforces that; dropping the form is
+    #: the same rule stated where a person can see it.
+    supports_manual_link = False
+
     # A mailbox asserts an address and nothing else, so seeding a fullname
     # mapping would only ever resolve to nothing.
     default_propertymap = {"email": "email"}  # noqa: RUF012

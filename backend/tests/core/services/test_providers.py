@@ -261,6 +261,45 @@ class TestUpdating(ControlPanelCase):
 
         assert get_provider("dex").enabled is False
 
+    def test_toggles_login_visibility(self):
+        """Taking a provider off the login screen leaves it usable."""
+        self.call(ProvidersPatch, "dex", payload={"show_in_login": False})
+
+        provider = get_provider("dex")
+
+        assert provider.show_in_login is False
+        assert provider.usable is True
+
+    def test_stores_a_style(self):
+        """Icon and colours are what the login button is drawn from."""
+        self.call(
+            ProvidersPatch,
+            "dex",
+            payload={
+                "icon": '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0"/></svg>',
+                "background_color": "#24292F",
+            },
+        )
+
+        provider = get_provider("dex")
+
+        assert "<path" in provider.icon
+        assert provider.background_color == "#24292f"
+
+    def test_refuses_an_icon_that_is_not_an_svg(self):
+        """400 rather than a traceback, and rather than a silent empty icon:
+        an operator who pasted the wrong thing has to find out here."""
+        result = self.call(ProvidersPatch, "dex", payload={"icon": "<html/>"})
+
+        assert self.status() == 400
+        assert result["error"]["type"] == "Invalid style"
+
+    def test_refuses_a_colour_that_is_not_hex(self):
+        """The value reaches a style attribute in the frontend."""
+        self.call(ProvidersPatch, "dex", payload={"background_color": "red"})
+
+        assert self.status() == 400
+
     def test_round_trip_preserves_the_secret(self):
         """The whole reason unmask exists. Read the provider, change
         the title, PATCH the config straight back with its masked secret."""

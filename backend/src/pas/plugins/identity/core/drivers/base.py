@@ -109,6 +109,16 @@ class BaseDriver:
     #: when it knows the far end ships a group by that name.
     default_groupmap: dict[str, str] = {}  # noqa: RUF012
 
+    #: Whether a user may start a link against this provider from a form.
+    #:
+    #: True for every redirect flow: the identities page offers a button, the
+    #: browser goes to the provider, and what comes back is proof. False for
+    #: a driver whose subject is something the *user types* -- an address --
+    #: because a free-text box there is a box for verifying any address at
+    #: all, not one of your own. Magic link is that case, and its addresses
+    #: come from the profile instead.
+    supports_manual_link: bool = True
+
     #: Extra config fields beyond :data:`OAUTH_FIELDS`.
     extra_fields: dict[str, JSONDict] = {}  # noqa: RUF012
 

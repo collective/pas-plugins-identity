@@ -54,10 +54,23 @@ class TestListing:
         assert item["@id"].endswith("/@login-providers/dex")
 
     def test_leaks_no_configuration(self):
-        """Nothing from the provider config leaves here, masked or not."""
+        """Nothing from the provider config leaves here, masked or not.
+
+        The style fields are presentation the login page needs and carry no
+        setting; everything a driver was configured with stays behind.
+        """
         item = self.reply()["items"][0]
 
-        assert set(item) == {"@id", "id", "title", "driver"}
+        assert set(item) == {
+            "@id",
+            "id",
+            "title",
+            "driver",
+            "supports_manual_link",
+            "icon",
+            "background_color",
+            "foreground_color",
+        }
 
     def test_listing_starts_no_flow(self):
         """Rendering the login page must not mint attempts: a login page is
