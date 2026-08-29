@@ -21,19 +21,18 @@ from identitydemo.setuphandlers import DemoRefused
 from identitydemo.setuphandlers import guard
 from identitydemo.setuphandlers.idp import install_idp
 from identitydemo.setuphandlers.rp import install_rp
-from pas.plugins.identity.content.catalog import PROFILE_PORTAL_TYPE
-from pas.plugins.identity.content.container import TYPE_RECORD as CONTAINER_TYPE_RECORD
-from pas.plugins.identity.content.subscribers import get_profile
+from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
+from pas.plugins.identity.core.container import TYPE_RECORD as CONTAINER_TYPE_RECORD
 from pas.plugins.identity.core.controlpanel import CALLBACK_URL_RECORD
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.interfaces import ICredentialStorage
+from pas.plugins.identity.core.subscribers import get_profile
 from pas.plugins.identity.server.clients import get_client
 from pas.plugins.identity.server.clients import get_clients
 from pas.plugins.identity.server.tokens import ISSUER_RECORD
 from plone import api
 from plone.app.testing import setRoles
 from plone.app.testing import TEST_USER_ID
-from tests.content import PROFILE_ID
 
 import pytest
 
@@ -140,7 +139,7 @@ class TestInstallIdP:
         assert api.user.get(userid=settings.DEMO_USER_ID) is not None
 
 
-@pytest.mark.portal(profiles=[PROFILE_ID, SERVER_PROFILE_ID])
+@pytest.mark.portal(profiles=[SERVER_PROFILE_ID])
 class TestTheDemoUserIsContent:
     """What the provider profile is *for*: a user who is a content object.
 

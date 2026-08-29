@@ -193,7 +193,12 @@ class TestAKnownIdentityWhoseAccountIsGone:
 
     def test_it_says_so(self, caplog):
         """An account reappearing is not what an operator who deleted one
-        expects, and removing the identity is what makes it stick."""
+        expects, and removing the identity is what makes it stick.
+
+        The Profile is put back by a subscriber that runs on every login and
+        cannot say anything, so this is the one place that can tell an
+        ordinary sign-in from a restoration.
+        """
         with caplog.at_level(logging.WARNING, logger="pas.plugins.identity"):
             self.authenticate()
 

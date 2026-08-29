@@ -16,10 +16,10 @@ from pas.plugins.identity.core.pas import EXTRACTOR
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.pas.plugin import IdentityPlugin
 from pas.plugins.identity.core.pas.plugin import mint_userid
-from pas.plugins.identity.setuphandlers import ACTIVATED_INTERFACES
-from pas.plugins.identity.setuphandlers import FIRST_REFUSAL_INTERFACES
 from pas.plugins.identity.setuphandlers import install_plugin
 from pas.plugins.identity.setuphandlers import uninstall_plugin
+from pas.plugins.identity.setuphandlers.plugins import ACTIVATED_INTERFACES
+from pas.plugins.identity.setuphandlers.plugins import FIRST_REFUSAL_INTERFACES
 from plone import api
 from Products.PluggableAuthService.interfaces.plugins import IChallengePlugin
 
@@ -203,21 +203,33 @@ class TestAuthentication:
         assert len(userid) == 32
         assert login == userid
 
-    def test_first_login_creates_plone_user(self):
-        """Core decorates ``source_users`` rather than enumerating itself."""
+    def test_first_login_creates_a_user(self):
+        """The account is the content object a subscriber minted, and PAS
+        can resolve the principal by the time this returns."""
         userid, _ = self.plugin.authenticateCredentials(self.credentials)
 
-        assert self.acl_users.source_users.getUserById(userid) is not None
+        assert api.user.get(userid=userid) is not None
+
+    def test_first_login_writes_no_source_users_row(self):
+        """The content object is the account; a row beside it would be a
+        second record of the same person, kept in step by nothing.
+
+        Asserted on ``getUserIds``, which is what the ZMI listing shows.
+        ``getUserById`` is not the question: PlonePAS's user manager answers
+        it for a principal it does not hold, so it cannot show an absence.
+        """
+        userid, _ = self.plugin.authenticateCredentials(self.credentials)
+
+        assert userid not in self.acl_users.source_users.getUserIds()
 
     def test_first_login_seeds_properties(self):
-        """Fullname and email land in ``mutable_properties``."""
+        """Fullname and email are readable off the principal, wherever the
+        site keeps them."""
         userid, _ = self.plugin.authenticateCredentials(self.credentials)
 
-        sheet = self.acl_users.mutable_properties.getPropertiesForUser(
-            self.acl_users.getUserById(userid)
-        )
-        assert sheet.getProperty("fullname") == "Érico Andrei"
-        assert sheet.getProperty("email") == "erico@plone.org"
+        member = api.user.get(userid=userid)
+        assert member.getProperty("fullname") == "Érico Andrei"
+        assert member.getProperty("email") == "erico@plone.org"
 
     def test_first_login_stores_identity(self):
         """The identity is linked to the new userid."""

@@ -1,9 +1,8 @@
 """Fixtures for the ``[server]`` extra.
 
-The layer stores its clients in a registry record and nothing else, so unlike
-the ``[content]`` extra there is no content to create and no elevation needed:
-the tests here do not carry the ``_manager`` workaround that
-``tests/content/conftest.py`` documents.
+The layer stores its clients in a registry record and nothing else, so there
+is no content to create and no elevation needed: the tests here do not carry
+the ``_manager`` workaround that ``tests/core/conftest.py`` documents.
 """
 
 from pas.plugins.identity.server import clients as clients_module

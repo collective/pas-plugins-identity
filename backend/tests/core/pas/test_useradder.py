@@ -1,22 +1,21 @@
-"""Adding a user on a site that keeps its users as content.
+"""Adding a user as content, with a type this package has never heard of.
 
-Core can create the content object a user *is*, without knowing what type
-that is. Two registry records say which portal type and where, and the type
-has to provide ``IUserContent`` -- an interface core declares and an optional
-layer's content type provides, which is the same direction every other
-extension point here runs in.
+The plugin creates the content object a user *is* without naming the type.
+Two registry records say which portal type and where, and the type has to
+provide ``IUserContent``. Installing the add-on points those records at
+``UserProfile``; a site with a user type of its own points them elsewhere,
+and that is the case this module is about.
 
-The point of the design is what happens when those records are empty, which
-is every site until somebody sets them. PAS walks the registered adders and
-stops at the first that returns true, so declining is how a plugin says "not
-mine" -- ``ZODBUserManager.doAddUser`` already returns ``False`` on a
-duplicate id. An unconfigured site therefore behaves exactly as it did
-before, and that is what most of this module asserts.
+The stub type is built here rather than borrowed on purpose: a test that used
+``UserProfile`` would prove only that the plugin works with the one type this
+package happens to ship.
 
-The stub type is built here rather than borrowed from the ``[content]``
-extra on purpose: core must be able to do this for a type it has never heard
-of, and a test that used ``Profile`` would prove only that core works with
-the one type this package happens to ship.
+It also covers what happens when the records are wrong or blank. PAS walks
+the registered adders and stops at the first that returns true, so declining
+is how a plugin says "not mine" -- ``ZODBUserManager.doAddUser`` already
+returns ``False`` on a duplicate id. A site whose records name something that
+is not a user therefore falls back to ``source_users``, which is stock Plone
+rather than a traceback.
 """
 
 from .stubs import add_type
@@ -67,13 +66,16 @@ def configured(site):
     return site
 
 
-class TestAnUnconfiguredSite:
-    """The default, and the one that must not change."""
+class TestASiteWithTheRecordsBlanked:
+    """Not the default any more, and still reachable: an operator can clear
+    the records in the control panel. Stock Plone is what they get."""
 
     @pytest.fixture(autouse=True)
     def _setup(self, site, acl_users) -> None:
         self.portal = site
         self.plugin = acl_users[PLUGIN_ID]
+        api.portal.set_registry_record(USER_CONTENT_TYPE_RECORD, "")
+        api.portal.set_registry_record(USER_CONTAINER_PATH_RECORD, "")
 
     def test_the_plugin_declines(self):
         """No type configured, so this is somebody else's job."""

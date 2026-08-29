@@ -4,20 +4,23 @@ Everything in ``test_first_login`` fires the events by hand, which is the
 right way to test the subscriber and no way at all to prove the subscriber is
 *wired*. This drives the whole thing: Dex issues a real authorization code
 against a real end-user session, core authenticates it and fires the contract
-event, and the ``[content]`` layer -- which core knows nothing about -- ends up
+event, and the subscriber -- which the plugin knows nothing about -- ends up
 with a Profile the user can edit and complete.
 
-The sequence the gate asks for, in one test: fresh Dex user logs in, Profile
-exists in ``incomplete``, the user edits their own Profile, transitions it to
-``complete``, and ``@my-profile`` reflects it.
+The sequence the gate asks for, in one test: a fresh Dex user logs in, a
+Profile exists and has been reconciled against what the site requires, the
+user edits their own Profile, and ``@my-profile`` reflects it.
+
+Dex sends both a name and an address, so the profile it mints is *complete*.
+The incomplete half of the flow needs a provider that withholds something,
+which cannot be arranged against this one; it is covered in
+``test_completeness`` and ``test_first_login`` instead.
 """
 
 from ..conftest import DEX_USER
-from pas.plugins.identity import PACKAGE_NAME
-from pas.plugins.identity.content.catalog import all_brains
-from pas.plugins.identity.content.catalog import query_catalog
+from pas.plugins.identity.core.catalog import all_brains
+from pas.plugins.identity.core.catalog import query_catalog
 from plone import api
-from plone.app.testing import applyProfile
 
 import pytest
 import transaction
@@ -28,7 +31,7 @@ pytestmark = pytest.mark.docker
 
 @pytest.fixture
 def profile_portal(portal):
-    """The functional portal with the ``[content]`` extra installed.
+    """The functional portal.
 
     Applied on top of the flow fixture rather than from a layer of its own:
     the functional layer stacks a DemoStorage per test, so the commit below is
@@ -37,7 +40,6 @@ def profile_portal(portal):
     :param portal: The portal with both Dex clients configured.
     :returns: The Plone site.
     """
-    applyProfile(portal, f"{PACKAGE_NAME}.content:default")
     transaction.commit()
     return portal
 
@@ -132,12 +134,26 @@ class TestFirstLoginMintsAProfile:
 
         assert brain.login == DEX_USER["email"]
 
-    def test_it_starts_incomplete(self):
-        """Which is what the frontend routes on."""
+    def test_it_arrives_complete(self):
+        """Because Dex supplies everything this site requires.
+
+        This asserted ``incomplete``, and had done since before there was a
+        transition to leave that state with. ``cac5a34`` gave the workflow
+        something that fires ``complete``, and from then on a Dex login --
+        which sends both a name and an address -- produced a complete profile
+        and this test was red. Nothing noticed: it is docker-marked, the
+        suite it belongs to has never run in CI, and the two sessions since
+        did not run it locally.
+
+        What the flow proves is that reconciliation runs at first login, and
+        that is what is asserted. A provider that withholds a field, which is
+        the case the gate exists for, is covered where it can be arranged --
+        ``test_completeness`` and ``test_first_login``.
+        """
         _, userid = self.logged_in
         brain = query_catalog().unrestrictedSearchResults(userid=userid)[0]
 
-        assert brain.review_state == "incomplete"
+        assert brain.review_state == "complete"
 
     def test_claims_from_dex_were_synced(self):
         """The real id_token's claims, not a fixture's."""
@@ -147,12 +163,13 @@ class TestFirstLoginMintsAProfile:
         assert brain.email == DEX_USER["email"]
 
     def test_my_profile_reports_it(self):
-        """Through the service Volto actually calls."""
+        """Through the service Volto actually calls, which is what routes the
+        browser after a login."""
         session, _ = self.logged_in
 
         body = session.get(f"{self.portal_url}/@my-profile", timeout=30).json()
 
-        assert body["review_state"] == "incomplete"
+        assert body["review_state"] == "complete"
         assert body["profile"]
 
 

@@ -1,23 +1,22 @@
 """Where a first external login puts the user record.
 
-An identity arrives, core mints a userid, and something has to become the
-account the rest of Plone can see. On an ordinary site that is a
-``source_users`` row with a placeholder password, and it has to stay that way:
-it is the only record such a user has.
+An identity arrives, a userid is minted, and something has to become the
+account the rest of Plone can see. That something is a content object, and
+never a ``source_users`` row: the object is the account -- this plugin
+enumerates it and ``_authenticate_content_password`` signs in against a
+password held on it -- so a row beside it is a second record of the same
+person. It turns up in the ZMI, nothing keeps it in step with the object, and
+it outlives what it shadows. It used to be written on every federated first
+login regardless, which is how the demo identity provider ended up with
+``alice`` and ``ericof`` in both stores at once.
 
-On a site that keeps its users as content it must **not** be. There the
-content object is the account -- this plugin enumerates it and
-``_authenticate_content_password`` signs in against a password held on it --
-so a ``source_users`` row is a second record of the same person: it turns up
-in the ZMI, nothing keeps it in step with the object, and it outlives what it
-shadows. It was written on every federated first login regardless, which is
-how the demo identity provider ended up with ``alice`` and ``ericof`` in both
-stores at once.
-
-Nothing here creates the content object for core. That is the site's job, the
-same way it is for :meth:`doAddUser`, and the subscriber below is this
-module's stand-in for the ``[content]`` layer's -- see
-``tests.content.test_external_user_record`` for the shipped one.
+The plugin does not create the object itself. A subscriber to
+``IExternalIdentityAuthenticated`` does, the same way ``doAddUser`` leaves the
+credential to whoever owns one -- and the subscriber below is this module's
+stand-in for the shipped one, with a stub type in place of ``UserProfile``.
+Using the real type here would prove only that the plugin works with the one
+type this package happens to ship; see ``tests/core/test_external_user_record.py``
+for that half.
 """
 
 from . import CLAIMS
@@ -89,7 +88,7 @@ def configured(site):
 def claiming(configured):
     """Register a subscriber that creates the user object, and remove it after.
 
-    What the ``[content]`` layer does, reduced to the one line this module
+    What the shipped subscriber does, reduced to the one line this module
     cares about. Registered here rather than assumed, because "core declines
     and somebody else creates" is the whole contract under test: without a
     claimant there is no account, which is the case its own test covers.
@@ -118,30 +117,7 @@ def claiming(configured):
     registry.unregisterHandler(create, (ExternalIdentityAuthenticated,))
 
 
-class TestAnUnconfiguredSite:
-    """The default, and the one that must not change."""
-
-    @pytest.fixture(autouse=True)
-    def _setup(self, site, acl_users, credentials) -> None:
-        self.portal = site
-        self.acl_users = acl_users
-        self.plugin = acl_users[PLUGIN_ID]
-        self.credentials = credentials
-
-    def test_the_account_is_created_in_source_users(self):
-        """The only record such a user has. Nothing about keeping users as
-        content may take this away from a site that does not."""
-        userid, _ = self.plugin.authenticateCredentials(self.credentials)
-
-        assert userid in self.acl_users.source_users.getUserIds()
-
-    def test_the_user_is_retrievable(self):
-        userid, _ = self.plugin.authenticateCredentials(self.credentials)
-
-        assert api.user.get(userid=userid) is not None
-
-
-class TestASiteThatKeepsItsUsersAsContent:
+class TestASiteWithAUserTypeOfItsOwn:
     """The bug: a second record of the same person, written every time."""
 
     @pytest.fixture(autouse=True)
@@ -186,12 +162,12 @@ class TestASiteThatKeepsItsUsersAsContent:
 
 
 class TestNothingClaimsTheUser:
-    """A site configured for user content with nothing creating one.
+    """A site pointed at a user type with nothing creating one.
 
-    Core declines here and the login still succeeds, so the principal exists
-    as an identity and as nothing else. It cannot be fixed from inside the
-    plugin -- what would create the object is the part that is missing -- so
-    it is said once, loudly, at the moment it becomes true.
+    The plugin writes nothing here and the login still succeeds, so the
+    principal exists as an identity and as nothing else. It cannot be fixed
+    from inside the plugin -- what would create the object is the part that is
+    missing -- so it is said once, loudly, at the moment it becomes true.
     """
 
     @pytest.fixture(autouse=True)
@@ -209,7 +185,7 @@ class TestNothingClaimsTheUser:
     def test_it_is_reported(self, caplog):
         self.plugin.authenticateCredentials(self.credentials)
 
-        assert "keeps its users as content" in caplog.text
+        assert "as an identity and as nothing else" in caplog.text
 
     def test_the_warning_names_the_type_that_was_not_created(self, caplog):
         """A site reading this has to know which record to look at."""

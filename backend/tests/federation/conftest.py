@@ -41,7 +41,7 @@ def _no_importer_commits(monkeypatch):
 
     A commit escapes the per-test rollback ``plone.app.testing`` does, so
     everything ``install_idp`` wrote stayed in the site for the rest of the
-    session: the demo user most visibly, since ``tests.content`` then tried
+    session: the demo user most visibly, since ``tests.core`` then tried
     to create its own ``alice`` and got ``Duplicate user ID``. That is a
     failure in a module which does not import the demo, hundreds of tests
     after the one that caused it, blaming a fixture that was innocent -- and

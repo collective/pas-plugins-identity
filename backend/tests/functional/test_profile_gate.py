@@ -11,10 +11,10 @@ would undo it on the far side of the gate.
 """
 
 from pas.plugins.identity import PACKAGE_NAME
-from pas.plugins.identity.content.completeness import REQUIRED_FIELDS_RECORD
-from pas.plugins.identity.content.container import get_container
-from pas.plugins.identity.content.gate import ENFORCE_RECORD
-from pas.plugins.identity.content.gate import EXEMPT_RECORD
+from pas.plugins.identity.core.completeness import REQUIRED_FIELDS_RECORD
+from pas.plugins.identity.core.container import get_container
+from pas.plugins.identity.core.gate import ENFORCE_RECORD
+from pas.plugins.identity.core.gate import EXEMPT_RECORD
 from plone import api
 from plone.app.testing import applyProfile
 from plone.app.testing import SITE_OWNER_NAME
@@ -49,7 +49,6 @@ def site(functional):
     :returns: ``(portal, url)``.
     """
     portal = functional["portal"]
-    applyProfile(portal, f"{PACKAGE_NAME}.content:default")
     api.portal.set_registry_record(REQUIRED_FIELDS_RECORD, ("email", "location"))
     with api.env.adopt_roles(["Manager"]):
         # Installing the layer does not create the container -- where profiles

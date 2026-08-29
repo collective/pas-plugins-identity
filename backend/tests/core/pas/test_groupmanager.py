@@ -61,13 +61,16 @@ def configured(portal, acl_users):
     return portal
 
 
-class TestAnUnconfiguredSite:
-    """The default, and the one that must not change."""
+class TestASiteWithTheRecordsBlanked:
+    """Not the default any more, and still reachable: an operator can clear
+    the records in the control panel. Stock Plone is what they get."""
 
     @pytest.fixture(autouse=True)
     def _setup(self, portal, acl_users) -> None:
         self.portal = portal
         self.plugin = acl_users[PLUGIN_ID]
+        api.portal.set_registry_record(GROUP_CONTENT_TYPE_RECORD, "")
+        api.portal.set_registry_record(GROUP_CONTAINER_PATH_RECORD, "")
 
     def test_add_declines(self):
         assert self.plugin.addGroup("editors") is False

@@ -279,9 +279,9 @@ class TestStoring:
 
 
 class TestWhereItLands:
-    """Which store answers for a user, with no [content] layer installed.
+    """Which store answers for a user who has no Profile.
 
-    The layer's own half is ``tests/content/test_provider_picture.py``: this
+    The Profile-backed half is ``tests/core/test_provider_picture.py``: this
     is the site that has never heard of it, and has to keep working exactly
     as it did.
     """
@@ -302,7 +302,7 @@ class TestWhereItLands:
 
 
 class TestThroughTheSync:
-    """Signing in: when a fetch is attempted at all. No [content] layer here
+    """Signing in: when a fetch is attempted at all. No Profile here
     -- portraits belong to the member, so they work without it."""
 
     @pytest.fixture(autouse=True)
@@ -407,3 +407,33 @@ class TestTheFeatureOff:
 
         assert calls == []
         assert userid
+
+
+class TestTheMediaTypeIsReadFromTheBytes:
+    """Not from the response header the fetch saw.
+
+    ``_fetch`` already refused anything whose header did not claim to be an
+    image, and what is stored should be described by what it *is*. Only the
+    PNG branch was ever exercised, because the one fixture in this suite is a
+    PNG -- so a provider serving a JPEG was storing bytes labelled by a line
+    nobody had run.
+    """
+
+    @pytest.mark.parametrize(
+        "data,expected",
+        [
+            pytest.param(b"\x89PNG\r\n\x1a\n" + b"\x00" * 8, "image/png", id="png"),
+            pytest.param(b"\xff\xd8\xff" + b"\x00" * 8, "image/jpeg", id="jpeg"),
+            pytest.param(b"GIF89a" + b"\x00" * 8, "image/gif", id="gif"),
+            pytest.param(b"RIFF\x00\x00\x00\x00WEBP", "image/webp", id="webp"),
+        ],
+    )
+    def test_a_signature_is_recognised(self, data: bytes, expected: str):
+        assert portraits._image_type(data) == expected
+
+    def test_anything_else_is_stored_rather_than_refused(self):
+        """It was already vetted, and a picture the browser can render is not
+        worth losing to a signature table."""
+        assert portraits._image_type(b"not an image at all") == (
+            "application/octet-stream"
+        )

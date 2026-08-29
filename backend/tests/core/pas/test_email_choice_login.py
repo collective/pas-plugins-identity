@@ -1,18 +1,20 @@
-"""What happens to an offered address list on a site that cannot ask.
+"""An offered address list survives the login that carried it.
 
 A driver offered several addresses picks none of them and carries the list, so
-the user can say which is theirs on their profile. That only works where there
-*are* profiles. With the ``[content]`` layer absent there is no profile, no
-form and no gate, so nobody is ever asked -- and the account would end up with
-no address at all, which is worse than the guess the choice replaced.
+the user can say which is theirs on their profile. Nothing in the login path
+may quietly settle it: the choice decides which identity the person is here
+as, and -- where the operator enabled auto-linking -- which existing account a
+verified-email link would attach to.
 
-Found by Érico installing the backend without the ``[content]`` extra
-(2026-08-28): a GitHub sign-in produced a user with no email and nothing
-asking for one.
+There used to be a second half to this module, for a site with no profiles to
+ask on: it took the first offer rather than leaving the account with no
+address at all. Found by Érico installing the backend without the content
+extra (2026-08-28), and gone with the extra itself -- every site has profiles
+now, so every site can ask.
 """
 
-from ...content import PROFILE_ID as CONTENT_PROFILE
 from . import DEX_IDENTITY
+from pas.plugins.identity.core.emailchoices import offered_addresses
 from pas.plugins.identity.core.pas import EXTRACTOR
 from plone import api
 
@@ -37,7 +39,7 @@ CLAIMS_WITH_CHOICES = {
 }
 
 
-class TestASiteWithNowhereToAsk:
+class TestTheChoiceIsLeftOpen:
     @pytest.fixture(autouse=True)
     def _setup(self, portal, plugin) -> None:
         self.portal = portal
@@ -57,27 +59,21 @@ class TestASiteWithNowhereToAsk:
         })
         return userid
 
-    def test_the_site_really_does_not_keep_users_as_content(self):
-        """The premise. With the records set this test would prove nothing,
-        and it is the same question the guard itself asks."""
-        assert not self.plugin._users_are_content()
-
-    def test_an_address_is_chosen(self):
-        """The bug: no address at all, and nothing anywhere to ask for one."""
+    def test_no_address_is_chosen(self):
+        """The account is left without one, on purpose: the profile is
+        ``incomplete`` and the gate holds its owner on the form that asks."""
         userid = self.authenticate(dict(CLAIMS_WITH_CHOICES))
 
-        assert api.user.get(userid=userid).getProperty("email") == "me@example.com"
+        assert not api.user.get(userid=userid).getProperty("email")
 
-    def test_the_first_offer_is_taken(self):
-        """Which the driver already ordered: primary and verified first."""
-        userid = self.authenticate({
-            **CLAIMS_WITH_CHOICES,
-            "email_choices": tuple(reversed(OFFERED)),
-        })
+    def test_the_offers_reach_the_form(self):
+        """Both of them, so the form renders a choice rather than a box."""
+        userid = self.authenticate(dict(CLAIMS_WITH_CHOICES))
 
-        assert api.user.get(userid=userid).getProperty("email") == "old@example.com"
+        addresses = [offer["address"] for offer in offered_addresses(userid)]
+        assert addresses == ["me@example.com", "old@example.com"]
 
-    def test_an_address_the_driver_sent_is_not_overridden(self):
+    def test_an_address_the_driver_sent_is_used(self):
         """One address is an answer, and the driver already used it."""
         userid = self.authenticate({
             **CLAIMS_WITH_CHOICES,
@@ -92,36 +88,3 @@ class TestASiteWithNowhereToAsk:
         userid = self.authenticate({**claims, "email": "plain@example.com"})
 
         assert api.user.get(userid=userid).getProperty("email") == "plain@example.com"
-
-
-@pytest.mark.portal(profiles=[CONTENT_PROFILE])
-class TestASiteThatCanAsk:
-    """Users as content: a profile is minted, and the gate holds its owner on
-    the form that asks. The question survives to be answered.
-
-    The real profile rather than the two registry records on their own:
-    ``_keeps_users_as_content`` also checks the configured type is one this
-    plugin may create a user in, and that type does not exist until the
-    ``[content]`` profile has registered it.
-    """
-
-    @pytest.fixture(autouse=True)
-    def _setup(self, portal, plugin) -> None:
-        self.portal = portal
-        self.plugin = plugin
-
-    def test_the_site_really_can_ask(self):
-        """The premise, for the same reason as the class above."""
-        assert self.plugin._users_are_content()
-
-    def test_the_container_does_not_exist_yet(self):
-        """Which is the point of asking `_users_are_content` instead: the
-        container is created while the first profile is minted, so on the
-        very first login to a fresh site it is not there."""
-        assert not self.plugin._keeps_users_as_content()
-
-    def test_the_choice_is_left_open(self):
-        settled = self.plugin._settle_email(dict(CLAIMS_WITH_CHOICES))
-
-        assert settled["email"] == ""
-        assert settled["email_choices"] == OFFERED

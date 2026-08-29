@@ -9,7 +9,6 @@ that basis would export the problem rather than solve it, so it is true only
 when this site verified the address itself.
 """
 
-from ..content import PROFILE_ID as PROFILE_LAYER_ID
 from . import PROFILE_ID
 from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
@@ -225,13 +224,13 @@ class TestPicture:
         assert "picture" not in claims_for(USERID, "email")
 
 
-@pytest.mark.portal(profiles=[PROFILE_ID, PROFILE_LAYER_ID])
+@pytest.mark.portal(profiles=[PROFILE_ID])
 class TestPictureOnASiteWithProfiles:
     """The same claim, on a site where the picture is not in memberdata.
 
     This is the configuration the federation demo runs, and the one that was
     broken: ``portrait_url`` asked ``portal_memberdata`` directly, which is
-    the *fallback* store once the ``[content]`` layer is installed. A user
+    the *fallback* store for a user who has a Profile. A user
     with a picture on their Profile got no ``picture`` claim at all -- and an
     omitted claim is indistinguishable downstream from a user who never
     uploaded one, so the relying party had nothing to report either.
@@ -243,21 +242,15 @@ class TestPictureOnASiteWithProfiles:
 
     @pytest.fixture(autouse=True)
     def _setup(self, portal, user) -> None:
-        from pas.plugins.identity.content.catalog import PROFILE_PORTAL_TYPE
-        from pas.plugins.identity.content.subscribers import get_container
+        from pas.plugins.identity.core.subscribers import get_profile
         from plone.namedfile.file import NamedBlobImage
 
         self.portal = portal
         api.portal.set_registry_record(ISSUER_RECORD, "http://id.example.org")
-        with api.env.adopt_roles(["Manager"]):
-            self.profile = api.content.create(
-                container=get_container(create=True),
-                type=PROFILE_PORTAL_TYPE,
-                id=USERID,
-                userid=USERID,
-                login=ADDRESS,
-                email=ADDRESS,
-            )
+        # The Profile the ``user`` fixture already minted: adding a user is
+        # what creates one, so making a second here is a duplicate id rather
+        # than a fixture.
+        self.profile = get_profile(USERID)
         self.profile.image = NamedBlobImage(
             data=PNG, contentType="image/png", filename="me.png"
         )
@@ -378,16 +371,16 @@ class TestEmailVerified:
         assert "email_verified" not in claims_for(USERID, "profile")
 
 
-@pytest.mark.portal(profiles=[PROFILE_ID, PROFILE_LAYER_ID])
+@pytest.mark.portal(profiles=[PROFILE_ID])
 class TestClaimsOnASiteWithProfiles:
     """The two claims that went missing in the federation demo.
 
     This is the configuration the demo runs, and until now only ``picture``
-    was covered in it -- ``name`` and ``email`` were tested on a site *without*
-    the ``[content]`` layer, where they come from ``portal_memberdata`` and
-    nothing is in front of them.
+    was covered in it -- ``name`` and ``email`` were tested for a user with no
+    Profile, where they come from ``portal_memberdata`` and nothing is in
+    front of them.
 
-    Install that layer and its plugin serves the property sheet. A Profile
+    Give the user a Profile and the profile plugin serves the sheet. A Profile
     that does not carry a field used to answer for it anyway, with an empty
     string, and :func:`claims_for` omits an empty value -- so the ``id_token``
     went out with neither claim for a user whose account plainly had both, and
@@ -396,15 +389,28 @@ class TestClaimsOnASiteWithProfiles:
     """
 
     @pytest.fixture(autouse=True)
-    def _setup(self, portal, user) -> None:
-        from pas.plugins.identity.content.catalog import PROFILE_PORTAL_TYPE
-        from pas.plugins.identity.content.subscribers import get_container
+    def _setup(self, portal) -> None:
+        from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
+        from pas.plugins.identity.core.subscribers import get_container
 
         self.portal = portal
         api.portal.set_registry_record(ISSUER_RECORD, "http://id.example.org")
+        # Built the long way round rather than through ``api.user.create``,
+        # because the two halves have to be assembled in this order: an
+        # account whose values are in ``portal_memberdata``, and *then* a
+        # Profile minted carrying neither. That is an account older than this
+        # add-on signing in for the first time, and it is what a provider
+        # withholding an address leaves behind.
+        acl_users = api.portal.get_tool("acl_users")
+        acl_users.source_users.addUser(USERID, USERID, "irrelevant-to-claims")
+        api.user.get(userid=USERID).setMemberProperties({
+            "fullname": "Alice Liddell",
+            "email": ADDRESS,
+            "home_page": "https://alice.example.org",
+            "location": "Oxford",
+            "description": "Curious.",
+        })
         with api.env.adopt_roles(["Manager"]):
-            # Minted from claims that carried neither, which is what a
-            # provider withholding an address leaves behind.
             self.profile = api.content.create(
                 container=get_container(create=True),
                 type=PROFILE_PORTAL_TYPE,

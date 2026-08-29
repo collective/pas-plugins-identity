@@ -81,10 +81,14 @@ class TestAccess(ControlPanelCase):
         assert self.status() == 401
 
     @pytest.mark.parametrize("service", [DriversGet, ProvidersGet])
-    def test_ordinary_member_is_refused(self, service):
-        """Being logged in is not the same as being allowed."""
-        login(self.portal, TEST_USER_NAME)
+    def test_ordinary_member_is_refused(self, service, member):
+        """Being logged in is not the same as being allowed.
 
+        A member of its own rather than the shared test user: the fixtures in
+        ``tests/core/conftest.py`` make that one a ``Manager`` for the whole
+        directory, so asking it this question would answer 200 and prove the
+        opposite of what is written here.
+        """
         result = self.call(service)
 
         assert self.status() == 403

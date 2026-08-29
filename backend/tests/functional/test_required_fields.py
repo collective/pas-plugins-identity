@@ -13,15 +13,13 @@ question here is whether a registration on this layer wins over
 the ZCML reads.
 
 Filed under ``functional`` rather than beside the other service tests because
-it commits, and ``tests/content`` runs on the integration layer, which aborts
+it commits, and ``tests/core`` runs on the integration layer, which aborts
 between tests and refuses to have committed to. No Dex here, so no docker
 marker: the fixtures in this package that need one are all opt-in.
 """
 
-from pas.plugins.identity import PACKAGE_NAME
-from pas.plugins.identity.content.completeness import REQUIRED_FIELDS_RECORD
+from pas.plugins.identity.core.completeness import REQUIRED_FIELDS_RECORD
 from plone import api
-from plone.app.testing import applyProfile
 from plone.app.testing import SITE_OWNER_NAME
 from plone.app.testing import SITE_OWNER_PASSWORD
 
@@ -32,7 +30,7 @@ import transaction
 
 @pytest.fixture
 def url(functional) -> str:
-    """Return the portal URL, with the ``[content]`` layer installed.
+    """Return the portal URL.
 
     Applied here rather than in a layer: the functional layer stacks a
     DemoStorage per test, so the commit is rolled back afterwards and no other
@@ -42,7 +40,6 @@ def url(functional) -> str:
     :returns: The portal URL as the test server publishes it.
     """
     portal = functional["portal"]
-    applyProfile(portal, f"{PACKAGE_NAME}.content:default")
     transaction.commit()
     return portal.absolute_url()
 

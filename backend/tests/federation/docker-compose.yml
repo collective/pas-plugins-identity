@@ -37,6 +37,11 @@ services:
       SITE: Plone
       CONFIGURE_PACKAGES: plone.restapi,plone.volto,identitydemo
       DEMO_PROFILE: identitydemo:idp
+      # Empty on purpose: this stack runs the two backends and no frontend,
+      # so the route the demo otherwise points the consent screen at is
+      # served by nothing. The server renders its own standalone page
+      # instead, which is what the flow test posts the answer on.
+      DEMO_IDP_CONSENT_URL: ''
     healthcheck: *healthcheck
     # Fixed, and matching IDP_PUBLIC_URL in identitydemo.settings: the issuer
     # is published in the discovery document and the provider will not be

@@ -14,17 +14,16 @@ to proceed until the profile carries what the site requires. The relying party
 cannot enforce this and should not have to; the provider is the only party
 that knows what it requires.
 
-Asked through ``IProfileSupport`` rather than by importing the ``[content]``
-layer, which the import-linter contract forbids -- so these tests also cover
-the case that made the contract worth having: a site with the server layer and
-without the content layer, where the utility is absent and nothing is
-enforced.
+Asked through :func:`pas.plugins.identity.core.gate.incomplete_profile_url`,
+which is the same question the gate asks on every page load and reads the same
+registry record -- so an authorization request and a browser request cannot
+disagree about whether a profile is finished.
 """
 
 from pas.plugins.identity import PACKAGE_NAME
-from pas.plugins.identity.content.completeness import REQUIRED_FIELDS_RECORD
-from pas.plugins.identity.content.container import get_container
-from pas.plugins.identity.content.gate import ENFORCE_RECORD
+from pas.plugins.identity.core.completeness import REQUIRED_FIELDS_RECORD
+from pas.plugins.identity.core.container import get_container
+from pas.plugins.identity.core.gate import ENFORCE_RECORD
 from pas.plugins.identity.server.clients import add_client
 from plone import api
 from plone.app.testing import applyProfile
@@ -82,7 +81,6 @@ def site(functional):
     :returns: ``(portal, url)``.
     """
     portal = functional["portal"]
-    applyProfile(portal, f"{PACKAGE_NAME}.content:default")
     applyProfile(portal, f"{PACKAGE_NAME}.server:default")
     api.portal.set_registry_record(REQUIRED_FIELDS_RECORD, ("email", "location"))
     with api.env.adopt_roles(["Manager"]):

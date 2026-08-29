@@ -11,11 +11,9 @@ request, as the user, against the field. If the binding is wrong the write
 succeeds and alice is in a group she granted herself.
 """
 
-from pas.plugins.identity import PACKAGE_NAME
-from pas.plugins.identity.content.catalog import GROUP_PORTAL_TYPE
-from pas.plugins.identity.content.container import get_container
+from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
+from pas.plugins.identity.core.container import get_container
 from plone import api
-from plone.app.testing import applyProfile
 
 import pytest
 import requests
@@ -36,7 +34,6 @@ def site(functional):
     :returns: ``(portal, url)``.
     """
     portal = functional["portal"]
-    applyProfile(portal, f"{PACKAGE_NAME}.content:default")
     with api.env.adopt_roles(["Manager"]):
         container = get_container(create=True)
         api.content.create(
