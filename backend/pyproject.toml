@@ -27,6 +27,14 @@ classifiers = [
 ]
 dependencies = [
     "Authlib>=1.3",
+    # Provider icons are SVG, which is XML, and an operator pastes them in.
+    # core/svg parses one before storing it, and the entity-expansion attacks
+    # against an XML parser are older than the scripting ones. Declared rather
+    # than relied on: it arrives today through another package's graph, and
+    # what we import directly should not depend on that staying put -- which
+    # is exactly what a fresh demo image caught, refusing to start on a
+    # missing module.
+    "defusedxml",
     "Products.CMFPlone",
     "plone.api",
     # Users and groups are Dexterity content, on every site that installs

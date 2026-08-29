@@ -265,6 +265,15 @@ class TestThroughThePlugin:
 
         assert self.plugin.getNestedGroupIds("staff") == ("developers",)
 
+    def test_an_unknown_group_has_no_members(self):
+        """An empty answer rather than a query with no criteria, which in
+        ZCatalog returns nothing anyway and reads as an empty group."""
+        assert self.plugin.getGroupMembers("no-such-group") == ()
+
+    def test_an_unknown_group_has_no_parents(self):
+        """Asked by the group page about a group that has just been deleted."""
+        assert self.plugin.getGroupParentIds("no-such-group") == ()
+
     def test_parent_ids_are_what_was_typed(self):
         """The edit form shows the stored edges, not their closure."""
         for group_id in ("staff", "engineering", "developers"):

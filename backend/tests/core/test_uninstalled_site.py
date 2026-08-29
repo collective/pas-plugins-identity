@@ -15,6 +15,7 @@ gets its site back.
 
 from pas.plugins.identity import PACKAGE_NAME
 from pas.plugins.identity import setuphandlers
+from pas.plugins.identity.core import emails
 from pas.plugins.identity.core import indexing
 from pas.plugins.identity.core import subscribers
 from pas.plugins.identity.core.catalog import CATALOG_ID
@@ -23,6 +24,10 @@ from pas.plugins.identity.core.gate import enforcing
 from pas.plugins.identity.core.gate import incomplete_profile_url
 from pas.plugins.identity.core.pas.profile import IdentityProfilePlugin
 from pas.plugins.identity.core.pas.profile import PLUGIN_ID
+from pas.plugins.identity.core.services import groups as group_services
+from pas.plugins.identity.core.services import useraccount as account_services
+from pas.plugins.identity.core.services.groups.get import GroupMembersGet
+from pas.plugins.identity.core.services.useraccount.get import UserAccountGet
 from pas.plugins.identity.setuphandlers.plugins import uninstall_profile_plugin
 from plone import api
 from plone.app.testing import TEST_USER_ID
@@ -187,6 +192,67 @@ class TestProfileHelpersAreInert:
         """A login here must not mint content."""
         assert subscribers.ensure_profile("alice", "alice", {}) is None
         assert "identity-profiles" not in self.portal.objectIds()
+
+
+class TestAddressHelpersAreInert:
+    """``email`` is derived from the identity store, and there is no store
+    here. A Profile carried over from an export must still be readable."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+
+    def test_nothing_is_verified(self):
+        """Not an exception, and not everything: no store means no proof."""
+        assert emails.verified_addresses("alice", ("alice@example.com",)) == ()
+
+    def test_the_preferred_address_is_still_the_first(self):
+        """Which is what keeps a first login working before any link has been
+        clicked, here and on a site that does have the plugin."""
+        assert (
+            emails.preferred_address("alice", ("a@example.com", "b@example.com"))
+            == "a@example.com"
+        )
+
+    def test_no_userid_is_no_proof(self):
+        """An object being read outside any request has nobody to prove an
+        address for."""
+        assert emails.verified_addresses("", ("alice@example.com",)) == ()
+
+
+class TestGroupAndAccountServicesAreInert:
+    """Both look their plugin up by id, and neither may raise without it."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_) -> None:
+        self.portal = portal
+        self.request = request_
+
+    def test_the_group_plugin_is_absent(self):
+        assert group_services.get_profile_plugin() is None
+
+    def test_the_account_plugin_is_absent(self):
+        assert account_services.identity_plugin() is None
+
+    def test_a_group_listing_is_a_404(self):
+        """Rather than a traceback: a frontend asking every site the same
+        question deserves an answer."""
+        service = GroupMembersGet(self.portal, self.request)
+        service.segments = ["staff"]
+
+        service.reply()
+
+        assert self.request.response.getStatus() == 404
+
+    def test_member_brains_without_a_catalog(self):
+        """The catalog is the tool the uninstall removes."""
+        assert group_services.member_brains("staff", None) == []
+
+    def test_an_account_carries_no_addresses(self):
+        """No catalog, so no brain to read them off."""
+        service = UserAccountGet(self.portal, self.request)
+
+        assert service._addresses(TEST_USER_ID) == []
 
 
 class TestSyncingTheCoreRecords:

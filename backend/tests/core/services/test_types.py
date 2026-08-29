@@ -156,6 +156,31 @@ class TestTheOfferedAddresses:
 
         assert self.items()["type"] == "string"
 
+    def test_a_schema_without_the_field_is_left_alone(self):
+        """Defensive against a future plone.restapi shape, and against a site
+        whose own user type has no such field: the decoration is skipped
+        rather than raising in the middle of a form request."""
+        from pas.plugins.identity.core.services.types import ProfileTypesGet
+
+        service = ProfileTypesGet(self.portal, self.portal.REQUEST)
+        properties = {"emails": "not a mapping"}
+
+        service._offer_addresses(properties)
+
+        assert properties == {"emails": "not a mapping"}
+
+    def test_a_field_without_items_is_left_alone(self):
+        """An array field is what carries ``items``; anything else is a shape
+        this does not know how to decorate."""
+        from pas.plugins.identity.core.services.types import ProfileTypesGet
+
+        service = ProfileTypesGet(self.portal, self.portal.REQUEST)
+        properties = {"emails": {"type": "string"}}
+
+        service._offer_addresses(properties)
+
+        assert properties == {"emails": {"type": "string"}}
+
     def test_the_derived_field_is_not_on_the_form(self):
         """``plone.restapi`` leaves a read-only field out of a type's schema
         altogether, which is the right answer here: ``email`` is computed

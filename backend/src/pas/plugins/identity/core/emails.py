@@ -82,21 +82,6 @@ def _store():
     return plugin.store
 
 
-def is_verified(userid: str, address: str) -> bool:
-    """Report whether this site has proved an address belongs to a userid.
-
-    :param userid: Canonical Plone userid.
-    :param address: The address to check.
-    :returns: Whether an ``email`` identity for it is held for that userid.
-        A magic link is the only thing that creates one; a provider asserting
-        ``email_verified`` never does.
-    """
-    store = _store()
-    if store is None or not userid or not address:
-        return False
-    return store.userid_for(EMAIL_PROVIDER, normalize(address)) == userid
-
-
 def verified_addresses(userid: str, addresses: tuple[str, ...]) -> tuple[str, ...]:
     """Return the subset of a user's addresses this site has proved.
 
@@ -135,7 +120,6 @@ def preferred_address(userid: str, addresses: tuple[str, ...]) -> str:
 
 __all__ = [
     "clean",
-    "is_verified",
     "normalize",
     "preferred_address",
     "verified_addresses",

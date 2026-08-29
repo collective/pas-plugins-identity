@@ -142,6 +142,42 @@ class TestListing(GroupMembersCase):
 
         assert entry["title"] == "Developers"
 
+    def test_a_group_the_graph_does_not_know_feeds_nobody(self):
+        """An empty listing rather than a query with no criteria, which in
+        ZCatalog returns nothing anyway and reads as "the group is empty"."""
+        from pas.plugins.identity.core.services.groups import member_brains
+
+        plugin = api.portal.get_tool("acl_users")["identity_profile"]
+
+        assert member_brains("no-such-group", plugin) == []
+
+    def test_a_missing_group_id_is_a_400(self):
+        """The endpoint is about one group."""
+        self.listing()
+
+        assert self.status() == 400
+
+    def test_a_long_listing_carries_its_batching(self):
+        """plone.restapi's own batch links, so a caller pages the way it
+        pages everything else."""
+        for index in range(30):
+            self.member(f"member-{index:02d}", "staff")
+
+        result = self.listing("staff")
+
+        assert result["items_total"] == 32
+        assert "batching" in result
+
+    def test_the_url_is_traversed_rather_than_supplied(self):
+        """The service is published, so the id arrives one segment at a
+        time."""
+        from pas.plugins.identity.core.services.groups.get import GroupMembersGet
+
+        service = GroupMembersGet(self.portal, self.request)
+        service.publishTraverse(self.request, "staff")
+
+        assert service.segments == ["staff"]
+
     def test_an_unknown_group_is_a_404(self):
         """And so is a group that is not content, deliberately: which groups
         a site has is not worth probing for."""

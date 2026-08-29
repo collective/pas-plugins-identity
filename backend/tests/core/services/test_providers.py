@@ -286,6 +286,12 @@ class TestUpdating(ControlPanelCase):
         assert "<path" in provider.icon
         assert provider.background_color == "#24292f"
 
+    def test_stores_a_foreground_colour(self):
+        """The other half of the pair, and the one a monochrome icon uses."""
+        self.call(ProvidersPatch, "dex", payload={"foreground_color": "#FFF"})
+
+        assert get_provider("dex").foreground_color == "#fff"
+
     def test_refuses_an_icon_that_is_not_an_svg(self):
         """400 rather than a traceback, and rather than a silent empty icon:
         an operator who pasted the wrong thing has to find out here."""

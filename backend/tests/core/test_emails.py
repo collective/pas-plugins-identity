@@ -64,6 +64,34 @@ class ProfileCase:
         modified(self.profile)
 
 
+class TestOutsideASite:
+    """A Profile can be read where there is no portal at all.
+
+    An object being constructed by an import, or a test touching the class
+    directly. Nothing is verified in that world, and nothing may raise.
+    """
+
+    def test_nothing_is_verified_without_a_portal(self, monkeypatch):
+        from pas.plugins.identity.core import emails
+
+        def no_portal(_name):
+            raise api.exc.CannotGetPortalError("no site")
+
+        monkeypatch.setattr(emails.api.portal, "get_tool", no_portal)
+
+        assert emails.verified_addresses("alice", (ADDRESS,)) == ()
+
+    def test_the_first_address_still_answers(self, monkeypatch):
+        from pas.plugins.identity.core import emails
+
+        def no_portal(_name):
+            raise api.exc.CannotGetPortalError("no site")
+
+        monkeypatch.setattr(emails.api.portal, "get_tool", no_portal)
+
+        assert emails.preferred_address("alice", (ADDRESS,)) == ADDRESS
+
+
 class TestTheDerivedAddress(ProfileCase):
     @pytest.fixture(autouse=True)
     def _setup(self, portal, make_profile) -> None:

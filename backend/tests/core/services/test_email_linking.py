@@ -118,6 +118,22 @@ class TestStartingALink(EmailLinkCase):
         assert len(messages) == 1
         assert "other@plone.org" in messages[0]["To"]
 
+    def test_a_caller_with_no_profile_may_name_any_address(self):
+        """A site not keeping users as content, or an account that predates
+        this add-on: neither has a list to name an address on, so holding
+        them to one would take the feature away from them entirely."""
+        from pas.plugins.identity.core.subscribers import get_profile
+        from plone import api as plone_api
+
+        with plone_api.env.adopt_roles(["Manager"]):
+            plone_api.content.delete(
+                obj=get_profile(self.member), check_linkintegrity=False
+            )
+
+        self.start_link(provider="email", email="stranger@plone.org")
+
+        assert self.status() == 200
+
     def test_an_address_that_is_not_yours_is_refused(self):
         """What replaced the free-text box on the identities page. A magic
         link proves control of whatever was typed, so an unguarded endpoint

@@ -288,6 +288,13 @@ class TestAccess(UserAccountCase):
 
         assert self.status() == 200
 
+    def test_the_url_is_traversed_rather_than_supplied(self):
+        """The service is published, so the userid arrives as a segment."""
+        service = UserAccountGet(self.portal, self.request)
+        service.publishTraverse(self.request, "alice")
+
+        assert service.segments == ["alice"]
+
     def test_an_unknown_user_is_a_404(self):
         self.account("nobody")
 
