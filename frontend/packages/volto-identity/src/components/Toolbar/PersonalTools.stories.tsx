@@ -68,8 +68,8 @@ export const Manager: Story = {
 };
 
 /**
- * A site without the `[content]` layer: Volto's own Profile link takes the
- * slot back, leading to the member form at `/personal-information`.
+ * A user with no Profile: Volto's own Profile link takes the slot back,
+ * leading to the member form at `/personal-information`.
  *
  * "Sign-in methods" stays, because identities are core rather than part of
  * the optional layer.

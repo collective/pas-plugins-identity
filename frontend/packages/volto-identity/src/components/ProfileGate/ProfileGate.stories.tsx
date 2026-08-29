@@ -101,8 +101,8 @@ export const LetThrough: Story = {
   ],
 };
 
-/** A site without the [content] layer has no profiles to hold anybody for. */
-export const NoProfileLayer: Story = {
+/** A user with no Profile: there is nothing to hold them for. */
+export const NoProfile: Story = {
   decorators: [
     at('/news'),
     withStore({

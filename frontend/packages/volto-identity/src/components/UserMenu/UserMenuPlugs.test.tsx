@@ -147,9 +147,10 @@ describe('the personal-tools menu', () => {
   });
 
   it('does not care which plugin authenticated the account', () => {
-    // Every account this package creates is a `source_users` one -- the
-    // `[content]` layer serves properties, it does not authenticate -- so a
-    // rule keyed on that hid the entry for everybody.
+    // `source` names whichever plugin PAS enumerated the account from, and
+    // that changes with how the account was made -- so a rule keyed on it
+    // hid the entry for whole classes of user. `profile_url` is the
+    // question the menu actually has.
     const { ids } = renderMenu({
       profileUrl: 'http://site/profiles/alice',
       source: 'source_users',
@@ -160,8 +161,8 @@ describe('the personal-tools menu', () => {
   });
 
   it('falls back to the member form when there is no Profile', () => {
-    // A site without the [content] layer, or a user whose first login has
-    // not minted one yet.
+    // An account that predates the add-on, or a user whose first login has
+    // not minted a Profile yet.
     const { ids } = renderMenu();
 
     expect(ids).toContain('toolbar-profile');

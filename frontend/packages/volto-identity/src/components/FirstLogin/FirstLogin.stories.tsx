@@ -32,8 +32,8 @@ export const ProfileIncomplete: Story = {
   ],
 };
 
-/** A site without the [content] layer: there is no Profile to complete. */
-export const NoProfileLayer: Story = {
+/** A user with no Profile: there is nothing to complete. */
+export const NoProfile: Story = {
   decorators: [
     withStore({
       myProfile: {

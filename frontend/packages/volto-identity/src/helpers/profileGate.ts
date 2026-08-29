@@ -174,9 +174,9 @@ export function editPath(profileUrl: string, apiPath = ''): string {
  * Work out where a user must be sent, if anywhere.
  *
  * Returns `null` for every reason not to gate, which is most of them: no
- * profile, a complete one, a site without the `[content]` extra, an answer
- * that has not arrived, an exempt route, and — the one that matters — being
- * already on the profile the redirect would send them to.
+ * profile, a complete one, an answer that has not arrived, an exempt route,
+ * and — the one that matters — being already on the profile the redirect
+ * would send them to.
  *
  * That last check covers the whole profile rather than its edit form alone.
  * The form loads widgets and vocabularies against paths beneath it, and a

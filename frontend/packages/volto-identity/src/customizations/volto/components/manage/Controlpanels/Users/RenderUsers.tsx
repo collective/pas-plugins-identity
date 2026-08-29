@@ -6,9 +6,9 @@
  *
  * WHY IT IS SHADOWED. The row's {guilabel}`Edit` action is built inline and
  * Volto has no extension point in it, so where that action leads cannot be
- * changed without replacing the component. On a site running the `[content]`
- * extra it led to the wrong form on the wrong store for every user whose
- * fields live in a Profile.
+ * changed without replacing the component. It led to the wrong form on the
+ * wrong store for every user whose fields live in a Profile, which is most of
+ * them.
  *
  * No code lives here. The component is
  * `components/ControlPanel/RenderUsers`, with its tests and its stories

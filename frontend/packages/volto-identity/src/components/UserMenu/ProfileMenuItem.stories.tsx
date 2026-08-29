@@ -57,9 +57,9 @@ export const StoredElsewhere: Story = {
 /**
  * No Profile: the entry is absent rather than disabled.
  *
- * Either the `[content]` layer is not installed, or first login has not
- * minted one for this user yet. A menu entry leading nowhere is worse than
- * no menu entry, which is why this renders an empty list.
+ * Either this account predates the add-on, or first login has not minted a
+ * Profile for it yet. A menu entry leading nowhere is worse than no menu
+ * entry, which is why this renders an empty list.
  */
 export const WithoutAProfile: Story = {
   render: inTheMenu,

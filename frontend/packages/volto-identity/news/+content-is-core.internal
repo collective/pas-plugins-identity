@@ -1,0 +1,7 @@
+The layer half the comments and stories describe no longer exists, so they describe what is left.
+
+No behaviour changed, and that is the point worth recording: every state the add-on branches on survives the backend merge under a different name. "A site without the `[content]` extra" becomes "a user whose first login has not minted a Profile yet", or an account that predates the add-on — both real, both still reached by the same code. `profile_url` stays nullable and `profileHoldsTheFields` still keys on it.
+
+One claim in `helpers/profileSource` was made wrong by the merge rather than merely dated. It said every account this package creates is a `source_users` one; a user who signs in through a provider now has only a Profile and reports `identity_profile` as their source. The helper was already right to ignore `source` — that is exactly why — but the reason it gave for ignoring it no longer held.
+
+Two stories are renamed for the same reason: `NoProfileLayer` is `NoProfile`. @ericof

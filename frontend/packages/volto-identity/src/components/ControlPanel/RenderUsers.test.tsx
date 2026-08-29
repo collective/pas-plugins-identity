@@ -4,8 +4,8 @@
  * What is pinned here is the one thing that differs from Volto: where Edit
  * leads. A user whose fields live in a Profile is edited on that Profile; a
  * user whose fields live in `portal_memberdata` still gets Volto's modal.
- * Both halves matter — the second is every site that does not run the
- * `[content]` extra, and the site's own `admin` on every site that does.
+ * Both halves matter — the second is the site's own `admin`, and any account
+ * that predates the add-on and has not signed in since.
  */
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '../../testing';
@@ -74,8 +74,7 @@ describe('profileEditUrl', () => {
 
   it('is nothing for a user with no Profile', () => {
     // Which is what leaves Volto's member-properties modal in place for
-    // them: the site's own admin, and every user on a site without the
-    // `[content]` extra.
+    // them: the site's own admin, and anyone else with no Profile.
     expect(profileEditUrl(null)).toBeNull();
     expect(profileEditUrl(undefined)).toBeNull();
     expect(profileEditUrl('')).toBeNull();

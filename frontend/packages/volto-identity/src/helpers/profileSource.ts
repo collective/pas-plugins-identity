@@ -1,24 +1,22 @@
 /**
  * Whether a user's fields live in a Profile content object.
  *
- * This asked `source === 'identity_profile'` first, and that was wrong: on a
- * real site it is never true. `source` is the PAS plugin the *account* came
- * from, and every account this package creates is a `source_users` one — the
- * `[content]` layer's plugin serves properties and enumeration, it does not
- * authenticate. So a user with a Profile at `/profiles/ericof` still reports
- * `"source": "source_users"`, and keying the menu on that hid the entry for
- * everybody.
+ * This asked `source === 'identity_profile'` first, and that was wrong.
+ * `source` names whichever PAS plugin *enumerated* the account, and which one
+ * that is depends on how the account was made: a user added with a password
+ * has a `source_users` row and reports that, while an externally
+ * authenticated one has only a Profile and reports `identity_profile`. Both
+ * of them have their fields in a Profile, so keying the menu on `source` hid
+ * the entry for whole classes of user.
  *
- * The question the menu actually needs is narrower than "does the site have
- * the layer" and wider than "which plugin authenticated": *is this person's
- * name, email and biography stored in a content object?* Having a Profile is
- * exactly that. The layer's PAS plugin sits above `mutable_properties`, so
- * wherever a Profile exists it is what answers for that user's fields — the
- * two conditions are one condition, and `profile_url` is how the payload
- * says it.
+ * The question the menu actually needs is narrower: *is this person's name,
+ * email and biography stored in a content object?* Having a Profile is
+ * exactly that. The profile PAS plugin sits above `mutable_properties`, so
+ * wherever a Profile exists it is what answers for that user's fields — and
+ * `profile_url` is how the payload says so.
  *
- * The consequence for the menu is the one that was wanted: on a site without
- * the layer, or for a user first login has not minted a Profile for,
+ * The consequence for the menu is the one that was wanted: for a user first
+ * login has not minted a Profile for, or an account that predates the add-on,
  * `profile_url` is null and Volto's own Profile entry keeps its slot,
  * leading to the member form where those users' fields really are.
  * @module helpers/profileSource
