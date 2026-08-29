@@ -45,6 +45,8 @@ export PYTHONWARNINGS := ignore
 export DOCKER_BUILDKIT := 1
 export PYTHON_VERSION := 3.14
 export PLONE_VERSION := $(shell echo '$(REPOSITORY_SETTINGS)' | jq -r '.backend.base_package_version')
+export ENABLE_PRINTING_MAILHOST := true
+
 
 ifdef CI
 UV_VENV_ARGS :=

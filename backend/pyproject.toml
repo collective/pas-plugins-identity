@@ -48,6 +48,7 @@ server = [
 ]
 test = [
     "collective.MockMailHost",
+    "Products.PrintingMailHost",
     # Migration fixtures. Test-only, and deliberately real rather than
     # synthesized: a fixture that encodes our reading of their storage would
     # pass while the migration was wrong about it.
