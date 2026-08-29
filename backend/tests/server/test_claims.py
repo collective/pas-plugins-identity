@@ -361,8 +361,24 @@ class TestEmailVerified:
 
     def test_it_is_absent_without_an_address(self):
         """A claim about nothing. OIDC readers differ on what to do with
-        `email_verified` when there is no `email`, so it is not sent."""
+        `email_verified` when there is no `email`, so it is not sent.
+
+        The address is cleared through the profile's own list rather than by
+        writing an empty ``email``: that field is derived from the list, so
+        an empty write is an instruction about nothing and is ignored.
+        """
+        from pas.plugins.identity.core.subscribers import get_profile
+        from zope.lifecycleevent import modified
+
         with api.env.adopt_roles(["Manager"]):
+            # Both stores. A profile carrying no address does not erase what
+            # ``portal_memberdata`` holds -- an empty profile field is left
+            # out of the sheet rather than shadowing the sheet below it --
+            # so clearing one of the two leaves the claim answerable.
+            profile = get_profile(USERID)
+            if profile is not None:
+                profile.emails = ()
+                modified(profile)
             api.user.get(userid=USERID).setMemberProperties({"email": ""})
 
         assert "email_verified" not in claims_for(USERID, "email")

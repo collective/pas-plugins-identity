@@ -77,7 +77,7 @@ class TestTheUserTypeSchema:
 
     def test_the_types_own_required_fields_are_reported(self):
         """The base behaviour, and the control for everything below."""
-        assert set(self.required()) >= {"login", "email"}
+        assert set(self.required()) >= {"login", "emails"}
 
     def test_a_configured_field_becomes_required(self):
         """``location`` is optional on the type. The site wants it anyway."""

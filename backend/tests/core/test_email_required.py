@@ -20,4 +20,11 @@ class TestEmailIsRequired:
         """A Profile exists to be the thing a person is reached and
         recognised by; the enumeration plugin, the property map and the
         magic-link join all read the address."""
-        assert IUserProfileSchema["email"].required is True
+        assert IUserProfileSchema["emails"].required is True
+
+    def test_the_derived_field_is_not(self):
+        """``email`` is computed from the list, so requiring it would be
+        requiring the same thing twice -- and it is read-only, so a form
+        insisting on it would insist on something nobody can type."""
+        assert IUserProfileSchema["email"].required is False
+        assert IUserProfileSchema["email"].readonly is True

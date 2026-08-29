@@ -103,51 +103,62 @@ class TestTheOfferedAddresses:
             },
         )
 
-    def email(self):
-        """Return the `email` property of the user type's schema.
+    def items(self):
+        """Return the ``items`` schema of the user type's ``emails`` field.
 
-        :returns: The property.
+        The decoration goes on ``items`` rather than on the field, because
+        ``emails`` is an array and its entries are what a widget renders a
+        choice for. ``email`` is derived and read-only, so it has no box.
+
+        :returns: The item schema.
         """
-        return self.schema_for()["properties"]["email"]
+        return self.schema_for()["properties"]["emails"]["items"]
 
     def test_a_plain_box_when_nothing_was_offered(self):
         """Every provider that sends one address looks like this."""
-        assert "choices" not in self.email()
+        assert "choices" not in self.items()
 
     def test_the_offered_addresses_become_the_choices(self):
         self.offer("me@example.com", "other@example.com")
 
-        assert self.email()["enum"] == ["me@example.com", "other@example.com"]
+        assert self.items()["enum"] == ["me@example.com", "other@example.com"]
 
     def test_the_trio_restapi_emits_for_a_choice_is_complete(self):
         """`enum`/`enumNames`/`choices` together, so a widget that renders a
         Choice field renders this without being taught anything new."""
         self.offer("me@example.com")
 
-        email = self.email()
+        items = self.items()
 
-        assert email["choices"] == [["me@example.com", "me@example.com (github)"]]
-        assert email["enumNames"] == ["me@example.com (github)"]
+        assert items["choices"] == [["me@example.com", "me@example.com (github)"]]
+        assert items["enumNames"] == ["me@example.com (github)"]
 
     def test_each_choice_names_the_provider_that_offered_it(self):
         """Somebody with two linked accounts is shown two lists merged into
         one, and the address alone does not say which is which."""
         self.offer("me@example.com")
 
-        assert "(github)" in self.email()["enumNames"][0]
+        assert "(github)" in self.items()["enumNames"][0]
 
     def test_the_question_stops_once_it_is_answered(self):
         """Turning somebody's own field into a list of suggestions they have
         already declined is a worse form than the plain box."""
         self.offer("me@example.com", "other@example.com")
-        self.profile.email = "chosen@example.com"
+        self.profile.emails = ("chosen@example.com",)
         modified(self.profile)
 
-        assert "choices" not in self.email()
+        assert "choices" not in self.items()
 
-    def test_the_field_is_still_free_text(self):
+    def test_the_entries_are_still_free_text(self):
         """Advisory, not binding: the list is what the person was handed, not
         the set of addresses they are allowed to have."""
         self.offer("me@example.com")
 
-        assert self.email()["type"] == "string"
+        assert self.items()["type"] == "string"
+
+    def test_the_derived_field_is_not_on_the_form(self):
+        """``plone.restapi`` leaves a read-only field out of a type's schema
+        altogether, which is the right answer here: ``email`` is computed
+        from the list above and there is nothing on it to fill in. It is
+        still serialized with the content, so a *view* can show it."""
+        assert "email" not in self.schema_for()["properties"]

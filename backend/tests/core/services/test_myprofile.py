@@ -5,6 +5,7 @@ from pas.plugins.identity.core.services.myprofile import MyProfileGet
 from plone import api
 from plone.app.testing import logout
 from plone.app.testing import TEST_USER_ID
+from zope.lifecycleevent import modified
 
 import pytest
 
@@ -98,6 +99,69 @@ class TestWithAProfile:
         assert (
             self.service.reply()["@id"] == f"{self.portal.absolute_url()}/@my-profile"
         )
+
+
+class TestTheProfilesOwnAddresses:
+    """What the account page renders the verify buttons from.
+
+    Deliberately separate from ``email_choices``: one is what the person has
+    claimed, the other is what a provider offered and nobody has picked from.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, service, make_profile) -> None:
+        self.portal = portal
+        self.service = service
+        self.profile = make_profile(TEST_USER_ID, email="alice@example.com")
+
+    def addresses(self) -> list:
+        """Return the reported addresses.
+
+        :returns: The ``emails`` entries.
+        """
+        return self.service.reply()["emails"]
+
+    def test_the_profiles_addresses_are_reported(self):
+        """In the person's own order, which is the order they mean."""
+        self.profile.emails = ("alice@example.org", "alice@example.com")
+        modified(self.profile)
+
+        assert [entry["address"] for entry in self.addresses()] == [
+            "alice@example.org",
+            "alice@example.com",
+        ]
+
+    def test_an_unverified_address_says_so(self):
+        """Adding an address does not prove it."""
+        assert self.addresses()[0]["verified"] is False
+
+    def test_a_verified_address_says_so(self):
+        """A magic link is the only thing that changes this."""
+        api.portal.get_tool("acl_users")[CORE_PLUGIN_ID].link(
+            TEST_USER_ID, "email", "alice@example.com", {}
+        )
+
+        assert self.addresses()[0]["verified"] is True
+
+    def test_the_preferred_one_is_marked(self):
+        """So a page can show which address answers for this person without
+        reimplementing the rule that picks it."""
+        self.profile.emails = ("alice@example.org", "alice@example.com")
+        modified(self.profile)
+        api.portal.get_tool("acl_users")[CORE_PLUGIN_ID].link(
+            TEST_USER_ID, "email", "alice@example.com", {}
+        )
+
+        preferred = [e["address"] for e in self.addresses() if e["preferred"]]
+
+        assert preferred == ["alice@example.com"]
+
+    def test_a_profile_with_none_reports_an_empty_list(self):
+        """Never ``None``: the frontend iterates it."""
+        self.profile.emails = ()
+        modified(self.profile)
+
+        assert self.addresses() == []
 
 
 class TestNotInstalled:

@@ -47,7 +47,11 @@ class TestWhatIsRequired:
     def test_it_defaults_to_what_the_type_requires(self):
         """Read off the object, so a site with its own user type or an extra
         behavior gets the answer for the type it actually has."""
-        assert set(required_fields(self.profile)) == {"login", "email", "fullname"}
+        assert set(required_fields(self.profile)) == {
+            "login",
+            "emails",
+            "fullname",
+        }
 
     def test_the_registry_record_wins(self):
         api.portal.set_registry_record(REQUIRED_FIELDS_RECORD, ("email", "location"))
@@ -58,7 +62,11 @@ class TestWhatIsRequired:
         """Empty means "ask the type", not "require nothing"."""
         api.portal.set_registry_record(REQUIRED_FIELDS_RECORD, ())
 
-        assert set(required_fields(self.profile)) == {"login", "email", "fullname"}
+        assert set(required_fields(self.profile)) == {
+            "login",
+            "emails",
+            "fullname",
+        }
 
     def test_the_userid_is_never_required(self):
         """It is the object's own id. Asking a user for it would be asking
@@ -81,9 +89,9 @@ class TestWhatIsMissing:
         assert is_complete(self.profile) is True
 
     def test_an_empty_required_field_is_missing(self):
-        self.profile.email = ""
+        self.profile.emails = ()
 
-        assert missing_fields(self.profile) == ("email",)
+        assert missing_fields(self.profile) == ("emails",)
         assert is_complete(self.profile) is False
 
     def test_an_absent_attribute_is_missing(self):
@@ -94,9 +102,9 @@ class TestWhatIsMissing:
 
     def test_whitespace_does_not_count_as_filled(self):
         """Otherwise a space bar satisfies the requirement."""
-        self.profile.email = "   "
+        self.profile.emails = ("   ",)
 
-        assert missing_fields(self.profile) == ("email",)
+        assert missing_fields(self.profile) == ("emails",)
 
     def test_an_empty_collection_is_missing(self):
         api.portal.set_registry_record(REQUIRED_FIELDS_RECORD, ("group_ids",))

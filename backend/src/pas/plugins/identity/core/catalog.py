@@ -73,6 +73,11 @@ INDEXES = (
     ("login", "FieldIndex"),
     ("group_id", "FieldIndex"),
     ("group_ids", "KeywordIndex"),
+    # Every address a person has, not only the one ``email`` resolves to. A
+    # Keyword index because the field is a list and because the question
+    # asked of it -- "whose profile carries this address" -- is an exact
+    # match on one entry.
+    ("emails", "KeywordIndex"),
     ("review_state", "FieldIndex"),
     ("path", "ExtendedPathIndex"),
     ("SearchableText", "ZCTextIndex"),
@@ -89,6 +94,8 @@ METADATA = (
     "login",
     "fullname",
     "email",
+    "emails",
+    "verified_emails",
     "home_page",
     "description",
     "location",
@@ -108,6 +115,8 @@ PROFILE_METADATA = (
     "login",
     "fullname",
     "email",
+    "emails",
+    "verified_emails",
     "home_page",
     "description",
     "location",

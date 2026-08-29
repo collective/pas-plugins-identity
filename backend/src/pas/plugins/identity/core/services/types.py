@@ -23,13 +23,17 @@ addresses had none of them chosen -- see
 :mod:`pas.plugins.identity.core.emailchoices` -- so the profile arrives
 without one and the gate holds its owner on this form. Asking them to retype
 an address the site was handed a list of would be a poor way to end that, so
-while ``email`` is still empty the schema carries the offered addresses and
-Volto renders a choice instead of an empty box.
+while ``emails`` is still empty the schema carries the offered addresses on
+that field's ``items`` and Volto renders a choice instead of an empty box.
 
-Advisory rather than binding, and deliberately: the field is a ``TextLine``
-either way, so a ``PATCH`` carrying an address that was never offered is still
-accepted. The list is what the person was handed, not the set of addresses
-they are allowed to have.
+``emails`` rather than ``email``, since the address became a list: the person
+picks which of the offered addresses are theirs, and possibly more than one.
+``email`` is derived and read-only, so there is no box on it to fill.
+
+Advisory rather than binding, and deliberately: the entries are still plain
+addresses, so a ``PATCH`` carrying one that was never offered is accepted.
+The list is what the person was handed, not the set of addresses they are
+allowed to have.
 """
 
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
@@ -110,20 +114,25 @@ class ProfileTypesGet(TypesGet):
         return schema
 
     def _offer_addresses(self, properties: dict) -> None:
-        """Put the offered addresses into the ``email`` field's schema.
+        """Put the offered addresses into the ``emails`` field's schema.
 
         Only while the question is open. Once the profile carries an address
         the person has answered, and turning their own field into a list of
         somebody else's suggestions would be a worse form than the plain box.
 
-        ``enum``/``enumNames``/``choices`` is the trio ``plone.restapi``
-        emits for a ``Choice`` field, so a widget that renders one of those
-        renders this without being taught anything new.
+        The decoration goes on ``items`` rather than on the field, because
+        ``emails`` is an array and its entries are what a widget renders a
+        choice for. ``enum``/``enumNames``/``choices`` is the trio
+        ``plone.restapi`` emits for a ``Choice``, so a widget that renders
+        one of those renders this without being taught anything new.
 
         :param properties: The schema's properties, edited in place.
         """
-        email = properties.get("email")
-        if not isinstance(email, dict):
+        field = properties.get("emails")
+        if not isinstance(field, dict):
+            return
+        items = field.get("items")
+        if not isinstance(items, dict):
             return
         userid = api.user.get_current().getId()
         if not userid or self._has_address(userid):
@@ -132,9 +141,9 @@ class ProfileTypesGet(TypesGet):
         if not offered:
             return
         addresses = [choice["address"] for choice in offered]
-        email["enum"] = addresses
-        email["enumNames"] = [self._label(choice) for choice in offered]
-        email["choices"] = [
+        items["enum"] = addresses
+        items["enumNames"] = [self._label(choice) for choice in offered]
+        items["choices"] = [
             [choice["address"], self._label(choice)] for choice in offered
         ]
 
@@ -169,7 +178,7 @@ class ProfileTypesGet(TypesGet):
         if catalog is None:
             return False
         brains = catalog.unrestrictedSearchResults(userid=userid)
-        return bool(brains and (getattr(brains[0], "email", "") or "").strip())
+        return bool(brains and (getattr(brains[0], "emails", None) or ()))
 
 
 __all__ = ["ProfileTypesGet", "user_content_type"]

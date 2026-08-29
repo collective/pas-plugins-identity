@@ -29,6 +29,24 @@ import pytest
 class EmailLinkCase:
     """Drives the two halves of the email-linking flow."""
 
+    def claim_address(self, address: str = ADDRESS) -> None:
+        """Put an address on the caller's own profile.
+
+        The precondition for verifying one. A magic link proves control of
+        whatever was typed, so ``POST @identities`` will only send one to an
+        address already named on the profile -- otherwise the endpoint
+        verifies any mailbox, and a verified address is what
+        ``auto_link_by_email`` attaches a new provider account to.
+
+        :param address: The address to claim.
+        """
+        from pas.plugins.identity.core.subscribers import get_profile
+        from zope.lifecycleevent import modified
+
+        profile = get_profile(self.member)
+        profile.emails = (*profile.emails, address)
+        modified(profile)
+
     def start_link(self, **payload) -> dict:
         """POST a linking start to ``@identities``.
 
@@ -77,6 +95,7 @@ class TestStartingALink(EmailLinkCase):
         self.member = member
         self.mailbox = mailbox
         self.log = log
+        self.claim_address()
 
     def test_answers_a_send_rather_than_an_authorize_url(self):
         """The defect this whole flow exists to fix: the email provider has
@@ -88,13 +107,27 @@ class TestStartingALink(EmailLinkCase):
         assert result == {"provider": "email", "sent": True}
 
     def test_sends_one_message_to_the_address(self):
-        """The address named, not the address on the account: proving control
-        of a mailbox is the entire point."""
+        """The address named, not the one ``email`` currently resolves to:
+        proving control of a mailbox is the entire point, and a profile with
+        several addresses has several to prove."""
+        self.claim_address("other@plone.org")
+
         self.start_link(provider="email", email="other@plone.org")
 
         messages = self.mailbox()
         assert len(messages) == 1
         assert "other@plone.org" in messages[0]["To"]
+
+    def test_an_address_that_is_not_yours_is_refused(self):
+        """What replaced the free-text box on the identities page. A magic
+        link proves control of whatever was typed, so an unguarded endpoint
+        verifies *any* mailbox -- and a verified address is what
+        ``auto_link_by_email`` attaches a new provider account to."""
+        result = self.start_link(provider="email", email="stranger@plone.org")
+
+        assert self.status() == 400
+        assert result["error"]["type"] == "Not one of your addresses"
+        assert self.mailbox() == []
 
     def test_the_mail_names_the_account(self):
         """Unlike the login mail, which cannot: this one only ever goes to
@@ -183,6 +216,7 @@ class TestRedeemingALink(EmailLinkCase):
         self.member = member
         self.mailbox = mailbox
         self.log = log
+        self.claim_address()
 
     def token_for(self, address: str = ADDRESS) -> str:
         """Start a link and return the token that was mailed.

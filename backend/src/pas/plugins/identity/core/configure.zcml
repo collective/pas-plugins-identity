@@ -116,6 +116,21 @@
       handler=".subscribers.on_claims_refreshed"
       />
 
+  <!-- A Profile's ``email`` and ``verified_emails`` are derived from the
+       identity store, and everything reads them from catalog metadata.
+       Confirming a magic link writes to the store and never touches the
+       Profile, so the derived values would be right on the object and wrong
+       everywhere they are used. See .emails. -->
+  <subscriber
+      for=".events.IIdentityLinked"
+      handler=".subscribers.on_email_identity_changed"
+      />
+
+  <subscriber
+      for=".events.IIdentityUnlinked"
+      handler=".subscribers.on_email_identity_changed"
+      />
+
   <!-- Every other way of logging in. The three events above are fired only
        by a federated sign-in, so without this the required-information flow
        reached federated users and nobody else: a source_users account was

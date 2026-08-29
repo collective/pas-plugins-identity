@@ -328,10 +328,17 @@ class IdentityProfilePlugin(BasePlugin):
             if not propertysheet.hasProperty(field):
                 continue
             value = propertysheet.getProperty(field)
-            if (getattr(profile, field, None) or "") == (value or ""):
+            before = getattr(profile, field, None) or ""
+            if before == (value or ""):
                 continue
             setattr(profile, field, value)
-            changed = True
+            # Compared again afterwards rather than assumed. ``email`` is
+            # derived from the profile's address list, and a write of it is
+            # an instruction about that list rather than an assignment -- an
+            # empty one changes nothing, and reporting a change here would
+            # reindex on every save of a form that left the box blank.
+            if (getattr(profile, field, None) or "") != before:
+                changed = True
 
         if changed:
             # The catalog is this layer's only read path -- the property sheet

@@ -54,6 +54,7 @@ from pas.plugins.identity.core.events import UserClaimsRefreshed
 from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.core.profile import UserProfile
 from pas.plugins.identity.core.propertymap import resolve_claim
+from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from persistent.mapping import PersistentMapping
 from plone import api
 from plone.base.utils import safe_text
@@ -449,12 +450,38 @@ def on_claims_refreshed(event: UserClaimsRefreshed) -> None:
     _handle(event.userid, event.claims, event.provider)
 
 
+def on_email_identity_changed(event) -> None:
+    """Reindex a Profile whose set of verified addresses just changed.
+
+    ``email`` and ``verified_emails`` are derived from the identity store, and
+    every path that matters reads them from catalog *metadata* -- the property
+    sheet, enumeration, the OIDC claims. Confirming or removing a magic-link
+    identity writes to the store and never touches the Profile, so without
+    this the derived values stay correct on the object and wrong everywhere
+    they are actually read.
+
+    Only the email provider matters here: no other provider's identity can
+    change which of a person's addresses this site has proved.
+
+    :param event: An ``IdentityLinked`` or ``IdentityUnlinked`` event.
+    """
+    if event.provider != EMAIL_PROVIDER:
+        return
+    profile = get_profile(event.userid)
+    if profile is None:
+        return
+    catalog = query_catalog()
+    if catalog is not None:
+        catalog.reindexObject(profile)
+
+
 __all__ = [
     "claim_fields",
     "ensure_profile",
     "get_profile",
     "on_authenticated",
     "on_claims_refreshed",
+    "on_email_identity_changed",
     "on_identity_linked",
     "on_logged_in",
     "profile_url",

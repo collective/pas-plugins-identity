@@ -27,6 +27,7 @@ from pas.plugins.identity.core.services.identities import IdentitiesBase
 from pas.plugins.identity.core.services.magiclink import check_rate_limits
 from pas.plugins.identity.core.services.magiclink import send_link
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
+from pas.plugins.identity.core.subscribers import get_profile
 from plone import api
 from plone.restapi.deserializer import json_body
 
@@ -81,6 +82,38 @@ class IdentitiesPost(IdentitiesBase):
 
         return {"provider": provider_id, "authorize_url": authorize_url}
 
+    def _refuse_unless_own_address(self, userid: str, address: str) -> JSONDict | None:
+        """Refuse to verify an address that is not on the caller's profile.
+
+        This is what replaces the free-text address box the identities page
+        used to have. A magic link proves control of whatever was typed, so an
+        unguarded form here verifies *any* mailbox -- including one somebody
+        has momentary access to -- and a verified address is what
+        ``auto_link_by_email`` attaches a new provider account to. Naming the
+        address on your profile first makes it a claim somebody can see and an
+        administrator can audit, rather than a value that only ever existed
+        inside one request.
+
+        A caller with no Profile is not held to it. That is a site not keeping
+        users as content, or an account that predates this add-on, and neither
+        has a list to name an address on.
+
+        :param userid: The caller.
+        :param address: The address they asked to verify.
+        :returns: An error body, or ``None`` when the address is theirs to
+            verify.
+        """
+        profile = get_profile(userid)
+        if profile is None:
+            return None
+        if address in (getattr(profile, "emails", None) or ()):
+            return None
+        return self._error(
+            400,
+            "Not one of your addresses",
+            "Add the address to your profile before verifying it.",
+        )
+
     def _start_email_link(
         self, provider: ProviderConfig, userid: str, data: JSONDict
     ) -> JSONDict:
@@ -107,6 +140,10 @@ class IdentitiesPost(IdentitiesBase):
         address = (data.get("email") or "").strip().lower()
         if not address or "@" not in address:
             return self._error(400, "Missing parameters", "Required: email")
+
+        refusal = self._refuse_unless_own_address(userid, address)
+        if refusal is not None:
+            return refusal
 
         config = provider.config
         try:
