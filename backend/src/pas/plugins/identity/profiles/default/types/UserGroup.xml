@@ -23,6 +23,7 @@
   <property name="model_file" />
   <property name="behaviors">
     <element value="plone.shortname" />
+    <element value="pas.plugins.identity.group_membership" />
   </property>
 
   <alias from="(Default)"

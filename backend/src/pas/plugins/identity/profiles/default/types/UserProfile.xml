@@ -37,6 +37,7 @@
        Profile is created with an explicit id (the canonical userid). -->
   <property name="behaviors">
     <element value="plone.shortname" />
+    <element value="pas.plugins.identity.group_membership" />
   </property>
 
   <alias from="(Default)"

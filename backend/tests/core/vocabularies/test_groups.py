@@ -11,7 +11,6 @@ The doctor reports those as ``unknown-group`` and explicitly does not treat
 them as fatal, so validation must not make such a Profile unreadable.
 """
 
-from pas.plugins.identity.core.profile import IUserProfileSchema
 from pas.plugins.identity.core.vocabularies.groups import GROUPS_VOCABULARY
 from plone import api
 from zope.component import getUtility
@@ -40,7 +39,9 @@ class TestTheVocabulary:
 
     def test_the_field_uses_it(self):
         """Which is what gives the widget something to offer."""
-        value_type = IUserProfileSchema["group_ids"].value_type
+        from pas.plugins.identity.core.membership import IGroupMembership
+
+        value_type = IGroupMembership["group_ids"].value_type
 
         assert value_type.vocabularyName == GROUPS_VOCABULARY
 

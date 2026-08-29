@@ -246,6 +246,9 @@ class IUserContent(Interface):
     ``group_ids`` names the groups the user belongs to -- membership lives on
     the *member*, because ``getGroupsForPrincipal`` runs on every permission
     check that touches a local role while listing a group's members does not.
+    A type gets it from the
+    :class:`~pas.plugins.identity.core.membership.IGroupMembership` behavior
+    rather than by declaring the field again.
 
     The object's **id within its container is the userid**. That is what lets
     core find a user in one traversal instead of a scan, and it is not a
@@ -267,7 +270,13 @@ class IUserContent(Interface):
 
     userid = Attribute("The canonical Plone userid. Assigned once.")
     login = Attribute("The name this user signs in with.")
-    group_ids = Attribute("Ids of the groups this user belongs to.")
+    # ``group_ids`` is deliberately *not* an ``Attribute`` here, though the
+    # contract above promises it. Dexterity answers a missing attribute from
+    # the schema's field default, and it finds the type's own schema first --
+    # so an ``Attribute`` inherited from this marker shadows the behavior's
+    # real field, and the lookup then dies on ``Attribute.default``, which
+    # does not exist. The symptom is ``profile.group_ids`` raising
+    # AttributeError on an object that has simply never had one written.
 
 
 class ICredentialStorage(Interface):
@@ -315,13 +324,17 @@ class IGroupContent(Interface):
     A group does **not** carry its members. They are named by each user's
     ``group_ids``, which is the direction Plone asks the question in.
 
-    Group nesting is out of scope, and core refuses it rather than storing
-    something it cannot answer: a group whose members are groups makes
-    ``getGroupsForPrincipal`` recursive, and a recursive answer computed from
-    catalog metadata stops being a single lookup.
+    ``group_ids`` on a *group* is the other end of the same idea: the groups
+    this group is nested inside. Everybody in the inner group is in every
+    group it names, so membership stays a fact stored on the member whether
+    the member is a person or a group, and the transitive answer is a walk
+    over one field rather than a second kind of edge. See
+    :mod:`pas.plugins.identity.core.nesting`.
     """
 
     group_id = Attribute("The canonical group id. Assigned once.")
+    # ``group_ids`` is not declared here either, for the reason spelled out
+    # on :class:`IUserContent`.
 
 
 class IIdentityPlugin(Interface):

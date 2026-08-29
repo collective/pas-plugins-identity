@@ -33,7 +33,6 @@ from catalog metadata, and a blob has no business in a brain.
 from pas.plugins.identity import _
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.interfaces import IUserContent
-from pas.plugins.identity.core.vocabularies.groups import GROUPS_VOCABULARY
 from plone.autoform.directives import read_permission
 from plone.autoform.directives import write_permission
 from plone.dexterity.content import Container
@@ -49,9 +48,11 @@ class IUserProfileSchema(model.Schema, IUserContent):
 
     Extends :class:`~pas.plugins.identity.core.interfaces.IUserContent`,
     which is how core knows objects of this type are users and may create
-    them. The three attributes that interface promises -- ``userid``,
-    ``login`` and ``group_ids`` -- are declared below and were already here;
-    claiming the marker states the contract rather than adding to it.
+    them. Two of the three attributes that interface promises -- ``userid``
+    and ``login`` -- are here; the third, ``group_ids``, comes from the
+    :class:`~pas.plugins.identity.core.membership.IGroupMembership` behavior,
+    which the FTI enables and which the Group type enables too. Claiming the
+    marker states the contract rather than adding to it.
 
     The fourth clause is about placement rather than fields: the object's id
     within its container is the userid. That is what
@@ -106,22 +107,6 @@ class IUserProfileSchema(model.Schema, IUserContent):
         required=False,
     )
 
-    group_ids = schema.Tuple(
-        title=_("Groups"),
-        description=_(
-            "The groups this user belongs to. Membership is kept on the "
-            "member rather than on the group, so editing this field and "
-            "calling api.group.add_user are two ways to the same place."
-        ),
-        # A vocabulary rather than free text. The value is a group id and
-        # nothing checked that it named a group: the groups plugin filters an
-        # unknown id out rather than failing, so a typo produced a membership
-        # that silently granted nothing.
-        value_type=schema.Choice(vocabulary=GROUPS_VOCABULARY),
-        required=False,
-        missing_value=(),
-        default=(),
-    )
     write_permission(
         login="pas.plugins.identity.content.edit",
         fullname="pas.plugins.identity.content.edit",
@@ -130,9 +115,6 @@ class IUserProfileSchema(model.Schema, IUserContent):
         description="pas.plugins.identity.content.edit",
         location="pas.plugins.identity.content.edit",
         image="pas.plugins.identity.content.edit",
-        # Not ``.edit``: see permissions.zcml. The owner of a profile holds
-        # the edit permission on it, and this field is what grants roles.
-        group_ids="pas.plugins.identity.content.editgroups",
     )
     read_permission(
         login="pas.plugins.identity.content.view",
@@ -142,7 +124,6 @@ class IUserProfileSchema(model.Schema, IUserContent):
         description="pas.plugins.identity.content.view",
         location="pas.plugins.identity.content.view",
         image="pas.plugins.identity.content.view",
-        group_ids="pas.plugins.identity.content.view",
     )
 
 

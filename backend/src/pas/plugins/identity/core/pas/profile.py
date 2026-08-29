@@ -39,6 +39,9 @@ from pas.plugins.identity.core.catalog import profile_brains
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.interfaces import IOwnsUserProperties
+from pas.plugins.identity.core.nesting import build_edges
+from pas.plugins.identity.core.nesting import close_over
+from pas.plugins.identity.core.nesting import members_of
 from plone import api
 from Products.PlonePAS.interfaces.capabilities import IDeleteCapability
 from Products.PlonePAS.interfaces.group import IGroupIntrospection
@@ -150,7 +153,7 @@ class IdentityProfilePlugin(BasePlugin):
 
     # -- helpers ---------------------------------------------------------
 
-    def _enumeration_states(self) -> tuple[str, ...]:
+    def enumeration_states(self) -> tuple[str, ...]:
         """Return the workflow states a Profile is visible in.
 
         :returns: State ids; empty when the layer is not installed here.
@@ -166,7 +169,7 @@ class IdentityProfilePlugin(BasePlugin):
         catalog = query_catalog()
         if catalog is None:
             return []
-        states = self._enumeration_states()
+        states = self.enumeration_states()
         return [
             brain for brain in profile_brains(catalog) if brain.review_state in states
         ]
@@ -434,7 +437,7 @@ class IdentityProfilePlugin(BasePlugin):
         states = api.portal.get_registry_record(GROUP_STATES_RECORD, default=None)
         return tuple(states) if states else ()
 
-    def _active_group_brains(self) -> list[AbstractCatalogBrain]:
+    def active_group_brains(self) -> list[AbstractCatalogBrain]:
         """Return brains for every Group in an enumeration-active state.
 
         :returns: Brains, or an empty list when the layer is not installed.
@@ -452,7 +455,20 @@ class IdentityProfilePlugin(BasePlugin):
 
         :returns: Group ids.
         """
-        return {brain.group_id for brain in self._active_group_brains()}
+        return {brain.group_id for brain in self.active_group_brains()}
+
+    def group_edges(self) -> dict[str, tuple[str, ...]]:
+        """Return the group-in-group graph, read from brains.
+
+        One catalog query and no object loads, which is what makes the
+        transitive answers below affordable on the paths that ask them. Only
+        active groups are in it, so a deactivated group neither grants nor
+        conducts -- deactivating has to remove the access of everybody who
+        reached something *through* that group, or it is not a control.
+
+        :returns: Group id to the ids of the groups it belongs to.
+        """
+        return build_edges(self.active_group_brains())
 
     def getGroupsForPrincipal(
         self, principal: PropertiedUser, request: HTTPRequest | None = None
@@ -469,18 +485,37 @@ class IdentityProfilePlugin(BasePlugin):
         single Profile -- and so a group id left behind by a deleted group
         does not keep granting anything.
 
+        Nesting is closed over here rather than stored: a group carries
+        ``group_ids`` too, and a member of an inner group is a member of every
+        group that group belongs to. The walk is over the group graph, which
+        is the small one -- it grows with the number of teams, not with the
+        number of people -- and it comes out of catalog metadata in a single
+        query. See :mod:`pas.plugins.identity.core.nesting`.
+
         :param principal: The user PAS is asking about.
         :param request: The request, unused.
-        :returns: Group ids.
+        :returns: Group ids, direct and inherited.
         """
-        brain = self._brain_for_userid(principal.getId())
-        if brain is None:
-            return ()
-        claimed = tuple(getattr(brain, "group_ids", None) or ())
-        if not claimed:
-            return ()
-        active = self._active_group_ids()
-        return tuple(group_id for group_id in claimed if group_id in active)
+        principal_id = principal.getId()
+        brain = self._brain_for_userid(principal_id)
+        if brain is not None:
+            claimed = tuple(getattr(brain, "group_ids", None) or ())
+            return close_over(claimed, self.group_edges()) if claimed else ()
+
+        # A group is a principal too, and PAS asks this about one while
+        # working out what a group's roles are. Answering it here means the
+        # nesting holds however the question arrives, rather than only on the
+        # path that happens to start from a user.
+        edges = self.group_edges()
+        if principal_id in edges:
+            return tuple(
+                group_id
+                for group_id in close_over(edges[principal_id], edges)
+                # A cycle would otherwise make a group a member of itself,
+                # which nothing downstream expects to see.
+                if group_id != principal_id
+            )
+        return ()
 
     def enumerateGroups(
         self,
@@ -513,7 +548,7 @@ class IdentityProfilePlugin(BasePlugin):
             if terms
         ]
         results = []
-        for brain in self._active_group_brains():
+        for brain in self.active_group_brains():
             if criteria and not self._brain_matches(brain, criteria, exact_match):
                 continue
             results.append({
@@ -587,22 +622,65 @@ class IdentityProfilePlugin(BasePlugin):
         The rare direction of the question, so it is the one that costs a
         catalog query rather than a metadata read. Still brains only.
 
+        A nested group's members are included. The nesting is resolved into a
+        list of group ids first and the catalog is then asked for all of them
+        at once -- ``group_ids`` is a KeywordIndex, so a query naming ten
+        groups is still one query, where recursing per level would be one per
+        level per branch.
+
+        Groups nested under this one are *not* returned as members. PAS
+        expects userids here, and a group id among them would be resolved as
+        a user by everything that reads the answer. Which groups feed into
+        this one is a different question, and
+        :meth:`getNestedGroupIds` answers it.
+
         :param group_id: The group id.
         :returns: Userids, sorted.
         """
         catalog = query_catalog()
         if catalog is None:
             return ()
-        states = self._enumeration_states()
+        feeding = members_of(group_id, self.group_edges())
+        if not feeding:
+            return ()
+        states = self.enumeration_states()
         return tuple(
-            sorted(
+            sorted({
                 brain.userid
                 for brain in catalog.unrestrictedSearchResults(
-                    portal_type=PROFILE_PORTAL_TYPE, group_ids=group_id
+                    portal_type=PROFILE_PORTAL_TYPE, group_ids=list(feeding)
                 )
                 if brain.review_state in states
-            )
+            })
         )
+
+    def getNestedGroupIds(self, group_id: str) -> tuple[str, ...]:
+        """Return the groups nested under one group, at any depth.
+
+        Not part of any PAS interface -- it is this package's own question,
+        asked by the group view and by ``@group-members``. The group itself
+        is excluded: a caller asking what is *inside* a group does not want
+        the group back.
+
+        :param group_id: The outer group.
+        :returns: Group ids, sorted.
+        """
+        feeding = members_of(group_id, self.group_edges())
+        return tuple(gid for gid in feeding if gid != group_id)
+
+    def getGroupParentIds(self, group_id: str) -> tuple[str, ...]:
+        """Return the groups one group is directly a member of.
+
+        The stored edges rather than the closure, because this is the value
+        an edit form shows: what somebody typed, not what it implies.
+
+        :param group_id: The inner group.
+        :returns: Group ids, in stored order.
+        """
+        for brain in self.active_group_brains():
+            if brain.group_id == group_id:
+                return tuple(getattr(brain, "group_ids", None) or ())
+        return ()
 
     # -- IUserManagement / IDeleteCapability -----------------------------
     #

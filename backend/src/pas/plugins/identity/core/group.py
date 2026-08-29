@@ -9,12 +9,24 @@ question is answered by one brain and the rare one by a catalog query.
 Membership lives on the Profile, and a group is never edited to change it.
 Core implements ``IGroupManagement`` over this type -- creating and removing
 the content, and writing membership to the *user* -- so a group can be added
-through ``api.group.create`` like any other. What core will not do is nest
-one group inside another, for the reason below.
+through ``api.group.create`` like any other.
 
-No nesting in v1 either: a group whose members are groups makes
-``getGroupsForPrincipal`` recursive, and a recursive answer computed from
-brains stops being a single lookup.
+**Groups nest, in the same direction.** A group carries ``group_ids`` too,
+from the same
+:class:`~pas.plugins.identity.core.membership.IGroupMembership` behavior a
+Profile carries, and it means the same thing: the groups this principal
+belongs to. So everybody in an inner group is in every group the inner group
+names, which is how a GitHub child team inherits its parent's access.
+
+This was refused once, on the grounds that a group whose members are groups
+makes ``getGroupsForPrincipal`` recursive and that a recursive answer computed
+from brains stops being a single lookup. The first half is true; the second
+turned out not to matter, because the recursion is not over the thing that is
+large. A site has as many groups as it has teams, the whole graph is in
+catalog metadata, and one query returns it -- so the cost grows with the
+number of teams rather than with the number of people. See
+:mod:`pas.plugins.identity.core.nesting`, which also says what happens to a
+cycle.
 """
 
 from pas.plugins.identity import _
@@ -35,6 +47,10 @@ class IUserGroupSchema(model.Schema, IGroupContent):
     marker states the contract rather than adding to it, and carries the
     placement clause the user side does -- the object's id within its
     container is the group id.
+
+    ``group_ids`` -- the groups this group is nested inside -- comes from the
+    :class:`~pas.plugins.identity.core.membership.IGroupMembership` behavior
+    the FTI enables, which is the same behavior the Profile type enables.
     """
 
     title = schema.TextLine(

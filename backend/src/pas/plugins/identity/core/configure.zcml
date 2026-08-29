@@ -149,6 +149,20 @@
       handler=".behaviors.clear_on_copy"
       />
 
+  <!-- Group membership. A schema-only behavior, so its one field is stored
+       on the content object exactly as a declared field was: the Profile
+       still answers ``profile.group_ids`` and the catalog still indexes it.
+       Enabled on the Group type as well, where the same field means the
+       groups that *group* is in. See .nesting for why membership stays a
+       fact stored on the member, whether the member is a person or a
+       group. -->
+  <plone:behavior
+      name="pas.plugins.identity.group_membership"
+      title="Group membership"
+      description="The groups this principal belongs to."
+      provides=".membership.IGroupMembership"
+      />
+
   <!-- The required-information gate. Registered for the publication event
        rather than around a view, because what it enforces is that there is no
        page to reach instead. It excludes far more than it catches, and each
