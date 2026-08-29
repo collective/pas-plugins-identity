@@ -13,6 +13,7 @@ const meta: Meta<typeof ProfileEmails> = {
     busy: false,
     sent: false,
     onVerify: () => {},
+    onPrefer: () => {},
   },
 };
 export default meta;
@@ -43,3 +44,20 @@ export const Sent: Story = { args: { sent: true } };
 
 /** While a send is in flight, nothing else may be started. */
 export const Busy: Story = { args: { busy: true } };
+
+/**
+ * A page that only shows the addresses.
+ *
+ * Without a handler the buttons are not rendered at all, rather than rendered
+ * inert: an action that does nothing when clicked is worse than one that was
+ * never offered.
+ */
+export const NoReordering: Story = { args: { onPrefer: undefined } };
+
+/**
+ * One address, so there is nothing to choose between.
+ *
+ * The hint above the list is what disappears; the address is preferred by
+ * being the only one.
+ */
+export const OnlyOne: Story = { args: { emails: PROFILE_EMAILS.slice(0, 1) } };

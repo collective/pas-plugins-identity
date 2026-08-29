@@ -10,6 +10,15 @@
  *
  * Verifying is still the same magic link and the same endpoint; what changed
  * is that the backend now refuses an address that is not yours.
+ *
+ * **Choosing which one is yours.** A provider that knows several of your
+ * addresses puts all of them on your profile, so the question is no longer
+ * which one to keep but which one stands for you here. That is the *order* of
+ * the list -- the backend derives `email` from it, preferring the first
+ * verified address -- so {guilabel}`Make preferred` moves one to the front
+ * rather than setting a field. An unverified address can be moved and will not
+ * win while a verified one is on the list, which is why the badge is what says
+ * who won rather than what you last clicked.
  * @module components/Identities/ProfileEmails
  */
 import React from 'react';
@@ -32,6 +41,10 @@ const messages = defineMessages({
       'profile first, then verify it here.',
   },
   verify: { id: 'Verify', defaultMessage: 'Verify' },
+  makePreferred: {
+    id: 'Make preferred',
+    defaultMessage: 'Make preferred',
+  },
   verified: { id: 'Verified', defaultMessage: 'Verified' },
   preferred: { id: 'Preferred', defaultMessage: 'Preferred' },
   preferredHelp: {
@@ -39,6 +52,11 @@ const messages = defineMessages({
     defaultMessage:
       'The address this site uses for you: the first verified one, or the ' +
       'first on your profile when none is verified.',
+  },
+  choose: {
+    id: 'profile-emails-choose',
+    defaultMessage:
+      'Move an address to the top to make it the one this site uses for you.',
   },
   empty: {
     id: 'profile-emails-empty',
@@ -62,6 +80,14 @@ interface ProfileEmailsProps {
   /** Whether a confirmation mail has just gone out. */
   sent: boolean;
   onVerify: (address: string) => void;
+  /**
+   * Move an address to the front of the list.
+   *
+   * Optional so that a page rendering this panel read-only -- or one talking
+   * to a backend that predates the reorder -- can leave the buttons out
+   * rather than wire up a handler that does nothing.
+   */
+  onPrefer?: (address: string) => void;
 }
 
 const ProfileEmails: React.FC<ProfileEmailsProps> = ({
@@ -71,6 +97,7 @@ const ProfileEmails: React.FC<ProfileEmailsProps> = ({
   busy,
   sent,
   onVerify,
+  onPrefer,
 }) => {
   const intl = useIntl();
 
@@ -82,6 +109,9 @@ const ProfileEmails: React.FC<ProfileEmailsProps> = ({
     <div className="identity-emails">
       <h3>{intl.formatMessage(messages.heading)}</h3>
       <p className="identity-note">{intl.formatMessage(messages.intro)}</p>
+      {onPrefer && emails.length > 1 ? (
+        <p className="identity-note">{intl.formatMessage(messages.choose)}</p>
+      ) : null}
 
       {emails.length ? (
         <ul className="identity-emails__list">
@@ -114,6 +144,17 @@ const ProfileEmails: React.FC<ProfileEmailsProps> = ({
                 >
                   {intl.formatMessage(messages.preferred)}
                 </span>
+              ) : null}
+              {onPrefer && !entry.preferred ? (
+                <button
+                  type="button"
+                  className="identity-button identity-button--quiet"
+                  data-action="prefer"
+                  disabled={busy}
+                  onClick={() => onPrefer(entry.address)}
+                >
+                  {intl.formatMessage(messages.makePreferred)}
+                </button>
               ) : null}
             </li>
           ))}

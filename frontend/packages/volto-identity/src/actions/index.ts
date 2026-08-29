@@ -30,6 +30,7 @@ import {
   ROTATE_CLIENT_SECRET,
   ROTATE_KEY,
   SEND_MAGIC_LINK,
+  SET_PREFERRED_EMAIL,
   START_LINKING,
   START_PROVIDER_LOGIN,
   TEST_PROVIDER,
@@ -273,6 +274,31 @@ export function createProvider(data: Record<string, unknown>) {
  * @param providerId Provider to update.
  * @param data The fields to change.
  */
+/**
+ * Move one of your addresses to the front of your profile's list.
+ *
+ * Which address stands for you is the order of that list -- the backend
+ * derives `email` from it, preferring the first verified one -- so choosing is
+ * a reorder rather than a field of its own. A `PATCH` on the profile is what
+ * saving the edit form does, and the same permission covers both.
+ *
+ * The whole list is sent, not just the address, because that is what the field
+ * is: sending one entry would replace the list with it.
+ *
+ * @param profilePath App-relative path of the profile.
+ * @param addresses The addresses in their new order.
+ */
+export function setPreferredEmail(profilePath: string, addresses: string[]) {
+  return {
+    type: SET_PREFERRED_EMAIL,
+    request: {
+      op: 'patch',
+      path: profilePath,
+      data: { emails: addresses },
+    },
+  };
+}
+
 export function updateProvider(
   providerId: string,
   data: Record<string, unknown>,

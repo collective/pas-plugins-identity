@@ -50,3 +50,13 @@
   border-color: var(--identity-verified-border, #1a7f37);
   color: var(--identity-verified-color, #1a7f37);
 }
+
+/* A second action on the same row as `Verify`, and quieter than it: choosing
+   a preferred address is housekeeping, while proving one is the thing this
+   panel is for. */
+.identity-button--quiet {
+  border-color: transparent;
+  background: none;
+  font-weight: 400;
+  text-decoration: underline;
+}

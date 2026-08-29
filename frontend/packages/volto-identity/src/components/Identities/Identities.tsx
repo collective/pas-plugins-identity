@@ -10,6 +10,7 @@ import { Container, Segment } from 'semantic-ui-react';
 import { defineMessages, useIntl } from 'react-intl';
 
 import { Helmet } from '@plone/volto/helpers/Helmet/Helmet';
+import { flattenToAppURL } from '@plone/volto/helpers/Url/Url';
 import { useClient } from '@plone/volto/hooks/client/useClient';
 import Icon from '@plone/volto/components/theme/Icon/Icon';
 import Toolbar from '@plone/volto/components/manage/Toolbar/Toolbar';
@@ -19,11 +20,12 @@ import backSVG from '@plone/volto/icons/back.svg';
 import {
   getMyProfile,
   listIdentities,
+  setPreferredEmail,
   startLinking,
   unlinkIdentity,
 } from '../../actions';
 import { EMAIL_DRIVER } from '../../helpers/identities';
-import type { Identity, LoginProvider } from '../../types';
+import type { Identity, LoginProvider, ProfileEmail } from '../../types';
 import IdentitiesList from './IdentitiesList';
 
 const messages = defineMessages({
@@ -45,6 +47,7 @@ const Identities: React.FC = () => {
   );
   const linking = useSelector((state: any) => state.identityLinking);
   const removing = useSelector((state: any) => state.identityUnlink);
+  const preferring = useSelector((state: any) => state.preferredEmail);
   // The addresses live on the profile, not on the identity records, so this
   // page needs the one endpoint that reads them off the catalog brain.
   const myProfile = useSelector((state: any) => state.myProfile);
@@ -98,6 +101,38 @@ const Identities: React.FC = () => {
     [dispatch, location.pathname],
   );
 
+  const onPreferEmail = useCallback(
+    (address: string) => {
+      // The whole list, reordered here rather than on the backend: `emails`
+      // is a field, and a PATCH carrying one entry would replace the list
+      // with it. The rest keep their order, so this moves one address and
+      // rearranges nothing else.
+      const profileUrl = myProfile?.data?.profile;
+      if (!profileUrl) {
+        return;
+      }
+      const addresses: string[] = (myProfile?.data?.emails ?? []).map(
+        (entry: ProfileEmail) => entry.address,
+      );
+      dispatch(
+        setPreferredEmail(flattenToAppURL(profileUrl), [
+          address,
+          ...addresses.filter((each) => each !== address),
+        ]),
+      );
+    },
+    [dispatch, myProfile],
+  );
+
+  useEffect(() => {
+    if (preferring?.loaded) {
+      // A PATCH answers with no body, so the new order comes from asking
+      // again -- and `preferred` is derived, so the answer is the only place
+      // that knows which address actually won.
+      dispatch(getMyProfile());
+    }
+  }, [dispatch, preferring?.loaded]);
+
   const onUnlink = useCallback(
     (identity: Identity) => {
       dispatch(unlinkIdentity(identity.provider, identity.subject));
@@ -125,12 +160,14 @@ const Identities: React.FC = () => {
             busy={
               redirecting ||
               Boolean(removing?.loading) ||
+              Boolean(preferring?.loading) ||
               Boolean(linking?.loading)
             }
             error={linking?.error ?? removing?.error}
             emailSent={emailSent}
             onLink={onLink}
             onVerifyEmail={onVerifyEmail}
+            onPreferEmail={onPreferEmail}
             onUnlink={onUnlink}
           />
         </Segment>

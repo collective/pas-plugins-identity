@@ -54,6 +54,8 @@ interface IdentitiesListProps {
   emailSent: boolean;
   onLink: (provider: LoginProvider) => void;
   onVerifyEmail: (address: string) => void;
+  /** Move an address to the front of the caller's list, when they can. */
+  onPreferEmail?: (address: string) => void;
   onUnlink: (identity: Identity) => void;
 }
 
@@ -68,6 +70,7 @@ const IdentitiesList: React.FC<IdentitiesListProps> = ({
   emailSent,
   onLink,
   onVerifyEmail,
+  onPreferEmail,
   onUnlink,
 }) => {
   const intl = useIntl();
@@ -145,6 +148,7 @@ const IdentitiesList: React.FC<IdentitiesListProps> = ({
         busy={busy}
         sent={emailSent}
         onVerify={onVerifyEmail}
+        onPrefer={onPreferEmail}
       />
 
       {error ? (

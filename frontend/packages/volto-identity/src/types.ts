@@ -206,10 +206,12 @@ export interface MyProfile {
 /**
  * One address on a Profile.
  *
- * `verified` means this site proved it with a magic link, and nothing else:
- * a provider asserting `email_verified` has never counted here. `preferred`
- * marks the one the Profile's `email` resolves to, so a page can show it
- * without reimplementing the rule that picks it.
+ * `verified` means this site holds the address as proved: either the person
+ * followed a magic link sent here, or a provider the operator marked as
+ * trusted vouched for it. A provider nobody marked still counts for nothing.
+ * `preferred` marks the one the Profile's `email` resolves to, so a page can
+ * show it without reimplementing the rule that picks it -- the first verified
+ * address, or the first address at all.
  */
 export interface ProfileEmail {
   address: string;

@@ -15,6 +15,7 @@ import {
   DELETE_PROVIDER,
   GET_CONSENT_REQUEST,
   GET_MY_PROFILE,
+  SET_PREFERRED_EMAIL,
   GET_USER_ACCOUNT,
   LIST_GRANTS,
   LIST_GROUP_MEMBERS,
@@ -242,6 +243,15 @@ export const myProfile = requestReducer<MyProfile | null>(
   null,
 );
 
+// A `PATCH` on content answers 204 with no body, so there is nothing to keep:
+// this reducer exists for `loading` and `error`, and the new order is read back
+// through `@my-profile` once the write lands.
+export const preferredEmail = requestReducer<null>(
+  SET_PREFERRED_EMAIL,
+  () => null,
+  null,
+);
+
 export const oauthClients = requestReducer<OAuthClient[]>(
   LIST_CLIENTS,
   (result) => result?.items ?? [],
@@ -324,6 +334,7 @@ const reducers = {
   providerDelete,
   providerTest,
   myProfile,
+  preferredEmail,
   userProfile,
   oauthClients,
   clientCreate,
