@@ -27,14 +27,26 @@ rather than a second kind of edge. See
 together and puts membership on its own tab, where it is also the only field
 carrying a different write permission -- the owner of a profile may edit it
 and may not grant themselves a group.
+
+**And the fieldset only exists because of the last line of this module.**
+Enabling a behavior on a type does not put its fields on a form: ``@types``
+and every autoform-built form ask for the behaviors marked
+``IFormFieldProvider`` and skip the rest, silently. Without that marker this
+behavior was complete in every other respect -- the FTI listed it, the
+attribute answered, the catalog indexed it, ``api.group.add_user`` wrote
+through it -- and nobody could edit a group membership in a browser. Found by
+Érico on the demo (2026-08-29), months of tests later, because every one of
+them asked about storage and none about the form.
 """
 
 from pas.plugins.identity import _
 from pas.plugins.identity.core.vocabularies.groups import GROUPS_VOCABULARY
 from plone.autoform.directives import read_permission
 from plone.autoform.directives import write_permission
+from plone.autoform.interfaces import IFormFieldProvider
 from plone.supermodel import model
 from zope import schema
+from zope.interface import alsoProvides
 
 
 #: Name the fieldset is registered under, and the id a form renders it with.
@@ -76,6 +88,13 @@ class IGroupMembership(model.Schema):
     # edit permission on it, and this field is what grants roles.
     write_permission(group_ids="pas.plugins.identity.content.editgroups")
     read_permission(group_ids="pas.plugins.identity.content.view")
+
+
+# What makes the field appear on a form at all; see the module docstring.
+# Applied here rather than as a `provides=` in ZCML because the marker belongs
+# to the schema, and a schema that is a form field provider on one site and
+# not on another is a difference nobody would think to look for.
+alsoProvides(IGroupMembership, IFormFieldProvider)
 
 
 __all__ = ["FIELDSET", "IGroupMembership"]
