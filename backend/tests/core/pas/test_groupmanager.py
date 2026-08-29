@@ -13,9 +13,11 @@ tested here. ``updateGroup`` and ``setRolesForGroup`` are never reached -- the
 tool edits a group through the group object and routes roles to a role
 manager -- so they refuse rather than report a success nobody performed.
 
-Membership is written to the **user**, not to the group. That is the
+Membership is written to the **member**, not to the group. That is the
 direction Plone asks the question in, and it is why ``IUserContent`` promises
-``group_ids``.
+``group_ids``. The member may itself be a group, which nests it: the same
+write on the same side, so the transitive answer is a walk over one field
+rather than a second kind of edge.
 """
 
 from .stubs import add_type
@@ -225,13 +227,34 @@ class TestMembership:
     def test_an_unknown_group_declines(self):
         assert self.plugin.addPrincipalToGroup("alice", "nosuchgroup") is False
 
-    def test_nesting_a_group_is_refused(self):
-        """A group whose members are groups makes getGroupsForPrincipal
-        recursive, and a recursive answer computed from catalog metadata
-        stops being a single lookup."""
+    def test_a_group_can_be_nested_in_a_group(self):
+        """The same write on the same side: membership is a fact stored on the
+        member, whether the member is a person or a group."""
         self.plugin.addGroup("staff")
 
-        assert self.plugin.addPrincipalToGroup("staff", "editors") is False
+        assert self.plugin.addPrincipalToGroup("staff", "editors") is True
+
+    def test_nesting_writes_the_edge_on_the_inner_group(self):
+        """Which is what makes the closure a walk over one field."""
+        self.plugin.addGroup("staff")
+
+        self.plugin.addPrincipalToGroup("staff", "editors")
+
+        staff = self.plugin._content_group("staff")
+        assert "editors" in staff.group_ids
+
+    def test_un_nesting_removes_it_again(self):
+        self.plugin.addGroup("staff")
+        self.plugin.addPrincipalToGroup("staff", "editors")
+
+        assert self.plugin.removePrincipalFromGroup("staff", "editors") is True
+        assert self.plugin._content_group("staff").group_ids == ()
+
+    def test_a_group_inside_itself_is_refused(self):
+        """It grants nothing and means nothing; the closure would answer
+        correctly and the edit form would show a row nobody can account
+        for."""
+        assert self.plugin.addPrincipalToGroup("editors", "editors") is False
 
 
 class TestTheMethodsPloneNeverCalls:

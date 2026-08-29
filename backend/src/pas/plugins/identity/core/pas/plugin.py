@@ -671,50 +671,60 @@ class IdentityPlugin(BasePlugin):
         return True
 
     def addPrincipalToGroup(self, principal_id: str, group_id: str) -> bool:
-        """Record that a user belongs to a group.
+        """Record that a principal belongs to a group.
 
-        Written to the *user*, because that is the direction Plone asks the
+        Written to the *member*, because that is the direction Plone asks the
         question in: ``getGroupsForPrincipal`` runs on every permission check
         touching a local role, and listing a group's members does not.
 
-        Refuses to nest a group inside a group. A recursive membership answer
-        computed from catalog metadata stops being a single lookup, which is
-        the property the whole design rests on.
+        The member may itself be a group, which nests it: everybody in the
+        inner group is in the outer one. The write is the same field on the
+        same side, which is what makes the nesting a walk over one edge rather
+        than a second kind of relation -- see
+        :mod:`pas.plugins.identity.core.nesting`.
 
-        :param principal_id: The user to add.
+        :param principal_id: The user or group to add.
         :param group_id: The group to add them to.
         :returns: Whether the membership was recorded.
         """
-        if self._content_group(principal_id) is not None:
-            logger.info("Refusing to nest group %r inside %r", principal_id, group_id)
+        if self._content_group(group_id) is None:
+            return False
+        if principal_id == group_id:
+            # A group inside itself grants nothing and means nothing; the
+            # closure would answer correctly and the edit form would show a
+            # row nobody can account for.
+            logger.info("Refusing to nest group %r inside itself", principal_id)
             return False
 
-        user = self._content_user(principal_id)
-        if user is None or self._content_group(group_id) is None:
+        member = self._content_user(principal_id) or self._content_group(principal_id)
+        if member is None:
             return False
 
-        current = tuple(getattr(user, "group_ids", ()) or ())
+        current = tuple(getattr(member, "group_ids", ()) or ())
         if group_id not in current:
-            user.group_ids = (*current, group_id)
-            _reindex(user)
+            member.group_ids = (*current, group_id)
+            _reindex(member)
         return True
 
     def removePrincipalFromGroup(self, principal_id: str, group_id: str) -> bool:
-        """Remove a user from a group.
+        """Remove a principal from a group.
 
-        :param principal_id: The user to remove.
+        The counterpart of :meth:`addPrincipalToGroup`, and it un-nests a
+        group for the same reason that one nests it.
+
+        :param principal_id: The user or group to remove.
         :param group_id: The group to remove them from.
         :returns: Whether the membership was removed.
         """
-        user = self._content_user(principal_id)
-        if user is None:
+        member = self._content_user(principal_id) or self._content_group(principal_id)
+        if member is None:
             return False
 
-        current = tuple(getattr(user, "group_ids", ()) or ())
+        current = tuple(getattr(member, "group_ids", ()) or ())
         if group_id not in current:
             return False
-        user.group_ids = tuple(g for g in current if g != group_id)
-        _reindex(user)
+        member.group_ids = tuple(g for g in current if g != group_id)
+        _reindex(member)
         return True
 
     def updateGroup(self, id: str, **kw) -> bool:
