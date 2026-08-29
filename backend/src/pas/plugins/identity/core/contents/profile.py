@@ -36,11 +36,11 @@ from catalog metadata, and a blob has no business in a brain.
 
 from pas.plugins.identity import _
 from pas.plugins.identity import logger
+from pas.plugins.identity.core.interfaces import IUserContent
 from pas.plugins.identity.core.utils.emails import clean
 from pas.plugins.identity.core.utils.emails import normalize
 from pas.plugins.identity.core.utils.emails import preferred_address
 from pas.plugins.identity.core.utils.emails import verified_addresses
-from pas.plugins.identity.core.interfaces import IUserContent
 from plone.autoform.directives import read_permission
 from plone.autoform.directives import write_permission
 from plone.dexterity.content import Container

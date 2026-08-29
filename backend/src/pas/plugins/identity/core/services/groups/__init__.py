@@ -26,9 +26,9 @@ from pas.plugins.identity import logger
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.interfaces import JSONDict
-from pas.plugins.identity.core.utils.nesting import members_of
 from pas.plugins.identity.core.pas.profile import PLUGIN_ID as PROFILE_PLUGIN_ID
 from pas.plugins.identity.core.subscribers import profile_url
+from pas.plugins.identity.core.utils.nesting import members_of
 from plone import api
 from Products.CMFCore.permissions import ManageUsers
 from Products.ZCatalog.CatalogBrains import AbstractCatalogBrain

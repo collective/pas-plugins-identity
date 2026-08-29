@@ -15,20 +15,20 @@ gets its site back.
 
 from pas.plugins.identity import PACKAGE_NAME
 from pas.plugins.identity import setuphandlers
-from pas.plugins.identity.core.utils import emails
 from pas.plugins.identity.core import indexers
 from pas.plugins.identity.core import subscribers
 from pas.plugins.identity.core.catalog import CATALOG_ID
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
-from pas.plugins.identity.core.subscribers.gate import enforcing
-from pas.plugins.identity.core.subscribers.gate import incomplete_profile_url
 from pas.plugins.identity.core.pas.profile import IdentityProfilePlugin
 from pas.plugins.identity.core.pas.profile import PLUGIN_ID
 from pas.plugins.identity.core.services import groups as group_services
 from pas.plugins.identity.core.services import useraccount as account_services
 from pas.plugins.identity.core.services.groups.get import GroupMembersGet
 from pas.plugins.identity.core.services.useraccount.get import UserAccountGet
+from pas.plugins.identity.core.subscribers.gate import enforcing
+from pas.plugins.identity.core.subscribers.gate import incomplete_profile_url
+from pas.plugins.identity.core.utils import emails
 from pas.plugins.identity.setuphandlers.plugins import uninstall_profile_plugin
 from plone import api
 from plone.app.testing import TEST_USER_ID

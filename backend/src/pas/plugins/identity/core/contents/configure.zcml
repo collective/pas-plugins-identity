@@ -1,0 +1,22 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <!-- The two content types a user and a group are.
+
+       Each marker is applied to the *class* rather than through the FTI, so
+       that everything registered against it — the catalog subscribers above
+       all — binds however the object was constructed, including by a test
+       that instantiates one directly. Through the FTI it would bind only to
+       objects Dexterity had built. -->
+
+  <class class=".group.UserGroup">
+    <implements interface="..interfaces.IUserGroup" />
+  </class>
+
+  <class class=".profile.UserProfile">
+    <implements interface="..interfaces.IUserProfile" />
+  </class>
+
+</configure>

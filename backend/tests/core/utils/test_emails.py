@@ -7,10 +7,10 @@ what a magic link creates -- and nothing else. A provider asserting
 start counting here.
 """
 
-from pas.plugins.identity.core.utils.emails import clean
-from pas.plugins.identity.core.utils.emails import normalize
 from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
 from pas.plugins.identity.core.subscribers import get_profile
+from pas.plugins.identity.core.utils.emails import clean
+from pas.plugins.identity.core.utils.emails import normalize
 from plone import api
 from plone.app.testing import TEST_USER_ID
 from zope.lifecycleevent import modified

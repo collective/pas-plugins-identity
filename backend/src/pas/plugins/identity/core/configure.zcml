@@ -5,6 +5,7 @@
 
   <include package=".audit" />
   <include package=".behaviors" />
+  <include package=".contents" />
   <include package=".controlpanel" />
   <include package=".drivers" />
   <include package=".indexers" />
@@ -15,23 +16,6 @@
   <include package=".vocabularies" />
 
   <include package=".browser" />
-
-  <!-- The two content types a user and a group are.
-
-       The markers are applied to the class rather than through the FTI so
-       that the catalog subscribers bind to them however the object was
-       constructed — including by a test that instantiates one directly. That
-       is why these two directives stay here rather than moving into
-       ``.contents``: they are the join between a class and the machinery
-       registered against its marker, and both ends are one level up. -->
-
-  <class class=".contents.group.UserGroup">
-    <implements interface=".interfaces.IUserGroup" />
-  </class>
-
-  <class class=".contents.profile.UserProfile">
-    <implements interface=".interfaces.IUserProfile" />
-  </class>
 
   <!-- A user may edit their own Profile and nobody else's. Computed rather
        than assigned, so there is nothing to keep in step. -->

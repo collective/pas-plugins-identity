@@ -26,8 +26,8 @@ written down.
 
 from borg.localrole.interfaces import ILocalRoleProvider
 from collections.abc import Iterator
-from pas.plugins.identity.core.interfaces import IUserProfile
 from pas.plugins.identity.core.contents.profile import UserProfile
+from pas.plugins.identity.core.interfaces import IUserProfile
 from zope.component import adapter
 from zope.interface import implementer
 

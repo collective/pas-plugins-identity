@@ -58,14 +58,14 @@ from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.completeness import reconcile
 from pas.plugins.identity.core.container import get_container
-from pas.plugins.identity.core.utils.emails import normalize
+from pas.plugins.identity.core.contents.profile import UserProfile
 from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
 from pas.plugins.identity.core.events import IdentityLinked
 from pas.plugins.identity.core.events import UserClaimsRefreshed
 from pas.plugins.identity.core.interfaces import Claims
-from pas.plugins.identity.core.contents.profile import UserProfile
-from pas.plugins.identity.core.utils.propertymap import resolve_claim
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
+from pas.plugins.identity.core.utils.emails import normalize
+from pas.plugins.identity.core.utils.propertymap import resolve_claim
 from pas.plugins.identity.core.verification import record_verified_addresses
 from persistent.mapping import PersistentMapping
 from plone import api

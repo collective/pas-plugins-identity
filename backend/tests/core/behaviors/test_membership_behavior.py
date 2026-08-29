@@ -5,10 +5,10 @@ what lets a site's own user type get membership without redeclaring the field,
 its vocabulary and its two permissions.
 """
 
-from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
-from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.behaviors.membership import FIELDSET
 from pas.plugins.identity.core.behaviors.membership import IGroupMembership
+from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
+from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.contents.profile import IUserProfileSchema
 from plone import api
 from plone.behavior.interfaces import IBehavior
