@@ -1,0 +1,36 @@
+/**
+ * A group page: what is in it, and who.
+ *
+ * Three sections with the same rhythm, so a group nested three deep and a
+ * flat one read as the same page with different amounts on it.
+ */
+.identity-group-view {
+  section {
+    margin-top: var(--identity-gap);
+  }
+
+  h2 {
+    margin-bottom: 4px;
+    font-size: 1.15em;
+  }
+
+  ul {
+    padding: 0;
+    margin: 8px 0 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    align-items: baseline;
+    padding: 6px 0;
+    border-bottom: var(--identity-border);
+    gap: 8px;
+  }
+}
+
+.identity-group-view__list {
+  li a {
+    font-weight: 600;
+  }
+}

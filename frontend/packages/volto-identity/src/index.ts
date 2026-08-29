@@ -3,6 +3,7 @@ import installReducers from './config/reducers';
 import installRoutes from './config/routes';
 import installSettings from './config/settings';
 import installMenu from './config/menu';
+import installViews from './config/views';
 
 import './styles.css';
 
@@ -11,6 +12,7 @@ function applyConfig(config: ConfigType) {
   installReducers(config);
   installRoutes(config);
   installMenu(config);
+  installViews(config);
 
   return config;
 }

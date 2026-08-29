@@ -63,4 +63,41 @@
       background: var(--identity-provider-oidc-bg-hover);
     }
   }
+
+  /* An operator's own colours, set per provider in the control panel. The
+     rule carries no colours of its own: they arrive as an inline style, and
+     this only has to stop the driver rules above from winning. `revert`
+     rather than `unset`, so a provider styled with a background alone keeps
+     the stylesheet's text colour rather than falling back to the browser's
+     black on whatever they chose. */
+  &.identity-provider--styled {
+    background: revert;
+    color: revert;
+
+    &:hover:not(:disabled) {
+      background: revert;
+      /* The operator chose the colour; dimming it slightly is the only hover
+         this can offer without knowing what would contrast with it. */
+      filter: brightness(0.92);
+    }
+  }
+
+  .identity-provider__icon {
+    display: inline-flex;
+    width: 1.25em;
+    height: 1.25em;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+
+    /* An uploaded icon is whatever size it was drawn at, and `currentColor`
+       is what makes a monochrome one take the button's text colour -- which
+       is the reason it is inlined rather than served as an image. A fill the
+       operator set on the path still wins over this. */
+    svg {
+      width: 100%;
+      height: 100%;
+      fill: currentcolor;
+    }
+  }
 }

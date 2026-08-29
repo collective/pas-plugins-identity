@@ -207,6 +207,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
               id={provider.id}
               driver={provider.driver}
               label={provider.title || provider.id}
+              icon={provider.icon}
+              background_color={provider.background_color}
+              foreground_color={provider.foreground_color}
               disabled={starting}
               onSelect={() => onSelectProvider(provider)}
             />

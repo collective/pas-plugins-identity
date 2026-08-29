@@ -1,0 +1,5 @@
+Login and identity buttons are drawn from the provider's own icon and colours, and the sign-in-methods page no longer asks for an address.
+
+A provider that carries an icon and colours is rendered as its own button; one that carries neither looks exactly as it did. The icon is inlined rather than served as an image, which is what lets a monochrome one take the button's text colour. The provider control panel grew a **Style** tab for all three, and a **Show on the login screen** switch beside **Enabled** -- two questions rather than one, so taking a provider off the login page no longer takes it away from everybody already signed in through it.
+
+The sign-in-methods page reads the backend's `available` listing rather than the login screen's, so a provider an operator has hidden is still something an existing user can attach. Magic link is no longer offered there as a form: the box asked for an address and mailed a link to it, which verified any mailbox somebody could reach. In its place is **Your email addresses** -- the addresses already on your profile, each with whether this site has verified it and a button to verify one that it has not.

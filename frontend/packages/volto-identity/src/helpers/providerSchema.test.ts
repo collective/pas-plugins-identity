@@ -265,6 +265,7 @@ describe('providerSchema', () => {
       'id',
       'title',
       'enabled',
+      'show_in_login',
     ]);
   });
 
@@ -299,16 +300,40 @@ describe('providerSchema', () => {
   });
 
   it('shows no settings fieldset before a driver is chosen', () => {
-    // An empty fieldset reads as a broken form.
+    // An empty fieldset reads as a broken form. The style fieldset is always
+    // there: an icon and two colours are the operator's whatever the driver
+    // turns out to be.
     const schema = providerSchema([OIDC], undefined, true, testIntl);
 
-    expect(schema.fieldsets.map((f) => f.id)).toEqual(['default', 'mapping']);
+    expect(schema.fieldsets.map((f) => f.id)).toEqual([
+      'default',
+      'style',
+      'mapping',
+    ]);
   });
 
   it('shows no settings fieldset for a driver that declares none', () => {
     const schema = providerSchema([GITHUB], 'github', true, testIntl);
 
-    expect(schema.fieldsets.map((f) => f.id)).toEqual(['default', 'mapping']);
+    expect(schema.fieldsets.map((f) => f.id)).toEqual([
+      'default',
+      'style',
+      'mapping',
+    ]);
+  });
+
+  it('keeps the look in a fieldset of its own', () => {
+    // None of it changes what the provider does, and mixing presentation
+    // into the tab that decides whether people can sign in is how a colour
+    // edit gets made nervously.
+    const schema = providerSchema([OIDC], 'oidc-generic', false, testIntl);
+    const style = schema.fieldsets.find((f) => f.id === 'style');
+
+    expect(style?.fields).toEqual([
+      'icon',
+      'background_color',
+      'foreground_color',
+    ]);
   });
 
   it('titles the settings fieldset after the driver', () => {
@@ -335,17 +360,42 @@ describe('providerSchema', () => {
   it('survives a driver that is not installed', () => {
     const schema = providerSchema([], 'gone', false, testIntl);
 
-    expect(schema.fieldsets.map((f) => f.id)).toEqual(['default', 'mapping']);
+    expect(schema.fieldsets.map((f) => f.id)).toEqual([
+      'default',
+      'style',
+      'mapping',
+    ]);
   });
 });
 
 describe('toFormData', () => {
-  it('defaults a new provider to enabled with no mapping', () => {
+  it('defaults a new provider to enabled, shown, with no mapping', () => {
     expect(toFormData(undefined)).toEqual({
       enabled: true,
+      show_in_login: true,
       propertymap: [],
       groupmap: [],
     });
+  });
+
+  it('reads a provider stored before show_in_login existed as shown', () => {
+    // Reading the absent key as false would take a site's login buttons away
+    // on upgrade.
+    const data = toFormData({ title: 'Dex', enabled: true });
+
+    expect(data.show_in_login).toBe(true);
+  });
+
+  it('carries the stored look into the form', () => {
+    const data = toFormData({
+      title: 'Dex',
+      icon: '<svg/>',
+      background_color: '#24292f',
+    });
+
+    expect(data.icon).toBe('<svg/>');
+    expect(data.background_color).toBe('#24292f');
+    expect(data.foreground_color).toBe('');
   });
 
   it('flattens config onto prefixed keys', () => {
@@ -401,6 +451,29 @@ describe('fromFormData', () => {
 
     expect(payload.id).toBe('dex');
     expect(payload.title).toBe('Dex');
+  });
+
+  it('trims the colours', () => {
+    // The backend refuses a colour it cannot parse, and a trailing space
+    // pasted from a brand page is not a mistake worth a 400.
+    const payload = fromFormData({ background_color: ' #24292f ' });
+
+    expect(payload.background_color).toBe('#24292f');
+  });
+
+  it('leaves the icon whitespace alone', () => {
+    // It is a document, and the sanitizer strips what it does not want.
+    const payload = fromFormData({ icon: '<svg>\n  <path/>\n</svg>' });
+
+    expect(payload.icon).toBe('<svg>\n  <path/>\n</svg>');
+  });
+
+  it('always sends the visibility flag', () => {
+    // An unchecked checkbox submits nothing, and a PATCH that omitted the
+    // key would leave a provider shown after somebody unticked it.
+    const payload = fromFormData({ title: 'Dex' });
+
+    expect(payload.show_in_login).toBe(false);
   });
 
   it('always sends config, even when the driver has no fields', () => {

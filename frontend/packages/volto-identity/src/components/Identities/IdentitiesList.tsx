@@ -5,9 +5,9 @@
 import React from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 
-import type { Identity, LoginProvider } from '../../types';
-import { splitLinkable } from '../../helpers/identities';
-import EmailLinkForm from './EmailLinkForm';
+import type { Identity, LoginProvider, ProfileEmail } from '../../types';
+import ProviderButton from '../Login/ProviderButton';
+import ProfileEmails from './ProfileEmails';
 
 import './IdentitiesList.scss';
 
@@ -34,35 +34,43 @@ const messages = defineMessages({
 
 interface IdentitiesListProps {
   identities: Identity[];
-  /** Providers that could still be added, already filtered by the caller. */
+  /**
+   * Providers that could still be added.
+   *
+   * The backend's own `available`, not a filter applied here. It is the
+   * *enabled* providers minus the ones already linked, which is a different
+   * question from the login screen's listing -- a provider an operator has
+   * taken off the login page is still one an existing user may attach.
+   */
   available: LoginProvider[];
+  /** The caller's own addresses, and which of them are verified. */
+  emails: ProfileEmail[];
+  /** Where the caller's profile is, when they have one. */
+  profileUrl?: string | null;
   loading: boolean;
   busy: boolean;
   error?: unknown;
-  /** Whether a confirmation mail has gone out for the email provider. */
+  /** Whether a confirmation mail has gone out for an address. */
   emailSent: boolean;
   onLink: (provider: LoginProvider) => void;
-  onLinkEmail: (provider: LoginProvider, email: string) => void;
+  onVerifyEmail: (address: string) => void;
   onUnlink: (identity: Identity) => void;
 }
 
 const IdentitiesList: React.FC<IdentitiesListProps> = ({
   identities,
   available,
+  emails,
+  profileUrl,
   loading,
   busy,
   error,
   emailSent,
   onLink,
-  onLinkEmail,
+  onVerifyEmail,
   onUnlink,
 }) => {
   const intl = useIntl();
-  // Not every provider is a button. The email one proves a mailbox, which
-  // means asking which mailbox first -- rendering it as a button posted a
-  // link request for a provider with no authorize URL, and the page died on
-  // the refusal.
-  const { redirect, email } = splitLinkable(available);
 
   if (loading) {
     return (
@@ -108,34 +116,36 @@ const IdentitiesList: React.FC<IdentitiesListProps> = ({
         </p>
       ) : null}
 
-      {redirect.length ? (
+      {available.length ? (
         <div className="identity-identities__add">
           <h3>{intl.formatMessage(messages.addAnother)}</h3>
           <ul>
-            {redirect.map((provider) => (
+            {available.map((provider) => (
               <li key={provider.id}>
-                <button
-                  type="button"
-                  className="identity-button"
-                  data-provider={provider.id}
+                <ProviderButton
+                  id={provider.id}
+                  driver={provider.driver}
+                  label={provider.title || provider.id}
+                  icon={provider.icon}
+                  background_color={provider.background_color}
+                  foreground_color={provider.foreground_color}
                   disabled={busy}
-                  onClick={() => onLink(provider)}
-                >
-                  {provider.title || provider.id}
-                </button>
+                  onSelect={() => onLink(provider)}
+                />
               </li>
             ))}
           </ul>
         </div>
       ) : null}
 
-      {email ? (
-        <EmailLinkForm
-          sent={emailSent}
-          loading={busy}
-          onSend={(address) => onLinkEmail(email, address)}
-        />
-      ) : null}
+      <ProfileEmails
+        emails={emails}
+        profileUrl={profileUrl}
+        loading={loading}
+        busy={busy}
+        sent={emailSent}
+        onVerify={onVerifyEmail}
+      />
 
       {error ? (
         <p className="identity-error" role="alert">

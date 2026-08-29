@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 
 import ProviderButton from './ProviderButton';
-import { GITHUB, GOOGLE, KEYCLOAK } from '../../stories/fixtures';
+import { GITHUB, GOOGLE, KEYCLOAK, STYLED } from '../../stories/fixtures';
 
 const meta: Meta<typeof ProviderButton> = {
   title: 'Identity/Login/ProviderButton',
@@ -45,3 +45,30 @@ export const Redirecting: Story = { args: { disabled: true } };
 
 /** A provider whose title the operator never set falls back to its id. */
 export const Untitled: Story = { args: { label: GOOGLE.id } };
+
+/**
+ * A provider wearing the look an operator gave it in the control panel.
+ *
+ * The icon is inlined rather than served as an image, which is what lets a
+ * monochrome one take the button's own text colour.
+ */
+export const Styled: Story = {
+  args: {
+    id: STYLED.id,
+    driver: STYLED.driver,
+    label: STYLED.title,
+    icon: STYLED.icon,
+    background_color: STYLED.background_color,
+    foreground_color: STYLED.foreground_color,
+  },
+};
+
+/** An icon and no colours: the theme's own button, with a mark on it. */
+export const IconOnly: Story = {
+  args: {
+    id: STYLED.id,
+    driver: STYLED.driver,
+    label: STYLED.title,
+    icon: STYLED.icon,
+  },
+};

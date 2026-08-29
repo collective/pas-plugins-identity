@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '../../testing';
 import React from 'react';
 
 import IdentitiesList from './IdentitiesList';
-import type { Identity, LoginProvider } from '../../types';
+import type { Identity, LoginProvider, ProfileEmail } from '../../types';
 
 const DEX: Identity = {
   '@id': '/@identities/dex/subject-1',
@@ -22,33 +22,33 @@ const GITHUB: LoginProvider = {
   driver: 'github',
 };
 
-const EMAIL: LoginProvider = {
-  '@id': '/@login-providers/email',
-  id: 'email',
-  title: 'Email',
-  driver: 'email',
+const ADDRESS: ProfileEmail = {
+  address: 'erico@plone.org',
+  verified: false,
+  preferred: true,
 };
 
 function renderList(
   props: Partial<React.ComponentProps<typeof IdentitiesList>> = {},
 ) {
   const onLink = vi.fn();
-  const onLinkEmail = vi.fn();
+  const onVerifyEmail = vi.fn();
   const onUnlink = vi.fn();
   render(
     <IdentitiesList
       identities={[DEX]}
       available={[GITHUB]}
+      emails={[ADDRESS]}
       loading={false}
       busy={false}
       emailSent={false}
       onLink={onLink}
-      onLinkEmail={onLinkEmail}
+      onVerifyEmail={onVerifyEmail}
       onUnlink={onUnlink}
       {...props}
     />,
   );
-  return { onLink, onLinkEmail, onUnlink };
+  return { onLink, onVerifyEmail, onUnlink };
 }
 
 describe('IdentitiesList', () => {
@@ -124,44 +124,49 @@ describe('IdentitiesList', () => {
   });
 });
 
-describe('IdentitiesList and the email provider', () => {
-  it('offers an address field rather than a button', () => {
-    // The defect: rendered as a button, clicking it posted a link request
-    // for a provider that has no authorize URL to answer with.
-    renderList({ available: [EMAIL] });
+describe('IdentitiesList and your own addresses', () => {
+  it('lists the addresses on the profile', () => {
+    // Not a box to type one into. The address a magic link proves is
+    // whatever was typed, so a free-text field here verified any mailbox at
+    // all -- and a verified address is what a new provider account can be
+    // auto-attached to.
+    renderList();
 
-    expect(screen.queryByRole('button', { name: 'Email' })).toBeNull();
-    expect(screen.getByLabelText('Email address')).toBeTruthy();
+    expect(screen.queryByLabelText('Email address')).toBeNull();
+    expect(screen.getByText('erico@plone.org')).toBeTruthy();
   });
 
-  it('reports the address to link', () => {
-    const { onLinkEmail } = renderList({ available: [EMAIL] });
+  it('offers to verify one that is not verified yet', () => {
+    const { onVerifyEmail } = renderList();
 
-    fireEvent.change(screen.getByLabelText('Email address'), {
-      target: { value: 'erico@plone.org' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: /confirmation/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
 
-    expect(onLinkEmail).toHaveBeenCalledWith(EMAIL, 'erico@plone.org');
+    expect(onVerifyEmail).toHaveBeenCalledWith('erico@plone.org');
   });
 
-  it('still renders redirect providers as buttons beside it', () => {
-    renderList({ available: [GITHUB, EMAIL] });
+  it('says so rather than offering to verify a verified one', () => {
+    renderList({ emails: [{ ...ADDRESS, verified: true }] });
 
-    expect(screen.getByText('GitHub')).toBeTruthy();
-    expect(screen.getByLabelText('Email address')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Verify' })).toBeNull();
+    expect(screen.getByText('Verified')).toBeTruthy();
+  });
+
+  it('marks the address the site uses', () => {
+    renderList();
+
+    expect(screen.getByText('Preferred')).toBeTruthy();
   });
 
   it('says the mail is out once it is', () => {
-    renderList({ available: [EMAIL], emailSent: true });
+    renderList({ emailSent: true });
 
-    expect(screen.queryByLabelText('Email address')).toBeNull();
     expect(screen.getByRole('status')).toBeTruthy();
   });
 
-  it('offers no address field when the site has no email provider', () => {
-    renderList({ available: [GITHUB] });
+  it('points at the profile when there is nothing to verify', () => {
+    renderList({ emails: [], profileUrl: '/identity-profiles/erico' });
 
-    expect(screen.queryByLabelText('Email address')).toBeNull();
+    expect(screen.getByText(/carries no email address/i)).toBeTruthy();
+    expect(screen.getByText('Edit your profile')).toBeTruthy();
   });
 });

@@ -16,8 +16,13 @@ import Toolbar from '@plone/volto/components/manage/Toolbar/Toolbar';
 import { getBaseUrl } from '@plone/volto/helpers/Url/Url';
 import backSVG from '@plone/volto/icons/back.svg';
 
-import { listIdentities, startLinking, unlinkIdentity } from '../../actions';
-import { linkable } from '../../helpers/identities';
+import {
+  getMyProfile,
+  listIdentities,
+  startLinking,
+  unlinkIdentity,
+} from '../../actions';
+import { EMAIL_DRIVER } from '../../helpers/identities';
 import type { Identity, LoginProvider } from '../../types';
 import IdentitiesList from './IdentitiesList';
 
@@ -35,13 +40,18 @@ const Identities: React.FC = () => {
   const [redirecting, setRedirecting] = useState(false);
 
   const mine = useSelector((state: any) => state.identities);
-  const offered = useSelector((state: any) => state.loginProviders);
+  const linkableProviders = useSelector(
+    (state: any) => state.linkableProviders,
+  );
   const linking = useSelector((state: any) => state.identityLinking);
   const removing = useSelector((state: any) => state.identityUnlink);
+  // The addresses live on the profile, not on the identity records, so this
+  // page needs the one endpoint that reads them off the catalog brain.
+  const myProfile = useSelector((state: any) => state.myProfile);
 
   useEffect(() => {
-    // One request: the providers ride along as an expanded component.
-    dispatch(listIdentities(true));
+    dispatch(listIdentities());
+    dispatch(getMyProfile());
   }, [dispatch]);
 
   useEffect(() => {
@@ -57,8 +67,10 @@ const Identities: React.FC = () => {
   useEffect(() => {
     if (removing?.loaded) {
       // The list is stale the moment an unlink succeeds, and can_unlink may
-      // have changed for everything left.
+      // have changed for everything left. So are the addresses: removing an
+      // email identity is exactly what un-verifies one.
       dispatch(listIdentities());
+      dispatch(getMyProfile());
     }
   }, [dispatch, removing?.loaded]);
 
@@ -70,12 +82,18 @@ const Identities: React.FC = () => {
     [dispatch, location.pathname],
   );
 
-  const onLinkEmail = useCallback(
-    (provider: LoginProvider, email: string) => {
+  const onVerifyEmail = useCallback(
+    (address: string) => {
       // No `setRedirecting` here: nothing is going to navigate. The flow
       // continues when the link in the message is clicked, which may well be
       // in another browser entirely.
-      dispatch(startLinking(provider.id, location.pathname, email));
+      //
+      // The provider id is the driver id, which is what this site's email
+      // provider is called by convention and what the backend's own
+      // `EMAIL_PROVIDER` is. A site that renamed it would need the id off the
+      // listing instead -- but the listing deliberately does not carry the
+      // email provider any more, which is the whole point of this panel.
+      dispatch(startLinking(EMAIL_DRIVER, location.pathname, address));
     },
     [dispatch, location.pathname],
   );
@@ -100,7 +118,9 @@ const Identities: React.FC = () => {
         <Segment>
           <IdentitiesList
             identities={mine?.data ?? []}
-            available={linkable(offered?.data ?? [], mine?.data ?? [])}
+            available={linkableProviders?.data ?? []}
+            emails={myProfile?.data?.emails ?? []}
+            profileUrl={myProfile?.data?.profile ?? null}
             loading={Boolean(mine?.loading)}
             busy={
               redirecting ||
@@ -110,7 +130,7 @@ const Identities: React.FC = () => {
             error={linking?.error ?? removing?.error}
             emailSent={emailSent}
             onLink={onLink}
-            onLinkEmail={onLinkEmail}
+            onVerifyEmail={onVerifyEmail}
             onUnlink={onUnlink}
           />
         </Segment>

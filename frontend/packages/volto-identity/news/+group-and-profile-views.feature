@@ -1,0 +1,7 @@
+Groups and profiles have views of their own, and the users control panel can say how somebody signs in.
+
+Both types are content, so both rendered through Volto's default view: a title and a body that is empty, because neither has rich text. A **profile** now shows the person -- their name, what they wrote about themselves, and their picture. Deliberately not their address: the page's URL is guessable from a userid, and the account's own owner sees their addresses on their sign-in methods page.
+
+A **group** shows what is in it. The groups nested inside it, the groups it is nested inside, and its members -- including everybody who is in it through a nested group, with the group they arrived through named beside them. A visitor who can see the group without being in it gets the title and description: a membership list is personal data about other people, and it is visible to its own members and to somebody who manages users.
+
+The users control panel gained an **Account** action per row, answering the two questions it could not before. Which providers this person has configured, named and dated rather than as bare ids, with a badge on an identity whose provider has since been switched off or removed -- the case that looks like a broken login and reads like nothing. And when they last authenticated, which nothing in Plone records: "not in the retained log" is not the same as never, and the panel says so.

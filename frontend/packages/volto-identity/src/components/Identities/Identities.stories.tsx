@@ -5,6 +5,7 @@ import {
   IDENTITIES,
   LOADED,
   LOADING,
+  PROFILE_EMAILS,
   PROVIDERS,
   withStore,
 } from '../../stories/fixtures';
@@ -19,7 +20,21 @@ type Story = StoryObj<typeof Identities>;
 
 const base = {
   identities: { ...LOADED, data: IDENTITIES },
-  loginProviders: { ...LOADED, data: PROVIDERS },
+  // What the page offers to add is the backend's own `available`, which is
+  // not the login screen's listing: a provider taken off the login page is
+  // still one an existing user may attach.
+  linkableProviders: { ...LOADED, data: PROVIDERS },
+  myProfile: {
+    ...LOADED,
+    data: {
+      '@id': '/@my-profile',
+      userid: 'erico',
+      profile: '/identity-profiles/erico',
+      review_state: 'complete',
+      missing: [],
+      emails: PROFILE_EMAILS,
+    },
+  },
   identityLinking: {},
   identityUnlink: {},
 };

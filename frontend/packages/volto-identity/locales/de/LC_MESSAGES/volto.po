@@ -21,6 +21,11 @@ msgstr ""
 msgid "Access withdrawn"
 msgstr ""
 
+#. Default: "Account"
+#: components/ControlPanel/RenderUsers
+msgid "Account"
+msgstr ""
+
 #. Default: "Actions"
 #: components/Applications/ApplicationsPanel
 #: components/ControlPanel/ClientsPanel
@@ -38,11 +43,6 @@ msgstr ""
 msgid "Add a provider"
 msgstr ""
 
-#. Default: "Add an email address"
-#: components/Identities/EmailLinkForm
-msgid "Add an email address"
-msgstr ""
-
 #. Default: "Add another"
 #: components/Identities/IdentitiesList
 msgid "Add another"
@@ -51,11 +51,6 @@ msgstr ""
 #. Default: "Add provider"
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Add provider"
-msgstr ""
-
-#. Default: "We will email a link to confirm the address belongs to you. Once confirmed, you can sign in with it."
-#: components/Identities/EmailLinkForm
-msgid "Adding an address lets you sign in with a link"
 msgstr ""
 
 #. Default: "Allow"
@@ -114,6 +109,11 @@ msgstr ""
 msgid "Back to the list"
 msgstr ""
 
+#. Default: "Background colour"
+#: helpers/providerSchema
+msgid "Background colour"
+msgstr ""
+
 #. Default: "Cancel"
 #: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ProvidersControlPanel
@@ -124,11 +124,6 @@ msgstr ""
 #: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Changes saved"
-msgstr ""
-
-#. Default: "Check that inbox. The link works once, and only for a few minutes, and it has to be opened while you are still signed in here."
-#: components/Identities/EmailLinkForm
-msgid "Check that inbox for a confirmation link"
 msgstr ""
 
 #. Default: "Choose how you would like to sign in."
@@ -218,6 +213,11 @@ msgstr ""
 msgid "Details"
 msgstr ""
 
+#. Default: "Disabled"
+#: components/ControlPanel/UserAccountPanel
+msgid "Disabled"
+msgstr ""
+
 #. Default: "Disabled. Its existing access tokens are refused as well: the audience is checked against this registry on every request."
 #: components/ControlPanel/ClientsPanel
 msgid "Disabled. Its existing access tokens are refused as well."
@@ -247,10 +247,19 @@ msgstr ""
 msgid "Edit provider"
 msgstr ""
 
+#. Default: "Edit your profile"
+#: components/Identities/ProfileEmails
+msgid "Edit your profile"
+msgstr ""
+
 #. Default: "Email address"
-#: components/Identities/EmailLinkForm
 #: components/Login/MagicLinkForm
 msgid "Email address"
+msgstr ""
+
+#. Default: "Email addresses"
+#: components/ControlPanel/UserAccountPanel
+msgid "Email addresses"
 msgstr ""
 
 #. Default: "Email me a link"
@@ -288,6 +297,11 @@ msgstr ""
 msgid "Focus on"
 msgstr ""
 
+#. Default: "Foreground colour"
+#: helpers/providerSchema
+msgid "Foreground colour"
+msgstr ""
+
 #. Default: "Grants"
 #: components/ControlPanel/ClientsPanel
 #: helpers/clientSchema
@@ -299,9 +313,19 @@ msgstr ""
 msgid "Group mapping"
 msgstr ""
 
+#. Default: "Groups in this group"
+#: components/Views/GroupView
+msgid "Groups in this group"
+msgstr ""
+
 #. Default: "I have saved it"
 #: components/ControlPanel/SecretReveal
 msgid "I have saved it"
+msgstr ""
+
+#. Default: "Icon"
+#: helpers/providerSchema
+msgid "Icon"
 msgstr ""
 
 #. Default: "Id"
@@ -327,6 +351,11 @@ msgstr ""
 #. Default: "It will be able to read:"
 #: components/Consent/ConsentPanel
 msgid "It will be able to read:"
+msgstr ""
+
+#. Default: "Last signed in"
+#: components/ControlPanel/UserAccountPanel
+msgid "Last signed in"
 msgstr ""
 
 #. Default: "Link"
@@ -391,6 +420,11 @@ msgstr ""
 msgid "Mapping"
 msgstr ""
 
+#. Default: "Members"
+#: components/Views/GroupView
+msgid "Members"
+msgstr ""
+
 #. Default: "Menu closed"
 #: components/Toolbar/Toolbar
 msgid "Menu closed"
@@ -437,6 +471,11 @@ msgstr ""
 msgid "No providers are configured yet."
 msgstr ""
 
+#. Default: "Not configured"
+#: components/ControlPanel/UserAccountPanel
+msgid "Not configured"
+msgstr ""
+
 #. Default: "Nothing"
 #: components/Applications/ApplicationsPanel
 msgid "Nothing"
@@ -460,6 +499,11 @@ msgstr ""
 #. Default: "Page"
 #: components/Toolbar/Toolbar
 msgid "Page"
+msgstr ""
+
+#. Default: "Part of"
+#: components/Views/GroupView
+msgid "Part of"
 msgstr ""
 
 #. Default: "Password"
@@ -490,6 +534,11 @@ msgstr ""
 #. Default: "Preferences"
 #: components/UserMenu/UserMenuPlugs
 msgid "Preferences"
+msgstr ""
+
+#. Default: "Preferred"
+#: components/Identities/ProfileEmails
+msgid "Preferred"
 msgstr ""
 
 #. Default: "Profile"
@@ -548,6 +597,11 @@ msgstr ""
 msgid "Reads"
 msgstr ""
 
+#. Default: "Recent activity"
+#: components/ControlPanel/UserAccountPanel
+msgid "Recent activity"
+msgstr ""
+
 #. Default: "Redirect URIs"
 #: helpers/clientSchema
 msgid "Redirect URIs"
@@ -602,11 +656,6 @@ msgstr ""
 msgid "Secret for {clientId}"
 msgstr ""
 
-#. Default: "Send confirmation link"
-#: components/Identities/EmailLinkForm
-msgid "Send confirmation link"
-msgstr ""
-
 #. Default: "Service user"
 #: helpers/clientSchema
 msgid "Service user"
@@ -616,6 +665,11 @@ msgstr ""
 #: components/ControlPanel/ProvidersControlPanel
 #: helpers/providerSchema
 msgid "Settings"
+msgstr ""
+
+#. Default: "Show on the login screen"
+#: helpers/providerSchema
+msgid "Show on the login screen"
 msgstr ""
 
 #. Default: "Shrink toolbar"
@@ -639,6 +693,7 @@ msgid "Sign in with your account on this site."
 msgstr ""
 
 #. Default: "Sign-in methods"
+#: components/ControlPanel/UserAccountPanel
 #: components/Identities/Identities
 #: components/UserMenu/IdentitiesMenuItem
 msgid "Sign-in methods"
@@ -669,6 +724,11 @@ msgstr ""
 #. Default: "Site Setup"
 #: components/UserMenu/UserMenuPlugs
 msgid "Site Setup"
+msgstr ""
+
+#. Default: "Style"
+#: helpers/providerSchema
+msgid "Style"
 msgstr ""
 
 #. Default: "Taking you to {provider}…"
@@ -784,6 +844,17 @@ msgstr ""
 msgid "User field"
 msgstr ""
 
+#. Default: "Verified"
+#: components/ControlPanel/UserAccountPanel
+#: components/Identities/ProfileEmails
+msgid "Verified"
+msgstr ""
+
+#. Default: "Verify"
+#: components/Identities/ProfileEmails
+msgid "Verify"
+msgstr ""
+
 #. Default: "Which integration handles this provider."
 #: helpers/providerSchema
 msgid "Which integration handles this provider."
@@ -828,6 +899,11 @@ msgstr ""
 #. Default: "You have not authorized any application. Anything you sign in to with this account will ask you first, and appear here afterwards."
 #: components/Applications/ApplicationsPanel
 msgid "You have not authorized any application."
+msgstr ""
+
+#. Default: "Your email addresses"
+#: components/Identities/ProfileEmails
+msgid "Your email addresses"
 msgstr ""
 
 #. Default: "Your profile needs a few more details before you can continue."
@@ -875,6 +951,31 @@ msgstr ""
 msgid "group-mapping-help"
 msgstr ""
 
+#. Default: "Loading members…"
+#: components/Views/GroupView
+msgid "group-view-loading"
+msgstr ""
+
+#. Default: "Everybody in these groups is in this one as well, at any depth."
+#: components/Views/GroupView
+msgid "group-view-nested-help"
+msgstr ""
+
+#. Default: "Nobody is in this group yet."
+#: components/Views/GroupView
+msgid "group-view-no-members"
+msgstr ""
+
+#. Default: "You can see this group but not who is in it. A membership list is visible to its own members and to somebody who manages users."
+#: components/Views/GroupView
+msgid "group-view-refused"
+msgstr ""
+
+#. Default: "through {groups}"
+#: components/Views/GroupView
+msgid "group-view-through"
+msgstr ""
+
 #. Default: "The group it grants on this site. A group that does not exist here grants nothing."
 #: helpers/providerSchema
 msgid "local-group-help"
@@ -885,14 +986,49 @@ msgstr ""
 msgid "nothing beyond the fact that you signed in"
 msgstr ""
 
+#. Default: "Your profile carries no email address yet."
+#: components/Identities/ProfileEmails
+msgid "profile-emails-empty"
+msgstr ""
+
+#. Default: "A verified address can be used to sign in with a link, and to recognise you when you add another provider. Add an address on your profile first, then verify it here."
+#: components/Identities/ProfileEmails
+msgid "profile-emails-intro"
+msgstr ""
+
+#. Default: "The address this site uses for you: the first verified one, or the first on your profile when none is verified."
+#: components/Identities/ProfileEmails
+msgid "profile-emails-preferred-help"
+msgstr ""
+
+#. Default: "Check that mailbox. The link confirms the address; it does not sign anybody in."
+#: components/Identities/ProfileEmails
+msgid "profile-emails-sent"
+msgstr ""
+
+#. Default: "Unnamed user"
+#: components/Views/ProfileView
+msgid "profile-view-unnamed"
+msgstr ""
+
+#. Default: "A hex value such as #24292f. Empty leaves the theme's own styling alone."
+#: helpers/providerSchema
+msgid "provider-background-colour-help"
+msgstr ""
+
 #. Default: "Dotted path into the claims, for example email or address.formatted. Normalized claims are tried before the provider's raw payload."
 #: helpers/providerSchema
 msgid "provider-claim-help"
 msgstr ""
 
-#. Default: "A disabled provider is configured but offered to nobody."
+#. Default: "Whether this provider works at all. A disabled one keeps its settings and its stored identities, and nobody can sign in or link through it."
 #: helpers/providerSchema
 msgid "provider-enabled-help"
+msgstr ""
+
+#. Default: "The colour of the button text and icon, as a hex value."
+#: helpers/providerSchema
+msgid "provider-foreground-colour-help"
 msgstr ""
 
 #. Default: "The group's name as the provider sends it. Free text: this site cannot enumerate the far end. A name with no row here grants nothing, and is never created."
@@ -900,9 +1036,19 @@ msgstr ""
 msgid "provider-group-help"
 msgstr ""
 
+#. Default: "An SVG document, pasted as its source. Empty means no icon, and the button then shows the title alone. What is stored is sanitized: scripts, styles and anything referencing a URL are removed, and a document that is not an SVG is refused."
+#: helpers/providerSchema
+msgid "provider-icon-help"
+msgstr ""
+
 #. Default: "Permanent. It is stored on every identity linked through this provider, so renaming it later would orphan them all. Letters, digits, - and _ only."
 #: helpers/providerSchema
 msgid "provider-id-help"
+msgstr ""
+
+#. Default: "Whether the login screen offers a button for it. An enabled provider that is not shown still works: it stays linkable from a user's own sign-in methods, and an account already linked to it still signs in."
+#: helpers/providerSchema
+msgid "provider-show-in-login-help"
 msgstr ""
 
 #. Default: "What the sign-in button says. Defaults to the driver name."
@@ -933,6 +1079,66 @@ msgstr ""
 #. Default: "user avatar"
 #: components/UserMenu/UserAvatar
 msgid "user avatar"
+msgstr ""
+
+#. Default: "The provider is switched off, so this identity cannot sign anybody in."
+#: components/ControlPanel/UserAccountPanel
+msgid "user-account-disabled-help"
+msgstr ""
+
+#. Default: "That could not be read."
+#: components/ControlPanel/UserAccountPanel
+msgid "user-account-failed"
+msgstr ""
+
+#. Default: "The provider was removed while this identity was still stored against it. Nobody can sign in through it, and nothing was deleted."
+#: components/ControlPanel/UserAccountPanel
+msgid "user-account-gone-help"
+msgstr ""
+
+#. Default: "last used {date}"
+#: components/ControlPanel/UserAccountPanel
+msgid "user-account-last-used"
+msgstr ""
+
+#. Default: "linked {date}"
+#: components/ControlPanel/UserAccountPanel
+msgid "user-account-linked"
+msgstr ""
+
+#. Default: "Loading…"
+#: components/ControlPanel/UserAccountPanel
+msgid "user-account-loading"
+msgstr ""
+
+#. Default: "Not in the retained log"
+#: components/ControlPanel/UserAccountPanel
+msgid "user-account-never"
+msgstr ""
+
+#. Default: "Not the same as never: the authentication log is bounded, so an account dormant longer than the retention period has had its entries dropped."
+#: components/ControlPanel/UserAccountPanel
+msgid "user-account-never-help"
+msgstr ""
+
+#. Default: "never used"
+#: components/ControlPanel/UserAccountPanel
+msgid "user-account-never-used"
+msgstr ""
+
+#. Default: "This account has no profile, so it carries no addresses."
+#: components/ControlPanel/UserAccountPanel
+msgid "user-account-no-addresses"
+msgstr ""
+
+#. Default: "Nothing recorded."
+#: components/ControlPanel/UserAccountPanel
+msgid "user-account-no-events"
+msgstr ""
+
+#. Default: "This account signs in with a password only."
+#: components/ControlPanel/UserAccountPanel
+msgid "user-account-no-providers"
 msgstr ""
 
 #. Default: "Where the value is written on the user's profile."

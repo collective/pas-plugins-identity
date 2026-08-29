@@ -3,12 +3,44 @@
  * @module types
  */
 
+/**
+ * How a provider's button should look.
+ *
+ * Served on the public listing, so it carries presentation and nothing else:
+ * an icon, and the two colours the button is drawn in. Every field may be
+ * empty, and empty means "use the frontend's own styling" rather than a
+ * placeholder every provider shares.
+ */
+export interface ProviderStyle {
+  /**
+   * SVG source, sanitized by the backend on the way in.
+   *
+   * Rendered inline rather than as an `<img>`, which is what lets it inherit
+   * the button's colour. The backend keeps an allowlist of elements and
+   * attributes and refuses anything that references a URL, which is what
+   * makes inlining it safe -- see `core/svg.py`.
+   */
+  icon?: string;
+  background_color?: string;
+  foreground_color?: string;
+}
+
 /** One provider offered on the login page, from `@login-providers`. */
-export interface LoginProvider {
+export interface LoginProvider extends ProviderStyle {
   '@id': string;
   id: string;
   title: string;
   driver: string;
+  /**
+   * Whether a user may start a link against this from a form.
+   *
+   * False for magic link: the address it would prove is whatever was typed,
+   * and the addresses this site verifies are the ones already on a person's
+   * profile. The backend leaves such providers out of `available` as well;
+   * this is here so a client can explain the absence rather than only
+   * observe it.
+   */
+  supports_manual_link?: boolean;
 }
 
 /** Answer from `@login-providers/<id>`: where to send the browser. */
@@ -109,12 +141,22 @@ export interface Driver {
 }
 
 /** A configured provider as the control panel sees it. */
-export interface ConfiguredProvider {
+export interface ConfiguredProvider extends ProviderStyle {
   '@id': string;
   id: string;
   driver: string;
   title: string;
+  /** Whether the provider may be used at all -- to sign in, and to link. */
   enabled: boolean;
+  /**
+   * Whether the login screen offers a button for it.
+   *
+   * A separate question from `enabled`. An enabled provider that is not
+   * shown stays linkable from a user's own sign-in methods and still signs
+   * in an account already linked to it, which is what a staff-only provider
+   * looks like.
+   */
+  show_in_login: boolean;
   config: Record<string, unknown>;
   /** Claim path to Plone user field, applied on every login. */
   propertymap: Record<string, string>;
@@ -151,6 +193,28 @@ export interface MyProfile {
    * wants. Empty for a complete Profile and for a user without one.
    */
   missing: string[];
+  /**
+   * The addresses the Profile carries, and which of them are verified.
+   *
+   * Optional because a client may be talking to a backend that predates it,
+   * and every consumer therefore has to tolerate its absence -- an empty
+   * list and a missing key mean the same thing here.
+   */
+  emails?: ProfileEmail[];
+}
+
+/**
+ * One address on a Profile.
+ *
+ * `verified` means this site proved it with a magic link, and nothing else:
+ * a provider asserting `email_verified` has never counted here. `preferred`
+ * marks the one the Profile's `email` resolves to, so a page can show it
+ * without reimplementing the rule that picks it.
+ */
+export interface ProfileEmail {
+  address: string;
+  verified: boolean;
+  preferred: boolean;
 }
 
 /**
@@ -174,6 +238,93 @@ export interface UserProfile {
   identities: Identity[];
   /** The user's Profile, when they have one. */
   profile_url: string | null;
+}
+
+/** One member of a group, from `@group-members/<id>`. */
+export interface GroupMember {
+  '@id': string;
+  id: string;
+  fullname: string;
+  login: string;
+  profile_url: string | null;
+  /**
+   * The groups this person is actually in.
+   *
+   * Which is how a listing can account for somebody being on it: a member of
+   * an inner group appears in the outer group's list, and this says through
+   * which.
+   */
+  through: string[];
+}
+
+/** A group named in a nesting, with enough to render a link. */
+export interface NestedGroup {
+  '@id': string;
+  id: string;
+  title: string;
+}
+
+/** What `@group-members/<id>` answers with. */
+export interface GroupMembers {
+  '@id': string;
+  group: string;
+  items_total: number;
+  items: GroupMember[];
+  /** Groups nested inside this one, at any depth. */
+  nested_groups: NestedGroup[];
+  /** Groups this one is nested inside, as stored rather than as closed. */
+  parent_groups: NestedGroup[];
+  batching?: Record<string, string>;
+}
+
+/** One identity as an administrator sees it, from `@user-account/<id>`. */
+export interface AccountIdentity extends ProviderStyle {
+  provider: string;
+  title: string;
+  subject: string;
+  created: string;
+  last_login: string | null;
+  /** Whether the provider still exists in this site's configuration. */
+  provider_configured: boolean;
+  /** Whether it is enabled. An identity against a disabled provider cannot
+   * sign anybody in, and looks like a broken login rather than a setting. */
+  provider_enabled: boolean;
+  /** Groups this provider granted at the last sign-in. */
+  groups: string[];
+}
+
+/** One recorded authentication event. */
+export interface AuditEvent {
+  event: string;
+  provider: string;
+  success: boolean;
+  timestamp: string;
+  detail: Record<string, unknown>;
+}
+
+/**
+ * How one account gets in, and when it last did.
+ *
+ * `@users/<id>` carries identities as bare ids; this names and styles them,
+ * says whether each provider is still usable, and adds the two things Plone
+ * records nowhere: when the person last authenticated, and by what route.
+ */
+export interface UserAccount {
+  '@id': string;
+  userid: string;
+  fullname: string;
+  profile_url: string | null;
+  identities: AccountIdentity[];
+  emails: ProfileEmail[];
+  /**
+   * ISO 8601, or null.
+   *
+   * Null is not "never signed in": the audit log is bounded, so an account
+   * dormant longer than the retention period has had its entries purged.
+   */
+  last_authenticated: string | null;
+  events_total: number;
+  events: AuditEvent[];
 }
 
 /** One registered OAuth client: who may log in *to* this site. */

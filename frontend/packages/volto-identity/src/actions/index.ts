@@ -18,7 +18,9 @@ import {
   DELETE_CLIENT,
   DELETE_PROVIDER,
   GET_MY_PROFILE,
+  GET_USER_ACCOUNT,
   GET_USER_PROFILE,
+  LIST_GROUP_MEMBERS,
   LIST_CLIENTS,
   LIST_DRIVERS,
   LIST_KEYS,
@@ -136,9 +138,12 @@ export function getUserProfile(userid: string) {
 /**
  * List the identities the signed-in user owns.
  *
- * The page showing them also offers what is *not* linked yet, which is the
- * same listing `@login-providers` serves. Asking for it as a component here
- * answers the whole screen in one request instead of two.
+ * The answer also carries `available`: every *enabled* provider the caller
+ * has not linked yet. That is a different question from what the login screen
+ * offers -- a provider taken off the login page is still one an existing user
+ * may attach -- so it is the endpoint's own answer rather than the expanded
+ * `login-providers` listing, which remains available for a caller that wants
+ * the login screen's view of things.
  *
  * @param withProviders Whether to expand the login providers alongside.
  */
@@ -188,6 +193,44 @@ export function unlinkIdentity(provider: string, subject: string) {
     request: {
       op: 'del',
       path: `/@identities/${encodeURIComponent(provider)}/${encodeURIComponent(subject)}`,
+    },
+  };
+}
+
+/**
+ * List the members of one group, nested memberships included.
+ *
+ * plone.restapi's `@groups/<id>` already carries member userids and already
+ * sees the nesting; what it cannot do is name each person, search within the
+ * group, or say what feeds into it. This does all three.
+ *
+ * @param groupId The group to read.
+ * @param query Case-insensitive substring, matched against name and login.
+ */
+export function listGroupMembers(groupId: string, query = '') {
+  const search = query ? `?query=${encodeURIComponent(query)}` : '';
+  return {
+    type: LIST_GROUP_MEMBERS,
+    request: {
+      op: 'get',
+      path: `/@group-members/${encodeURIComponent(groupId)}${search}`,
+    },
+  };
+}
+
+/**
+ * Read how one account gets in, and when it last did.
+ *
+ * `Manage users`, except when a caller asks about themselves.
+ *
+ * @param userid The account to read.
+ */
+export function getUserAccount(userid: string) {
+  return {
+    type: GET_USER_ACCOUNT,
+    request: {
+      op: 'get',
+      path: `/@user-account/${encodeURIComponent(userid)}`,
     },
   };
 }

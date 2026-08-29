@@ -1,0 +1,52 @@
+/**
+ * Your addresses, and the button that proves one.
+ *
+ * Shares the geometry of the sign-in-methods list above it: the two panels
+ * sit in the same Segment and a second set of measurements would read as two
+ * pages stapled together.
+ */
+.identity-emails {
+  margin-top: var(--identity-gap);
+
+  h3 {
+    margin-bottom: 4px;
+  }
+}
+
+.identity-emails__list {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  margin: var(--identity-gap) 0;
+  gap: 8px;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: baseline;
+    padding: 10px 0;
+    border-bottom: var(--identity-border);
+    gap: 8px;
+  }
+}
+
+.identity-emails__address {
+  flex: 1;
+  font-weight: 600;
+  /* An address is long and has no spaces to wrap at, so it is the one thing
+     on the row that must be allowed to break rather than push the buttons
+     off the end. */
+  overflow-wrap: anywhere;
+}
+
+.identity-emails__badge {
+  padding: 2px 8px;
+  border: var(--identity-border);
+  border-radius: 10px;
+  font-size: 0.85em;
+}
+
+.identity-emails__badge--verified {
+  border-color: var(--identity-verified-border, #1a7f37);
+  color: var(--identity-verified-color, #1a7f37);
+}

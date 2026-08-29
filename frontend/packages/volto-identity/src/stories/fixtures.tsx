@@ -27,6 +27,7 @@ import type {
   OAuthGrants,
   SigningKeyRing,
   UserProfile,
+  ProfileEmail,
 } from '../types';
 
 /** A request that has finished with data. */
@@ -67,6 +68,31 @@ export const EMAIL: LoginProvider = {
 };
 
 export const PROVIDERS = [GOOGLE, GITHUB, KEYCLOAK];
+
+/**
+ * A provider carrying the look an operator gave it.
+ *
+ * The icon is a real SVG rather than a placeholder, because the point of the
+ * story is that the button is drawn from it: a stand-in string would render
+ * an empty box and prove nothing.
+ */
+export const STYLED: LoginProvider = {
+  '@id': '/@login-providers/acme',
+  id: 'acme',
+  title: 'Acme SSO',
+  driver: 'oidc-generic',
+  icon:
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">' +
+    '<path d="M8 1l7 13H1z"/></svg>',
+  background_color: '#4b3f72',
+  foreground_color: '#ffffff',
+};
+
+/** A profile's addresses: one proved, one not. */
+export const PROFILE_EMAILS: ProfileEmail[] = [
+  { address: 'erico@plone.org', verified: true, preferred: true },
+  { address: 'erico@example.com', verified: false, preferred: false },
+];
 
 export const IDENTITIES: Identity[] = [
   {

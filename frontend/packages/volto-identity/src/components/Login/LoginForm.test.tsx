@@ -108,7 +108,11 @@ describe('LoginForm', () => {
   it('offers the password as one of the buttons, not a line of text', () => {
     renderForm();
 
-    const button = screen.getByText('Sign in with a password');
+    // The label is a span inside the button now, so that an operator's icon
+    // can sit beside it.
+    const button = screen
+      .getByText('Sign in with a password')
+      .closest('button') as HTMLButtonElement;
     expect(button.closest('.identity-providers')).toBeTruthy();
     // volto-authomatic's `plone` colours, so the same button is the same
     // blue in both add-ons.

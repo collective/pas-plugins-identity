@@ -1,0 +1,27 @@
+/**
+ * A user's Profile, seen by somebody else.
+ *
+ * The picture and the name sit on one line rather than stacked: a profile
+ * page is a person, and a portrait above a heading reads as an article with
+ * a lead image.
+ */
+.identity-profile-view__header {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--identity-gap);
+  gap: 16px;
+
+  h1 {
+    margin: 0;
+  }
+}
+
+.identity-profile-view__picture {
+  width: 96px;
+  height: 96px;
+  flex: none;
+  border-radius: 50%;
+  /* An uploaded portrait is whatever shape it was cropped to; a circle over
+     a stretched image is worse than a circle over a cropped one. */
+  object-fit: cover;
+}

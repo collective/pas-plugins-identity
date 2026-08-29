@@ -15,7 +15,9 @@ import {
   DELETE_PROVIDER,
   GET_CONSENT_REQUEST,
   GET_MY_PROFILE,
+  GET_USER_ACCOUNT,
   LIST_GRANTS,
+  LIST_GROUP_MEMBERS,
   WITHDRAW_GRANT,
   LIST_CLIENTS,
   LIST_DRIVERS,
@@ -40,9 +42,11 @@ import type {
   ConsentRequest,
   ConnectionCheck,
   Driver,
+  GroupMembers,
   Identity,
   LoginProvider,
   MyProfile,
+  UserAccount,
   UserProfile,
   OAuthClient,
   OAuthGrants,
@@ -155,6 +159,33 @@ export const identities = requestReducer<Identity[]>(
   LIST_IDENTITIES,
   (result) => result?.items ?? [],
   [],
+);
+
+/**
+ * What the caller could still attach to their account.
+ *
+ * The backend's own answer rather than a filter applied here, and a different
+ * question from `loginProviders`: that one is what the login screen offers,
+ * this one is every *enabled* provider the caller has not linked. A provider
+ * an operator has taken off the login page is still one an existing user may
+ * attach, which is exactly what the two settings exist to distinguish.
+ */
+export const linkableProviders = requestReducer<LoginProvider[]>(
+  LIST_IDENTITIES,
+  (result) => result?.available ?? [],
+  [],
+);
+
+export const groupMembers = requestReducer<GroupMembers | null>(
+  LIST_GROUP_MEMBERS,
+  (result) => result ?? null,
+  null,
+);
+
+export const userAccount = requestReducer<UserAccount | null>(
+  GET_USER_ACCOUNT,
+  (result) => result ?? null,
+  null,
 );
 
 export const identityLinking = requestReducer<AuthorizeRedirect | null>(
@@ -281,6 +312,9 @@ const reducers = {
   magicLinkSend,
   magicLinkConfirm,
   identities,
+  linkableProviders,
+  groupMembers,
+  userAccount,
   identityLinking,
   identityUnlink,
   identityDrivers,

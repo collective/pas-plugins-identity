@@ -1,0 +1,38 @@
+/**
+ * One account's sign-in methods, addresses and recent activity.
+ *
+ * Three lists with the same rhythm, so an account with one provider and one
+ * with four read as the same panel.
+ */
+.identity-account {
+  h3 {
+    margin: var(--identity-gap) 0 4px;
+    font-size: 1.05em;
+  }
+}
+
+.identity-account__list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    padding: 6px 0;
+    border-bottom: var(--identity-border);
+    gap: 8px;
+  }
+}
+
+.identity-account__title {
+  font-weight: 600;
+}
+
+.identity-account__badge {
+  padding: 2px 8px;
+  border: var(--identity-border);
+  border-radius: 10px;
+  font-size: 0.85em;
+}

@@ -48,7 +48,49 @@ const messages = defineMessages({
   enabled: { id: 'Enabled', defaultMessage: 'Enabled' },
   enabledHelp: {
     id: 'provider-enabled-help',
-    defaultMessage: 'A disabled provider is configured but offered to nobody.',
+    defaultMessage:
+      'Whether this provider works at all. A disabled one keeps its settings ' +
+      'and its stored identities, and nobody can sign in or link through ' +
+      'it.',
+  },
+  showInLogin: {
+    id: 'Show on the login screen',
+    defaultMessage: 'Show on the login screen',
+  },
+  showInLoginHelp: {
+    id: 'provider-show-in-login-help',
+    defaultMessage:
+      'Whether the login screen offers a button for it. An enabled provider ' +
+      "that is not shown still works: it stays linkable from a user's own " +
+      'sign-in methods, and an account already linked to it still signs in.',
+  },
+  style: { id: 'Style', defaultMessage: 'Style' },
+  icon: { id: 'Icon', defaultMessage: 'Icon' },
+  iconHelp: {
+    id: 'provider-icon-help',
+    defaultMessage:
+      'An SVG document, pasted as its source. Empty means no icon, and the ' +
+      'button then shows the title alone. What is stored is sanitized: ' +
+      'scripts, styles and anything referencing a URL are removed, and a ' +
+      'document that is not an SVG is refused.',
+  },
+  backgroundColor: {
+    id: 'Background colour',
+    defaultMessage: 'Background colour',
+  },
+  backgroundColorHelp: {
+    id: 'provider-background-colour-help',
+    defaultMessage:
+      "A hex value such as #24292f. Empty leaves the theme's own styling " +
+      'alone.',
+  },
+  foregroundColor: {
+    id: 'Foreground colour',
+    defaultMessage: 'Foreground colour',
+  },
+  foregroundColorHelp: {
+    id: 'provider-foreground-colour-help',
+    defaultMessage: 'The colour of the button text and icon, as a hex value.',
   },
   settings: { id: 'Settings', defaultMessage: 'Settings' },
   provider: { id: 'Provider', defaultMessage: 'Provider' },
@@ -309,7 +351,32 @@ export function providerSchema(
     description: intl.formatMessage(messages.enabledHelp),
     type: 'boolean',
   };
-  identity.push('title', 'enabled');
+  properties.show_in_login = {
+    title: intl.formatMessage(messages.showInLogin),
+    description: intl.formatMessage(messages.showInLoginHelp),
+    type: 'boolean',
+  };
+  identity.push('title', 'enabled', 'show_in_login');
+
+  // The look of the button, in a fieldset of its own: none of it changes what
+  // the provider *does*, and mixing presentation into the tab that decides
+  // whether people can sign in is how a colour edit gets made nervously.
+  properties.icon = {
+    title: intl.formatMessage(messages.icon),
+    description: intl.formatMessage(messages.iconHelp),
+    type: 'string',
+    widget: 'textarea',
+  };
+  properties.background_color = {
+    title: intl.formatMessage(messages.backgroundColor),
+    description: intl.formatMessage(messages.backgroundColorHelp),
+    type: 'string',
+  };
+  properties.foreground_color = {
+    title: intl.formatMessage(messages.foregroundColor),
+    description: intl.formatMessage(messages.foregroundColorHelp),
+    type: 'string',
+  };
 
   const settings = orderedFields(driver?.schema ?? {}).map(([name, field]) => {
     const key = `${CONFIG_PREFIX}${name}`;
@@ -347,6 +414,11 @@ export function providerSchema(
           },
         ]
       : []),
+    {
+      id: 'style',
+      title: intl.formatMessage(messages.style),
+      fields: ['icon', 'background_color', 'foreground_color'],
+    },
     {
       id: 'mapping',
       title: intl.formatMessage(messages.mapping),
@@ -390,6 +462,7 @@ export function toFormData(
   if (!provider) {
     return {
       enabled: true,
+      show_in_login: true,
       propertymap: toRows(defaults?.propertymap),
       groupmap: toGroupRows(defaults?.groupmap),
     };
@@ -397,6 +470,13 @@ export function toFormData(
   const data: Record<string, unknown> = {
     title: provider.title ?? '',
     enabled: provider.enabled ?? true,
+    // Absent means shown. A provider stored before the setting existed was
+    // on the login page, and reading the key back as false would take a
+    // site's login buttons away on upgrade.
+    show_in_login: provider.show_in_login ?? true,
+    icon: provider.icon ?? '',
+    background_color: provider.background_color ?? '',
+    foreground_color: provider.foreground_color ?? '',
     propertymap: toRows(provider.propertymap),
     groupmap: toGroupRows(provider.groupmap),
   };
@@ -433,6 +513,13 @@ export function fromFormData(
   payload.config = config;
   payload.title = String(payload.title ?? '').trim();
   payload.enabled = Boolean(payload.enabled);
+  payload.show_in_login = Boolean(payload.show_in_login);
+  // Trimmed, because the backend refuses a colour it cannot parse and a
+  // trailing space pasted from a brand page is not a mistake worth a 400.
+  // The icon keeps its whitespace: it is a document, and the sanitizer
+  // strips what it does not want.
+  payload.background_color = String(payload.background_color ?? '').trim();
+  payload.foreground_color = String(payload.foreground_color ?? '').trim();
   if (typeof payload.id === 'string') {
     payload.id = payload.id.trim();
   }
