@@ -26,7 +26,7 @@ any later request for a scope not already agreed to.
 """
 
 from AccessControl import Unauthorized
-from pas.plugins.identity.core.interfaces import IProfileSupport
+from pas.plugins.identity.core.gate import incomplete_profile_url
 from pas.plugins.identity.server.clients import get_client
 from pas.plugins.identity.server.codes import ChallengeError
 from pas.plugins.identity.server.codes import check_challenge
@@ -41,7 +41,6 @@ from Products.Five.browser import BrowserView
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from urllib.parse import urlencode
 from zExceptions import Forbidden
-from zope.component import queryUtility
 from zope.interface import alsoProvides
 
 import html
@@ -235,15 +234,10 @@ class AuthorizeView(BrowserView):
         # identity provider is where that insistence belongs -- the relying
         # party cannot enforce it and should not have to.
         #
-        # Asked through the utility core declares, so this layer never imports
-        # the one that owns the idea. No utility, or no answer, means nothing
-        # here is incomplete.
-        support = queryUtility(IProfileSupport)
-        elsewhere = (
-            support.incomplete_profile_url(user.getId())
-            if support is not None
-            else None
-        )
+        # No answer means nothing here is incomplete: a complete profile, a
+        # user who has none, or a site that has turned the gate off and so
+        # has said an incomplete profile is a suggestion.
+        elsewhere = incomplete_profile_url(user.getId())
         if elsewhere:
             if quiet:
                 raise AuthorizationError(

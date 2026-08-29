@@ -1,5 +1,6 @@
 <configure
     xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone"
     i18n_domain="pas.plugins.identity"
     >
 
@@ -9,5 +10,56 @@
   <include package=".login" />
   <include package=".magiclink" />
   <include package=".providers" />
+
+  <!-- Volto's first-login routing question. Authenticated-only, checked in
+       the service so the refusal is a JSON body rather than a login form. -->
+  <plone:service
+      method="GET"
+      factory=".myprofile.MyProfileGet"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@my-profile"
+      />
+
+  <!-- @types, with the site's required profile fields in the schema the edit
+       form is built from. plone.restapi reads ``required`` off the type and
+       nothing else, so a field required by the registry record but optional
+       on the type would hold a profile incomplete while the form accepted a
+       save without it. That is a loop, and the record alone would create it.
+       See .types. -->
+  <plone:service
+      method="GET"
+      accept="application/json,application/schema+json"
+      factory=".types.ProfileTypesGet"
+      for="*"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@types"
+      />
+
+  <!-- plone.restapi's own @users PATCH, with the portrait written to the
+       Profile that owns it rather than to portal_memberdata. -->
+  <plone:service
+      method="PATCH"
+      factory=".users.ProfileUsersPatch"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@users"
+      />
+
+  <!-- The read side of the same decision. plone.restapi's @portrait reads
+       portal_memberdata only, so it answered 404 for a user whose picture is
+       on their Profile - including when the [server] layer publishes this
+       URL as the OIDC picture claim and a relying party fetches it. -->
+  <plone:service
+      method="GET"
+      factory=".users.ProfilePortraitGet"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@portrait"
+      />
 
 </configure>

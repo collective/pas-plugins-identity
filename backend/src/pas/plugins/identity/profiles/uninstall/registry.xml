@@ -15,4 +15,58 @@
   <record name="pas.plugins.identity.audit_record_pii"
           remove="true"
   />
+  <record name="pas.plugins.identity.sync_portraits"
+          remove="true"
+  />
+  <record name="pas.plugins.identity.user_content_type"
+          remove="true"
+  />
+  <record name="pas.plugins.identity.user_container_path"
+          remove="true"
+  />
+  <record name="pas.plugins.identity.group_content_type"
+          remove="true"
+  />
+  <record name="pas.plugins.identity.group_container_path"
+          remove="true"
+  />
+  <record name="pas.plugins.identity.profile_container_parent"
+          remove="true"
+  />
+  <record name="pas.plugins.identity.profile_container_id"
+          remove="true"
+  />
+  <record name="pas.plugins.identity.profile_container_title"
+          remove="true"
+  />
+  <record name="pas.plugins.identity.profile_container_type"
+          remove="true"
+  />
+  <record name="pas.plugins.identity.group_container_parent"
+          remove="true"
+  />
+  <record name="pas.plugins.identity.group_container_id"
+          remove="true"
+  />
+  <record name="pas.plugins.identity.group_container_title"
+          remove="true"
+  />
+  <record name="pas.plugins.identity.group_container_type"
+          remove="true"
+  />
+  <record name="pas.plugins.identity.profile_enumeration_states"
+          remove="true"
+  />
+  <record name="pas.plugins.identity.group_enumeration_states"
+          remove="true"
+  />
+  <record name="pas.plugins.identity.gate_exempt_paths"
+          remove="true"
+  />
+  <record name="pas.plugins.identity.enforce_required_profile_fields"
+          remove="true"
+  />
+  <record name="pas.plugins.identity.required_profile_fields"
+          remove="true"
+  />
 </registry>

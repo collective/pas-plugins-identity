@@ -2,7 +2,7 @@
 
 Three things a site with external identities needs and Plone has no place to
 put: which identities a user has linked, which PAS plugin the userid actually
-came from, and where the user's Profile lives when the ``[content]`` layer is
+came from, and where the user's Profile lives when they have one, are
 installed.
 
 **How the source is decided.** PAS stamps it. ``searchUsers`` aggregates the
@@ -18,16 +18,16 @@ search, so ``alice`` would otherwise also match ``alice2`` and the source
 reported would be whichever record came back first.
 """
 
-from pas.plugins.identity.core.interfaces import IProfileSupport
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.pas import PLUGIN_ID
+from pas.plugins.identity.core.portraits import picture_url
+from pas.plugins.identity.core.subscribers import profile_url
 from pas.plugins.identity.interfaces import IBrowserLayer
 from plone import api
 from plone.restapi.interfaces import ISerializeToJson
 from plone.restapi.serializer.user import SerializeUserToJson
 from Products.CMFCore.interfaces._tools import IMemberData
 from zope.component import adapter
-from zope.component import queryUtility
 from zope.interface import implementer
 
 
@@ -87,32 +87,17 @@ def portrait_of(userid: str) -> str | None:
         all. The member portrait is already ``None`` for the default image,
         which is what makes "no picture" distinguishable here.
     """
-    support = _profile_support()
-    return support.picture_url(userid) if support is not None else None
-
-
-def _profile_support():
-    """Return the ``[content]`` layer's bridge, when it is installed.
-
-    A utility lookup rather than an import inside a function. The import was
-    a contract violation that looked like a way of avoiding one:
-    import-linter reads function bodies, so ``core`` was importing the
-    optional layer in fact while appearing not to.
-
-    :returns: The utility, or ``None`` on a site without the extra.
-    """
-    return queryUtility(IProfileSupport)
+    return picture_url(userid)
 
 
 def profile_url_of(userid: str) -> str | None:
     """Return the URL of a user's Profile, when there is one.
 
     :param userid: Canonical Plone userid.
-    :returns: The absolute URL, or ``None`` when the ``[content]`` layer is
-        not installed or the user has no Profile yet.
+    :returns: The absolute URL, or ``None`` when the user has no Profile yet
+        -- an account that predates this add-on and has not signed in since.
     """
-    support = _profile_support()
-    return support.profile_url(userid) if support is not None else None
+    return profile_url(userid)
 
 
 @implementer(ISerializeToJson)

@@ -1,16 +1,14 @@
 """Copying a provider's avatar into Plone's portrait storage.
 
-``picture_url`` is copied into the standard portrait storage on login, with
-no custom adapter -- ``portal_memberdata``, the same place a portrait
-uploaded through user preferences goes. It stays there rather than moving to
-the ``[content]`` layer's Dexterity type, because a portrait synced from a
-provider has to work the same whether or not that optional layer is
-installed.
+``picture_url`` is copied into whichever store holds this user's picture:
+the ``image`` field on their Profile, or ``portal_memberdata`` for a userid
+that has no Profile -- an account created before this add-on was installed
+and not signed in with since.
 
-The ``[content]`` type *does* have a picture field now, and it **wins** where
-a user has filled it in: a picture somebody chose beats one a provider
-supplied. See :func:`pas.plugins.identity.core.serializer.portrait_of`, which
-is where the precedence lives. What is written here is the fallback.
+A picture on the Profile **wins** where the user filled it in: a picture
+somebody chose beats one a provider supplied. See
+:func:`pas.plugins.identity.core.serializer.portrait_of`, which is where the
+precedence lives. What lands in ``portal_memberdata`` is the fallback.
 
 Syncing is **off by default**, which is worth explaining.
 
@@ -31,13 +29,12 @@ claims is an image. None of this makes fetching a user-supplied URL safe --
 a hostile URL can still name a public host that resolves internally -- which
 is why the flag exists rather than a longer list of guards.
 
-**Where it lands depends on the site.** On one running the ``[content]``
-layer the picture goes on the user's Profile, because that is where that site
-keeps a person's fields and a picture in the other store would leave the
-content object showing an empty one. Everywhere else it is
-``portal_memberdata``. One store per user either way, and the same one a
-preferences upload uses -- see
-:class:`pas.plugins.identity.content.services.users.ProfileUsersPatch` for
+**Where it lands depends on the user.** It goes on their Profile, because
+that is where a person's fields live and a picture in the other store would
+leave the content object showing an empty one. For a userid with no Profile
+it is ``portal_memberdata``. One store per user either way, and the same one
+a preferences upload uses -- see
+:class:`pas.plugins.identity.core.services.users.ProfileUsersPatch` for
 the other writer. A picture the user chose is never overwritten: the Profile
 remembers which URL the provider supplied, and a provider may replace only
 its own.
@@ -60,11 +57,14 @@ it would be a far worse bug than the missing picture.
 from io import BytesIO
 from OFS.Image import Image
 from pas.plugins.identity import logger
-from pas.plugins.identity.core.interfaces import IProfileSupport
+from pas.plugins.identity.core.subscribers import get_profile
+from pas.plugins.identity.core.subscribers import remember_picture_url
+from pas.plugins.identity.core.subscribers import remembered_picture_url
 from plone import api
+from plone.namedfile.file import NamedBlobImage
 from Products.PlonePAS.utils import scale_image
 from urllib.parse import urlparse
-from zope.component import queryUtility
+from zope.lifecycleevent import modified
 
 import requests
 
@@ -84,9 +84,93 @@ MAX_BYTES = 2 * 1024 * 1024
 #: Chunk size for the capped read.
 CHUNK = 64 * 1024
 
+#: Filename given to a picture fetched from a provider.
+#:
+#: A provider's avatar URL rarely ends in something usable, and the field
+#: needs *a* name. What it is called matters only in a download header.
+PROVIDER_FILENAME = "portrait"
+
 
 class PortraitRefused(ValueError):
     """The URL or its answer did not satisfy the guards."""
+
+
+def picture_url(userid: str) -> str | None:
+    """Return the URL of the picture held on a user's Profile.
+
+    :param userid: Canonical Plone userid.
+    :returns: An absolute URL, or ``None`` when there is no Profile or it has
+        no picture. ``None`` is what makes the member portrait the fallback,
+        so it has to mean "nothing here" rather than "no Profile".
+    """
+    profile = get_profile(userid)
+    if profile is None or getattr(profile, "image", None) is None:
+        return None
+    # `@@images` rather than `@@download` so a caller may ask for a scale.
+    return f"{profile.absolute_url()}/@@images/image"
+
+
+def store_provider_picture(userid: str, data: bytes, url: str) -> bool:
+    """Store a provider's avatar on a user's Profile, if it may.
+
+    Refused when the user has a picture the provider did not put there. That
+    is the precedence a Profile has always claimed -- a picture somebody
+    chose beats one a provider supplied -- and it is enforced the same way
+    the text fields are: the Profile remembers what the provider last wrote,
+    and the provider may replace only that.
+
+    Refusing is not an error. The caller stores the member portrait instead,
+    so a user who chose their own Profile picture still gets their provider's
+    avatar kept as the fallback nobody sees.
+
+    :param userid: Canonical Plone userid.
+    :param data: The image bytes, already fetched and vetted.
+    :param url: The claim they came from.
+    :returns: Whether it was stored.
+    """
+    profile = get_profile(userid)
+    if profile is None:
+        return False
+
+    current = getattr(profile, "image", None)
+    if current is not None and not remembered_picture_url(profile):
+        # Theirs. Untouched, and the provider does not acquire it by being
+        # the next writer.
+        return False
+
+    profile.image = NamedBlobImage(
+        data=data,
+        contentType=_image_type(data),
+        filename=PROVIDER_FILENAME,
+    )
+    remember_picture_url(profile, url)
+    # The Profile is catalogued, and users are read out of that catalog; a
+    # write nobody reindexed is a write nobody can see.
+    modified(profile)
+    return True
+
+
+def _image_type(data: bytes) -> str:
+    """Return the image's media type, read from the bytes themselves.
+
+    Not from the response header the fetch saw: :func:`_fetch` already
+    refused anything whose header did not claim to be an image, and what is
+    stored should be described by what it *is*. An unrecognised image is
+    stored as a generic one rather than refused -- it was already vetted, and
+    a picture the browser can render is not worth losing to a signature table.
+
+    :param data: The image bytes.
+    :returns: A media type.
+    """
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if data.startswith(b"GIF8"):
+        return "image/gif"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    return "application/octet-stream"
 
 
 def has_picture(userid: str) -> bool:
@@ -107,8 +191,7 @@ def has_picture(userid: str) -> bool:
     :param userid: Canonical Plone userid.
     :returns: Whether a picture exists anywhere for this user.
     """
-    support = queryUtility(IProfileSupport)
-    if support is not None and support.picture_url(userid) is not None:
+    if picture_url(userid) is not None:
         return True
 
     memberdata = api.portal.get_tool("portal_memberdata")
@@ -160,12 +243,11 @@ def _fetch(url: str, allow_http: bool = False) -> bytes:
 def store(userid: str, data: bytes, url: str = "") -> None:
     """Put image bytes wherever this user's picture lives.
 
-    On a site running the ``[content]`` layer that is the Profile, for the
-    same reason a portrait uploaded through preferences goes there: the
-    Profile is where that site keeps a person's fields, and a picture in the
-    other store would leave the content object showing an empty one. Without
-    the layer -- or for a user who has no Profile, or who put a picture on it
-    themselves -- it is ``portal_memberdata``, exactly as before.
+    Their Profile, for the same reason a portrait uploaded through
+    preferences goes there: the Profile is where a person's fields live, and a
+    picture in the other store would leave the content object showing an empty
+    one. For a user who has no Profile, or who put a picture on it themselves,
+    it is ``portal_memberdata`` instead.
 
     Scaled through Plone's own helper rather than stored raw for the member
     portrait, so the result is the same shape as one uploaded through
@@ -178,8 +260,7 @@ def store(userid: str, data: bytes, url: str = "") -> None:
     :param url: The claim they came from, remembered by the Profile so a
         later sync can tell its own picture from one the user chose.
     """
-    support = queryUtility(IProfileSupport)
-    if support is not None and support.store_provider_picture(userid, data, url):
+    if store_provider_picture(userid, data, url):
         return
 
     memberdata = api.portal.get_tool("portal_memberdata")

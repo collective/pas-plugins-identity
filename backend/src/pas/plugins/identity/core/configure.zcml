@@ -1,5 +1,6 @@
 <configure
     xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone"
     i18n_domain="pas.plugins.identity"
     >
 
@@ -13,9 +14,170 @@
   <include package=".browser" />
 
   <!-- What `@users` says about a user once this package is installed: the
-       identities linked, the plugin the userid came from, and the Profile
-       when the [content] layer put one there. On our own browser layer, so
-       a site that has not installed this package is untouched. -->
+       identities linked, the plugin the userid came from, and the Profile.
+       On our own browser layer, so a site that has not installed this package
+       is untouched. -->
   <adapter factory=".serializer.SerializeIdentityUserToJson" />
+
+  <!-- The two content types a user and a group are. -->
+
+  <class class=".group.UserGroup">
+    <implements interface=".interfaces.IUserGroup" />
+  </class>
+
+  <!-- The Profile marker is applied to the class rather than through the FTI
+       so that the catalog subscribers below bind to it however the object was
+       constructed — including by a test that instantiates it directly. -->
+  <class class=".profile.UserProfile">
+    <implements interface=".interfaces.IUserProfile" />
+  </class>
+
+  <!-- Catalog maintenance. Registered for the marker rather than for the
+       portal type, so an object of a site's own type that claims the marker
+       is filed the same way. ``query_catalog`` answers None in a site that
+       does not have this add-on installed, which is what keeps these inert
+       there: the subscribers are registered instance-wide, and other sites in
+       the same Zope have never heard of us. -->
+  <subscriber
+      for=".interfaces.IIdentityCatalogued
+           zope.lifecycleevent.interfaces.IObjectMovedEvent"
+      handler=".indexing.profile_moved"
+      />
+
+  <subscriber
+      for=".interfaces.IIdentityCatalogued
+           OFS.interfaces.IObjectWillBeMovedEvent"
+      handler=".indexing.profile_will_be_moved"
+      />
+
+  <subscriber
+      for=".interfaces.IIdentityCatalogued
+           zope.lifecycleevent.interfaces.IObjectModifiedEvent"
+      handler=".indexing.profile_modified"
+      />
+
+  <!-- A transition changes review_state, which is both an index and a
+       metadata column, and fires no modification event of its own. -->
+  <subscriber
+      for=".interfaces.IIdentityCatalogued
+           Products.DCWorkflow.interfaces.IAfterTransitionEvent"
+      handler=".indexing.profile_modified"
+      />
+
+  <!-- Keep the workflow state honest about what the profile carries. Bound to
+       the Profile marker rather than to the catalog one: a Group has no
+       required-information flow, and firing a transition it does not have
+       would be an error rather than a no-op.
+
+       Added as well as modified. A profile created with everything already in
+       it (by api.user.create, by @users POST, by an import) fires no
+       modification event at all, and would otherwise sit in incomplete
+       waiting for a write that never comes. -->
+  <subscriber
+      for=".interfaces.IUserProfile
+           zope.lifecycleevent.interfaces.IObjectAddedEvent"
+      handler=".subscribers.on_profile_modified"
+      />
+
+  <subscriber
+      for=".interfaces.IUserProfile
+           zope.lifecycleevent.interfaces.IObjectModifiedEvent"
+      handler=".subscribers.on_profile_modified"
+      />
+
+  <!-- Both indexers fold or narrow what the field literally holds; see the
+       module for why. -->
+  <adapter
+      factory=".indexing.login_index"
+      name="login"
+      />
+
+  <adapter
+      factory=".indexing.searchable_text_index"
+      name="SearchableText"
+      />
+
+  <!-- First login and claims sync. Registered for the event contract rather
+       than called from the plugin: anything that fires these events gets
+       profile handling for free, which is what makes the events a real
+       extension point instead of an internal detail with a public name. -->
+  <subscriber
+      for=".events.IExternalIdentityAuthenticated"
+      handler=".subscribers.on_authenticated"
+      />
+
+  <subscriber
+      for=".events.IIdentityLinked"
+      handler=".subscribers.on_identity_linked"
+      />
+
+  <subscriber
+      for=".events.IUserClaimsRefreshed"
+      handler=".subscribers.on_claims_refreshed"
+      />
+
+  <!-- Every other way of logging in. The three events above are fired only
+       by a federated sign-in, so without this the required-information flow
+       reached federated users and nobody else: a source_users account was
+       never minted a Profile and never reconciled, and the gate therefore
+       had nothing to hold it for. -->
+  <subscriber
+      for="Products.PluggableAuthService.interfaces.events.IUserLoggedInEvent"
+      handler=".subscribers.on_logged_in"
+      />
+
+  <!-- A user may edit their own Profile and nobody else's. Computed rather
+       than assigned, so there is nothing to keep in step. -->
+  <adapter factory=".localroles.ProfileSelfRole" />
+
+  <!-- Off unless a site enables it on a type. Without it a new user's
+       password goes to source_users, which is where Plone has always kept
+       one. See .behaviors for the four ways a Dexterity field holding a
+       credential leaks it, and why the hash is an annotation. -->
+  <plone:behavior
+      name="pas.plugins.identity.password"
+      title="Password storage"
+      description="Keep this user's password on the object rather than in source_users."
+      factory=".behaviors.PasswordStorage"
+      provides=".interfaces.ICredentialStorage"
+      for=".interfaces.IUserContent"
+      />
+
+  <subscriber
+      for=".interfaces.IUserContent
+           zope.lifecycleevent.interfaces.IObjectCopiedEvent"
+      handler=".behaviors.clear_on_copy"
+      />
+
+  <!-- The required-information gate. Registered for the publication event
+       rather than around a view, because what it enforces is that there is no
+       page to reach instead. It excludes far more than it catches, and each
+       exclusion is a way the gate would otherwise break the escape it depends
+       on; see .gate. -->
+  <subscriber
+      for="ZPublisher.interfaces.IPubAfterTraversal"
+      handler=".gate.on_after_traversal"
+      />
+
+  <!-- Where Profiles live is configurable and set late. A layered profile
+       may move the container after this package's handler has run, so the
+       core record naming it is derived and re-derived rather than written
+       once. See .principals. -->
+  <subscriber
+      for="plone.registry.interfaces.IRecordModifiedEvent"
+      handler=".principals.on_container_setting_changed"
+      />
+
+  <!-- The other half of the same problem. A container this package did not
+       create gets no add permission from the creation path, and neither the
+       install handler nor the settings subscriber ever sees it: one runs too
+       early and the other watches records rather than content. A folder
+       appearing at the configured path is the third case, and the demo hits
+       it on every fresh site. -->
+  <subscriber
+      for="Products.CMFCore.interfaces.IFolderish
+           zope.lifecycleevent.interfaces.IObjectAddedEvent"
+      handler=".principals.on_folder_added"
+      />
 
 </configure>

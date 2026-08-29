@@ -10,7 +10,7 @@
     <!-- ``server_clients`` and ``server_issuer`` are deliberately not listed.
          An empty <value> imports as None, while leaving the key out takes the
          empty string each schema field declares as its default. That is the
-         same trap documented in the [content] layer's registry XML.
+         same trap documented in the core settings' registry XML.
          A site with no clients and no issuer configured is the correct
          initial state: the server signs nothing until it is told what it is
          called. -->

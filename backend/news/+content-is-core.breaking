@@ -1,0 +1,16 @@
+Users and groups as content is no longer an extra. Installing the add-on installs it, and there is no `pas.plugins.identity.content:default` profile any more.
+
+**A site installed by an earlier version must reinstall the add-on.** There is no upgrade step, deliberately: the package is `1.0.0a0` and nothing is released. Until it is reinstalled such a site looks installed and has no content types, no catalog and no `identity_profile` plugin — uninstall and install it again from the add-ons control panel, or apply `pas.plugins.identity:default` from `portal_setup`. Reinstalling leaves every existing `UserProfile` where it is.
+
+The `[content]` extra is gone from `pyproject.toml` and `plone.app.dexterity` is an ordinary dependency. It always was one in practice: it ships with Plone, so the extra spared nobody anything while creating a second configuration of every code path that touches a user. Every bug found in the last week of that arrangement was in the seam.
+
+`pas.plugins.identity.content` merged into `pas.plugins.identity.core`, flat: `content/catalog.py` is `core/catalog.py`, `content/pas.py` is `core/pas/profile.py`, the markers and the settings schema moved into `core/interfaces.py` and `core/controlpanel/interfaces.py`, and the two `setuphandlers` modules became one package with the catalog builders and the PAS plugin installers in modules of their own. `IIdentityContentLayer` is gone and every registration that was bound to it is bound to `pas.plugins.identity.interfaces.IBrowserLayer`. The `IProfileSupport` utility is gone too — it existed only so core could ask the other layer a question without importing it, and there is nothing on the other side of that boundary any more.
+
+The GenericSetup profiles merged the same way. One `default` installs the control panel, both PAS plugins, both content types with their workflows, and the catalog; one `uninstall` removes them; `rebuild-catalog` is now `pas.plugins.identity:rebuild-catalog`. The uninstall profile also removes the registry records the old one left behind — the four naming the user and group types, and the gate's three.
+
+What follows from the merge, rather than from the move:
+
+*   A federated first login never writes a `source_users` row. It used to, on a site without the extra, because there the row was the only record the user had; now the Profile is, and a row beside it is a second record of the same person that nothing keeps in step.
+*   `api.user.create` mints a Profile on a site nobody has signed in to yet. The container is created by whoever needs it first rather than at install time, so the gap where the first user added to a fresh site got a `source_users` row and no Profile is closed.
+*   An offered address list is never settled by guessing. A driver that returned several addresses and no answer used to have the first one taken on a site with nowhere to ask; every site can ask now.
+*   A login through an identity whose account is gone is restored by the subscriber that mints Profiles, and says so at warning level first — an account reappearing is not what an operator who deleted one expects. @ericof

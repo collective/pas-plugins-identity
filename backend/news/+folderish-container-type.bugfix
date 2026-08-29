@@ -1,0 +1,5 @@
+The principal container is only ever created as a type that can actually contain something.
+
+`Document` is the first fallback when the configured container type may not be added where the container goes, because `plone.volto` makes `Document` folderish and a Volto site refuses `Folder` at the portal root. The same id names an ordinary *item* on a site without that add-on, and nothing checked.
+
+The result was a container that could hold no Profile and could not even be granted the add permission, reported as `The permission pas.plugins.identity: Add User Profile is invalid` — a message about permissions, from a line about permissions, for a mistake about types. Candidates are now filtered on whether their class is folderish, and when nothing addable in the parent is, the refusal names the record to change and lists the folderish types that were available. @ericof

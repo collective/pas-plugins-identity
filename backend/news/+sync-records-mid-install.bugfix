@@ -1,0 +1,9 @@
+Installing the add-on no longer fails while it is importing its own settings.
+
+The four registry records naming the user and group content types are derived from the container settings rather than written once, so a subscriber re-derives them whenever a container setting changes. Every registry write in the site reaches that subscriber, and one of the writes that reaches it is this profile's own `registry.xml` — during the very import step that creates the records being written.
+
+That was safe while the two settings files belonged to two profiles: the core half was always already in place by the time the other one was imported. Merging them inverted the order, and site creation died with `Cannot find a record with name 'pas.plugins.identity.user_content_type'` from a line about syncing.
+
+Syncing now declines while any record it needs is missing, in either direction — the settings it reads, in a site that has uninstalled, and the records it writes, in a site that is mid-install. `post_install` runs it again once everything exists, so the site ends up with the same values either way.
+
+Found by the federation demo refusing to start, which is the only thing in this repository that creates a site from scratch in a container. @ericof

@@ -1,0 +1,9 @@
+The federation test stack asks for consent on a page it actually serves.
+
+The demo points the identity provider's consent screen at a frontend route, which is the interesting configuration and the one the manual stack runs: the question is then rendered in the site's own look rather than by the standalone page the server falls back to.
+
+The federation test stack runs the two backends and no frontend. It got the same setting, so the first authorization in a fresh stack was redirected to a route nothing serves, the flow test found a 404 where it expected either a consent form or a code, and four tests failed on an assertion about the *URL* for a mistake about the *stack*.
+
+`DEMO_IDP_CONSENT_URL` now overrides it, and the compose file sets it empty. Empty is a meaningful value rather than "unset", so it is read with `os.environ.get` instead of through the helper that falls back to a default — a helper that could not have expressed it.
+
+Red since 2026-08-25 and never seen: those tests are docker-marked, and this repository has no remote, so the suite has never run in CI. @ericof

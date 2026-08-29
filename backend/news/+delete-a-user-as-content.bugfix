@@ -1,0 +1,9 @@
+`api.user.delete` now deletes a user whose account is a Profile.
+
+It did not, and the failure was silent in the way that matters: PlonePAS hands a deletion to whichever plugins implement `IUserManagement`, this package implemented none, and `source_users` removed whatever it held — nothing at all, for anybody who signed in through a provider. The Profile stayed where it was, kept answering enumeration and kept serving the property sheet, so the user was still there and the site had reported success.
+
+The profile plugin implements `IUserManagement` and `IDeleteCapability` now: deleting a user deletes their Profile, and the users listing offers the button because the plugin says it can. It declines for a userid it holds no Profile for, which is how PAS is told to try the next plugin.
+
+The identity records are deliberately left alone. An identity outliving an account is by design here — it is what lets the same person sign back in under the same userid — and removing one is a separate decision. A login through an identity whose account is gone recreates the Profile and says so at warning level first, so the case is reported rather than silent.
+
+The plugin is not a credential store, so `doChangeUser` refuses with the `RuntimeError` PlonePAS expects from a plugin that cannot set a password, and password changes go on reaching `source_users` exactly as before. @ericof

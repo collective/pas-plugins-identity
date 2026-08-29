@@ -12,7 +12,6 @@ plugin handed out, and never reaches the network.
 """
 
 from AccessControl.class_init import InitializeClass
-from BTrees.OOBTree import OOSet
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.audit import AuditLog
 from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
@@ -52,8 +51,6 @@ from zope.event import notify
 from zope.interface import implementer
 from ZPublisher.HTTPRequest import HTTPRequest
 from ZPublisher.HTTPResponse import HTTPResponse
-
-import secrets
 
 
 #: Where the provider picker lives, for the optional challenge plugin.
@@ -148,14 +145,21 @@ def mint_userid(
     return f"{normalized}-{counter}"
 
 
-#: Portal type created for a new user, on a site keeping users as content.
-#: Empty means this plugin adds nobody and ``source_users`` does it.
+#: Portal type created for a new user. Installing this add-on points it at
+#: ``UserProfile`` -- see
+#: :func:`~pas.plugins.identity.core.principals.sync_core_records` -- and it
+#: stays a record rather than a constant so a site may substitute a user type
+#: of its own. A type that does not provide :class:`IUserContent` is refused
+#: rather than created.
 USER_CONTENT_TYPE_RECORD = "pas.plugins.identity.user_content_type"
 
-#: Where those objects go, relative to the site root.
+#: Where those objects go, relative to the site root. Derived from the
+#: container settings, so moving the container in the control panel moves
+#: this with it.
 USER_CONTAINER_PATH_RECORD = "pas.plugins.identity.user_container_path"
 
-#: Portal type created for a new group, on a site keeping groups as content.
+#: Portal type created for a new group, ``UserGroup`` unless a site says
+#: otherwise.
 GROUP_CONTENT_TYPE_RECORD = "pas.plugins.identity.group_content_type"
 
 #: Where those objects go, relative to the site root.
@@ -200,10 +204,6 @@ class IdentityPlugin(BasePlugin):
     #: picker instead of the stock login form.
     challenge_enabled = False
 
-    #: Userids whose ``source_users`` password is a plugin-generated
-    #: placeholder rather than something the human can type.
-    _placeholder_passwords: OOSet
-
     def __init__(self, id: str = PLUGIN_ID, title: str = PLUGIN_TITLE) -> None:
         """Create the plugin and its identity store.
 
@@ -216,7 +216,6 @@ class IdentityPlugin(BasePlugin):
         self._audit = AuditLog()
         self._magic_links = MagicLinkStore()
         self._logout_jtis = LogoutJTIStore()
-        self._placeholder_passwords = OOSet()
 
     @property
     def store(self) -> IdentityStore:
@@ -304,12 +303,12 @@ class IdentityPlugin(BasePlugin):
     def authenticateCredentials(self, credentials: JSONDict) -> tuple[str, str] | None:
         """Resolve external credentials to a Plone principal.
 
-        On first sight of an identity a userid is minted and a user record is
-        created for it, so the rest of Plone sees an ordinary user: a
-        ``source_users`` account on an ordinary site, and on a site that
-        keeps its users as content, the content object -- created by whatever
-        the site configured to claim it, in a subscriber to the event fired
-        below.
+        On first sight of an identity a userid is minted, and the Profile that
+        *is* that user is created for it by a subscriber to the event fired
+        below -- so the rest of Plone sees an ordinary user. Nothing is
+        written to ``source_users``: the content object is the account, this
+        plugin enumerates it, and a second record of the same person is the
+        thing that then outlives the object it shadows.
 
         :param credentials: Mapping from :meth:`extractCredentials`.
         :returns: ``(userid, login)`` on success, ``None`` otherwise.
@@ -319,7 +318,7 @@ class IdentityPlugin(BasePlugin):
 
         provider = credentials["provider"]
         subject = credentials["subject"]
-        claims: Claims = self._settle_email(credentials.get("claims", {}))
+        claims: Claims = credentials.get("claims", {})
 
         userid = self._store.userid_for(provider, subject)
         is_new_identity = userid is None
@@ -337,11 +336,10 @@ class IdentityPlugin(BasePlugin):
                     claims=claims,
                     subject=subject,
                 )
-                self._create_plone_user(userid, claims)
             self._store.add(provider, subject, userid, claims)
         else:
             self._store.touch(provider, subject, claims)
-            is_new_user = self._restore_missing_account(userid, claims)
+            self._warn_if_orphaned(userid)
 
         notify(
             ExternalIdentityAuthenticated(
@@ -354,25 +352,25 @@ class IdentityPlugin(BasePlugin):
             )
         )
 
-        if is_new_user and self._keeps_users_as_content():
+        if is_new_user:
             self._warn_if_unclaimed(userid)
 
         # After the event, and that ordering is load-bearing.
         #
-        # Both of these writes are *fallbacks*: they put a value in core's own
-        # store only for a user nobody else claims. `_apply_property_map` asks
-        # `_properties_owned_elsewhere` and `_sync_portrait` asks
-        # `IProfileSupport`, and on a first login neither question has an
-        # honest answer yet -- the thing that would claim the user is created
-        # by a subscriber to the event above. Asked too early, both were told
-        # "nobody owns this user" and wrote into `portal_memberdata`, leaving
-        # the claimed store empty on exactly the login that mattered. Then
-        # nothing corrected it: the property map skips a field that already
-        # has a value, and the avatar is refetched only when the provider
-        # changes its URL, so one badly-timed answer became permanent.
+        # Both of these writes are *fallbacks*: they put a value in
+        # `portal_memberdata` only for a user whose Profile does not claim it.
+        # `_apply_property_map` asks `_properties_owned_elsewhere` and
+        # `_sync_portrait` asks whether the user has a Profile at all, and on
+        # a first login neither question has an honest answer yet -- the
+        # Profile is created by a subscriber to the event above. Asked too
+        # early, both were told "nobody owns this user" and wrote into
+        # `portal_memberdata`, leaving the Profile empty on exactly the login
+        # that mattered. Then nothing corrected it: the property map skips a
+        # field that already has a value, and the avatar is refetched only
+        # when the provider changes its URL, so one badly-timed answer became
+        # permanent.
         #
-        # A fallback runs after everyone entitled to claim has been told. That
-        # is the rule, and it names no layer.
+        # A fallback runs after everyone entitled to claim has been told.
         #
         # Every login, not just the first: a name or address changed at the
         # provider should reach Plone without the user being recreated.
@@ -389,24 +387,35 @@ class IdentityPlugin(BasePlugin):
         PAS walks every registered adder and stops at the first that returns
         true -- ``ZODBUserManager.doAddUser`` returns ``False`` on a duplicate
         id, so declining is the protocol rather than something invented here.
-        This one declines whenever the site has not been configured to keep
-        its users as content, which is every site until somebody sets the two
-        records, and ``source_users`` then adds the user exactly as before.
+        This one declines only when a site has pointed the records at a type
+        that is not a user, which is a misconfiguration rather than a mode;
+        ``source_users`` then adds the user, exactly as it did before this
+        add-on existed.
+
+        The container is created here if it is missing. Where Profiles live is
+        set late -- a policy profile may move it after this add-on is
+        installed -- so it is not made at install time, and the first person
+        to need one is what brings it into being.
 
         The password is **not** stored here. This plugin creates the record a
         user *is*; where a credential lives is a separate decision, and on a
         site that has not made it the credential still belongs to
-        ``source_users``. So a site running this creates a content object and
-        a credential, and neither store is guessing about the other. An
-        externally authenticated user has neither a password nor a
-        ``source_users`` row -- see :meth:`_create_plone_user`.
+        ``source_users``. So adding a user through the ordinary API creates a
+        content object and a credential, and neither store is guessing about
+        the other. An externally authenticated user has neither -- nothing
+        writes them a row, and they sign in at their provider.
 
         :param login: The login name, already transformed by PAS.
         :param password: The password PAS was given. Ignored, deliberately.
         :returns: Whether this plugin created the user.
         """
+        from pas.plugins.identity.core.container import PROFILE
+
         configured = self._configured(
-            USER_CONTENT_TYPE_RECORD, USER_CONTAINER_PATH_RECORD, IUserContent
+            USER_CONTENT_TYPE_RECORD,
+            USER_CONTAINER_PATH_RECORD,
+            IUserContent,
+            create_kind=PROFILE,
         )
         if configured is None:
             return False
@@ -438,8 +447,7 @@ class IdentityPlugin(BasePlugin):
         A site adding a user through the ordinary API therefore ends up with
         someone who can actually sign in. An externally authenticated user
         needs none of this -- they have no password to put anywhere, and
-        :meth:`_create_plone_user` writes no ``source_users`` row for them on
-        a site that keeps its users as content.
+        nothing writes a ``source_users`` row for them.
 
         A site that would rather keep credentials on the content type opts
         into something providing
@@ -506,16 +514,27 @@ class IdentityPlugin(BasePlugin):
             return False
         return schema.isOrExtends(marker)
 
-    def _configured(self, type_record: str, path_record: str, marker):
+    def _configured(
+        self,
+        type_record: str,
+        path_record: str,
+        marker,
+        create_kind: str = "",
+    ):
         """Return where to create, or ``None`` when this is not our job.
 
-        One place for the four ways a site declines: no type, no container, a
-        container that does not resolve, and a type that is not what the
-        marker requires.
+        One place for the ways a site declines: no type, no container path, a
+        path that resolves to nothing, and a type that is not what the marker
+        requires.
 
         :param type_record: Registry record naming the portal type.
         :param path_record: Registry record naming the container path.
         :param marker: The interface the type has to provide.
+        :param create_kind: :data:`~pas.plugins.identity.core.container.PROFILE`
+            or :data:`~pas.plugins.identity.core.container.GROUP` to create the
+            container when it is missing. Empty -- the default -- keeps this a
+            read: the paths that only want to *find* something must not make
+            a folder as a side effect.
         :returns: ``(container, portal_type)``, or ``None``.
         """
         portal_type = _record(type_record)
@@ -524,6 +543,14 @@ class IdentityPlugin(BasePlugin):
             return None
 
         container = self._container(container_path)
+        if container is None and create_kind:
+            self._make_container(create_kind)
+            # Re-resolved through the record rather than taken from the call
+            # above. The container settings and this record normally derive
+            # from each other; where a site has pulled them apart, the record
+            # is what says where principals go, and filing them into whatever
+            # was just created somewhere else would be worse than declining.
+            container = self._container(container_path)
         if container is None:
             logger.warning("%r does not resolve to a container", container_path)
             return None
@@ -532,6 +559,30 @@ class IdentityPlugin(BasePlugin):
             logger.warning("%r does not provide %s", portal_type, marker.__name__)
             return None
         return container, portal_type
+
+    def _make_container(self, kind: str) -> None:
+        """Create the configured principal container, if it can be created.
+
+        Run as a Manager: the person triggering this is usually mid-login and
+        holds no roles yet, and the add permissions the container is about to
+        be granted are exactly what stops anyone else filing a principal.
+
+        Silent when the configured *parent* path does not resolve -- a folder
+        somebody named and never created. The caller then finds no container
+        at the path it asked about and declines, which is the report.
+
+        :param kind: :data:`~pas.plugins.identity.core.container.PROFILE` or
+            :data:`~pas.plugins.identity.core.container.GROUP`.
+        """
+        from pas.plugins.identity.core.container import ContainerNotFound
+        from pas.plugins.identity.core.container import get_container
+        from plone import api
+
+        try:
+            with api.env.adopt_roles(["Manager"]):
+                get_container(create=True, kind=kind)
+        except ContainerNotFound:
+            pass
 
     def _content_user(self, userid: str):
         """Return the content object that *is* this user, if there is one.
@@ -573,8 +624,13 @@ class IdentityPlugin(BasePlugin):
         :param kw: ``title`` and ``description``, as the tool sends them.
         :returns: Whether this plugin created the group.
         """
+        from pas.plugins.identity.core.container import GROUP
+
         configured = self._configured(
-            GROUP_CONTENT_TYPE_RECORD, GROUP_CONTAINER_PATH_RECORD, IGroupContent
+            GROUP_CONTENT_TYPE_RECORD,
+            GROUP_CONTAINER_PATH_RECORD,
+            IGroupContent,
+            create_kind=GROUP,
         )
         if configured is None:
             return False
@@ -699,23 +755,21 @@ class IdentityPlugin(BasePlugin):
     ) -> tuple[str, str] | None:
         """Authenticate against a password kept on the user's own object.
 
-        Answers only where a site both keeps its users as content *and* has
-        opted something into
+        Answers only where a site has opted its user type into
         :class:`~pas.plugins.identity.core.interfaces.ICredentialStorage`.
-        Neither is the default, so on an ordinary site the adaptation fails
+        That is not the default, so on an ordinary site the adaptation fails
         and ``source_users`` answers exactly as it always did.
 
-        This lives here rather than in the ``[content]`` layer on purpose.
-        That layer serves properties, enumeration and groups and must never
-        become a way to log in -- there is a test named for it -- because the
-        plugin that authenticates a userid is the one ``@users`` reports as
-        its source, and a site's answer to "where did this account come
-        from" should not change with an optional property store. Core already
-        authenticates; this is one more thing it authenticates against.
+        This lives on the identity plugin rather than the profile one on
+        purpose. That plugin serves properties, enumeration and groups and
+        must never become a way to log in -- there is a test named for it --
+        because the plugin that authenticates a userid is the one ``@users``
+        reports as its source, and a site's answer to "where did this account
+        come from" should not change with where its properties are kept.
 
         The login is resolved through PAS rather than by guessing that it
-        equals the userid. Enumeration is the layer's job, and asking it is
-        what makes a login name that differs from the userid work.
+        equals the userid. Enumeration is the profile plugin's job, and asking
+        it is what makes a login name that differs from the userid work.
 
         :param credentials: PAS's extracted credentials.
         :returns: ``(userid, login)`` on success, or ``None``.
@@ -903,70 +957,6 @@ class IdentityPlugin(BasePlugin):
             return "uuid"
         return str(config.config.get("userid_source") or "uuid")
 
-    def _users_are_content(self) -> bool:
-        """Report whether this site intends its users to be content objects.
-
-        Deliberately narrower than :meth:`_keeps_users_as_content`, which
-        also insists the container resolves. That is the right question
-        before *creating* something and the wrong one before deciding whether
-        anybody will be able to answer a question later: the container is
-        made while the first profile is minted, so it is absent on exactly
-        the login this is asked about.
-
-        :returns: Whether a user content type is configured and is one this
-            plugin may create a user in.
-        """
-        portal_type = _record(USER_CONTENT_TYPE_RECORD)
-        return bool(portal_type) and self._provides(portal_type, IUserContent)
-
-    def _settle_email(self, claims: Claims) -> Claims:
-        """Choose an offered address when nothing here can ask for one.
-
-        A driver that was offered several addresses picks none of them and
-        carries the list instead, so the user can say which is theirs on
-        their profile. That only works on a site that *has* profiles: with
-        the ``[content]`` layer absent there is no profile, no form and no
-        gate, so nobody is ever asked and the account simply has no address
-        -- worse than the guess the choice replaced, because the guess was at
-        least usually right.
-
-        So the question is asked only where it can be answered. On a site
-        that keeps its users as content the list is left alone and the flow
-        holds the user on the form. Anywhere else the first offer is taken,
-        which is the address the driver ordered first: the account's primary
-        verified one where there is one.
-
-        Asked with :meth:`_users_are_content` rather than
-        :meth:`_keeps_users_as_content`, and the difference matters exactly
-        once. The latter also requires the *container* to resolve, and the
-        container is created while the first profile is minted -- in a
-        subscriber to the event fired further down this method. On the very
-        first login to a fresh site it therefore does not exist yet, and
-        asking that question here would answer "no profiles" for the one
-        user most likely to be offered a list.
-
-        :param claims: Normalized claims from the driver.
-        :returns: The claims, with ``email`` filled in when this site has no
-            way of asking. Unchanged in every other case, including when the
-            driver sent an address of its own.
-        """
-        choices = claims.get("email_choices") or ()
-        if not choices or claims.get("email"):
-            return claims
-        if self._users_are_content():
-            return claims
-        chosen = choices[0]
-        logger.info(
-            "No profile to ask on: taking %s of %d offered addresses",
-            chosen.get("address", ""),
-            len(choices),
-        )
-        return {
-            **claims,
-            "email": chosen.get("address", ""),
-            "email_verified": chosen.get("verified") is True,
-        }
-
     def _adopt_by_verified_email(self, provider: str, claims: Claims) -> str | None:
         """Find an existing account to attach this identity to.
 
@@ -1153,69 +1143,26 @@ class IdentityPlugin(BasePlugin):
     def _has_local_password(self, userid: str) -> bool:
         """Report whether the user has a password they can actually log in with.
 
-        Every account this plugin creates carries a random placeholder in
-        ``source_users`` -- see :meth:`_create_plone_user` -- and a placeholder
-        is not a way in. Counting it would defeat the lockout guard entirely: it would
-        report "you still have a password" for every externally-created user,
-        and cheerfully unlink their last identity.
+        An externally authenticated user has no ``source_users`` row at all --
+        their Profile is the account, and nothing ever wrote them a
+        credential -- so the absence of a row is the honest answer to "could
+        you still get in without this identity?". A row exists only where
+        somebody set a password: through ``api.user.create``, or through the
+        stock forms.
 
-        Known limitation: if a Manager later sets a real password for such an
-        account through the stock forms, this plugin is not told, and the
-        account stays flagged as placeholder-only. That errs toward refusing an
+        A password kept on the Profile itself, by a site that enabled the
+        password behaviour, is not counted here. That errs toward refusing an
         unlink, which is the safe direction.
 
         :param userid: Canonical Plone userid.
         :returns: Whether a usable local password exists.
         """
-        if userid in self._placeholder_passwords:
-            return False
         passwords = getattr(self._source_users(), "_user_passwords", {})
         return userid in passwords
 
     # ------------------------------------------------------------------
     # Decoration of the stock plugins
     # ------------------------------------------------------------------
-
-    def _restore_missing_account(self, userid: str, claims: Claims) -> bool:
-        """Recreate the account behind a known identity that has lost it.
-
-        An identity outlives the account it was minted for -- a user deleted
-        while the identity stayed in the store, an export restored without
-        one half. From then on every login through that identity resolves to
-        a userid nothing can serve: no properties, no roles, invisible to
-        every search, and a traceback from the first line that touches the
-        user. It never recovers on its own, because the identity is found,
-        so nothing is ever created again.
-
-        The **same** userid is restored rather than a fresh one. It is what
-        the identity points at, what anything this person owns is owned by,
-        and what the store would go on resolving to anyway; minting a new one
-        would strand all of it and leave the same dead record behind.
-
-        Says so, because an account reappearing is not what an operator who
-        deleted one expects. Removing the identity as well is what makes the
-        deletion stick.
-
-        Silent on a site that keeps its users as content: there the object is
-        the account, creating it is the site's own business, and
-        :meth:`_warn_if_unclaimed` already reports one that nothing made.
-
-        :param userid: The userid the identity resolved to.
-        :param claims: Normalized claims, to seed a restored account with.
-        :returns: Whether an account was created, so the caller can treat the
-            login as a first one for everything that follows.
-        """
-        if self._getPAS().getUserById(userid) is not None:
-            return False
-        if self._keeps_users_as_content():
-            return False
-        logger.warning(
-            "Identity resolved to %s, which has no account: restoring it. "
-            "Remove the identity as well if the deletion was deliberate.",
-            userid,
-        )
-        self._create_plone_user(userid, claims)
-        return True
 
     def _source_users(self) -> ZODBUserManager:
         """Return the site's ``source_users`` plugin.
@@ -1228,110 +1175,74 @@ class IdentityPlugin(BasePlugin):
         """
         return self._getPAS()["source_users"]
 
-    def _create_plone_user(self, userid: str, claims: Claims) -> None:
-        """Create the ``source_users`` account backing a new identity.
+    def _warn_if_orphaned(self, userid: str) -> None:
+        """Say so when a known identity resolves to an account that is gone.
 
-        The account gets a random placeholder password so the stock plugins
-        have a complete record. Nobody is ever shown it and it is not a way in
-        -- the userid is recorded in :attr:`_placeholder_passwords` so that the
-        lockout guard does not mistake it for one.
+        An identity outlives the account it was minted for -- a user deleted
+        while the identity stayed in the store, an export restored without one
+        half. The login is not a first one, so nothing on that path creates
+        anything; what puts the account back is the subscriber that mints a
+        Profile on every sign-in, and it does so quietly because it runs for
+        every user on every login.
 
-        **Not on a site that keeps its users as content.** There the content
-        object *is* the account: this plugin enumerates it, and
-        :meth:`_authenticate_content_password` signs in against a password
-        held on it, so a ``source_users`` row would be a second record of the
-        same person -- the one that turns up in
-        {menuselection}`acl_users --> source_users --> Users`, that nothing
-        keeps in step, and that outlives the object it shadows. Creating the
-        content half is the site's own business, the same way it is for a
-        user added through :meth:`doAddUser`; core declines here exactly as
-        it declines there.
+        Quietly is wrong here. An account reappearing is not what an operator
+        who deleted one expects, and removing the identity as well is what
+        makes the deletion stick. So this is the one place that can tell the
+        two apart, and it says so.
 
-        :param userid: The freshly minted userid.
-        :param claims: Normalized claims used to seed the property sheet.
+        The **same** userid is restored rather than a fresh one. It is what
+        the identity points at, what anything this person owns is owned by,
+        and what the store would go on resolving to anyway; minting a new one
+        would strand all of it and leave the same dead record behind.
+
+        :param userid: The userid the identity resolved to.
         """
-        if self._keeps_users_as_content():
+        if self._getPAS().getUserById(userid) is not None:
             return
-
-        self._source_users().addUser(userid, userid, secrets.token_urlsafe(32))
-        self._placeholder_passwords.insert(userid)
-        self._seed_properties(userid, claims)
+        logger.warning(
+            "Identity resolved to %s, which has no account: it is about to be "
+            "created again. Remove the identity as well if the deletion was "
+            "deliberate.",
+            userid,
+        )
 
     def _warn_if_unclaimed(self, userid: str) -> None:
         """Say so when a new user ended up with no record at all.
 
-        A site that keeps its users as content has told core not to mint a
-        ``source_users`` account, and something else -- the ``[content]``
-        layer's subscriber, or a site's own -- creates the object instead. If
-        nothing did, the login still succeeds and returns a principal that
-        does not exist: no properties, no roles, invisible to every search.
-        That is a configuration this cannot fix from here, and the one thing
-        worse than it is finding out weeks later, so it is said once, at the
-        moment it becomes true, naming the consequence.
+        Nothing writes a ``source_users`` account for an externally
+        authenticated user: the content object is the account, and it is
+        created by a subscriber to the event this method is called after --
+        this package's own, or a site's. If nothing did, the login still
+        succeeds and returns a principal that does not exist: no properties,
+        no roles, invisible to every search. That is a configuration this
+        cannot fix from here, and the one thing worse than it is finding out
+        weeks later, so it is said once, at the moment it becomes true,
+        naming the consequence.
 
         :param userid: The userid just minted.
         """
         if self._content_user(userid) is not None:
             return
         logger.warning(
-            "No user object was created for %s: this site keeps its users as "
-            "content, so nothing wrote a %s -- the account exists as an "
-            "identity and as nothing else",
+            "No user object was created for %s: nothing wrote a %s, so the "
+            "account exists as an identity and as nothing else",
             userid,
             _record(USER_CONTENT_TYPE_RECORD),
         )
 
-    def _keeps_users_as_content(self) -> bool:
-        """Report whether this site's users are content objects.
-
-        :returns: Whether a type and a container are configured, and the type
-            is one this plugin may create a user in.
-        """
-        return (
-            self._configured(
-                USER_CONTENT_TYPE_RECORD, USER_CONTAINER_PATH_RECORD, IUserContent
-            )
-            is not None
-        )
-
-    def _seed_properties(self, userid: str, claims: Claims) -> None:
-        """Write the claims Plone knows how to display onto the user.
-
-        Goes through ``plone.api``, which hands back the ``MemberData``
-        wrapper. The bare ``PloneUser`` that PAS returns has no
-        ``setMemberProperties`` -- reaching for it there fails with an
-        acquisition error naming ``RequestContainer``, which reads like a
-        request bug rather than a wrong object.
-
-        ``setMemberProperties`` routes to whichever mutable property provider
-        the site has, so core keeps working on a site that swapped
-        ``mutable_properties`` for something else.
-
-        :param userid: Canonical Plone userid.
-        :param claims: Normalized claims.
-        """
-        from plone import api
-
-        member = api.user.get(userid=userid)
-        if member is None:  # pragma: no cover - can't-happen: just created above
-            logger.warning("Newly created user %s is not retrievable", userid)
-            return
-        member.setMemberProperties({
-            "fullname": claims.get("fullname", ""),
-            "email": claims.get("email", ""),
-        })
-
     def _properties_owned_elsewhere(self, userid: str) -> bool:
         """Report whether another plugin owns this user's properties.
 
-        The ``[content]`` layer's plugin does, for a user who has a Profile:
-        it serves the property sheet, it applies the same property map, and it
-        remembers which fields the provider wrote so a human's edit survives
-        the next login. Writing through its sheet from here would defeat that
-        -- the write would land, and nothing here knows it should not have.
+        The profile plugin does, for a user who has a Profile: it serves the
+        property sheet, it applies the same property map, and it remembers
+        which fields the provider wrote so a human's edit survives the next
+        login. Writing through its sheet from here would defeat that -- the
+        write would land, and nothing here knows it should not have.
 
-        Asked per user rather than per site, because a site can run the layer
-        and still have users it does not serve.
+        Asked per user rather than per site. A site always has the profile
+        plugin now, and still has users it does not serve: an account created
+        before the add-on was installed and not signed in with since has no
+        Profile, and its properties are ``portal_memberdata``'s to keep.
 
         :param userid: Canonical Plone userid.
         :returns: Whether to leave this user's properties alone.

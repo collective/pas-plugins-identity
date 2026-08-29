@@ -18,22 +18,14 @@
 
   <include package=".core" />
 
-  <!-- The optional layers. Their ZCML loads whenever their dependency
-       is importable; what actually switches them on in a site is applying the
-       matching GenericSetup profile, which is what installs the tools, the
-       types and the browser layer their registrations are bound to.
+  <!-- The one optional layer. Its ZCML loads whenever its dependency is
+       importable; what switches it on in a site is applying its GenericSetup
+       profile, which is what installs the control panel and the browser layer
+       its registrations are bound to.
 
-       On Plone 6.2 the ``[content]`` condition is always true — p.a.dexterity
-       ships with Plone — so this guard is a declaration of what the layer
-       needs rather than a discriminator. The real isolation guarantees are the
-       import-linter contract and the separate GS profile; the ``[server]``
-       extra, whose cryptography dependency is genuinely optional, is the one
-       the condition switches off in practice. -->
-  <include
-      package=".content"
-      zcml:condition="installed plone.app.dexterity"
-      />
-
+       The ``[server]`` extra is genuinely optional: cryptography is a
+       compiled dependency, and a site that is not an authorization server has
+       no reason to carry it. -->
   <include
       package=".server"
       zcml:condition="installed cryptography"

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<registry xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+          i18n:domain="pas.plugins.identity"
+>
+
+  <records interface="pas.plugins.identity.core.controlpanel.interfaces.IProfileSettings"
+           prefix="pas.plugins.identity"
+  >
+
+    <!-- Where Profiles are stored. Four records rather than a constant so
+         the add-on does not dictate the site's structure. The catalog
+         indexes a Profile wherever it actually is; these settings only
+         answer "where does a new one go". ``profile_container_parent`` is
+         not listed: an empty <value> imports as None, while leaving it out
+         takes the empty string the schema declares. -->
+    <value key="profile_container_id">identity-profiles</value>
+    <value key="profile_container_title">Identity Profiles</value>
+    <value key="profile_container_type">Folder</value>
+
+    <!-- Where Groups are stored. Only the two records with a non-empty
+         default are listed, for the reason given above: an empty <value>
+         imports as None. Leaving ``group_container_id`` unset is what makes
+         groups share the Profile container, which is every site that has
+         not deliberately asked otherwise. -->
+    <value key="group_container_title">Groups</value>
+    <value key="group_container_type">Folder</value>
+
+    <!-- Workflow states in which a Profile is served to PAS enumeration.
+         Both working states are active; deactivated is not. -->
+    <value key="profile_enumeration_states">
+      <element>incomplete</element>
+      <element>complete</element>
+    </value>
+
+    <!-- Workflow states in which a Group is enumerated and grants
+         membership. Deactivating a group removes its members' access
+         without editing a single Profile. -->
+    <value key="group_enumeration_states">
+      <element>active</element>
+    </value>
+
+    <!-- Fields a profile must carry to count as complete. Not listed, and
+         deliberately so: an empty tuple means "whatever the type marks
+         required", which stays right when somebody swaps in their own user
+         type. Listing values here would freeze today's answer into every
+         site that installs this profile. -->
+
+    <!-- The gate itself is on, and is not listed here for the same reason:
+         the schema default is True and stating it again would be a second
+         place to change it. Turn it off in the registry to make an
+         incomplete profile a suggestion rather than a redirect. -->
+
+    <!-- Portraits. Off by default: picture_url is a claim, and at plenty of
+         providers a claim is whatever the user typed. Turning it into a
+         server-side fetch makes the login path a request forger, so no site
+         should acquire that by upgrading. -->
+
+  </records>
+
+</registry>

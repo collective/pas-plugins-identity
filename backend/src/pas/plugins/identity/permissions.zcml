@@ -1,11 +1,14 @@
 <configure xmlns="http://namespaces.zope.org/zope">
 
   <!-- Adding a user or a group is not an authoring action: they are minted by
-       the first-login machinery of the ``[content]`` layer and otherwise
-       managed by administrators. These permissions are declared here, in
-       core, because ZCML permission ids are global and a permission that only
-       exists when an extra is installed would make the FTI unimportable in a
-       site that later adds the extra.
+       the first-login machinery and otherwise managed by administrators.
+
+       The field permissions below still have ids under
+       ``pas.plugins.identity.content``, from when that was a layer. They are
+       stored in every site's rolemap, on every FTI and in both workflow
+       definitions, so renaming them would be a migration that buys a nicer
+       string. What they name is a content object, which is what a user is
+       here, so they are not inaccurate either.
 
        One per type rather than one for both. They are granted on the
        container each type is filed in, and a site that files groups

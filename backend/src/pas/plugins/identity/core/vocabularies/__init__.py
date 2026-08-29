@@ -16,7 +16,7 @@ from plone.app.content.browser.vocabulary import PERMISSIONS
 #: what stock Plone puts on ``plone.app.vocabularies.Users``, which is the
 #: closest analogue -- it also enumerates principals. A management permission
 #: would be tighter, but these vocabularies are read by content forms as well
-#: as by the control panel: the ``[content]`` layer's ``group_ids`` field is a
+#: as by the control panel: the ``group_ids`` field on a Profile is a
 #: ``Choice`` over ``Groups``, and an editor who can edit a Profile has to be
 #: able to fill that widget.
 VOCABULARY_PERMISSION = "Modify portal content"
