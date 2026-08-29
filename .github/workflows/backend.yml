@@ -49,7 +49,7 @@ jobs:
       plone-version: ${{ matrix.plone-version }}
       working-directory: ${{ inputs.working-directory }}
 
-  # The four dependency configurations the package promises to support.
+  # The two dependency configurations the package promises to support.
   # ``pip install pas.plugins.identity`` with no extras has to work on its
   # own, so "core" is the job that matters most here -- it is the one that
   # fails the moment something in core starts needing an optional dependency.
@@ -62,12 +62,8 @@ jobs:
         include:
           - name: core
             extras: ''
-          - name: +profile
-            extras: 'content'
           - name: +server
             extras: 'server'
-          - name: all
-            extras: 'content,server'
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}

@@ -29,6 +29,11 @@ dependencies = [
     "Authlib>=1.3",
     "Products.CMFPlone",
     "plone.api",
+    # Users and groups are Dexterity content, on every site that installs
+    # this. It was an extra while that was a choice a site made; it is not a
+    # choice any more, and Plone ships p.a.dexterity anyway -- declaring it is
+    # honesty about what this imports, not a new install burden.
+    "plone.app.dexterity",
     "plone.restapi",
     # core/flows imports authlib.integrations.requests_client at module scope,
     # and Authlib does not pull requests in on its own. Today it arrives anyway
@@ -40,9 +45,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-content = [
-    "plone.app.dexterity",
-]
 server = [
     "cryptography>=42",
 ]
@@ -192,10 +194,10 @@ preview = true
 "src/pas/plugins/identity/core/pas/plugin.py" = ["A002"]
 # A002: ``object`` is CMFCore's parameter name for the indexing methods we
 # override. Renaming it would break every keyword caller in Zope.
-"src/pas/plugins/identity/content/catalog.py" = ["A002"]
+"src/pas/plugins/identity/core/catalog.py" = ["A002"]
 # A002: ``id``, ``login`` and friends are the IUserEnumerationPlugin
 # signature, and ``id``/``title`` the Zope factory signature.
-"src/pas/plugins/identity/content/pas.py" = ["A002"]
+"src/pas/plugins/identity/core/pas/profile.py" = ["A002"]
 # A002: ``id``/``title`` are the Zope factory signature here too.
 "src/pas/plugins/identity/server/pas.py" = ["A002"]
 "src/pas/plugins/identity/server/session.py" = ["A002"]
@@ -204,7 +206,7 @@ preview = true
 "tests/core/pas/stubs.py" = ["A002"]
 # S311: the churn sequences are randomized for coverage of orderings, not
 # for unpredictability; the seeds are fixed precisely so they repeat.
-"tests/content/test_churn.py" = ["S311"]
+"tests/core/test_churn.py" = ["S311"]
 
 [tool.check-manifest]
 ignore = [
@@ -238,25 +240,17 @@ show_missing = true
 skip_covered = true
 
 # The hard layer boundary. ``core`` is what ``pip install
-# pas.plugins.identity`` gives you with no extras, so it must never reach
-# into a layer that may not be installed -- and the two optional layers must
-# not grow a dependency on each other either.
+# pas.plugins.identity`` gives you with no extras, so it must never reach into
+# the one layer that may not be installed. There used to be two optional
+# layers and a second contract keeping them apart; ``content`` is core now,
+# and what is left is the boundary that still means something -- cryptography
+# is a compiled dependency, and a site that is not an authorization server
+# should not have to carry it.
 [tool.importlinter]
 root_packages = ["pas.plugins.identity"]
 
 [[tool.importlinter.contracts]]
-name = "Core never imports the optional layers"
+name = "Core never imports the server layer"
 type = "forbidden"
 source_modules = ["pas.plugins.identity.core"]
-forbidden_modules = [
-  "pas.plugins.identity.content",
-  "pas.plugins.identity.server",
-]
-
-[[tool.importlinter.contracts]]
-name = "The optional layers are independent of each other"
-type = "independence"
-modules = [
-  "pas.plugins.identity.content",
-  "pas.plugins.identity.server",
-]
+forbidden_modules = ["pas.plugins.identity.server"]

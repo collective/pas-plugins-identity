@@ -98,12 +98,12 @@ config: instance/etc/zope.ini
 .PHONY: install
 install: $(VENV_FOLDER) config ## Install Plone and dependencies
 
-# Optional dependency layers. The base install is core-only on purpose,
-# so the CI matrix layers the extras on top: core / +content / +server / all.
+# Optional dependency layers. The base install is core-only on purpose, so
+# the CI matrix layers the extra on top: core / +server.
 EXTRAS ?=
 
 .PHONY: install-extras
-install-extras: $(VENV_FOLDER) ## Layer optional extras on top, e.g. EXTRAS=content,server
+install-extras: $(VENV_FOLDER) ## Layer optional extras on top, e.g. EXTRAS=server
 	@if [ -z "$(EXTRAS)" ]; then \
 		echo "$(YELLOW)==> No extras requested; core-only install$(RESET)"; \
 	else \
@@ -208,7 +208,7 @@ check-clean-install: requirements-mxdev.txt ## Import the package from a no-extr
 	rm -rf $(BACKEND_FOLDER)/.venv-clean
 
 .PHONY: check-imports
-check-imports: ## Enforce the core/content/server layer boundary
+check-imports: ## Enforce the core/server layer boundary
 	@echo "$(GREEN)==> Check layer boundaries$(RESET)"
 	@# Run against a venv holding nothing but this package. The migration
 	@# test dependencies (pas.plugins.authomatic, pas.plugins.oidc) each ship a
