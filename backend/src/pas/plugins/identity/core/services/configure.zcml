@@ -11,6 +11,7 @@
   <include package=".login" />
   <include package=".magiclink" />
   <include package=".providers" />
+  <include package=".useraccount" />
 
   <!-- Volto's first-login routing question. Authenticated-only, checked in
        the service so the refusal is a JSON body rather than a login form. -->

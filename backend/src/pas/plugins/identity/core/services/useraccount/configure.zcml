@@ -1,0 +1,19 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <!-- How one user gets in, and when they last did. Authenticated-only,
+       checked in the service so the refusal is a JSON body rather than a
+       login form; who may read which account is decided there too. -->
+  <plone:service
+      method="GET"
+      factory=".get.UserAccountGet"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@user-account"
+      />
+
+</configure>
