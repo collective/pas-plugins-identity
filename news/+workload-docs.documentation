@@ -1,0 +1,9 @@
+Documented the whole of this workload: the split between a provider working and a provider being advertised, the style an operator can give one, groups inside groups, a Profile's list of addresses, and the two new endpoints.
+
+The provider how-to gained the two switches and the **Style** tab, and lost a claim that had become false -- configuration has not been one JSON record since the records were split per setting.
+
+`concepts/profiles-and-groups` and `concepts/users-as-content` said group nesting was refused, and said why. The reason was half right: the recursion is real, and the conclusion drawn from it was not, because the group graph grows with the number of teams rather than the number of people and one catalog query returns all of it. Both pages now describe what happens instead, including what a cycle and a deactivated group do. `reference/user-content` narrowed its refusal to a group inside *itself*, and `reference/profiles` lost its "limits in version 1" note.
+
+`reference/profiles` describes the address list and the derived `email`, and `concepts/email-verification` gained the rule that a magic link only ever goes to an address already on your profile -- with the reason, which is that the proof is proof of control over whatever was typed.
+
+`reference/security-guarantees` gained three: the address rule, the icon sanitizing (and why it happens on save rather than on render), and what a nesting grants. A new how-to, **How to review a user's account**, covers the two questions the users control panel could not answer.

@@ -113,9 +113,12 @@ Keeping membership on the member makes the hot question a single metadata read, 
 `IGroupContent` therefore has no members accessor, and will not grow one.
 An accessor would be a second copy of the same fact, and the two would drift the first time anything wrote to one without the other.
 
-Group nesting is refused for a related reason.
-A group whose members are groups makes `getGroupsForPrincipal` recursive, and a recursive answer computed from catalog metadata stops being a single lookup.
-That is the property the whole design rests on, so nesting is refused rather than stored and answered slowly.
+A group can be a member of a group, and that is the same fact stored the same way.
+A group carries `group_ids` as well, naming the groups it is nested inside, so everybody in the inner group is in the outer one.
+
+The answer is closed over on the way out rather than stored expanded.
+That walk is over the group graph, which grows with the number of teams rather than the number of people, and the whole of it is one catalog query.
+See {doc}`profiles-and-groups` for what happens to a cycle and to a deactivated group.
 
 ## Creating and enumerating are two plugins
 

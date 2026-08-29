@@ -168,9 +168,10 @@ A login through an identity whose account is gone recreates the object and logs 
 
 The following are refused rather than supported.
 
-Group nesting
-:   `addPrincipalToGroup` returns false when the principal is itself a group.
-    A recursive membership answer computed from catalog metadata is no longer a single lookup.
+A group inside itself
+:   `addPrincipalToGroup` returns false when the principal and the group are the same id.
+    It would grant nothing and mean nothing, and the edit form would show a row nobody can account for.
+    A group inside a *different* group is supported; see {doc}`/concepts/profiles-and-groups`.
 
 A container chosen at creation time
 :   The registry records decide where objects are created.

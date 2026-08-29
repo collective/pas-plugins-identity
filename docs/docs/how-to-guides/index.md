@@ -30,6 +30,7 @@ configure-a-provider
 :maxdepth: 1
 
 read-the-audit-log
+review-a-user-account
 enable-back-channel-logout
 ```
 

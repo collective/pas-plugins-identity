@@ -50,6 +50,13 @@ Plone Sphinx Theme
 plone-sphinx-theme
     [Plone Sphinx Theme](https://plone-sphinx-theme.readthedocs.io/) is a Sphinx theme for [Plone 6 Documentation](https://6.docs.plone.org/), [Plone Conference Training](https://training.plone.org/), and documentation of various Plone packages.
 
+nested group
+    A group that is a member of another group.
+    Membership is stored on the member, so nesting is the same field on the same side, and everybody in the inner group is in the outer one.
+
+preferred address
+    The address a Profile's `email` resolves to: the first verified one in its `emails` list, or the first one at all when none is verified.
+
 Profile
     A content object carrying one user's PAS property sheet.
     Its values are served from catalog metadata, so answering a property lookup never wakes the object.
@@ -64,6 +71,10 @@ relying party
 subject
     A provider's own identifier for a person, sent as the `sub` claim in OpenID Connect.
     A subject is meaningful only within the provider that issued it.
+
+verified address
+    An address this site proved with a magic link, recorded as an `email` external identity owned by that user id.
+    A provider asserting `email_verified` does not make an address verified here.
 
 Markedly Structured Text
 MyST

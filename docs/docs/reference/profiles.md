@@ -24,8 +24,27 @@ For why they are built this way, see {doc}`/concepts/profiles-and-groups`.
 
 `UserGroup`
 :   A group.
-    Membership is not stored here.
-    It is stored on each `UserProfile`, in the `group_ids` field.
+    Its own members are not stored here; they are stored on each member, in `group_ids`.
+    Its `group_ids` names the groups this group is nested inside.
+
+Both types get `group_ids` from the `pas.plugins.identity.group_membership` behavior rather than declaring it, which is what lets a site's own user type have membership without declaring the field, its vocabulary, and its two permissions all over again.
+
+### Addresses
+
+`emails` is an ordered tuple, and it is the required field.
+`email` is derived from it and read-only: the first verified address, or the first address at all when none is verified.
+
+A person has more than one address, signs in with more than one of them, and which one is theirs *here* is a question whose answer changes.
+Two stored values that have to agree, with nothing making them agree, is the shape this package already paid for once with a `userid` that could drift from its object id.
+
+An address counts as verified when this site holds an `email` identity for it, which is what a magic link creates.
+A provider asserting `email_verified` does not count, here or anywhere else in this package.
+
+Because verification lives in the identity store rather than on the profile, confirming or removing a magic-link identity updates the owner's catalog entry: `email` is served from catalog metadata everywhere it matters, so without that the derived value would be correct on the object and wrong everywhere it is read.
+
+Writing `email` -- which the Dexterity factory, the claims sync, and every older exported payload all do -- moves that address to the front of `emails` rather than replacing a field.
+An empty write is ignored: a provider that stopped sending an address has not said the person no longer has one.
+`plone.restapi` leaves a read-only field out of a type's schema, so `email` has no box on the edit form; it is still serialized with the content, so a view can show it.
 
 ## Profile workflow states
 
@@ -82,12 +101,12 @@ pas.plugins.identity.required_profile_fields
 ```
 
 Empty, which is how it ships, means the fields the profile type itself marks required.
-That is `login`, `email` and `fullname` for the type in this package, and the right answer for a site running its own user type or a behavior that adds a field.
+That is `login`, `emails` and `fullname` for the type in this package, and the right answer for a site running its own user type or a behavior that adds a field.
 
 Set it to name fields explicitly:
 
 ```text
-('email', 'fullname', 'location')
+('emails', 'fullname', 'location')
 ```
 
 A field counts as filled when it holds something other than `None`, an empty string, whitespace, or an empty collection.
@@ -237,9 +256,20 @@ A user deleting their own `UserProfile` would break their account while their si
 
 | Endpoint | Returns |
 | --- | --- |
-| `GET @my-profile` | Where the current user's `UserProfile` is, and what state it is in. |
+| `GET @my-profile` | Where the current user's `UserProfile` is, what state it is in, and the addresses it carries. |
+| `GET @group-members/<id>` | The people in one group, the nesting around it, and a search within it. |
+| `GET @user-account/<id>` | How one account signs in, and when it last did. |
 
 The frontend uses `@my-profile` to send a new user to their profile once and never ask again.
+Its `emails` entry is one row per address on the profile, each with `verified` and `preferred` -- the second marking the one `email` resolves to, so a page can show it without repeating the rule that picks it.
+
+`@group-members` is the contextual version of a listing `plone.restapi` half-answers.
+`@groups/<id>` already carries member userids and already sees the nesting, because it goes through PlonePAS; what it cannot do is name each person, search within the group, or say what feeds into it.
+Reading it needs `Manage users`, or membership of the group.
+
+`@user-account` answers two questions Plone otherwise cannot: which providers a person has configured -- named, dated, and flagged when the provider has since been disabled or removed -- and when they last authenticated.
+One user at a time, because the audit log is bounded per user and folding either answer into the `@users` listing would read one bounded log per row.
+`Manage users`, except for a caller asking about themselves.
 
 ## Claims refresh rules
 
@@ -285,17 +315,9 @@ The rebuild step
 
 They are kept apart so that the check can be scheduled read-only.
 
-## Limits in version 1
-
-```{note}
-Group nesting is out of scope.
-A group whose members are groups makes `getGroupsForPrincipal` recursive, and a recursive answer computed from brains stops being a single lookup.
-So it is refused rather than stored.
-```
-
 ## Managing membership
 
-Membership is stored in the `group_ids` field of each `UserProfile`.
+Membership is stored in the `group_ids` field of each member.
 
 Two paths write it, and they reach the same place.
 
@@ -310,10 +332,13 @@ Removing a group does not edit a single `UserProfile`.
 A `UserProfile` naming a group that no longer exists grants nothing, and the consistency check reports it.
 Recreating the group restores exactly the membership it had.
 
-```{note}
-Adding a group to a group is refused.
-See {ref}`reference-user-content` for why.
-```
+A group can be a member of a group.
+`api.group.add_user(groupname='staff', username='developers')` nests `developers` inside `staff`, writing the edge on the inner group, and everybody in `developers` is then in `staff` as well.
+Only a group inside *itself* is refused.
+
+The nesting is closed over when the question is asked rather than stored expanded, so removing an edge takes effect everywhere at once.
+An inactive group grants nothing and passes nothing through.
+See {doc}`/concepts/profiles-and-groups`.
 
 ## Coexistence with the stock plugins
 

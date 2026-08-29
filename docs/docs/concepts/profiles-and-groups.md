@@ -49,9 +49,31 @@ That is backwards from how people draw groups, and it is the direction Plone ask
 `getGroupMembers` runs when somebody opens a listing.
 The first is hot and the second is not, so keeping membership on the member makes the hot question a single metadata read and the cold question a catalog query.
 
-Group nesting would break this.
-A group whose members are groups makes `getGroupsForPrincipal` recursive, and a recursive answer computed from brains stops being a single lookup.
-So it is out of scope rather than slow.
+## A group can be inside a group
+
+A group carries `group_ids` too, from the same behavior a profile carries, and it means the same thing: the groups this principal belongs to.
+
+So a group named there is an *outer* group, and everybody in the inner group is in the outer one.
+That is how a child team inherits its parent team's access on GitHub, and it is the shape most people already have in mind when they draw groups.
+
+Membership therefore stays a fact stored on the member, whether the member is a person or a group.
+The transitive answer is a walk over one field rather than a second kind of edge.
+
+This was refused once, and the reason was that a group whose members are groups makes `getGroupsForPrincipal` recursive.
+That is true.
+What turned out not to matter is the conclusion drawn from it, that a recursive answer computed from brains stops being a single lookup.
+
+The recursion is not over the thing that is large.
+A site has as many people as it has people and as many groups as it has teams; the group graph is the small one, it lives entirely in catalog metadata, and one query returns all of it.
+The cost grows with the number of teams, not with the number of users, which is the number that grows.
+
+Two consequences worth stating.
+
+A cycle is an ordinary input.
+Nothing stops an operator putting A in B and B in A through two edit forms that each looked reasonable on their own, so the walk terminates on a cycle rather than refusing the second edit for a reason about the first.
+
+A deactivated group does not conduct.
+It grants nothing, and it also passes nothing through, because deactivating a group has to remove the access of everybody who reached something *through* it or deactivating is not a control.
 
 ## A provider can grant membership, and take it back
 

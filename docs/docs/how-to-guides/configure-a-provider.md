@@ -26,7 +26,50 @@ For the drivers you can choose from, see {doc}`/reference/shipped-drivers`.
 
 The form is generated from the driver's published schema, so a site that installs a third-party driver gets that driver's form with no frontend change.
 
-Configuration lives in the registry as a single JSON record, which keeps the whole thing exportable and importable through GenericSetup in one place.
+Configuration lives in the registry, one record per setting, under `pas.plugins.identity.providers.<id>.<field>`.
+A GenericSetup export therefore describes a site's providers field by field, and one setting can be changed without rewriting the rest.
+
+## Decide whether it works, and whether it is advertised
+
+Two switches, and they answer different questions.
+
+{guilabel}`Enabled`
+:   Whether the provider works at all.
+    A disabled provider keeps its settings and its stored identities, and nobody can sign in or link through it.
+
+{guilabel}`Show on the login screen`
+:   Whether the login page offers a button for it.
+
+An enabled provider that is not shown is still usable.
+It stays linkable from a user's own {guilabel}`Sign-in methods` page, and an account already linked to it still signs in through it.
+
+That is what a staff-only or invitation-only provider looks like: usable, and not advertised to everybody who reaches the login form.
+
+```{note}
+A provider configured before this setting existed reads back as shown.
+Upgrading a site does not take its login buttons away.
+```
+
+## Give it a look
+
+The {guilabel}`Style` tab decides how the button is drawn, and none of it changes what the provider does.
+
+{guilabel}`Icon`
+:   An SVG document, pasted as its source.
+    Empty means no icon, and the button then shows the title alone rather than a placeholder every provider shares.
+
+{guilabel}`Background colour` and {guilabel}`Foreground colour`
+:   Hex values such as `#24292f`.
+    Empty leaves the theme's own styling alone.
+
+The icon is rendered *inside* the page rather than as an image, which is what lets a single-colour icon take the button's own text colour.
+That is also why what you paste is sanitized as it is stored: only the shapes and attributes on a fixed list survive, no attribute may reference an address elsewhere, and a document that is not an SVG is refused rather than quietly emptied.
+
+```{warning}
+Sanitizing happens on save, not on render.
+An icon that was refused was never stored, and an icon that was accepted is the version the site serves — not the version you pasted.
+Check the button after saving.
+```
 
 ## Test the connection
 

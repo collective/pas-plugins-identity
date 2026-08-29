@@ -61,6 +61,21 @@ Nowhere.
 Automatic linking is off by default, and turning it on does not lower the bar.
 It changes what happens when the bar is met.
 
+## Only your own addresses
+
+The proof a magic link produces is proof of control over whatever address the link was sent to, and nothing more.
+
+That makes the question of *which* addresses a site will send one to a security question rather than a convenience.
+A free-text box asking for an address and mailing a link to it verifies any mailbox somebody can reach, including one they have momentary access to -- and a verified address is exactly what automatic linking attaches a new provider account to.
+
+So the addresses this site will verify are the ones already listed on your profile.
+`POST @identities` for the email provider refuses an address that is not among them, and the {guilabel}`Sign-in methods` page offers your addresses with a {guilabel}`Verify` button rather than a box to type one into.
+
+Naming an address on your profile first is what turns it into a claim somebody can see and an administrator can audit, rather than a value that only ever existed inside one request.
+
+A caller with no profile is not held to this.
+That is a site not keeping users as content, or an account that predates this add-on, and neither has a list to name an address on.
+
 ## Where to go next
 
 -   {doc}`identities` for why the mapping is never guessed in the first place.

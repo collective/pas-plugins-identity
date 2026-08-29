@@ -47,6 +47,16 @@ Both of this package's vocabularies are registered at `Modify portal content`.
 **Secrets are write-only everywhere**, including GenericSetup export.
 The audit log never records credentials or tokens.
 
+**A magic link is only ever sent to an address already on your profile.**
+The proof it produces is proof of control over whatever address it was sent to, so a free-text box would verify any mailbox somebody can reach -- which is exactly what automatic linking attaches an account to.
+A caller with no profile is not held to this, because there is no list to name an address on.
+
+**A provider icon is sanitized as it is stored, not as it is rendered.**
+An icon is an SVG document, rendered inside the page so it can take the button's colour, which means it is markup rather than an image: it can carry a script, a stylesheet, and references to other documents.
+Only the shapes and attributes on a fixed list survive, an element not on that list is dropped with everything inside it rather than unwrapped, no attribute value may reference an address elsewhere, and the result is serialized from the parsed tree rather than sliced out of the input.
+A document that is not an SVG is refused.
+Sanitizing on save rather than on render is what keeps the registry, a GenericSetup export, and anything else reading the record from holding the dangerous version.
+
 **The layer boundary is enforced in CI.**
 Core never imports from `[server]`.
 See {doc}`/concepts/layers`.
@@ -74,6 +84,14 @@ It records authentication events, not sessions.
 `AuthenticatedUsers` is never released, and a user in no other group gets no claim at all.
 If your group names are themselves sensitive, do not grant `profile` to a client you would not grant them to.
 See {doc}`claims`.
+
+**A group inside a group grants through it.**
+Everybody in an inner group is a member of every group it is nested inside, at any depth, so a nesting is a grant and reviewing one group's access means reviewing what feeds into it.
+An inactive group grants nothing and passes nothing through.
+A cycle terminates rather than raising; it means both groups grant each other.
+
+**A membership list is personal data about other people.**
+`@group-members` needs `Manage users` or membership of the group itself, and `@user-account` needs `Manage users` except when a caller asks about their own account.
 
 **A provider's groups grant nothing until you map them.**
 A group map starts empty, an unmapped provider group grants nothing and is never created locally, and a row pointing at a group this site does not have is skipped and logged.
