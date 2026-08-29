@@ -81,4 +81,10 @@ class EmailDriver(BaseDriver):
         """
         claims = super().normalize_claims(payload)
         claims["email_verified"] = True
+        # And in the list too, which the base class built before this line
+        # raised the flag. Nothing acts on it -- redeeming the link is what
+        # writes the identity that *is* the verification -- but a claims
+        # snapshot that says verified in one place and not the other is the
+        # kind of disagreement somebody eventually reads as a bug.
+        claims["emails"] = self.reported_addresses(claims["email"], True)
         return claims

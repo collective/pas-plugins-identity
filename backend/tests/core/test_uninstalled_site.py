@@ -20,6 +20,7 @@ from pas.plugins.identity.core import indexing
 from pas.plugins.identity.core import subscribers
 from pas.plugins.identity.core.catalog import CATALOG_ID
 from pas.plugins.identity.core.catalog import query_catalog
+from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
 from pas.plugins.identity.core.gate import enforcing
 from pas.plugins.identity.core.gate import incomplete_profile_url
 from pas.plugins.identity.core.pas.profile import IdentityProfilePlugin
@@ -191,6 +192,39 @@ class TestProfileHelpersAreInert:
     def test_ensure_profile_creates_nothing(self):
         """A login here must not mint content."""
         assert subscribers.ensure_profile("alice", "alice", {}) is None
+        assert "identity-profiles" not in self.portal.objectIds()
+
+    def test_an_authentication_event_is_survivable(self):
+        """The whole handler, not just the helper under it.
+
+        A consumer of this package's event contract may fire one in a site
+        that never installed the add-on -- and the handler now does three
+        things after minting a profile rather than one, each of which has to
+        cope with there being no profile to do it to.
+        """
+        event = ExternalIdentityAuthenticated(
+            "alice",
+            "somewhere",
+            "subject-1",
+            {
+                "fullname": "Alice",
+                "email": "alice@example.com",
+                "email_verified": True,
+                "emails": (
+                    {
+                        "address": "alice@example.com",
+                        "verified": True,
+                        "primary": True,
+                    },
+                ),
+                "raw": {},
+            },
+            True,
+            True,
+        )
+
+        subscribers.on_authenticated(event)
+
         assert "identity-profiles" not in self.portal.objectIds()
 
 

@@ -3,9 +3,7 @@
 ``GET @my-profile``
     ``{"profile": <url or null>, "review_state": <state or null>,
     "userid": …, "missing": [<field names>],
-    "emails": [{"address": …, "verified": …, "preferred": …}],
-    "email_choices": [{"address": …, "verified": …, "primary": …,
-    "provider": …}]}``
+    "emails": [{"address": …, "verified": …, "preferred": …}]}``
 
 Exists for one job: Volto's first-login routing. A user whose Profile is still
 ``incomplete`` should land on it and be asked to fill it in; a user whose
@@ -18,30 +16,25 @@ knows anything about the workflow state of a piece of content.
 and has to be able to say what it wants: a user redirected to a form with no
 reason given cannot tell a requirement from a broken site.
 
-``email_choices`` is the addresses this user's linked identities offer and
-nobody has picked between. A provider that offers several -- GitHub returns
-every address on the account -- has not told us which one the person is here
-as, and choosing for them decides which existing account a verified-email
-link would attach to. So the driver carries the list instead of guessing, the
-profile is minted without an address and therefore ``incomplete``, and the
-form the gate holds the user on offers these rather than an empty box.
+``emails`` is the addresses the profile carries, each with whether this site
+has verified it and which one ``email`` therefore resolves to. It is what the
+account page renders the verify buttons from, and what a page offering the
+person a preferred address chooses between.
 
-``emails`` is the addresses the profile actually carries, each with whether
-this site has verified it and which one ``email`` therefore resolves to. It is
-what the account page renders the verify buttons from, and it is deliberately
-separate from ``email_choices``: one is what the person has claimed, the other
-is what a provider offered and nobody has picked from yet.
+There used to be a second list beside it, ``email_choices``: the addresses a
+provider had offered and nobody had picked between. There is nothing to pick
+between any more -- every address a provider reports goes onto the profile,
+and arranging them is the choice. See
+:func:`~pas.plugins.identity.core.subscribers.sync_addresses`.
 
 Answered from the catalog, so the routing check every login performs costs no
 object load -- the same discipline as the PAS plugin, for the same reason, and
-the reason ``missing`` is read off the brain rather than off the profile. The
-addresses are the exception: they live on the identity records rather than in
-the catalog, and are read only when there is a profile to put one on.
+the reason ``missing`` and the addresses alike are read off the brain rather
+than off the profile.
 """
 
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.completeness import missing_from_brain
-from pas.plugins.identity.core.emailchoices import offered_addresses
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.services.base import IdentityService
 from plone import api
@@ -66,7 +59,6 @@ class MyProfileGet(IdentityService):
             "review_state": None,
             "missing": [],
             "emails": [],
-            "email_choices": [],
         }
 
         catalog = query_catalog()
@@ -90,7 +82,6 @@ class MyProfileGet(IdentityService):
         # does not know whether the site is broken.
         body["missing"] = list(missing_from_brain(brain))
         body["emails"] = self._addresses(brain)
-        body["email_choices"] = offered_addresses(userid)
         return body
 
     @staticmethod

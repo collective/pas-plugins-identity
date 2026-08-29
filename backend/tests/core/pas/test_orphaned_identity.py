@@ -51,7 +51,12 @@ class TestAdoptingAnAccountThatIsGone:
                 provider_id=PROVIDER,
                 driver_id="oidc-generic",
                 title="Dex",
-                config={"auto_link_by_email": True},
+                config={
+                    "auto_link_by_email": True,
+                    # Both switches, because auto-linking needs the address
+                    # this provider just sent to be worth something.
+                    "trust_email_verification": True,
+                },
             )
         ])
 

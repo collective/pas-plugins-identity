@@ -174,16 +174,17 @@ def released(scope: str) -> list[str]:
 
 
 def email_is_verified(userid: str, address: str) -> bool:
-    """Whether *this site* verified that address for that user.
+    """Whether this site holds the address as verified for that user.
 
-    Not whether some provider said so. The whole of this package's
-    auto-linking discipline rests on refusing a provider's word for a verified
-    address, and emitting ``email_verified: true`` on that basis would export
-    the problem: a relying party auto-linking on this claim would be trusting
-    a chain this server has already decided not to trust.
+    One question, asked of one place: is there an ``email`` identity for this
+    address owned by this userid? That is what a magic link writes, and -- for
+    a provider the operator marked ``trust_email_verification`` -- what a
+    login through that provider writes too.
 
-    True means the user proved the address to this site with a magic link,
-    which is recorded as an ``email`` identity whose subject is the address.
+    So a relying party reading this claim is being told what this site
+    believes, on the terms this site set. It is *not* a provider's assertion
+    passed through: a provider nobody here trusts can say ``email_verified``
+    all day and this stays false. See :doc:`/concepts/email-verification`.
 
     :param userid: The Plone userid.
     :param address: The address being asserted.

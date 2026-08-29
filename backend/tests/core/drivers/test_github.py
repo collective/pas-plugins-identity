@@ -136,15 +136,15 @@ class TestTheAddressComesFromASecondCall:
         assert self.driver.merge_enrichment(payload, answer) == payload
 
 
-class TestSeveralAddressesAreAQuestion:
-    """One address is an answer; several are a question.
+class TestEveryAddressIsReported:
+    """All of them, in the order they should be offered.
 
-    Picking the primary, or the first verified one, is a guess made on the
-    user's behalf about which identity they are here as -- and the address
-    decides which existing account a verified-email link would attach to. So
-    an account with more than one usable address has none of them chosen
-    here: the list is carried forward and the user is asked on their profile,
-    which the required-information gate holds them on until they answer.
+    This class used to be ``TestSeveralAddressesAreAQuestion`` and held the
+    opposite: an account with more than one usable address had none of them
+    chosen, ``email`` was left empty, and the required-information gate held
+    the person on a form until they answered. A Profile carries a list now, so
+    there is nothing to withhold -- every address goes on it, ``email`` is the
+    head, and choosing is arranging the list afterwards (Érico, 2026-08-29).
     """
 
     @pytest.fixture(autouse=True)
@@ -165,34 +165,32 @@ class TestSeveralAddressesAreAQuestion:
         merged = self.driver.merge_enrichment({"id": 1, "login": "ghost"}, addresses)
         return self.driver.normalize_claims(merged)
 
-    def test_no_address_is_chosen(self):
-        """The bug this replaces: `me@example.com` used to win here."""
-        assert self.claims(self.several)["email"] == ""
+    def test_the_primary_becomes_the_headline_address(self):
+        """It is GitHub's own answer to which address the account is."""
+        assert self.claims(self.several)["email"] == "me@example.com"
 
-    def test_nothing_is_reported_as_verified_either(self):
-        """An unanswered question cannot satisfy link-by-verified-email."""
-        assert self.claims(self.several)["email_verified"] is False
+    def test_its_verification_comes_with_it(self):
+        """The flag has to describe the address beside it, or the pair says
+        something neither half meant."""
+        assert self.claims(self.several)["email_verified"] is True
 
-    def test_every_address_is_offered(self):
-        choices = self.claims(self.several)["email_choices"]
+    def test_every_address_is_reported(self):
+        reported = self.claims(self.several)["emails"]
 
-        assert {choice["address"] for choice in choices} == {
+        assert {entry["address"] for entry in reported} == {
             "me@example.com",
             "noreply@users.noreply.github.com",
             "old@example.com",
         }
 
-    def test_the_primary_is_offered_first(self):
-        """A hint for ordering the choice, not a decision: it is presented
-        first and still has to be picked."""
-        assert self.claims(self.several)["email_choices"][0]["address"] == (
-            "me@example.com"
-        )
+    def test_the_primary_is_reported_first(self):
+        """Which makes it the head, and therefore ``email``."""
+        assert self.claims(self.several)["emails"][0]["address"] == "me@example.com"
 
-    def test_verified_addresses_are_offered_before_unverified(self):
-        choices = self.claims(self.several)["email_choices"]
+    def test_verified_addresses_come_before_unverified(self):
+        reported = self.claims(self.several)["emails"]
 
-        assert [choice["verified"] for choice in choices] == [True, True, False]
+        assert [entry["verified"] for entry in reported] == [True, True, False]
 
     def test_the_provider_order_survives_within_a_group(self):
         """`sorted` is stable, so a list that does not change at the provider
@@ -202,30 +200,37 @@ class TestSeveralAddressesAreAQuestion:
             {"email": "a@example.com", "verified": True},
         ]
 
-        choices = self.claims(addresses)["email_choices"]
+        reported = self.claims(addresses)["emails"]
 
-        assert [choice["address"] for choice in choices] == [
+        assert [entry["address"] for entry in reported] == [
             "b@example.com",
             "a@example.com",
         ]
 
-    def test_a_single_address_is_not_a_question(self):
-        """Nothing to decide, so it is used exactly as a provider that sent
-        one address would be -- and the user is never asked."""
+    def test_a_single_address_is_reported_as_a_list_of_one(self):
+        """So nothing downstream branches on how many a provider happens to
+        have."""
         claims = self.claims([{"email": "only@example.com", "verified": True}])
 
         assert claims["email"] == "only@example.com"
-        assert claims.get("email_choices", ()) == ()
+        assert claims["emails"] == (
+            {
+                "address": "only@example.com",
+                "verified": True,
+                "primary": False,
+            },
+        )
 
-    def test_a_repeated_address_is_not_a_choice(self):
-        """Offering the same address twice is a question with one answer."""
+    def test_a_repeated_address_is_one_address(self):
+        """Two spellings of one mailbox are not two addresses to put on a
+        profile."""
         claims = self.claims([
             {"email": "me@example.com", "primary": True, "verified": True},
             {"email": "ME@example.com", "verified": False},
         ])
 
         assert claims["email"] == "me@example.com"
-        assert claims.get("email_choices", ()) == ()
+        assert [entry["address"] for entry in claims["emails"]] == ["me@example.com"]
 
     def test_the_carrier_key_does_not_leak_into_raw(self):
         """`raw` is documented as the untouched provider payload, and the key
@@ -235,7 +240,12 @@ class TestSeveralAddressesAreAQuestion:
         assert GitHubDriver.ADDRESSES_KEY not in raw
         assert not any(key.startswith("_pas_plugins") for key in raw)
 
-    def test_an_account_with_no_addresses_offers_no_choice(self):
-        claims = self.claims([])
+    def test_an_account_with_no_addresses_reports_none(self):
+        """``GET /user`` carried no address either, so there is nothing to
+        report and nothing to invent."""
+        assert self.claims([])["emails"] == ()
 
-        assert claims.get("email_choices", ()) == ()
+    def test_github_is_trusted_by_default(self):
+        """It will not call an address verified until the account has
+        answered mail at it. The operator can still say otherwise."""
+        assert GitHubDriver.default_trust_email_verification is True

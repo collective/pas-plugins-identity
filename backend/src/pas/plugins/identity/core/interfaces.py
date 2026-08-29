@@ -19,16 +19,19 @@ type JSONValue = (
 type JSONDict = dict[str, JSONValue]
 
 
-class EmailChoice(TypedDict):
-    """One address a provider offers, as something to be chosen between.
+class ProviderEmail(TypedDict):
+    """One address a provider reports for an account.
 
     :ivar address: The address itself, lowercased.
-    :ivar verified: Whether the provider says it checked it. Carried so the
-        choice can say so, never so this package can act on it: a provider
-        asserting ``verified`` is not evidence here, and only an address the
-        *site* confirmed with a magic link ever counts as verified.
+    :ivar verified: Whether the provider says it checked it. What that is
+        worth here is the operator's decision, per provider: see
+        ``trust_email_verification`` in
+        :meth:`~pas.plugins.identity.core.drivers.base.BaseDriver.config_schema`.
+        A provider the site does not trust still has its word carried and
+        shown; it simply proves nothing.
     :ivar primary: Whether the provider calls it the account's main address.
-        A hint for ordering the choice, not a decision.
+        It orders the list a Profile is seeded from, and nothing after that:
+        once somebody has arranged their own addresses, the order is theirs.
     """
 
     address: str
@@ -48,14 +51,18 @@ class Claims(TypedDict, total=False):
     :ivar picture_url: URL of an avatar image.
     :ivar username: Provider-side login name.
     :ivar raw: The untouched provider payload, for driver-specific consumers.
-    :ivar email_choices: Addresses the provider says belong to this account,
-        when it offers more than one and none of them may be picked on the
-        user's behalf. Not a claim any provider sends and not an OIDC name --
-        it is this package's own, which is why nothing maps it onto a profile
-        field and why ``email`` is left empty when it is populated. A
-        provider that offers one address, or none, leaves it empty and fills
-        ``email`` as before. See
-        :class:`~pas.plugins.identity.core.drivers.github.GitHubDriver`.
+    :ivar emails: Every address the provider reports for this account, in the
+        order it should be offered -- the account's own primary first, then
+        the ones it says it verified. Not a claim any provider sends and not
+        an OIDC name: it is this package's own, and a driver whose provider
+        sends a single address fills it with that one entry so nothing
+        downstream has to ask which shape it is looking at. ``email`` stays
+        the headline address and is the first entry.
+
+        A person has more than one address, and picking one of them for them
+        is a decision about which identity they are here as. So all of them
+        go onto the Profile and the person arranges them; see
+        :func:`~pas.plugins.identity.core.subscribers.sync_addresses`.
     """
 
     fullname: str
@@ -64,7 +71,7 @@ class Claims(TypedDict, total=False):
     picture_url: str
     username: str
     raw: JSONDict
-    email_choices: tuple[EmailChoice, ...]
+    emails: tuple[ProviderEmail, ...]
 
 
 class IDriver(Interface):
@@ -97,6 +104,13 @@ class IDriver(Interface):
         "Provider group name to local group id, seeded into a new provider's "
         "map. Almost always empty: group names are a fact about one "
         "deployment's directory, not about a driver."
+    )
+
+    default_trust_email_verification = Attribute(
+        "Whether this provider's own ``email_verified`` is worth anything "
+        "here, as the default for the ``trust_email_verification`` config "
+        "field. False unless a driver knows the provider really checks; "
+        "whether a given deployment agrees is the operator's to say."
     )
 
     supports_manual_link = Attribute(

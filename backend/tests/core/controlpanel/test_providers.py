@@ -352,6 +352,7 @@ class TestProviderConfig:
         """
         assert self.provider.config == {
             "scope": ("read:user", "user:email"),
+            "trust_email_verification": True,
             "auto_link_by_email": False,
             "userid_source": "username",
         }

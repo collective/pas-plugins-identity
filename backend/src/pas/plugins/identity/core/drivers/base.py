@@ -9,6 +9,7 @@ from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.core.interfaces import ClaimsError
 from pas.plugins.identity.core.interfaces import IDriver
 from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity.core.interfaces import ProviderEmail
 from zope.interface import implementer
 
 
@@ -109,6 +110,21 @@ class BaseDriver:
     #: when it knows the far end ships a group by that name.
     default_groupmap: dict[str, str] = {}  # noqa: RUF012
 
+    #: Whether this provider's own ``email_verified`` is worth anything here.
+    #:
+    #: False on the base class, which is the answer for a provider nobody has
+    #: said anything about: its word is carried and shown, and it proves
+    #: nothing. A driver sets this where the provider actually does verify --
+    #: Google and GitHub both do, and both refuse to call an address verified
+    #: until the account has answered mail at it.
+    #:
+    #: It is only the *default* for the ``trust_email_verification`` config
+    #: field, because whether a given deployment trusts a given provider is a
+    #: fact about the deployment. An operator running a permissive OIDC
+    #: provider of their own can switch it on; one who does not trust GitHub
+    #: can switch it off.
+    default_trust_email_verification: bool = False
+
     #: Whether a user may start a link against this provider from a form.
     #:
     #: True for every redirect flow: the identities page offers a button, the
@@ -149,16 +165,33 @@ class BaseDriver:
         """
         schema: JSONDict = {k: dict(v) for k, v in OAUTH_FIELDS.items()}
         schema["scope"]["default"] = list(self.default_scope)
-        # Off by default, and even when on it is only ever honoured against
-        # this package's own magic-link-verified addresses -- never against
-        # another provider's word for it.
+        schema["trust_email_verification"] = {
+            "type": "bool",
+            "title": "This provider's email verification counts",
+            "description": (
+                "When this provider says it verified an address, record the "
+                "address as verified here too -- exactly as a magic link "
+                "from this site would. Switch it on only for a provider that "
+                "really does check, since a verified address is what an "
+                "account can be attached to. Anything left off still shows "
+                "what the provider claimed; it just proves nothing."
+            ),
+            "required": False,
+            "secret": False,
+            "default": self.default_trust_email_verification,
+            "order": 55,
+        }
+        # Off by default, and it needs the switch above as well: a provider
+        # whose verification this site does not trust cannot attach itself to
+        # an account on the strength of an address.
         schema["auto_link_by_email"] = {
             "type": "bool",
             "title": "Attach to an existing account with the same verified email",
             "description": (
-                "Only matches addresses this site verified itself with a "
-                "magic link. A provider asserting email_verified is not "
-                "enough."
+                "Matches a verified address: one this site confirmed with a "
+                "magic link, or one a provider it trusts confirmed. Needs "
+                "this provider's own verification to be trusted too, since "
+                "the address being matched on is the one it just sent."
             ),
             "required": False,
             "secret": False,
@@ -258,16 +291,39 @@ class BaseDriver:
         """Map a provider payload onto the documented claims schema.
 
         :param payload: Raw provider payload.
-        :returns: Normalized claims. ``raw`` always carries the input verbatim.
+        :returns: Normalized claims. ``raw`` always carries the input verbatim,
+            and ``emails`` always carries a list -- one entry for the single
+            address most providers send, so nothing downstream has to branch
+            on how many a provider happens to offer.
         """
+        email = text(payload, "email").lower()
+        verified = self._email_verified(payload)
         return {
             "fullname": text(payload, "name", "fullname"),
-            "email": text(payload, "email").lower(),
-            "email_verified": self._email_verified(payload),
+            "email": email,
+            "email_verified": verified,
+            "emails": self.reported_addresses(email, verified),
             "picture_url": text(payload, "picture", "avatar_url"),
             "username": text(payload, "preferred_username", "login", "username"),
             "raw": dict(payload),
         }
+
+    @staticmethod
+    def reported_addresses(email: str, verified: bool) -> tuple[ProviderEmail, ...]:
+        """Return the address list for a provider that sends one address.
+
+        The common case, and the reason it is a list at all: a Profile takes
+        every address a provider reports, so a driver that offers several --
+        GitHub does -- and one that offers one hand the same shape to the same
+        code.
+
+        :param email: The normalized address, or the empty string.
+        :param verified: Whether the provider says it checked it.
+        :returns: One entry, or none at all when the provider sent no address.
+        """
+        if not email:
+            return ()
+        return ({"address": email, "verified": verified, "primary": True},)
 
     def _email_verified(self, payload: JSONDict) -> bool:
         """Decide whether the provider asserts the address is verified.

@@ -401,12 +401,22 @@ class TestAutoLinkByEmail(MagicLinkCase):
     def _set_auto_link(self, value: bool) -> None:
         """Switch auto-link on or off for the Dex provider.
 
+        Both switches together: auto-linking matches on the address this
+        provider just sent, so a provider whose verification the site does
+        not trust cannot reach an account with one. Turning only the first on
+        is tested separately, in
+        :meth:`test_an_untrusted_provider_does_not_attach`.
+
         :param value: The setting.
         """
         providers = get_providers()
         for provider in providers:
             if provider.provider_id == "dex":
-                provider.config = {**provider.config, "auto_link_by_email": value}
+                provider.config = {
+                    **provider.config,
+                    "auto_link_by_email": value,
+                    "trust_email_verification": value,
+                }
         set_providers(providers)
 
     def test_off_by_default(self, existing):
@@ -423,6 +433,25 @@ class TestAutoLinkByEmail(MagicLinkCase):
         userid = self._login({"email": ADDRESS, "email_verified": True})
 
         assert userid == existing
+
+    def test_an_untrusted_provider_does_not_attach(self, existing):
+        """Auto-linking on its own is not enough, and this is the hole that
+        closes: the address being matched on is the one this provider just
+        sent, so a provider whose word the operator never took cannot reach
+        an account by asserting somebody else's address."""
+        providers = get_providers()
+        for provider in providers:
+            if provider.provider_id == "dex":
+                provider.config = {
+                    **provider.config,
+                    "auto_link_by_email": True,
+                    "trust_email_verification": False,
+                }
+        set_providers(providers)
+
+        userid = self._login({"email": ADDRESS, "email_verified": True})
+
+        assert userid != existing
 
     def test_unverified_claim_cannot_attach(self, existing):
         """The attack: a provider account registered with somebody else's

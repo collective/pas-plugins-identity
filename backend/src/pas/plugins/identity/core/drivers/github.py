@@ -2,7 +2,7 @@
 
 from pas.plugins.identity.core.drivers.base import BaseDriver
 from pas.plugins.identity.core.interfaces import Claims
-from pas.plugins.identity.core.interfaces import EmailChoice
+from pas.plugins.identity.core.interfaces import ProviderEmail
 from pas.plugins.identity.core.interfaces import JSONDict
 
 
@@ -25,9 +25,10 @@ class GitHubDriver(BaseDriver):
     after userinfo; :meth:`merge_enrichment` folds the chosen address in. The
     driver still performs no I/O of its own.
 
-    A GitHub account may hold several addresses. The primary verified one is
-    preferred, then any verified one, and an unverified primary last -- an
-    address is worth having even when nobody will auto-link on it.
+    A GitHub account may hold several addresses, and all of them go onto the
+    person's Profile. The account's own primary comes first, then the verified
+    ones, and that order is only the order they are *offered* in: once
+    somebody has arranged their addresses, theirs is the one that stands.
 
     The call is best-effort. A token whose scope an operator narrowed answers
     403, and a login is not the moment to fail over an address: the payload is
@@ -51,6 +52,14 @@ class GitHubDriver(BaseDriver):
     #: way.
     default_userid_source = "username"
 
+    #: GitHub verifies an address before it will call it verified.
+    #:
+    #: ``GET /user/emails`` reports ``verified`` per address, and GitHub sets
+    #: it only once the account has answered mail there. So an address it
+    #: vouches for is recorded as verified here -- the operator can still say
+    #: otherwise, per provider.
+    default_trust_email_verification = True
+
     def enrichment_endpoint(self, metadata: JSONDict) -> str:
         """Return GitHub's address list endpoint.
 
@@ -71,50 +80,52 @@ class GitHubDriver(BaseDriver):
     ADDRESSES_KEY = "_pas_plugins_identity_addresses"
 
     def merge_enrichment(self, payload: JSONDict, data: object) -> JSONDict:
-        """Fold ``GET /user/emails`` into the payload without choosing.
+        """Fold ``GET /user/emails`` into the payload, all of it.
 
-        **One address is an answer; several are a question.** An account with
-        a single usable address has nothing to decide, so it fills ``email``
-        exactly as a provider that sent one would. An account with more than
-        one is the case this exists for: picking the primary, or the first
-        verified one, is a guess made on the user's behalf about which
-        identity they are here as -- and the address decides which existing
-        account a verified-email link would attach to. So the list is carried
-        forward and the user is asked, on their profile, once they are in.
+        Every address the account holds is carried, because every one of them
+        goes onto the person's Profile. This used to carry the list only when
+        there was more than one and leave ``email`` empty in that case -- the
+        address was a question nobody could answer for the user, so they were
+        held on a form until they did. They have a list now, so there is
+        nothing to withhold: all the addresses are theirs, and which of them
+        stands for them is an order they can change rather than a question
+        blocking their first login (Érico, 2026-08-29).
+
+        ``email`` is the head of the list, which is the account's own primary
+        address where GitHub named one.
 
         :param payload: The ``/user`` payload.
         :param data: The decoded address list.
-        :returns: The payload, with either the single address folded in or
-            the whole list attached under :attr:`ADDRESSES_KEY`. Unchanged
-            when the answer carries no usable address, so a surprising shape
-            costs nothing rather than raising in the middle of a login.
+        :returns: The payload with the addresses folded in, under ``email``
+            and under :attr:`ADDRESSES_KEY`. Unchanged when the answer carries
+            no usable address, so a surprising shape costs nothing rather than
+            raising in the middle of a login.
         """
         entries = self._addresses(data)
         if not entries:
             return payload
-        if len(entries) == 1:
-            only = entries[0]
-            return {
-                **payload,
-                "email": only["address"],
-                "email_verified": only["verified"],
-            }
-        return {**payload, self.ADDRESSES_KEY: entries}
+        head = entries[0]
+        return {
+            **payload,
+            "email": head["address"],
+            "email_verified": head["verified"],
+            self.ADDRESSES_KEY: entries,
+        }
 
     @staticmethod
-    def _addresses(data: object) -> list[EmailChoice]:
+    def _addresses(data: object) -> list[ProviderEmail]:
         """Normalize ``GET /user/emails`` into addresses worth offering.
 
-        Ordered the way the choice should be presented: the account's primary
-        address first, verified ones ahead of unverified, and the provider's
-        own order preserved within each group so a stable list stays stable.
+        Ordered the way they should be offered: the account's primary address
+        first, verified ones ahead of unverified, and GitHub's own order
+        preserved within each group so a stable list stays stable.
 
         :param data: The decoded ``/user/emails`` answer.
         :returns: The addresses, empty when there is nothing usable.
         """
         if not isinstance(data, list):
             return []
-        entries: list[EmailChoice] = []
+        entries: list[ProviderEmail] = []
         seen: set[str] = set()
         for entry in data:
             if not isinstance(entry, dict):
@@ -135,21 +146,15 @@ class GitHubDriver(BaseDriver):
         """Normalize a GitHub ``/user`` payload.
 
         :param payload: Raw payload.
-        :returns: Normalized claims. ``email_choices`` is populated, and
-            ``email`` deliberately left empty, when the account offers more
-            than one address: the user is asked which one on their profile
-            rather than having one picked for them here.
+        :returns: Normalized claims. ``emails`` carries every address the
+            account holds when ``GET /user/emails`` was reachable, and the one
+            entry the base class synthesizes from ``/user`` alone when it was
+            not.
         """
         claims = super().normalize_claims(payload)
-        choices = payload.get(self.ADDRESSES_KEY)
-        if isinstance(choices, list) and choices:
-            claims["email_choices"] = tuple(choices)
-            # No address until the user names one. Leaving a guess in here is
-            # exactly what the choice exists to avoid, and an empty `email`
-            # is what makes the profile `incomplete` and holds them on the
-            # form that asks.
-            claims["email"] = ""
-            claims["email_verified"] = False
+        reported = payload.get(self.ADDRESSES_KEY)
+        if isinstance(reported, list) and reported:
+            claims["emails"] = tuple(reported)
             # `raw` is documented as the untouched provider payload, so the
             # key this package added on the way through does not belong in it.
             claims["raw"] = {

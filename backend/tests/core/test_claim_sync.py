@@ -147,7 +147,6 @@ class TestClaimsReachTheProfile:
     def test_the_whole_map_is_applied_in_one_login(self, provider):
         provider({
             "fullname": "fullname",
-            "email": "email",
             "bio": "description",
             "blog": "home_page",
             "location": "location",
@@ -157,11 +156,20 @@ class TestClaimsReachTheProfile:
 
         assert sorted(changed) == [
             "description",
-            "email",
             "fullname",
             "home_page",
             "location",
         ]
+
+    def test_a_map_naming_the_address_is_ignored_here(self, provider):
+        """``email`` is derived from the address list, so a single-value
+        write of it would move an address to the front of a list its owner
+        arranged. The addresses have their own path --
+        :func:`~pas.plugins.identity.core.subscribers.sync_addresses` -- and
+        the same map is still honoured against the Plone user."""
+        provider({"fullname": "fullname", "email": "email"})
+
+        assert sync_claims(self.profile, CLAIMS, "github") == ["fullname"]
 
 
 class TestTheOwnershipRuleStillHolds:

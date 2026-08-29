@@ -46,7 +46,7 @@ ADDRESSES = [
     {"email": "ghost@example.com", "primary": True, "verified": True},
 ]
 
-#: An account with nothing to decide between.
+#: An account with a single address.
 ONE_ADDRESS = [{"email": "ghost@example.com", "primary": True, "verified": True}]
 
 
@@ -151,14 +151,15 @@ class TestTheAddressIsFetched:
 
         assert payload["email_verified"] is True
 
-    def test_several_addresses_reach_the_payload_unchosen(self):
-        """The flow's job is to fetch and hand over; which address is used --
-        or that none is, and the user is asked -- belongs to the driver."""
+    def test_every_address_reaches_the_payload(self):
+        """The flow's job is to fetch and hand over. Which of them becomes
+        the headline address, and that all of them go onto the Profile,
+        belongs to the driver and to the claims sync."""
         client = StubClient(StubResponse(ADDRESSES))
 
         payload = self.manager._enrich(client, self.github, METADATA, USER)
 
-        assert payload.get("email") in (None, "")
+        assert payload["email"] == "ghost@example.com"
         assert len(payload[GitHubDriver.ADDRESSES_KEY]) == 2
 
     def test_nothing_else_in_the_payload_is_disturbed(self):

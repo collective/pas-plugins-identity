@@ -180,14 +180,21 @@ class TestClaimsRefresh:
         assert self.profile.fullname == "Alice Liddell"
 
     def test_ownership_is_per_field(self):
-        """Editing the name must not freeze the email as well."""
+        """Editing the name must not freeze the addresses as well.
+
+        The addresses are not owned the way a single-value field is: a login
+        appends what it has not offered before and never reorders. So the new
+        address arrives even though the name is now the user's, and it
+        arrives at the end -- the head of the list is somebody's answer to
+        which address stands for them.
+        """
         self.profile.fullname = "Alice from Accounts"
         modified(self.profile)
 
         login(fullname="Ignored", email="alice@example.org")
 
         assert self.profile.fullname == "Alice from Accounts"
-        assert self.profile.email == "alice@example.org"
+        assert self.profile.emails == ("alice@example.com", "alice@example.org")
 
     def test_login_is_never_synced(self):
         """A provider renaming somebody must not move their account.

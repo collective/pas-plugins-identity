@@ -970,21 +970,36 @@ class IdentityPlugin(BasePlugin):
     def _adopt_by_verified_email(self, provider: str, claims: Claims) -> str | None:
         """Find an existing account to attach this identity to.
 
-        Auto-linking by email is off unless the operator switched it on for
-        this provider, and even then it matches only against an ``email``
-        identity **this site** verified with a magic link. A provider saying
-        ``email_verified`` about an address is not evidence: anyone who can
-        register at that provider with a chosen address could otherwise walk
-        into the matching Plone account.
+        Two switches, both the operator's and both off by default, because
+        this is the step where somebody signing in with a provider ends up
+        inside an account that already existed.
+
+        ``auto_link_by_email``
+            Whether to look for an account at all.
+
+        ``trust_email_verification``
+            Whether *this* provider saying ``email_verified`` means anything.
+            The address being matched on is the one it just sent, so a
+            provider whose word this site does not take cannot reach an
+            account by asserting somebody else's address -- which is the
+            takeover in :doc:`/concepts/email-verification`, and which
+            auto-linking alone did not stop: the match was against an address
+            some *other*, trusted route had verified.
+
+        Even with both on, the address has to already be verified here: by a
+        magic link this site sent, or by a provider this site trusts.
 
         :param provider: Provider id the login came from.
         :param claims: Normalized claims from the provider.
         :returns: The userid to adopt, or ``None`` to mint a fresh one.
         """
         from pas.plugins.identity.core.controlpanel import get_provider
+        from pas.plugins.identity.core.verification import trusts_verification
 
         config = get_provider(provider)
         if config is None or not config.config.get("auto_link_by_email"):
+            return None
+        if not trusts_verification(provider):
             return None
         # Only a literal True counts, exactly as in the driver layer: a
         # missing key or a string "false" must not read as verified.

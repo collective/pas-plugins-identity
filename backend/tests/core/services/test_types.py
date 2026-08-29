@@ -1,22 +1,19 @@
 """``@types`` for the user type: what the edit form is built from.
 
-Two corrections live here and both exist to stop the same shape of loop --
-a form that does not ask for what the flow insists on, so the user saves,
-stays `incomplete`, and is sent straight back.
+One correction lives here, and it exists to stop a loop: a form that does not
+ask for what the flow insists on, so the user saves, stays `incomplete`, and
+is sent straight back. `plone.restapi` cannot know about the site's required
+fields, because it reads `required` off the type and nothing else.
 
-The first is the site's required fields, which `plone.restapi` cannot know
-about because it reads `required` off the type and nothing else. The second is
-the addresses a provider offered without choosing between: the profile arrives
-without one, and asking the user to retype an address the site was handed a
-list of would be a poor way to end the hold.
+There used to be a second correction, decorating the `emails` field with the
+addresses a provider had offered but nobody had picked between. Nothing offers
+them any more: every address a provider reports goes onto the Profile, so the
+field this decorated is never empty when there is anything to put in it.
 """
 
 from pas.plugins.identity.core.completeness import REQUIRED_FIELDS_RECORD
-from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
 from pas.plugins.identity.core.services.types import ProfileTypesGet
 from plone import api
-from plone.app.testing import TEST_USER_ID
-from zope.lifecycleevent import modified
 
 import pytest
 
@@ -74,116 +71,3 @@ class TestTheSitesRequiredFields:
         api.portal.set_registry_record(REQUIRED_FIELDS_RECORD, ("location",))
 
         assert "location" not in (self.schema_for("Document").get("required") or [])
-
-
-class TestTheOfferedAddresses:
-    """The form asks with what the provider handed over."""
-
-    @pytest.fixture(autouse=True)
-    def _setup(self, portal, schema_for, make_profile) -> None:
-        self.portal = portal
-        self.schema_for = schema_for
-        self.profile = make_profile(TEST_USER_ID)
-        self.store = portal.acl_users[CORE_PLUGIN_ID].store
-
-    def offer(self, *addresses) -> None:
-        """Record a GitHub identity offering these addresses.
-
-        :param addresses: The addresses offered.
-        """
-        self.store.add(
-            "github",
-            "1",
-            TEST_USER_ID,
-            {
-                "email_choices": tuple(
-                    {"address": address, "verified": True, "primary": False}
-                    for address in addresses
-                )
-            },
-        )
-
-    def items(self):
-        """Return the ``items`` schema of the user type's ``emails`` field.
-
-        The decoration goes on ``items`` rather than on the field, because
-        ``emails`` is an array and its entries are what a widget renders a
-        choice for. ``email`` is derived and read-only, so it has no box.
-
-        :returns: The item schema.
-        """
-        return self.schema_for()["properties"]["emails"]["items"]
-
-    def test_a_plain_box_when_nothing_was_offered(self):
-        """Every provider that sends one address looks like this."""
-        assert "choices" not in self.items()
-
-    def test_the_offered_addresses_become_the_choices(self):
-        self.offer("me@example.com", "other@example.com")
-
-        assert self.items()["enum"] == ["me@example.com", "other@example.com"]
-
-    def test_the_trio_restapi_emits_for_a_choice_is_complete(self):
-        """`enum`/`enumNames`/`choices` together, so a widget that renders a
-        Choice field renders this without being taught anything new."""
-        self.offer("me@example.com")
-
-        items = self.items()
-
-        assert items["choices"] == [["me@example.com", "me@example.com (github)"]]
-        assert items["enumNames"] == ["me@example.com (github)"]
-
-    def test_each_choice_names_the_provider_that_offered_it(self):
-        """Somebody with two linked accounts is shown two lists merged into
-        one, and the address alone does not say which is which."""
-        self.offer("me@example.com")
-
-        assert "(github)" in self.items()["enumNames"][0]
-
-    def test_the_question_stops_once_it_is_answered(self):
-        """Turning somebody's own field into a list of suggestions they have
-        already declined is a worse form than the plain box."""
-        self.offer("me@example.com", "other@example.com")
-        self.profile.emails = ("chosen@example.com",)
-        modified(self.profile)
-
-        assert "choices" not in self.items()
-
-    def test_the_entries_are_still_free_text(self):
-        """Advisory, not binding: the list is what the person was handed, not
-        the set of addresses they are allowed to have."""
-        self.offer("me@example.com")
-
-        assert self.items()["type"] == "string"
-
-    def test_a_schema_without_the_field_is_left_alone(self):
-        """Defensive against a future plone.restapi shape, and against a site
-        whose own user type has no such field: the decoration is skipped
-        rather than raising in the middle of a form request."""
-        from pas.plugins.identity.core.services.types import ProfileTypesGet
-
-        service = ProfileTypesGet(self.portal, self.portal.REQUEST)
-        properties = {"emails": "not a mapping"}
-
-        service._offer_addresses(properties)
-
-        assert properties == {"emails": "not a mapping"}
-
-    def test_a_field_without_items_is_left_alone(self):
-        """An array field is what carries ``items``; anything else is a shape
-        this does not know how to decorate."""
-        from pas.plugins.identity.core.services.types import ProfileTypesGet
-
-        service = ProfileTypesGet(self.portal, self.portal.REQUEST)
-        properties = {"emails": {"type": "string"}}
-
-        service._offer_addresses(properties)
-
-        assert properties == {"emails": {"type": "string"}}
-
-    def test_the_derived_field_is_not_on_the_form(self):
-        """``plone.restapi`` leaves a read-only field out of a type's schema
-        altogether, which is the right answer here: ``email`` is computed
-        from the list above and there is nothing on it to fill in. It is
-        still serialized with the content, so a *view* can show it."""
-        assert "email" not in self.schema_for()["properties"]

@@ -30,7 +30,15 @@ OAUTH_DRIVERS: tuple[type[BaseDriver], ...] = (
 )
 
 #: Keys the normalized schema always carries.
-CLAIM_KEYS = {"fullname", "email", "email_verified", "picture_url", "username", "raw"}
+CLAIM_KEYS = {
+    "fullname",
+    "email",
+    "email_verified",
+    "emails",
+    "picture_url",
+    "username",
+    "raw",
+}
 
 #: ``GET /user`` on GitHub.
 #:
