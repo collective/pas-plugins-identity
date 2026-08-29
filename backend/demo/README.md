@@ -39,11 +39,17 @@ Plone constraints, as every backend in this family does.
 
 | Profile | Site | What it does |
 |---|---|---|
-| `identitydemo:idp` | A, `id.localhost` | Applies `core`, `profile` and `server`; registers the `demo-rp` client and the demo user. |
-| `identitydemo:rp` | B, `plone.localhost` | Applies `core`; registers an `oidc-generic` provider pointed at A's issuer. |
+| `identitydemo:idp` | A, `id.localhost` | Applies the add-on and the `server` layer; registers the `demo-rp` client and the demo user. |
+| `identitydemo:rp` | B, `plone.localhost` | Applies the add-on; registers an `oidc-generic` provider pointed at A's issuer. |
 
 One package and one Docker image, run twice under different `APPLY_PROFILES`.
 The two sites differ in configuration, not in code.
+
+The relying party now keeps its users as content as well. That was decided
+against while it was a choice — the demo is more legible when only one side
+does it — and the choice is gone: users as content is what installing the
+add-on means. B's users are Profiles, filed in its own container, and the
+federation story is unchanged by it.
 
 ## Running it
 

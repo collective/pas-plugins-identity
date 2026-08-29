@@ -28,7 +28,7 @@ create them protects nobody.
 
 from identitydemo import logger
 from identitydemo import settings
-from pas.plugins.identity.content.container import get_container
+from pas.plugins.identity.core.container import get_container
 from pas.plugins.identity.server.clients import get_clients
 from pas.plugins.identity.server.clients import set_clients
 from pas.plugins.identity.server.consent_screen import CONSENT_URL_RECORD
@@ -104,7 +104,7 @@ def _ensure_profile_container() -> None:
     But it is logged at warning, with the consequence spelled out, because the
     silent version of this is exactly the bug it was added to fix.
     """
-    from pas.plugins.identity.content.container import ContainerNotFound
+    from pas.plugins.identity.core.container import ContainerNotFound
 
     try:
         get_container(create=True)
@@ -131,7 +131,10 @@ def _apply_deployment_urls() -> None:
 
     The consent URL is different in kind: it is only ever a place to send a
     browser, and setting it is what makes this demo exercise the frontend
-    consent screen rather than the server's standalone fallback.
+    consent screen rather than the server's standalone fallback. Written even
+    when it is empty, because empty is a meaningful value there -- it is how
+    the federation test stack, which runs no frontend, asks for the standalone
+    page instead of a route nothing serves.
     """
     api.portal.set_registry_record(ISSUER_RECORD, settings.IDP_PUBLIC_URL)
     api.portal.set_registry_record(CONSENT_URL_RECORD, settings.IDP_CONSENT_URL)
