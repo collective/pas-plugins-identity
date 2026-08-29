@@ -24,9 +24,14 @@ Please do not use the public issue tracker.
 A linking flow additionally requires an authenticated session at initiation and completion by the same session.
 Holding the code, the state, and the flow cookie is not enough to attach an identity to somebody else's account.
 
-**Automatic linking by email is off by default.**
-When enabled, it matches only addresses this site itself verified by sending a link to them, and only on a literal `True`.
+**Automatic linking by email needs two switches, and both are off by default.**
+It matches only an address this site holds as verified, and only when the provider now asserting it is one the operator marked as trusting -- so a provider nobody trusts cannot reach an account by asserting an address some other route verified.
+Only a literal `True` counts.
 A forged unverified email claim cannot link.
+
+**A provider's `email_verified` counts only where an operator said it does.**
+{guilabel}`This provider's email verification counts` is off unless a driver knows the provider really checks; Google and GitHub ship with it on, everything else off.
+Switched on, that provider's verified addresses are recorded exactly as a magic link records one -- there is one notion of verified and no second flag to drift.
 
 **A link collision is a hard error.**
 An external identity already linked to one user id is never attached to another.

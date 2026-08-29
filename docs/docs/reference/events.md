@@ -31,10 +31,17 @@ Consumers read these keys and nothing else.
 
 `email`
 :   Email address as reported by the provider.
+    The first entry of `emails`.
 
 `email_verified`
-:   Whether the provider asserts the address is verified.
-    Trusted only when it is literally `True`.
+:   Whether the provider asserts `email` is verified.
+    Read only when it is literally `True`, and worth something only for a provider the operator marked as trusting -- see {doc}`/concepts/email-verification`.
+
+`emails`
+:   Every address the provider reports for the account, in the order they should be offered: primary first, then verified.
+    One entry per address, each `{"address": ..., "verified": ..., "primary": ...}`.
+    Not a claim any provider sends -- it is this package's own, and a driver whose provider sends a single address fills it with that one entry, so nothing downstream branches on how many there are.
+    All of them go onto the person's profile.
 
 `picture_url`
 :   URL of an avatar image.

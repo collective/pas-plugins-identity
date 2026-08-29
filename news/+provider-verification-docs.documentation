@@ -1,0 +1,3 @@
+Rewrote the email-verification concept page around who decides.
+
+The page said a provider's word never counts, and listed "the one place this is relaxed" as "nowhere". A provider the operator marks as trusting now verifies an address exactly as a magic link does, so the page explains the two switches, why the second one is not decoration, and why the drivers that ship trusting are the two that really check. The provider guide gained a section on setting them, the driver guide gained the attribute a new driver should almost always leave alone, and the security guarantees, glossary, profile reference, claims contract and events schema all follow. @ericof

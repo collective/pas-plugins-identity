@@ -44,9 +44,9 @@ The tempting inference is by email address.
 Two identities reporting the same address are probably the same person, and often they are.
 Automatic linking by email exists for exactly that, and it is off by default.
 
-When you turn it on, it matches only against addresses this site verified itself, by sending a link to the address and watching somebody follow it.
-It refuses a provider's `email_verified` claim.
-See {doc}`email-verification` for why that asymmetry is the whole safety property.
+When you turn it on, it matches only against an address this site holds as verified -- proved by a magic link, or vouched for by a provider the operator trusts -- and it also needs the provider now asserting the address to be one of those trusted providers.
+A provider nobody marked cannot link on its own word, whatever it claims.
+See {doc}`email-verification` for the two switches and why the second one is not decoration.
 
 ## A collision is an error, not a merge
 

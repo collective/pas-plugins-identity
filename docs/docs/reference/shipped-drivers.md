@@ -16,9 +16,13 @@ The following drivers ship with the package.
 `github`
 :   GitHub OAuth.
     Uses GitHub's published endpoints rather than discovery, because GitHub publishes no discovery document.
+    `GET /user` omits the address of anybody who marked it private and carries no `email_verified` at all, so the driver also calls `GET /user/emails` -- best-effort, since a narrowed scope answers 403 and a login is not the moment to fail over an address.
+    That call reports every address on the account, and all of them go onto the person's profile.
+    Ships with {guilabel}`This provider's email verification counts` on: GitHub does not mark an address verified until the account has answered mail at it.
 
 `google`
 :   Google, through OpenID Connect discovery.
+    Ships with {guilabel}`This provider's email verification counts` on, for the same reason: `email_verified` is false on a Google account that has not proved the address.
 
 `oidc-generic`
 :   Any OpenID Connect provider, configured with its discovery URL.

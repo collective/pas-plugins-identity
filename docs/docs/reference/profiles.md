@@ -37,14 +37,32 @@ Both types get `group_ids` from the `pas.plugins.identity.group_membership` beha
 A person has more than one address, signs in with more than one of them, and which one is theirs *here* is a question whose answer changes.
 Two stored values that have to agree, with nothing making them agree, is the shape this package already paid for once with a `userid` that could drift from its object id.
 
-An address counts as verified when this site holds an `email` identity for it, which is what a magic link creates.
-A provider asserting `email_verified` does not count, here or anywhere else in this package.
+An address counts as verified when this site holds an `email` identity for it.
+A magic link creates one, and so does a login through a provider the operator marked as trusting -- Google and GitHub ship that way, everything else does not.
+A provider nobody marked can assert `email_verified` all it likes and the address stays unverified.
+See {doc}`/concepts/email-verification`.
 
-Because verification lives in the identity store rather than on the profile, confirming or removing a magic-link identity updates the owner's catalog entry: `email` is served from catalog metadata everywhere it matters, so without that the derived value would be correct on the object and wrong everywhere it is read.
+Because verification lives in the identity store rather than on the profile, confirming or removing an email identity updates the owner's catalog entry: `email` is served from catalog metadata everywhere it matters, so without that the derived value would be correct on the object and wrong everywhere it is read.
 
-Writing `email` -- which the Dexterity factory, the claims sync, and every older exported payload all do -- moves that address to the front of `emails` rather than replacing a field.
+Writing `email` -- which the Dexterity factory and every older exported payload both do -- moves that address to the front of `emails` rather than replacing a field.
 An empty write is ignored: a provider that stopped sending an address has not said the person no longer has one.
 `plone.restapi` leaves a read-only field out of a type's schema, so `email` has no box on the edit form; it is still serialized with the content, so a view can show it.
+
+### Where the addresses come from
+
+A login puts every address its provider reports onto the profile, in the order the provider offers them: the account's own primary first, then the ones it says it verified.
+GitHub reports all of them; most providers report one.
+
+This used to work the other way round.
+An account with several addresses had none of them chosen, arrived without an address, and its owner was held on the edit form until they picked -- because the profile had a single slot and filling it was a guess about which identity the person was here as.
+A list is not a guess, so all of them go on and the person arranges them afterwards.
+
+A later login **appends**, and only an address no provider has offered before.
+An address you delete stays deleted; the order you put them in is not rearranged; and a provider that changes your address adds the new one beside the old rather than replacing it.
+
+Which address stands for you is that order, so choosing one is moving it to the front.
+The edit form's list does that, and so does {guilabel}`Make preferred` on the {guilabel}`Sign-in methods` page.
+A verified address still wins over an unverified one above it, because that is what `email` is derived from.
 
 ## Profile workflow states
 

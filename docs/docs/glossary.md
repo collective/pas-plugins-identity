@@ -41,7 +41,7 @@ issuer
 
 magic link
     Sign-in by an emailed, signed, single-use token, provided by the `email` driver.
-    It needs no external provider, and it is the only email verification this package trusts for linking decisions.
+    It needs no external provider, and it is the verification this package performs itself.
 
 Plone
     [Plone](https://plone.org/) is an open source content management system used to create, edit, and manage digital content, such as websites, intranets, and custom solutions.
@@ -73,8 +73,9 @@ subject
     A subject is meaningful only within the provider that issued it.
 
 verified address
-    An address this site proved with a magic link, recorded as an `email` external identity owned by that user id.
-    A provider asserting `email_verified` does not make an address verified here.
+    An address this site holds as proved, recorded as an `email` external identity owned by that user id.
+    Either a magic link proved it, or a provider the operator marked as trusting vouched for it.
+    A provider nobody marked does not make an address verified here, whatever it asserts.
 
 Markedly Structured Text
 MyST

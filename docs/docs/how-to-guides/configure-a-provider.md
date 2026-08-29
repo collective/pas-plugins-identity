@@ -103,6 +103,29 @@ It does **not** delete the identities linked through it.
 Those are account data, and a configuration change is not an instruction to lock people out.
 If you want the identities gone as well, remove them first.
 
+## Decide whether the provider's email verification counts
+
+Two switches on the provider's form, both off unless a driver knows better, and both about the same question: how far this site trusts what the provider says about an address.
+
+{guilabel}`This provider's email verification counts`
+:   Switch it on and an address the provider says it verified is recorded as verified here, exactly as a magic link from this site would record one.
+    That address then satisfies automatic linking, and the site releases `email_verified: true` for it when it acts as an authorization server.
+    Switch it on only for a provider that really checks.
+    `google` and `github` ship with it on; every other driver ships with it off.
+
+{guilabel}`Attach to an existing account with the same verified email`
+:   Whether a person signing in with this provider for the first time is attached to an account that already exists, when the address matches a verified one.
+    It needs the switch above as well: the address being matched on is the one this provider just sent, so a provider whose word the site does not take cannot reach an account with it.
+
+```{warning}
+A provider that marks addresses verified according to weaker rules than yours is an account takeover waiting to happen: somebody registers there with an address that belongs to one of your users, and this site hands them the account.
+Turn the first switch on only where you know the provider refuses to call an address verified until the account has answered mail at it.
+
+Turning it off later stops it verifying anything new; addresses already recorded as verified stay that way, because they are identities and removing one is an unlink rather than a configuration change.
+```
+
+See {doc}`/concepts/email-verification` for the whole rule.
+
 ## Configure magic-link sign-in
 
 The `email` driver needs no external provider.

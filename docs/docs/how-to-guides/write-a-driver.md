@@ -110,8 +110,18 @@ Even the `plone-identity` driver ships it empty, though it knows its peer releas
 **Make `email_verified` a boolean, and count only `True`.**
 Several providers send the string `"true"`, and several send `1`.
 Normalize it.
-Automatic linking by email refuses anything that is not literally `True`, because a forged unverified address that reads as truthy is an account takeover.
+Everything that reads the flag refuses anything that is not literally `True`, because a forged unverified address that reads as truthy is an account takeover.
 See {doc}`/concepts/email-verification`.
+
+**Leave `default_trust_email_verification` alone unless your provider really checks.**
+It is the default for a per-provider switch that makes the provider's word verify an address here, exactly as a magic link would.
+Set it only if the provider refuses to call an address verified until the account has answered mail at it -- which is why `google` and `github` set it and nothing else does.
+An operator can always switch it on for a provider you left off.
+
+**Report every address the provider knows, not the first one.**
+`normalize_claims` fills `emails` with one entry per address -- `address`, `verified`, `primary` -- and the base class does that for you from the single address most providers send.
+Override it only where the provider offers more, and put them in the order they should be offered: primary first, verified before unverified.
+All of them go onto the person's profile, and `email` is the head of the list.
 
 **Never construct protocol messages by hand.**
 Authorization URLs, token requests, and JWT parsing all go through authlib.
