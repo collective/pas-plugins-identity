@@ -1,0 +1,40 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <!-- Off unless a site enables it on a type. Without it a new user's
+       password goes to source_users, which is where Plone has always kept
+       one. See .password for the four ways a Dexterity field holding a
+       credential leaks it, and why the hash is an annotation. -->
+  <plone:behavior
+      name="pas.plugins.identity.password"
+      title="Password storage"
+      description="Keep this user's password on the object rather than in source_users."
+      factory=".password.PasswordStorage"
+      provides="..interfaces.ICredentialStorage"
+      for="..interfaces.IUserContent"
+      />
+
+  <subscriber
+      for="..interfaces.IUserContent
+           zope.lifecycleevent.interfaces.IObjectCopiedEvent"
+      handler=".password.clear_on_copy"
+      />
+
+  <!-- Group membership. A schema-only behavior, so its one field is stored
+       on the content object exactly as a declared field was: the Profile
+       still answers ``profile.group_ids`` and the catalog still indexes it.
+       Enabled on the Group type as well, where the same field means the
+       groups that *group* is in. See ..utils.nesting for why membership stays
+       a fact stored on the member, whether the member is a person or a
+       group. -->
+  <plone:behavior
+      name="pas.plugins.identity.group_membership"
+      title="Group membership"
+      description="The groups this principal belongs to."
+      provides=".membership.IGroupMembership"
+      />
+
+</configure>

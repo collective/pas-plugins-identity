@@ -207,7 +207,7 @@ class IProviderRecords(Interface):
             "the frontend then draws the title alone rather than a "
             "placeholder every provider shares. What is stored is sanitized "
             "on the way in -- see "
-            "pas.plugins.identity.core.svg -- because this is markup a site "
+            "pas.plugins.identity.core.utils.svg -- because this is markup a site "
             "renders inline."
         ),
         required=False,

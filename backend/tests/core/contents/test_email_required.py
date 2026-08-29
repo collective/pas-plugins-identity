@@ -6,7 +6,7 @@ on the way in: the userid *is* the object id, so there is no field to send.
 See ``test_derived_ids.py``.
 """
 
-from pas.plugins.identity.core.profile import IUserProfileSchema
+from pas.plugins.identity.core.contents.profile import IUserProfileSchema
 
 import pytest
 

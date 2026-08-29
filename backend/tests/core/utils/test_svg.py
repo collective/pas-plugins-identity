@@ -1,13 +1,13 @@
 """Unit tests for the provider-icon sanitizer.
 
-No portal: :mod:`pas.plugins.identity.core.svg` is a pure function over a
+No portal: :mod:`pas.plugins.identity.core.utils.svg` is a pure function over a
 string, and the whole point of it is that it can be reasoned about without a
 site in the loop.
 """
 
-from pas.plugins.identity.core.svg import InvalidSVG
-from pas.plugins.identity.core.svg import MAX_LENGTH
-from pas.plugins.identity.core.svg import sanitize
+from pas.plugins.identity.core.utils.svg import InvalidSVG
+from pas.plugins.identity.core.utils.svg import MAX_LENGTH
+from pas.plugins.identity.core.utils.svg import sanitize
 
 import pytest
 

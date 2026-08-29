@@ -147,7 +147,7 @@ def mint_userid(
 
 #: Portal type created for a new user. Installing this add-on points it at
 #: ``UserProfile`` -- see
-#: :func:`~pas.plugins.identity.core.principals.sync_core_records` -- and it
+#: :func:`~pas.plugins.identity.core.subscribers.principals.sync_core_records` -- and it
 #: stays a record rather than a constant so a site may substitute a user type
 #: of its own. A type that does not provide :class:`IUserContent` is refused
 #: rather than created.
@@ -681,7 +681,7 @@ class IdentityPlugin(BasePlugin):
         inner group is in the outer one. The write is the same field on the
         same side, which is what makes the nesting a walk over one edge rather
         than a second kind of relation -- see
-        :mod:`pas.plugins.identity.core.nesting`.
+        :mod:`pas.plugins.identity.core.utils.nesting`.
 
         :param principal_id: The user or group to add.
         :param group_id: The group to add them to.
@@ -864,8 +864,8 @@ class IdentityPlugin(BasePlugin):
         :param claims: The claims of this login.
         """
         from pas.plugins.identity.core.controlpanel import get_provider
-        from pas.plugins.identity.core.groupmap import claimed_groups
-        from pas.plugins.identity.core.groupmap import map_groups
+        from pas.plugins.identity.core.utils.groupmap import claimed_groups
+        from pas.plugins.identity.core.utils.groupmap import map_groups
         from plone import api
 
         config = get_provider(provider)
@@ -1304,7 +1304,7 @@ class IdentityPlugin(BasePlugin):
         :param claims: Normalized claims.
         """
         from pas.plugins.identity.core.controlpanel import get_provider
-        from pas.plugins.identity.core.propertymap import apply_property_map
+        from pas.plugins.identity.core.utils.propertymap import apply_property_map
         from plone import api
 
         config = get_provider(provider_id)

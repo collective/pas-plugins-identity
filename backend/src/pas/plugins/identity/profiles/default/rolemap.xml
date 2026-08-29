@@ -24,7 +24,7 @@
     />
 
     <!-- The other three are the field permissions declared on the schema in
-         ``pas.plugins.identity.core.profile``. Every one of them is also managed by
+         ``pas.plugins.identity.core.contents.profile``. Every one of them is also managed by
          ``user_profile_workflow``, which is what decides who may read
          and write a Profile in each of its states; these entries are the
          site-wide floor for anywhere the workflow does not reach.

@@ -16,7 +16,7 @@ from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.container import grant_add_permissions
 from pas.plugins.identity.core.controlpanel.interfaces import IIdentitySettings
 from pas.plugins.identity.core.controlpanel.interfaces import IProfileSettings
-from pas.plugins.identity.core.principals import sync_core_records
+from pas.plugins.identity.core.subscribers.principals import sync_core_records
 from pas.plugins.identity.setuphandlers.catalog import add_indexes
 from pas.plugins.identity.setuphandlers.catalog import add_lexicon
 from pas.plugins.identity.setuphandlers.catalog import add_metadata

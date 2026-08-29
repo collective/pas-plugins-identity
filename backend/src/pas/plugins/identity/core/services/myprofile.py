@@ -92,7 +92,7 @@ class MyProfileGet(IdentityService):
         metadata, and the one that changes without the profile being written
         -- ``verified_emails``, which a magic link updates through the
         identity store -- is reindexed by a subscriber for exactly that
-        reason. See :mod:`pas.plugins.identity.core.emails`.
+        reason. See :mod:`pas.plugins.identity.core.utils.emails`.
 
         :param brain: The Profile brain.
         :returns: One entry per address, in the person's own order.

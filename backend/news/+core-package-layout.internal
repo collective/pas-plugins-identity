@@ -1,0 +1,9 @@
+Regrouped `core` by what a module is, rather than leaving twenty-five files at one level.
+
+`behaviors/` takes one module per behavior, `contents/` the two Dexterity classes, `serializers/`, `indexers/` and `subscribers/` each take their own registrations, and `utils/` takes the helpers that have no policy in them and nothing wired into ZCML — normalising an address, sanitizing an SVG, resolving a claim path, closing a group graph. The line drawn at `utils/` is that line and no other: `catalog`, `completeness`, `container`, `doctor`, `interfaces`, `localroles`, `logout`, `patches`, `portraits` and `verification` all decide something, so they stay one level up beside the things that call them. Eleven files remain where there were twenty-five.
+
+`core/configure.zcml` is now the four things that cannot move: the sub-package includes, the two class markers, and one adapter. Every other registration lives in the package it registers, next to the code it names.
+
+`core.subscribers` kept its dotted path by becoming a package whose `__init__` carries what the module carried, which is the shape `core.store` and `core.events` already had. The tests mirror the same folders.
+
+**This moves two persistent classes.** `UserProfile` and `UserGroup` are stored in the ZODB under their dotted path, so an existing site's profiles and groups are unreadable until it is migrated or rebuilt. The FTI declares the new path, and nothing in Plone can repair an object it cannot unpickle. @ericof

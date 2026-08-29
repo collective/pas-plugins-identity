@@ -18,8 +18,8 @@ deactivation.
 
 from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
-from pas.plugins.identity.core.group import UserGroup
-from pas.plugins.identity.core.profile import UserProfile
+from pas.plugins.identity.core.contents.group import UserGroup
+from pas.plugins.identity.core.contents.profile import UserProfile
 from plone import api
 from Products.CMFCore.indexing import processQueue
 

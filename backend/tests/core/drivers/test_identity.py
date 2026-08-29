@@ -4,7 +4,7 @@ from . import PLONE_IDENTITY_USERINFO
 from pas.plugins.identity.core.drivers import get_driver
 from pas.plugins.identity.core.drivers.identity import PloneIdentityDriver
 from pas.plugins.identity.core.drivers.oidc import GenericOIDCDriver
-from pas.plugins.identity.core.propertymap import apply_property_map
+from pas.plugins.identity.core.utils.propertymap import apply_property_map
 
 import pytest
 

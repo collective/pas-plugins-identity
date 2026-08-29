@@ -15,8 +15,8 @@
   <!-- Same lock as the UserProfile type: see that FTI. -->
   <property name="global_allow">True</property>
   <property name="icon_expr">string:users</property>
-  <property name="klass">pas.plugins.identity.core.group.UserGroup</property>
-  <property name="schema">pas.plugins.identity.core.group.IUserGroupSchema</property>
+  <property name="klass">pas.plugins.identity.core.contents.group.UserGroup</property>
+  <property name="schema">pas.plugins.identity.core.contents.group.IUserGroupSchema</property>
   <property name="add_permission">pas.plugins.identity.usergroup.add</property>
   <property name="link_target" />
   <property name="model_source" />

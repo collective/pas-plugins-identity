@@ -7,7 +7,7 @@ and not signed in with since.
 
 A picture on the Profile **wins** where the user filled it in: a picture
 somebody chose beats one a provider supplied. See
-:func:`pas.plugins.identity.core.serializer.portrait_of`, which is where the
+:func:`pas.plugins.identity.core.serializers.user.portrait_of`, which is where the
 precedence lives. What lands in ``portal_memberdata`` is the fallback.
 
 Syncing is **off by default**, which is worth explaining.
@@ -178,7 +178,7 @@ def has_picture(userid: str) -> bool:
 
     The question the ``[server]`` layer needs before it publishes a
     ``picture`` claim, and it has to be asked of both stores for the same
-    reason :func:`pas.plugins.identity.core.serializer.portrait_of` reads
+    reason :func:`pas.plugins.identity.core.serializers.user.portrait_of` reads
     both: which one holds a given user's picture depends on whether that
     user has a Profile, and the server layer is not allowed to know.
 

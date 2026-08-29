@@ -261,7 +261,7 @@ class IUserContent(Interface):
     the *member*, because ``getGroupsForPrincipal`` runs on every permission
     check that touches a local role while listing a group's members does not.
     A type gets it from the
-    :class:`~pas.plugins.identity.core.membership.IGroupMembership` behavior
+    :class:`~pas.plugins.identity.core.behaviors.membership.IGroupMembership` behavior
     rather than by declaring the field again.
 
     The object's **id within its container is the userid**. That is what lets
@@ -343,7 +343,7 @@ class IGroupContent(Interface):
     group it names, so membership stays a fact stored on the member whether
     the member is a person or a group, and the transitive answer is a walk
     over one field rather than a second kind of edge. See
-    :mod:`pas.plugins.identity.core.nesting`.
+    :mod:`pas.plugins.identity.core.utils.nesting`.
     """
 
     group_id = Attribute("The canonical group id. Assigned once.")

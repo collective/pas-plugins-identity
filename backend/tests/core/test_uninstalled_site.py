@@ -15,14 +15,14 @@ gets its site back.
 
 from pas.plugins.identity import PACKAGE_NAME
 from pas.plugins.identity import setuphandlers
-from pas.plugins.identity.core import emails
-from pas.plugins.identity.core import indexing
+from pas.plugins.identity.core.utils import emails
+from pas.plugins.identity.core import indexers
 from pas.plugins.identity.core import subscribers
 from pas.plugins.identity.core.catalog import CATALOG_ID
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
-from pas.plugins.identity.core.gate import enforcing
-from pas.plugins.identity.core.gate import incomplete_profile_url
+from pas.plugins.identity.core.subscribers.gate import enforcing
+from pas.plugins.identity.core.subscribers.gate import incomplete_profile_url
 from pas.plugins.identity.core.pas.profile import IdentityProfilePlugin
 from pas.plugins.identity.core.pas.profile import PLUGIN_ID
 from pas.plugins.identity.core.services import groups as group_services
@@ -95,15 +95,15 @@ class TestIndexingSubscribersAreInert:
 
     def test_moved_is_a_no_op(self):
         """A Profile appearing here indexes nowhere, quietly."""
-        indexing.profile_moved(self.portal, FakeEvent(new_parent=self.portal))
+        indexers.profile_moved(self.portal, FakeEvent(new_parent=self.portal))
 
     def test_will_be_moved_is_a_no_op(self):
         """Same on the way out."""
-        indexing.profile_will_be_moved(self.portal, FakeEvent(old_parent=self.portal))
+        indexers.profile_will_be_moved(self.portal, FakeEvent(old_parent=self.portal))
 
     def test_modified_is_a_no_op(self):
         """Same on edit."""
-        indexing.profile_modified(self.portal, FakeEvent())
+        indexers.profile_modified(self.portal, FakeEvent())
 
 
 class TestTheGateIsInert:
@@ -303,7 +303,7 @@ class TestSyncingTheCoreRecords:
         belonged to two profiles until they were merged, so the core half was
         always already in place. Merging inverted the order and the demo
         stack refused to start."""
-        from pas.plugins.identity.core.principals import sync_core_records
+        from pas.plugins.identity.core.subscribers.principals import sync_core_records
 
         sync_core_records()
 

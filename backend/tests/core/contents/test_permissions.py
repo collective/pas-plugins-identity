@@ -1,6 +1,6 @@
 """Who may read and write a Profile's fields, in each workflow state.
 
-The schema in :mod:`pas.plugins.identity.core.profile` declares a
+The schema in :mod:`pas.plugins.identity.core.contents.profile` declares a
 ``read_permission`` and a ``write_permission`` on every field. Declaring one is
 not granting it: until this package said who holds them, they were permissions
 no rolemap and no workflow mentioned, which does not mean "nobody" -- it means

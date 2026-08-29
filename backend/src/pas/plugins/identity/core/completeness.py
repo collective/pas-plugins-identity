@@ -31,8 +31,8 @@ missing anything" has no business reversing it.
 
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.container import PREFIX
-from pas.plugins.identity.core.profile import IUserProfileSchema
-from pas.plugins.identity.core.profile import UserProfile
+from pas.plugins.identity.core.contents.profile import IUserProfileSchema
+from pas.plugins.identity.core.contents.profile import UserProfile
 from plone import api
 from plone.api.exc import InvalidParameterError
 from plone.dexterity.utils import iterSchemata
@@ -81,7 +81,7 @@ def _declared(profile: UserProfile) -> tuple[str, ...]:
     """Return the fields the profile's own type marks required.
 
     Read from the object rather than from
-    :class:`~pas.plugins.identity.core.profile.IUserProfileSchema`, and
+    :class:`~pas.plugins.identity.core.contents.profile.IUserProfileSchema`, and
     through ``iterSchemata`` rather than the FTI's own schema, so that a site
     running its own user type or a behavior that adds a required field gets
     the answer for the type it actually has.

@@ -2,7 +2,7 @@
 
 A user's picture lives on their Profile
 and that the member portrait is the fallback -- see
-:func:`pas.plugins.identity.core.serializer.portrait_of`, which is the read
+:func:`pas.plugins.identity.core.serializers.user.portrait_of`, which is the read
 side of that decision. Only the read side existed: a portrait uploaded
 through user preferences went to ``portal_memberdata`` like any other, so a
 site running this layer stored the picture in the place the reader looks at

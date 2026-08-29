@@ -29,7 +29,7 @@ Nothing here commits. Login runs inside the request's transaction, and a
 Profile minted for a login that then fails should not outlive it.
 
 **Which fields.** The provider's own property map, the one the control panel
-edits and :mod:`pas.plugins.identity.core.propertymap` applies to the Plone
+edits and :mod:`pas.plugins.identity.core.utils.propertymap` applies to the Plone
 user, so a site states the mapping once and both the user and the Profile
 follow it. Claims are addressed by dotted path there, which is how
 ``address.formatted`` reaches into a provider's own document; a path landing
@@ -58,13 +58,13 @@ from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.completeness import reconcile
 from pas.plugins.identity.core.container import get_container
-from pas.plugins.identity.core.emails import normalize
+from pas.plugins.identity.core.utils.emails import normalize
 from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
 from pas.plugins.identity.core.events import IdentityLinked
 from pas.plugins.identity.core.events import UserClaimsRefreshed
 from pas.plugins.identity.core.interfaces import Claims
-from pas.plugins.identity.core.profile import UserProfile
-from pas.plugins.identity.core.propertymap import resolve_claim
+from pas.plugins.identity.core.contents.profile import UserProfile
+from pas.plugins.identity.core.utils.propertymap import resolve_claim
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from pas.plugins.identity.core.verification import record_verified_addresses
 from persistent.mapping import PersistentMapping
@@ -89,7 +89,7 @@ PROVIDER_VALUES_KEY = "pas.plugins.identity.provider_values"
 #: ``email`` is absent for a different reason: it is derived from ``emails``,
 #: and the addresses have their own path in :func:`sync_addresses`. A map
 #: naming it is ignored here and still honoured against the *Plone user*,
-#: which is what :mod:`pas.plugins.identity.core.propertymap` applies.
+#: which is what :mod:`pas.plugins.identity.core.utils.propertymap` applies.
 WRITABLE_FIELDS = frozenset({
     "fullname",
     "home_page",
@@ -114,7 +114,7 @@ def claim_fields(provider_id: str) -> dict[str, str]:
     """Return the claim path to Profile field map for one provider.
 
     The provider's own map, which is what the control panel edits and what
-    :mod:`pas.plugins.identity.core.propertymap` applies to a Plone user, so a
+    :mod:`pas.plugins.identity.core.utils.propertymap` applies to a Plone user, so a
     site configures the mapping once and both the user and the Profile follow
     it. A provider that has no map gets :data:`DEFAULT_CLAIM_FIELDS`.
 

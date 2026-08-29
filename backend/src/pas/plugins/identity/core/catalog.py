@@ -52,8 +52,8 @@ from zope.interface import implementer
 CATALOG_ID = "portal_identity_catalog"
 
 #: ``portal_type`` of the Profile content type. Lives here rather than in
-#: ``core.profile`` because the catalog and the subscribers need it and
-#: neither should have to import the class to get it.
+#: ``core.contents.profile`` because the catalog and the subscribers both need
+#: it and neither should have to import the class to get it.
 PROFILE_PORTAL_TYPE = "UserProfile"
 
 #: ``portal_type`` of the Group content type.
@@ -64,7 +64,7 @@ GROUP_PORTAL_TYPE = "UserGroup"
 CATALOGUED_TYPES = (PROFILE_PORTAL_TYPE, GROUP_PORTAL_TYPE)
 
 #: Indexes the catalog is created with. ``login`` is lowercased at index time
-#: by the indexer in :mod:`pas.plugins.identity.core.indexing` and must be
+#: by the indexer in :mod:`pas.plugins.identity.core.indexers` and must be
 #: lowercased at query time by every caller -- login names are
 #: case-insensitive in Plone, FieldIndex is not.
 INDEXES = (

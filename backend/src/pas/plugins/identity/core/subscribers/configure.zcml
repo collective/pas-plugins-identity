@@ -1,0 +1,102 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <!-- Keep the workflow state honest about what the profile carries. Bound to
+       the Profile marker rather than to the catalog one: a Group has no
+       required-information flow, and firing a transition it does not have
+       would be an error rather than a no-op.
+
+       Added as well as modified. A profile created with everything already in
+       it (by api.user.create, by @users POST, by an import) fires no
+       modification event at all, and would otherwise sit in incomplete
+       waiting for a write that never comes. -->
+  <subscriber
+      for="..interfaces.IUserProfile
+           zope.lifecycleevent.interfaces.IObjectAddedEvent"
+      handler=".on_profile_modified"
+      />
+
+  <subscriber
+      for="..interfaces.IUserProfile
+           zope.lifecycleevent.interfaces.IObjectModifiedEvent"
+      handler=".on_profile_modified"
+      />
+
+  <!-- First login and claims sync. Registered for the event contract rather
+       than called from the plugin: anything that fires these events gets
+       profile handling for free, which is what makes the events a real
+       extension point instead of an internal detail with a public name. -->
+  <subscriber
+      for="..events.IExternalIdentityAuthenticated"
+      handler=".on_authenticated"
+      />
+
+  <subscriber
+      for="..events.IIdentityLinked"
+      handler=".on_identity_linked"
+      />
+
+  <subscriber
+      for="..events.IUserClaimsRefreshed"
+      handler=".on_claims_refreshed"
+      />
+
+  <!-- A Profile's ``email`` and ``verified_emails`` are derived from the
+       identity store, and everything reads them from catalog metadata.
+       Confirming a magic link writes to the store and never touches the
+       Profile, so the derived values would be right on the object and wrong
+       everywhere they are used. See ..utils.emails. -->
+  <subscriber
+      for="..events.IIdentityLinked"
+      handler=".on_email_identity_changed"
+      />
+
+  <subscriber
+      for="..events.IIdentityUnlinked"
+      handler=".on_email_identity_changed"
+      />
+
+  <!-- Every other way of logging in. The three events above are fired only
+       by a federated sign-in, so without this the required-information flow
+       reached federated users and nobody else: a source_users account was
+       never minted a Profile and never reconciled, and the gate therefore
+       had nothing to hold it for. -->
+  <subscriber
+      for="Products.PluggableAuthService.interfaces.events.IUserLoggedInEvent"
+      handler=".on_logged_in"
+      />
+
+  <!-- The required-information gate. Registered for the publication event
+       rather than around a view, because what it enforces is that there is no
+       page to reach instead. It excludes far more than it catches, and each
+       exclusion is a way the gate would otherwise break the escape it depends
+       on; see .gate. -->
+  <subscriber
+      for="ZPublisher.interfaces.IPubAfterTraversal"
+      handler=".gate.on_after_traversal"
+      />
+
+  <!-- Where Profiles live is configurable and set late. A layered profile
+       may move the container after this package's handler has run, so the
+       core record naming it is derived and re-derived rather than written
+       once. See .principals. -->
+  <subscriber
+      for="plone.registry.interfaces.IRecordModifiedEvent"
+      handler=".principals.on_container_setting_changed"
+      />
+
+  <!-- The other half of the same problem. A container this package did not
+       create gets no add permission from the creation path, and neither the
+       install handler nor the settings subscriber ever sees it: one runs too
+       early and the other watches records rather than content. A folder
+       appearing at the configured path is the third case, and the demo hits
+       it on every fresh site. -->
+  <subscriber
+      for="Products.CMFCore.interfaces.IFolderish
+           zope.lifecycleevent.interfaces.IObjectAddedEvent"
+      handler=".principals.on_folder_added"
+      />
+
+</configure>

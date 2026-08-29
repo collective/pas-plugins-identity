@@ -46,7 +46,7 @@ from pas.plugins.identity.core.drivers import get_driver
 from pas.plugins.identity.core.drivers.base import BaseDriver
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.interfaces import ProviderUnusable
-from pas.plugins.identity.core.svg import sanitize as sanitize_svg
+from pas.plugins.identity.core.utils.svg import sanitize as sanitize_svg
 from plone import api
 from plone.registry import field as registry_field
 from plone.registry.interfaces import IRegistry
@@ -190,9 +190,9 @@ class ProviderConfig:
     :ivar foreground_color: Button foreground as a hex value, or empty.
     :ivar config: Driver-specific settings.
     :ivar propertymap: Claim path to Plone user field. Applied on every
-        login -- see :mod:`pas.plugins.identity.core.propertymap`.
+        login -- see :mod:`pas.plugins.identity.core.utils.propertymap`.
     :ivar groupmap: Provider-side group name to local group id. Applied on
-        every login -- see :mod:`pas.plugins.identity.core.groupmap`. Empty
+        every login -- see :mod:`pas.plugins.identity.core.utils.groupmap`. Empty
         by default, which is what makes a provider grant no groups at all
         until somebody says otherwise.
     """

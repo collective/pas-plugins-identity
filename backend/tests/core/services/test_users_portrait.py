@@ -8,7 +8,7 @@ on *both* stores rather than only on the one that was written.
 """
 
 from base64 import b64encode
-from pas.plugins.identity.core.serializer import portrait_of
+from pas.plugins.identity.core.serializers.user import portrait_of
 from pas.plugins.identity.core.services.users import ProfileUsersPatch
 from plone import api
 

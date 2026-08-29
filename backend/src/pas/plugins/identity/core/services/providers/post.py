@@ -14,7 +14,7 @@ from pas.plugins.identity.core.interfaces import FlowError
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.services.providers import ProvidersService
 from pas.plugins.identity.core.services.providers import TEST_ACTION
-from pas.plugins.identity.core.svg import InvalidSVG
+from pas.plugins.identity.core.utils.svg import InvalidSVG
 from plone.restapi.deserializer import json_body
 
 

@@ -1,7 +1,7 @@
 """The generic OpenID Connect driver."""
 
 from pas.plugins.identity.core.drivers.base import BaseDriver
-from pas.plugins.identity.core.groupmap import DEFAULT_GROUP_CLAIM
+from pas.plugins.identity.core.utils.groupmap import DEFAULT_GROUP_CLAIM
 
 
 class GenericOIDCDriver(BaseDriver):

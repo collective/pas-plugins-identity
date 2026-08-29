@@ -1,6 +1,6 @@
 """Turning a provider's group claim into local group ids.
 
-The counterpart of :mod:`pas.plugins.identity.core.propertymap`, and it works
+The counterpart of :mod:`pas.plugins.identity.core.utils.propertymap`, and it works
 the same way: a per-provider mapping an operator edits, resolved against the
 claims of the login that is happening. It is deliberately *not* on the driver.
 A driver is one class shared by every provider using it -- two Keycloak realms
@@ -19,7 +19,7 @@ from it would let anyone who can name a group at the far end create one here.
 """
 
 from pas.plugins.identity.core.interfaces import Claims
-from pas.plugins.identity.core.propertymap import resolve_claim
+from pas.plugins.identity.core.utils.propertymap import resolve_claim
 
 
 #: The claim a driver reads groups from when it does not say otherwise.

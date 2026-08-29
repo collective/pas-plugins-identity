@@ -117,7 +117,7 @@ class TestTheFieldIsGuardedByIt:
 
     def test_group_ids_names_the_new_permission(self):
         """The field moved to a behavior; the permission moved with it."""
-        from pas.plugins.identity.core.membership import IGroupMembership
+        from pas.plugins.identity.core.behaviors.membership import IGroupMembership
         from plone.autoform.interfaces import WRITE_PERMISSIONS_KEY
 
         permissions = IGroupMembership.queryTaggedValue(WRITE_PERMISSIONS_KEY)
@@ -125,7 +125,7 @@ class TestTheFieldIsGuardedByIt:
         assert permissions["group_ids"] == ("pas.plugins.identity.content.editgroups")
 
     def test_the_other_fields_still_name_the_ordinary_one(self):
-        from pas.plugins.identity.core.profile import IUserProfileSchema
+        from pas.plugins.identity.core.contents.profile import IUserProfileSchema
         from plone.autoform.interfaces import WRITE_PERMISSIONS_KEY
 
         permissions = IUserProfileSchema.queryTaggedValue(WRITE_PERMISSIONS_KEY)

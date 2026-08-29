@@ -7,8 +7,8 @@ what a magic link creates -- and nothing else. A provider asserting
 start counting here.
 """
 
-from pas.plugins.identity.core.emails import clean
-from pas.plugins.identity.core.emails import normalize
+from pas.plugins.identity.core.utils.emails import clean
+from pas.plugins.identity.core.utils.emails import normalize
 from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
 from pas.plugins.identity.core.subscribers import get_profile
 from plone import api
@@ -72,7 +72,7 @@ class TestOutsideASite:
     """
 
     def test_nothing_is_verified_without_a_portal(self, monkeypatch):
-        from pas.plugins.identity.core import emails
+        from pas.plugins.identity.core.utils import emails
 
         def no_portal(_name):
             raise api.exc.CannotGetPortalError("no site")
@@ -82,7 +82,7 @@ class TestOutsideASite:
         assert emails.verified_addresses("alice", (ADDRESS,)) == ()
 
     def test_the_first_address_still_answers(self, monkeypatch):
-        from pas.plugins.identity.core import emails
+        from pas.plugins.identity.core.utils import emails
 
         def no_portal(_name):
             raise api.exc.CannotGetPortalError("no site")

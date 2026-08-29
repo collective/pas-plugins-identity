@@ -150,7 +150,7 @@ class TestTheFirstLoginWritesToTheClaimedStore:
 
     def test_the_reader_finds_the_picture(self):
         """End to end: what ``@users`` reports after a single login."""
-        from pas.plugins.identity.core.serializer import portrait_of
+        from pas.plugins.identity.core.serializers.user import portrait_of
 
         profile = get_profile(userid := self.authenticate())
 

@@ -1,7 +1,7 @@
 """The group graph, closed over.
 
 Two halves. The first drives
-:mod:`pas.plugins.identity.core.nesting` as the pure functions it is -- no
+:mod:`pas.plugins.identity.core.utils.nesting` as the pure functions it is -- no
 portal, no catalog, just a mapping -- because that is where the cycle and
 depth behaviour is decidable. The second proves the plugin actually asks it,
 which the first cannot: a correct closure the plugin never calls is a
@@ -9,10 +9,10 @@ membership rule nothing enforces.
 """
 
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
-from pas.plugins.identity.core.nesting import build_edges
-from pas.plugins.identity.core.nesting import close_over
-from pas.plugins.identity.core.nesting import MAX_DEPTH
-from pas.plugins.identity.core.nesting import members_of
+from pas.plugins.identity.core.utils.nesting import build_edges
+from pas.plugins.identity.core.utils.nesting import close_over
+from pas.plugins.identity.core.utils.nesting import MAX_DEPTH
+from pas.plugins.identity.core.utils.nesting import members_of
 from plone import api
 from zope.lifecycleevent import modified
 

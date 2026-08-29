@@ -6,12 +6,12 @@ this reads the answer PAS already resolved to rather than re-running the
 resolution and hoping to agree with it.
 """
 
-from .services import USERINFO
+from ..services import USERINFO
 from pas.plugins.identity.core.pas import PLUGIN_ID
-from pas.plugins.identity.core.serializer import identities_of
-from pas.plugins.identity.core.serializer import portrait_of
-from pas.plugins.identity.core.serializer import profile_url_of
-from pas.plugins.identity.core.serializer import source_of
+from pas.plugins.identity.core.serializers.user import identities_of
+from pas.plugins.identity.core.serializers.user import portrait_of
+from pas.plugins.identity.core.serializers.user import profile_url_of
+from pas.plugins.identity.core.serializers.user import source_of
 from plone import api
 from plone.namedfile.file import NamedBlobImage
 from plone.restapi.interfaces import ISerializeToJson

@@ -1,7 +1,7 @@
 """Unit tests for claim-to-property resolution."""
 
-from pas.plugins.identity.core.propertymap import apply_property_map
-from pas.plugins.identity.core.propertymap import resolve_claim
+from pas.plugins.identity.core.utils.propertymap import apply_property_map
+from pas.plugins.identity.core.utils.propertymap import resolve_claim
 
 import pytest
 

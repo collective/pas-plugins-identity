@@ -15,7 +15,7 @@ from pas.plugins.identity.core.controlpanel import login_providers
 from pas.plugins.identity.core.controlpanel import normalize_color
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
-from pas.plugins.identity.core.svg import InvalidSVG
+from pas.plugins.identity.core.utils.svg import InvalidSVG
 
 import pytest
 

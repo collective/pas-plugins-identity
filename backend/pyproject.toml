@@ -214,7 +214,7 @@ preview = true
 "tests/core/pas/stubs.py" = ["A002"]
 # S311: the churn sequences are randomized for coverage of orderings, not
 # for unpredictability; the seeds are fixed precisely so they repeat.
-"tests/core/test_churn.py" = ["S311"]
+"tests/core/indexers/test_churn.py" = ["S311"]
 
 [tool.check-manifest]
 ignore = [

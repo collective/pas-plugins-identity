@@ -20,8 +20,8 @@ from pas.plugins.identity.core.pas.plugin import GROUP_CONTAINER_PATH_RECORD
 from pas.plugins.identity.core.pas.plugin import GROUP_CONTENT_TYPE_RECORD
 from pas.plugins.identity.core.pas.plugin import USER_CONTAINER_PATH_RECORD
 from pas.plugins.identity.core.pas.plugin import USER_CONTENT_TYPE_RECORD
-from pas.plugins.identity.core.principals import container_path
-from pas.plugins.identity.core.principals import on_folder_added
+from pas.plugins.identity.core.subscribers.principals import container_path
+from pas.plugins.identity.core.subscribers.principals import on_folder_added
 from plone import api
 from zope.component.hooks import setSite
 

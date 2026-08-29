@@ -17,7 +17,7 @@ enumeration and groups and must never become a way to log in -- see
 core adapts the object to ``ICredentialStorage`` and answers.
 """
 
-from pas.plugins.identity.core.behaviors import ANNOTATION_KEY
+from pas.plugins.identity.core.behaviors.password import ANNOTATION_KEY
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.interfaces import ICredentialStorage
 from plone import api
@@ -124,7 +124,7 @@ class TestTheStorageIsNotAField:
     def test_it_is_not_in_the_schema(self):
         """So plone.restapi cannot serialize it and GenericSetup cannot
         export it: neither walks annotations."""
-        from pas.plugins.identity.core.profile import IUserProfileSchema
+        from pas.plugins.identity.core.contents.profile import IUserProfileSchema
 
         assert "password" not in IUserProfileSchema.names()
         assert "hash" not in IUserProfileSchema.names()

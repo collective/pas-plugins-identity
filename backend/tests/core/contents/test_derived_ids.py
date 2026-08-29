@@ -13,8 +13,8 @@ roles and sharing entries all name the old id and do not follow.
 """
 
 from pas.plugins.identity.core.catalog import query_catalog
-from pas.plugins.identity.core.group import IUserGroupSchema
-from pas.plugins.identity.core.profile import IUserProfileSchema
+from pas.plugins.identity.core.contents.group import IUserGroupSchema
+from pas.plugins.identity.core.contents.profile import IUserProfileSchema
 from plone import api
 
 import pytest

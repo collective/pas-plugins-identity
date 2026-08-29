@@ -14,7 +14,7 @@ to proceed until the profile carries what the site requires. The relying party
 cannot enforce this and should not have to; the provider is the only party
 that knows what it requires.
 
-Asked through :func:`pas.plugins.identity.core.gate.incomplete_profile_url`,
+Asked through :func:`pas.plugins.identity.core.subscribers.gate.incomplete_profile_url`,
 which is the same question the gate asks on every page load and reads the same
 registry record -- so an authorization request and a browser request cannot
 disagree about whether a profile is finished.
@@ -23,7 +23,7 @@ disagree about whether a profile is finished.
 from pas.plugins.identity import PACKAGE_NAME
 from pas.plugins.identity.core.completeness import REQUIRED_FIELDS_RECORD
 from pas.plugins.identity.core.container import get_container
-from pas.plugins.identity.core.gate import ENFORCE_RECORD
+from pas.plugins.identity.core.subscribers.gate import ENFORCE_RECORD
 from pas.plugins.identity.server.clients import add_client
 from plone import api
 from plone.app.testing import applyProfile

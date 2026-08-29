@@ -13,7 +13,7 @@ through ``api.group.create`` like any other.
 
 **Groups nest, in the same direction.** A group carries ``group_ids`` too,
 from the same
-:class:`~pas.plugins.identity.core.membership.IGroupMembership` behavior a
+:class:`~pas.plugins.identity.core.behaviors.membership.IGroupMembership` behavior a
 Profile carries, and it means the same thing: the groups this principal
 belongs to. So everybody in an inner group is in every group the inner group
 names, which is how a GitHub child team inherits its parent's access.
@@ -25,7 +25,7 @@ turned out not to matter, because the recursion is not over the thing that is
 large. A site has as many groups as it has teams, the whole graph is in
 catalog metadata, and one query returns it -- so the cost grows with the
 number of teams rather than with the number of people. See
-:mod:`pas.plugins.identity.core.nesting`, which also says what happens to a
+:mod:`pas.plugins.identity.core.utils.nesting`, which also says what happens to a
 cycle.
 """
 
@@ -49,7 +49,7 @@ class IUserGroupSchema(model.Schema, IGroupContent):
     container is the group id.
 
     ``group_ids`` -- the groups this group is nested inside -- comes from the
-    :class:`~pas.plugins.identity.core.membership.IGroupMembership` behavior
+    :class:`~pas.plugins.identity.core.behaviors.membership.IGroupMembership` behavior
     the FTI enables, which is the same behavior the Profile type enables.
     """
 

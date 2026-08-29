@@ -39,7 +39,7 @@ class TestTheVocabulary:
 
     def test_the_field_uses_it(self):
         """Which is what gives the widget something to offer."""
-        from pas.plugins.identity.core.membership import IGroupMembership
+        from pas.plugins.identity.core.behaviors.membership import IGroupMembership
 
         value_type = IGroupMembership["group_ids"].value_type
 

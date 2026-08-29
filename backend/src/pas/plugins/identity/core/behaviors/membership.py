@@ -20,7 +20,7 @@ That is what makes nesting work in the same direction everything else here
 does: membership is always a fact stored on the member, whether the member is
 a person or a group, so the transitive answer is a walk over the same field
 rather than a second kind of edge. See
-:mod:`pas.plugins.identity.core.nesting`.
+:mod:`pas.plugins.identity.core.utils.nesting`.
 
 **Ordering matters on the form, not in the data.** The field lives in a
 ``groups`` fieldset so that a Profile's edit form keeps the personal fields

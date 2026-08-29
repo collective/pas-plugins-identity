@@ -23,12 +23,12 @@ theirs *here* is a question whose answer changes -- so the list is what is
 stored and the single value everything else reads is computed: the first
 verified address, or the first address at all. An address counts as verified
 when this site holds an ``email`` identity for it, which is what a magic link
-creates; see :mod:`pas.plugins.identity.core.emails`, which also says why
+creates; see :mod:`pas.plugins.identity.core.utils.emails`, which also says why
 linking one reindexes the Profile.
 
 ``image`` is where a user's picture lives, and it wins over the member
 portrait when it is set -- see
-:func:`pas.plugins.identity.core.serializer.portrait_of` for the precedence
+:func:`pas.plugins.identity.core.serializers.user.portrait_of` for the precedence
 and why it runs that way round. It is not in
 :data:`~pas.plugins.identity.core.pas.profile.PROPERTY_FIELDS`: those are served
 from catalog metadata, and a blob has no business in a brain.
@@ -36,10 +36,10 @@ from catalog metadata, and a blob has no business in a brain.
 
 from pas.plugins.identity import _
 from pas.plugins.identity import logger
-from pas.plugins.identity.core.emails import clean
-from pas.plugins.identity.core.emails import normalize
-from pas.plugins.identity.core.emails import preferred_address
-from pas.plugins.identity.core.emails import verified_addresses
+from pas.plugins.identity.core.utils.emails import clean
+from pas.plugins.identity.core.utils.emails import normalize
+from pas.plugins.identity.core.utils.emails import preferred_address
+from pas.plugins.identity.core.utils.emails import verified_addresses
 from pas.plugins.identity.core.interfaces import IUserContent
 from plone.autoform.directives import read_permission
 from plone.autoform.directives import write_permission
@@ -58,7 +58,7 @@ class IUserProfileSchema(model.Schema, IUserContent):
     which is how core knows objects of this type are users and may create
     them. Two of the three attributes that interface promises -- ``userid``
     and ``login`` -- are here; the third, ``group_ids``, comes from the
-    :class:`~pas.plugins.identity.core.membership.IGroupMembership` behavior,
+    :class:`~pas.plugins.identity.core.behaviors.membership.IGroupMembership` behavior,
     which the FTI enables and which the Group type enables too. Claiming the
     marker states the contract rather than adding to it.
 

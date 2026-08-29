@@ -20,8 +20,8 @@
        in this package has to know. -->
   <property name="global_allow">True</property>
   <property name="icon_expr">string:person</property>
-  <property name="klass">pas.plugins.identity.core.profile.UserProfile</property>
-  <property name="schema">pas.plugins.identity.core.profile.IUserProfileSchema</property>
+  <property name="klass">pas.plugins.identity.core.contents.profile.UserProfile</property>
+  <property name="schema">pas.plugins.identity.core.contents.profile.IUserProfileSchema</property>
   <property name="add_permission">pas.plugins.identity.userprofile.add</property>
   <property name="link_target" />
   <property name="model_source" />

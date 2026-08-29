@@ -36,7 +36,7 @@ had just been written.
 """
 
 from pas.plugins.identity import logger
-from pas.plugins.identity.core.emails import normalize
+from pas.plugins.identity.core.utils.emails import normalize
 from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.core.interfaces import IdentityCollision
 from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID

@@ -16,7 +16,7 @@ from OFS.interfaces import IObjectWillBeMovedEvent
 from pas.plugins.identity.core.catalog import IdentityProfileCatalog
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.interfaces import IUserProfile
-from pas.plugins.identity.core.profile import UserProfile
+from pas.plugins.identity.core.contents.profile import UserProfile
 from plone.indexer.decorator import indexer
 from zope.lifecycleevent.interfaces import IObjectModifiedEvent
 from zope.lifecycleevent.interfaces import IObjectMovedEvent

@@ -1,0 +1,12 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <!-- What `@users` says about a user once this package is installed: the
+       identities linked, the plugin the userid came from, and the Profile.
+       On our own browser layer, so a site that has not installed this package
+       is untouched. -->
+  <adapter factory=".user.SerializeIdentityUserToJson" />
+
+</configure>

@@ -39,9 +39,9 @@ from pas.plugins.identity.core.catalog import profile_brains
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.interfaces import IOwnsUserProperties
-from pas.plugins.identity.core.nesting import build_edges
-from pas.plugins.identity.core.nesting import close_over
-from pas.plugins.identity.core.nesting import members_of
+from pas.plugins.identity.core.utils.nesting import build_edges
+from pas.plugins.identity.core.utils.nesting import close_over
+from pas.plugins.identity.core.utils.nesting import members_of
 from plone import api
 from Products.PlonePAS.interfaces.capabilities import IDeleteCapability
 from Products.PlonePAS.interfaces.group import IGroupIntrospection
@@ -497,7 +497,7 @@ class IdentityProfilePlugin(BasePlugin):
         group that group belongs to. The walk is over the group graph, which
         is the small one -- it grows with the number of teams, not with the
         number of people -- and it comes out of catalog metadata in a single
-        query. See :mod:`pas.plugins.identity.core.nesting`.
+        query. See :mod:`pas.plugins.identity.core.utils.nesting`.
 
         :param principal: The user PAS is asking about.
         :param request: The request, unused.

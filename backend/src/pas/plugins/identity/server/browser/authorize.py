@@ -26,7 +26,7 @@ any later request for a scope not already agreed to.
 """
 
 from AccessControl import Unauthorized
-from pas.plugins.identity.core.gate import incomplete_profile_url
+from pas.plugins.identity.core.subscribers.gate import incomplete_profile_url
 from pas.plugins.identity.server.clients import get_client
 from pas.plugins.identity.server.codes import ChallengeError
 from pas.plugins.identity.server.codes import check_challenge

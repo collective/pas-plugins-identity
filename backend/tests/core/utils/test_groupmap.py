@@ -5,9 +5,9 @@ it that way: what a provider asserted and what that grants are two separate
 questions, and only the second one has an opinion.
 """
 
-from pas.plugins.identity.core.groupmap import claimed_groups
-from pas.plugins.identity.core.groupmap import DEFAULT_GROUP_CLAIM
-from pas.plugins.identity.core.groupmap import map_groups
+from pas.plugins.identity.core.utils.groupmap import claimed_groups
+from pas.plugins.identity.core.utils.groupmap import DEFAULT_GROUP_CLAIM
+from pas.plugins.identity.core.utils.groupmap import map_groups
 
 import pytest
 
