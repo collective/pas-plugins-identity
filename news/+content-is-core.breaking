@@ -1,0 +1,9 @@
+Users and groups as content is no longer an optional layer. The documentation, the federation demo and the CI matrix follow.
+
+The concepts pages that described three layers describe two. {doc}`concepts/layers` keeps the argument for the boundary that is left and adds the argument against the one that went: a layer earns its boundary when the combinations it creates are ones somebody wants and somebody tests, and `[content]` failed both halves — its dependency ships with Plone, so nobody was ever spared anything, while the option created a second configuration of every code path that touches a user.
+
+{doc}`how-to-guides/install` carries the upgrade note, prominently, because there is no upgrade step and the failure mode is silent: a site installed by an earlier version looks installed and has no content types, no catalog and no `identity_profile` plugin until the add-on is reinstalled.
+
+The federation demo's identity provider stops depending on a profile that no longer exists. The relying party gets the content types too, which it did not before — that follows from the merge rather than being chosen, and the demo README says so.
+
+The backend CI matrix drops from four dependency configurations to two, `core` and `+server`, and the import-linter contracts from two to one. @ericof

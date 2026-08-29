@@ -48,7 +48,7 @@ Both of this package's vocabularies are registered at `Modify portal content`.
 The audit log never records credentials or tokens.
 
 **The layer boundary is enforced in CI.**
-Core never imports from `[content]` or `[server]`, and neither optional layer imports the other.
+Core never imports from `[server]`.
 See {doc}`/concepts/layers`.
 
 **Protocol messages are never constructed by hand.**

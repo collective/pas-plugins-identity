@@ -67,4 +67,4 @@ This is the one place where the package overrides what the user asked for, and i
 ## Where to go next
 
 -   {doc}`/reference/events` lists the events fired when an identity is created, linked, or unlinked.
--   {doc}`layers` explains how the optional layers attach to this core without importing it in the wrong direction.
+-   {doc}`layers` explains how the optional server layer attaches to this core without importing it in the wrong direction.

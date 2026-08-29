@@ -51,26 +51,20 @@ Why the design works the way it does, and what it refuses to do.
 ````
 `````
 
-## The three layers
+## The two layers
 
-The package installs in three layers, and you choose how many.
+The package installs as a core and one optional extra.
 
 `pas.plugins.identity`
-:   Core.
-    Sign in with one or more external providers, link and unlink identities, an audit log of authentication events, and a control panel.
-    Core works on its own with no extras.
-
-`pas.plugins.identity[content]`
-:   Content-backed user profiles and groups.
-    This layer adds a `UserProfile` content type with a workflow, a dedicated catalog, and PAS plugins that serve user properties, user enumeration, and group membership from that catalog.
-    See {doc}`concepts/profiles-and-groups`.
+:   Sign in with one or more external providers, link and unlink identities, an audit log of authentication events, and a control panel.
+    Users and groups are content: installing the add-on adds a `UserProfile` and a `UserGroup` content type, each with a workflow, a dedicated catalog, and PAS plugins that serve user properties, user enumeration, and group membership from that catalog.
+    See {doc}`concepts/users-as-content` and {doc}`concepts/profiles-and-groups`.
 
 `pas.plugins.identity[server]`
 :   An OAuth 2.1 and OpenID Connect authorization server, so a Plone site can be the provider that other applications sign in against.
     See {doc}`reference/claims`.
 
-Core never imports from either optional layer, and the two optional layers do not import from each other.
-CI enforces that boundary rather than leaving it to discipline.
+Core never imports from the server layer, and CI enforces that boundary rather than leaving it to discipline.
 So `pip install pas.plugins.identity` with no extras is a configuration that is tested rather than assumed.
 
 Read {doc}`concepts/layers` for what that buys you and what it costs.

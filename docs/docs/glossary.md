@@ -51,7 +51,7 @@ plone-sphinx-theme
     [Plone Sphinx Theme](https://plone-sphinx-theme.readthedocs.io/) is a Sphinx theme for [Plone 6 Documentation](https://6.docs.plone.org/), [Plone Conference Training](https://training.plone.org/), and documentation of various Plone packages.
 
 Profile
-    A content object carrying one user's PAS property sheet, provided by the `[content]` extra.
+    A content object carrying one user's PAS property sheet.
     Its values are served from catalog metadata, so answering a property lookup never wakes the object.
 
 provider

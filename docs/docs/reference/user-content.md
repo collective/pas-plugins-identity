@@ -12,7 +12,7 @@ myst:
 
 This page describes the core mechanism.
 For why it is built this way, read {doc}`/concepts/users-as-content`.
-For the content types the `[content]` extra provides, read {doc}`/reference/profiles`.
+For the content types this package ships, read {doc}`/reference/profiles`.
 
 ## Registry records
 
@@ -42,7 +42,7 @@ A type with nowhere to go would fail at the moment somebody adds a user, which i
 You can edit all four in {menuselection}`Site Setup --> Identity`.
 
 ```{note}
-Installing the `[content]` extra sets all four for you and keeps them pointed at its own container.
+Installing the add-on sets all four for you and keeps them pointed at its own types and container.
 It derives them from the container settings through a subscriber, so moving the container in the control panel does not require a reinstall.
 ```
 
@@ -131,28 +131,38 @@ An empty password is never stored anywhere.
 An externally authenticated user has no password, and a blank one is not a credential.
 
 Nor does an externally authenticated user get a `source_users` account of their own.
-On a site that keeps its users as content, whatever the site configured to claim the login creates the record: the `[content]` extra's subscriber, or your own.
-Core writes nothing.
-If nothing claims it, the login succeeds and the principal exists as an identity and as nothing else; core logs a warning naming the type that was not created, because it cannot create it for you.
+The content object is the record they are, and a subscriber to `IExternalIdentityAuthenticated` creates it: this package's own, or yours.
+The plugin writes nothing itself.
+If nothing claims the login, it still succeeds and the principal exists as an identity and as nothing else; a warning is logged naming the type that was not created, because nothing here can create it for you.
 
 ```{warning}
 Never store a credential in a Dexterity field.
 A field is serialized by `plone.restapi`, exported by GenericSetup, indexed by the catalog, and snapshotted by versioning.
-The `[content]` extra's password behavior keeps a hash in an annotation for this reason.
+The password behavior this package ships keeps a hash in an annotation for this reason.
 ```
 
-## What core does not do
+## Which plugin does what
 
-Core creates and deletes user and group objects.
-It does not enumerate them, and it does not serve their properties.
+The `identity` plugin creates user and group objects, and authenticates.
+The `identity_profile` plugin enumerates them, serves their properties, and deletes them.
 
-Answering "which users match this?" without waking every object requires a catalog, which core does not ship.
-PAS looks a principal back up immediately after adding it.
+Answering "which users match this?" without waking every object requires a catalog, and so does deciding whether a user is one this plugin holds, so both live with the plugin that owns the catalog.
+PAS looks a principal back up immediately after adding it, so the two halves are not independent: one plugin without the other gives you a user that cannot be found.
+Installing the add-on installs both.
 
 ```{important}
-A site that sets these records without running a layer that enumerates the named type gets a user that cannot be found.
-The `[content]` extra provides that layer.
+If you point these records at a content type of your own, make sure something on the site enumerates it.
+`UserProfile` and `UserGroup` are enumerated by the plugin this package installs; another type is your responsibility.
 ```
+
+## Deleting a user
+
+`api.user.delete` removes the content object, through `IUserManagement` on the `identity_profile` plugin.
+The users listing offers the button because the plugin also provides `IDeleteCapability` and says it can.
+
+The identity records are deliberately left behind.
+An identity outliving an account is by design, because it is what lets the same person sign back in under the same userid, so removing one is a separate decision an operator makes in the {guilabel}`Identities` panel.
+A login through an identity whose account is gone recreates the object and logs a warning naming the userid, so the case is reported rather than silent.
 
 ## Refusals
 
@@ -169,6 +179,10 @@ A container chosen at creation time
 `updateGroup` and `setRolesForGroup`
 :   Declared by `IGroupManagement` and never called by PlonePAS's group tool, which edits a group through the group object and routes roles to a role manager.
     Both return false rather than reporting a success that did nothing.
+
+`doChangeUser`
+:   Declared by `IUserManagement`, and refused with the `RuntimeError` PlonePAS expects from a plugin that cannot set a password.
+    Where a credential lives is a separate question with a separate answer; see {ref}`credential-storage`.
 
 ```{seealso}
 {doc}`/concepts/users-as-content`

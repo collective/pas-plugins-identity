@@ -1,8 +1,8 @@
 ---
 myst:
   html_meta:
-    "description": "How core lets a site keep its users and groups as content without knowing what content."
-    "property=og:description": "How core lets a site keep its users and groups as content without knowing what content."
+    "description": "Why users and groups are content objects here, and how the plugin creates one without knowing what type it is."
+    "property=og:description": "Why users and groups are content objects here, and how the plugin creates one without knowing what type it is."
     "property=og:title": "About users as content"
 ---
 
@@ -13,29 +13,31 @@ myst:
 Plone keeps users in `source_users` and groups in `source_groups`, as records in a BTree.
 
 A site that wants a member directory, an editable profile page, or a reviewable group wants those to be content instead.
-Core makes that possible without ever knowing what the content is.
+This package makes them content, on every site that installs it, and the `UserProfile` and `UserGroup` types it ships are what a user and a group are here.
 
-The `[content]` extra is one answer to that question, and the reason the mechanism exists.
-It is not the only permitted answer, which is why the mechanism lives in core and the content types do not.
-For what the extra itself does with it, read {doc}`/concepts/profiles-and-groups`.
+That used to be an option, a `[content]` extra a site chose, and the choice created two of every code path that touches a user.
+It is not an option any more.
+For what is done with the fields a Profile owns, read {doc}`/concepts/profiles-and-groups`.
 
-## Core declares the contract, a layer provides it
+What survived the merge is the *indirection*: the plugin that creates a user still does not name the type it creates.
+
+## The contract is declared, not assumed
 
 `IUserContent` and `IGroupContent` are markers that a Dexterity type provides.
 
-Core declares them and creates objects of a type it has never heard of.
-A layer implements them on a type it owns.
-That is the direction every extension point in this package runs in, and here it is the only direction that works: core has to create a user on a site whose content types were written after core was.
+The plugin creates objects of whatever type the registry names, having checked only that the type claims the marker.
+`UserProfile` and `UserGroup` claim it, and installing the add-on points the records at them, so nothing has to be configured.
+A site with a user type of its own points the records somewhere else and keeps everything below.
 
 A user type promises `userid`, `login`, and `group_ids`.
 A group type promises `group_id`.
-Core reads nothing else, so the rest of the schema belongs entirely to the layer.
+The plugin reads nothing else, so the rest of the schema is the type's own business.
 
 ## The object's id is the identifier
 
 For both types, the object's id within its container *is* the `userid` or the `group_id`.
 
-That is what lets core resolve a user in a single traversal rather than a search.
+That is what lets the plugin resolve a user in a single traversal rather than a search.
 It is not a constraint invented for the interface.
 An opaque userid never changes, so the object never has to be renamed, and a rename is the one operation that strands a URL somebody bookmarked.
 
@@ -43,13 +45,12 @@ This single promise is what several later refusals rest on.
 
 ## Working by declining
 
-Core implements the `IUserAdderPlugin` interface from PAS and the `IGroupManagement` interface from PlonePAS.
+The identity plugin implements the `IUserAdderPlugin` interface from PAS and the `IGroupManagement` interface from PlonePAS.
 
 Both of those interfaces are walked plugin by plugin until one returns true.
-So both halves of this feature work by *declining*: with no content type configured, which is every site until somebody says otherwise, the plugin returns false and `source_users` or `source_groups` does the job exactly as it always did.
-
-Nothing about a site that has not set the records changes.
-That is the whole reason the interfaces are activated on install rather than lazily, because activating them lazily would mean reinstalling the add-on after setting a registry record, which is the kind of step nobody remembers and nothing reports.
+So both halves of this feature work by *declining*, and declining is what happens when a site has pointed the records at a type that is not a user.
+That is a mistake in the settings rather than a mode, and `source_users` or `source_groups` then does the job exactly as it did before this add-on existed.
+It is the right failure: an operator who mistyped a portal type gets stock Plone rather than an error page.
 
 ## Being asked first is load-bearing
 
@@ -57,7 +58,7 @@ A plugin that declines has to be asked before a plugin that never declines.
 
 `source_users` and `source_groups` always succeed.
 Registered below either of them, this plugin is never reached, and nothing reports it: the site simply keeps creating stock users while every test that calls the plugin directly stays green.
-So install moves the plugin to the top of both interfaces, for the same reason the `[content]` layer sits at the top of `IPropertiesPlugin`.
+So install moves the plugin to the top of both interfaces, for the same reason the profile plugin sits at the top of `IPropertiesPlugin`.
 
 This is the failure mode the design is most exposed to, and it is silent in both directions.
 The test suite therefore asserts the plugin's *position*, not merely that it is registered.
@@ -79,11 +80,10 @@ A user added through the ordinary API therefore ends up as somebody who can actu
 
 An externally authenticated user gets no `source_users` account at all.
 They have no password to store, and the content object is already the record they are: the plugin enumerates it, and a site that opted into {ref}`credential-storage` authenticates against it.
-A row beside it would be a second record of the same person, kept in step by nothing.
-On a site that has *not* configured user content, the `source_users` account is still created for them, because there it is the only record they have.
+A row beside it would be a second record of the same person, kept in step by nothing, turning up in {menuselection}`acl_users --> source_users --> Users`, and outliving the object it shadows.
 
-A site that would rather keep the credential with the rest of the user opts into `ICredentialStorage`, takes on those four questions deliberately, and core then has nothing to delegate.
-The `[content]` extra ships that as an opt-in behavior which keeps a hash in an annotation rather than in a field.
+A site that would rather keep the credential with the rest of the user opts into `ICredentialStorage`, takes on those four questions deliberately, and the plugin then has nothing to delegate.
+The package ships that as an opt-in behavior which keeps a hash in an annotation rather than in a field.
 
 ## Where a user is created is a setting, not a parameter
 
@@ -108,7 +108,7 @@ Everything created afterward goes to the new container, and the catalog is not s
 
 `getGroupsForPrincipal` runs on every permission check that touches a local role.
 Listing a group's members does not.
-Keeping membership on the member makes the hot question a single metadata read, and leaves the cold question to a catalog query in whichever layer owns enumeration.
+Keeping membership on the member makes the hot question a single metadata read, and leaves the cold question to a catalog query.
 
 `IGroupContent` therefore has no members accessor, and will not grow one.
 An accessor would be a second copy of the same fact, and the two would drift the first time anything wrote to one without the other.
@@ -117,21 +117,23 @@ Group nesting is refused for a related reason.
 A group whose members are groups makes `getGroupsForPrincipal` recursive, and a recursive answer computed from catalog metadata stops being a single lookup.
 That is the property the whole design rests on, so nesting is refused rather than stored and answered slowly.
 
-## Core creates, but does not enumerate
+## Creating and enumerating are two plugins
 
-Core can make a user.
-It cannot answer which users match a search, because doing so without waking every object needs a catalog, and core does not ship one.
+One plugin creates a user; a second one answers which users match a search.
+Answering that without waking every object needs a catalog, which is why it is a separate plugin over a separate tool.
 
 The two are not independent.
-PAS looks a principal straight back up after adding it, so a site that sets the records without also running a layer that enumerates gets a user that cannot be found.
+PAS looks a principal straight back up after adding it, so a site with the first plugin and not the second gets a user that cannot be found.
+
+Installing the add-on installs both, which is exactly why they stopped being two profiles.
 
 ```{important}
-Do not point the registry records at a content type unless something on the site enumerates that type.
-The `[content]` extra does this for you, and points the records at itself.
+If you point the registry records at a content type of your own, make sure something on the site enumerates that type.
+`UserProfile` is enumerated by the plugin this package installs; another type is your responsibility.
 ```
 
 ```{seealso}
 {doc}`/reference/user-content` for the records and the contracts.
-{doc}`/concepts/profiles-and-groups` for what the `[content]` extra builds on top.
-{doc}`/concepts/layers` for why core declares an interface an extra provides.
+{doc}`/concepts/profiles-and-groups` for what is built on top.
+{doc}`/concepts/layers` for why the authorization server is still a layer of its own.
 ```

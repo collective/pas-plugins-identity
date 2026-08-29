@@ -100,10 +100,10 @@ A claim with no value is omitted, never sent as an empty string, so a relying pa
 ## Where claims come from
 
 Claims are read from Plone user properties.
-They are not read from a `UserProfile`, even on a site that installs the `[content]` extra.
+They are not read from a `UserProfile` directly, even though that is usually where the values live.
 
-The `[content]` extra serves its fields as a property sheet, through its `IPropertiesPlugin`.
-So asking PAS for a property returns Profile-backed values on a site that has that layer, and stock `mutable_properties` values on a site that does not, with no branch in the server layer and without the `[server]` layer importing the `[content]` layer.
+The profile plugin serves a Profile's fields as a property sheet, through its `IPropertiesPlugin`.
+So asking PAS for a property returns Profile-backed values for a user who has a Profile, and stock `mutable_properties` values for a userid that does not, with no branch in the server layer at all.
 
 See {doc}`/concepts/layers` for the boundary that makes this necessary.
 

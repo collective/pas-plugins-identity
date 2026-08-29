@@ -910,6 +910,7 @@ source = { editable = "../backend" }
 dependencies = [
     { name = "authlib" },
     { name = "plone-api" },
+    { name = "plone-app-dexterity" },
     { name = "plone-restapi" },
     { name = "products-cmfplone" },
     { name = "requests" },
@@ -925,12 +926,13 @@ requires-dist = [
     { name = "pas-plugins-authomatic", marker = "extra == 'test'", specifier = ">=2.0.0" },
     { name = "pas-plugins-oidc", marker = "extra == 'test'", specifier = ">=2.0.0" },
     { name = "plone-api" },
-    { name = "plone-app-dexterity", marker = "extra == 'content'" },
+    { name = "plone-app-dexterity" },
     { name = "plone-app-testing", marker = "extra == 'test'" },
     { name = "plone-restapi" },
     { name = "plone-restapi", extras = ["test"], marker = "extra == 'test'" },
     { name = "plone-volto", marker = "extra == 'test'" },
     { name = "products-cmfplone" },
+    { name = "products-printingmailhost", marker = "extra == 'test'" },
     { name = "pytest", marker = "extra == 'test'" },
     { name = "pytest-cov", marker = "extra == 'test'" },
     { name = "pytest-docker", marker = "extra == 'test'" },
@@ -938,7 +940,7 @@ requires-dist = [
     { name = "requests" },
     { name = "requests", marker = "extra == 'test'" },
 ]
-provides-extras = ["content", "server", "test"]
+provides-extras = ["server", "test"]
 
 [[package]]
 name = "pas-plugins-identity-docs"

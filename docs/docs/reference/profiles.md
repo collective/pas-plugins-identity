@@ -10,9 +10,9 @@ myst:
 
 # Profiles and groups reference
 
-This page describes the `[content]` extra.
+This page describes the `UserProfile` and `UserGroup` content types, and the settings and endpoints that go with them.
 
-For why the layer is built this way, see {doc}`/concepts/profiles-and-groups`.
+For why they are built this way, see {doc}`/concepts/profiles-and-groups`.
 
 ## Content types
 
@@ -281,7 +281,7 @@ The consistency check
 
 The rebuild step
 :   Repairs and reports nothing.
-    It is a GenericSetup import step you can re-run whenever the check finds something.
+    It is the `pas.plugins.identity:rebuild-catalog` GenericSetup profile, re-runnable whenever the check finds something.
 
 They are kept apart so that the check can be scheduled read-only.
 
@@ -319,5 +319,5 @@ See {ref}`reference-user-content` for why.
 
 `source_users`, `source_groups`, and `auto_group` keep working.
 
-A user known to both this layer and `source_users` appears once in a search, because both return the same canonical user id and every consumer merges on it.
+A user known to both the profile plugin and `source_users` appears once in a search, because both return the same canonical user id and every consumer merges on it.
 Group memberships are the union, with no duplicates.

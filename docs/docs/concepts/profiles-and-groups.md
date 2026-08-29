@@ -13,10 +13,10 @@ myst:
 Plone's stock user storage keeps properties in a BTree and knows nothing about workflow, permissions, or the catalog.
 
 That is fine until you want a member directory, an editable profile page, or a group whose membership somebody can review.
-The `[content]` extra backs users with content instead, while keeping the thing that usually goes wrong from going wrong.
+This package backs users with content instead, while keeping the thing that usually goes wrong from going wrong.
 
 For the states, records, and endpoints, see {doc}`/reference/profiles`.
-For the core mechanism this extra plugs into, see {doc}`/concepts/users-as-content`.
+For the mechanism underneath, see {doc}`/concepts/users-as-content`.
 
 ## The thing that usually goes wrong
 
@@ -105,7 +105,7 @@ Which is why there is a switch, defaulting to off, rather than a longer list of 
 
 A dedicated catalog is a second copy of the truth, and second copies drift.
 
-The layer ships two tools, kept deliberately apart.
+The add-on ships two tools, kept deliberately apart.
 The consistency check reports drift and repairs nothing.
 The rebuild step repairs and reports nothing.
 
@@ -132,10 +132,10 @@ Membrane's user enumeration is not affected: that goes through `findImplementati
 
 This is architecture, not oversight.
 Membrane's property values live on the content object and are read through an adapter on it, so a brain genuinely cannot answer.
-This layer copies the values it serves into catalog metadata instead, which is what lets a brain answer and what the zero-wake test measures.
+This package copies the values it serves into catalog metadata instead, which is what lets a brain answer and what the zero-wake test measures.
 
 The trade is real in both directions.
-Metadata has to be kept honest, and that is why this layer ships a consistency check and a rebuild step at all.
+Metadata has to be kept honest, and that is why this package ships a consistency check and a rebuild step at all.
 
 ```{note}
 Verified against `Products.membrane` 7.0.1.dev0, in `plugins/propertymanager.py` and `utils.py`, by reading the source rather than by measurement.
