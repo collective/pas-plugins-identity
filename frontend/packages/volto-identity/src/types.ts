@@ -112,6 +112,21 @@ export interface JsonSchema {
   fieldsets?: { id: string; title: string; fields: string[] }[];
 }
 
+/**
+ * A composed form schema, as Volto's `Form` consumes one.
+ *
+ * The same three keys as `JsonSchema` and none of them optional, which is the
+ * whole difference: a `JsonSchema` is what arrived over the wire and may be
+ * missing anything, while this is what a helper in this package built out of
+ * one, and `Form` renders nothing at all when handed a schema without
+ * `properties`.
+ */
+export interface VoltoSchema {
+  properties: Record<string, Record<string, unknown>>;
+  required: string[];
+  fieldsets: { id: string; title: string; fields: string[] }[];
+}
+
 export interface Driver {
   id: string;
   title: string;

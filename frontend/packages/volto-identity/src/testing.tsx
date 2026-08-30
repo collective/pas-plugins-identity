@@ -11,7 +11,7 @@
  */
 import React from 'react';
 import type { ReactElement, ReactNode } from 'react';
-import { createIntl, IntlProvider } from 'react-intl';
+import { createIntl, IntlProvider as BareIntlProvider } from 'react-intl';
 import { MemoryRouter } from 'react-router-dom';
 import {
   render as renderBare,
@@ -27,6 +27,20 @@ import {
  * components used to hard-code. `onError` is silenced because "no message for
  * this id" is the expected state here, not a failure.
  */
+/**
+ * `react-intl` 3.12's provider, given its children back.
+ *
+ * The version Volto pins types `IntlProvider` as a class component whose
+ * props never mention `children` -- React 17's types supplied that
+ * implicitly and React 18's do not, so every use of it is a type error and
+ * none of them is a bug. The cast restores the prop the component has always
+ * accepted and changes nothing at runtime. Exported because the tests that
+ * bring their own provider need the same repair.
+ */
+export const IntlProvider = BareIntlProvider as React.ComponentType<
+  React.ComponentProps<typeof BareIntlProvider> & { children?: ReactNode }
+>;
+
 const WithIntl = ({ children }: { children: ReactNode }) => (
   <IntlProvider locale="en" defaultLocale="en" messages={{}} onError={() => {}}>
     {/* A router as well, for the same reason: components in this package

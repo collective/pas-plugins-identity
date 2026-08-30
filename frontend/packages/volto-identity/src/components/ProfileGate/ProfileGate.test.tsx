@@ -13,7 +13,7 @@ import { render } from '@testing-library/react';
 import React from 'react';
 import { MemoryRouter, Route, useLocation } from 'react-router-dom';
 import { Provider } from 'react-redux';
-import { IntlProvider } from 'react-intl';
+import { IntlProvider } from '../../testing';
 
 import ProfileGate from './ProfileGate';
 import { rememberReturn, takeReturn } from '../../helpers/profileGate';

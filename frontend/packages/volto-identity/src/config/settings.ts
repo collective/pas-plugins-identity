@@ -63,7 +63,10 @@ export default function install(config: ConfigType) {
   // only covers some routes is a list of ways around it.
   config.settings.appExtras = [
     ...(config.settings.appExtras ?? []),
-    { match: '', component: ProfileGate },
+    // `props` is empty and still spelled out: `AppExtras` spreads it, so
+    // omitting it renders the same, but Volto's `Settings.d.ts` declares it
+    // required and the gate is the only entry this add-on adds.
+    { match: '', component: ProfileGate, props: {} },
   ];
   return config;
 }

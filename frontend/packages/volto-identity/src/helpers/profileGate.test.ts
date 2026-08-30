@@ -11,6 +11,7 @@ function profile(overrides: Partial<MyProfile> = {}): MyProfile {
     userid: 'alice',
     profile: PROFILE_URL,
     review_state: 'incomplete',
+    missing: [],
     ...overrides,
   };
 }

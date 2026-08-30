@@ -94,6 +94,7 @@ format: ## Format codebase
 .PHONY: lint
 lint: ## Lint, or catch and remove problems, in code base
 	pnpm lint
+	pnpm typecheck
 	pnpm prettier
 	pnpm stylelint --allow-empty-input
 

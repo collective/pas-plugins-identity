@@ -120,39 +120,76 @@ export const ONLY_IDENTITY: Identity[] = [
   { ...IDENTITIES[0], can_unlink: false },
 ];
 
+/**
+ * What one entry of `@identity-drivers` sends: `IOIDCSettings`, serialized.
+ *
+ * An ordinary JSON schema, because that is what the backend produces now --
+ * `plone.restapi`'s own `get_fieldsets` / `get_jsonschema_properties` /
+ * `get_fieldset_infos`, the same three calls that answer `@controlpanels`.
+ * Titles arrive translated and widgets arrive decided, which is why nothing
+ * here carries a `secret` flag or an `order`: a secret is a `Password` field
+ * and the order is the order the properties are in.
+ */
 export const OIDC_DRIVER: Driver = {
   id: 'oidc-generic',
   title: 'OpenID Connect',
   schema: {
-    client_id: {
-      type: 'string',
-      title: 'Client ID',
-      required: true,
-      secret: false,
+    properties: {
+      issuer: {
+        type: 'string',
+        title: 'Issuer URL',
+        description:
+          'Discovery is fetched from <issuer>/.well-known/openid-configuration.',
+      },
+      client_id: {
+        type: 'string',
+        title: 'Client ID',
+        description: 'The identifier this provider issued for this site.',
+      },
+      client_secret: {
+        type: 'string',
+        title: 'Client secret',
+        description: 'Write-only. It is never sent back by any endpoint here.',
+        widget: 'password',
+      },
+      scope: {
+        type: 'array',
+        title: 'Scope',
+        description: 'One permission per entry.',
+        widget: 'token',
+      },
+      userid_source: {
+        type: 'string',
+        title: 'Userid taken from',
+        choices: [
+          ['uuid', 'A random id'],
+          ['username', "The provider's username"],
+          ['email', 'The email address'],
+          ['subject', "The provider's subject identifier"],
+        ],
+      },
+      group_claim: {
+        type: 'string',
+        title: 'Groups arrive in the claim',
+        description:
+          'Which claim carries the group names this provider asserts.',
+      },
     },
-    client_secret: {
-      type: 'string',
-      title: 'Client secret',
-      required: true,
-      secret: true,
-    },
-    issuer: {
-      type: 'string',
-      title: 'Issuer URL',
-      description:
-        'Discovery is fetched from <issuer>/.well-known/openid-configuration.',
-      required: true,
-      secret: false,
-    },
-    scope: { type: 'string', title: 'Scope', required: false, secret: false },
-    group_claim: {
-      type: 'string',
-      title: 'Groups arrive in the claim',
-      description: 'Which claim carries the group names this provider asserts.',
-      required: false,
-      secret: false,
-      default: 'groups',
-    },
+    required: ['issuer', 'client_id', 'client_secret'],
+    fieldsets: [
+      {
+        id: 'default',
+        title: 'Default',
+        fields: [
+          'issuer',
+          'client_id',
+          'client_secret',
+          'scope',
+          'userid_source',
+          'group_claim',
+        ],
+      },
+    ],
   },
 };
 
@@ -162,15 +199,86 @@ export const OIDC_DRIVER: Driver = {
  * The real GitHub driver is this case, and the difference is worth having in
  * the fixtures: the group mapping is offered for a driver that declares a
  * group claim and hidden for one that does not, so a story showing only the
- * first would never show the second.
+ * first would never show the second. `IGitHubSettings` extends the OAuth2
+ * base and adds nothing, so the absence here is the absence there.
  */
-const { group_claim: _groupClaim, ...NO_GROUPS_SCHEMA } = OIDC_DRIVER.schema;
+const NO_GROUPS_SCHEMA: Driver['schema'] = {
+  properties: Object.fromEntries(
+    Object.entries(OIDC_DRIVER.schema.properties ?? {}).filter(
+      ([name]) => name !== 'group_claim' && name !== 'issuer',
+    ),
+  ),
+  required: ['client_id', 'client_secret'],
+  fieldsets: [
+    {
+      id: 'default',
+      title: 'Default',
+      fields: ['client_id', 'client_secret', 'scope', 'userid_source'],
+    },
+  ],
+};
 
 export const DRIVERS: Driver[] = [
   OIDC_DRIVER,
   { id: 'google', title: 'Google', schema: OIDC_DRIVER.schema },
   { id: 'github', title: 'GitHub', schema: NO_GROUPS_SCHEMA },
 ];
+
+/**
+ * What `@identity-providers` sends alongside the listing: `IProviderRecords`.
+ *
+ * The provider's own half of the form -- everything true of a provider
+ * whatever its driver. The panel renders this and the chosen driver's schema
+ * together, which is why a story needs both.
+ */
+export const PROVIDER_SCHEMA = {
+  type: 'object',
+  properties: {
+    // Served, and dropped again by `providerSchema`: a provider's storage
+    // has a driver and two maps, and none of the three is renderable as
+    // described. Kept here because a fixture that quietly leaves them out
+    // would stop the stories from showing what the composition does.
+    driver: { type: 'string', title: 'Driver' },
+    propertymap: { type: 'object', title: 'Property map' },
+    groupmap: { type: 'object', title: 'Group map' },
+    title: { type: 'string', title: 'Title' },
+    enabled: { type: 'boolean', title: 'Enabled' },
+    show_in_login: { type: 'boolean', title: 'Show on the login screen' },
+    order: { type: 'integer', title: 'Order' },
+    icon: { type: 'string', title: 'Icon', widget: 'provider_icon' },
+    background_color: {
+      type: 'string',
+      title: 'Background colour',
+      widget: 'color_picker',
+    },
+    foreground_color: {
+      type: 'string',
+      title: 'Foreground colour',
+      widget: 'color_picker',
+    },
+  },
+  required: [],
+  fieldsets: [
+    {
+      id: 'default',
+      title: 'Default',
+      fields: [
+        'driver',
+        'title',
+        'enabled',
+        'show_in_login',
+        'order',
+        'propertymap',
+        'groupmap',
+      ],
+    },
+    {
+      id: 'style',
+      title: 'Style',
+      fields: ['icon', 'background_color', 'foreground_color'],
+    },
+  ],
+};
 
 export const CONFIGURED: ConfiguredProvider[] = [
   {
@@ -179,6 +287,7 @@ export const CONFIGURED: ConfiguredProvider[] = [
     driver: 'oidc-generic',
     title: 'Sign in with Keycloak',
     enabled: true,
+    show_in_login: true,
     config: {
       client_id: 'plone',
       client_secret: '••••••••',
@@ -200,6 +309,7 @@ export const CONFIGURED: ConfiguredProvider[] = [
     driver: 'github',
     title: 'GitHub',
     enabled: false,
+    show_in_login: false,
     config: { client_id: 'Iv1.0123456789abcdef', client_secret: '••••••••' },
     propertymap: {},
     groupmap: {},

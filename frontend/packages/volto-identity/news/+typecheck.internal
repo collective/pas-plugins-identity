@@ -1,0 +1,7 @@
+`tsc` runs, and `make lint` runs it.
+
+There was a `tsconfig.json` and no way to act on it: no script invoked the compiler and no gate called the script, so fifteen type errors had accumulated where nobody would meet them. `pnpm typecheck` runs `tsc --noEmit` and `make lint` runs it beside eslint, prettier and stylelint.
+
+Its `exclude` list was also not doing anything. Tests, stories and fixtures were listed as `**/*.test.{js,jsx,ts,tsx}` and friends — TypeScript's globs understand `*`, `?` and `**/` and have no brace expansion, so each pattern matched only a file named that literally. They were being checked all along, which is how the fixtures were found to describe a schema shape the backend stopped sending; the patterns are gone rather than corrected, because checking them is what caught it.
+
+The fifteen: `VoltoSchema` was deleted from `providerSchema.ts` by the cutover and its import moved to `types`, where it was never added — a type-only import, so nothing failed at runtime and no test noticed. The gate's `appExtras` entry was missing the `props` Volto declares required. Two `MyProfile` fixtures were missing a required field. `react-intl` 3.12 types `IntlProvider` without `children`, which React 17 supplied implicitly and React 18 does not, so `testing` exports it repaired and the tests that bring their own provider use that one. The stories were calling `providerSchema` with the signature it had before the cutover, and `stories/fixtures` still described drivers in the schema language the cutover removed. @ericof

@@ -7,6 +7,7 @@ import {
   CONFIGURED,
   DRIVERS,
   GROUPS_STATE,
+  PROVIDER_SCHEMA,
   USER_FIELDS_STATE,
   withStore,
 } from '../../stories/fixtures';
@@ -45,7 +46,7 @@ const KEYCLOAK = CONFIGURED[0];
 const GITHUB = CONFIGURED[1];
 
 const form = (provider: (typeof CONFIGURED)[number], driverId: string) => ({
-  schema: providerSchema(DRIVERS, driverId, false, testIntl),
+  schema: providerSchema(PROVIDER_SCHEMA, DRIVERS, driverId, false, testIntl),
   formData: toFormData(provider),
   onSubmit: () => {},
   onCancel: () => {},
@@ -87,7 +88,13 @@ export const WithoutGroups: Story = {
  */
 export const Adding: Story = {
   args: {
-    schema: providerSchema(DRIVERS, 'oidc-generic', true, testIntl),
+    schema: providerSchema(
+      PROVIDER_SCHEMA,
+      DRIVERS,
+      'oidc-generic',
+      true,
+      testIntl,
+    ),
     formData: toFormData(undefined, {
       propertymap: DRIVERS[0].default_propertymap,
       groupmap: DRIVERS[0].default_groupmap,

@@ -9,6 +9,7 @@ function profile(overrides: Partial<MyProfile> = {}): MyProfile {
     userid: 'alice-userid',
     profile: 'http://backend:8080/Plone/identity-profiles/alice-userid',
     review_state: 'incomplete',
+    missing: [],
     ...overrides,
   };
 }
