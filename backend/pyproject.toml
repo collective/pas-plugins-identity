@@ -42,6 +42,11 @@ dependencies = [
     # choice any more, and Plone ships p.a.dexterity anyway -- declaring it is
     # honesty about what this imports, not a new install burden.
     "plone.app.dexterity",
+    # exportimport/cli.py imports plone.exportimport.utils.cli, so that the
+    # identity-* console scripts take the same zope.conf and site arguments
+    # as plone-exporter and plone-importer. It ships with Plone 6.1+, so this
+    # is honesty about a direct import rather than a new install burden.
+    "plone.exportimport",
     "plone.restapi",
     # core/flows imports authlib.integrations.requests_client at module scope,
     # and Authlib does not pull requests in on its own. Today it arrives anyway
@@ -75,6 +80,10 @@ test = [
     "pytest-plone>=1.1.0",
     "requests",
 ]
+
+[project.scripts]
+identity-exporter = "pas.plugins.identity.exportimport.cli:exporter_cli"
+identity-importer = "pas.plugins.identity.exportimport.cli:importer_cli"
 
 [project.urls]
 Homepage = "https://github.com/collective/pas-plugins-identity"
@@ -270,3 +279,17 @@ name = "Core never imports the server layer"
 type = "forbidden"
 source_modules = ["pas.plugins.identity.core"]
 forbidden_modules = ["pas.plugins.identity.server"]
+
+# exportimport is a leaf: it reads core and writes through it, and nothing in
+# the add-on's request path may depend on it. A tool that moves accounts in
+# bulk should be reachable from a console script and from nowhere a browser
+# can get to.
+[[tool.importlinter.contracts]]
+name = "Nothing imports the exportimport layer"
+type = "forbidden"
+source_modules = [
+    "pas.plugins.identity.core",
+    "pas.plugins.identity.server",
+    "pas.plugins.identity.migration",
+]
+forbidden_modules = ["pas.plugins.identity.exportimport"]

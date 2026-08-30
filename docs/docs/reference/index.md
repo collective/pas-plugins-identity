@@ -25,6 +25,7 @@ claims
 profiles
 user-content
 migration-reports
+principal-documents
 security-guarantees
 ```
 

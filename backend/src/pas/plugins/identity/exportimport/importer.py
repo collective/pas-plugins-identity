@@ -1,0 +1,305 @@
+"""A document into a site.
+
+The half that can do damage, so it is the half with the refusals.
+
+**Groups first, then users, then nesting.** A user's ``group_ids`` names
+groups, so the groups have to exist; a group's own ``group_ids`` can name a
+group further down the same list, so nesting is applied only once every group
+is in place. Three passes rather than one, and the ordering is the reason.
+
+**A bad record is a skip, not a refusal.** One user whose identity is already
+linked to somebody else must not stop the other nine hundred, and an operator
+importing a large dump needs the list of what did not land far more than they
+need a traceback. :meth:`Result.skipped` is that list. Refusals are reserved
+for conditions that make the whole run meaningless -- no plugin, no catalog, a
+document from a newer version of this package.
+
+**Idempotent.** Running the same document twice writes the same site: an
+existing user is updated rather than duplicated, and an identity already
+pointing at the right userid is left alone rather than re-added. A migration
+you cannot re-run is a migration nobody dares run, which is the same rule
+:mod:`pas.plugins.identity.migration` states.
+
+**A dry run writes nothing at all.** Not "writes and rolls back" -- the write
+is never attempted, so a dry run cannot leave a half-applied transaction
+behind if something outside this package commits. Read the report first.
+"""
+
+from pas.plugins.identity import logger
+from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
+from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
+from pas.plugins.identity.core.catalog import query_catalog
+from pas.plugins.identity.core.container import get_container
+from pas.plugins.identity.core.container import GROUP
+from pas.plugins.identity.core.container import PROFILE
+from pas.plugins.identity.core.interfaces import IdentityCollision
+from pas.plugins.identity.core.pas import PLUGIN_ID
+from pas.plugins.identity.exportimport.schema import ExportImportError
+from pas.plugins.identity.exportimport.schema import GROUP_FIELDS
+from pas.plugins.identity.exportimport.schema import Result
+from pas.plugins.identity.exportimport.schema import USER_FIELDS
+from pas.plugins.identity.exportimport.schema import validate
+from plone import api
+from typing import Any
+
+
+def _plugin():
+    """Return the identity plugin, or refuse.
+
+    :returns: The plugin.
+    :raises ExportImportError: When the add-on is not installed here.
+    """
+    plugin = api.portal.get_tool("acl_users").get(PLUGIN_ID)
+    if plugin is None:
+        raise ExportImportError(
+            "This site has no identity plugin, so there is nowhere to import "
+            "to. Install pas.plugins.identity here first."
+        )
+    return plugin
+
+
+def _existing(portal_type: str, index: str, value: str):
+    """Return an existing principal object, or ``None``.
+
+    :param portal_type: ``UserProfile`` or ``UserGroup``.
+    :param index: The catalog index to match on.
+    :param value: The value to match.
+    :returns: The object, or ``None``.
+    """
+    catalog = query_catalog()
+    if catalog is None:
+        return None
+    brains = catalog.unrestrictedSearchResults(**{
+        "portal_type": portal_type,
+        index: value,
+    })
+    return brains[0]._unrestrictedGetObject() if brains else None
+
+
+def _import_group(group: dict[str, Any], result: Result, dry_run: bool) -> None:
+    """Create or update one group, without its nesting.
+
+    :param group: The group record.
+    :param result: The result to record into.
+    :param dry_run: Whether to write.
+    """
+    group_id = group["group_id"]
+    existing = _existing(GROUP_PORTAL_TYPE, "group_id", group_id)
+    fields = {name: group.get(name) or "" for name in GROUP_FIELDS}
+
+    if existing is not None:
+        if not dry_run:
+            for name, value in fields.items():
+                setattr(existing, name, value)
+            existing.reindexObject()
+        result.groups.append(group_id)
+        return
+
+    if dry_run:
+        result.groups.append(group_id)
+        return
+
+    container = get_container(create=True, kind=GROUP)
+    if container is None:  # pragma: no cover - refused upstream
+        result.skipped.append(f"group {group_id}: no container to file it in")
+        return
+    api.content.create(
+        container=container,
+        type=GROUP_PORTAL_TYPE,
+        id=group_id,
+        group_id=group_id,
+        **fields,
+    )
+    result.groups.append(group_id)
+
+
+def _import_user(user: dict[str, Any], result: Result, dry_run: bool) -> None:
+    """Create or update one user's Profile, without its identities.
+
+    :param user: The user record.
+    :param result: The result to record into.
+    :param dry_run: Whether to write.
+    """
+    userid = user["userid"]
+    existing = _existing(PROFILE_PORTAL_TYPE, "userid", userid)
+    emails = [address for address in user.get("emails") or () if address]
+    if not emails:
+        # ``emails`` is required on the Profile and ``email`` is derived from
+        # it, so a user with none cannot be created at all. Reported rather
+        # than defaulted: inventing an address would produce an account whose
+        # owner cannot be reached and cannot be told why.
+        result.skipped.append(
+            f"user {userid}: no email address, which a profile requires"
+        )
+        return
+
+    fields = {name: user.get(name) or "" for name in USER_FIELDS}
+    login = user.get("login") or userid
+
+    if existing is not None:
+        if not dry_run:
+            for name, value in fields.items():
+                setattr(existing, name, value)
+            existing.login = login
+            existing.emails = tuple(emails)
+            existing.reindexObject()
+        result.users.append(userid)
+        return
+
+    if dry_run:
+        result.users.append(userid)
+        return
+
+    container = get_container(create=True, kind=PROFILE)
+    if container is None:  # pragma: no cover - refused upstream
+        result.skipped.append(f"user {userid}: no container to file it in")
+        return
+    api.content.create(
+        container=container,
+        type=PROFILE_PORTAL_TYPE,
+        id=userid,
+        userid=userid,
+        login=login,
+        emails=tuple(emails),
+        **fields,
+    )
+    result.users.append(userid)
+
+
+def _apply_membership(record: dict[str, Any], portal_type: str, dry_run: bool) -> None:
+    """Write a principal's group membership, once every group exists.
+
+    ``portal_type`` is passed rather than inferred from the record's keys. A
+    document is a file somebody may have written by hand, so "it has a
+    ``userid`` key, therefore it is a user" is a guess about untrusted input
+    at exactly the point where being wrong writes the membership onto the
+    wrong object.
+
+    :param record: The user or group record.
+    :param portal_type: Which of the two types this record is.
+    :param dry_run: Whether to write.
+    """
+    wanted = [group_id for group_id in record.get("group_ids") or () if group_id]
+    if not wanted or dry_run:
+        return
+    index = "userid" if portal_type == PROFILE_PORTAL_TYPE else "group_id"
+    obj = _existing(portal_type, index, record[index])
+    if obj is None:  # pragma: no cover - written a moment ago
+        return
+    known = [
+        group_id
+        for group_id in wanted
+        if _existing(GROUP_PORTAL_TYPE, "group_id", group_id) is not None
+    ]
+    missing = sorted(set(wanted) - set(known))
+    if missing:
+        # Named rather than created. A group this document does not carry is
+        # a group whose members and nesting nobody has stated, and inventing
+        # one produces a grant nobody decided on.
+        logger.warning(
+            "%r names groups this site does not have, which were not created: %s",
+            record[index],
+            ", ".join(missing),
+        )
+    obj.group_ids = tuple(known)
+    obj.reindexObject()
+
+
+def _import_identities(
+    user: dict[str, Any], plugin, result: Result, dry_run: bool
+) -> None:
+    """Write one user's identity join.
+
+    :param user: The user record.
+    :param plugin: The identity plugin.
+    :param result: The result to record into.
+    :param dry_run: Whether to write.
+    """
+    userid = user["userid"]
+    store = plugin.store
+    for identity in user.get("identities") or ():
+        provider = identity["provider"]
+        subject = identity["subject"]
+        owner = store.userid_for(provider, subject)
+
+        if owner == userid:
+            # Already ours. This is what makes a second run a no-op.
+            continue
+        if owner is not None:
+            # The one case that must never be resolved by guessing: two
+            # people cannot both be the same identity, and quietly moving it
+            # is one of them taking the other's account.
+            result.skipped.append(
+                f"identity {provider}:{subject}: already linked to {owner}, "
+                f"not to {userid}"
+            )
+            continue
+
+        if not dry_run:
+            try:
+                record = plugin.link(
+                    userid, provider, subject, identity.get("claims") or {}
+                )
+            except (
+                IdentityCollision
+            ) as error:  # pragma: no cover - the store was read a line above
+                result.skipped.append(f"identity {provider}:{subject}: {error}")
+                continue
+            record.groups = tuple(identity.get("groups") or ())
+        result.identities.append((provider, subject, userid))
+
+
+def import_site(document: Any, dry_run: bool = False) -> Result:
+    """Write a document's principals into this site.
+
+    :param document: The parsed JSON document.
+    :param dry_run: Report what would happen and write nothing.
+    :returns: What was done, or would be.
+    :raises ExportImportError: When the document is not one, or when this site
+        cannot receive it.
+    """
+    result = Result(dry_run=dry_run)
+    try:
+        document = validate(document)
+        plugin = _plugin()
+        if query_catalog() is None:
+            raise ExportImportError(
+                "This site has no identity catalog, so imported principals "
+                "would be invisible to enumeration."
+            )
+    except ExportImportError as error:
+        result.refusals.append(str(error))
+        return result
+
+    groups = document.get("groups") or []
+    users = document.get("users") or []
+
+    # Elevated throughout: filing a principal needs an add permission that no
+    # ordinary member holds, and this runs from a console script whose
+    # security context is whatever the caller set up.
+    with api.env.adopt_roles(["Manager"]):
+        for group in groups:
+            _import_group(group, result, dry_run)
+        for user in users:
+            _import_user(user, result, dry_run)
+        # Nesting last, so a group may name one that came after it.
+        for group in groups:
+            _apply_membership(group, GROUP_PORTAL_TYPE, dry_run)
+        for user in users:
+            if user["userid"] in result.users:
+                _apply_membership(user, PROFILE_PORTAL_TYPE, dry_run)
+        for user in users:
+            if user["userid"] in result.users:
+                _import_identities(user, plugin, result, dry_run)
+
+    logger.info(
+        "Imported %d users, %d groups and %d identities%s",
+        len(result.users),
+        len(result.groups),
+        len(result.identities),
+        " (dry run)" if dry_run else "",
+    )
+    return result
+
+
+__all__ = ["import_site"]

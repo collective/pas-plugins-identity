@@ -921,6 +921,7 @@ dependencies = [
     { name = "defusedxml" },
     { name = "plone-api" },
     { name = "plone-app-dexterity" },
+    { name = "plone-exportimport" },
     { name = "plone-restapi" },
     { name = "products-cmfplone" },
     { name = "requests" },
@@ -939,6 +940,7 @@ requires-dist = [
     { name = "plone-api" },
     { name = "plone-app-dexterity" },
     { name = "plone-app-testing", marker = "extra == 'test'" },
+    { name = "plone-exportimport" },
     { name = "plone-restapi" },
     { name = "plone-restapi", extras = ["test"], marker = "extra == 'test'" },
     { name = "plone-volto", marker = "extra == 'test'" },
@@ -2019,6 +2021,37 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/8f/e5/9b8195f6085c25e6840c34103c954d6cfe574c32fbb18d1a7e9e51e47408/plone_event-3.0.0.tar.gz", hash = "sha256:3b4aca28c3396efb5d389d202ce1cb3d8b61ee9815428edcb3333a33d0d933c8", size = 34475, upload-time = "2026-05-16T21:18:34.56Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d9/4c/4d4c163ed7fa1f5e38ad4bfe25390de23febb116e311ac7da22b1b43a62d/plone_event-3.0.0-py3-none-any.whl", hash = "sha256:ca598a3777203a489b6de98ef4a90385995e1ff7684b2434112e273188c4e1f9", size = 25873, upload-time = "2026-05-16T21:18:32.957Z" },
+]
+
+[[package]]
+name = "plone-exportimport"
+version = "2.0.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "plone-api" },
+    { name = "plone-app-contenttypes" },
+    { name = "plone-app-dexterity" },
+    { name = "plone-app-redirector" },
+    { name = "plone-app-textfield" },
+    { name = "plone-app-users" },
+    { name = "plone-base" },
+    { name = "plone-dexterity" },
+    { name = "plone-namedfile" },
+    { name = "plone-restapi" },
+    { name = "plone-uuid" },
+    { name = "products-cmfeditions" },
+    { name = "products-cmfplone" },
+    { name = "products-dcworkflow" },
+    { name = "products-plonepas" },
+    { name = "products-portaltransforms" },
+    { name = "python-dateutil" },
+    { name = "z3c-relationfield" },
+    { name = "zc-relation" },
+    { name = "zope" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6b/06/0355131c241bbdf5d358475c0c883af46a98e5086bdb9182e48caebdac4c/plone_exportimport-2.0.2.tar.gz", hash = "sha256:ddf82871c787541aa6cb5a5345bc1783d07f68f67e54f375b2f4a7906a0adace", size = 203355, upload-time = "2026-08-21T21:41:30.379Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/91/2a/c6876a292e5a527f1cbda2c38449ea27f8558b08140beaa4da6d5b88e073/plone_exportimport-2.0.2-py3-none-any.whl", hash = "sha256:ac4b0a3e704471295960c850b6bf5b1f409e171d87e49c932e5c85e46068879c", size = 69400, upload-time = "2026-08-21T21:41:28.95Z" },
 ]
 
 [[package]]

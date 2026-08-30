@@ -1,0 +1,1 @@
+Documented the export/import of principals: a how-to guide covering the two console commands, the dry run and the offline `pas.plugins.authomatic` path, and a reference page giving the document format, both refusal and skip conditions, and the shape of a dump with a working extraction to produce one. @ericof

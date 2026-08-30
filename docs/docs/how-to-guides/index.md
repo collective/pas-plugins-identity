@@ -32,6 +32,7 @@ configure-a-provider
 read-the-audit-log
 review-a-user-account
 enable-back-channel-logout
+export-and-import-principals
 ```
 
 ## Acting as an authorization server
