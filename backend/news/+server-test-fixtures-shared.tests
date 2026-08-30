@@ -1,0 +1,5 @@
+The server tests stopped redeclaring the same fixtures and constants in every module.
+
+An `issuer` fixture was written out eight times with byte-identical bodies and eight different docstrings; `plugin` and `userid` twice each. `ISSUER` was declared in ten modules, `REDIRECT` in ten, `SERVICE_USER` in three and `USERID` in five — every copy identical. Meanwhile `tests/server/__init__.py` already existed holding two profile ids, and `tests/core/services/__init__.py` was already the worked example of exactly this: a package `__init__` carrying the values its modules share.
+
+The constants moved there and the fixtures into `tests/server/conftest.py`. `test_paused_authorization.py` keeps its own `USERID = "dana"`, which was the one deliberate variation in the set. The shared `plugin` fixture now reaches PAS through the `acl_users` fixture rather than `portal.acl_users`. @ericof

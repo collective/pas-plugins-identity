@@ -9,6 +9,7 @@ response that mints it.
 """
 
 from . import PROFILE_ID
+from . import REDIRECT
 from pas.plugins.identity.server.controlpanel.clients import get_client
 from pas.plugins.identity.server.controlpanel.clients import verify_secret
 from pas.plugins.identity.server.services.clients.delete import ClientsDelete
@@ -26,8 +27,6 @@ import pytest
 
 
 pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
-
-REDIRECT = "https://app.example.org/cb"
 
 
 @pytest.fixture

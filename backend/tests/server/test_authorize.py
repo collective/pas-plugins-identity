@@ -7,6 +7,7 @@ open redirect, so it is asserted in both directions.
 """
 
 from . import PROFILE_ID
+from . import REDIRECT
 from AccessControl import Unauthorized
 from pas.plugins.identity.server.browser.authorize import AuthorizeView
 from pas.plugins.identity.server.grants.codes import make_verifier
@@ -20,8 +21,6 @@ import pytest
 
 
 pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
-
-REDIRECT = "https://app.example.org/cb"
 
 
 @pytest.fixture

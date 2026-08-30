@@ -7,35 +7,20 @@ than no screen: it tells somebody a false thing about their own account.
 """
 
 from . import PROFILE_ID
+from . import REDIRECT
 from datetime import datetime
 from datetime import timedelta
 from datetime import UTC
 from pas.plugins.identity.server.consent import ConsentRecord
 from pas.plugins.identity.server.consent import ConsentStore
-from pas.plugins.identity.server.pas import PLUGIN_ID
 from pas.plugins.identity.server.services.grants.delete import GrantsDelete
 from pas.plugins.identity.server.services.grants.get import GrantsGet
-from plone import api
 from plone.app.testing import logout
 
 import pytest
 
 
 pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
-
-REDIRECT = "https://app.example.org/cb"
-
-
-@pytest.fixture
-def plugin(portal):
-    """The server PAS plugin, holding both stores."""
-    return portal.acl_users[PLUGIN_ID]
-
-
-@pytest.fixture
-def userid() -> str:
-    """The authenticated user's id."""
-    return api.user.get_current().getId()
 
 
 @pytest.fixture

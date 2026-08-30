@@ -5,6 +5,7 @@ a verifier refuses. The second half is the one that matters, and every refusal
 here is deliberately indistinguishable from the outside.
 """
 
+from . import ISSUER
 from . import PROFILE_ID
 from pas.plugins.identity.server.grants.tokens import decode_access_token
 from pas.plugins.identity.server.grants.tokens import get_issuer
@@ -23,19 +24,6 @@ import pytest
 
 
 pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
-
-ISSUER = "https://id.example.org"
-
-
-@pytest.fixture
-def issuer(portal):
-    """Configure an issuer, which the server refuses to sign without.
-
-    :param portal: The Plone site.
-    :returns: The configured issuer URL.
-    """
-    api.portal.set_registry_record(ISSUER_RECORD, ISSUER)
-    return ISSUER
 
 
 class TestIssuer:

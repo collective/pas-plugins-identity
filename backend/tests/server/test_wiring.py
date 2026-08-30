@@ -8,6 +8,9 @@ matters most here -- a browser layer that leaves the endpoints unreachable in
 a site that did apply the profile, or reachable in one that did not.
 """
 
+from . import ISSUER
+from . import REDIRECT
+from . import SERVICE_USER
 from bs4 import BeautifulSoup
 from pas.plugins.identity import PACKAGE_NAME
 from pas.plugins.identity.server.controlpanel.clients import add_client
@@ -25,12 +28,6 @@ import pytest
 import requests
 import transaction
 
-
-REDIRECT = "https://app.example.org/cb"
-ISSUER = "https://id.example.org"
-
-#: The Plone user a client-credentials token acts as, in the Bearer tests.
-SERVICE_USER = "svc-indexer"
 
 #: plone.restapi does not traverse an ``@endpoint`` without it.
 JSON = {"Accept": "application/json"}

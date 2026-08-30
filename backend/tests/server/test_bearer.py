@@ -10,7 +10,9 @@ Authentication is where the refusals live, and there are more of them than the
 signature check alone would suggest.
 """
 
+from . import ISSUER
 from . import PROFILE_ID
+from . import USERID
 from pas.plugins.identity.server.controlpanel.clients import get_clients
 from pas.plugins.identity.server.controlpanel.clients import remove_client
 from pas.plugins.identity.server.controlpanel.clients import set_clients
@@ -23,22 +25,6 @@ import pytest
 
 
 pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
-
-ISSUER = "https://id.example.org"
-USERID = "alice"
-
-
-@pytest.fixture
-def plugin(portal):
-    """The server plugin, which is also the Bearer plugin."""
-    return portal.acl_users[PLUGIN_ID]
-
-
-@pytest.fixture
-def issuer(portal):
-    """Configure the issuer, without which nothing can be signed."""
-    api.portal.set_registry_record(ISSUER_RECORD, ISSUER)
-    return ISSUER
 
 
 @pytest.fixture

@@ -9,11 +9,11 @@ is a registration mistake somebody has to be able to read.
 """
 
 from . import PROFILE_ID
+from . import SERVICE_USER
 from pas.plugins.identity.server.browser.token import TokenView
 from pas.plugins.identity.server.controlpanel.clients import get_clients
 from pas.plugins.identity.server.controlpanel.clients import set_clients
 from pas.plugins.identity.server.grants.tokens import decode_access_token
-from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
 from plone import api
 
 import json
@@ -21,9 +21,6 @@ import pytest
 
 
 pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
-
-ISSUER = "https://id.example.org"
-SERVICE_USER = "svc-indexer"
 
 
 def post(portal, **params):
@@ -39,13 +36,6 @@ def post(portal, **params):
     request.environ["REQUEST_METHOD"] = "POST"
     body = TokenView(portal, request)()
     return request.response.getStatus(), json.loads(body)
-
-
-@pytest.fixture
-def issuer(portal):
-    """Configure the issuer, without which nothing can be signed."""
-    api.portal.set_registry_record(ISSUER_RECORD, ISSUER)
-    return ISSUER
 
 
 @pytest.fixture

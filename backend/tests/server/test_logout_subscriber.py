@@ -12,6 +12,7 @@ repeating that setup would test the stub twice and the subscriber once.
 """
 
 from . import PROFILE_ID
+from . import USERID
 from pas.plugins.identity.core.events import SessionsRevoked
 from pas.plugins.identity.server.pas import PLUGIN_ID
 from zope.event import notify
@@ -21,7 +22,6 @@ import pytest
 
 pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
 
-USERID = "alice"
 OTHER = "bob"
 
 

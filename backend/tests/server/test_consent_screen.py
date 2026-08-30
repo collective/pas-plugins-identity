@@ -7,6 +7,7 @@ frontend can find out about the request once it lands there.
 """
 
 from . import PROFILE_ID
+from . import REDIRECT
 from pas.plugins.identity.server.browser.authorize import AuthorizeView
 from pas.plugins.identity.server.consent.screen import consent_screen_url
 from pas.plugins.identity.server.consent.screen import CONSENT_URL_RECORD
@@ -21,7 +22,6 @@ import pytest
 
 pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
 
-REDIRECT = "https://app.example.org/cb"
 SCREEN = "https://id.example.org/oauth-consent"
 
 

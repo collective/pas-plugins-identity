@@ -5,6 +5,7 @@ them is to be able to refuse the second use. Most of what is asserted here is
 therefore about refusal.
 """
 
+from . import REDIRECT
 from datetime import datetime
 from datetime import timedelta
 from datetime import UTC
@@ -17,9 +18,6 @@ from pas.plugins.identity.server.grants.codes import CodeError
 from pas.plugins.identity.server.grants.codes import make_verifier
 
 import pytest
-
-
-REDIRECT = "https://app.example.org/cb"
 
 
 class TestIssuing:

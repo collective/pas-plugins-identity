@@ -9,6 +9,8 @@ neither keeps access.
 """
 
 from . import PROFILE_ID
+from . import REDIRECT
+from . import USERID
 from datetime import datetime
 from datetime import timedelta
 from datetime import UTC
@@ -16,7 +18,6 @@ from pas.plugins.identity.server.browser.token import TokenView
 from pas.plugins.identity.server.grants.refresh import RefreshError
 from pas.plugins.identity.server.grants.refresh import RefreshTokenStore
 from pas.plugins.identity.server.grants.tokens import decode_access_token
-from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
 from pas.plugins.identity.server.pas import PLUGIN_ID
 from plone import api
 
@@ -25,17 +26,6 @@ import pytest
 
 
 pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
-
-ISSUER = "https://id.example.org"
-REDIRECT = "https://app.example.org/cb"
-USERID = "alice"
-
-
-@pytest.fixture
-def issuer(portal):
-    """Configure the issuer."""
-    api.portal.set_registry_record(ISSUER_RECORD, ISSUER)
-    return ISSUER
 
 
 @pytest.fixture

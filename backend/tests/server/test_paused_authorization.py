@@ -22,8 +22,8 @@ them.
 """
 
 from . import PROFILE_ID
+from . import REDIRECT
 from pas.plugins.identity.server.browser.token import TokenView
-from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
 from pas.plugins.identity.server.pas import PLUGIN_ID
 from plone import api
 
@@ -33,19 +33,10 @@ import pytest
 
 pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
 
-REDIRECT = "https://app.example.org/cb"
-ISSUER = "https://id.example.org"
 USERID = "dana"
 #: What the account carries before anybody fills the form in.
 PLACEHOLDER = "placeholder@example.org"
 SCOPE = "openid email profile"
-
-
-@pytest.fixture
-def issuer(portal):
-    """Configure the issuer, without which nothing can be signed."""
-    api.portal.set_registry_record(ISSUER_RECORD, ISSUER)
-    return ISSUER
 
 
 @pytest.fixture

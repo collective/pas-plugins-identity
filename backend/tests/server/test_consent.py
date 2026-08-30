@@ -8,11 +8,11 @@ the request that arrives claiming they already answered.
 """
 
 from . import PROFILE_ID
+from . import REDIRECT
 from bs4 import BeautifulSoup
 from pas.plugins.identity.server.browser.authorize import AuthorizeView
 from pas.plugins.identity.server.consent import ConsentStore
 from pas.plugins.identity.server.pas import PLUGIN_ID
-from plone import api
 from plone.protect.authenticator import createToken
 from urllib.parse import parse_qs
 from urllib.parse import urlparse
@@ -22,8 +22,6 @@ import pytest
 
 
 pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
-
-REDIRECT = "https://app.example.org/cb"
 
 
 @pytest.fixture
@@ -44,12 +42,6 @@ def client(portal, add_client):
 def store(portal):
     """The consent store."""
     return portal.acl_users[PLUGIN_ID].consent
-
-
-@pytest.fixture
-def userid(portal) -> str:
-    """The authenticated user's id."""
-    return api.user.get_current().getId()
 
 
 def call(portal, **params):

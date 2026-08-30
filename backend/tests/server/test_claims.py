@@ -10,6 +10,7 @@ when this site verified the address itself.
 """
 
 from . import PROFILE_ID
+from . import USERID
 from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from pas.plugins.identity.server.claims import claims_for
@@ -24,7 +25,6 @@ import pytest
 
 pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
 
-USERID = "alice"
 ADDRESS = "alice@example.org"
 
 #: The smallest valid PNG, so a test never carries a binary fixture file.

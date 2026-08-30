@@ -26,7 +26,9 @@ stores' internal BTrees, not on the store objects), which is a good reason
 not to guess at all.
 """
 
+from . import ISSUER
 from . import PROFILE_ID
+from . import SERVICE_USER
 from pas.plugins.identity.server.browser.token import TokenView
 from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
 from pas.plugins.identity.server.pas import PLUGIN_ID
@@ -40,8 +42,6 @@ import ZODB.Connection
 
 pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
 
-ISSUER = "https://id.example.org"
-SERVICE_USER = "svc-indexer"
 
 #: How many tokens to mint when checking that the cost does not scale.
 BATCH = 20

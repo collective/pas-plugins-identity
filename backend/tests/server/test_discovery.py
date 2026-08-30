@@ -7,6 +7,7 @@ lists is the one actually used, and the issuer it reports is the one a client
 compared against to get here.
 """
 
+from . import ISSUER
 from . import PROFILE_ID
 from pas.plugins.identity.server.browser.discovery import DiscoveryView
 from pas.plugins.identity.server.browser.discovery import JSONView
@@ -14,12 +15,10 @@ from pas.plugins.identity.server.browser.discovery import JWKSView
 from pas.plugins.identity.server.browser.discovery import WellKnownView
 from pas.plugins.identity.server.discovery import DISCOVERY_DOCUMENT
 from pas.plugins.identity.server.discovery import metadata
-from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
 from pas.plugins.identity.server.grants.tokens import mint_id_token
 from pas.plugins.identity.server.utils.keys import ALGORITHM
 from pas.plugins.identity.server.utils.keys import get_keys
 from pas.plugins.identity.server.utils.keys import rotate_keys
-from plone import api
 from zExceptions import NotFound
 
 import base64
@@ -28,15 +27,6 @@ import pytest
 
 
 pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
-
-ISSUER = "https://id.example.org"
-
-
-@pytest.fixture
-def issuer(portal):
-    """Configure the issuer, without which nothing describes itself."""
-    api.portal.set_registry_record(ISSUER_RECORD, ISSUER)
-    return ISSUER
 
 
 def render(view_class, portal):

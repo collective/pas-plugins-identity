@@ -6,6 +6,7 @@ different mistakes are indistinguishable from outside.
 """
 
 from . import PROFILE_ID
+from . import REDIRECT
 from pas.plugins.identity.server.browser.token import TokenView
 from pas.plugins.identity.server.grants.codes import make_verifier
 from pas.plugins.identity.server.grants.tokens import decode_access_token
@@ -20,16 +21,6 @@ import pytest
 
 
 pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
-
-REDIRECT = "https://app.example.org/cb"
-ISSUER = "https://id.example.org"
-
-
-@pytest.fixture
-def issuer(portal):
-    """Configure the issuer, without which nothing can be signed."""
-    api.portal.set_registry_record(ISSUER_RECORD, ISSUER)
-    return ISSUER
 
 
 @pytest.fixture

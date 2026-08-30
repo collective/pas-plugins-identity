@@ -12,9 +12,10 @@ authorization server that drops it produces logins that fail with no useful
 message.
 """
 
+from . import ISSUER
 from . import PROFILE_ID
+from . import USERID
 from pas.plugins.identity.server.browser.userinfo import UserInfoView
-from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
 from pas.plugins.identity.server.grants.tokens import mint_access_token
 from pas.plugins.identity.server.grants.tokens import mint_id_token
 from pas.plugins.identity.server.grants.tokens import token_response
@@ -26,16 +27,6 @@ import pytest
 
 
 pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
-
-ISSUER = "https://id.example.org"
-USERID = "alice"
-
-
-@pytest.fixture
-def issuer(portal):
-    """Configure the issuer."""
-    api.portal.set_registry_record(ISSUER_RECORD, ISSUER)
-    return ISSUER
 
 
 @pytest.fixture
