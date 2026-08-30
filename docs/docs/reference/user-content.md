@@ -164,6 +164,18 @@ The identity records are deliberately left behind.
 An identity outliving an account is by design, because it is what lets the same person sign back in under the same userid, so removing one is a separate decision an operator makes in the {guilabel}`Identities` panel.
 A login through an identity whose account is gone recreates the object and logs a warning naming the userid, so the case is reported rather than silent.
 
+The audit entries are left behind for the same reason: they are the record of how an account was used, and discarding it on deletion would mean an operator investigating an incident loses exactly the accounts worth investigating.
+
+```{warning}
+Deleting a user therefore does not erase everything the site holds about them.
+The identity record keeps a snapshot of the claims the provider last sent, which typically includes an address and a name.
+The audit entries keep the login history, with the IP address and user agent as well on a site that has switched that on.
+Both are keyed to a userid that no longer resolves to anybody, and neither is reachable through `@users`.
+
+A deployment with an erasure obligation has to remove them deliberately: unlink the identities in the {guilabel}`Identities` panel *before* deleting the user, which also drops the store's record of them.
+Local roles are revoked by Plone on deletion and are not restored by a later sign-in, so this is a data-retention question rather than an access one.
+```
+
 ## Refusals
 
 The following are refused rather than supported.

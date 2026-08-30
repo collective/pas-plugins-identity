@@ -84,6 +84,12 @@ See {doc}`audit-log`.
 **The audit log is not a session ledger.**
 It records authentication events, not sessions.
 
+**Deleting a user does not delete their identities or their audit entries.**
+The identity join is what lets somebody sign back in under the same userid, and the audit entries are the record of how the account was used, so both outlive the account by design.
+Each keeps personal data against a userid that no longer resolves: a claims snapshot on the identity, and a login history on the audit entries.
+Unlink the identities before deleting the user if you have an erasure obligation.
+See {doc}`user-content`.
+
 **A relying party granted the `profile` scope receives the group list.**
 `groups` rides on `profile` rather than on a scope of its own, so a client asking for a display scope also learns which groups a user is in.
 `AuthenticatedUsers` is never released, and a user in no other group gets no claim at all.

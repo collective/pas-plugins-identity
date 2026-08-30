@@ -1,0 +1,5 @@
+Said plainly what a user deletion leaves behind.
+
+Deleting a user removes the Profile and the Plone account, and deliberately keeps the identity records — that part was already documented, because it is what lets somebody sign back in under the same userid. What was not documented is that the audit entries stay too, and that both hold personal data against a userid nobody can resolve any more: a claims snapshot on the identity, a login history on the audit entries, with an IP address on a site that has switched that on.
+
+Local roles are revoked by Plone on deletion and are not restored by a later sign-in, so this is a data-retention question rather than an access one. A deployment with an erasure obligation should unlink the identities before deleting the user. @ericof
