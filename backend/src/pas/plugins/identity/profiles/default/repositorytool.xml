@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Versioning for the two principal types.
+
+  The FTI's plone.versioning behavior is only half of it: the behavior puts a
+  change note on the edit form and marks the type versionable, and this file
+  is what actually registers a policy with portal_repository. A type carrying
+  the behavior and missing from here looks versioned everywhere a person can
+  see and keeps no history at all.
+
+  The type entries must sit inside policymap. CMFEditions' import handler
+  walks the children of policymap only, so a type element one level up is
+  valid XML, imports without an error, and is silently ignored.
+-->
+<repositorytool>
+  <policymap purge="false">
+    <type name="UserProfile">
+      <policy name="at_edit_autoversion" />
+      <policy name="version_on_revert" />
+    </type>
+    <type name="UserGroup">
+      <policy name="at_edit_autoversion" />
+      <policy name="version_on_revert" />
+    </type>
+  </policymap>
+</repositorytool>

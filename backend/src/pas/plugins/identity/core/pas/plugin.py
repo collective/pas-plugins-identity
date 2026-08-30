@@ -438,7 +438,9 @@ class IdentityPlugin(BasePlugin):
         serialized by ``plone.restapi``, exported by GenericSetup, indexable
         and snapshotted by versioning -- four separate paths that each fail by
         disclosing it. So the content object is the record a user *is*, and
-        ``source_users`` stays the credential store.
+        ``source_users`` stays the credential store. (The optional behavior
+        that does keep it on the object uses an annotation for the first
+        three and :mod:`pas.plugins.identity.core.versioning` for the fourth.)
 
         A site adding a user through the ordinary API therefore ends up with
         someone who can actually sign in. An externally authenticated user

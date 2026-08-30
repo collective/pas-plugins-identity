@@ -125,6 +125,42 @@ class TestTheServerLayerIsItsOwnProduct:
         assert not self.installer.is_product_installable(f"{PACKAGE_NAME}.content")
 
 
+class TestVersioningIsInstalled:
+    """Versioning takes two pieces of configuration and a guard, and the FTI
+    only shows one of them."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+
+    @pytest.mark.parametrize("portal_type", ["UserProfile", "UserGroup"])
+    def test_the_type_has_a_versioning_policy(self, portal_type: str):
+        """``repositorytool.xml`` is the half a behaviour cannot provide, and
+        CMFEditions' importer silently ignores a ``type`` element placed
+        outside ``policymap`` -- so this is the assertion that catches a
+        policy that looks right and was never read."""
+        repository = api.portal.get_tool("portal_repository")
+
+        assert portal_type in repository.getVersionableContentTypes()
+
+    def test_the_credential_guard_is_registered(self):
+        """CMFEditions copies annotations into a snapshot, and the password
+        behaviour keeps its hash in one. Registered on install whether or not
+        that behaviour is enabled anywhere."""
+        from pas.plugins.identity.core.versioning import MODIFIER_ID
+
+        assert MODIFIER_ID in api.portal.get_tool("portal_modifier").objectIds()
+
+    def test_the_credential_guard_is_enabled(self):
+        """A registered but disabled modifier is inert, which here would mean
+        the guard visible in the ZMI and credentials going into history."""
+        from pas.plugins.identity.core.versioning import MODIFIER_ID
+
+        modifier = api.portal.get_tool("portal_modifier").get(MODIFIER_ID)
+
+        assert modifier.isEnabled() is True
+
+
 class TestSetupInstall:
     @pytest.fixture(autouse=True)
     def _setup(self, portal) -> None:

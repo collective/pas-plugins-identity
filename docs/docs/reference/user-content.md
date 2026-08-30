@@ -137,7 +137,7 @@ If nothing claims the login, it still succeeds and the principal exists as an id
 
 ```{warning}
 Never store a credential in a Dexterity field.
-A field is serialized by `plone.restapi`, exported by GenericSetup, indexed by the catalog, and snapshotted by versioning.
+A field is serialized by `plone.restapi`, exported by GenericSetup, indexed by the catalog, and snapshotted by versioning. An annotation is invisible to the first three by construction. Versioning is the exception: CMFEditions copies annotations into a snapshot, so the add-on registers a modifier that keeps the hash out of the version repository, and a superseded password is not recoverable from a Profile's history.
 The password behavior this package ships keeps a hash in an annotation for this reason.
 ```
 

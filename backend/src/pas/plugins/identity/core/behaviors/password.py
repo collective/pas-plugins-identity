@@ -13,9 +13,17 @@ fails by disclosing the credential, and each has to be remembered
 independently.
 
 **So the hash is an annotation, not a field.** An annotation is invisible to
-all four without anything being excluded anywhere -- the difference between
-"we remembered in four places" and "there is nothing to remember". Nothing
-renders it, nothing exports it, and reading it takes an explicit accessor.
+three of the four without anything being excluded anywhere -- the difference
+between "we remembered in three places" and "there is nothing to remember".
+Nothing renders it, nothing exports it, and reading it takes an explicit
+accessor.
+
+Versioning is the fourth, and it is not free: CMFEditions deep-copies
+``__annotations__`` into a snapshot, so a versionable Profile would carry
+every superseded hash in ``portal_repository`` -- a password change that did
+not retire the old credential, with nothing to say so. Both principal types
+*are* versionable, so this is handled rather than avoided; see
+:mod:`pas.plugins.identity.core.versioning`.
 
 **What it buys.** A site whose users are content gets one object per person
 holding everything about them, and Profile workflow becomes account

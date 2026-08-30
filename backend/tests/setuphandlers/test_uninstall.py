@@ -72,6 +72,16 @@ class TestSetupUninstall:
 
         assert CONFIGLET_ID not in [action.id for action in tool.listActions()]
 
+    def test_the_versioning_modifier_is_removed(self):
+        """It guards this package's credential annotation and nothing else, so
+        a site without this package has no use for it -- and a persistent
+        object whose class left with the package is a broken one."""
+        from pas.plugins.identity.core.versioning import MODIFIER_ID
+
+        tool = api.portal.get_tool("portal_modifier")
+
+        assert MODIFIER_ID not in tool.objectIds()
+
     def test_registry_records_removed(self):
         """No orphan settings behind an add-on nobody can configure."""
         assert (

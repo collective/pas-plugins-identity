@@ -1,0 +1,5 @@
+A federated first login stopped failing once Profiles became versionable.
+
+`sync_claims` and `sync_addresses` end in a modification event when they change something, `at_edit_autoversion` answers it by calling `portal_repository.save`, and that is a permission the person being logged in does not have. The callback answered `401` with `"You are not allowed to access 'save' in this context"`, which reads as an authentication failure rather than as a versioning one.
+
+The Profile *creation* beside it already ran unrestricted, for the reason the docstring gives: the person is mid-login and holds no roles yet. The claim sync now runs the same way — these writes are the package acting, not the user editing. @ericof

@@ -38,6 +38,7 @@
   <property name="behaviors">
     <element value="plone.shortname" />
     <element value="pas.plugins.identity.group_membership" />
+    <element value="plone.versioning" />
   </property>
 
   <alias from="(Default)"

@@ -312,7 +312,9 @@ class ICredentialStorage(Interface):
     holding a credential is serialized by ``plone.restapi``, exported by
     GenericSetup, indexable, and snapshotted by versioning -- four separate
     paths that each fail by disclosing it, and each of which has to be
-    remembered separately.
+    remembered separately. An annotation closes the first three by
+    construction; versioning needs a guard, which
+    :mod:`pas.plugins.identity.core.versioning` installs.
 
     A layer that would rather keep the credential with the rest of the user
     provides this instead, takes on those four questions deliberately, and

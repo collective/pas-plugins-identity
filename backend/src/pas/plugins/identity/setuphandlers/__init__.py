@@ -17,6 +17,8 @@ from pas.plugins.identity.core.container import grant_add_permissions
 from pas.plugins.identity.core.controlpanel.interfaces import IIdentitySettings
 from pas.plugins.identity.core.controlpanel.interfaces import IProfileSettings
 from pas.plugins.identity.core.subscribers.principals import sync_core_records
+from pas.plugins.identity.core.versioning import register_modifier
+from pas.plugins.identity.core.versioning import unregister_modifier
 from pas.plugins.identity.setuphandlers.catalog import add_indexes
 from pas.plugins.identity.setuphandlers.catalog import add_lexicon
 from pas.plugins.identity.setuphandlers.catalog import add_metadata
@@ -126,6 +128,13 @@ def post_install(context: SetupTool) -> None:
     install_plugin(acl_users)
     install_profile_plugin(acl_users)
 
+    # Both principal types are versionable, and CMFEditions deep-copies
+    # annotations -- which is where the optional password behavior keeps its
+    # hash. Registered whether or not that behavior is enabled anywhere: a
+    # site that switches it on later must not start writing credentials into
+    # its history with nothing in place to stop it.
+    register_modifier(api.portal.get_tool("portal_modifier"))
+
     # The subscriber in ``core.principals`` has already run for any container
     # setting this profile's registry.xml wrote. Doing it again here covers
     # the site that reinstalls without changing one, and costs a write.
@@ -171,6 +180,7 @@ def post_uninstall(context: SetupTool) -> None:
     acl_users = _acl_users()
     uninstall_profile_plugin(acl_users)
     uninstall_plugin(acl_users)
+    unregister_modifier(api.portal.get_tool("portal_modifier"))
     # The records naming the user and group types are removed declaratively,
     # by this profile's ``registry.xml``. Blanking them here as well would run
     # after they are already gone, and ``set_registry_record`` raises for a

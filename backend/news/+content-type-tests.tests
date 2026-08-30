@@ -1,0 +1,7 @@
+Added `tests/content_types/`, covering the FTI and versioning of both types.
+
+There were no FTI tests at all. Nothing asserted the class, the schema, the add permission, or which behaviors either type declares in which order — so a behavior added, removed or reordered was a change no test could see, on the two types the whole add-on is built around.
+
+The layout follows the house pattern: a package `conftest.py` holding everything type-agnostic, and a module per type supplying only `portal_type` and `payload`. Adding a third content type should mean writing a module, not new fixtures.
+
+Two things differ from that pattern, and both come from what these types are. Principals may only be created where the add permission is granted — which is the container the registry names and nowhere else — so `container` resolves that instead of defaulting to the portal. And this package is not under `tests/core`, so the autouse fixtures that elect those tests as a manager do not reach it and the factory elevates for itself. @ericof

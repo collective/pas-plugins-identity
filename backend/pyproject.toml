@@ -230,6 +230,14 @@ markers = [
     "docker: needs the compose stack in tests/docker-compose.yml.",
     "no_profile_container: start without a Profile container, for the tests that create one.",
 ]
+# Both principal types are versionable, so every save runs CMFEditions'
+# modifier conditions -- and one of those conditions is a TALES expression
+# shipped by CMFEditions that calls a method Plone has deprecated. Nothing
+# here can fix it at either end, and left alone it buried 45 real warnings
+# under 15,000 copies of this one. Remove when CMFEditions stops asking.
+filterwarnings = [
+    "ignore:Use method is_structural_folder from @@plone_context_state instead:DeprecationWarning",
+]
 
 [tool.coverage.run]
 source_pkgs = ["pas.plugins.identity", "tests"]

@@ -411,8 +411,20 @@ def _handle(userid: str, claims: Claims, provider_id: str) -> None:
     """
     profile = ensure_profile(userid, _login_for(userid, claims), claims)
     if profile is not None:
-        sync_claims(profile, claims, provider_id)
-        sync_addresses(profile, claims)
+        # Unrestricted for the same reason the creation above is: the person
+        # is mid-login and holds no roles yet, and these writes are the
+        # package acting rather than the user editing.
+        #
+        # It became load-bearing when the Profile became versionable. Both
+        # helpers end in a modification event when they change something,
+        # ``at_edit_autoversion`` answers it by calling
+        # ``portal_repository.save``, and that is a permission the user being
+        # logged in does not have -- so a first federated login failed with
+        # "You are not allowed to access 'save' in this context", reported to
+        # the caller as a 401 from the callback.
+        with api.env.adopt_roles(["Manager"]):
+            sync_claims(profile, claims, provider_id)
+            sync_addresses(profile, claims)
     # After the addresses rather than before, so that an address this login
     # has just proved is already on the Profile whose derived `email` it
     # changes. Outside the `is not None` because verification is a fact about

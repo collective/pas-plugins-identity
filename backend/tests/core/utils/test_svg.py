@@ -59,6 +59,63 @@ class TestKeepsWhatAnIconNeeds:
         assert sanitize("   ") == ""
 
 
+#: ``(source, what must be gone, what must survive)``. The root element
+#: is written out per row rather than wrapped around a fragment, because
+#: one of these attacks is *on* the root.
+ATTACKS = [
+    (
+        # Unwrapping it would keep the payload, which is the whole element.
+        f'{ROOT}<script>fetch("//evil.example")</script><path d="M0 0"/></svg>',
+        ("script", "evil.example"),
+        ('d="M0 0"',),
+    ),
+    (
+        # Excluded by the allowlist rather than by matching ``on*``.
+        '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"/>',
+        ("onload",),
+        (),
+    ),
+    (
+        # foreignObject is the documented way to put a whole HTML
+        # document inside an SVG.
+        f'{ROOT}<foreignObject><iframe src="//evil.example"/></foreignObject></svg>',
+        ("foreignObject", "iframe"),
+        (),
+    ),
+    (
+        # CSS is a second language, and it can fetch.
+        f"{ROOT}<style>@import url(//evil.example)</style></svg>",
+        ("evil.example",),
+        (),
+    ),
+    (
+        # Same reason, in the place people forget to look.
+        f'{ROOT}<path d="M0 0" style="background:url(//evil.example)"/></svg>',
+        ("evil.example",),
+        (),
+    ),
+    (
+        # A ``use`` pulls in a document from somewhere else.
+        f'{ROOT}<use href="https://evil.example/x.svg#i"/></svg>',
+        ("use", "evil.example"),
+        (),
+    ),
+    (
+        # The element is fine; what it points at is not.
+        f'{ROOT}<path d="M0 0" fill="url(#x)"/></svg>',
+        ("url(#x)",),
+        ('d="M0 0"',),
+    ),
+    (
+        # A shape's text means nothing in SVG, so keeping it is only a
+        # way past a filter that looked at tags alone.
+        f'{ROOT}<path d="M0 0">alert(1)</path></svg>',
+        ("alert(1)",),
+        (),
+    ),
+]
+
+
 class TestDropsWhatRuns:
     """The sanitizer's threat model, as a table.
 
@@ -67,63 +124,6 @@ class TestDropsWhatRuns:
     before; the shape never varied, only the attack did, so the attack is what
     the table carries.
     """
-
-    #: ``(source, what must be gone, what must survive)``. The root element
-    #: is written out per row rather than wrapped around a fragment, because
-    #: one of these attacks is *on* the root.
-    ATTACKS = [
-        (
-            # Unwrapping it would keep the payload, which is the whole element.
-            f'{ROOT}<script>fetch("//evil.example")</script><path d="M0 0"/></svg>',
-            ("script", "evil.example"),
-            ('d="M0 0"',),
-        ),
-        (
-            # Excluded by the allowlist rather than by matching ``on*``.
-            '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"/>',
-            ("onload",),
-            (),
-        ),
-        (
-            # foreignObject is the documented way to put a whole HTML
-            # document inside an SVG.
-            f'{ROOT}<foreignObject><iframe src="//evil.example"/>'
-            f"</foreignObject></svg>",
-            ("foreignObject", "iframe"),
-            (),
-        ),
-        (
-            # CSS is a second language, and it can fetch.
-            f"{ROOT}<style>@import url(//evil.example)</style></svg>",
-            ("evil.example",),
-            (),
-        ),
-        (
-            # Same reason, in the place people forget to look.
-            f'{ROOT}<path d="M0 0" style="background:url(//evil.example)"/></svg>',
-            ("evil.example",),
-            (),
-        ),
-        (
-            # A ``use`` pulls in a document from somewhere else.
-            f'{ROOT}<use href="https://evil.example/x.svg#i"/></svg>',
-            ("use", "evil.example"),
-            (),
-        ),
-        (
-            # The element is fine; what it points at is not.
-            f'{ROOT}<path d="M0 0" fill="url(#x)"/></svg>',
-            ("url(#x)",),
-            ('d="M0 0"',),
-        ),
-        (
-            # A shape's text means nothing in SVG, so keeping it is only a
-            # way past a filter that looked at tags alone.
-            f'{ROOT}<path d="M0 0">alert(1)</path></svg>',
-            ("alert(1)",),
-            (),
-        ),
-    ]
 
     @pytest.mark.parametrize(
         "source,must_go,must_stay",
