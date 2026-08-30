@@ -28,6 +28,7 @@ class TestReport:
         report = Report(dry_run=False)
         report.identities.append(("github", "1", "userid"))
         report.providers.append("github")
+        report.users.append("userid")
         report.skipped.append("something")
 
         body = report.as_dict()
@@ -35,8 +36,17 @@ class TestReport:
         assert body["counts"] == {
             "identities": 1,
             "providers": 1,
+            "users": 1,
             "skipped": 1,
         }
+
+    def test_as_dict_carries_the_users(self):
+        """A migration produces people as well as identities, and an operator
+        reading the report wants to know how many."""
+        report = Report(dry_run=False)
+        report.users.append("userid")
+
+        assert report.as_dict()["users"] == ["userid"]
 
     def test_as_dict_renders_triples_as_lists(self):
         """Tuples are not JSON; a view should not have to convert them."""

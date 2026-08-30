@@ -46,6 +46,7 @@ from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.store import IdentityStore
+from pas.plugins.identity.migration import profiles_for
 from pas.plugins.identity.migration import Report
 from plone import api
 from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
@@ -215,17 +216,24 @@ def migrate(dry_run: bool = True, userids: list[str] | None = None) -> Report:
     store = identity_plugin.store
     _plan_identities(plugins, _candidate_userids(userids), store, report)
 
+    migrating = [userid for _, _, userid in report.identities]
     if dry_run:
+        report.users = sorted(set(migrating) - set(profiles_for(migrating)))
         return report
 
     if new_records:
         set_providers([*get_providers(), *new_records])
     for provider, subject, userid in report.identities:
-        store.add(provider, subject, userid, {})
+        # ``link`` rather than ``store.add``, for the reason spelled out in
+        # the authomatic migration beside it: the event is what mints the
+        # Profile that is this user.
+        identity_plugin.link(userid, provider, subject, {})
+    report.users = profiles_for(migrating)
 
     logger.info(
-        "Migrated %d identities and %d providers from pas.plugins.oidc",
+        "Migrated %d identities, %d users and %d providers from pas.plugins.oidc",
         len(report.identities),
+        len(report.users),
         len(report.providers),
     )
     return report

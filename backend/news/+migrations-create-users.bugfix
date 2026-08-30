@@ -1,0 +1,9 @@
+Both migrations now produce users, not only identities.
+
+`migrate()` wrote each `(provider, subject) → userid` straight into the identity store. That is half of what `link()` does: the other half is firing `IdentityLinked`, and on a site where principals are content that event is what mints the Profile which *is* the user.
+
+So a migrated person existed as a row in a BTree and as nobody at all — absent from `@users`, not addable to a group, not grantable a local role, and, once the old plugin was removed as the hard cutover intends, gone entirely. They appeared at their first login, because the login path fires the event the migration had skipped.
+
+Both migrations link through the plugin now. The claims the authomatic migration had been building all along reach the Profile too, having previously had no listener: the full name and the address arrive with the person. The address is still never inherited as verified, because authomatic did not record whether the provider asserted it.
+
+The report gained a `users` field — the userids that have a Profile after a live run, or that would gain one on a dry run — and `counts` gained the matching entry. @ericof

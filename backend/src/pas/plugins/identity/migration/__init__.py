@@ -8,6 +8,15 @@ one outcome a stable userid exists to prevent.
 
 Every migration here is:
 
+**Through the plugin, never straight into the store.** ``store.add`` writes the
+identity join and nothing else; ``plugin.link`` writes it and fires
+``IdentityLinked``, which is what mints the Profile that *is* the user on a
+site where principals are content. Both migrations wrote to the store directly
+until 2026-08-30, so a migrated person existed as an identity and not as a
+user: absent from ``@users``, ungrantable, unaddable to a group, and invisible
+altogether once the old plugin was removed. They appeared at their first login
+and not before.
+
 **Idempotent.** Running it twice does nothing the second time. A migration you
 cannot re-run is a migration nobody dares run.
 
@@ -30,6 +39,8 @@ class Report:
     :ivar dry_run: Whether anything was actually written.
     :ivar identities: ``(provider, subject, userid)`` triples migrated.
     :ivar providers: Provider ids created from the old configuration.
+    :ivar users: Userids that have a Profile once the migration has run. On a
+        dry run, those that would gain one.
     :ivar skipped: Records deliberately not migrated, with the reason.
     :ivar refusals: Conditions that stopped the migration entirely.
     """
@@ -37,6 +48,7 @@ class Report:
     dry_run: bool = True
     identities: list[tuple[str, str, str]] = field(default_factory=list)
     providers: list[str] = field(default_factory=list)
+    users: list[str] = field(default_factory=list)
     skipped: list[str] = field(default_factory=list)
     refusals: list[str] = field(default_factory=list)
 
@@ -59,13 +71,29 @@ class Report:
             "refusals": list(self.refusals),
             "identities": [list(triple) for triple in self.identities],
             "providers": list(self.providers),
+            "users": list(self.users),
             "skipped": list(self.skipped),
             "counts": {
                 "identities": len(self.identities),
                 "providers": len(self.providers),
+                "users": len(self.users),
                 "skipped": len(self.skipped),
             },
         }
 
 
-__all__ = ["Report"]
+def profiles_for(userids) -> list[str]:
+    """Return those userids that have a Profile.
+
+    Used to report what a migration produced, and -- on a dry run, where it is
+    called before anything is written -- what it would produce.
+
+    :param userids: The userids to look at.
+    :returns: Those with a Profile, sorted.
+    """
+    from pas.plugins.identity.core.subscribers import get_profile
+
+    return sorted(uid for uid in set(userids) if get_profile(uid) is not None)
+
+
+__all__ = ["Report", "profiles_for"]

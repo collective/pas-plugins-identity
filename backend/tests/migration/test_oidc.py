@@ -320,3 +320,53 @@ class TestIdempotence:
         migration.migrate(dry_run=False)
 
         assert self.store.userid_for("oidc", "sub-alice") == "sub-alice"
+
+
+class TestTheMigratedPersonIsAUser:
+    """The same gap the authomatic migration had, in the same shape.
+
+    ``store.add`` writes the identity join; ``plugin.link`` writes it and
+    fires ``IdentityLinked``, which mints the Profile that is the user. Fixed
+    in both at once, because one occurrence is a bug and two are a habit.
+
+    ``pas.plugins.oidc`` keeps no user data this package can read, so there is
+    nothing to seed a Profile from beyond the userid itself. The person
+    arrives incomplete rather than absent, which is the difference that
+    matters: a site administrator can find them, grant them a role and put
+    them in a group before they have ever signed in.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, acl_users, oidc_plugin, legacy_user, store) -> None:
+        self.portal = portal
+        self.acl_users = acl_users
+        self.legacy_user = legacy_user
+        self.store = store
+        self.legacy_user("sub-alice")
+
+    def test_the_profile_exists_after_migrating(self):
+        from pas.plugins.identity.core.subscribers import get_profile
+
+        migration.migrate(dry_run=False)
+
+        assert get_profile("sub-alice") is not None
+
+    def test_the_report_names_them(self):
+        """Membership rather than equality: this migration also sweeps up
+        every other ``source_users`` account, the layer's own test user
+        included, which is behaviour of its own and tested above."""
+        report = migration.migrate(dry_run=False)
+
+        assert "sub-alice" in report.users
+
+    def test_a_dry_run_creates_nobody(self):
+        from pas.plugins.identity.core.subscribers import get_profile
+
+        migration.migrate(dry_run=True)
+
+        assert get_profile("sub-alice") is None
+
+    def test_a_dry_run_says_who_would_arrive(self):
+        report = migration.migrate(dry_run=True)
+
+        assert "sub-alice" in report.users

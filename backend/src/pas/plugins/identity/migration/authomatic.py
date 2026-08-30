@@ -36,6 +36,7 @@ from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.pas import PLUGIN_ID
+from pas.plugins.identity.migration import profiles_for
 from pas.plugins.identity.migration import Report
 from plone import api
 from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
@@ -205,17 +206,32 @@ def migrate(dry_run: bool = True) -> Report:
             continue
         report.identities.append((provider, subject, userid))
 
+    migrating = [userid for _, _, userid in report.identities]
     if dry_run:
+        # What they would gain. Reported the other way round from the live
+        # run: here it is the userids that do *not* have a Profile yet.
+        report.users = sorted(set(migrating) - set(profiles_for(migrating)))
         return report
 
     if new_records:
         set_providers([*get_providers(), *new_records])
     for provider, subject, userid in report.identities:
-        store.add(provider, subject, userid, _claims_for(plugin, userid, provider))
+        # ``link`` rather than ``store.add``: the store write is only half of
+        # it. ``link`` fires ``IdentityLinked``, and the subscriber answers it
+        # by minting the Profile that *is* this user, applying the claims
+        # built above and settling the workflow state. Writing to the store
+        # directly leaves a migrated person as an identity with no user --
+        # absent from ``@users``, ungrantable, and gone entirely once the old
+        # plugin is removed -- until they happen to sign in.
+        identity_plugin.link(
+            userid, provider, subject, _claims_for(plugin, userid, provider)
+        )
+    report.users = profiles_for(migrating)
 
     logger.info(
-        "Migrated %d identities and %d providers from authomatic",
+        "Migrated %d identities, %d users and %d providers from authomatic",
         len(report.identities),
+        len(report.users),
         len(report.providers),
     )
     return report

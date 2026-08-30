@@ -371,3 +371,97 @@ class TestIdempotence:
         migration.migrate(dry_run=False)
 
         assert self.store.userid_for("github", "12345") == "some-userid"
+
+
+class TestTheMigratedPersonIsAUser:
+    """A migration that produced an identity and no user.
+
+    Both migrations wrote straight into the store until this. That writes the
+    join and nothing else: ``plugin.link`` is the same write *plus*
+    ``IdentityLinked``, and it is the event that mints the Profile which, on a
+    site where principals are content, is the user.
+
+    So a migrated person existed as a row in a BTree and as nobody at all --
+    absent from ``@users``, not addable to a group, not grantable a local
+    role, and gone entirely once the old plugin was removed. They appeared at
+    their first login, because the login path fires the event the migration
+    had skipped, and not one moment before (Érico, 2026-08-30).
+    """
+
+    USERID = "8f2c1e5b9a7d4c6e8f0a1b2c3d4e5f60"
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, acl_users, legacy) -> None:
+        self.portal = portal
+        self.acl_users = acl_users
+        legacy(
+            "github",
+            "1234",
+            self.USERID,
+            name="Érico Andrei",
+            email="erico@plone.org",
+        )
+
+    def test_the_profile_exists_after_migrating(self):
+        """The whole point."""
+        from pas.plugins.identity.core.subscribers import get_profile
+
+        migration.migrate(dry_run=False)
+
+        assert get_profile(self.USERID) is not None
+
+    def test_the_report_names_them(self):
+        """An operator reading it wants the count of people, not only of
+        rows in a store."""
+        report = migration.migrate(dry_run=False)
+
+        assert report.users == [self.USERID]
+
+    def test_the_claims_reach_the_profile(self):
+        """The migration built a claims snapshot all along and nothing ever
+        applied it, because nothing was listening."""
+        from pas.plugins.identity.core.subscribers import get_profile
+
+        migration.migrate(dry_run=False)
+
+        assert get_profile(self.USERID).fullname == "Érico Andrei"
+
+    def test_the_address_reaches_the_profile(self):
+        from pas.plugins.identity.core.subscribers import get_profile
+
+        migration.migrate(dry_run=False)
+
+        assert get_profile(self.USERID).emails == ("erico@plone.org",)
+
+    def test_the_address_is_not_verified(self):
+        """authomatic never recorded whether the provider asserted it, so
+        this site has proved nothing and says so."""
+        from pas.plugins.identity.core.subscribers import get_profile
+
+        migration.migrate(dry_run=False)
+
+        assert get_profile(self.USERID).verified_emails == ()
+
+    def test_a_dry_run_creates_nobody(self):
+        from pas.plugins.identity.core.subscribers import get_profile
+
+        migration.migrate(dry_run=True)
+
+        assert get_profile(self.USERID) is None
+
+    def test_a_dry_run_says_who_would_arrive(self):
+        """Reported the other way round from a live run: the userids that do
+        not have a Profile yet are the ones that would gain one."""
+        report = migration.migrate(dry_run=True)
+
+        assert report.users == [self.USERID]
+
+    def test_a_second_run_adds_nobody(self):
+        """The identity is skipped the second time, so nothing is linked and
+        no second Profile is attempted."""
+        migration.migrate(dry_run=False)
+
+        second = migration.migrate(dry_run=False)
+
+        assert second.identities == []
+        assert second.users == []
