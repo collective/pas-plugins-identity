@@ -15,9 +15,18 @@ ever verified an address.
 
 The second is that a ``pas.plugins.authomatic`` dump carries something weaker:
 the provider's ``email_verified`` claim, which is an assertion rather than a
-fact this site established. Whether to believe it is the operator's decision,
-recorded per provider as ``trust_email_verification``, and it is applied on
-import exactly as it would be at a login. A dump cannot grant itself trust.
+fact this site established. A dump cannot grant itself trust.
+
+Who decides is deliberately two questions, not one. A site that believes the
+provider at a login believes the same claim in a document, through the
+ordinary event contract and with nothing asked of the operator. A site that
+does *not* may still want the addresses its old site had already collected --
+which is a decision about history rather than about every future sign-in, and
+is asked for per run as ``trust_verified_emails``. Reusing
+``trust_email_verification`` for both would mean switching a login policy on,
+importing, and remembering to switch it back, with a window in which real
+logins are judged by the temporary setting and nothing reporting it if the
+last step is forgotten (Érico, 2026-08-30).
 """
 
 from . import ADDRESS
@@ -29,6 +38,7 @@ from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from pas.plugins.identity.core.subscribers import get_profile
+from pas.plugins.identity.core.verification import trusts_verification
 from pas.plugins.identity.exportimport import convert_authomatic
 from pas.plugins.identity.exportimport import export_site
 from pas.plugins.identity.exportimport import import_site
@@ -118,23 +128,42 @@ class TestAnAuthomaticDumpAsksPermission:
         self.portal = portal
         self.plugin = plugin
 
-    def test_a_trusted_provider_arrives_verified(self):
+    def test_the_flag_accepts_them(self):
         """The point of the whole thing: 17 people who signed in with Google
         yesterday should not be strangers to their own addresses today."""
+        provider(trusts=False)
+
+        import_site(convert_authomatic(dump()), trust_verified_emails=True)
+
+        assert get_profile(USERID).verified_emails == (ADDRESS,)
+
+    def test_without_the_flag_an_untrusted_provider_is_not_believed(self):
+        """The default. A dump cannot grant itself trust, and importing one
+        is not a reason to start believing a provider."""
+        provider(trusts=False)
+
+        import_site(convert_authomatic(dump()))
+
+        assert get_profile(USERID).verified_emails == ()
+
+    def test_a_trusted_provider_needs_no_flag(self):
+        """A site that already believes this provider at a login believes the
+        same claim in a document, through the ordinary event contract."""
         provider(trusts=True)
 
         import_site(convert_authomatic(dump()))
 
         assert get_profile(USERID).verified_emails == (ADDRESS,)
 
-    def test_an_untrusted_provider_does_not(self):
-        """Same dump, same claim, different site policy. The operator decides,
-        exactly as they do for a login."""
+    def test_the_flag_does_not_change_the_login_policy(self):
+        """The whole reason it is a flag. Reusing
+        ``trust_email_verification`` would mean switching a site's login
+        policy on, importing, and remembering to switch it back."""
         provider(trusts=False)
 
-        import_site(convert_authomatic(dump()))
+        import_site(convert_authomatic(dump()), trust_verified_emails=True)
 
-        assert get_profile(USERID).verified_emails == ()
+        assert trusts_verification(PROVIDER) is False
 
     def test_the_profile_still_has_the_address(self):
         """Not verified is not the same as not there."""
@@ -150,19 +179,20 @@ class TestAnAuthomaticDumpAsksPermission:
     def test_only_a_literal_true_counts(self, claimed):
         """A string ``"true"`` and a ``1`` are both truthy and neither is a
         provider saying yes. The same rule as everywhere else this package
-        reads the flag."""
-        provider(trusts=True)
+        reads the flag -- and the flag says "believe what the dump claims",
+        never "call everything verified"."""
+        provider(trusts=False)
 
-        import_site(convert_authomatic(dump(verified=claimed)))
+        import_site(
+            convert_authomatic(dump(verified=claimed)), trust_verified_emails=True
+        )
 
         assert get_profile(USERID).verified_emails == ()
 
-    def test_it_happens_through_the_event_contract(self):
-        """The importer records nothing itself. ``plugin.link`` fires
-        ``IdentityLinked``, and the subscriber answers it the way it answers a
-        login -- which is why supplying the claims was the whole fix, and why
-        a second call in the importer would have been a second path to the
-        same write."""
+    def test_a_trusted_provider_records_through_the_event_contract(self):
+        """Without the flag the importer writes nothing itself: ``link`` fires
+        ``IdentityLinked`` and the subscriber answers it the way it answers a
+        login, which is why supplying the claims was the whole fix."""
         provider(trusts=True)
 
         result = import_site(convert_authomatic(dump()))
@@ -170,10 +200,22 @@ class TestAnAuthomaticDumpAsksPermission:
         assert result.identities == [(PROVIDER, SUBJECT, USERID)]
         assert self.plugin.store.userid_for(EMAIL_PROVIDER, ADDRESS) == USERID
 
-    def test_a_dry_run_records_nothing(self):
+    def test_the_flag_reports_what_it_recorded(self):
+        """This path *is* the importer acting, so it says so. Recording an
+        address as proved is not a small thing to do silently."""
+        provider(trusts=False)
+
+        result = import_site(convert_authomatic(dump()), trust_verified_emails=True)
+
+        assert (EMAIL_PROVIDER, ADDRESS, USERID) in result.identities
+
+    @pytest.mark.parametrize("flag", [True, False], ids=["with-flag", "without"])
+    def test_a_dry_run_records_nothing(self, flag):
         provider(trusts=True)
 
-        import_site(convert_authomatic(dump()), dry_run=True)
+        import_site(
+            convert_authomatic(dump()), dry_run=True, trust_verified_emails=flag
+        )
 
         assert get_profile(USERID) is None
         assert self.plugin.store.userid_for(EMAIL_PROVIDER, ADDRESS) is None

@@ -59,6 +59,7 @@ class TestTheArguments:
         )
 
         assert parsed.allow_unknown_providers is False
+        assert parsed.trust_verified_emails is False
 
     def test_the_importer_flags_can_be_set(self):
         parsed = cli._parse_args(
@@ -71,12 +72,14 @@ class TestTheArguments:
                 "--dry-run",
                 "--from-authomatic",
                 "--allow-unknown-providers",
+                "--trust-verified-emails",
             ],
         )
 
         assert parsed.dry_run is True
         assert parsed.from_authomatic is True
         assert parsed.allow_unknown_providers is True
+        assert parsed.trust_verified_emails is True
 
 
 class TestGivingUpBeforeTheSite:

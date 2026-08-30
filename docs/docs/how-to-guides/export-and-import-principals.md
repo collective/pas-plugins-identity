@@ -104,11 +104,15 @@ identity-importer etc/zope.conf plone var/authomatic.json --from-authomatic --al
 The identities are written either way, so the join starts working the moment a provider is configured under the right name.
 The flag only turns off the check that the name is one this site knows.
 
-```{tip}
-Switch `trust_email_verification` on for the provider before importing if you want people to arrive with verified addresses.
-`pas.plugins.authomatic` records what the provider claimed, and the import applies your policy to it rather than taking the claim at face value.
-Turning it on afterwards changes nothing retroactively — each person is verified at their next sign-in instead.
+If the people in the dump should arrive with verified addresses, and this site does not otherwise trust that provider at a login, ask for it per run:
+
+```shell
+identity-importer etc/zope.conf plone var/authomatic.json --from-authomatic --trust-verified-emails
 ```
+
+Do not switch `trust_email_verification` on to get the same effect and switch it off afterwards.
+That changes the site's policy for every login in the meantime, and nothing tells you if the last step is forgotten.
+A site that *does* trust the provider at a login needs no flag; the claim is honoured through the ordinary path.
 
 Configure the providers in the target site before anybody signs in.
 Provider configuration is not carried in either format, and the client secret is deliberately not something a document can hold.

@@ -97,15 +97,23 @@ An exported document therefore carries verification already, as `email` identiti
 `email` is exempt from the provider-name check for that reason: it is not a provider anybody configures.
 
 A `pas.plugins.authomatic` dump carries something weaker: the provider's `email_verified` claim, which is an assertion rather than a fact this site established.
-The converter puts it in the identity's `claims`, and the import applies your policy: the address is recorded as proved only when the target provider's `trust_email_verification` is on, exactly as it would be at a login.
-Only a literal `true` counts; a string `"true"` is truthy and is not a provider saying yes.
+The converter puts it in the identity's `claims`, and a dump cannot grant itself trust.
 
-Nothing in the importer writes the record. `link` fires `IdentityLinked`, and the subscriber answers it the way it answers a login.
+Who decides is two questions, not one.
 
-```{tip}
-If your people should arrive already verified, switch `trust_email_verification` on for the provider **before** importing.
-Turning it on afterwards changes nothing retroactively; each person is verified at their next sign-in instead.
+A site that already believes this provider at a login believes the same claim in a document, and needs to do nothing: `link` fires `IdentityLinked`, and the subscriber answers it the way it answers a login.
+
+A site that does **not** believe the provider at a login may still want the addresses its old site had already collected.
+That is a decision about the history being imported rather than about every future sign-in.
+That is `trust_verified_emails`, asked for per run:
+
+```shell
+identity-importer etc/zope.conf plone var/authomatic.json --from-authomatic --trust-verified-emails
 ```
+
+The flag changes nothing about the site's login policy, and nothing persists from it beyond the addresses recorded.
+Only a literal `true` in the dump counts either way: a string `"true"` is truthy and is not a provider saying yes.
+The flag means *believe what the dump claims*, never *call everything verified*.
 
 ## Reading order matters
 

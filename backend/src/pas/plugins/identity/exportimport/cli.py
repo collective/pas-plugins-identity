@@ -9,7 +9,8 @@ learn a second set of arguments to run these.
 
    $ identity-exporter etc/zope.conf plone var/principals.json
    $ identity-importer etc/zope.conf plone var/principals.json --dry-run
-   $ identity-importer etc/zope.conf plone var/authomatic.json --from-authomatic
+   $ identity-importer etc/zope.conf plone var/authomatic.json --from-authomatic \
+       --trust-verified-emails
 
 The difference from ``plone-exporter`` is the last argument: it takes a
 *directory* and writes several files into it, and this takes the path of the
@@ -68,6 +69,10 @@ CLI_SPEC = {
             "--from-authomatic": (
                 "Read a pas.plugins.authomatic dump rather than a document "
                 "this package wrote"
+            ),
+            "--trust-verified-emails": (
+                "Accept the addresses the source's provider called verified, "
+                "without changing this site's login policy for that provider"
             ),
             "--allow-unknown-providers": (
                 "Import even when this site has no provider for a name the "
@@ -162,6 +167,7 @@ def importer_cli(args: list | None = None) -> None:
             document,
             dry_run=namespace.dry_run,
             allow_unknown_providers=namespace.allow_unknown_providers,
+            trust_verified_emails=namespace.trust_verified_emails,
         )
         for line in result.summary():
             logger.info(f" - {line}")

@@ -43,6 +43,7 @@ from pas.plugins.identity.core.container import PROFILE
 from pas.plugins.identity.core.interfaces import IdentityCollision
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
+from pas.plugins.identity.core.verification import record_verified_addresses
 from pas.plugins.identity.exportimport.schema import ExportImportError
 from pas.plugins.identity.exportimport.schema import GROUP_FIELDS
 from pas.plugins.identity.exportimport.schema import Result
@@ -215,7 +216,11 @@ def _apply_membership(record: dict[str, Any], portal_type: str, dry_run: bool) -
 
 
 def _import_identities(
-    user: dict[str, Any], plugin, result: Result, dry_run: bool
+    user: dict[str, Any],
+    plugin,
+    result: Result,
+    dry_run: bool,
+    trust_verified_emails: bool = False,
 ) -> None:
     """Write one user's identity join.
 
@@ -223,6 +228,9 @@ def _import_identities(
     :param plugin: The identity plugin.
     :param result: The result to record into.
     :param dry_run: Whether to write.
+    :param trust_verified_emails: Record an address the source's provider
+        called verified as verified here, whatever this site's provider record
+        says about trusting that provider at a login.
     """
     userid = user["userid"]
     store = plugin.store
@@ -255,13 +263,24 @@ def _import_identities(
                 result.skipped.append(f"identity {provider}:{subject}: {error}")
                 continue
             record.groups = tuple(identity.get("groups") or ())
-            # Nothing here records the address as verified, and nothing here
-            # should: ``plugin.link`` fires ``IdentityLinked``, and the
-            # subscriber answers it exactly as it answers a login -- applying
-            # the claims to the Profile and asking
-            # ``record_verified_addresses`` whether this site takes that
-            # provider's word. Repeating the call here would be a second path
-            # to the same write, and the wrong one to maintain.
+            # ``plugin.link`` has already fired ``IdentityLinked``, and the
+            # subscriber answered it exactly as it answers a login -- applying
+            # the claims and asking the provider record whether to believe
+            # ``email_verified``. So on a site that trusts this provider,
+            # the addresses are recorded already and the call below is a
+            # no-op returning nothing.
+            #
+            # It is here for the site that does *not* trust it at login and
+            # still wants the addresses its old site had already collected.
+            # That is a different question -- one about history rather than
+            # about every future sign-in -- and answering it by switching the
+            # login policy on and back off again would leave a window where
+            # real logins are judged by the temporary setting.
+            if trust_verified_emails:
+                for address in record_verified_addresses(
+                    userid, provider, identity.get("claims") or {}, trust=True
+                ):
+                    result.identities.append((EMAIL_PROVIDER, address, userid))
         result.identities.append((provider, subject, userid))
 
 
@@ -367,6 +386,7 @@ def import_site(
     document: Any,
     dry_run: bool = False,
     allow_unknown_providers: bool = False,
+    trust_verified_emails: bool = False,
 ) -> Result:
     """Write a document's principals into this site.
 
@@ -375,6 +395,11 @@ def import_site(
     :param allow_unknown_providers: Import even when the site has no provider
         for a name the document uses. For the deliberate order -- import
         first, configure the providers afterwards -- and for nothing else.
+    :param trust_verified_emails: Accept the addresses the source's provider
+        called verified, whatever this site's provider record says about
+        trusting that provider at a login. A decision about the history being
+        imported rather than about future sign-ins, which is why it is asked
+        here and not read from ``trust_email_verification``.
     :returns: What was done, or would be.
     :raises ExportImportError: When the document is not one, or when this site
         cannot receive it.
@@ -405,7 +430,7 @@ def import_site(
                 _apply_membership(user, PROFILE_PORTAL_TYPE, dry_run)
         for user in users:
             if user["userid"] in result.users:
-                _import_identities(user, plugin, result, dry_run)
+                _import_identities(user, plugin, result, dry_run, trust_verified_emails)
 
     logger.info(
         "Imported %d users, %d groups and %d identities%s",

@@ -86,7 +86,7 @@ def verified_by_provider(claims: Claims) -> tuple[str, ...]:
 
 
 def record_verified_addresses(
-    userid: str, provider_id: str, claims: Claims
+    userid: str, provider_id: str, claims: Claims, trust: bool | None = None
 ) -> tuple[str, ...]:
     """Record a trusted provider's verified addresses as verified here.
 
@@ -104,13 +104,27 @@ def record_verified_addresses(
     :param userid: The user who just authenticated or linked.
     :param provider_id: The provider the claims came from.
     :param claims: Normalized claims.
+    :param trust: Whether to take the provider's word, overriding the
+        provider record. ``None``, the default, asks the record -- which is
+        what a login does and what anything reacting to an event must do.
+
+        The override exists for a bulk import, where the question is a
+        different one. ``trust_email_verification`` is a standing policy about
+        every future login; accepting the addresses a site has *already*
+        collected is a decision about history, made once. Reusing the record
+        for both would mean switching a site's login policy on, importing, and
+        remembering to switch it back -- with a window in which real logins
+        are judged by the temporary setting, and nothing reporting it if the
+        last step is forgotten.
     :returns: The addresses newly recorded as verified, empty when there is
         nothing to record -- which is the ordinary case.
     """
     if provider_id == EMAIL_PROVIDER:
         return ()
     addresses = verified_by_provider(claims)
-    if not addresses or not trusts_verification(provider_id):
+    if trust is None:
+        trust = trusts_verification(provider_id)
+    if not addresses or not trust:
         return ()
 
     plugin = api.portal.get_tool("acl_users").get(CORE_PLUGIN_ID)
