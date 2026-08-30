@@ -16,6 +16,7 @@ from pas.plugins.identity import PACKAGE_NAME
 from pas.plugins.identity.server.controlpanel.clients import add_client
 from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
 from pas.plugins.identity.server.grants.tokens import mint_access_token
+from pas.plugins.identity.server.pas import PLUGIN_ID
 from plone import api
 from plone.app.testing import applyProfile
 from plone.app.testing import SITE_OWNER_NAME
@@ -430,3 +431,107 @@ class TestTheAdminAPIIsPublished:
 
         assert response.status_code == 200
         assert response.json()["items_total"] == 1
+
+
+class TestTheConsentAndGrantServicesArePublished:
+    """``@oauth-consent`` and ``@oauth-grants``.
+
+    Both were thoroughly tested by constructing the service and never once
+    reached through the publisher. They are the two endpoints a *person*
+    drives rather than a machine -- the screen that asks whether to hand an
+    application their account, and the screen that takes it back -- so a
+    registration mistake in either is one a relying party would never report.
+
+    ``@oauth-grants`` is addressed by client id in a path segment on the
+    DELETE, which is exactly the shape a direct call cannot check.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, server_site, url: str) -> None:
+        self.url = url
+        self.admin = (SITE_OWNER_NAME, SITE_OWNER_PASSWORD)
+        # An agreement to withdraw. Recorded for the Zope root user, which is
+        # who the requests below authenticate as.
+        server_site.acl_users[PLUGIN_ID].consent.record(
+            SITE_OWNER_NAME, "app", "openid"
+        )
+        transaction.commit()
+
+    def test_consent_describes_a_request(self):
+        """The screen's data comes from here; Volto draws it."""
+        response = requests.get(
+            f"{self.url}/@oauth-consent",
+            params={
+                "client_id": "app",
+                "redirect_uri": REDIRECT,
+                "response_type": "code",
+                "scope": "openid",
+            },
+            headers=JSON,
+            auth=self.admin,
+            timeout=30,
+        )
+
+        assert response.status_code == 200
+        assert response.json()["client"]["title"] == "app"
+
+    def test_consent_refuses_anonymous_as_json(self):
+        """Nobody can agree to anything before they have signed in, and the
+        refusal has to be a body rather than a login form."""
+        response = requests.get(
+            f"{self.url}/@oauth-consent",
+            params={"client_id": "app"},
+            headers=JSON,
+            allow_redirects=False,
+            timeout=30,
+        )
+
+        assert response.status_code == 401
+        assert response.headers["Content-Type"].startswith("application/json")
+
+    def test_grants_are_listed(self):
+        response = requests.get(
+            f"{self.url}/@oauth-grants", headers=JSON, auth=self.admin, timeout=30
+        )
+
+        assert response.status_code == 200
+        assert "items" in response.json()
+
+    def test_grants_refuses_anonymous_as_json(self):
+        response = requests.get(
+            f"{self.url}/@oauth-grants",
+            headers=JSON,
+            allow_redirects=False,
+            timeout=30,
+        )
+
+        assert response.status_code == 401
+        assert response.headers["Content-Type"].startswith("application/json")
+
+    def test_withdrawing_traverses_the_client_segment(self):
+        """``DELETE @oauth-grants/<client_id>``.
+
+        The agreement is recorded first so this withdraws something real: a
+        DELETE against a client the caller never authorized answers 404
+        whether traversal worked or not, which is the one status that cannot
+        tell a reached service from an unreached one.
+        """
+        response = requests.delete(
+            f"{self.url}/@oauth-grants/app", headers=JSON, auth=self.admin, timeout=30
+        )
+
+        assert response.status_code == 200
+        assert response.json()["client_id"] == "app"
+
+    def test_withdrawing_needs_exactly_one_segment(self):
+        """The refusal is the service's own, which is what makes it evidence
+        that the segments reached it rather than the publisher."""
+        response = requests.delete(
+            f"{self.url}/@oauth-grants/app/extra",
+            headers=JSON,
+            auth=self.admin,
+            timeout=30,
+        )
+
+        assert response.status_code == 400
+        assert response.json()["error"]["type"] == "Bad request"

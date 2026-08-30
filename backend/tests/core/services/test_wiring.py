@@ -9,14 +9,33 @@ which a direct call would notice.
 
 from . import CALLBACK_URL
 from . import DEX_PROVIDER
+from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
+from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
+from pas.plugins.identity.core.container import get_container
+from pas.plugins.identity.core.container import GROUP
 from pas.plugins.identity.core.controlpanel import CALLBACK_URL_RECORD
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
 from plone import api
+from plone.app.testing import SITE_OWNER_NAME
+from plone.app.testing import SITE_OWNER_PASSWORD
+from plone.namedfile.file import NamedBlobImage
 
 import pytest
 import requests
 import transaction
+
+
+#: The Profile the principal services answer about.
+USERID = "alice"
+
+#: The smallest valid PNG, so a test never carries a binary fixture file.
+PNG = (
+    b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00"
+    b"\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\n"
+    b"IDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00"
+    b"\x00IEND\xaeB`\x82"
+)
 
 
 @pytest.fixture
@@ -228,3 +247,134 @@ class TestPublished:
 
         assert response.status_code == 401
         assert response.json()["error"]["type"] == "Not authenticated"
+
+
+@pytest.fixture
+def principals(site):
+    """Create one Profile and one Group for the principal services to answer about.
+
+    The three services below read principals rather than configuration, so
+    unlike the rest of this module they need something to read. The container
+    is created here the way a first login would: ``tests/core/conftest.py``
+    does it for the modules that use a ``portal`` fixture, and this one runs
+    on the functional layer.
+
+    :param site: The Plone site.
+    :returns: The Profile's userid.
+    """
+    with api.env.adopt_roles(["Manager"]):
+        container = get_container(create=True)
+        api.content.create(
+            container=container,
+            type=PROFILE_PORTAL_TYPE,
+            id=USERID,
+            userid=USERID,
+            login=f"{USERID}@example.org",
+            fullname="Alice Example",
+            image=NamedBlobImage(data=PNG, contentType="image/png", filename="me.png"),
+        )
+        api.content.create(
+            container=get_container(create=True, kind=GROUP),
+            type=GROUP_PORTAL_TYPE,
+            id="editors",
+            group_id="editors",
+            title="Editors",
+        )
+    transaction.commit()
+    return USERID
+
+
+class TestThePrincipalServicesArePublished:
+    """``@group-members``, ``@portrait`` and ``@user-account``.
+
+    These three were the gap this class was written to close: each is
+    thoroughly tested by constructing the service directly, and until now no
+    test had ever reached one through the publisher. A direct call cannot see
+    a wrong ``name``, a missing browser layer, or a traversal that drops the
+    path segment carrying the principal's id -- and every one of these three
+    services is addressed *by* that segment.
+
+    ``@portrait`` is the one that most needed it. The ``[server]`` layer
+    publishes its URL as the OIDC ``picture`` claim, so the caller is a
+    relying party with no Plone session at all.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, url: str, principals: str) -> None:
+        self.url = url
+        self.userid = principals
+        self.headers = {"Accept": "application/json"}
+        self.admin = (SITE_OWNER_NAME, SITE_OWNER_PASSWORD)
+
+    def test_portrait_is_served_to_a_relying_party(self):
+        """No session and no credentials, because an OIDC client fetching a
+        picture claim has neither. A 404 here means the claim this package
+        publishes points at nothing."""
+        response = requests.get(
+            f"{self.url}/@portrait/{self.userid}", headers=self.headers, timeout=30
+        )
+
+        assert response.status_code == 200
+        assert response.content == PNG
+
+    def test_portrait_is_served_as_the_image_it_is(self):
+        """Not as JSON. A relying party puts this URL in an ``img`` tag."""
+        response = requests.get(
+            f"{self.url}/@portrait/{self.userid}", headers=self.headers, timeout=30
+        )
+
+        assert response.headers["Content-Type"].startswith("image/png")
+
+    def test_portrait_traverses_the_userid_segment(self):
+        """The id is a path segment rather than a query parameter, so a
+        service registered without traversal would answer the same thing
+        whatever came after the slash."""
+        response = requests.get(
+            f"{self.url}/@portrait/nobody-at-all", headers=self.headers, timeout=30
+        )
+
+        assert response.status_code == 404
+
+    def test_user_account_is_published(self):
+        """Reached as a manager, which is what the service asks for."""
+        response = requests.get(
+            f"{self.url}/@user-account/{self.userid}",
+            headers=self.headers,
+            auth=self.admin,
+            timeout=30,
+        )
+
+        assert response.status_code == 200
+        assert response.json()["userid"] == self.userid
+
+    def test_user_account_refuses_anonymous_as_json(self):
+        """The permission is ``zope2.View`` and the real check is inside the
+        service, precisely so an anonymous caller gets a JSON body instead of
+        a login form. That only holds if the service is reached at all."""
+        response = requests.get(
+            f"{self.url}/@user-account/{self.userid}", headers=self.headers, timeout=30
+        )
+
+        assert response.status_code == 401
+        assert response.headers["Content-Type"].startswith("application/json")
+
+    def test_group_members_is_published(self):
+        response = requests.get(
+            f"{self.url}/@group-members/editors",
+            headers=self.headers,
+            auth=self.admin,
+            timeout=30,
+        )
+
+        assert response.status_code == 200
+        assert "items" in response.json()
+
+    def test_group_members_refuses_anonymous_as_json(self):
+        """Same shape as ``@user-account``: authenticated-only, refused in
+        the service rather than by the publisher."""
+        response = requests.get(
+            f"{self.url}/@group-members/editors", headers=self.headers, timeout=30
+        )
+
+        assert response.status_code == 401
+        assert response.headers["Content-Type"].startswith("application/json")

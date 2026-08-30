@@ -71,25 +71,31 @@ class TestOutsideASite:
     directly. Nothing is verified in that world, and nothing may raise.
     """
 
-    def test_nothing_is_verified_without_a_portal(self, monkeypatch):
+    @pytest.fixture(autouse=True)
+    def _setup(self, monkeypatch) -> None:
+        """Put the helpers somewhere there is no portal to reach.
+
+        :param monkeypatch: Used to make ``get_tool`` answer the way it does
+            outside a site.
+        """
         from pas.plugins.identity.core.utils import emails
 
         def no_portal(_name):
+            """Fail the way plone.api does with no site.
+
+            :param _name: The tool asked for, ignored.
+            :raises CannotGetPortalError: Always.
+            """
             raise api.exc.CannotGetPortalError("no site")
 
         monkeypatch.setattr(emails.api.portal, "get_tool", no_portal)
+        self.emails = emails
 
-        assert emails.verified_addresses("alice", (ADDRESS,)) == ()
+    def test_nothing_is_verified_without_a_portal(self):
+        assert self.emails.verified_addresses("alice", (ADDRESS,)) == ()
 
-    def test_the_first_address_still_answers(self, monkeypatch):
-        from pas.plugins.identity.core.utils import emails
-
-        def no_portal(_name):
-            raise api.exc.CannotGetPortalError("no site")
-
-        monkeypatch.setattr(emails.api.portal, "get_tool", no_portal)
-
-        assert emails.preferred_address("alice", (ADDRESS,)) == ADDRESS
+    def test_the_first_address_still_answers(self):
+        assert self.emails.preferred_address("alice", (ADDRESS,)) == ADDRESS
 
 
 class TestTheDerivedAddress(ProfileCase):

@@ -226,9 +226,17 @@ class TestFlowsAreNotInterrupted:
         """By prefix rather than by list. The three machine endpoints do not
         send ``text/html`` and would pass anyway; naming the namespace is what
         stops the next browser-facing one from being found the way this one
-        was."""
+        was.
+
+        The 404 assertion is not decoration. A 404 carries no ``Location``
+        either, so on its own the redirect check passes for a view that does
+        not exist -- which is what it was doing for ``@@oauth-jwks`` and
+        ``@@oauth-userinfo``, neither of which had the existence test that
+        sits above for ``@@oauth-authorize`` alone.
+        """
         response = get(f"{self.url}/{view}", auth=self.user)
 
+        assert response.status_code != 404
         assert "/edit" not in response.headers.get("Location", "")
 
     def test_a_site_can_exempt_its_own_paths(self):

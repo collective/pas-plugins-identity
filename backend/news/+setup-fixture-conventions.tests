@@ -1,0 +1,5 @@
+Two test classes stopped repeating their own setup, and one duplicated assertion went.
+
+`TestOutsideASite` opened both of its tests with the same five lines of `monkeypatch`, and `TestGuard` opened two of three with the same `delenv`. Both now use the `_setup` fixture the other 118 modules in the suite already use.
+
+While in `TestGuard`: `test_refuses_without_the_opt_in` asserted that `guard()` raises, and `test_says_why_it_stopped` asserted that it raises *and* names the variable in the message. The second cannot pass while the first fails, so the first was never able to fail alone. It is gone and the reason is recorded on the test that replaced it. @ericof

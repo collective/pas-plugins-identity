@@ -38,28 +38,35 @@ import pytest
 
 
 class TestGuard:
-    def test_refuses_without_the_opt_in(self, monkeypatch):
-        """The only thing standing between a curious click in
-        ``portal_setup`` and a site holding a published client secret."""
-        monkeypatch.delenv(settings.OPT_IN_ENV, raising=False)
+    """The only thing standing between a curious click in ``portal_setup``
+    and a site holding a published client secret."""
 
-        with pytest.raises(DemoRefused):
+    @pytest.fixture(autouse=True)
+    def _setup(self, monkeypatch) -> None:
+        """Start from a site where the demo was never opted into.
+
+        :param monkeypatch: Used to clear the opt-in variable.
+        """
+        monkeypatch.delenv(settings.OPT_IN_ENV, raising=False)
+        self.monkeypatch = monkeypatch
+
+    def test_says_why_it_stopped(self):
+        """A profile that appears to install and silently does nothing is
+        worse to debug than one that refuses out loud.
+
+        This subsumes the bare "it refuses" assertion that used to sit beside
+        it: naming the variable in the message is strictly more than raising,
+        and two tests where one of them cannot fail alone is one test.
+        """
+        with pytest.raises(DemoRefused, match=settings.OPT_IN_ENV):
             guard()
 
-    def test_refuses_when_the_opt_in_is_empty(self, monkeypatch):
+    def test_refuses_when_the_opt_in_is_empty(self):
         """``IDENTITY_DEMO=`` is how a compose file switches the demo off
         without deleting the line, so an empty value must not count."""
-        monkeypatch.setenv(settings.OPT_IN_ENV, "")
+        self.monkeypatch.setenv(settings.OPT_IN_ENV, "")
 
         with pytest.raises(DemoRefused):
-            guard()
-
-    def test_says_why_it_stopped(self, monkeypatch):
-        """A profile that appears to install and silently does nothing is
-        worse to debug than one that refuses out loud."""
-        monkeypatch.delenv(settings.OPT_IN_ENV, raising=False)
-
-        with pytest.raises(DemoRefused, match=settings.OPT_IN_ENV):
             guard()
 
 

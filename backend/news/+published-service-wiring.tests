@@ -1,0 +1,9 @@
+Five REST services were reached through the publisher for the first time.
+
+`@group-members`, `@portrait`, `@user-account`, `@oauth-consent` and `@oauth-grants` were each well covered by constructing the service directly and had never once been fetched over HTTP. That is the gap the direct-construction convention deliberately leaves, and `test_wiring.py` exists to close it: a wrong `name`, a missing browser layer, a permission that refuses anonymous with a login form instead of a body, or a traversal that drops the path segment carrying the principal's id — none of which a direct call can see.
+
+`@portrait` was the one that most needed it. The `[server]` layer publishes its URL as the OIDC `picture` claim, and the caller is a relying party with no Plone session; the new test fetches a real PNG anonymously and asserts the bytes and the content type.
+
+Writing them found nothing broken, and two of the assertions had to be corrected rather than the code: a Profile with no picture correctly answers 404, and withdrawing an agreement that was never made correctly answers 404 too. The consent and grants tests now record an agreement first, so the withdrawal withdraws something — a DELETE against a client the caller never authorized answers 404 whether traversal worked or not, which is the one status that cannot distinguish a reached service from an unreached one.
+
+Separately, `test_the_whole_oauth_namespace_is_exempt` was passing vacuously for two of its four cases. It asserted only that no `/edit` redirect was issued, and a 404 carries no `Location` either — so `@@oauth-jwks` and `@@oauth-userinfo` would have passed had the views not existed. Only `@@oauth-authorize` had a companion existence test. All four now assert they were reached. @ericof
