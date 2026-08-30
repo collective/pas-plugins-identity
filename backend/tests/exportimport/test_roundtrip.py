@@ -12,6 +12,8 @@ from . import LOGIN
 from . import PROVIDER
 from . import SUBJECT
 from . import USERID
+from pas.plugins.identity.core.controlpanel import ProviderConfig
+from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.exportimport import export_site
 from pas.plugins.identity.exportimport import import_site
 
@@ -24,6 +26,11 @@ class TestARoundTrip:
     def _setup(self, portal, plugin, make_user, make_group) -> None:
         self.portal = portal
         self.plugin = plugin
+        # The importer refuses a document naming a provider this site does
+        # not have, so the round trip has to configure the one it links.
+        set_providers([
+            ProviderConfig(provider_id=PROVIDER, driver_id="oidc-generic", title="Dex")
+        ])
         make_group("site-editors", title="Site Editors")
         make_group("staff", title="Staff", group_ids=("site-editors",))
         self.profile = make_user(location="Berlin", group_ids=("site-editors",))
@@ -53,7 +60,7 @@ class TestARoundTrip:
 
     def test_importing_into_itself_preserves_the_user(self):
         """The round trip proper, against the site that produced it."""
-        import_site(export_site())
+        assert not import_site(export_site()).refused
 
         after = export_site()
         user = after["users"][0]
@@ -67,7 +74,7 @@ class TestARoundTrip:
     def test_the_identity_join_survives(self):
         """The whole reason this package exists rather than
         ``plone.exportimport`` alone."""
-        import_site(export_site())
+        assert not import_site(export_site()).refused
 
         identities = export_site()["users"][0]["identities"]
 
@@ -79,7 +86,7 @@ class TestARoundTrip:
     def test_the_nesting_survives(self):
         """A group inside a group, which is the case that needs the third
         pass -- the nesting can name a group that comes later in the list."""
-        import_site(export_site())
+        assert not import_site(export_site()).refused
 
         groups = {group["group_id"]: group for group in export_site()["groups"]}
 

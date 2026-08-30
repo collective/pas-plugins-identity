@@ -9,6 +9,8 @@ get right.
 
 from . import ADDRESS
 from . import USERID
+from pas.plugins.identity.core.controlpanel import ProviderConfig
+from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.subscribers import get_profile
 from pas.plugins.identity.exportimport import convert_authomatic
 from pas.plugins.identity.exportimport import import_site
@@ -211,6 +213,12 @@ class TestConvertedThenImported:
     def _setup(self, portal, plugin) -> None:
         self.portal = portal
         self.plugin = plugin
+        # Both providers the dump names, because the importer refuses a
+        # document naming one this site does not have.
+        set_providers([
+            ProviderConfig(provider_id=pid, driver_id="oidc-generic", title=pid)
+            for pid in ("github", "google")
+        ])
 
     def test_the_account_arrives(self):
         result = import_site(convert_authomatic(dump()))

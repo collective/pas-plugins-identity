@@ -50,6 +50,16 @@ class TestTheArguments:
         assert parsed.dry_run is False
         assert parsed.from_authomatic is False
 
+    def test_allow_unknown_providers_defaults_to_off(self):
+        """It turns off the guard that stops a migration nobody can sign in
+        to, so it has to be asked for."""
+        parsed = cli._parse_args(
+            cli.CLI_SPEC["importer"],
+            ["identity-importer", "etc/zope.conf", "plone", "in.json"],
+        )
+
+        assert parsed.allow_unknown_providers is False
+
     def test_the_importer_flags_can_be_set(self):
         parsed = cli._parse_args(
             cli.CLI_SPEC["importer"],
@@ -60,11 +70,13 @@ class TestTheArguments:
                 "in.json",
                 "--dry-run",
                 "--from-authomatic",
+                "--allow-unknown-providers",
             ],
         )
 
         assert parsed.dry_run is True
         assert parsed.from_authomatic is True
+        assert parsed.allow_unknown_providers is True
 
 
 class TestGivingUpBeforeTheSite:

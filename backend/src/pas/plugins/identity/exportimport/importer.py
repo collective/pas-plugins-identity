@@ -14,6 +14,14 @@ need a traceback. :meth:`Result.skipped` is that list. Refusals are reserved
 for conditions that make the whole run meaningless -- no plugin, no catalog, a
 document from a newer version of this package.
 
+**The provider names are checked before anything is written.** The identity
+key is ``(provider, subject)``, and the name half is authomatic's
+``json_config`` key on one side and a string an operator typed into a control
+panel on the other. A mismatch raises nothing at import time and orphans every
+migrated account at the first login, so it is a refusal here rather than a
+discovery later. ``allow_unknown_providers`` is for the deliberate order --
+import first, configure afterwards -- and for nothing else.
+
 **Idempotent.** Running the same document twice writes the same site: an
 existing user is updated rather than duplicated, and an identity already
 pointing at the right userid is left alone rather than re-added. A migration
@@ -249,24 +257,116 @@ def _import_identities(
         result.identities.append((provider, subject, userid))
 
 
-def import_site(document: Any, dry_run: bool = False) -> Result:
+def _check_providers(document: dict[str, Any]) -> str:
+    """Refuse when the site has no provider for a name the document uses.
+
+    The identity key is ``(provider, subject)``. The subject is the
+    provider's own and survives a migration untouched; the *name* does not,
+    because it is authomatic's ``json_config`` key on one side and a string
+    an operator types into a control panel on the other. When they differ,
+    nothing raises: the import reports success, and then every migrated
+    person signs in, matches no identity, and is given a second account
+    beside the one waiting for them -- which keeps their name and their
+    groups and belongs to nobody who can sign in.
+
+    So it is checked here, before anything is written, rather than
+    discovered at the first login. Checked against *configured* providers
+    rather than enabled ones: an operator may reasonably import before
+    switching a provider on, and being switched off does not break the join.
+
+    :param document: The document about to be imported.
+    :returns: A refusal message, or the empty string when every name matches.
+    """
+    from pas.plugins.identity.core.controlpanel import get_providers
+
+    wanted = {
+        identity["provider"]
+        for user in document.get("users") or []
+        for identity in user.get("identities") or []
+        if identity.get("provider")
+    }
+    if not wanted:
+        return ""
+
+    configured = {provider.provider_id for provider in get_providers()}
+    missing = sorted(wanted - configured)
+    if not missing:
+        return ""
+
+    lines = [
+        f"This site has no provider named {', '.join(repr(m) for m in missing)}, "
+        f"which {'is' if len(missing) == 1 else 'are'} named by the identities "
+        f"in this document."
+    ]
+    # A near miss is the likely case and the one worth naming, because the
+    # two strings look the same in a control panel listing.
+    folded = {p.casefold(): p for p in configured}
+    near = [(m, folded[m.casefold()]) for m in missing if m.casefold() in folded]
+    if near:
+        lines.append(
+            "Configured but spelled differently: "
+            + ", ".join(f"{found!r} for {want!r}" for want, found in near)
+            + "."
+        )
+    lines.append(
+        f"Configured here: "
+        f"{', '.join(repr(p) for p in sorted(configured)) or '(none)'}."
+    )
+    lines.append(
+        "The provider id is half of every identity key, so importing against "
+        "the wrong one gives every migrated person a second account at their "
+        "first login and leaves the migrated one unreachable. Configure a "
+        "provider under the name the document uses, or pass "
+        "--allow-unknown-providers to import now and configure it afterwards."
+    )
+    return " ".join(lines)
+
+
+def _preflight(document: Any, allow_unknown_providers: bool) -> tuple:
+    """Check everything that makes a run meaningless, before writing.
+
+    Every condition here is one where continuing would produce a site nobody
+    asked for: a document that is not one, a site that cannot hold principals,
+    or providers that no login will ever match.
+
+    :param document: The document offered.
+    :param allow_unknown_providers: Skip the provider-name check.
+    :returns: ``(document, plugin)`` once both are known good.
+    :raises ExportImportError: On the first condition that fails.
+    """
+    document = validate(document)
+    plugin = _plugin()
+    if query_catalog() is None:
+        raise ExportImportError(
+            "This site has no identity catalog, so imported principals "
+            "would be invisible to enumeration."
+        )
+    if not allow_unknown_providers:
+        complaint = _check_providers(document)
+        if complaint:
+            raise ExportImportError(complaint)
+    return document, plugin
+
+
+def import_site(
+    document: Any,
+    dry_run: bool = False,
+    allow_unknown_providers: bool = False,
+) -> Result:
     """Write a document's principals into this site.
 
     :param document: The parsed JSON document.
     :param dry_run: Report what would happen and write nothing.
+    :param allow_unknown_providers: Import even when the site has no provider
+        for a name the document uses. For the deliberate order -- import
+        first, configure the providers afterwards -- and for nothing else.
     :returns: What was done, or would be.
     :raises ExportImportError: When the document is not one, or when this site
         cannot receive it.
     """
     result = Result(dry_run=dry_run)
     try:
-        document = validate(document)
-        plugin = _plugin()
-        if query_catalog() is None:
-            raise ExportImportError(
-                "This site has no identity catalog, so imported principals "
-                "would be invisible to enumeration."
-            )
+        document, plugin = _preflight(document, allow_unknown_providers)
     except ExportImportError as error:
         result.refusals.append(str(error))
         return result

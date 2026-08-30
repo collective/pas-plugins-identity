@@ -142,7 +142,15 @@ class TestSigningInAfterAMigration:
 
 
 class TestWhenTheProviderWasRenamed:
-    """The one thing that has to match, and the one thing nothing checks."""
+    """The one thing that has to match.
+
+    The importer refuses this outright now -- see
+    ``test_provider_check.py`` -- so reaching the damage takes
+    ``allow_unknown_providers``, deliberately. That is the point: this class
+    records *what the guard is protecting against*, and it is only still
+    reachable by someone who has said in as many words that they know the
+    provider is not configured yet.
+    """
 
     @pytest.fixture(autouse=True)
     def _setup(self, portal, acl_users) -> None:
@@ -155,7 +163,15 @@ class TestWhenTheProviderWasRenamed:
                 title="Google Workspace",
             )
         ])
-        import_site(convert_authomatic(DUMP))
+        import_site(convert_authomatic(DUMP), allow_unknown_providers=True)
+
+    def test_the_guard_refuses_this_without_the_flag(self):
+        """The premise for the two below: what they demonstrate is exactly
+        what an ordinary import will not do."""
+        result = import_site(convert_authomatic(DUMP))
+
+        assert result.refused
+        assert "'google'" in " ".join(result.refusals)
 
     def test_the_migrated_account_is_orphaned(self):
         """Same person, same Google account, same subject -- and a new userid,

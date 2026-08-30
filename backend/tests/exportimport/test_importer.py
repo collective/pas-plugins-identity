@@ -10,6 +10,8 @@ from . import ADDRESS
 from . import PROVIDER
 from . import SUBJECT
 from . import USERID
+from pas.plugins.identity.core.controlpanel import ProviderConfig
+from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.subscribers import get_profile
 from pas.plugins.identity.exportimport import import_site
 from pas.plugins.identity.exportimport.schema import DOCUMENT_VERSION
@@ -56,6 +58,12 @@ class TestRestoringIntoAnEmptySite:
     def _setup(self, portal, plugin) -> None:
         self.portal = portal
         self.plugin = plugin
+        # The importer refuses a document naming a provider this site does
+        # not have; that guard has its own module, and these are about the
+        # writing that happens once it is satisfied.
+        set_providers([
+            ProviderConfig(provider_id=PROVIDER, driver_id="oidc-generic", title="Dex")
+        ])
 
     def test_the_user_arrives(self):
         """The point of the whole package."""
@@ -122,6 +130,12 @@ class TestWhatItRefuses:
     def _setup(self, portal, plugin) -> None:
         self.portal = portal
         self.plugin = plugin
+        # The importer refuses a document naming a provider this site does
+        # not have; that guard has its own module, and these are about the
+        # writing that happens once it is satisfied.
+        set_providers([
+            ProviderConfig(provider_id=PROVIDER, driver_id="oidc-generic", title="Dex")
+        ])
 
     @pytest.mark.parametrize(
         "broken,expected",
@@ -167,6 +181,12 @@ class TestWhatItSkips:
     def _setup(self, portal, plugin) -> None:
         self.portal = portal
         self.plugin = plugin
+        # The importer refuses a document naming a provider this site does
+        # not have; that guard has its own module, and these are about the
+        # writing that happens once it is satisfied.
+        set_providers([
+            ProviderConfig(provider_id=PROVIDER, driver_id="oidc-generic", title="Dex")
+        ])
 
     def test_a_user_with_no_address_is_skipped_not_refused(self):
         """``emails`` is required on a Profile and ``email`` is derived from

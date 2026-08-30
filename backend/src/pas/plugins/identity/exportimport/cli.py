@@ -69,6 +69,11 @@ CLI_SPEC = {
                 "Read a pas.plugins.authomatic dump rather than a document "
                 "this package wrote"
             ),
+            "--allow-unknown-providers": (
+                "Import even when this site has no provider for a name the "
+                "document uses. Only for importing first and configuring the "
+                "providers afterwards"
+            ),
         },
     },
 }
@@ -153,7 +158,11 @@ def importer_cli(args: list | None = None) -> None:
     site = cli_helpers.get_site(app, namespace.site, logger)
     with hooks.site(site), api.env.adopt_roles(["Manager"]):
         logger.info(f" Reading {path} into the Plone site at /{site.id}")
-        result = import_site(document, dry_run=namespace.dry_run)
+        result = import_site(
+            document,
+            dry_run=namespace.dry_run,
+            allow_unknown_providers=namespace.allow_unknown_providers,
+        )
         for line in result.summary():
             logger.info(f" - {line}")
         if result.refused:
