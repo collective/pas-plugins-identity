@@ -1,0 +1,9 @@
+Corrected the documented `pas.plugins.authomatic` extraction script, which did not work.
+
+It was written from a reading of authomatic's source and never run. Running it against a real 2.0.0 store on PostgreSQL/RelStorage found two faults, both of which produce a wrong answer rather than an error.
+
+It never called `setSite()`. `UserIdentities.propertysheet` reads authomatic's configuration out of the registry, and the registry is a local utility that `queryUtility` finds only once the site is the active component site; traversing to `app.Plone` does not make it one. The script therefore died on the first user with `AttributeError: 'NoneType' object has no attribute 'forInterface'` — and on a site with no authomatic users it exited `0` and printed an empty, perfectly valid dump instead, which is the worse of the two.
+
+It read the derived property sheet rather than the stored identity. That sheet is rebuilt by walking the providers currently in `json_config` and applying each one's `propertymap`, so an identity whose provider has since been removed, renamed, or was never configured on this site contributes nothing to it — silently. The stored `UserIdentity` still holds the name and the address. Reading the sheet would hand you users with no address at all, and every one of them is then skipped on import for exactly that reason.
+
+The documented script now sets the site and reads `_identities`, and the reference page says why both are load-bearing. @ericof

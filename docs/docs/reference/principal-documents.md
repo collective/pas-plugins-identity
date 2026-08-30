@@ -133,8 +133,9 @@ It exists so that migrating from that package is the ordinary import rather than
         {"provider": "google", "subject": "109876543210"}
       ],
       "properties": {
-        "fullname": "Érico Andrei",
+        "name": "Érico Andrei",
         "email": "erico@plone.org",
+        "link": "https://kitconcept.com",
         "location": "Berlin"
       }
     }
@@ -152,9 +153,10 @@ It is checked rather than assumed: the two formats are close enough that reading
 It is in the format because a real migration is moving a site, and membership carried in the same file beats a second one.
 Note that membership is on the group here and on the principal in a document; the conversion inverts it.
 
-`properties` keys are mapped onto Profile fields.
-`fullname`, `name`, `location`, `home_page` and `description` are understood, and `name` answers for `fullname` when the latter is absent.
-A key with no matching Profile field is dropped rather than carried, because an attribute nothing declares is invisible to every form and permission in the site.
+`properties` keys are mapped onto Profile fields, in both vocabularies.
+`fullname` and `name` both answer for the full name, `home_page` and `link` both for the homepage, and `location` and `description` for themselves.
+`link` is the one worth naming: it is what an OAuth2 provider calls a homepage, and authomatic's own shipped property maps translate it.
+A key with no matching Profile field, such as `picture`, `first_name` or `last_name`, is dropped rather than carried, because an attribute nothing declares is invisible to every form and permission in the site.
 
 ### Where the values come from
 
@@ -175,40 +177,93 @@ The extraction has to run where `pas.plugins.authomatic` is installed, which is 
 The shape is small enough to state completely:
 
 ```python
-# Run against the old site, for example with `zconsole run` or `bin/instance run`.
-import json
+"""Extract a pas.plugins.authomatic dump.
 
-plugin = app.Plone.acl_users["authomatic"]
+    SITE_ID=Plone bin/zconsole run instance/etc/zope.conf extract.py > dump.json
+"""
+import json
+import os
+import sys
+
+from zope.component.hooks import setSite
+
+SITE_ID = os.environ.get("SITE_ID", "Plone")
+
+site = app.unrestrictedTraverse(SITE_ID, None)
+if site is None:
+    sys.exit(f"No Plone site at {SITE_ID!r}")
+setSite(site)
+
+plugin = site.acl_users.get("authomatic")
+if plugin is None:
+    sys.exit(f"No authomatic plugin in {SITE_ID}/acl_users")
 
 identities = {}
 for (provider, subject), userid in plugin._userid_by_identityinfo.items():
-    identities.setdefault(userid, []).append(
-        {"provider": provider, "subject": subject}
-    )
+    identities.setdefault(userid, []).append((provider, subject))
 
 users = []
 for userid, useridentities in plugin._useridentities_by_userid.items():
-    sheet = useridentities.propertysheet
+    properties = {}
+    entries = []
+    for provider, subject in identities.get(userid, []):
+        raw = dict(useridentities._identities.get(provider) or {})
+        raw.pop("credentials", None)      # a token, never a migration input
+        nested = raw.pop("data", None) or {}
+        entries.append({"provider": provider, "subject": subject})
+        for key, value in {**nested, **raw}.items():
+            if value and key not in properties and key != "provider_name":
+                properties[key] = value
     users.append({
         "userid": userid,
-        "identities": identities.get(userid, []),
-        "properties": {
-            key: sheet.getProperty(key)
-            for key in ("fullname", "email", "location", "home_page", "description")
-            if sheet.hasProperty(key)
-        },
+        "identities": entries,
+        "properties": properties,
     })
 
-groups = [
-    {"group_id": group_id, "title": group_id, "members": list(members)}
-    for group_id, members in ()  # fill in from source_groups if you want them
-]
+groups = []
+source_groups = site.acl_users.get("source_groups")
+if source_groups is not None:
+    for group_id in source_groups.listGroupIds():
+        groups.append({
+            "group_id": group_id,
+            "title": group_id,
+            "members": list(source_groups._group_principal_map.get(group_id, ())),
+        })
 
 print(json.dumps(
     {"source": "pas.plugins.authomatic", "users": users, "groups": groups},
-    indent=2,
+    indent=2, ensure_ascii=False,
 ))
 ```
+
+Two things in that script are not decoration, and both were found by running it
+against a real authomatic store rather than by reading the source.
+
+`setSite(site)` is required
+:   `UserIdentities.propertysheet` reads authomatic's configuration out of the
+    registry, and the registry is a *local* utility that `queryUtility` finds
+    only once the site is the active component site.
+    Traversing to `app.Plone` does not make it one.
+    Without the call, the script dies on the first user with
+    `AttributeError: 'NoneType' object has no attribute 'forInterface'`.
+    On a site with no authomatic users it exits `0` and prints an empty,
+    perfectly valid dump instead, which is worse.
+
+Read `_identities`, not `propertysheet`
+:   The property sheet is *derived*: it is rebuilt by walking the providers
+    currently in `json_config` and applying each one's `propertymap`.
+    An identity whose provider has since been removed from the
+    configuration, or renamed, or never configured on this site, contributes
+    nothing to it, silently and without an error.
+    The stored `UserIdentity` still holds the name, the address and the rest.
+    Reading the sheet would hand you users with no address at all, and every
+    one of them is then skipped on import for exactly that reason.
+
+The keys in `properties` are therefore the provider's own (`name`, `link`,
+`picture`, `first_name`) rather than Plone's.
+The converter understands both vocabularies, because a dump can honestly carry
+either.
+
 
 ```{important}
 Do not carry `UserIdentities._secret` across.
