@@ -29,7 +29,7 @@ import { defineMessages } from 'react-intl';
 
 import { toGroupRows, fromGroupRows } from './groupmap';
 import { toRows, fromRows } from './propertymap';
-import type { Driver, VoltoSchema } from '../types';
+import type { Driver, JsonSchema, VoltoSchema } from '../types';
 
 import type { IntlShape } from 'react-intl';
 
@@ -48,6 +48,20 @@ export const SETTINGS_FIELDSET = 'settings';
 
 /** Fieldset the two claim mappings are rendered in. */
 export const MAPPING_FIELDSET = 'mapping';
+
+/**
+ * Fields `IProviderRecords` declares that this file renders itself.
+ *
+ * The served schema describes a provider's *storage*, which is right, and
+ * three of its fields are not renderable as described. `driver` is a picker
+ * over the registered drivers and is asked only while adding -- a provider's
+ * driver is not an editable property, and the served `TextLine` would win,
+ * because the merge below arrives after the picker is put in. `propertymap`
+ * and `groupmap` are `Dict` fields, which Volto has no widget for at all;
+ * they are rebuilt as row editors in a fieldset of their own. So the served
+ * descriptions of the three are dropped rather than merged.
+ */
+const COMPOSED_HERE = ['driver', 'propertymap', 'groupmap'];
 
 const messages = defineMessages({
   identity: { id: 'Identity', defaultMessage: 'Identity' },
@@ -102,13 +116,6 @@ export function suggestedProviderId(
   );
 }
 
-/** A JSON schema as `plone.restapi` serializes one. */
-interface ServedSchema {
-  properties?: Record<string, Record<string, unknown>>;
-  required?: string[];
-  fieldsets?: { id: string; title: string; fields: string[] }[];
-}
-
 /**
  * Build the provider form from the two schemas the backend sent.
  *
@@ -120,7 +127,7 @@ interface ServedSchema {
  * @returns A Volto schema.
  */
 export function providerSchema(
-  served: ServedSchema | undefined,
+  served: JsonSchema | undefined,
   drivers: Driver[],
   driverId: string | undefined,
   adding: boolean,
@@ -128,7 +135,9 @@ export function providerSchema(
 ): VoltoSchema {
   const properties: Record<string, Record<string, unknown>> = {};
   const fieldsets: { id: string; title: string; fields: string[] }[] = [];
-  const required: string[] = [...(served?.required ?? [])];
+  const required: string[] = (served?.required ?? []).filter(
+    (name) => !COMPOSED_HERE.includes(name),
+  );
 
   if (adding) {
     // The only two fields this file still invents, and they are not stored
@@ -148,22 +157,35 @@ export function providerSchema(
     required.push('driver', 'id');
   }
 
-  Object.assign(properties, served?.properties ?? {});
+  Object.assign(
+    properties,
+    Object.fromEntries(
+      Object.entries(served?.properties ?? {}).filter(
+        ([name]) => !COMPOSED_HERE.includes(name),
+      ),
+    ),
+  );
 
   // The backend's own fieldsets, in its order, with the creation questions
   // folded into the first one so they are the first thing asked.
   (served?.fieldsets ?? []).forEach((fieldset, index) => {
     const extra = adding && index === 0 ? ['driver', 'id'] : [];
+    const fields = [
+      ...extra,
+      ...fieldset.fields.filter((name) => !COMPOSED_HERE.includes(name)),
+    ];
+    // A fieldset the filter empties is not rendered as an empty tab.
+    if (!fields.length) return;
     fieldsets.push({
       id: fieldset.id,
       title:
         index === 0 ? intl.formatMessage(messages.identity) : fieldset.title,
-      fields: [...extra, ...fieldset.fields],
+      fields,
     });
   });
 
   const driver = drivers.find((d) => d.id === driverId);
-  const settings = (driver?.schema ?? {}) as ServedSchema;
+  const settings: JsonSchema = driver?.schema ?? {};
   const settingFields: string[] = [];
   for (const [name, property] of Object.entries(settings.properties ?? {})) {
     const key = `${CONFIG_PREFIX}${name}`;
@@ -196,15 +218,24 @@ export function providerSchema(
     widget: 'object_list',
     schema: rowSchema(intl, 'claim', 'field'),
   };
-  properties.groupmap = {
-    title: intl.formatMessage(messages.groupmap),
-    widget: 'object_list',
-    schema: rowSchema(intl, 'group', 'local'),
-  };
+  // The group map, only for a driver whose providers have groups. The
+  // backend declares that by putting a `group_claim` field in the settings
+  // schema, and it is the same switch on both ends: a driver with no groups
+  // offers no claim to read them from, and a map stored against one grants
+  // nothing. Asking an operator to map the groups of a magic link would be
+  // asking a question with no answer.
+  const hasGroups = Boolean(settings.properties?.group_claim);
+  if (hasGroups) {
+    properties.groupmap = {
+      title: intl.formatMessage(messages.groupmap),
+      widget: 'object_list',
+      schema: rowSchema(intl, 'group', 'local'),
+    };
+  }
   fieldsets.push({
     id: MAPPING_FIELDSET,
     title: intl.formatMessage(messages.mapping),
-    fields: ['propertymap', 'groupmap'],
+    fields: hasGroups ? ['propertymap', 'groupmap'] : ['propertymap'],
   });
 
   return { fieldsets, properties, required };

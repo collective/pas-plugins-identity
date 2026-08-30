@@ -1,0 +1,11 @@
+The provider form composes the backend's schema again, rather than being overwritten by it.
+
+Three things the schema cutover dropped, all of them invisible without a typecheck and none of them caught by a test.
+
+**The group map came back for every driver.** It used to be offered only for a driver that declares a `group_claim`, which is how the backend says its providers have groups at all. `IGitHubSettings` and `IEmailSettings` declare none, so a GitHub provider and a magic link were both asking an operator to map groups that do not exist — a question with no answer, and a map stored against such a provider grants nothing.
+
+**The driver picker was overwritten by a text box.** `IProviderRecords` has a `driver` field, because a provider's storage has one, and the merge of the served properties ran after the picker was put in — so the add form offered free text where it meant to offer a list of the registered drivers, and the choice that decides which settings the rest of the form shows.
+
+**Both mappings were rendered twice.** They are in the served default fieldset as the `Dict` fields they are stored as, and this package rebuilds them as row editors in a Mapping fieldset, because Volto has no Dict widget. A field named in two fieldsets is rendered in both.
+
+All three are one rule now: the three fields this file composes itself are dropped from the served half rather than merged, and `providerSchema`'s own tests describe what `@identity-providers` really sends — including the three — instead of a convenient subset that could not see any of it. @ericof

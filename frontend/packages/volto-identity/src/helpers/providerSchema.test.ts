@@ -26,18 +26,31 @@ const intl = {
   formatMessage: (m: { defaultMessage: string }) => m.defaultMessage,
 } as any;
 
-/** What `@identity-providers` sends: `IProviderRecords`, serialized. */
+/**
+ * What `@identity-providers` sends: `IProviderRecords`, serialized.
+ *
+ * Including `driver`, `propertymap` and `groupmap`, which it really does
+ * send -- they are fields of a provider's storage. Leaving them out of this
+ * fixture is what let the merge below go unnoticed once already.
+ */
 const SERVED = {
   type: 'object',
   properties: {
+    driver: { title: 'Driver', type: 'string' },
     title: { title: 'Title', type: 'string' },
     enabled: { title: 'Enabled', type: 'boolean' },
+    propertymap: { title: 'Property map', type: 'object' },
+    groupmap: { title: 'Group map', type: 'object' },
     icon: { title: 'Icon', type: 'string', widget: 'provider_icon' },
     background_color: { title: 'Background colour', widget: 'color_picker' },
   },
   required: ['title'],
   fieldsets: [
-    { id: 'default', title: 'Default', fields: ['title', 'enabled'] },
+    {
+      id: 'default',
+      title: 'Default',
+      fields: ['driver', 'title', 'enabled', 'propertymap', 'groupmap'],
+    },
     { id: 'style', title: 'Style', fields: ['icon', 'background_color'] },
   ],
 };
@@ -62,7 +75,23 @@ const GITHUB: Driver = {
   },
 } as Driver;
 
-const DRIVERS = [GITHUB];
+/** A driver whose providers have groups: the only difference that matters. */
+const OIDC: Driver = {
+  id: 'oidc',
+  title: 'OpenID Connect',
+  schema: {
+    properties: {
+      issuer: { title: 'Issuer URL', type: 'string' },
+      group_claim: { title: 'Groups arrive in the claim', type: 'string' },
+    },
+    required: ['issuer'],
+    fieldsets: [
+      { id: 'default', title: 'Default', fields: ['issuer', 'group_claim'] },
+    ],
+  },
+} as Driver;
+
+const DRIVERS = [GITHUB, OIDC];
 
 describe('providerSchema', () => {
   it('carries the served properties through untouched', () => {
@@ -133,6 +162,55 @@ describe('providerSchema', () => {
     expect(schema.fieldsets.map((f) => f.id)).toEqual([
       SETTINGS_FIELDSET,
       MAPPING_FIELDSET,
+    ]);
+  });
+
+  it('renders the group map only for a driver that has groups', () => {
+    // The backend says a driver's providers have groups by putting a
+    // `group_claim` field in its settings schema, and this is the same
+    // switch. GitHub declares none, so mapping them is a question with no
+    // answer -- and a map stored against such a provider grants nothing.
+    const withGroups = providerSchema(SERVED, DRIVERS, 'oidc', false, intl);
+    const without = providerSchema(SERVED, DRIVERS, 'github', false, intl);
+
+    expect(withGroups.properties.groupmap).toBeDefined();
+    expect(
+      withGroups.fieldsets.find((f) => f.id === MAPPING_FIELDSET)?.fields,
+    ).toEqual(['propertymap', 'groupmap']);
+
+    expect(without.properties.groupmap).toBeUndefined();
+    expect(
+      without.fieldsets.find((f) => f.id === MAPPING_FIELDSET)?.fields,
+    ).toEqual(['propertymap']);
+  });
+
+  it('drops the served driver field rather than merging it', () => {
+    // `IProviderRecords` has a `driver` TextLine, because storage does. The
+    // form asks the question with a picker over the registered drivers, and
+    // only while adding -- so the served description of it must not arrive
+    // last and overwrite that.
+    const adding = providerSchema(SERVED, DRIVERS, 'github', true, intl);
+
+    expect(adding.properties.driver?.choices).toEqual([
+      ['github', 'GitHub'],
+      ['oidc', 'OpenID Connect'],
+    ]);
+    expect(adding.properties.driver?.type).toBeUndefined();
+  });
+
+  it('never lists a mapping twice', () => {
+    // The served default fieldset carries `propertymap` and `groupmap`, and
+    // this file rebuilds both as row editors in a fieldset of its own. A
+    // field named in two fieldsets is rendered in both, once as a `Dict`
+    // that Volto has no widget for.
+    const schema = providerSchema(SERVED, DRIVERS, 'oidc', false, intl);
+    const listed = schema.fieldsets.flatMap((f) => f.fields);
+
+    expect(listed.filter((name) => name === 'propertymap')).toHaveLength(1);
+    expect(listed.filter((name) => name === 'groupmap')).toHaveLength(1);
+    expect(schema.fieldsets.find((f) => f.id === 'default')?.fields).toEqual([
+      'title',
+      'enabled',
     ]);
   });
 
