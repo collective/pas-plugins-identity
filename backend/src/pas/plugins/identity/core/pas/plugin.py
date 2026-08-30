@@ -22,7 +22,6 @@ from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.core.interfaces import ICredentialStorage
 from pas.plugins.identity.core.interfaces import IGroupContent
 from pas.plugins.identity.core.interfaces import IIdentityPlugin
-from pas.plugins.identity.core.interfaces import IOwnsUserProperties
 from pas.plugins.identity.core.interfaces import IUserContent
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.interfaces import LockoutRefused
@@ -39,7 +38,6 @@ from Products.PluggableAuthService.interfaces.plugins import IAuthenticationPlug
 from Products.PluggableAuthService.interfaces.plugins import IChallengePlugin
 from Products.PluggableAuthService.interfaces.plugins import ICredentialsResetPlugin
 from Products.PluggableAuthService.interfaces.plugins import IExtractionPlugin
-from Products.PluggableAuthService.interfaces.plugins import IPropertiesPlugin
 from Products.PluggableAuthService.interfaces.plugins import IUserAdderPlugin
 from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
 from Products.PluggableAuthService.plugins.ZODBUserManager import ZODBUserManager
@@ -357,24 +355,22 @@ class IdentityPlugin(BasePlugin):
 
         # After the event, and that ordering is load-bearing.
         #
-        # Both of these writes are *fallbacks*: they put a value in
-        # `portal_memberdata` only for a user whose Profile does not claim it.
-        # `_apply_property_map` asks `_properties_owned_elsewhere` and
         # `_sync_portrait` asks whether the user has a Profile at all, and on
-        # a first login neither question has an honest answer yet -- the
-        # Profile is created by a subscriber to the event above. Asked too
-        # early, both were told "nobody owns this user" and wrote into
-        # `portal_memberdata`, leaving the Profile empty on exactly the login
-        # that mattered. Then nothing corrected it: the property map skips a
-        # field that already has a value, and the avatar is refetched only
-        # when the provider changes its URL, so one badly-timed answer became
+        # a first login that question has no honest answer yet -- the Profile
+        # is created by a subscriber to the event above. Asked too early it
+        # was told "nobody owns this user" and wrote into `portal_memberdata`,
+        # leaving the Profile's own image empty on exactly the login that
+        # mattered. Nothing corrected it either: an avatar is refetched only
+        # when the provider changes its URL, so one badly-timed answer was
         # permanent.
         #
         # A fallback runs after everyone entitled to claim has been told.
         #
-        # Every login, not just the first: a name or address changed at the
-        # provider should reach Plone without the user being recreated.
-        self._apply_property_map(userid, provider, claims)
+        # Every login, not just the first: an avatar changed at the provider
+        # should reach Plone without the user being recreated. The provider's
+        # mapped claims used to be written here too and no longer are -- the
+        # subscriber applies the map to the Profile, and every authenticated
+        # user has one.
         self._sync_portrait(userid, provider, claims, previous_picture)
         self._sync_federated_groups(userid, provider, subject, claims)
         return (userid, userid)
@@ -1254,86 +1250,6 @@ class IdentityPlugin(BasePlugin):
             userid,
             _record(USER_CONTENT_TYPE_RECORD),
         )
-
-    def _properties_owned_elsewhere(self, userid: str) -> bool:
-        """Report whether another plugin owns this user's properties.
-
-        The profile plugin does, for a user who has a Profile: it serves the
-        property sheet, it applies the same property map, and it remembers
-        which fields the provider wrote so a human's edit survives the next
-        login. Writing through its sheet from here would defeat that -- the
-        write would land, and nothing here knows it should not have.
-
-        Asked per user rather than per site. A site always has the profile
-        plugin now, and still has users it does not serve: an account created
-        before the add-on was installed and not signed in with since has no
-        Profile, and its properties are ``portal_memberdata``'s to keep.
-
-        :param userid: Canonical Plone userid.
-        :returns: Whether to leave this user's properties alone.
-        """
-        from plone import api
-
-        member = api.user.get(userid=userid)
-        if member is None:
-            return False
-
-        acl_users = api.portal.get_tool("acl_users")
-        for _plugin_id, plugin in acl_users.plugins.listPlugins(IPropertiesPlugin):
-            if not IOwnsUserProperties.providedBy(plugin):
-                continue
-            if plugin.getPropertiesForUser(member.getUser()) is not None:
-                return True
-        return False
-
-    def _apply_property_map(
-        self, userid: str, provider_id: str, claims: Claims
-    ) -> None:
-        """Write the provider's mapped claims onto the user.
-
-        A property that already holds a value locally is left alone. The
-        provider is the source of truth for a field nobody has touched, but
-        an edit made in Plone must not be undone by the next login -- which
-        is what an unconditional write on every login would do.
-
-        Runs for every provider, mapped or not; a provider with no map
-        resolves to nothing and writes nothing.
-
-        :param userid: Canonical Plone userid.
-        :param provider_id: Provider the claims came from.
-        :param claims: Normalized claims.
-        """
-        from pas.plugins.identity.core.controlpanel import get_provider
-        from pas.plugins.identity.core.utils.propertymap import apply_property_map
-        from plone import api
-
-        config = get_provider(provider_id)
-        if config is None or not config.propertymap:
-            return
-
-        if self._properties_owned_elsewhere(userid):
-            return
-
-        member = api.user.get(userid=userid)
-        if member is None:  # pragma: no cover - can't-happen: just authenticated
-            logger.warning("Authenticated user %s is not retrievable", userid)
-            return
-
-        resolved = apply_property_map(config.propertymap, claims)
-
-        updates = {
-            field: value
-            for field, value in resolved.items()
-            if not member.getProperty(field, None)
-        }
-        # A portrait is an image in member storage, not a property: writing
-        # a URL string into it through setMemberProperties would store the
-        # URL. Avatars have their own path -- see :meth:`_sync_portrait` --
-        # which fetches, scales and stores the bytes, behind the opt-in that
-        # exists because the URL is a claim the user may control.
-        updates.pop("portrait", None)
-        if updates:
-            member.setMemberProperties(updates)
 
 
 classImplements(

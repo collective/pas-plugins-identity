@@ -1,0 +1,7 @@
+The property-map fallback is gone, because nothing could reach it.
+
+`IdentityPlugin._apply_property_map` wrote a provider's mapped claims into `portal_memberdata` for a user whose data nobody else claimed, and `_properties_owned_elsewhere` is what told it to stand aside for a user with a Profile. Every authenticated user has a Profile: `ensure_profile` runs from the login event and declines only where the Profile catalog is absent, which is a site this plugin is not installed in. So the guard always answered yes and the body never ran — across the whole suite, which is how it was found.
+
+Both methods are removed. Nothing changes for a running site: the subscriber applies the same map to the Profile, and the property sheet a Profile serves is what every reader consults first. `tests/core/test_login_ordering.py` still asserts that nothing lands in `portal_memberdata`, which is now a statement about there being no such writer rather than about one declining — and is what would notice the fallback coming back.
+
+`IOwnsUserProperties` stays. It is the layer's declaration about its own sheet and it is still true; what it no longer does is switch off a second writer, because there is no second writer. Its docstring says so rather than describing a method that is not there. @ericof

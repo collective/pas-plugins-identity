@@ -98,10 +98,15 @@ class TestTheSheetIsWritable:
         assert self.plugin.getPropertiesForUser(bob.getUser()) is None
 
 
-class TestCoreStandsAside:
-    """Both this plugin and core's would otherwise apply the same property
-    map to the same fields, and only this one remembers which of them a human
-    has since edited."""
+class TestTheSheetClaimsOwnership:
+    """This plugin declares that its sheet is the authoritative one.
+
+    Core used to read the declaration, to decide whether to write the mapped
+    claims into ``portal_memberdata`` as well. It no longer writes them at
+    all, so nothing reads it -- but the claim is still what a sheet at the
+    top of the ``IPropertiesPlugin`` order is making, and a layer that
+    stopped declaring it would be saying something untrue.
+    """
 
     @pytest.fixture(autouse=True)
     def _setup(self, portal, alice) -> None:
@@ -110,23 +115,6 @@ class TestCoreStandsAside:
 
     def test_the_plugin_claims_ownership(self):
         assert IOwnsUserProperties.providedBy(self.portal.acl_users[PLUGIN_ID])
-
-    def test_core_sees_the_claim(self):
-        from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
-
-        core = self.portal.acl_users[CORE_PLUGIN_ID]
-
-        assert core._properties_owned_elsewhere("alice")
-
-    def test_core_keeps_a_user_it_alone_serves(self):
-        """A site can run this layer and still have users it does not give a
-        Profile to, and those are core's to write."""
-        from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
-
-        self.portal.acl_users.source_users.addUser("bob", "bob", "placeholder")
-        core = self.portal.acl_users[CORE_PLUGIN_ID]
-
-        assert not core._properties_owned_elsewhere("bob")
 
 
 class TestAFieldTheProfileDoesNotCarry:

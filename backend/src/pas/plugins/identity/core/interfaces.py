@@ -237,11 +237,20 @@ class IOwnsUserProperties(Interface):
 
     A plugin claiming this says two things. Its property sheet is the
     authoritative one for the users it serves, and it applies the provider's
-    property map to them itself. Core's own
-    :meth:`~pas.plugins.identity.core.pas.plugin.IdentityPlugin._apply_property_map`
-    therefore stands aside rather than writing through the sheet: both would
-    be writing the same fields from the same map, and only one of them knows
-    which of those fields a human has since edited.
+    property map to them itself.
+
+    **Core no longer asks.** It used to: a fallback on the login path wrote
+    the mapped claims into ``portal_memberdata`` for a user nobody had
+    claimed, and this marker is what made it stand aside for one who had.
+    Every authenticated user gets a Profile now -- the layer that mints them
+    is not optional -- so the fallback was unreachable and was removed rather
+    than left as a branch no site can take.
+
+    The marker stays because it is the *layer's* declaration about its own
+    sheet, and it is still true: a sheet at the top of the
+    ``IPropertiesPlugin`` order that wins reads is saying exactly this. What
+    it no longer does is switch off a second writer, because there is no
+    second writer.
     """
 
 

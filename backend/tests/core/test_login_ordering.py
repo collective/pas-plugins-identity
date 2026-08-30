@@ -8,12 +8,10 @@ tests exist for was not in either half. Both functions were correct. They were
 called one step too early, and no test that fires the event itself can see the
 order core calls things in.
 
-The plugin makes two writes at the end of a login -- the provider's mapped claims,
-and the provider's avatar -- and both are fallbacks. Each asks whether
-somebody else owns this user's data and writes into ``portal_memberdata``
-only when the answer is no. ``_properties_owned_elsewhere`` asks PAS for a
-plugin that claims the property sheet, and ``portraits.store`` asks whether
-the user has a Profile at all.
+The plugin made two writes at the end of a login -- the provider's mapped
+claims, and the provider's avatar -- and both were fallbacks. Each asked
+whether somebody else owned this user's data and wrote into
+``portal_memberdata`` only when the answer was no.
 
 On a first login both questions used to be asked before the Profile existed,
 because the Profile is minted by a subscriber to the event core fires *after*
@@ -21,10 +19,16 @@ authenticating. So both were told "nobody owns this user", both wrote to
 ``portal_memberdata``, and the Profile -- which every reader consults first --
 was left empty on the one login where it was being created.
 
-Neither self-corrects. The property map skips a field that already holds a
+Neither self-corrected. The property map skipped a field that already held a
 value, and the avatar is refetched only when the provider changes its URL. One
 badly-timed answer was permanent, which is what these tests exist to prevent
 coming back.
+
+Only the avatar is written here now: the mapped-claims fallback was removed
+once it became unreachable, so the assertion below that nothing lands in
+``portal_memberdata`` is about there being no such writer at all rather than
+about it declining. Worth keeping either way -- it is the observable fact,
+and it is what would notice a fallback coming back.
 
 They drive the real plugin rather than the helpers underneath it: the bug was
 entirely in the order two correct functions were called in, so a test that
@@ -121,9 +125,10 @@ class TestTheFirstLoginWritesToTheClaimedStore:
         assert profile.home_page == "https://example.org/~ericof"
 
     def test_the_mapped_claim_does_not_also_land_in_memberdata(self):
-        """The symptom. Asked before the Profile existed,
-        ``_properties_owned_elsewhere`` answered "nobody", so core wrote a
-        second copy that no reader consults and no later login corrects.
+        """The symptom. Asked before the Profile existed, the ownership
+        question answered "nobody", so core wrote a second copy that no
+        reader consults and no later login corrects. Nothing writes it now;
+        this is what says so from outside.
 
         Read through ``mutable_properties`` rather than through the member:
         the member merges every sheet, so it reports the Profile's value and
