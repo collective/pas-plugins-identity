@@ -5,10 +5,12 @@ from pathlib import Path
 from pytest_plone import fixtures_factory
 from requests import exceptions as requests_exc
 
+import itertools
 import os
 import pytest
 import requests
 import shutil
+import uuid
 
 
 pytest_plugins = ["pytest_plone"]
@@ -96,6 +98,53 @@ globals().update(
         (INTEGRATION_TESTING, "integration"),
     ))
 )
+
+
+#: How many RSA keys the pool below holds. Small: the pool exists to stop the
+#: suite paying for key generation, not to model a real key ring, and every
+#: draw gets its own ``kid`` regardless of which key it recycles.
+KEY_POOL_SIZE = 4
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _pooled_signing_keys():
+    """Recycle a handful of RSA keys instead of minting one per site.
+
+    Every test site that applies the ``server`` profile runs ``ensure_keys``,
+    and each fresh portal therefore generated its own RSA-2048 key. Measured
+    across the suite that was **520 keys and 42.9 seconds -- a fifth of the
+    whole run** -- to produce material that is thrown away microseconds later.
+
+    The expensive part is the RSA maths, not the identity, so the pool
+    recycles the maths and hands out a fresh ``kid`` every time. Nothing here
+    asserts on key *material*; what the ring tests assert on is the ``kid``,
+    and no two draws ever share one. Signing and verification are unaffected:
+    a verifier picks the key out of the JWKS by ``kid``, and a ``kid`` that is
+    not in the ring fails to verify exactly as it did before.
+
+    ``tests/server/test_keys.py`` imports ``generate_key`` by name, so its
+    three tests of generation itself still exercise the real thing.
+
+    :returns: Nothing; patches for the session and restores afterwards.
+    """
+    from pas.plugins.identity.server.utils import keys as keys_module
+
+    real_generate_key = keys_module.generate_key
+    pool = [real_generate_key() for _ in range(KEY_POOL_SIZE)]
+    draws = itertools.count()
+
+    def pooled() -> dict:
+        """Return a pooled key under a ``kid`` nothing has used before.
+
+        :returns: A private JWK.
+        """
+        key = dict(pool[next(draws) % KEY_POOL_SIZE])
+        key["kid"] = uuid.uuid4().hex
+        return key
+
+    keys_module.generate_key = pooled
+    yield
+    keys_module.generate_key = real_generate_key
 
 
 #: Set this in CI. Without it a machine with no Docker skips the flow tests,

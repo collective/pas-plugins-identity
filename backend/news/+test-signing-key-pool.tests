@@ -1,0 +1,7 @@
+The suite stopped minting an RSA key per test site.
+
+Every test portal that applies the `server` profile runs `ensure_keys`, and each fresh portal generated its own RSA-2048 key. Instrumenting `generate_key` put a number on it: **520 keys and 42.9 seconds, a fifth of the entire run**, all of it thrown away microseconds later. The server suite alone spent 51% of its wall clock there.
+
+A session fixture now generates four keys once and recycles the RSA maths, handing out a fresh `kid` on every draw. Nothing asserts on key *material* — the ring tests assert on `kid`, and no two draws ever share one — so signing, verification and rotation behave exactly as before, including a `kid` absent from the ring failing to verify. `tests/server/test_keys.py` imports `generate_key` by name, so the three tests of generation itself still exercise the real thing.
+
+The backend suite went from 211.9s to 172.6s, and `tests/server` from 75.4s to 37.9s. @ericof
