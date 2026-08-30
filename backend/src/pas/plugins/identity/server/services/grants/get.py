@@ -4,8 +4,8 @@ from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.services.base import IdentityService
 from pas.plugins.identity.server.claims import SCOPE_CLAIMS
 from pas.plugins.identity.server.controlpanel.clients import get_client
-from pas.plugins.identity.server.pas import PLUGIN_ID
 from pas.plugins.identity.server.grants.tokens import TTL_RECORD
+from pas.plugins.identity.server.pas import PLUGIN_ID
 from plone import api
 
 

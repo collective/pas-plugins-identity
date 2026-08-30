@@ -14,11 +14,11 @@ from pas.plugins.identity.server.browser.discovery import JWKSView
 from pas.plugins.identity.server.browser.discovery import WellKnownView
 from pas.plugins.identity.server.discovery import DISCOVERY_DOCUMENT
 from pas.plugins.identity.server.discovery import metadata
+from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
+from pas.plugins.identity.server.grants.tokens import mint_id_token
 from pas.plugins.identity.server.utils.keys import ALGORITHM
 from pas.plugins.identity.server.utils.keys import get_keys
 from pas.plugins.identity.server.utils.keys import rotate_keys
-from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
-from pas.plugins.identity.server.grants.tokens import mint_id_token
 from plone import api
 from zExceptions import NotFound
 

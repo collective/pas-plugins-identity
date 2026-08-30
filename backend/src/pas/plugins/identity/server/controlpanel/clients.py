@@ -110,9 +110,7 @@ def validated_redirect_uris(uris: list[str] | None) -> list[str]:
         A ``ServerError`` rather than the schema's ``Invalid`` because every
         caller here already turns that into a 400 with the message attached.
     """
-    from pas.plugins.identity.server.controlpanel.interfaces import (
-        is_redirect_uri,
-    )
+    from pas.plugins.identity.server.controlpanel.interfaces import is_redirect_uri
     from zope.interface import Invalid
 
     checked = []

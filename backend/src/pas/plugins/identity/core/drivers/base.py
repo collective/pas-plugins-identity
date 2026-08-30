@@ -5,10 +5,10 @@ and never touches the ZODB, which is what makes the whole layer unit-testable
 against recorded payload fixtures with no provider in the loop.
 """
 
-from pas.plugins.identity.core.interfaces import Claims
-from pas.plugins.identity.core.interfaces import ClaimsError
 from pas.plugins.identity.core.drivers.settings import IDriverSettings
 from pas.plugins.identity.core.drivers.settings import IOAuth2Settings
+from pas.plugins.identity.core.interfaces import Claims
+from pas.plugins.identity.core.interfaces import ClaimsError
 from pas.plugins.identity.core.interfaces import IDriver
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.interfaces import ProviderEmail

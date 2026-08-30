@@ -29,9 +29,9 @@ create them protects nobody.
 from identitydemo import logger
 from identitydemo import settings
 from pas.plugins.identity.core.container import get_container
+from pas.plugins.identity.server.consent.screen import CONSENT_URL_RECORD
 from pas.plugins.identity.server.controlpanel.clients import get_clients
 from pas.plugins.identity.server.controlpanel.clients import set_clients
-from pas.plugins.identity.server.consent.screen import CONSENT_URL_RECORD
 from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
 from pathlib import Path
 from plone import api

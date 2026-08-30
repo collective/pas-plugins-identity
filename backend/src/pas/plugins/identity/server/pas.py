@@ -25,9 +25,9 @@ would mean this add-on decided the site is an API, and that is not its call.
 from AccessControl.class_init import InitializeClass
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity.server.consent import ConsentStore
 from pas.plugins.identity.server.controlpanel.clients import get_client
 from pas.plugins.identity.server.grants.codes import AuthorizationCodeStore
-from pas.plugins.identity.server.consent import ConsentStore
 from pas.plugins.identity.server.grants.refresh import RefreshTokenStore
 from pas.plugins.identity.server.grants.tokens import decode_access_token
 from pas.plugins.identity.server.grants.tokens import TOKEN_TYPE

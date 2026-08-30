@@ -11,13 +11,13 @@ response that mints it.
 from . import PROFILE_ID
 from pas.plugins.identity.server.controlpanel.clients import get_client
 from pas.plugins.identity.server.controlpanel.clients import verify_secret
-from pas.plugins.identity.server.utils.keys import get_keys
 from pas.plugins.identity.server.services.clients.delete import ClientsDelete
 from pas.plugins.identity.server.services.clients.get import ClientsGet
 from pas.plugins.identity.server.services.clients.patch import ClientsPatch
 from pas.plugins.identity.server.services.clients.post import ClientsPost
 from pas.plugins.identity.server.services.keys import KeysGet
 from pas.plugins.identity.server.services.keys import KeysPost
+from pas.plugins.identity.server.utils.keys import get_keys
 from plone import api
 from plone.app.testing import logout
 

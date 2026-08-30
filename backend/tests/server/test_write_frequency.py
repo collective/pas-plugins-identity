@@ -28,8 +28,8 @@ not to guess at all.
 
 from . import PROFILE_ID
 from pas.plugins.identity.server.browser.token import TokenView
-from pas.plugins.identity.server.pas import PLUGIN_ID
 from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
+from pas.plugins.identity.server.pas import PLUGIN_ID
 from plone import api
 
 import json

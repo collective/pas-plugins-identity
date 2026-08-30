@@ -23,9 +23,9 @@ from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.server.claims import OPENID_SCOPE
 from pas.plugins.identity.server.claims import SCOPE_CLAIMS
 from pas.plugins.identity.server.grants.codes import CHALLENGE_METHOD
+from pas.plugins.identity.server.grants.tokens import get_issuer
 from pas.plugins.identity.server.interfaces import GRANT_TYPES
 from pas.plugins.identity.server.utils.keys import ALGORITHM
-from pas.plugins.identity.server.grants.tokens import get_issuer
 
 
 #: Path the document is published at, relative to the issuer. Fixed by

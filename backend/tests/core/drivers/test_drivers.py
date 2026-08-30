@@ -22,9 +22,8 @@ from pas.plugins.identity.core.interfaces import ClaimsError
 from pas.plugins.identity.core.interfaces import IDriver
 from plone.app.users.browser.schemaeditor import getFromBaseSchema
 from plone.app.users.schema import IUserDataSchema
-from zope.interface.verify import verifyObject
-
 from zope.i18nmessageid import Message
+from zope.interface.verify import verifyObject
 from zope.schema import getFieldsInOrder
 from zope.schema.interfaces import IPassword
 

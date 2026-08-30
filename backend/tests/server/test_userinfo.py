@@ -14,11 +14,11 @@ message.
 
 from . import PROFILE_ID
 from pas.plugins.identity.server.browser.userinfo import UserInfoView
-from pas.plugins.identity.server.pas import PLUGIN_ID
 from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
 from pas.plugins.identity.server.grants.tokens import mint_access_token
 from pas.plugins.identity.server.grants.tokens import mint_id_token
 from pas.plugins.identity.server.grants.tokens import token_response
+from pas.plugins.identity.server.pas import PLUGIN_ID
 from plone import api
 
 import json

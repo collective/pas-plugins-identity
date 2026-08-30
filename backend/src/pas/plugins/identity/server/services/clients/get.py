@@ -2,9 +2,9 @@
 
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.services.schema import jsonschema_for
-from pas.plugins.identity.server.controlpanel.interfaces import IClientRecords
 from pas.plugins.identity.server.controlpanel.clients import get_client
 from pas.plugins.identity.server.controlpanel.clients import get_clients
+from pas.plugins.identity.server.controlpanel.interfaces import IClientRecords
 from pas.plugins.identity.server.services.clients import ClientsService
 
 

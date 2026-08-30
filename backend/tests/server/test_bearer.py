@@ -14,9 +14,9 @@ from . import PROFILE_ID
 from pas.plugins.identity.server.controlpanel.clients import get_clients
 from pas.plugins.identity.server.controlpanel.clients import remove_client
 from pas.plugins.identity.server.controlpanel.clients import set_clients
-from pas.plugins.identity.server.pas import PLUGIN_ID
 from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
 from pas.plugins.identity.server.grants.tokens import mint_access_token
+from pas.plugins.identity.server.pas import PLUGIN_ID
 from plone import api
 
 import pytest

@@ -1,11 +1,11 @@
 """``GET @identity-providers`` -- list, or read one."""
 
 from pas.plugins.identity.core.controlpanel import get_provider
-from pas.plugins.identity.core.controlpanel.interfaces import IProviderRecords
 from pas.plugins.identity.core.controlpanel import get_providers
+from pas.plugins.identity.core.controlpanel.interfaces import IProviderRecords
 from pas.plugins.identity.core.interfaces import JSONDict
-from pas.plugins.identity.core.services.schema import jsonschema_for
 from pas.plugins.identity.core.services.providers import ProvidersService
+from pas.plugins.identity.core.services.schema import jsonschema_for
 
 
 class ProvidersGet(ProvidersService):

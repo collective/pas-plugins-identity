@@ -12,12 +12,12 @@ older one*.
 """
 
 from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity.server.services import ROTATE_KEY_ACTION
+from pas.plugins.identity.server.services import ServerAdminService
 from pas.plugins.identity.server.utils.keys import ALGORITHM
 from pas.plugins.identity.server.utils.keys import get_keys
 from pas.plugins.identity.server.utils.keys import RING_SIZE
 from pas.plugins.identity.server.utils.keys import rotate_keys
-from pas.plugins.identity.server.services import ROTATE_KEY_ACTION
-from pas.plugins.identity.server.services import ServerAdminService
 
 
 class KeysService(ServerAdminService):
