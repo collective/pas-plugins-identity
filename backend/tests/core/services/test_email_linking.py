@@ -272,10 +272,9 @@ class TestRedeemingALink(EmailLinkCase):
         """A forwarded link, or one clicked in a browser signed in as
         somebody else, adds nothing to anybody."""
         token = self.token_for()
-        with api.env.adopt_roles(["Manager"]):
-            api.user.create(
-                email="other@plone.org", username="other", password="s3cr3t-other"
-            )
+        api.user.create(
+            email="other@plone.org", username="other", password="s3cr3t-other"
+        )
         login(self.portal, "other")
 
         result = self.confirm(token=token)
@@ -321,10 +320,9 @@ class TestRedeemingALink(EmailLinkCase):
 
     def test_an_address_owned_by_someone_else_collides(self):
         """Never merge two people into one account."""
-        with api.env.adopt_roles(["Manager"]):
-            other = api.user.create(
-                email="other@plone.org", username="other", password="s3cr3t-other"
-            )
+        other = api.user.create(
+            email="other@plone.org", username="other", password="s3cr3t-other"
+        )
         self.plugin().link(other.getId(), EMAIL_PROVIDER, ADDRESS, {})
 
         result = self.confirm(token=self.token_for())
@@ -336,10 +334,9 @@ class TestRedeemingALink(EmailLinkCase):
     def test_a_collision_is_audited(self):
         """With the subject, which is what an operator needs to see who
         already owns it."""
-        with api.env.adopt_roles(["Manager"]):
-            other = api.user.create(
-                email="other@plone.org", username="other", password="s3cr3t-other"
-            )
+        other = api.user.create(
+            email="other@plone.org", username="other", password="s3cr3t-other"
+        )
         self.plugin().link(other.getId(), EMAIL_PROVIDER, ADDRESS, {})
 
         self.confirm(token=self.token_for())

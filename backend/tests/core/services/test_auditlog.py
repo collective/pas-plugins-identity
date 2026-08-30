@@ -93,8 +93,7 @@ class TestAccess:
         self.log.record("somebody-else", AUTHENTICATED, "dex", True)
         login(self.portal, TEST_USER_NAME)
 
-        with api.env.adopt_roles(["Manager"]):
-            result = self._read(userid="somebody-else")
+        result = self._read(userid="somebody-else")
 
         assert self.request.response.getStatus() == 200
         assert result["scope"] == "somebody-else"
@@ -106,8 +105,7 @@ class TestAccess:
         self.log.record(None, FLOW_REFUSED, "dex", False)
         login(self.portal, TEST_USER_NAME)
 
-        with api.env.adopt_roles(["Manager"]):
-            result = self._read(scope="site")
+        result = self._read(scope="site")
 
         assert result["scope"] == "site"
         assert len(result["items"]) == 2
@@ -117,9 +115,8 @@ class TestAccess:
         self.log.record(None, FLOW_REFUSED, "dex", False)
         login(self.portal, TEST_USER_NAME)
 
-        with api.env.adopt_roles(["Manager"]):
-            site = self._read(scope="site")
-            bucket = self._read(userid=UNATTRIBUTED)
+        site = self._read(scope="site")
+        bucket = self._read(userid=UNATTRIBUTED)
 
         assert len(site["items"]) == 1
         assert len(bucket["items"]) == 1

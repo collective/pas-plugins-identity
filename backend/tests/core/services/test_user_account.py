@@ -116,8 +116,7 @@ class TestTheIdentities(UserAccountCase):
 
     def test_a_user_with_none_reports_an_empty_list(self):
         """A password account is not an error."""
-        with api.env.adopt_roles(["Manager"]):
-            api.user.create(username="bob", email="bob@example.com")
+        api.user.create(username="bob", email="bob@example.com")
 
         assert self.account("bob")["identities"] == []
 
@@ -251,10 +250,9 @@ class TestAccess(UserAccountCase):
         setRoles(portal, TEST_USER_ID, ["Manager"])
         login(portal, TEST_USER_NAME)
         make_profile(TEST_USER_ID, email="alice@example.com")
-        with api.env.adopt_roles(["Manager"]):
-            api.user.create(
-                username="bob", email="bob@example.com", password="bob-secret-1"
-            )
+        api.user.create(
+            username="bob", email="bob@example.com", password="bob-secret-1"
+        )
 
     def test_anonymous_is_refused(self):
         """This is an account's authentication history."""

@@ -79,9 +79,8 @@ class TestGroupMapOnLogin:
     def _setup(self, portal, plugin) -> None:
         self.portal = portal
         self.plugin = plugin
-        with api.env.adopt_roles(["Manager"]):
-            for name in ("site-editors", "site-staff", "granted-by-hand"):
-                api.group.create(groupname=name)
+        for name in ("site-editors", "site-staff", "granted-by-hand"):
+            api.group.create(groupname=name)
 
     def authenticate(self, claims=None, identity=DEX_IDENTITY) -> str:
         """Run a login and return the userid it resolved to.
@@ -182,8 +181,7 @@ class TestGroupMapOnLogin:
         """
         configure()
         userid = self.authenticate(with_groups("editors"))
-        with api.env.adopt_roles(["Manager"]):
-            api.group.add_user(groupname="granted-by-hand", username=userid)
+        api.group.add_user(groupname="granted-by-hand", username=userid)
 
         self.authenticate(with_groups("editors"))
 
@@ -193,8 +191,7 @@ class TestGroupMapOnLogin:
         """Even on the login that strips the provider's own grant."""
         configure()
         userid = self.authenticate(with_groups("editors"))
-        with api.env.adopt_roles(["Manager"]):
-            api.group.add_user(groupname="granted-by-hand", username=userid)
+        api.group.add_user(groupname="granted-by-hand", username=userid)
 
         self.authenticate(CLAIMS)
 

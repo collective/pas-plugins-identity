@@ -438,8 +438,7 @@ class TestDeletingAUser:
     def test_the_profile_is_deleted(self):
         self.make_user("alice", fullname="Alice Liddell")
 
-        with api.env.adopt_roles(["Manager"]):
-            api.user.delete(username="alice")
+        api.user.delete(username="alice")
 
         assert "alice" not in self.portal["identity-profiles"]
 
@@ -447,8 +446,7 @@ class TestDeletingAUser:
         """Which is the question the caller actually asked."""
         self.make_user("alice", fullname="Alice Liddell")
 
-        with api.env.adopt_roles(["Manager"]):
-            api.user.delete(username="alice")
+        api.user.delete(username="alice")
 
         assert api.user.get(userid="alice") is None
 
@@ -456,8 +454,7 @@ class TestDeletingAUser:
         """A Profile left behind goes on being a user in every search."""
         self.make_user("alice", fullname="Alice Liddell")
 
-        with api.env.adopt_roles(["Manager"]):
-            api.user.delete(username="alice")
+        api.user.delete(username="alice")
 
         assert self.plugin.enumerateUsers(id="alice", exact_match=True) == ()
 
@@ -478,8 +475,7 @@ class TestDeletingAUser:
         core = self.acl_users[CORE_PLUGIN_ID]
         core.store.add("dex", "subject-1", "alice", {})
 
-        with api.env.adopt_roles(["Manager"]):
-            api.user.delete(username="alice")
+        api.user.delete(username="alice")
 
         assert core.store.userid_for("dex", "subject-1") == "alice"
 

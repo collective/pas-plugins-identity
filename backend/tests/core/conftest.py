@@ -256,14 +256,22 @@ def _manager(request):
     .. warning::
 
        This fixture is now the *only* thing electing these tests, and the whole
-       package leans on it: the 27 explicit ``api.env.adopt_roles(["Manager"])``
-       blocks that used to double it up have been removed as redundant. It was
-       introduced as a workaround for `plone/pytest-plone#63
+       package leans on it: **75 explicit ``api.env.adopt_roles(["Manager"])``
+       blocks** that used to double it up have been removed as redundant -- 27
+       in one pass and 48 in another, the second measured by deleting all of
+       them and watching 1582 tests still pass. It was introduced as a
+       workaround for `plone/pytest-plone#63
        <https://github.com/plone/pytest-plone/issues/63>`_ and is marked for
        deletion once that lands -- but deleting it wholesale would now strip
        every test here of its role, not merely undo a workaround. When #63
        ships, replace this with the marker's own ``roles`` argument; do not
        simply drop it.
+
+       Two elevations under ``tests/core`` survive on purpose, and neither is
+       redundant with this: ``test_completeness.py`` adopts ``Anonymous``,
+       which is the opposite of a grant, and ``test_email_linking.py`` runs as
+       the ``member`` fixture rather than as ``TEST_USER_ID`` -- so the role
+       granted here is not the role that request carries.
 
     .. warning::
 

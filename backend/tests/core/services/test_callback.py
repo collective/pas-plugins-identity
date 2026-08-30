@@ -322,12 +322,11 @@ class TestExistingIdentity(CallbackCase):
         stub_metadata(DEX_METADATA)
         stub_provider()
         self.flow = self.start_flow()
-        with api.env.adopt_roles(["Manager"]):
-            member = api.user.create(
-                email="owner@plone.org",
-                username="owner",
-                password="s3cr3t-owner",
-            )
+        member = api.user.create(
+            email="owner@plone.org",
+            username="owner",
+            password="s3cr3t-owner",
+        )
         self.owner = member.getId()
         self.plugin().store.add("dex", USERINFO["sub"], self.owner, {})
 

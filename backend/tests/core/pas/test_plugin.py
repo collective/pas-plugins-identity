@@ -474,12 +474,11 @@ class TestLocalPassword:
         self.plugin = plugin
         self.portal = portal
         self.credentials = credentials
-        with api.env.adopt_roles(["Manager"]):
-            user = api.user.create(
-                email="local@plone.org",
-                username="local",
-                password="s3cr3t-local",
-            )
+        user = api.user.create(
+            email="local@plone.org",
+            username="local",
+            password="s3cr3t-local",
+        )
         self.member = user.getId()
 
     def test_password_permits_unlink_of_last_identity(self):

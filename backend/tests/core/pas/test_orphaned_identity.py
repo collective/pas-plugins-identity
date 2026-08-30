@@ -82,10 +82,9 @@ class TestAdoptingAnAccountThatIsGone:
 
     def test_a_live_account_is_still_adopted(self):
         """The feature itself, so the guard below cannot pass by breaking it."""
-        with api.env.adopt_roles(["Manager"]):
-            api.user.create(
-                username="live-user", email=ADDRESS, password="a-long-enough-password"
-            )
+        api.user.create(
+            username="live-user", email=ADDRESS, password="a-long-enough-password"
+        )
         self.verify_for("live-user")
 
         assert self.authenticate() == "live-user"
@@ -154,8 +153,7 @@ class TestAKnownIdentityWhoseAccountIsGone:
         ])
         # A login that worked once, and an account removed afterwards.
         self.userid = self.authenticate()
-        with api.env.adopt_roles(["Manager"]):
-            api.user.delete(username=self.userid)
+        api.user.delete(username=self.userid)
 
     def authenticate(self) -> str:
         """Sign in with the provider and return the resolved userid.

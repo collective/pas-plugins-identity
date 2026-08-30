@@ -44,12 +44,11 @@ def site(portal, acl_users):
     :param acl_users: The site's PAS instance.
     :returns: The Plone site.
     """
-    with api.env.adopt_roles(["Manager"]):
-        add_type(portal, USER_TYPE, f"{IStubUserSchema.__module__}.IStubUserSchema")
-        add_type(
-            portal, NOT_A_USER, f"{IStubDocumentSchema.__module__}.IStubDocumentSchema"
-        )
-        api.content.create(container=portal, type="Folder", id=USERS)
+    add_type(portal, USER_TYPE, f"{IStubUserSchema.__module__}.IStubUserSchema")
+    add_type(
+        portal, NOT_A_USER, f"{IStubDocumentSchema.__module__}.IStubDocumentSchema"
+    )
+    api.content.create(container=portal, type="Folder", id=USERS)
     install_enumerator(acl_users)
     return portal
 
@@ -84,14 +83,12 @@ class TestASiteWithTheRecordsBlanked:
     def test_a_user_is_still_created(self):
         """By source_users, exactly as before. The adder being registered
         must not break adding users on a site that ignores it."""
-        with api.env.adopt_roles(["Manager"]):
-            api.user.create(username="alice", email="alice@example.org")
+        api.user.create(username="alice", email="alice@example.org")
 
         assert api.user.get(userid="alice") is not None
 
     def test_nothing_is_created_as_content(self):
-        with api.env.adopt_roles(["Manager"]):
-            api.user.create(username="alice", email="alice@example.org")
+        api.user.create(username="alice", email="alice@example.org")
 
         assert USERS in self.portal
         assert len(self.portal[USERS]) == 0
@@ -124,16 +121,14 @@ class TestAConfiguredSite:
     def test_the_api_reaches_this_plugin(self):
         """End to end. Calling doAddUser directly proves nothing about
         whether PAS ever asks this plugin, or about what happens next."""
-        with api.env.adopt_roles(["Manager"]):
-            api.user.create(username="alice", email="alice@example.org")
+        api.user.create(username="alice", email="alice@example.org")
 
         assert "alice" in self.portal[USERS]
 
     def test_the_created_user_can_be_looked_up(self):
         """PAS looks the principal straight back up after adding it. A user
         that cannot be found is a user that was not really created."""
-        with api.env.adopt_roles(["Manager"]):
-            api.user.create(username="alice", email="alice@example.org")
+        api.user.create(username="alice", email="alice@example.org")
 
         assert api.user.get(userid="alice") is not None
 

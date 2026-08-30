@@ -159,19 +159,15 @@ class TestCopyingAProfile:
         """Copy and paste is a normal thing to do to content. Doing it to a
         user must not hand the copy somebody else's credential."""
         container = self.profile.__parent__
-        with api.env.adopt_roles(["Manager"]):
-            copied = api.content.copy(
-                source=self.profile, target=container, id="bob", safe_id=False
-            )
+        copied = api.content.copy(
+            source=self.profile, target=container, id="bob", safe_id=False
+        )
 
         assert ICredentialStorage(copied).check_password("hunter2!") is False
 
     def test_the_original_keeps_its_own(self):
         container = self.profile.__parent__
-        with api.env.adopt_roles(["Manager"]):
-            api.content.copy(
-                source=self.profile, target=container, id="bob", safe_id=False
-            )
+        api.content.copy(source=self.profile, target=container, id="bob", safe_id=False)
 
         assert ICredentialStorage(self.profile).check_password("hunter2!") is True
 
@@ -211,15 +207,13 @@ class TestSigningIn:
     def test_a_deactivated_profile_cannot_sign_in(self):
         """The thing source_users cannot do: workflow as account suspension,
         without deleting anything and without touching a password."""
-        with api.env.adopt_roles(["Manager"]):
-            api.content.transition(obj=self.profile, to_state="deactivated")
+        api.content.transition(obj=self.profile, to_state="deactivated")
 
         assert not self.signin("alice", "hunter2!")
 
     def test_reactivating_restores_it(self):
         """Suspension, not deletion."""
-        with api.env.adopt_roles(["Manager"]):
-            api.content.transition(obj=self.profile, to_state="deactivated")
-            api.content.transition(obj=self.profile, to_state="complete")
+        api.content.transition(obj=self.profile, to_state="deactivated")
+        api.content.transition(obj=self.profile, to_state="complete")
 
         assert self.signin("alice", "hunter2!")

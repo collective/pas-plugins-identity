@@ -29,8 +29,7 @@ import pytest
 def manager(portal):
     """Log in as somebody who may manage the site."""
     login(portal, TEST_USER_NAME)
-    with api.env.adopt_roles(["Manager"]):
-        yield
+    yield
 
 
 class ControlPanelCase:

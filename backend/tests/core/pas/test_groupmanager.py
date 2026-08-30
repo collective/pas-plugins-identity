@@ -50,11 +50,10 @@ def configured(portal, acl_users):
     :param acl_users: The site's PAS instance.
     :returns: The Plone site.
     """
-    with api.env.adopt_roles(["Manager"]):
-        add_type(portal, USER_TYPE, f"{IStubUserSchema.__module__}.IStubUserSchema")
-        add_type(portal, GROUP_TYPE, f"{IStubGroupSchema.__module__}.IStubGroupSchema")
-        api.content.create(container=portal, type="Folder", id=USERS)
-        api.content.create(container=portal, type="Folder", id=GROUPS)
+    add_type(portal, USER_TYPE, f"{IStubUserSchema.__module__}.IStubUserSchema")
+    add_type(portal, GROUP_TYPE, f"{IStubGroupSchema.__module__}.IStubGroupSchema")
+    api.content.create(container=portal, type="Folder", id=USERS)
+    api.content.create(container=portal, type="Folder", id=GROUPS)
     install_enumerator(acl_users)
     api.portal.set_registry_record(USER_CONTENT_TYPE_RECORD, USER_TYPE)
     api.portal.set_registry_record(USER_CONTAINER_PATH_RECORD, USERS)
@@ -83,8 +82,7 @@ class TestASiteWithTheRecordsBlanked:
     def test_a_group_is_still_created_by_source_groups(self):
         """The plugin being registered must not break adding a group on a
         site that ignores it."""
-        with api.env.adopt_roles(["Manager"]):
-            api.group.create(groupname="editors")
+        api.group.create(groupname="editors")
 
         assert api.group.get(groupname="editors") is not None
 
@@ -126,8 +124,7 @@ class TestCreatingAndRemoving:
         stops at the first that returns true. If ``source_groups`` is reached
         first every test above passes and the feature does nothing.
         """
-        with api.env.adopt_roles(["Manager"]):
-            api.group.create(groupname="editors", title="Editors")
+        api.group.create(groupname="editors", title="Editors")
 
         assert "editors" in self.portal[GROUPS]
 
@@ -159,34 +156,29 @@ class TestDeletingThroughTheTool:
         self.tool = api.portal.get_tool("portal_groups")
 
     def test_it_deletes_a_content_group(self):
-        with api.env.adopt_roles(["Manager"]):
-            api.group.create(groupname="editors", title="Editors")
+        api.group.create(groupname="editors", title="Editors")
         assert "editors" in self.portal[GROUPS]
 
-        with api.env.adopt_roles(["Manager"]):
-            api.group.delete(groupname="editors")
+        api.group.delete(groupname="editors")
 
         assert "editors" not in self.portal[GROUPS]
 
     def test_it_reports_the_removal(self):
         """False here reads as 'nothing was deleted' to every caller."""
-        with api.env.adopt_roles(["Manager"]):
-            api.group.create(groupname="editors", title="Editors")
+        api.group.create(groupname="editors", title="Editors")
 
-            assert api.group.delete(groupname="editors") is True
+        assert api.group.delete(groupname="editors") is True
 
     def test_a_source_groups_group_still_deletes(self):
         """The repair must not cost the stock plugin its own deletions."""
-        with api.env.adopt_roles(["Manager"]):
-            self.portal.acl_users.source_groups.addGroup("reviewers")
+        self.portal.acl_users.source_groups.addGroup("reviewers")
 
-            assert api.group.delete(groupname="reviewers") is True
+        assert api.group.delete(groupname="reviewers") is True
         assert "reviewers" not in self.portal.acl_users.source_groups.listGroupIds()
 
     def test_a_group_no_plugin_has_is_not_an_error(self):
         """Every manager declines, so nothing was removed and nothing raised."""
-        with api.env.adopt_roles(["Manager"]):
-            assert api.group.delete(groupname="nobody-has-this") is False
+        assert api.group.delete(groupname="nobody-has-this") is False
 
 
 class TestMembership:

@@ -133,8 +133,7 @@ class TestTheDerivedAddress(ProfileCase):
         """The store is keyed on the address, so a check that only asked
         whether the address was verified would hand one person's proof to
         anybody who typed their address."""
-        with api.env.adopt_roles(["Manager"]):
-            api.user.create(username="mallory", email="mallory@example.com")
+        api.user.create(username="mallory", email="mallory@example.com")
         self.profile.emails = (OTHER, ADDRESS)
         self.verify(ADDRESS, userid="mallory")
 

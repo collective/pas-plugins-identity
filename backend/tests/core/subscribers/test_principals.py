@@ -154,21 +154,18 @@ class TestTheWholePoint:
         from pas.plugins.identity.core.container import get_container
 
         self.portal = portal
-        with api.env.adopt_roles(["Manager"]):
-            self.container = get_container(create=True)
+        self.container = get_container(create=True)
 
     def test_api_user_create_mints_a_profile(self):
         """The bug this started from. `api.user.create` went to source_users
         and only externally authenticated people ever got a Profile."""
-        with api.env.adopt_roles(["Manager"]):
-            api.user.create(username="alice", email="alice@example.org")
+        api.user.create(username="alice", email="alice@example.org")
 
         assert "alice" in self.container
         assert self.container["alice"].portal_type == PROFILE_PORTAL_TYPE
 
     def test_the_profile_carries_the_userid_and_login(self):
-        with api.env.adopt_roles(["Manager"]):
-            api.user.create(username="alice", email="alice@example.org")
+        api.user.create(username="alice", email="alice@example.org")
         profile = self.container["alice"]
 
         assert profile.userid == "alice"
@@ -177,18 +174,16 @@ class TestTheWholePoint:
     def test_the_user_can_still_sign_in(self):
         """The credential goes to source_users, because a Dexterity field
         holding one is serialized, exported, indexable and versioned."""
-        with api.env.adopt_roles(["Manager"]):
-            api.user.create(
-                username="alice", email="alice@example.org", password="hunter2!"
-            )
+        api.user.create(
+            username="alice", email="alice@example.org", password="hunter2!"
+        )
 
         assert self.portal.acl_users.authenticate(
             "alice", "hunter2!", self.portal.REQUEST
         )
 
     def test_api_group_create_mints_an_identity_group(self):
-        with api.env.adopt_roles(["Manager"]):
-            api.group.create(groupname="editors", title="Editors")
+        api.group.create(groupname="editors", title="Editors")
 
         assert "editors" in self.container
         assert self.container["editors"].portal_type == GROUP_PORTAL_TYPE
@@ -200,10 +195,9 @@ class TestTheWholePoint:
         cannot tell whether PlonePAS's ``GroupTool`` ever reaches this
         plugin, which is the half that has already been wrong twice.
         """
-        with api.env.adopt_roles(["Manager"]):
-            api.user.create(username="alice", email="alice@example.org")
-            api.group.create(groupname="editors", title="Editors")
-            api.group.add_user(groupname="editors", username="alice")
+        api.user.create(username="alice", email="alice@example.org")
+        api.group.create(groupname="editors", title="Editors")
+        api.group.add_user(groupname="editors", username="alice")
 
         assert self.container["alice"].group_ids == ("editors",)
 
@@ -212,21 +206,19 @@ class TestTheWholePoint:
 
         Recording it where nothing reads it would pass the test above.
         """
-        with api.env.adopt_roles(["Manager"]):
-            api.user.create(username="alice", email="alice@example.org")
-            api.group.create(groupname="editors", title="Editors")
-            api.group.add_user(groupname="editors", username="alice")
+        api.user.create(username="alice", email="alice@example.org")
+        api.group.create(groupname="editors", title="Editors")
+        api.group.add_user(groupname="editors", username="alice")
 
         groups = [g.id for g in api.group.get_groups(username="alice")]
 
         assert "editors" in groups
 
     def test_api_group_remove_user_takes_it_away(self):
-        with api.env.adopt_roles(["Manager"]):
-            api.user.create(username="alice", email="alice@example.org")
-            api.group.create(groupname="editors", title="Editors")
-            api.group.add_user(groupname="editors", username="alice")
-            api.group.remove_user(groupname="editors", username="alice")
+        api.user.create(username="alice", email="alice@example.org")
+        api.group.create(groupname="editors", title="Editors")
+        api.group.add_user(groupname="editors", username="alice")
+        api.group.remove_user(groupname="editors", username="alice")
 
         assert self.container["alice"].group_ids == ()
         assert "editors" not in [g.id for g in api.group.get_groups(username="alice")]
@@ -251,13 +243,11 @@ class TestTheContainerIsMadeOnDemand:
         self.portal = portal
 
     def test_the_user_is_added(self):
-        with api.env.adopt_roles(["Manager"]):
-            api.user.create(username="alice", email="alice@example.org")
+        api.user.create(username="alice", email="alice@example.org")
 
         assert api.user.get(userid="alice") is not None
 
     def test_a_profile_is_minted(self):
-        with api.env.adopt_roles(["Manager"]):
-            api.user.create(username="alice", email="alice@example.org")
+        api.user.create(username="alice", email="alice@example.org")
 
         assert "alice" in self.portal["identity-profiles"]

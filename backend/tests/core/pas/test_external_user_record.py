@@ -62,12 +62,11 @@ def site(portal, acl_users):
     :param acl_users: The site's PAS instance.
     :returns: The Plone site.
     """
-    with api.env.adopt_roles(["Manager"]):
-        add_type(portal, USER_TYPE, f"{IStubUserSchema.__module__}.IStubUserSchema")
-        add_type(
-            portal, NOT_A_USER, f"{IStubDocumentSchema.__module__}.IStubDocumentSchema"
-        )
-        api.content.create(container=portal, type="Folder", id=USERS)
+    add_type(portal, USER_TYPE, f"{IStubUserSchema.__module__}.IStubUserSchema")
+    add_type(
+        portal, NOT_A_USER, f"{IStubDocumentSchema.__module__}.IStubDocumentSchema"
+    )
+    api.content.create(container=portal, type="Folder", id=USERS)
     install_enumerator(acl_users)
     return portal
 
@@ -102,14 +101,13 @@ def claiming(configured):
         # every login, not only the first.
         if event.userid in configured[USERS]:
             return
-        with api.env.adopt_roles(["Manager"]):
-            api.content.create(
-                container=configured[USERS],
-                type=USER_TYPE,
-                id=event.userid,
-                userid=event.userid,
-                login=event.userid,
-            )
+        api.content.create(
+            container=configured[USERS],
+            type=USER_TYPE,
+            id=event.userid,
+            userid=event.userid,
+            login=event.userid,
+        )
 
     registry = getGlobalSiteManager()
     registry.registerHandler(create, (ExternalIdentityAuthenticated,))

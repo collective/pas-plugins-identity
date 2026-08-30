@@ -1,0 +1,7 @@
+Removed 48 `api.env.adopt_roles(["Manager"])` blocks that granted a role the harness had already granted.
+
+The autouse `_manager` fixture in `tests/core/conftest.py` elects every test under `tests/core` as a site manager, and 48 blocks across 16 modules were re-granting it. This was measured rather than reasoned about: all 48 were deleted and the core suite ran 1582 passing, unchanged.
+
+Two elevations under `tests/core` stay, and the difference is worth naming. `test_completeness.py` adopts `Anonymous`, which is the opposite of a grant. `test_email_linking.py` runs as the `member` fixture rather than as `TEST_USER_ID`, so the role `_manager` grants is not the role that request carries — dropping it there would have been a real regression rather than a cleanup.
+
+The fixture's own warning is updated: 75 blocks now lean on it across two passes, which raises what is at stake when `plone/pytest-plone#63` finally allows it to go. @ericof

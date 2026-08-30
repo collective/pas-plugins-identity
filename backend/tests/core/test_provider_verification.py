@@ -147,10 +147,9 @@ class TestRecording:
     def test_somebody_elses_verified_address_is_refused(self):
         """Two people cannot both have proved one mailbox, and moving the
         identity would be one of them taking the other's account."""
-        with api.env.adopt_roles(["Manager"]):
-            other = api.user.create(
-                email="other@plone.org", username="other", password="s3cr3t-other"
-            ).getId()
+        other = api.user.create(
+            email="other@plone.org", username="other", password="s3cr3t-other"
+        ).getId()
         self.portal.acl_users[CORE_PLUGIN_ID].link(
             other, EMAIL_PROVIDER, MINE, {"email": MINE}
         )
