@@ -215,3 +215,66 @@ class TestWhatALoginRecords:
 
         assert second == first
         assert identity_lines()[0] == f"login {first} via {PROVIDER} (new identity)"
+
+
+class TestTheNoteSurvivesTheCommit:
+    """Everything above reads the ``Transaction`` object, which is one step
+    short of the claim being made: what an operator reads is the *committed*
+    record. A description that never survived the commit would pass every
+    other test in this module.
+
+    On the functional layer, because the integration one forbids a commit --
+    and a commit is exactly the thing under test.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, functional) -> None:
+        self.portal = functional["portal"]
+        self.plugin = self.portal.acl_users[CORE_PLUGIN_ID]
+        set_providers([
+            ProviderConfig(provider_id=PROVIDER, driver_id="oidc-generic", title="Dex")
+        ])
+        transaction.commit()
+
+    def committed(self) -> tuple[str, str]:
+        """Return the newest committed transaction's description and user.
+
+        The same record ``undoLog`` and every ZODB browser read. Both fields
+        are stored as UTF-8 bytes rather than text, which is worth going
+        through rather than around: it is the shape anything reading the undo
+        log has to handle.
+
+        :returns: ``(description, user)``, decoded.
+        """
+        record = list(self.portal._p_jar.db().storage.iterator())[-1]
+        return (
+            (record.description or b"").decode("utf-8"),
+            (record.user or b"").decode("utf-8"),
+        )
+
+    def test_the_description_is_in_the_undo_log(self):
+        userid, _ = self.plugin.authenticateCredentials({
+            "extractor": EXTRACTOR,
+            "provider": PROVIDER,
+            "subject": SUBJECT,
+            "claims": CLAIMS,
+        })
+        transaction.commit()
+
+        description, _ = self.committed()
+
+        assert f"login {userid} via {PROVIDER}" in description
+
+    def test_the_user_is_in_the_undo_log(self):
+        """The field that was empty before any of this existed."""
+        userid, _ = self.plugin.authenticateCredentials({
+            "extractor": EXTRACTOR,
+            "provider": PROVIDER,
+            "subject": SUBJECT,
+            "claims": CLAIMS,
+        })
+        transaction.commit()
+
+        _, user = self.committed()
+
+        assert user.endswith(userid)

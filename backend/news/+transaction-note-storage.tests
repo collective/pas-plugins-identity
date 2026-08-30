@@ -1,0 +1,3 @@
+Asserted the login transaction note against the *committed* storage record rather than only against the `Transaction` object.
+
+Every other test in the module reads the description and user off the object in memory, which is one step short of the claim being made: what an operator reads is the undo log, and a description that never survived the commit would pass all of them. The two new tests run on the functional layer, because the integration one forbids the commit that is the thing under test, and they read the record back through `storage.iterator()` — the same record `undoLog` and every ZODB browser show. Both fields are stored as UTF-8 bytes rather than text, which the tests go through rather than around. @ericof
