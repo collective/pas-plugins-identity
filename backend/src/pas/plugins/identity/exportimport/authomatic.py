@@ -77,15 +77,30 @@ from typing import Any
 #: package exists to avoid.
 SOURCE = "pas.plugins.authomatic"
 
-#: authomatic property-sheet keys mapped onto Profile fields. Its sheet is
-#: built from each provider's ``propertymap``, so the keys are whatever the
-#: old site configured -- but these are the names Plone itself uses and the
-#: ones every stock configuration produces.
+#: Dump property keys mapped onto Profile fields.
+#:
+#: Both halves of the vocabulary, because a dump can honestly contain either.
+#: A dump built from authomatic's *property sheet* carries Plone field names,
+#: because that is what its ``propertymap`` translated them into. A dump built
+#: from the stored identity -- which is what the documented extraction does,
+#: and for good reason -- carries the provider's own names, because that is
+#: what the provider sent.
+#:
+#: ``link`` is the one that matters: it is what OAuth2 providers call a
+#: homepage, and authomatic's own shipped property maps translate it to
+#: ``home_page``. A converter that did not know it silently dropped the field.
+#: Confirmed against a real authomatic 2.0.0 store on RelStorage, whose Google
+#: map was ``{email, link, name, first_name, last_name, picture}``.
+#:
+#: A key with no Profile field -- ``picture``, ``first_name``, ``last_name`` --
+#: is dropped rather than carried, because an attribute nothing declares is
+#: invisible to every form and permission in the site.
 PROPERTY_MAP = {
     "fullname": "fullname",
     "name": "fullname",
     "location": "location",
     "home_page": "home_page",
+    "link": "home_page",
     "description": "description",
 }
 

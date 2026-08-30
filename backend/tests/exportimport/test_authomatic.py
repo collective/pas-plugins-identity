@@ -105,6 +105,62 @@ class TestTheConversion:
 
         assert convert_authomatic(d)["users"][0]["fullname"] == "Someone"
 
+    def test_the_provider_vocabulary_is_understood(self):
+        """A dump read from the *stored identity* rather than from the derived
+        property sheet carries the provider's own key names, because that is
+        what the provider sent. ``link`` is what an OAuth2 provider calls a
+        homepage, and authomatic's own shipped property maps translate it.
+
+        Found by running the documented extraction against a real authomatic
+        2.0.0 store: the field was silently dropped.
+        """
+        d = dump()
+        d["users"][0]["properties"] = {
+            "name": "Erico Andrei",
+            "email": ADDRESS,
+            "link": "https://kitconcept.com",
+        }
+
+        user = convert_authomatic(d)["users"][0]
+
+        assert user["fullname"] == "Erico Andrei"
+        assert user["home_page"] == "https://kitconcept.com"
+
+    def test_a_plone_key_still_wins_over_the_provider_one(self):
+        """Both vocabularies are understood, so a dump carrying both must not
+        depend on dict ordering to pick."""
+        d = dump()
+        d["users"][0]["properties"] = {
+            "link": "https://provider.example",
+            "home_page": "https://plone.example",
+            "name": "From the provider",
+            "fullname": "From the sheet",
+            "email": ADDRESS,
+        }
+
+        user = convert_authomatic(d)["users"][0]
+
+        assert user["home_page"] == "https://plone.example"
+        assert user["fullname"] == "From the sheet"
+
+    def test_a_key_with_no_profile_field_is_dropped(self):
+        """``picture``, ``first_name`` and ``last_name`` are in a real Google
+        property map and have no Profile field. An attribute nothing declares
+        is invisible to every form and permission in the site."""
+        d = dump()
+        d["users"][0]["properties"] = {
+            "email": ADDRESS,
+            "picture": "https://example.org/a.png",
+            "first_name": "Erico",
+            "last_name": "Andrei",
+        }
+
+        user = convert_authomatic(d)["users"][0]
+
+        assert "picture" not in user
+        assert "first_name" not in user
+        assert "https://example.org/a.png" not in str(user)
+
     def test_the_generator_says_where_it_came_from(self):
         """A document found on disk in two years should say what made it."""
         assert SOURCE in convert_authomatic(dump())["generator"]

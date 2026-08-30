@@ -1,0 +1,5 @@
+The authomatic converter now understands the provider's own property names, not only Plone's.
+
+A dump read from authomatic's stored `UserIdentity` carries the keys the provider sent — `name`, `link`, `picture`, `first_name` — rather than the Plone field names its derived property sheet would have produced. `link` is the one that mattered: it is what an OAuth2 provider calls a homepage, authomatic's own shipped property maps translate it to `home_page`, and the converter was silently dropping it.
+
+Found by running the documented extraction against a real `pas.plugins.authomatic` 2.0.0 store on PostgreSQL/RelStorage rather than against a fixture. `fullname` and `name` now both answer for the full name and `home_page` and `link` both for the homepage, with the Plone name winning when a dump carries both. A key with no Profile field is still dropped, because an attribute nothing declares is invisible to every form and permission in the site. @ericof
