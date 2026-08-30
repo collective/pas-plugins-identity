@@ -102,6 +102,11 @@ The importer makes three passes, and the order is not incidental.
 
 A refusal stops the whole run and writes nothing: a malformed document, a document from a newer version, a user with no `userid`, an identity missing its provider or its subject, or a site with no identity plugin.
 
+An identity naming a provider this site does not have is a refusal too, and it is the one worth knowing about.
+The provider id is half of every identity key, so importing against a site that spells it differently produces a set of accounts no login will ever reach.
+The message names what is missing, what is configured, and any name that differs only in case.
+Pass `allow_unknown_providers` (`--allow-unknown-providers`) when you mean to import first and configure the providers afterwards; the identities are written either way, and the join starts working as soon as the name exists.
+
 A skip drops one record and keeps going, because one bad row must not stop the other nine hundred:
 
 | Skipped | Why |

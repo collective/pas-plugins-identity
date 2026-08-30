@@ -89,14 +89,20 @@ identity-importer etc/zope.conf plone var/authomatic.json --from-authomatic
 ```{important}
 Name the provider exactly as `pas.plugins.authomatic` named it.
 Its provider *name*, the key in that package's `json_config`, is the left half of every identity key in the dump, and this package's provider *id* is what a login presents as the right one.
-They have to be the same string.
+They have to be the same string: a dump whose identities say `"provider": "google"` needs a provider whose id is `google`, not `google-workspace` and not `Google`.
 
-Nothing can check this for you: the provider is configured by hand, in the target site, after the import.
-Get it wrong and the import still reports success, and then every migrated person signs in and is handed a **brand-new account** beside the one waiting for them.
-The migrated Profile is not corrupted, which is what makes it hard to notice: it keeps their name and their groups and simply belongs to nobody who can sign in.
-
-A dump whose identities say `"provider": "google"` needs a provider whose id is `google`, not `google-workspace` and not `Google`.
+**The importer checks this and refuses**, before writing anything, naming what is missing and what is configured — including when the difference is only one of case.
+Without the check the mistake is invisible: the import reports success, and then every migrated person signs in and is handed a brand-new account beside the one waiting for them, while the migrated Profile keeps their name and their groups and belongs to nobody who can sign in.
 ```
+
+If you mean to import first and configure the providers afterwards, say so:
+
+```shell
+identity-importer etc/zope.conf plone var/authomatic.json --from-authomatic --allow-unknown-providers
+```
+
+The identities are written either way, so the join starts working the moment a provider is configured under the right name.
+The flag only turns off the check that the name is one this site knows.
 
 Configure the providers in the target site before anybody signs in.
 Provider configuration is not carried in either format, and the client secret is deliberately not something a document can hold.

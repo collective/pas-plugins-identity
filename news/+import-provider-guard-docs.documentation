@@ -1,0 +1,3 @@
+Documented the importer's provider-name check, and the flag that turns it off.
+
+The how-to now shows the `--allow-unknown-providers` form for importing before the providers are configured, and says what the flag does and does not change: the identities are written either way, and only the check that the name is one this site knows is skipped. The reference page lists the refusal alongside the others and explains why this one is worth knowing about. @ericof
