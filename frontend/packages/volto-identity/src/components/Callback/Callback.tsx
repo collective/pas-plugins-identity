@@ -15,16 +15,21 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { MessageDescriptor } from 'react-intl';
 import { useDispatch, useSelector } from 'react-redux';
-import { useLocation } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { defineMessages, useIntl } from 'react-intl';
 import { LOGIN } from '@plone/volto/constants/ActionTypes';
 
-import { completeCallback, confirmMagicLink } from '../../actions';
+import {
+  completeCallback,
+  confirmMagicLink,
+  listIdentities,
+} from '../../actions';
 import { readCallback } from '../../helpers/callback';
 import { IDENTITIES_PATH } from '../../config/routes';
 import LoginPanel from '../Login/LoginPanel';
 
 import './Callback.scss';
+import { goTo } from '../../helpers/navigate';
 
 const messages = defineMessages({
   // The same id the login page's heading uses: the same card, so the same
@@ -58,6 +63,7 @@ const Callback: React.FC<CallbackProps> = ({ onToken }) => {
   const intl = useIntl();
   const dispatch = useDispatch();
   const location = useLocation();
+  const { push } = useHistory();
   const dispatched = useRef(false);
   // The descriptor rather than the formatted string: what is stored is
   // which refusal happened, and rendering it is the renderer's job.
@@ -101,11 +107,13 @@ const Callback: React.FC<CallbackProps> = ({ onToken }) => {
     if (!linked) {
       return;
     }
-    // Back to where the flow was started from. A full load rather than a
-    // router push: the identities list was fetched before this address
-    // existed, and the page has to be told about it.
-    window.location.href = IDENTITIES_PATH;
-  }, [linked]);
+    // Back to where the flow was started from, through the router. The list
+    // there was fetched before this address existed, so it is refetched --
+    // which is what the full page load this used to do was really for, at the
+    // cost of throwing the whole application away to get it.
+    dispatch(listIdentities());
+    goTo(IDENTITIES_PATH, push);
+  }, [linked, dispatch, push]);
 
   useEffect(() => {
     const token = answered?.data?.token;
@@ -129,10 +137,12 @@ const Callback: React.FC<CallbackProps> = ({ onToken }) => {
     // store is what makes the browser signed in. Reproducing that by writing
     // the cookie here would be a second implementation of it.
     dispatch({ type: `${LOGIN}_SUCCESS`, result: { token } });
-    // A full load rather than a router push: everything rendered so far was
-    // rendered for an anonymous user.
-    window.location.href = cameFrom || '/';
-  }, [answered, onToken, dispatch]);
+    // Through the router: the store changing is what re-renders everything
+    // that was rendered for an anonymous user, which is what the page load
+    // this used to do was standing in for. `came_from` arrives in a query
+    // string, so `goTo` is also what stops it being an open redirect.
+    goTo(cameFrom || '/', push);
+  }, [answered, onToken, dispatch, push]);
 
   // Every backend refusal reads the same on purpose: expired, replayed,
   // forged and wrong-session are one message here, and the audit log carries

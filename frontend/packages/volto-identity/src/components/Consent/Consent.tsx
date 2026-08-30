@@ -13,7 +13,7 @@
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useLocation } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { defineMessages, useIntl } from 'react-intl';
 
 import { Helmet } from '@plone/volto/helpers/Helmet/Helmet';
@@ -21,6 +21,7 @@ import { Helmet } from '@plone/volto/helpers/Helmet/Helmet';
 import { getConsentRequest } from '../../actions';
 import type { ConsentRequest } from '../../types';
 import ConsentPanel from './ConsentPanel';
+import { goTo } from '../../helpers/navigate';
 
 const messages = defineMessages({
   title: { id: 'Authorize', defaultMessage: 'Authorize' },
@@ -51,6 +52,7 @@ const Consent: React.FC = () => {
   const intl = useIntl();
   const dispatch = useDispatch();
   const { search } = useLocation();
+  const { push } = useHistory();
   // Set when the browser is on its way out. The buttons go dead rather than
   // letting a second click send a second answer to a request that has
   // already been decided.
@@ -70,9 +72,9 @@ const Consent: React.FC = () => {
         return;
       }
       setAnswering(true);
-      window.location.href = answerUrl(consent.data, allow);
+      goTo(answerUrl(consent.data, allow), push, { external: true });
     },
-    [consent?.data],
+    [consent?.data, push],
   );
 
   return (

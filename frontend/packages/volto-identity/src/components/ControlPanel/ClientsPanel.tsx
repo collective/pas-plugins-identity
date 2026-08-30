@@ -22,10 +22,11 @@ import pencilSVG from '@plone/volto/icons/pencil.svg';
 import refreshSVG from '@plone/volto/icons/refresh.svg';
 
 import { clientSchema, toFormData } from '../../helpers/clientSchema';
-import type { OAuthClient, SigningKeyRing } from '../../types';
+import type { JsonSchema, OAuthClient, SigningKeyRing } from '../../types';
 import SecretReveal from './SecretReveal';
 
 import './ClientsPanel.scss';
+import ConfirmModal from './ConfirmModal';
 
 const messages = defineMessages({
   loading: { id: 'Loading clients', defaultMessage: 'Loading clients…' },
@@ -98,6 +99,14 @@ export type ClientsView = 'list' | 'add' | 'edit' | 'keys';
 
 interface ClientsPanelProps {
   clients: OAuthClient[];
+  /**
+   * The form's schema, as the backend serialized it from `IClientRecords`.
+   *
+   * Optional so a page talking to a backend that predates it, or one whose
+   * request failed, renders an empty form rather than crashing on
+   * `schema.fieldsets`.
+   */
+  schema?: JsonSchema;
   keys: SigningKeyRing | null;
   loading: boolean;
   busy: boolean;
@@ -124,6 +133,7 @@ const NOTHING = '—';
 
 const ClientsPanel: React.FC<ClientsPanelProps> = ({
   clients,
+  schema,
   keys,
   loading,
   busy,
@@ -146,17 +156,35 @@ const ClientsPanel: React.FC<ClientsPanelProps> = ({
     : undefined;
   const adding = view === 'add';
 
+  const [confirming, setConfirming] = React.useState<string | null>(null);
+
   const confirmDelete = (clientId: string) => {
-    // eslint-disable-next-line no-alert
-    if (!window.confirm(intl.formatMessage(messages.confirmDelete))) {
+    setConfirming(clientId);
+  };
+
+  const onConfirmDelete = () => {
+    const clientId = confirming;
+    setConfirming(null);
+    if (!clientId) {
       return;
     }
     onDelete(clientId);
   };
 
+  const modal = (
+    <ConfirmModal
+      open={confirming !== null}
+      header={confirming ?? ''}
+      content={intl.formatMessage(messages.confirmDelete)}
+      onCancel={() => setConfirming(null)}
+      onConfirm={onConfirmDelete}
+    />
+  );
+
   if (view === 'keys') {
     return (
       <Segment.Group raised className="identity-clients">
+        {modal}
         <Segment className="primary">
           {intl.formatMessage(messages.signingKeys)}
         </Segment>
@@ -222,7 +250,7 @@ const ClientsPanel: React.FC<ClientsPanelProps> = ({
             ? intl.formatMessage(messages.add)
             : current?.title || current?.client_id
         }
-        schema={clientSchema(adding, intl)}
+        schema={clientSchema(schema, adding, intl)}
         formData={toFormData(adding ? undefined : current)}
         requestError={error}
         onSubmit={onSubmit}
@@ -234,6 +262,7 @@ const ClientsPanel: React.FC<ClientsPanelProps> = ({
 
   return (
     <Segment.Group raised className="identity-clients">
+      {modal}
       <Segment className="primary">
         {intl.formatMessage(messages.registered)}
       </Segment>

@@ -23,6 +23,31 @@ This package keeps one module per driver, and doing the same in your own add-on 
 `BaseDriver` gives you the OAuth configuration fields, the subject extraction, and the shared claim normalization.
 A driver is usually a few class attributes and one override:
 
+First the settings an operator fills in, as an ordinary `zope.schema` interface.
+Extend `IOAuth2Settings` and you inherit the client credentials, the scope, the userid source and the two trust switches; add only what your provider needs.
+
+```python
+from pas.plugins.identity import _
+from pas.plugins.identity.core.drivers.settings import IOAuth2Settings
+from plone.autoform import directives
+from zope import schema
+
+
+class IGitLabSettings(IOAuth2Settings):
+    """What a self-hosted GitLab needs beyond the OAuth2 fields."""
+
+    base_url = schema.TextLine(
+        title=_("GitLab URL"),
+        description=_("The root of your GitLab, with no trailing path."),
+        required=True,
+    )
+    # Ahead of the credentials: everything else is read from what this
+    # discovers. Position is declared, never spaced out by hand.
+    directives.order_before(base_url="client_id")
+```
+
+Then the driver, which names it:
+
 ```python
 from pas.plugins.identity.core.drivers.base import BaseDriver
 from pas.plugins.identity.core.interfaces import Claims
@@ -34,23 +59,9 @@ class GitLabDriver(BaseDriver):
 
     driver_id = "gitlab"
     title = "GitLab"
+    settings_schema = IGitLabSettings
     default_scope = ("read_user",)
     subject_keys = ("sub", "id")
-
-    #: Rendered by the control panel. The frontend builds the form from this,
-    #: so a field you declare here appears with no frontend change.
-    extra_fields = {
-        "base_url": {
-            "type": "string",
-            "title": "GitLab URL",
-            "required": True,
-            "secret": False,
-            # Where it goes in the form. A schema travels as a JSON object
-            # with sorted keys, so this is what survives the wire; the
-            # inherited fields are spaced by ten to leave room between them.
-            "order": 15,
-        },
-    }
 
     def normalize_claims(self, payload: JSONDict) -> Claims:
         """Turn GitLab's answer into the documented schema.
@@ -63,7 +74,14 @@ class GitLabDriver(BaseDriver):
         return claims
 ```
 
-If you would rather implement `IDriver` from scratch, the interface asks for `driver_id`, `title`, `config_schema()`, `subject()`, and `normalize_claims()`.
+`@identity-drivers` serializes that interface with `plone.restapi`, so the field appears in the control panel with no frontend change, in the site's language, and validated.
+
+```{tip}
+Put translatable strings through `_()`, and let the field type carry the meaning: a `Password` is masked everywhere without a flag, a `Choice` over a vocabulary becomes a select, and a `Tuple` becomes a list.
+Defaults that differ per driver — the scope GitLab needs, the userid source — stay on the driver class as `default_scope` and friends, because a subinterface redeclaring a field to change its default gives it a fresh creation order and the field jumps to the end of the form.
+```
+
+If you would rather implement `IDriver` from scratch, the interface asks for `driver_id`, `title`, `settings_schema`, `subject()`, and `normalize_claims()`.
 
 ## Register it
 

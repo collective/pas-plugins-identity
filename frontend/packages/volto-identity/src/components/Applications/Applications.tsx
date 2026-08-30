@@ -25,6 +25,7 @@ import backSVG from '@plone/volto/icons/back.svg';
 
 import { listGrants, withdrawGrant } from '../../actions';
 import ApplicationsPanel from './ApplicationsPanel';
+import ConfirmModal from '../ControlPanel/ConfirmModal';
 
 const messages = defineMessages({
   title: { id: 'Applications', defaultMessage: 'Applications' },
@@ -35,6 +36,7 @@ const messages = defineMessages({
       'Withdraw access for {client}? It will be signed out everywhere and ' +
       'will have to ask you again next time.',
   },
+  withdraw: { id: 'Withdraw access', defaultMessage: 'Withdraw access' },
   withdrawn: {
     id: 'Access withdrawn',
     defaultMessage: 'Access withdrawn',
@@ -62,50 +64,69 @@ const Applications: React.FC = () => {
     dispatch(listGrants());
   }, [dispatch]);
 
+  // Which application the question is being asked about, or null when it is
+  // not being asked. A blocking browser dialog was doing this, which froze
+  // the page and read as a different application than the one around it.
+  const [confirming, setConfirming] = useState<{
+    clientId: string;
+    title: string;
+  } | null>(null);
+
   const onWithdraw = useCallback(
     (clientId: string) => {
       const grant = grants?.data?.items?.find(
         (item: { client_id: string }) => item.client_id === clientId,
       );
-      // eslint-disable-next-line no-alert
-      const agreed = window.confirm(
-        intl.formatMessage(messages.confirm, {
-          client: grant?.title || clientId,
-        }),
-      );
-      if (!agreed) {
-        return;
-      }
-      setWithdrawing(clientId);
-      (dispatch(withdrawGrant(clientId)) as any)
-        .then(() => {
-          toast.success(
-            <Toast success title={intl.formatMessage(messages.withdrawn)} />,
-          );
-          // Back to the list: the application whose details were on screen
-          // is the one that just stopped existing.
-          setSelected(null);
-          // Re-read rather than drop the row locally: the listing is what
-          // says whether anything is left, and a locally pruned one would
-          // disagree with the server the moment anything else changed.
-          dispatch(listGrants());
-        })
-        .catch((err: any) => {
-          toast.error(
-            <Toast
-              error
-              title={intl.formatMessage(messages.error)}
-              content={err?.response?.body?.error?.message ?? String(err)}
-            />,
-          );
-        })
-        .finally(() => setWithdrawing(null));
+      setConfirming({ clientId, title: grant?.title || clientId });
     },
-    [dispatch, grants?.data?.items, intl],
+    [grants],
   );
+
+  const onConfirmWithdraw = useCallback(() => {
+    const asked = confirming;
+    setConfirming(null);
+    if (!asked) {
+      return;
+    }
+    const clientId = asked.clientId;
+    setWithdrawing(clientId);
+    (dispatch(withdrawGrant(clientId)) as any)
+      .then(() => {
+        toast.success(
+          <Toast success title={intl.formatMessage(messages.withdrawn)} />,
+        );
+        // Back to the list: the application whose details were on screen
+        // is the one that just stopped existing.
+        setSelected(null);
+        // Re-read rather than drop the row locally: the listing is what
+        // says whether anything is left, and a locally pruned one would
+        // disagree with the server the moment anything else changed.
+        dispatch(listGrants());
+      })
+      .catch((err: any) => {
+        toast.error(
+          <Toast
+            error
+            title={intl.formatMessage(messages.error)}
+            content={err?.response?.body?.error?.message ?? String(err)}
+          />,
+        );
+      })
+      .finally(() => setWithdrawing(null));
+  }, [confirming, dispatch, intl]);
 
   return (
     <Container id="page-applications">
+      <ConfirmModal
+        open={confirming !== null}
+        header={confirming?.title ?? ''}
+        content={intl.formatMessage(messages.confirm, {
+          client: confirming?.title ?? '',
+        })}
+        confirmLabel={intl.formatMessage(messages.withdraw)}
+        onCancel={() => setConfirming(null)}
+        onConfirm={onConfirmWithdraw}
+      />
       <Helmet title={intl.formatMessage(messages.title)} />
       <Segment.Group raised>
         <Segment className="primary">

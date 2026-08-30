@@ -4,7 +4,7 @@
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useHistory, useLocation } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { Container, Segment } from 'semantic-ui-react';
 import { defineMessages, useIntl } from 'react-intl';
@@ -27,6 +27,7 @@ import {
 import { EMAIL_DRIVER } from '../../helpers/identities';
 import type { Identity, LoginProvider, ProfileEmail } from '../../types';
 import IdentitiesList from './IdentitiesList';
+import { goTo } from '../../helpers/navigate';
 
 const messages = defineMessages({
   title: { id: 'Sign-in methods', defaultMessage: 'Sign-in methods' },
@@ -38,6 +39,7 @@ const Identities: React.FC = () => {
   const dispatch = useDispatch();
   const isClient = useClient();
   const location = useLocation();
+  const { push } = useHistory();
   const { pathname } = location;
   const [redirecting, setRedirecting] = useState(false);
 
@@ -59,9 +61,9 @@ const Identities: React.FC = () => {
 
   useEffect(() => {
     if (redirecting && linking?.loaded && linking?.data?.authorize_url) {
-      window.location.href = linking.data.authorize_url;
+      goTo(linking.data.authorize_url, push, { external: true });
     }
-  }, [redirecting, linking]);
+  }, [redirecting, linking, push]);
 
   // The email provider answers `sent` instead of an authorize URL, and the
   // page stays where it is to say so.

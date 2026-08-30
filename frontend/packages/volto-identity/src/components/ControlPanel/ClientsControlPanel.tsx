@@ -75,6 +75,11 @@ const ClientsControlPanel: React.FC = () => {
 
   const clients = useSelector((state: any) => state.oauthClients);
   const keys = useSelector((state: any) => state.signingKeys);
+  // Served beside the listing, from the interface the client's own storage is
+  // described by, so the form and the records cannot say different things.
+  const clientFormSchema = useSelector(
+    (state: any) => state.clientFormSchema?.data,
+  );
   const created = useSelector((state: any) => state.clientCreate);
   const rotated = useSelector((state: any) => state.clientSecretRotate);
   const updated = useSelector((state: any) => state.clientUpdate);
@@ -190,6 +195,7 @@ const ClientsControlPanel: React.FC = () => {
       <Helmet title={intl.formatMessage(messages.title)} />
       <Container>
         <ClientsPanel
+          schema={clientFormSchema}
           clients={clients?.data ?? []}
           keys={keys?.data ?? null}
           loading={Boolean(clients?.loading)}

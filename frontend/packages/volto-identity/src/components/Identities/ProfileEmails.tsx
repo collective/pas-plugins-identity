@@ -23,6 +23,9 @@
  */
 import React from 'react';
 import { defineMessages, useIntl } from 'react-intl';
+import { Link } from 'react-router-dom';
+
+import { flattenToAppURL } from '@plone/volto/helpers/Url/Url';
 
 import type { ProfileEmail } from '../../types';
 
@@ -171,9 +174,13 @@ const ProfileEmails: React.FC<ProfileEmailsProps> = ({
 
       {profileUrl ? (
         <p className="identity-emails__edit">
-          {/* An ordinary link rather than a router push: the profile is
-              content, and its edit form is Volto's own. */}
-          <a href={`${profileUrl}/edit`}>{intl.formatMessage(messages.edit)}</a>
+          {/* A router link: the edit form is a Volto route, and a plain
+              anchor to it threw the whole application away to reach a page
+              this app was already running. `profileUrl` is the backend's
+              absolute URL, so it has to be flattened first. */}
+          <Link to={`${flattenToAppURL(profileUrl)}/edit`}>
+            {intl.formatMessage(messages.edit)}
+          </Link>
         </p>
       ) : null}
     </div>

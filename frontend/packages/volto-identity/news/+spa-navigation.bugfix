@@ -1,0 +1,7 @@
+The application stops throwing itself away to navigate, and asks in the page.
+
+Six places used `window.location.href` and three used `window.confirm` (Érico, 2026-08-29). A page load fetches the bundle again, rebuilds the store from nothing and re-renders every route already rendered — pure waste for an address this app owns, which three of those six were. A browser dialog blocks the whole browser, cannot be styled, reads as a different application than the panel around it, and forces a test to stub a global to reach the code behind it.
+
+`helpers/navigate` asks the question once: a site-relative path goes through the router, an absolute URL on this origin gets a real navigation, and anything else is refused — which also closes the open redirect in the `came_from` the callback was handed. The three genuinely external targets, a provider's authorize URL and `@@oauth-authorize`, say `{ external: true }` so the intent is on the call rather than in a comment. Returning to the identities page after a link now refetches the list, which is what the page load it replaced was really for.
+
+`ConfirmModal` replaces the three browser dialogs, with a destructive button that can be named after what it does — "Withdraw access" is not "Delete". The two plain `<a href>` to Volto routes are `<Link>`, flattened from the backend's absolute URL. @ericof

@@ -4,7 +4,7 @@
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useLocation } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { defineMessages, useIntl } from 'react-intl';
 
 import {
@@ -19,6 +19,7 @@ import { showPloneLogin } from '../../helpers/showPloneLogin';
 import type { LoginProvider } from '../../types';
 import LoginForm from './LoginForm';
 import LoginPanel from './LoginPanel';
+import { goTo } from '../../helpers/navigate';
 
 const messages = defineMessages({
   title: { id: 'Log in', defaultMessage: 'Log in' },
@@ -36,6 +37,7 @@ const Login: React.FC = () => {
   const intl = useIntl();
   const dispatch = useDispatch();
   const location = useLocation();
+  const { push } = useHistory();
   const [redirecting, setRedirecting] = useState(false);
   // The session as it was when this page loaded. Only a token that appears
   // *after* that is somebody signing in here.
@@ -54,9 +56,9 @@ const Login: React.FC = () => {
     if (redirecting && started?.loaded && started?.data?.authorize_url) {
       // A full page load, not a router push: the next stop is the provider's
       // own origin.
-      window.location.href = started.data.authorize_url;
+      goTo(started.data.authorize_url, push, { external: true });
     }
-  }, [redirecting, started]);
+  }, [redirecting, started, push]);
 
   const onSelectProvider = useCallback(
     (provider: LoginProvider) => {
@@ -98,9 +100,9 @@ const Login: React.FC = () => {
     const token = userSession?.token;
     const arrived = sessionOnArrival.current;
     if (token && arrived !== undefined && token !== arrived) {
-      window.location.href = returnUrl(location.search, location.pathname);
+      goTo(returnUrl(location.search, location.pathname), push);
     }
-  }, [userSession?.token, location.search, location.pathname]);
+  }, [userSession?.token, location.search, location.pathname, push]);
 
   const onSendMagicLink = useCallback(
     (email: string) => {

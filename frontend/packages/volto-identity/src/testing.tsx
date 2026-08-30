@@ -12,6 +12,7 @@
 import React from 'react';
 import type { ReactElement, ReactNode } from 'react';
 import { createIntl, IntlProvider } from 'react-intl';
+import { MemoryRouter } from 'react-router-dom';
 import {
   render as renderBare,
   type RenderOptions,
@@ -28,7 +29,12 @@ import {
  */
 const WithIntl = ({ children }: { children: ReactNode }) => (
   <IntlProvider locale="en" defaultLocale="en" messages={{}} onError={() => {}}>
-    {children}
+    {/* A router as well, for the same reason: components in this package
+        link with `<Link>` rather than throwing the application away with a
+        plain anchor, and `<Link>` outside a Router throws on first render.
+        A test that needs to *observe* navigation still brings its own
+        `MemoryRouter` and asserts on its location. */}
+    <MemoryRouter>{children}</MemoryRouter>
   </IntlProvider>
 );
 

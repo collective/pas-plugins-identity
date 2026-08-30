@@ -75,8 +75,31 @@ function renderPanel(
 }
 
 /** Accept the delete confirmation without a real dialog. */
-function confirming(answer: boolean) {
-  return vi.spyOn(window, 'confirm').mockReturnValue(answer);
+/**
+ * Answer the confirmation dialog.
+ *
+ * These used to stub `window.confirm`, which is the tell that the panel was
+ * asking with a browser dialog: a test had to reach past the component to a
+ * global to get at the code behind it. The question is part of the page now,
+ * so answering it is a click.
+ *
+ * @param answer Whether to go through with it.
+ */
+function answerConfirmation(answer: boolean) {
+  const action = answer ? 'confirm' : 'cancel';
+  // Queried off the document rather than the render container: the dialog is
+  // a portal, so it is mounted beside the panel rather than inside it.
+  const button = document.querySelector(`[data-action="${action}"]`);
+  fireEvent.click(button!);
+}
+
+/**
+ * Whether the confirmation is on screen.
+ *
+ * @returns Whether the dialog is mounted.
+ */
+function asking(): boolean {
+  return Boolean(document.querySelector('[data-action="confirm"]'));
 }
 
 describe('ClientsPanel', () => {
@@ -141,24 +164,31 @@ describe('ClientsPanel', () => {
     expect(screen.getByText(/existing access tokens are refused/)).toBeTruthy();
   });
 
-  it('unregisters a client once it is confirmed', () => {
-    const confirm = confirming(true);
+  it('asks before unregistering rather than doing it', () => {
     const { onDelete } = renderPanel();
 
     fireEvent.click(screen.getByRole('button', { name: 'Unregister' }));
 
+    expect(asking()).toBe(true);
+    expect(onDelete).not.toHaveBeenCalled();
+  });
+
+  it('unregisters a client once it is confirmed', () => {
+    const { onDelete } = renderPanel();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Unregister' }));
+    answerConfirmation(true);
+
     expect(onDelete).toHaveBeenCalledWith('app');
-    confirm.mockRestore();
   });
 
   it('unregisters nothing when the confirmation is declined', () => {
-    const confirm = confirming(false);
     const { onDelete } = renderPanel();
 
     fireEvent.click(screen.getByRole('button', { name: 'Unregister' }));
+    answerConfirmation(false);
 
     expect(onDelete).not.toHaveBeenCalled();
-    confirm.mockRestore();
   });
 
   it('shows a freshly minted secret over the listing', () => {

@@ -23,8 +23,10 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { defineMessages, useIntl } from 'react-intl';
 import { Container } from 'semantic-ui-react';
+import { Link } from 'react-router-dom';
 
 import { Helmet } from '@plone/volto/helpers/Helmet/Helmet';
+import { flattenToAppURL } from '@plone/volto/helpers/Url/Url';
 
 import { listGroupMembers } from '../../actions';
 import type { GroupMember, NestedGroup } from '../../types';
@@ -144,7 +146,9 @@ const GroupView: React.FC<GroupViewProps> = ({ content }) => {
             {members.map((member) => (
               <li key={member.id} data-userid={member.id}>
                 {member.profile_url ? (
-                  <a href={member.profile_url}>{member.fullname}</a>
+                  <Link to={flattenToAppURL(member.profile_url)}>
+                    {member.fullname}
+                  </Link>
                 ) : (
                   <span>{member.fullname}</span>
                 )}

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '../../testing';
 import { Provider } from 'react-redux';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import React from 'react';
 
 import { LOGIN } from '@plone/volto/constants/ActionTypes';
@@ -32,12 +32,25 @@ function fakeStore(state: any) {
   };
 }
 
+/**
+ * Reports where the router currently is.
+ *
+ * These used to assert on `window.location.href`, because the component set
+ * it. It routes now, so the observable thing is the router's location -- and
+ * asserting on that is also what proves the page is no longer being thrown
+ * away to navigate.
+ */
+function Where() {
+  return <span data-testid="where">{useLocation().pathname}</span>;
+}
+
 function renderCallback(state: any, search = '?code=abc&state=xyz') {
   const { store, dispatched } = fakeStore(state);
   render(
     <Provider store={store as any}>
       <MemoryRouter initialEntries={[`/login-identity${search}`]}>
         <Callback />
+        <Where />
       </MemoryRouter>
     </Provider>,
   );
@@ -86,7 +99,7 @@ describe('Callback', () => {
       magicLinkConfirm: {},
     });
 
-    expect(window.location.href).toBe('/some/page');
+    expect(screen.getByTestId('where').textContent).toBe('/some/page');
   });
 
   it('falls back to the site root when the flow named nowhere', () => {
@@ -95,7 +108,7 @@ describe('Callback', () => {
       magicLinkConfirm: {},
     });
 
-    expect(window.location.href).toBe('/');
+    expect(screen.getByTestId('where').textContent).toBe('/');
   });
 
   it('lets a caller override what happens with the token', () => {
@@ -117,6 +130,7 @@ describe('Callback', () => {
 
     expect(onToken).toHaveBeenCalledWith('a-token', '/x');
     // The override replaces the default rather than running alongside it.
+    // The override replaced the default, so nothing navigated.
     expect(window.location.href).toBe('');
   });
 
@@ -181,7 +195,7 @@ describe('Callback and a confirmation link', () => {
       '?magic_link=a-token',
     );
 
-    expect((window as any).location.href).toBe('/identities');
+    expect(screen.getByTestId('where').textContent).toBe('/identities');
   });
 
   it('does not sign anybody in', () => {

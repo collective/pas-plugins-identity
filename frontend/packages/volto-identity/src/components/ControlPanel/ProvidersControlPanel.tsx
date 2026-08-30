@@ -55,6 +55,7 @@ import {
 import type { ConfiguredProvider, Driver } from '../../types';
 
 import './ProvidersControlPanel.scss';
+import ConfirmModal from './ConfirmModal';
 
 /**
  * The configlet id, which is also the name the site-wide settings are served
@@ -318,9 +319,21 @@ const ProvidersControlPanel: React.FC = () => {
       .catch(fail);
   };
 
+  // Which provider the question is being asked about, or null when it is
+  // not being asked. State rather than a blocking call: the panel stays
+  // interactive and the dialog is part of the page.
+  const [confirming, setConfirming] = React.useState<ConfiguredProvider | null>(
+    null,
+  );
+
   const onDelete = (provider: ConfiguredProvider) => {
-    // eslint-disable-next-line no-alert
-    if (!window.confirm(intl.formatMessage(messages.confirmDelete))) {
+    setConfirming(provider);
+  };
+
+  const onConfirmDelete = () => {
+    const provider = confirming;
+    setConfirming(null);
+    if (!provider) {
       return;
     }
     (dispatch(deleteProvider(provider.id)) as any)
@@ -330,6 +343,13 @@ const ProvidersControlPanel: React.FC = () => {
 
   return (
     <div id="page-controlpanel" className="identity-controlpanel">
+      <ConfirmModal
+        open={confirming !== null}
+        header={confirming?.title || confirming?.id || ''}
+        content={intl.formatMessage(messages.confirmDelete)}
+        onCancel={() => setConfirming(null)}
+        onConfirm={onConfirmDelete}
+      />
       <Helmet title={intl.formatMessage(messages.title)} />
       <Container>
         {editingSettings && !settingsReady ? (

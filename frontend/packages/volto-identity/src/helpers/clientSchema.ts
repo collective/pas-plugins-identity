@@ -1,34 +1,24 @@
 /**
- * Build the Volto form schema for an OAuth client registration.
+ * The OAuth client form, composed from what the backend already sent.
  *
- * The providers panel gets its fields from the driver, which describes
- * itself over `@identity-drivers`. A client has no such describing thing --
- * the registry is this package's own and its fields are fixed by the OAuth
- * spec rather than by an add-on -- so they are enumerated here. What is
- * shared with the providers panel is everything after that: one schema, one
- * Volto `Form`, and no input laid out by hand.
+ * This file used to build the schema: its own grant list, its own labels, its
+ * own English. The backend serves one now, produced by `plone.restapi` from
+ * `IClientRecords` — the interface the client's own storage is described by —
+ * so the grants offered are exactly what the token endpoint implements, and
+ * every label is translated in the site's language.
+ *
+ * What is left is composition and the two questions that exist only while a
+ * client is being registered: the permanent `client_id`, and whether the
+ * client is public. Neither is a stored field an operator edits — the first
+ * becomes the record prefix and the second decides whether a secret is minted
+ * — so neither is in the schema, and both disappear from the edit form.
  * @module helpers/clientSchema
  */
 import { defineMessages } from 'react-intl';
-import type { IntlShape } from 'react-intl';
-import type { VoltoSchema } from './providerSchema';
-import type { OAuthClient } from '../types';
 
-/**
- * Every grant the token endpoint implements.
- *
- * Mirrors `GRANT_TYPES` in the server layer, which is also what the
- * discovery document advertises. Hardcoded rather than read from discovery
- * because a grant this form offers and the endpoint does not implement is a
- * registration that fails at the first token request -- so the two lists
- * being the same is a fact worth stating in one place per side rather than
- * fetching over the network to find out.
- */
-export const GRANT_TYPES: [string, string][] = [
-  ['authorization_code', 'Authorization code'],
-  ['refresh_token', 'Refresh token'],
-  ['client_credentials', 'Client credentials'],
-];
+import type { JsonSchema, OAuthClient, VoltoSchema } from '../types';
+
+import type { IntlShape } from 'react-intl';
 
 /**
  * Fields a `PATCH` may change.
@@ -48,84 +38,41 @@ export const EDITABLE = [
   'service_user',
 ];
 
-/**
- * Build the schema for registering or editing a client.
- *
- * @param adding Whether this is the registration form, which also asks for
- *   the permanent id and whether the client is public.
- * @returns The schema.
- */
 const messages = defineMessages({
+  registration: { id: 'Registration', defaultMessage: 'Registration' },
   clientId: { id: 'Client ID', defaultMessage: 'Client ID' },
   clientIdHelp: {
     id: 'client-id-help',
     defaultMessage:
-      'Permanent. Every token minted for this client carries it as the ' +
-      'audience, so renaming it later would strand them all.',
-  },
-  title: { id: 'Title', defaultMessage: 'Title' },
-  titleHelp: {
-    id: 'client-title-help',
-    defaultMessage: 'What the consent screen calls this client.',
+      'Permanent. It is what every token already issued is bound to, so it ' +
+      'cannot be changed afterwards.',
   },
   publicClient: { id: 'Public client', defaultMessage: 'Public client' },
   publicClientHelp: {
-    id: 'public-client-help',
+    id: 'client-public-help',
     defaultMessage:
-      'A browser or native app, which cannot keep a secret. PKCE is ' +
-      'required for these and no secret is issued. Not editable ' +
-      'afterwards: turning a confidential client public would leave a ' +
-      'stored secret hash that nothing checks.',
+      'A native or browser app, which cannot keep a secret. No secret is ' +
+      'minted and PKCE becomes mandatory instead.',
   },
-  enabled: { id: 'Enabled', defaultMessage: 'Enabled' },
-  enabledHelp: {
-    id: 'client-enabled-help',
-    defaultMessage:
-      'A disabled client is refused at every endpoint, and its existing ' +
-      'access tokens are refused as well: the audience is checked against ' +
-      'this registry on every request.',
-  },
-  grants: { id: 'Grants', defaultMessage: 'Grants' },
-  grantsHelp: {
-    id: 'client-grants-help',
-    defaultMessage:
-      'Which flows this client may use. A grant is refused at the token ' +
-      'endpoint unless it is listed here.',
-  },
-  redirectUris: { id: 'Redirect URIs', defaultMessage: 'Redirect URIs' },
-  redirectUrisHelp: {
-    id: 'redirect-uris-help',
-    defaultMessage:
-      'Matched exactly -- a trailing slash or an extra query parameter is ' +
-      'a different URI. A client using the authorization code grant needs ' +
-      'at least one.',
-  },
-  scope: { id: 'Scope', defaultMessage: 'Scope' },
-  scopeHelp: {
-    id: 'client-scope-help',
-    defaultMessage:
-      'The most this client may ever be granted, one entry per token. A ' +
-      'request for more is cut down to this rather than refused.',
-  },
-  serviceUser: { id: 'Service user', defaultMessage: 'Service user' },
-  serviceUserHelp: {
-    id: 'service-user-help',
-    defaultMessage:
-      'The Plone userid a client-credentials token acts as. Only that ' +
-      'grant uses it; leave it empty for a client that signs people in.',
-  },
-  registerClient: {
-    id: 'Register a client',
-    defaultMessage: 'Register a client',
-  },
-  editClient: { id: 'Edit client', defaultMessage: 'Edit client' },
-  client: { id: 'Client', defaultMessage: 'Client' },
-  access: { id: 'Access', defaultMessage: 'Access' },
 });
 
-export function clientSchema(adding: boolean, intl: IntlShape): VoltoSchema {
+/**
+ * Build the client form from the schema the backend sent.
+ *
+ * @param served The schema from `@identity-clients`.
+ * @param adding Whether this registers a client, which asks two more
+ *   questions than an edit does.
+ * @param intl For the labels of the two registration-only fields.
+ * @returns A Volto schema.
+ */
+export function clientSchema(
+  served: JsonSchema | undefined,
+  adding: boolean,
+  intl: IntlShape,
+): VoltoSchema {
   const properties: Record<string, Record<string, unknown>> = {};
-  const identity: string[] = [];
+  const fieldsets: { id: string; title: string; fields: string[] }[] = [];
+  const required = [...(served?.required ?? [])];
 
   if (adding) {
     properties.client_id = {
@@ -133,82 +80,46 @@ export function clientSchema(adding: boolean, intl: IntlShape): VoltoSchema {
       description: intl.formatMessage(messages.clientIdHelp),
       type: 'string',
     };
-    identity.push('client_id');
-  }
-
-  properties.title = {
-    title: intl.formatMessage(messages.title),
-    description: intl.formatMessage(messages.titleHelp),
-    type: 'string',
-  };
-  identity.push('title');
-
-  if (adding) {
     properties.public = {
       title: intl.formatMessage(messages.publicClient),
       description: intl.formatMessage(messages.publicClientHelp),
       type: 'boolean',
     };
-    identity.push('public');
-  } else {
-    properties.enabled = {
-      title: intl.formatMessage(messages.enabled),
-      description: intl.formatMessage(messages.enabledHelp),
-      type: 'boolean',
-    };
-    identity.push('enabled');
+    required.push('client_id');
   }
 
-  properties.grant_types = {
-    title: intl.formatMessage(messages.grants),
-    description: intl.formatMessage(messages.grantsHelp),
-    type: 'array',
-    choices: GRANT_TYPES,
-    default: ['authorization_code'],
-  };
-  properties.redirect_uris = {
-    title: intl.formatMessage(messages.redirectUris),
-    description: intl.formatMessage(messages.redirectUrisHelp),
-    type: 'array',
-    widget: 'token',
-  };
-  properties.scope = {
-    title: intl.formatMessage(messages.scope),
-    description: intl.formatMessage(messages.scopeHelp),
-    type: 'array',
-    widget: 'token',
-  };
-  properties.service_user = {
-    title: intl.formatMessage(messages.serviceUser),
-    description: intl.formatMessage(messages.serviceUserHelp),
-    type: 'string',
-  };
+  Object.assign(properties, served?.properties ?? {});
 
-  return {
-    title: intl.formatMessage(
-      adding ? messages.registerClient : messages.editClient,
-    ),
-    fieldsets: [
-      {
-        id: 'default',
-        title: intl.formatMessage(messages.client),
-        fields: identity,
-      },
-      {
-        id: 'access',
-        title: intl.formatMessage(messages.access),
-        fields: ['grant_types', 'redirect_uris', 'scope', 'service_user'],
-      },
-    ],
-    properties,
-    required: adding ? ['client_id'] : [],
-  };
+  (served?.fieldsets ?? []).forEach((fieldset, index) => {
+    const fields =
+      index === 0
+        ? [
+            ...(adding ? ['client_id'] : []),
+            ...fieldset.fields.filter(
+              (name) => adding || EDITABLE.includes(name),
+            ),
+            ...(adding ? ['public'] : []),
+          ]
+        : fieldset.fields.filter((name) => adding || EDITABLE.includes(name));
+    if (fields.length) {
+      fieldsets.push({
+        id: fieldset.id,
+        title:
+          index === 0 && adding
+            ? intl.formatMessage(messages.registration)
+            : fieldset.title,
+        fields,
+      });
+    }
+  });
+
+  return { fieldsets, properties, required };
 }
 
 /**
- * Seed a form from a stored client.
+ * Turn a client from the API into form data.
  *
- * @param client The client being edited, or undefined when registering.
+ * @param client The client, or undefined when registering.
  * @returns Form data.
  */
 export function toFormData(client?: OAuthClient): Record<string, unknown> {
@@ -234,6 +145,12 @@ export function toFormData(client?: OAuthClient): Record<string, unknown> {
 /**
  * Turn submitted form data back into the API payload.
  *
+ * Shape only. Whether a redirect URI is one this server will send a browser
+ * to is decided on the backend field, which refuses a fragment, a wildcard, a
+ * `javascript:` scheme and plain HTTP off the loopback -- and says which. The
+ * blank entries dropped below are a list widget's empty rows, not a judgement
+ * about any value somebody typed.
+ *
  * @param formData What the form submitted.
  * @param adding Whether this registers a client; an edit sends only what
  *   the backend accepts, since it refuses the whole request otherwise.
@@ -245,18 +162,11 @@ export function fromFormData(
 ): Record<string, unknown> {
   const data = formData ?? {};
   const payload: Record<string, unknown> = {
-    title: String(data.title ?? '').trim(),
+    title: data.title ?? '',
     grant_types: [...(data.grant_types ?? [])],
-    // Blank entries and stray whitespace have to go: matching is exact on
-    // the backend, so a URI with a space in it is a URI nothing matches.
-    redirect_uris: (data.redirect_uris ?? [])
-      .map((uri: string) => String(uri).trim())
-      .filter(Boolean),
-    scope: (data.scope ?? [])
-      .map((token: string) => String(token).trim())
-      .filter(Boolean)
-      .join(' '),
-    service_user: String(data.service_user ?? '').trim(),
+    redirect_uris: (data.redirect_uris ?? []).filter(Boolean),
+    scope: (data.scope ?? []).filter(Boolean).join(' '),
+    service_user: data.service_user ?? '',
   };
 
   if (adding) {

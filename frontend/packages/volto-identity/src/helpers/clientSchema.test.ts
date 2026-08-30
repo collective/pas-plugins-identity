@@ -1,176 +1,161 @@
-import { testIntl } from '../testing';
+/**
+ * The client form is composed, not invented.
+ *
+ * What used to be asserted here — which grants exist, what each field is
+ * called, which of them are text boxes — is the backend's answer now,
+ * serialized by `plone.restapi` from `IClientRecords`. So the grants offered
+ * are exactly what the token endpoint implements, without this file holding a
+ * list that could drift from it.
+ *
+ * What is left to test is the composition, and the two questions that exist
+ * only while a client is being registered.
+ */
 import { describe, expect, it } from 'vitest';
 
 import {
   EDITABLE,
-  GRANT_TYPES,
   clientSchema,
   fromFormData,
   toFormData,
 } from './clientSchema';
 import type { OAuthClient } from '../types';
 
-const CLIENT: OAuthClient = {
-  '@id': '/@identity-clients/app',
-  client_id: 'app',
-  title: 'Example App',
-  redirect_uris: ['https://app.example.org/cb'],
-  grant_types: ['authorization_code', 'refresh_token'],
-  scope: 'openid profile email',
-  auth_method: 'client_secret_post',
-  public: false,
-  enabled: true,
-  service_user: '',
+const intl = {
+  formatMessage: (m: { defaultMessage: string }) => m.defaultMessage,
+} as any;
+
+/** What `@identity-clients` sends: `IClientRecords`, serialized. */
+const SERVED = {
+  type: 'object',
+  properties: {
+    title: { title: 'Title', type: 'string' },
+    enabled: { title: 'Enabled', type: 'boolean' },
+    redirect_uris: { title: 'Redirect URIs', type: 'array', widget: 'token' },
+    grant_types: {
+      title: 'Grants',
+      type: 'array',
+      choices: [
+        ['authorization_code', 'authorization_code'],
+        ['client_credentials', 'client_credentials'],
+        ['refresh_token', 'refresh_token'],
+      ],
+    },
+    scope: { title: 'Scope', type: 'string' },
+    service_user: { title: 'Acts as', type: 'string' },
+  },
+  required: ['title'],
+  fieldsets: [
+    { id: 'default', title: 'Default', fields: ['title', 'enabled'] },
+    {
+      id: 'flow',
+      title: 'Flow',
+      fields: ['redirect_uris', 'grant_types', 'scope', 'service_user'],
+    },
+  ],
 };
 
-/** The fields of a fieldset, flattened, in the order they are rendered. */
-function fields(adding: boolean): string[] {
-  return clientSchema(adding, testIntl).fieldsets.flatMap(
-    (fieldset) => fieldset.fields,
-  );
-}
-
 describe('clientSchema', () => {
+  it('carries the served properties through untouched', () => {
+    const schema = clientSchema(SERVED, false, intl);
+
+    expect(schema.properties.grant_types).toEqual(
+      SERVED.properties.grant_types,
+    );
+  });
+
+  it('offers exactly the grants the backend implements', () => {
+    // Not a list this file keeps in step by hand. The vocabulary is built on
+    // the backend from what the token endpoint serves and what discovery
+    // advertises, so the three can no longer disagree.
+    const schema = clientSchema(SERVED, true, intl);
+
+    expect(
+      (schema.properties.grant_types as any).choices.map(
+        ([value]: [string, string]) => value,
+      ),
+    ).toEqual(['authorization_code', 'client_credentials', 'refresh_token']);
+  });
+
   it('asks for the permanent id only when registering', () => {
-    expect(fields(true)).toContain('client_id');
-    expect(fields(false)).not.toContain('client_id');
+    expect(clientSchema(SERVED, true, intl).properties.client_id).toBeTruthy();
+    expect(
+      clientSchema(SERVED, false, intl).properties.client_id,
+    ).toBeUndefined();
   });
 
   it('requires the id it cannot invent', () => {
-    expect(clientSchema(true, testIntl).required).toEqual(['client_id']);
-  });
-
-  it('asks nothing an edit cannot change', () => {
-    // The backend refuses the whole PATCH when it sees a field it will not
-    // change, so a field offered here is a save that fails outright.
-    const editable = new Set([...EDITABLE, 'client_id']);
-    for (const field of fields(false)) {
-      expect(editable.has(field)).toBe(true);
-    }
+    expect(clientSchema(SERVED, true, intl).required).toContain('client_id');
   });
 
   it('offers whether a client is public only at registration', () => {
-    // Turning a confidential client public would leave a stored secret hash
-    // that nothing checks, so it is a re-registration rather than an edit.
-    expect(fields(true)).toContain('public');
-    expect(fields(false)).not.toContain('public');
+    // It decides whether a secret is minted, which is a fact about
+    // registration rather than a setting.
+    expect(clientSchema(SERVED, true, intl).properties.public).toBeTruthy();
+    expect(clientSchema(SERVED, false, intl).properties.public).toBeUndefined();
   });
 
-  it('offers enabling only on an existing client', () => {
-    expect(fields(false)).toContain('enabled');
-    expect(fields(true)).not.toContain('enabled');
+  it('asks nothing an edit cannot change', () => {
+    const schema = clientSchema(SERVED, false, intl);
+    const offered = schema.fieldsets.flatMap((f) => f.fields);
+
+    expect(offered.every((field) => EDITABLE.includes(field))).toBe(true);
   });
 
-  it('offers exactly the grants the token endpoint implements', () => {
-    expect(GRANT_TYPES.map(([value]) => value)).toEqual([
-      'authorization_code',
-      'refresh_token',
-      'client_credentials',
-    ]);
-    expect(clientSchema(true, testIntl).properties.grant_types.choices).toEqual(
-      GRANT_TYPES,
-    );
-  });
+  it('survives a backend that sent no schema', () => {
+    // An empty form is recoverable; a crash on `schema.fieldsets` is not.
+    const schema = clientSchema(undefined, true, intl);
 
-  it('starts a registration on the grant that makes it work', () => {
-    expect(clientSchema(true, testIntl).properties.grant_types.default).toEqual(
-      ['authorization_code'],
-    );
-  });
-
-  it('edits the repeating values as lists rather than as text', () => {
-    const properties = clientSchema(true, testIntl).properties;
-
-    for (const field of ['redirect_uris', 'scope']) {
-      expect(properties[field].type).toBe('array');
-      expect(properties[field].widget).toBe('token');
-    }
+    expect(schema.fieldsets).toEqual([]);
   });
 });
 
 describe('toFormData', () => {
-  it('seeds a registration with the grant that makes it work', () => {
-    expect(toFormData()).toEqual({
-      grant_types: ['authorization_code'],
-      public: false,
-    });
+  it('starts a registration on the grant that makes it work', () => {
+    expect(toFormData().grant_types).toEqual(['authorization_code']);
   });
 
-  it('splits the wire scope into the permissions it is', () => {
-    expect(toFormData(CLIENT).scope).toEqual(['openid', 'profile', 'email']);
-  });
+  it('edits a scope as the list of permissions it is', () => {
+    const client = { scope: 'openid profile email' } as OAuthClient;
 
-  it('leaves an empty scope empty rather than a blank entry', () => {
-    expect(toFormData({ ...CLIENT, scope: '' }).scope).toEqual([]);
-  });
-
-  it('copies the lists rather than handing over the stored ones', () => {
-    // The form mutates what it is given; the store's copy must not move.
-    const data = toFormData(CLIENT);
-
-    expect(data.redirect_uris).not.toBe(CLIENT.redirect_uris);
-    expect(data.grant_types).not.toBe(CLIENT.grant_types);
+    expect(toFormData(client).scope).toEqual(['openid', 'profile', 'email']);
   });
 });
 
 describe('fromFormData', () => {
-  const draft = {
-    client_id: '  app  ',
-    title: '  Example App  ',
-    public: true,
-    grant_types: ['authorization_code'],
-    redirect_uris: [' https://a.example.org/cb ', '', '  '],
-    scope: ['openid', ' profile '],
-    service_user: ' svc ',
-  };
+  it('joins the scope back into what OAuth 2 puts on the wire', () => {
+    const payload = fromFormData({ scope: ['openid', 'email'] }, true);
 
-  it('joins the scope back into what the wire wants', () => {
-    expect(fromFormData(draft, true).scope).toBe('openid profile');
+    expect(payload.scope).toBe('openid email');
   });
 
-  it('drops the blank redirect URIs an exact match would never hit', () => {
-    expect(fromFormData(draft, true).redirect_uris).toEqual([
-      'https://a.example.org/cb',
-    ]);
+  it('drops a list widget’s empty rows', () => {
+    const payload = fromFormData(
+      { redirect_uris: ['https://a.example/cb', '', null] },
+      true,
+    );
+
+    expect(payload.redirect_uris).toEqual(['https://a.example/cb']);
   });
 
-  it('trims the values an operator pasted', () => {
-    const payload = fromFormData(draft, true);
+  it('does not judge a redirect URI', () => {
+    // Whether this server will send a browser there is decided on the backend
+    // field, which refuses it and says why. Correcting it here would only
+    // hide which value the refusal is about.
+    const payload = fromFormData(
+      { redirect_uris: ['  https://a.example/cb#frag  '] },
+      true,
+    );
 
-    expect(payload.client_id).toBe('app');
-    expect(payload.title).toBe('Example App');
-    expect(payload.service_user).toBe('svc');
+    expect(payload.redirect_uris).toEqual(['  https://a.example/cb#frag  ']);
   });
 
-  it('sends the id and the client type only when registering', () => {
-    const payload = fromFormData(draft, true);
+  it('sends only what a PATCH accepts', () => {
+    // The backend refuses the whole request when it sees a field it will not
+    // change, so the two lists agreeing is what keeps an edit from failing
+    // wholesale.
+    const payload = fromFormData({ title: 'x', client_id: 'nope' }, false);
 
-    expect(payload.client_id).toBe('app');
-    expect(payload.public).toBe(true);
-  });
-
-  it('sends an edit nothing the backend would refuse', () => {
-    const payload = fromFormData({ ...draft, enabled: false }, false);
-
-    expect(Object.keys(payload).sort()).toEqual([...EDITABLE].sort());
-    expect(payload.enabled).toBe(false);
-  });
-
-  it('reads a missing enabled as disabled rather than as absent', () => {
-    // The checkbox is absent from the form data when it was never touched
-    // and never checked, which is a client that stays off.
-    expect(fromFormData(draft, false).enabled).toBe(false);
-  });
-
-  it('survives a form that submitted nothing at all', () => {
-    expect(fromFormData({}, true)).toEqual({
-      client_id: '',
-      title: '',
-      public: false,
-      grant_types: [],
-      redirect_uris: [],
-      scope: '',
-      service_user: '',
-    });
+    expect(payload.client_id).toBeUndefined();
+    expect(Object.keys(payload).every((k) => EDITABLE.includes(k))).toBe(true);
   });
 });
