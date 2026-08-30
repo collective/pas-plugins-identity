@@ -1,0 +1,7 @@
+An authorization paused to complete a profile, and resumed, releases the completed claims.
+
+The scenario a live demo produced on 2026-08-27 and no test covered: somebody is sent here to authorize an application, their profile says nothing about them yet, they fill it in, and the relying party exchanges its code four seconds later — and creates an account with neither an address nor a name. The suspicion was that the server had captured claims when the code was issued, so anything typed afterwards arrived too late.
+
+It had not. `mint_id_token` calls `claims_for` at token issue, and an authorization code carries a subject and a scope rather than a snapshot of a user. `tests/server/test_paused_authorization.py` holds that from the relying party's side, where it can be seen: the same code redeemed before the form is filled in carries the account as it stands, and redeemed after it carries what was typed. Removing the edit between the two halves is what makes the assertion fail, so it is sensitive to exactly the reported failure rather than to the endpoint working at all.
+
+Two facts about Plone turned up in the writing and are recorded in the fixture: `api.user.create` refuses a user with no address, and `setMemberProperties` silently drops a write that would blank one. So the fixture starts from a placeholder address and an empty `fullname`, and asserts on both claims changing rather than on either being absent. @ericof
