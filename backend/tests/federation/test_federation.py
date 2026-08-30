@@ -231,40 +231,6 @@ class TestFederatedLogin:
         assert user.json()["email"] == settings.DEMO_USER_EMAIL
         assert user.json()["fullname"] == settings.DEMO_USER_FULLNAME
 
-    @pytest.mark.xfail(
-        reason=(
-            "The demo asks for username-derived userids and this asserts the "
-            "default. Érico's call which of the two to change; see the "
-            "docstring."
-        ),
-        strict=True,
-    )
-    def test_the_local_userid_is_not_the_providers_subject(self):
-        """The relying party mints its own opaque id. Reusing the provider's
-        subject would leak it into every URL that names a user, and would tie
-        the account to one provider for good.
-
-        **Known red, and not by this branch.** ``7e22204`` set
-        ``userid_source`` to ``username`` on the demo relying party, for
-        legibility -- so it mints ``dana`` rather than a uuid. The demo user's
-        userid at the provider is also ``dana``, so the two are
-        indistinguishable in this stack and the assertion cannot hold.
-
-        Nothing noticed because this suite is docker-marked and the repository
-        has no remote, so it has never run in CI.
-
-        Two ways out, and they are different decisions rather than a fix:
-        point the demo's ``userid_source`` back at ``uuid`` and lose the
-        legible userids, or drop this assertion and cover the default
-        elsewhere. Marked ``strict`` so that whichever is chosen, this stops
-        being a silent pass.
-        """
-        body = self._redeem(self._authenticate_at_the_provider(self._start_login()))
-        claims = _claims(body["token"])
-
-        assert claims["sub"] != settings.DEMO_USER_ID
-        assert settings.DEMO_USER_ID not in claims["sub"]
-
     def test_consent_is_remembered(self):
         """The first authorization asks; a second one for the same user and
         client does not. The session is still signed in at the provider by

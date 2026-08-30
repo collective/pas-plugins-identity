@@ -107,6 +107,24 @@ class TestUseridSourceOnLogin:
 
         assert len(self.authenticate()) == 32
 
+    def test_the_default_userid_is_not_the_providers_subject(self):
+        """What the opaque default is *for*, rather than what shape it has.
+
+        Reusing the provider's subject would leak it into every URL that
+        names a user, and would tie the account to the one provider that
+        issued it. This used to be asserted in the federation suite, where
+        the demo relying party asks for username-derived userids and the demo
+        user's username at the provider happens to be its userid too -- so
+        the two were indistinguishable there and the assertion could not
+        hold. Here the subject is chosen to be nothing like a userid.
+        """
+        configure("uuid")
+
+        userid = self.authenticate(subject="1234567")
+
+        assert userid != "1234567"
+        assert "1234567" not in userid
+
     def test_an_unconfigured_provider_still_signs_in(self):
         """No provider record at all: fall back rather than refuse."""
         set_providers([])

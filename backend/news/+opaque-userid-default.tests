@@ -1,0 +1,5 @@
+The opaque userid default is asserted where the demo's choice cannot interfere.
+
+`test_the_local_userid_is_not_the_providers_subject` was `xfail(strict=True)` in the federation suite and could never have passed there: the demo relying party asks for username-derived userids, and the demo user's username at the provider is also its userid, so a userid equal to the subject and a userid correctly derived from the username are the same string.
+
+The assertion was worth keeping and the place was not. It is now `test_the_default_userid_is_not_the_providers_subject` in `tests/core/pas/test_userid_source.py`, signing in with a subject that is nothing like a userid, so it says what it always meant: reusing the provider's subject would leak it into every URL that names a user and tie the account to the one provider that issued it. The demo keeps its legible userids. @ericof
