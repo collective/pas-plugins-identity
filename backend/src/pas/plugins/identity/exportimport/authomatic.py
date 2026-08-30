@@ -145,6 +145,40 @@ def _addresses(user: dict[str, Any]) -> list[str]:
     return found
 
 
+def _claims(user: dict[str, Any], addresses: list[str]) -> dict[str, Any]:
+    """Build the claims snapshot for one user's identities.
+
+    Only the address facts. A claims snapshot is refreshed wholesale at the
+    next login, so carrying more of the dump into it buys nothing and invites
+    the question of which provider's copy won when a person has two.
+
+    ``email_verified`` is carried because it is the one claim that is not
+    merely data: it is the provider *asserting* something, and it is what
+    :func:`~pas.plugins.identity.core.verification.record_verified_addresses`
+    reads. Whether this site believes the assertion is not decided here --
+    that is the target provider's ``trust_email_verification``, applied at
+    import time, exactly as it would be at a login. A dump cannot grant
+    itself trust.
+
+    :param user: One user from the dump.
+    :param addresses: The addresses already resolved for them.
+    :returns: Normalized claims, empty when there is no address.
+    """
+    if not addresses:
+        return {}
+    source = user.get("properties") or {}
+    # Literally ``True`` -- a string "true" and a 1 are both truthy and
+    # neither is a provider saying yes. The same rule as everywhere else this
+    # package reads the flag.
+    verified = source.get("email_verified") is True
+    return {
+        "email": addresses[0],
+        "email_verified": verified,
+        "emails": [{"address": address, "verified": verified} for address in addresses],
+        "raw": {},
+    }
+
+
 def convert_authomatic(dump: Any) -> dict[str, Any]:
     """Turn an authomatic dump into a document.
 
@@ -184,6 +218,7 @@ def convert_authomatic(dump: Any) -> dict[str, Any]:
 
     converted_users = []
     for user in users:
+        addresses = _addresses(user)
         if not isinstance(user, dict):
             raise ExportImportError("A user in the dump is not an object")
         userid = user.get("userid")
@@ -196,7 +231,7 @@ def convert_authomatic(dump: Any) -> dict[str, Any]:
         converted_users.append({
             "userid": userid,
             "login": user.get("login") or userid,
-            "emails": _addresses(user),
+            "emails": addresses,
             **_properties(user),
             "group_ids": memberships.get(userid, []),
             "identities": [
@@ -210,7 +245,7 @@ def convert_authomatic(dump: Any) -> dict[str, Any]:
                     "created": None,
                     "last_login": None,
                     "groups": [],
-                    "claims": identity.get("claims") or {},
+                    "claims": identity.get("claims") or _claims(user, addresses),
                 }
                 for identity in user.get("identities") or ()
             ],

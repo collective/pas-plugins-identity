@@ -89,6 +89,24 @@ Audit entries
 :   The login history is the most sensitive thing this package stores and, on a site that opted in, includes IP addresses.
     Read it where it lives, under a permission; see {doc}`audit-log`.
 
+## Verified addresses
+
+A verified address is not a flag. It is an identity under the `email` provider, keyed by the address, so that one lookup answers "has this site proved this mailbox belongs to this person?" and so that a magic link and a trusted provider write the same record.
+
+An exported document therefore carries verification already, as `email` identities among the others, and a restore keeps it without anything being added.
+`email` is exempt from the provider-name check for that reason: it is not a provider anybody configures.
+
+A `pas.plugins.authomatic` dump carries something weaker: the provider's `email_verified` claim, which is an assertion rather than a fact this site established.
+The converter puts it in the identity's `claims`, and the import applies your policy: the address is recorded as proved only when the target provider's `trust_email_verification` is on, exactly as it would be at a login.
+Only a literal `true` counts; a string `"true"` is truthy and is not a provider saying yes.
+
+Nothing in the importer writes the record. `link` fires `IdentityLinked`, and the subscriber answers it the way it answers a login.
+
+```{tip}
+If your people should arrive already verified, switch `trust_email_verification` on for the provider **before** importing.
+Turning it on afterwards changes nothing retroactively; each person is verified at their next sign-in instead.
+```
+
 ## Reading order matters
 
 The importer makes three passes, and the order is not incidental.

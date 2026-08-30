@@ -1,0 +1,3 @@
+Explained what a verified address is, and what a migration does with one.
+
+The reference page now has a section saying that verification is an identity under the `email` provider rather than a flag — which is why an exported document carries it without a field for it, why `email` is exempt from the provider-name check, and why a `pas.plugins.authomatic` dump carries something weaker that the target site's `trust_email_verification` decides on. Both that page and the how-to note that the setting has to be on before the import, because turning it on afterwards changes nothing retroactively. @ericof

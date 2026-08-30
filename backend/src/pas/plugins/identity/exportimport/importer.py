@@ -42,6 +42,7 @@ from pas.plugins.identity.core.container import GROUP
 from pas.plugins.identity.core.container import PROFILE
 from pas.plugins.identity.core.interfaces import IdentityCollision
 from pas.plugins.identity.core.pas import PLUGIN_ID
+from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from pas.plugins.identity.exportimport.schema import ExportImportError
 from pas.plugins.identity.exportimport.schema import GROUP_FIELDS
 from pas.plugins.identity.exportimport.schema import Result
@@ -254,6 +255,13 @@ def _import_identities(
                 result.skipped.append(f"identity {provider}:{subject}: {error}")
                 continue
             record.groups = tuple(identity.get("groups") or ())
+            # Nothing here records the address as verified, and nothing here
+            # should: ``plugin.link`` fires ``IdentityLinked``, and the
+            # subscriber answers it exactly as it answers a login -- applying
+            # the claims to the Profile and asking
+            # ``record_verified_addresses`` whether this site takes that
+            # provider's word. Repeating the call here would be a second path
+            # to the same write, and the wrong one to maintain.
         result.identities.append((provider, subject, userid))
 
 
@@ -285,6 +293,13 @@ def _check_providers(document: dict[str, Any]) -> str:
         for identity in user.get("identities") or []
         if identity.get("provider")
     }
+    # ``email`` is not a provider anybody configures. It is the store's own
+    # marker for "this site has proved this address belongs to this person",
+    # written as an identity so that one BTree answers both questions -- see
+    # ``core.utils.emails.verified_addresses``. Requiring it to be configured
+    # would refuse every document exported from a site that has ever verified
+    # an address, which is most of them.
+    wanted.discard(EMAIL_PROVIDER)
     if not wanted:
         return ""
 

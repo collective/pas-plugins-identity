@@ -1,0 +1,5 @@
+An exported document is no longer refused because it carries verified addresses.
+
+A verified address is stored as an identity under the `email` provider, keyed by the address, so an export has always carried verification among the other identities. The provider-name check added in the same release required every provider a document names to be configured in the target site, and `email` is not a provider anybody configures — so every document from a site that had ever verified an address was refused, which is most of them.
+
+`email` is exempt from the check now, because it is the store's own marker rather than a provider. Caught by asking what the export already carried before adding a field for it. @ericof
