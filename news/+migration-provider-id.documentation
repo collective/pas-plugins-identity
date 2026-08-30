@@ -1,0 +1,5 @@
+Warned, in the how-to and the reference page, that the provider must be named exactly as `pas.plugins.authomatic` named it.
+
+Its provider name is the left half of every identity key in a dump, and this package's provider id is what a login presents as the right one. Nothing can check that they match, because the provider is configured by hand in the target site after the import has finished. Getting it wrong is not an error: the import reports success, and then every migrated person signs in and is handed a brand-new account beside the one waiting for them, while the migrated profile keeps their name and their groups and belongs to nobody who can sign in.
+
+The reference page also now states where each half of the join comes from, so an operator migrating from a provider other than Google can work out whether their subject survives the trip. @ericof

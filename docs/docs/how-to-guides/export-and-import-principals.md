@@ -86,6 +86,18 @@ identity-importer etc/zope.conf plone var/authomatic.json --from-authomatic --dr
 identity-importer etc/zope.conf plone var/authomatic.json --from-authomatic
 ```
 
+```{important}
+Name the provider exactly as `pas.plugins.authomatic` named it.
+Its provider *name*, the key in that package's `json_config`, is the left half of every identity key in the dump, and this package's provider *id* is what a login presents as the right one.
+They have to be the same string.
+
+Nothing can check this for you: the provider is configured by hand, in the target site, after the import.
+Get it wrong and the import still reports success, and then every migrated person signs in and is handed a **brand-new account** beside the one waiting for them.
+The migrated Profile is not corrupted, which is what makes it hard to notice: it keeps their name and their groups and simply belongs to nobody who can sign in.
+
+A dump whose identities say `"provider": "google"` needs a provider whose id is `google`, not `google-workspace` and not `Google`.
+```
+
 Configure the providers in the target site before anybody signs in.
 Provider configuration is not carried in either format, and the client secret is deliberately not something a document can hold.
 

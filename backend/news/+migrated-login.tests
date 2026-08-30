@@ -1,0 +1,7 @@
+Asserted the thing a migration is actually asked: that signing in afterwards lands on the account that was imported.
+
+Everything else in the export/import tests puts a document in and takes one out. None of it covered what happens next, which involves neither the exporter nor the importer — a real person authenticating at the provider, and either arriving in the account migrated for them or being handed a brand-new one beside it.
+
+The join is `(provider, subject)` and both halves have to survive. The subject does so without translation: `pas.plugins.authomatic` stores the provider's own user id, and for Google that is the `sub` claim, which is exactly what this package's Google driver reads. Confirmed against a real authomatic 2.0.0 store, where the stored subject equalled the `sub` claim in all 17 identities and all 17 people landed in their migrated account.
+
+The provider id does not, and cannot be made to: authomatic's provider *name* becomes this package's provider *id*, and that is typed by hand in a control panel, in the target site, after the import. Rename it and the import still reports success while every migrated person signs in and gets a second account — with the first left intact, keeping their name and their groups, belonging to nobody who can sign in. Reproduced on the real dump: 17 migrated accounts became 17 new ones and 34 userids. A test class now holds that failure in place. @ericof

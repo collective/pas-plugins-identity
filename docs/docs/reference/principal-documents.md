@@ -146,6 +146,10 @@ It exists so that migrating from that package is the ordinary import rather than
 }
 ```
 
+The `provider` in each identity is authomatic's provider *name*, which is the key under which that site configured it in `json_config`.
+It becomes this package's provider *id*, and the two must match exactly or no migrated account is ever reached again.
+The `subject` is the provider's own user id: for Google that is the `sub` claim, which is what this package's Google driver reads, so the join survives without translation.
+
 `source` must be the string `pas.plugins.authomatic`.
 It is checked rather than assumed: the two formats are close enough that reading one as the other half works, which is worse than failing.
 
