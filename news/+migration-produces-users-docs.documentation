@@ -1,3 +1,3 @@
 Documented that a migration produces users, and the `users` field that reports them.
 
-The migration-reports reference now lists `users` beside `identities` and `providers`, and states the guarantee behind it: both migrations write through the plugin rather than into the identity store, so the event that mints a Profile is fired for every identity they claim. It also records what the behaviour was before, because a site migrated with an earlier version has identities whose people only appear as they sign in. @ericof
+The migration-reports reference now lists `users` beside `identities` and `providers`, and states the guarantee behind it: both migrations write through the plugin rather than into the identity store, so the event that mints a Profile is fired for every identity they claim, and a migrated person is in `@users` without waiting for their first sign-in. @ericof

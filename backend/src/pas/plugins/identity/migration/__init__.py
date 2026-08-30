@@ -11,11 +11,15 @@ Every migration here is:
 **Through the plugin, never straight into the store.** ``store.add`` writes the
 identity join and nothing else; ``plugin.link`` writes it and fires
 ``IdentityLinked``, which is what mints the Profile that *is* the user on a
-site where principals are content. Both migrations wrote to the store directly
-until 2026-08-30, so a migrated person existed as an identity and not as a
-user: absent from ``@users``, ungrantable, unaddable to a group, and invisible
-altogether once the old plugin was removed. They appeared at their first login
-and not before.
+site where principals are content.
+
+The distinction is easy to lose, because both migrations read as correct with
+either one: the identity resolves, and the person turns up at their first
+login. What they do not do, with ``store.add``, is exist before it -- so they
+cannot be found in ``@users``, granted a role or added to a group, and they
+vanish entirely when the old plugin is removed, which is what the hard cutover
+below tells an operator to do. Both migrations were written that way and both
+were changed together.
 
 **Idempotent.** Running it twice does nothing the second time. A migration you
 cannot re-run is a migration nobody dares run.

@@ -60,9 +60,9 @@ Both migrations return a report object.
 
 ## Guarantees
 
-Both migrations write through the plugin rather than into the identity store, so the event that mints a Profile is fired for every identity they claim.
-Until 2026-08-30 they wrote to the store directly, and a migrated person existed as an identity and as nobody at all: absent from `@users`, unable to be granted a role or added to a group, and invisible altogether once the old plugin was removed.
-They appeared at their first login, and not before.
+Both migrations produce people, not only identities.
+They write through the plugin rather than into the identity store, so the event that mints a Profile is fired for every identity they claim.
+A migrated person is therefore in `@users`, can be granted a role and added to a group, and none of that waits for their first sign-in.
 
 Both migrations are dry-run by default.
 You must pass `dry_run=False` to change anything.
