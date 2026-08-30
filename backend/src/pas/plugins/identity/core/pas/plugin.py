@@ -33,6 +33,7 @@ from pas.plugins.identity.core.pas import PLUGIN_TITLE
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from pas.plugins.identity.core.store import IdentityRecord
 from pas.plugins.identity.core.store import IdentityStore
+from pas.plugins.identity.core.txn import note_login
 from Products.PlonePAS.interfaces.group import IGroupManagement
 from Products.PluggableAuthService.interfaces.plugins import IAuthenticationPlugin
 from Products.PluggableAuthService.interfaces.plugins import IChallengePlugin
@@ -338,6 +339,13 @@ class IdentityPlugin(BasePlugin):
         else:
             self._store.touch(provider, subject, claims)
             self._warn_if_orphaned(userid)
+
+        note_login(
+            userid,
+            provider=provider,
+            is_new_user=is_new_user,
+            is_new_identity=is_new_identity,
+        )
 
         notify(
             ExternalIdentityAuthenticated(
@@ -798,6 +806,7 @@ class IdentityPlugin(BasePlugin):
         storage = ICredentialStorage(obj, None)
         if storage is None or not storage.check_password(password):
             return None
+        note_login(userid, login=login)
         return (userid, login)
 
     def _userid_for_login(self, login: str) -> str | None:

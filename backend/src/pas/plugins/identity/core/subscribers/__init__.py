@@ -64,6 +64,7 @@ from pas.plugins.identity.core.events import IdentityLinked
 from pas.plugins.identity.core.events import UserClaimsRefreshed
 from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
+from pas.plugins.identity.core.txn import note_profile_created
 from pas.plugins.identity.core.utils.emails import normalize
 from pas.plugins.identity.core.utils.propertymap import resolve_claim
 from pas.plugins.identity.core.verification import record_verified_addresses
@@ -385,6 +386,7 @@ def ensure_profile(userid: str, login: str, claims: Claims) -> UserProfile | Non
             login=login,
         )
     logger.info("Created profile for %s", userid)
+    note_profile_created(profile)
     return profile
 
 
