@@ -99,31 +99,31 @@ export interface Identity {
   can_unlink: boolean;
 }
 
-/** One field of a driver's configuration schema. */
-export interface DriverField {
-  type: string;
-  title: string;
-  description?: string;
-  required?: boolean;
-  secret: boolean;
-  default?: unknown;
-  /**
-   * Where the field goes in the form, low first.
-   *
-   * A schema arrives as a JSON object serialised with sorted keys, so the
-   * order the driver declared its fields in is already gone -- this is what
-   * survives the wire. A field without one sinks below those that have one.
-   */
-  order?: number;
-  /** Present on a `choice` field: the options, as [value, label] pairs. */
-  choices?: [string, string][];
+/** A driver and the form it needs, from `@identity-drivers`. */
+/**
+ * A JSON schema as `plone.restapi` serializes an interface.
+ *
+ * The shape every Plone form is built from, and the reason this add-on no
+ * longer describes fields of its own.
+ */
+export interface JsonSchema {
+  properties?: Record<string, Record<string, unknown>>;
+  required?: string[];
+  fieldsets?: { id: string; title: string; fields: string[] }[];
 }
 
-/** A driver and the form it needs, from `@identity-drivers`. */
 export interface Driver {
   id: string;
   title: string;
-  schema: Record<string, DriverField>;
+  /**
+   * The driver's settings, as an ordinary JSON schema.
+   *
+   * Serialized by `plone.restapi` from the driver's `settings_schema`, so it
+   * carries `properties`, `required`, `fieldsets` and widget hints, already
+   * translated. The frontend composes it into the provider form and has no
+   * opinion about what is in it.
+   */
+  schema: JsonSchema;
   /**
    * Claim path to user field, seeded into a new provider's mapping.
    *

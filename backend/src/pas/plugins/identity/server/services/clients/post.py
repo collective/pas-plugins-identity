@@ -1,9 +1,9 @@
 """``POST @identity-clients`` -- register one, or rotate its secret."""
 
 from pas.plugins.identity.core.interfaces import JSONDict
-from pas.plugins.identity.server.clients import add_client
-from pas.plugins.identity.server.clients import get_client
-from pas.plugins.identity.server.clients import rotate_secret
+from pas.plugins.identity.server.controlpanel.clients import add_client
+from pas.plugins.identity.server.controlpanel.clients import get_client
+from pas.plugins.identity.server.controlpanel.clients import rotate_secret
 from pas.plugins.identity.server.interfaces import ServerError
 from pas.plugins.identity.server.services import ROTATE_SECRET_ACTION
 from pas.plugins.identity.server.services.clients import ClientsService

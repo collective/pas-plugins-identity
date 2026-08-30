@@ -6,17 +6,17 @@ here is deliberately indistinguishable from the outside.
 """
 
 from . import PROFILE_ID
-from pas.plugins.identity.server.keys import rotate_keys
-from pas.plugins.identity.server.keys import set_keys
-from pas.plugins.identity.server.tokens import decode_access_token
-from pas.plugins.identity.server.tokens import get_issuer
-from pas.plugins.identity.server.tokens import get_ttl
-from pas.plugins.identity.server.tokens import ISSUER_RECORD
-from pas.plugins.identity.server.tokens import mint_access_token
-from pas.plugins.identity.server.tokens import token_response
-from pas.plugins.identity.server.tokens import TOKEN_TYPE
-from pas.plugins.identity.server.tokens import TokenError
-from pas.plugins.identity.server.tokens import TTL_RECORD
+from pas.plugins.identity.server.utils.keys import rotate_keys
+from pas.plugins.identity.server.utils.keys import set_keys
+from pas.plugins.identity.server.grants.tokens import decode_access_token
+from pas.plugins.identity.server.grants.tokens import get_issuer
+from pas.plugins.identity.server.grants.tokens import get_ttl
+from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
+from pas.plugins.identity.server.grants.tokens import mint_access_token
+from pas.plugins.identity.server.grants.tokens import token_response
+from pas.plugins.identity.server.grants.tokens import TOKEN_TYPE
+from pas.plugins.identity.server.grants.tokens import TokenError
+from pas.plugins.identity.server.grants.tokens import TTL_RECORD
 from plone import api
 
 import pytest

@@ -1,0 +1,3 @@
+Regrouped the `server` layer by what a module is: sixteen files at the top level, now six.
+
+`controlpanel/` takes the panel, the client registry and the client schema; `grants/` takes authorization codes, access tokens and refresh tokens, which are one sequence rather than three subjects; `consent/` takes the record and the screen that asks for it; `subscribers/` and `utils/` take the rest. Each carries its own `configure.zcml`, so `server/configure.zcml` is four includes. What stays at the top level is what does not belong to any of them: the claims contract, discovery, the PAS plugin, the interfaces and the setup handlers. @ericof

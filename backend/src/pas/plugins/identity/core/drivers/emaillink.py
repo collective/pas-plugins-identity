@@ -6,6 +6,7 @@ anything later added to this package.
 """
 
 from pas.plugins.identity.core.drivers.base import BaseDriver
+from pas.plugins.identity.core.drivers.settings import IEmailSettings
 from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.core.interfaces import JSONDict
 
@@ -20,6 +21,7 @@ class EmailDriver(BaseDriver):
 
     driver_id = "email"
     title = "Email"
+    settings_schema = IEmailSettings
     subject_keys = ("email",)
 
     #: No link form on the identities page.
@@ -35,31 +37,6 @@ class EmailDriver(BaseDriver):
     # A mailbox asserts an address and nothing else, so seeding a fullname
     # mapping would only ever resolve to nothing.
     default_propertymap = {"email": "email"}  # noqa: RUF012
-
-    def config_schema(self) -> JSONDict:
-        """Return the configuration schema for magic-link login.
-
-        :returns: Mapping of field name to descriptor; no secrets, since the
-            signing key lives with the plugin rather than in the registry.
-        """
-        return {
-            "token_ttl": {
-                "type": "int",
-                "title": "Link lifetime (seconds)",
-                "required": False,
-                "secret": False,
-                "default": 900,
-                "order": 10,
-            },
-            "rate_limit_per_hour": {
-                "type": "int",
-                "title": "Links per address per hour",
-                "required": False,
-                "secret": False,
-                "default": 5,
-                "order": 20,
-            },
-        }
 
     def subject(self, payload: JSONDict) -> str:
         """Return the address, lowercased.

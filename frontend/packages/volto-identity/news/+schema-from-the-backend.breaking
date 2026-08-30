@@ -1,0 +1,9 @@
+The provider form is composed from the backend's schema rather than built here.
+
+`providerSchema.ts` was 529 lines that turned a descriptor dict into Volto properties, with its own notion of field types, its own ordering, its own secret flag and its own untranslated English. All of that is the backend's answer now, serialized by `plone.restapi` from two interfaces and already translated into the site's language, so what is left here is composition: merge the provider's schema with the chosen driver's, prefix the driver's half so one flat form can carry a nested object, and add the two fields that exist only while a provider is being created.
+
+Nothing in the frontend decides what a field looks like any more. The colour fields ask for Volto's own `color_picker` and the icon asks for `provider_icon`, both named by the backend through `frontendOptions`. `DriverField` is gone from the types: nothing here describes a field.
+
+`ProviderIconWidget` is the one widget this add-on supplies. It sends and reads the same `filenameb64:…;datab64:…` envelope Plone stores `site_logo` in, but previews by inlining the document rather than through `/@@site-logo/<filename>` — Volto's own registry image widget builds that URL, and it answers 404 for a provider icon. Inlining is also exactly what the login button does with the same bytes, so what an operator sees is what a visitor gets.
+
+`fromFormData` no longer trims or corrects anything. Every rule about what a value may be lives on the backend schema, and cleaning up here would only hide which value a refusal is about. @ericof

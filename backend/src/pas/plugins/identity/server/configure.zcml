@@ -16,20 +16,8 @@
 
   <include package=".browser" />
 
-  <!-- The control panel entry. Bound to this layer, so it appears only in a
-       site that switched the authorization server on: a panel for managing
-       OAuth clients where none can exist is a menu item leading to a
-       question. -->
-  <adapter
-      factory=".controlpanel.IdentityServerConfigletPanel"
-      provides=".controlpanel.IIdentityServerControlpanel"
-      name="identity-clients"
-      />
+  <include package=".controlpanel" />
   <include package=".services" />
-
-  <!-- A logout arriving from an upstream provider ends the sessions this
-       server issued as well. Core fires the event; this layer is the only
-       one that knows there are refresh tokens to revoke. -->
-  <subscriber handler=".subscribers.revoke_refresh_tokens" />
+  <include package=".subscribers" />
 
 </configure>

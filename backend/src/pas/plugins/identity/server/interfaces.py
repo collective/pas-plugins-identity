@@ -37,6 +37,14 @@ REFRESH_TOKEN = "refresh_token"  # noqa: S105 - a grant name, not a credential
 #: is a lie a client acts on.
 GRANT_TYPES = (AUTHORIZATION_CODE, CLIENT_CREDENTIALS, REFRESH_TOKEN)
 
+#: Auth method of a client that has no secret.
+#:
+#: Public clients are the ones PKCE is mandatory for (S8): a native or browser
+#: app cannot keep a secret, so the proof of possession has to come from the
+#: exchange itself. Named here rather than in ``clients`` because the client
+#: *schema* needs it and the schema must not import the storage it describes.
+PUBLIC_AUTH_METHOD = "none"
+
 
 class ServerError(Exception):
     """A request to the authorization server cannot be honoured.

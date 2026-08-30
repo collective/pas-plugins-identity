@@ -27,10 +27,10 @@ any later request for a scope not already agreed to.
 
 from AccessControl import Unauthorized
 from pas.plugins.identity.core.subscribers.gate import incomplete_profile_url
-from pas.plugins.identity.server.clients import get_client
-from pas.plugins.identity.server.codes import ChallengeError
-from pas.plugins.identity.server.codes import check_challenge
-from pas.plugins.identity.server.consent_screen import consent_screen_url
+from pas.plugins.identity.server.controlpanel.clients import get_client
+from pas.plugins.identity.server.grants.codes import ChallengeError
+from pas.plugins.identity.server.grants.codes import check_challenge
+from pas.plugins.identity.server.consent.screen import consent_screen_url
 from pas.plugins.identity.server.discovery import AUTHORIZE_VIEW
 from pas.plugins.identity.server.pas import PLUGIN_ID
 from plone import api

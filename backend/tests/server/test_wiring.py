@@ -10,9 +10,9 @@ a site that did apply the profile, or reachable in one that did not.
 
 from bs4 import BeautifulSoup
 from pas.plugins.identity import PACKAGE_NAME
-from pas.plugins.identity.server.clients import add_client
-from pas.plugins.identity.server.tokens import ISSUER_RECORD
-from pas.plugins.identity.server.tokens import mint_access_token
+from pas.plugins.identity.server.controlpanel.clients import add_client
+from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
+from pas.plugins.identity.server.grants.tokens import mint_access_token
 from plone import api
 from plone.app.testing import applyProfile
 from plone.app.testing import SITE_OWNER_NAME

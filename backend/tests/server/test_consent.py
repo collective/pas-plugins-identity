@@ -337,8 +337,8 @@ class TestTheAnswer:
         """The second request re-runs every check the first one did, so a
         client disabled while the user was reading the form is refused on the
         way out."""
-        from pas.plugins.identity.server.clients import get_clients
-        from pas.plugins.identity.server.clients import set_clients
+        from pas.plugins.identity.server.controlpanel.clients import get_clients
+        from pas.plugins.identity.server.controlpanel.clients import set_clients
 
         clients = get_clients()
         clients[0].enabled = False

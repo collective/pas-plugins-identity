@@ -1,0 +1,9 @@
+An OAuth client is an interface, and its redirect URIs are validated.
+
+`POST @identity-clients` stored `redirect_uris` exactly as it received them. No scheme check, no rejection of fragments, no loopback rule — so `javascript:alert(document.cookie)` could be registered and would later be handed to a browser redirect at the end of an authorization flow. `grant_types` was likewise stored unchecked and refused much later at the token endpoint, where it reads as a client bug rather than as a registration mistake.
+
+`IClientRecords` is the schema now, with the rules on the fields: a redirect URI must be absolute, must carry no fragment, must use `https`, a loopback address or a private-use scheme, and may not contain a wildcard that exact matching can never satisfy. RFC 6761 reserves the whole `.localhost` name space to loopback, so a development host such as `http://id.localhost` is accepted and `http://anything.else` is not. Grants are a `Choice` over what the token endpoint actually implements, which is what discovery advertises.
+
+`redirect_uris` and `grant_types` are validating properties rather than plain attributes, because a rule only the constructor enforces is a rule with a door in it — this package's own demo assigns to one of them directly.
+
+`@identity-clients` serves the schema beside the listing, so the panel is built from it rather than from a second description in TypeScript. @ericof

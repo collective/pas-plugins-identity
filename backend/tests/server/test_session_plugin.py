@@ -7,9 +7,9 @@ these tests are about the requests it must *not* answer.
 """
 
 from . import PROFILE_ID
-from pas.plugins.identity.server.session import COOKIE_NAME
-from pas.plugins.identity.server.session import IdentityAuthorizeSessionPlugin
-from pas.plugins.identity.server.session import PLUGIN_ID
+from pas.plugins.identity.server.utils.session import COOKIE_NAME
+from pas.plugins.identity.server.utils.session import IdentityAuthorizeSessionPlugin
+from pas.plugins.identity.server.utils.session import PLUGIN_ID
 from pas.plugins.identity.server.setuphandlers import install_session_plugin
 from pas.plugins.identity.server.setuphandlers import uninstall_session_plugin
 from plone import api

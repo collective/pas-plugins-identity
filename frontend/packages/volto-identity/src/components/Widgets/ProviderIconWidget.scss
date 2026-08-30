@@ -1,0 +1,21 @@
+/**
+ * The icon upload, sized so the preview reads as a button icon rather than as
+ * an illustration: it is drawn at button scale on the login page, and a
+ * preview at any other size would be a different thing.
+ */
+.provider-icon-widget__preview {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 8px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+}

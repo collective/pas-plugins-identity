@@ -5,7 +5,7 @@ is no content to create and no elevation needed: the tests here do not carry
 the ``_manager`` workaround that ``tests/core/conftest.py`` documents.
 """
 
-from pas.plugins.identity.server import clients as clients_module
+from pas.plugins.identity.server.controlpanel import clients as clients_module
 
 import pytest
 
@@ -15,7 +15,7 @@ def add_client(portal):
     """Return a factory registering a client.
 
     :param portal: The Plone site, so the registry is reachable.
-    :returns: Callable with :func:`~pas.plugins.identity.server.clients.
+    :returns: Callable with :func:`~pas.plugins.identity.server.controlpanel.clients.
         add_client`'s signature, returning ``(client, secret)``.
     """
 

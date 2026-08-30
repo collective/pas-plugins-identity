@@ -9,9 +9,9 @@ response that mints it.
 """
 
 from . import PROFILE_ID
-from pas.plugins.identity.server.clients import get_client
-from pas.plugins.identity.server.clients import verify_secret
-from pas.plugins.identity.server.keys import get_keys
+from pas.plugins.identity.server.controlpanel.clients import get_client
+from pas.plugins.identity.server.controlpanel.clients import verify_secret
+from pas.plugins.identity.server.utils.keys import get_keys
 from pas.plugins.identity.server.services.clients.delete import ClientsDelete
 from pas.plugins.identity.server.services.clients.get import ClientsGet
 from pas.plugins.identity.server.services.clients.patch import ClientsPatch

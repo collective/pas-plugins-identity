@@ -20,17 +20,17 @@ integration errors an operator has to be able to read, and saying so tells an
 attacker nothing they did not already have the secret to learn.
 """
 
-from pas.plugins.identity.server.clients import authenticate
-from pas.plugins.identity.server.clients import get_client
-from pas.plugins.identity.server.codes import CodeError
+from pas.plugins.identity.server.controlpanel.clients import authenticate
+from pas.plugins.identity.server.controlpanel.clients import get_client
+from pas.plugins.identity.server.grants.codes import CodeError
 from pas.plugins.identity.server.interfaces import AUTHORIZATION_CODE
 from pas.plugins.identity.server.interfaces import CLIENT_CREDENTIALS
 from pas.plugins.identity.server.interfaces import GRANT_TYPES
 from pas.plugins.identity.server.interfaces import REFRESH_TOKEN
 from pas.plugins.identity.server.interfaces import ServerError
 from pas.plugins.identity.server.pas import PLUGIN_ID
-from pas.plugins.identity.server.refresh import RefreshError
-from pas.plugins.identity.server.tokens import token_response
+from pas.plugins.identity.server.grants.refresh import RefreshError
+from pas.plugins.identity.server.grants.tokens import token_response
 from plone import api
 from plone.protect.interfaces import IDisableCSRFProtection
 from Products.Five.browser import BrowserView

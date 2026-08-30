@@ -154,6 +154,12 @@ const ProvidersControlPanel: React.FC = () => {
     data?: Driver[];
   };
   const check = useSelector((state: any) => state.providerTest);
+  // The provider's own fields, serialized by the backend from the interface
+  // its registry records are bound to. The driver's half rides on each entry
+  // of `identityDrivers`.
+  const servedSchema = useSelector(
+    (state: any) => state.providerFormSchema?.data,
+  );
   // The site-wide settings, served by the same configlet id. The callback
   // URL lives here rather than on a provider: it is one route in the
   // frontend, registered identically with every provider.
@@ -244,12 +250,13 @@ const ProvidersControlPanel: React.FC = () => {
   const schema = useMemo(
     () =>
       providerSchema(
+        servedSchema,
         driverList,
         adding ? draftDriver : current?.driver,
         adding,
         intl,
       ),
-    [driverList, adding, draftDriver, current?.driver, intl],
+    [servedSchema, driverList, adding, draftDriver, current?.driver, intl],
   );
 
   // Not memoized: `Form` reads this once, when it mounts, so recomputing it

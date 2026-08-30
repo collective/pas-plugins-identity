@@ -11,12 +11,12 @@ signature check alone would suggest.
 """
 
 from . import PROFILE_ID
-from pas.plugins.identity.server.clients import get_clients
-from pas.plugins.identity.server.clients import remove_client
-from pas.plugins.identity.server.clients import set_clients
+from pas.plugins.identity.server.controlpanel.clients import get_clients
+from pas.plugins.identity.server.controlpanel.clients import remove_client
+from pas.plugins.identity.server.controlpanel.clients import set_clients
 from pas.plugins.identity.server.pas import PLUGIN_ID
-from pas.plugins.identity.server.tokens import ISSUER_RECORD
-from pas.plugins.identity.server.tokens import mint_access_token
+from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
+from pas.plugins.identity.server.grants.tokens import mint_access_token
 from plone import api
 
 import pytest
@@ -190,8 +190,8 @@ class TestAuthentication:
         one -- but the plugin is what stands between a token and a session,
         and it does not get to assume the token came from here."""
         from authlib.jose import JsonWebToken
-        from pas.plugins.identity.server.keys import ALGORITHM
-        from pas.plugins.identity.server.keys import current_key
+        from pas.plugins.identity.server.utils.keys import ALGORITHM
+        from pas.plugins.identity.server.utils.keys import current_key
 
         key = current_key()
         forged = (

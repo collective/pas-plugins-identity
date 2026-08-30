@@ -24,7 +24,7 @@ from pas.plugins.identity import PACKAGE_NAME
 from pas.plugins.identity.core.completeness import REQUIRED_FIELDS_RECORD
 from pas.plugins.identity.core.container import get_container
 from pas.plugins.identity.core.subscribers.gate import ENFORCE_RECORD
-from pas.plugins.identity.server.clients import add_client
+from pas.plugins.identity.server.controlpanel.clients import add_client
 from plone import api
 from plone.app.testing import applyProfile
 from urllib.parse import parse_qs

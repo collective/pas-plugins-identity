@@ -1,8 +1,8 @@
 """``PATCH @identity-clients/<id>`` -- amend a registration."""
 
 from pas.plugins.identity.core.interfaces import JSONDict
-from pas.plugins.identity.server.clients import get_clients
-from pas.plugins.identity.server.clients import set_clients
+from pas.plugins.identity.server.controlpanel.clients import get_clients
+from pas.plugins.identity.server.controlpanel.clients import set_clients
 from pas.plugins.identity.server.services.clients import ClientsService
 from plone.restapi.deserializer import json_body
 

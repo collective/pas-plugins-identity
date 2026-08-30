@@ -1,0 +1,16 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <!-- The control panel entry. Bound to this layer, so it appears only in a
+       site that switched the authorization server on: a panel for managing
+       OAuth clients where none can exist is a menu item leading to a
+       question. -->
+  <adapter
+      factory=".panel.IdentityServerConfigletPanel"
+      provides=".panel.IIdentityServerControlpanel"
+      name="identity-clients"
+      />
+
+</configure>

@@ -28,9 +28,9 @@ from authlib.jose import JsonWebToken
 from authlib.oidc.discovery import OpenIDProviderMetadata
 from bs4 import BeautifulSoup
 from pas.plugins.identity import PACKAGE_NAME
-from pas.plugins.identity.server.clients import add_client
-from pas.plugins.identity.server.tokens import decode_access_token
-from pas.plugins.identity.server.tokens import ISSUER_RECORD
+from pas.plugins.identity.server.controlpanel.clients import add_client
+from pas.plugins.identity.server.grants.tokens import decode_access_token
+from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
 from plone import api
 from plone.app.testing import applyProfile
 from urllib.parse import parse_qs

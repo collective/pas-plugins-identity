@@ -9,7 +9,10 @@ a record the site knows about everywhere.
 """
 
 from pas.plugins.identity import _
+from pas.plugins.identity.core.utils.svg import is_svg_upload
+from plone.autoform import directives
 from plone.restapi.controlpanels.interfaces import IControlpanel
+from plone.supermodel import model
 from zope import schema
 from zope.interface import Interface
 
@@ -130,6 +133,10 @@ class IIdentitySettings(Interface):
     )
 
 
+#: Fieldset the look of a login button is edited in.
+STYLE_FIELDSET = "style"
+
+
 class IProviderRecords(Interface):
     """The fields every provider has, whatever its driver.
 
@@ -156,7 +163,7 @@ class IProviderRecords(Interface):
     The driver's *configuration* records -- ``config.client_id`` and the rest
     -- stay outside any interface and keep carrying their own field type. They
     have to: which of them exist, and what type each one is, comes from the
-    driver's ``config_schema`` at runtime, and no fixed schema can describe a
+    driver's ``settings_schema`` at runtime, and no fixed schema can describe a
     set of fields that is chosen after the schema was written.
     """
 
@@ -200,38 +207,43 @@ class IProviderRecords(Interface):
         default=True,
     )
 
-    icon = schema.Text(
+    icon = schema.Bytes(
         title=_("Icon"),
         description=_(
-            "An SVG document, stored as its source. Empty means no icon, and "
-            "the frontend then draws the title alone rather than a "
-            "placeholder every provider shares. What is stored is sanitized "
-            "on the way in -- see "
-            "pas.plugins.identity.core.utils.svg -- because this is markup a site "
-            "renders inline."
+            "An SVG file. Empty means no icon, and the frontend then draws "
+            "the title alone rather than a placeholder every provider shares."
         ),
         required=False,
-        default="",
+        constraint=is_svg_upload,
     )
+    directives.widget("icon", frontendOptions={"widget": "provider_icon"})
 
     background_color = schema.TextLine(
         title=_("Background colour"),
         description=_(
-            "The login button's background, as a hex value such as #24292f. "
-            "Empty leaves the frontend's own styling alone."
+            "The login button's background. Empty leaves the frontend's own "
+            "styling alone."
         ),
         required=False,
         default="",
     )
+    directives.widget("background_color", frontendOptions={"widget": "color_picker"})
 
     foreground_color = schema.TextLine(
         title=_("Foreground colour"),
         description=_(
-            "The login button's text and icon colour, as a hex value. Empty "
-            "leaves the frontend's own styling alone."
+            "The login button's text and icon colour. Empty leaves the "
+            "frontend's own styling alone."
         ),
         required=False,
         default="",
+    )
+    directives.widget("foreground_color", frontendOptions={"widget": "color_picker"})
+
+    model.fieldset(
+        STYLE_FIELDSET,
+        label=_("Style"),
+        fields=["icon", "background_color", "foreground_color"],
     )
 
     order = schema.Int(

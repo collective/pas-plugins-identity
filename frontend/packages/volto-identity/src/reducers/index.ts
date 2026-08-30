@@ -213,6 +213,22 @@ export const configuredProviders = requestReducer<ConfiguredProvider[]>(
   [],
 );
 
+// The provider form's own schema, served beside the listing. Its own slice
+// rather than a field on `configuredProviders`, because the panel asks for it
+// on mount and Volto's `Form` reads `schema.fieldsets` on the first render --
+// a listing that arrived without one would crash rather than render empty.
+export const providerFormSchema = requestReducer<Record<string, any> | null>(
+  LIST_PROVIDERS,
+  (result) => result?.schema ?? null,
+  null,
+);
+
+export const clientFormSchema = requestReducer<Record<string, any> | null>(
+  LIST_CLIENTS,
+  (result) => result?.schema ?? null,
+  null,
+);
+
 export const providerCreate = requestReducer<ConfiguredProvider | null>(
   CREATE_PROVIDER,
   (result) => result ?? null,
@@ -329,6 +345,8 @@ const reducers = {
   identityUnlink,
   identityDrivers,
   configuredProviders,
+  providerFormSchema,
+  clientFormSchema,
   providerCreate,
   providerUpdate,
   providerDelete,

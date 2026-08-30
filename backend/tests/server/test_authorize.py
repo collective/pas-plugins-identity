@@ -9,7 +9,7 @@ open redirect, so it is asserted in both directions.
 from . import PROFILE_ID
 from AccessControl import Unauthorized
 from pas.plugins.identity.server.browser.authorize import AuthorizeView
-from pas.plugins.identity.server.codes import make_verifier
+from pas.plugins.identity.server.grants.codes import make_verifier
 from pas.plugins.identity.server.pas import PLUGIN_ID
 from plone import api
 from plone.app.testing import logout
@@ -144,8 +144,8 @@ class TestRefusedWithoutRedirecting:
         assert location is None
 
     def test_a_disabled_client_is_refused(self):
-        from pas.plugins.identity.server.clients import get_clients
-        from pas.plugins.identity.server.clients import set_clients
+        from pas.plugins.identity.server.controlpanel.clients import get_clients
+        from pas.plugins.identity.server.controlpanel.clients import set_clients
 
         clients = get_clients()
         clients[0].enabled = False
@@ -204,8 +204,8 @@ class TestReportedToTheClient:
         assert query(location)["error"] == "invalid_scope"
 
     def test_a_grant_the_client_may_not_use_is_refused(self):
-        from pas.plugins.identity.server.clients import get_clients
-        from pas.plugins.identity.server.clients import set_clients
+        from pas.plugins.identity.server.controlpanel.clients import get_clients
+        from pas.plugins.identity.server.controlpanel.clients import set_clients
 
         clients = get_clients()
         clients[0].grant_types = ["client_credentials"]

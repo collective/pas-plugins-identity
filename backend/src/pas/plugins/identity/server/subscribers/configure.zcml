@@ -1,0 +1,11 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <!-- A logout arriving from an upstream provider ends the sessions this
+       server issued as well. Core fires the event; this layer is the only
+       one that knows there are refresh tokens to revoke. -->
+  <subscriber handler=".revoke_refresh_tokens" />
+
+</configure>

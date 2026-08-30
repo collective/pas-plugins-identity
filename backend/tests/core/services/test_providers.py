@@ -113,21 +113,54 @@ class TestDriverMetadata(ControlPanelCase):
             "email",
         }
 
-    def test_carries_the_config_schema(self):
-        """Schema-driven rendering is the point."""
+    def test_carries_an_ordinary_json_schema(self):
+        """The shape `plone.restapi` emits everywhere else, so a client needs
+        to know nothing about this package to build the form."""
+        result = self.call(DriversGet)
+        github = next(i for i in result["items"] if i["id"] == "github")
+        schema = github["schema"]
+
+        assert schema["type"] == "object"
+        assert "client_id" in schema["properties"]
+        assert "client_id" in schema["required"]
+        assert schema["fieldsets"]
+
+    def test_the_secret_is_a_password_widget(self):
+        """So the form renders a write-only field rather than a text box
+        showing bullets that somebody might try to edit."""
         result = self.call(DriversGet)
         github = next(i for i in result["items"] if i["id"] == "github")
 
-        assert github["schema"]["client_id"]["secret"] is False
-        assert github["schema"]["client_secret"]["secret"] is True
+        assert github["schema"]["properties"]["client_secret"]["widget"] == "password"
 
-    def test_flags_which_fields_are_secret(self):
-        """So the widget can render a write-only field rather than a text box
-        showing bullets that the user might try to edit."""
+    def test_titles_are_translated_rather_than_literal(self):
+        """The whole reason the hand-built dict had to go: it carried English
+        strings that no `.po` file could ever reach."""
         result = self.call(DriversGet)
+        github = next(i for i in result["items"] if i["id"] == "github")
 
-        for item in result["items"]:
-            assert all("secret" in field for field in item["schema"].values())
+        assert github["schema"]["properties"]["client_id"]["title"] == "Client ID"
+
+    def test_the_userid_source_is_a_vocabulary(self):
+        """Not a list of pairs this package invented a format for."""
+        result = self.call(DriversGet)
+        github = next(i for i in result["items"] if i["id"] == "github")
+        field = github["schema"]["properties"]["userid_source"]
+
+        assert [choice[0] for choice in field["choices"]] == [
+            "uuid",
+            "username",
+            "email",
+            "subject",
+        ]
+
+    def test_the_issuer_comes_first_for_a_discovered_provider(self):
+        """`order_before`, honoured by `plone.autoform` -- which is what
+        replaced spacing an `order` key by tens."""
+        result = self.call(DriversGet)
+        oidc = next(i for i in result["items"] if i["id"] == "oidc-generic")
+
+        assert oidc["schema"]["fieldsets"][0]["fields"][0] == "issuer"
 
 
 class TestReading(ControlPanelCase):

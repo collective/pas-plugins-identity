@@ -8,8 +8,8 @@ frontend can find out about the request once it lands there.
 
 from . import PROFILE_ID
 from pas.plugins.identity.server.browser.authorize import AuthorizeView
-from pas.plugins.identity.server.consent_screen import consent_screen_url
-from pas.plugins.identity.server.consent_screen import CONSENT_URL_RECORD
+from pas.plugins.identity.server.consent.screen import consent_screen_url
+from pas.plugins.identity.server.consent.screen import CONSENT_URL_RECORD
 from pas.plugins.identity.server.services.consent.get import ConsentGet
 from plone import api
 from plone.app.testing import logout
@@ -77,8 +77,8 @@ def amend(**changes) -> None:
 
     :param changes: Attributes to set on the one registered client.
     """
-    from pas.plugins.identity.server.clients import get_clients
-    from pas.plugins.identity.server.clients import set_clients
+    from pas.plugins.identity.server.controlpanel.clients import get_clients
+    from pas.plugins.identity.server.controlpanel.clients import set_clients
 
     clients = get_clients()
     for name, value in changes.items():

@@ -7,13 +7,15 @@ tokens with the same key as every other one.
 
 from pas.plugins.identity import logger
 from pas.plugins.identity.server.interfaces import IServerSettings
-from pas.plugins.identity.server.keys import ensure_keys
+from pas.plugins.identity.server.utils.keys import ensure_keys
 from pas.plugins.identity.server.pas import IdentityServerPlugin
 from pas.plugins.identity.server.pas import PLUGIN_ID
 from pas.plugins.identity.server.pas import PLUGIN_TITLE
-from pas.plugins.identity.server.session import IdentityAuthorizeSessionPlugin
-from pas.plugins.identity.server.session import PLUGIN_ID as SESSION_PLUGIN_ID
-from pas.plugins.identity.server.session import PLUGIN_TITLE as SESSION_PLUGIN_TITLE
+from pas.plugins.identity.server.utils.session import IdentityAuthorizeSessionPlugin
+from pas.plugins.identity.server.utils.session import PLUGIN_ID as SESSION_PLUGIN_ID
+from pas.plugins.identity.server.utils.session import (
+    PLUGIN_TITLE as SESSION_PLUGIN_TITLE,
+)
 from pas.plugins.identity.setuphandlers import register_settings
 from plone import api
 from Products.GenericSetup.tool import SetupTool

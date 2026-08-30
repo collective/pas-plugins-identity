@@ -14,7 +14,7 @@ from pas.plugins.identity.server.discovery import DISCOVERY_DOCUMENT
 from pas.plugins.identity.server.discovery import metadata
 from pas.plugins.identity.server.discovery import WELL_KNOWN
 from pas.plugins.identity.server.interfaces import ServerError
-from pas.plugins.identity.server.keys import public_jwks
+from pas.plugins.identity.server.utils.keys import public_jwks
 from Products.Five.browser import BrowserView
 from zExceptions import NotFound
 from zope.interface import implementer

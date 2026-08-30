@@ -1,195 +1,87 @@
 /**
- * Build the Volto form schema for a provider.
+ * The provider form, composed from what the backend already sent.
  *
- * Nothing here enumerates a provider's fields. The driver describes its own
- * configuration over ``@identity-drivers`` -- name, title, description,
- * type and whether it is secret -- and this turns that into the schema
- * Volto's `Form` renders. Adding a driver on the backend therefore adds its
- * form here with no frontend change.
+ * This file used to *build* the schema: 529 lines turning a hand-written
+ * descriptor dict — `{type, title, required, secret, order}` — into Volto
+ * properties, with its own notion of field types, its own ordering by a
+ * spaced-out `order` key, its own secret flag, and its own untranslated
+ * English strings. Érico's verdict (2026-08-29) was that it made a Classic UI
+ * form impossible and reinvented, worse, what Plone already had.
+ *
+ * So the backend now serves two ordinary JSON schemas, produced by
+ * `plone.restapi` from two interfaces:
+ *
+ * - `@identity-providers` sends the provider's own fields, from
+ *   `IProviderRecords` — the same interface its registry records are bound
+ *   to, so the form and the storage cannot describe different things.
+ * - `@identity-drivers` sends each driver's settings, from its
+ *   `settings_schema`.
+ *
+ * What is left here is composition, and only composition: merge the two,
+ * prefix the driver's half so a flat form can carry a nested object, and add
+ * the two fields that exist only while a provider is being created. Nothing
+ * below decides what a field looks like — that is the backend's answer, in
+ * the site's language, and this file must never start having an opinion about
+ * it again.
  * @module helpers/providerSchema
  */
-import {
-  GROUPS_VOCABULARY,
-  USER_FIELDS_VOCABULARY,
-} from '../constants/vocabularies';
-import { fromGroupRows, toGroupRows } from './groupmap';
-import { fromRows, toRows } from './propertymap';
-import type { Driver, DriverField } from '../types';
 import { defineMessages } from 'react-intl';
+
+import { toGroupRows, fromGroupRows } from './groupmap';
+import { toRows, fromRows } from './propertymap';
+import type { Driver, VoltoSchema } from '../types';
+
 import type { IntlShape } from 'react-intl';
 
 /**
- * Every label this module writes itself.
+ * Prefix a driver setting carries in form data.
  *
- * A driver's *own* fields are not here: their titles and descriptions arrive
- * from the backend over `@identity-drivers`, as plain strings rather than
- * message ids, so they are rendered as sent. See `propertyFor`.
+ * The API nests them under `config`, and a Volto form is flat. The prefix is
+ * what lets one flat object round-trip both halves without the two colliding
+ * — a driver may perfectly well declare a `title`, and it is not the
+ * provider's.
  */
+export const CONFIG_PREFIX = 'config.';
+
+/** Fieldset the driver's own settings are rendered in. */
+export const SETTINGS_FIELDSET = 'settings';
+
+/** Fieldset the two claim mappings are rendered in. */
+export const MAPPING_FIELDSET = 'mapping';
+
 const messages = defineMessages({
+  identity: { id: 'Identity', defaultMessage: 'Identity' },
   driver: { id: 'Driver', defaultMessage: 'Driver' },
   driverHelp: {
-    id: 'Which integration handles this provider.',
-    defaultMessage: 'Which integration handles this provider.',
+    id: 'provider-driver-help',
+    defaultMessage:
+      'Which service this provider talks to. It decides the rest of the ' +
+      'form, and it cannot be changed afterwards.',
   },
-  providerId: { id: 'Provider ID', defaultMessage: 'Provider ID' },
+  providerId: { id: 'Provider id', defaultMessage: 'Provider id' },
   providerIdHelp: {
     id: 'provider-id-help',
     defaultMessage:
-      'Permanent. It is stored on every identity linked through this ' +
-      'provider, so renaming it later would orphan them all. Letters, ' +
-      'digits, - and _ only.',
-  },
-  title: { id: 'Title', defaultMessage: 'Title' },
-  titleHelp: {
-    id: 'provider-title-help',
-    defaultMessage:
-      'What the sign-in button says. Defaults to the driver name.',
-  },
-  enabled: { id: 'Enabled', defaultMessage: 'Enabled' },
-  enabledHelp: {
-    id: 'provider-enabled-help',
-    defaultMessage:
-      'Whether this provider works at all. A disabled one keeps its settings ' +
-      'and its stored identities, and nobody can sign in or link through ' +
-      'it.',
-  },
-  showInLogin: {
-    id: 'Show on the login screen',
-    defaultMessage: 'Show on the login screen',
-  },
-  showInLoginHelp: {
-    id: 'provider-show-in-login-help',
-    defaultMessage:
-      'Whether the login screen offers a button for it. An enabled provider ' +
-      "that is not shown still works: it stays linkable from a user's own " +
-      'sign-in methods, and an account already linked to it still signs in.',
-  },
-  style: { id: 'Style', defaultMessage: 'Style' },
-  icon: { id: 'Icon', defaultMessage: 'Icon' },
-  iconHelp: {
-    id: 'provider-icon-help',
-    defaultMessage:
-      'An SVG document, pasted as its source. Empty means no icon, and the ' +
-      'button then shows the title alone. What is stored is sanitized: ' +
-      'scripts, styles and anything referencing a URL are removed, and a ' +
-      'document that is not an SVG is refused.',
-  },
-  backgroundColor: {
-    id: 'Background colour',
-    defaultMessage: 'Background colour',
-  },
-  backgroundColorHelp: {
-    id: 'provider-background-colour-help',
-    defaultMessage:
-      "A hex value such as #24292f. Empty leaves the theme's own styling " +
-      'alone.',
-  },
-  foregroundColor: {
-    id: 'Foreground colour',
-    defaultMessage: 'Foreground colour',
-  },
-  foregroundColorHelp: {
-    id: 'provider-foreground-colour-help',
-    defaultMessage: 'The colour of the button text and icon, as a hex value.',
+      'Used in URLs and stored with every identity linked through this ' +
+      'provider, so it is permanent.',
   },
   settings: { id: 'Settings', defaultMessage: 'Settings' },
-  provider: { id: 'Provider', defaultMessage: 'Provider' },
   mapping: { id: 'Mapping', defaultMessage: 'Mapping' },
-  addProvider: { id: 'Add a provider', defaultMessage: 'Add a provider' },
-  editProvider: { id: 'Edit provider', defaultMessage: 'Edit provider' },
-  attributeMapping: {
-    id: 'Attribute mapping',
-    defaultMessage: 'Attribute mapping',
-  },
-  attributeMappingHelp: {
-    id: 'attribute-mapping-help',
-    defaultMessage:
-      'What each provider claim writes onto the Plone user. A field that ' +
-      'already has a value locally is left alone.',
-  },
-  providerClaim: { id: 'Provider claim', defaultMessage: 'Provider claim' },
-  providerClaimHelp: {
-    id: 'provider-claim-help',
-    defaultMessage:
-      'Dotted path into the claims, for example email or address.formatted. ' +
-      "Normalized claims are tried before the provider's raw payload.",
-  },
-  userField: { id: 'User field', defaultMessage: 'User field' },
-  userFieldHelp: {
-    id: 'user-field-help',
-    defaultMessage: "Where the value is written on the user's profile.",
-  },
-  groupMapping: { id: 'Group mapping', defaultMessage: 'Group mapping' },
-  groupMappingHelp: {
-    id: 'group-mapping-help',
-    defaultMessage:
-      "Which of the provider's groups grant a group here. Empty grants " +
-      'nothing. Every sign-in reconciles, so a membership revoked at the ' +
-      'provider stops granting here -- but only groups this provider ' +
-      'granted are ever taken back, so a group you granted by hand is safe.',
-  },
-  providerGroup: { id: 'Provider group', defaultMessage: 'Provider group' },
-  providerGroupHelp: {
-    id: 'provider-group-help',
-    defaultMessage:
-      "The group's name as the provider sends it. Free text: this site " +
-      'cannot enumerate the far end. A name with no row here grants ' +
-      'nothing, and is never created.',
-  },
-  localGroup: { id: 'Local group', defaultMessage: 'Local group' },
-  localGroupHelp: {
-    id: 'local-group-help',
-    defaultMessage:
-      'The group it grants on this site. A group that does not exist here ' +
-      'grants nothing.',
-  },
+  propertymap: { id: 'Property map', defaultMessage: 'Property map' },
+  groupmap: { id: 'Group map', defaultMessage: 'Group map' },
 });
 
-/** A Volto form schema, as `Form` consumes it. */
-export interface VoltoSchema {
-  title: string;
-  fieldsets: { id: string; title: string; fields: string[] }[];
-  properties: Record<string, Record<string, unknown>>;
-  required: string[];
-}
-
-/** Prefix that keeps a driver's fields out of the provider's own namespace. */
-export const CONFIG_PREFIX = 'config.';
-
 /**
- * A driver's fields, in the order the driver wants them rendered.
+ * Suggest an id for a provider being added.
  *
- * `@identity-drivers` answers with a JSON object, and plone.restapi
- * serialises those with `sort_keys=True` -- so what arrives here is
- * alphabetical whatever the driver declared, which puts `auto_link_by_email`
- * above `client_id`. Each descriptor carries its own position instead.
- *
- * @param schema The driver's schema.
- * @returns The entries, sorted; ties and missing positions fall back to the
- *   field name, so the result is stable rather than merely sorted.
- */
-export function orderedFields(
-  schema: Record<string, DriverField>,
-): [string, DriverField][] {
-  return Object.entries(schema).sort(
-    ([nameA, a], [nameB, b]) =>
-      (a.order ?? Number.MAX_SAFE_INTEGER) -
-        (b.order ?? Number.MAX_SAFE_INTEGER) || nameA.localeCompare(nameB),
-  );
-}
-
-/**
- * Suggest a provider id for a driver.
- *
- * The id is permanent and stored on every identity linked through the
- * provider, so it is worth prefilling with something sane rather than
- * leaving an operator to invent one -- most sites have exactly one provider
- * per driver and want it called after the driver.
+ * Slugified from the driver's title, which reads better than its id for the
+ * one thing that becomes permanent the moment it is saved. Unchanged by the
+ * schema rewrite: it is about naming a provider, not about describing a
+ * field.
  *
  * @param drivers Every registered driver.
- * @param driverId The driver chosen, if one is chosen yet.
- * @returns The slugified driver title, or an empty string when no driver is
- *   chosen or its title slugifies to nothing.
+ * @param driverId The driver just chosen.
+ * @returns A suggested id, or an empty string.
  */
 export function suggestedProviderId(
   drivers: Driver[],
@@ -210,124 +102,39 @@ export function suggestedProviderId(
   );
 }
 
-/**
- * Turn one driver field descriptor into a Volto schema property.
- *
- * @param field The descriptor from the driver.
- * @returns The schema property.
- */
-export function propertyFor(field: DriverField): Record<string, unknown> {
-  const base = {
-    title: field.title,
-    description: field.description,
-    // The driver's own default. Without it an add form starts blank and the
-    // operator has to know what a sensible value is -- which is how a GitHub
-    // provider ends up with OIDC scopes typed into it and never sees an
-    // email address.
-    ...(field.default === undefined ? {} : { default: field.default }),
-  };
-  if (field.secret) {
-    // Volto's password widget, so a stored secret is not shoulder-readable
-    // and the browser does not offer to remember it.
-    return { ...base, widget: 'password' };
-  }
-  if (field.type === 'int') {
-    return { ...base, type: 'number' };
-  }
-  if (field.type === 'bool') {
-    return { ...base, type: 'boolean' };
-  }
-  if (field.type === 'list') {
-    // A repeating value, not a comma-separated string in a text box.
-    return { ...base, type: 'array', widget: 'token' };
-  }
-  if (field.type === 'choice') {
-    // The driver names the options, so a select renders whatever a driver
-    // offers without this knowing what any of them mean.
-    return { ...base, choices: field.choices ?? [] };
-  }
-  return { ...base, type: 'string' };
-}
-
-/** The mapping rows, edited with Volto's DataGridField equivalent. */
-function propertymapProperty(intl: IntlShape): Record<string, unknown> {
-  return {
-    title: intl.formatMessage(messages.attributeMapping),
-    description: intl.formatMessage(messages.attributeMappingHelp),
-    widget: 'object_list',
-    schema: {
-      title: intl.formatMessage(messages.mapping),
-      fieldsets: [
-        { id: 'default', title: 'Default', fields: ['claim', 'field'] },
-      ],
-      properties: {
-        claim: {
-          title: intl.formatMessage(messages.providerClaim),
-          description: intl.formatMessage(messages.providerClaimHelp),
-          type: 'string',
-        },
-        field: {
-          title: intl.formatMessage(messages.userField),
-          description: intl.formatMessage(messages.userFieldHelp),
-          vocabulary: { '@id': USER_FIELDS_VOCABULARY },
-        },
-      },
-      required: ['claim', 'field'],
-    },
-  };
-}
-
-/** The group mapping rows. */
-function groupmapProperty(intl: IntlShape): Record<string, unknown> {
-  return {
-    title: intl.formatMessage(messages.groupMapping),
-    description: intl.formatMessage(messages.groupMappingHelp),
-    widget: 'object_list',
-    schema: {
-      title: intl.formatMessage(messages.mapping),
-      fieldsets: [
-        { id: 'default', title: 'Default', fields: ['group', 'local'] },
-      ],
-      properties: {
-        group: {
-          title: intl.formatMessage(messages.providerGroup),
-          description: intl.formatMessage(messages.providerGroupHelp),
-          type: 'string',
-        },
-        local: {
-          title: intl.formatMessage(messages.localGroup),
-          description: intl.formatMessage(messages.localGroupHelp),
-          vocabulary: { '@id': GROUPS_VOCABULARY },
-        },
-      },
-      required: ['group', 'local'],
-    },
-  };
+/** A JSON schema as `plone.restapi` serializes one. */
+interface ServedSchema {
+  properties?: Record<string, Record<string, unknown>>;
+  required?: string[];
+  fieldsets?: { id: string; title: string; fields: string[] }[];
 }
 
 /**
- * Build the schema for adding or editing a provider.
+ * Build the provider form from the two schemas the backend sent.
  *
- * @param drivers Every registered driver, for the driver choice.
- * @param driverId The driver whose fields should be rendered, if one is
- *   chosen yet.
- * @param adding Whether this is the add form, which also asks for an id and
- *   lets the driver be chosen.
- * @returns The schema.
+ * @param served The provider's own schema, from `@identity-providers`.
+ * @param drivers Every registered driver, each carrying its settings schema.
+ * @param driverId The driver whose settings to render.
+ * @param adding Whether this is the add form, which asks two more questions.
+ * @param intl For the labels of the fields that exist only in this form.
+ * @returns A Volto schema.
  */
 export function providerSchema(
+  served: ServedSchema | undefined,
   drivers: Driver[],
   driverId: string | undefined,
   adding: boolean,
   intl: IntlShape,
 ): VoltoSchema {
-  const driver = drivers.find((d) => d.id === driverId);
   const properties: Record<string, Record<string, unknown>> = {};
-  const identity: string[] = [];
+  const fieldsets: { id: string; title: string; fields: string[] }[] = [];
+  const required: string[] = [...(served?.required ?? [])];
 
   if (adding) {
-    // Driver before id: it decides which fields the rest of the form even
-    // has, so answering it first is the only order that reads forwards.
+    // The only two fields this file still invents, and they are not stored
+    // anywhere: the driver decides which schema the rest of the form uses,
+    // and the id becomes the record prefix. Both are answered once, at
+    // creation, and neither exists on a provider that already exists.
     properties.driver = {
       title: intl.formatMessage(messages.driver),
       description: intl.formatMessage(messages.driverHelp),
@@ -338,119 +145,96 @@ export function providerSchema(
       description: intl.formatMessage(messages.providerIdHelp),
       type: 'string',
     };
-    identity.push('driver', 'id');
+    required.push('driver', 'id');
   }
 
-  properties.title = {
-    title: intl.formatMessage(messages.title),
-    description: intl.formatMessage(messages.titleHelp),
-    type: 'string',
-  };
-  properties.enabled = {
-    title: intl.formatMessage(messages.enabled),
-    description: intl.formatMessage(messages.enabledHelp),
-    type: 'boolean',
-  };
-  properties.show_in_login = {
-    title: intl.formatMessage(messages.showInLogin),
-    description: intl.formatMessage(messages.showInLoginHelp),
-    type: 'boolean',
-  };
-  identity.push('title', 'enabled', 'show_in_login');
+  Object.assign(properties, served?.properties ?? {});
 
-  // The look of the button, in a fieldset of its own: none of it changes what
-  // the provider *does*, and mixing presentation into the tab that decides
-  // whether people can sign in is how a colour edit gets made nervously.
-  properties.icon = {
-    title: intl.formatMessage(messages.icon),
-    description: intl.formatMessage(messages.iconHelp),
-    type: 'string',
-    widget: 'textarea',
-  };
-  properties.background_color = {
-    title: intl.formatMessage(messages.backgroundColor),
-    description: intl.formatMessage(messages.backgroundColorHelp),
-    type: 'string',
-  };
-  properties.foreground_color = {
-    title: intl.formatMessage(messages.foregroundColor),
-    description: intl.formatMessage(messages.foregroundColorHelp),
-    type: 'string',
-  };
-
-  const settings = orderedFields(driver?.schema ?? {}).map(([name, field]) => {
-    const key = `${CONFIG_PREFIX}${name}`;
-    properties[key] = propertyFor(field);
-    return key;
+  // The backend's own fieldsets, in its order, with the creation questions
+  // folded into the first one so they are the first thing asked.
+  (served?.fieldsets ?? []).forEach((fieldset, index) => {
+    const extra = adding && index === 0 ? ['driver', 'id'] : [];
+    fieldsets.push({
+      id: fieldset.id,
+      title:
+        index === 0 ? intl.formatMessage(messages.identity) : fieldset.title,
+      fields: [...extra, ...fieldset.fields],
+    });
   });
 
-  properties.propertymap = propertymapProperty(intl);
-
-  // Only for a driver that says its providers have groups. The backend
-  // declares that by putting a `group_claim` field in the schema, and it is
-  // the same switch on both ends: a driver with no groups offers no claim to
-  // read them from, and a map stored against one grants nothing. Asking an
-  // operator to map the groups of a magic link would be asking a question
-  // with no answer.
-  const hasGroups = Boolean(driver?.schema?.group_claim);
-  if (hasGroups) {
-    properties.groupmap = groupmapProperty(intl);
+  const driver = drivers.find((d) => d.id === driverId);
+  const settings = (driver?.schema ?? {}) as ServedSchema;
+  const settingFields: string[] = [];
+  for (const [name, property] of Object.entries(settings.properties ?? {})) {
+    const key = `${CONFIG_PREFIX}${name}`;
+    properties[key] = property;
+    settingFields.push(key);
+    if ((settings.required ?? []).includes(name)) {
+      required.push(key);
+    }
+  }
+  if (settingFields.length) {
+    fieldsets.push({
+      id: SETTINGS_FIELDSET,
+      title: intl.formatMessage(messages.settings),
+      // The driver's own fieldset order, flattened: a provider form shows one
+      // Settings tab rather than repeating the driver's internal grouping
+      // beside the provider's.
+      fields: (settings.fieldsets ?? []).length
+        ? (settings.fieldsets ?? []).flatMap((f) =>
+            f.fields.map((name) => `${CONFIG_PREFIX}${name}`),
+          )
+        : settingFields,
+    });
   }
 
-  const fieldsets = [
-    {
-      id: 'default',
-      title: intl.formatMessage(messages.provider),
-      fields: identity,
-    },
-    // Only once a driver is chosen: before that there is no honest set of
-    // fields to show, and an empty fieldset reads as a broken form.
-    ...(settings.length
-      ? [
-          {
-            id: 'settings',
-            title: driver?.title ?? intl.formatMessage(messages.settings),
-            fields: settings,
-          },
-        ]
-      : []),
-    {
-      id: 'style',
-      title: intl.formatMessage(messages.style),
-      fields: ['icon', 'background_color', 'foreground_color'],
-    },
-    {
-      id: 'mapping',
-      title: intl.formatMessage(messages.mapping),
-      fields: ['propertymap', ...(hasGroups ? ['groupmap'] : [])],
-    },
-  ];
+  // The two mappings. Their *shape* is `Dict` on the backend; Volto has no
+  // Dict widget, so they are edited as rows and converted below. That is a
+  // widget gap rather than a schema this file invented.
+  properties.propertymap = {
+    title: intl.formatMessage(messages.propertymap),
+    widget: 'object_list',
+    schema: rowSchema(intl, 'claim', 'field'),
+  };
+  properties.groupmap = {
+    title: intl.formatMessage(messages.groupmap),
+    widget: 'object_list',
+    schema: rowSchema(intl, 'group', 'local'),
+  };
+  fieldsets.push({
+    id: MAPPING_FIELDSET,
+    title: intl.formatMessage(messages.mapping),
+    fields: ['propertymap', 'groupmap'],
+  });
 
-  const required = Object.entries(driver?.schema ?? {})
-    .filter(([, field]) => field.required)
-    .map(([name]) => `${CONFIG_PREFIX}${name}`);
+  return { fieldsets, properties, required };
+}
 
+/**
+ * The two-column schema a mapping row is edited with.
+ *
+ * @param intl For the column labels.
+ * @param left Name of the left-hand field.
+ * @param right Name of the right-hand field.
+ * @returns A Volto schema for one row.
+ */
+function rowSchema(intl: IntlShape, left: string, right: string): VoltoSchema {
   return {
-    title: intl.formatMessage(
-      adding ? messages.addProvider : messages.editProvider,
-    ),
-    fieldsets,
-    properties,
-    required: adding ? ['id', 'driver', ...required] : required,
+    fieldsets: [{ id: 'default', title: 'default', fields: [left, right] }],
+    properties: {
+      [left]: { title: left, type: 'string' },
+      [right]: { title: right, type: 'string' },
+    },
+    required: [],
   };
 }
 
 /**
- * Seed a form from a stored provider.
+ * Turn a provider from the API into form data.
  *
- * Config values are flattened onto prefixed keys because a Volto schema is
- * flat; the mapping becomes rows because that is what the list widget edits.
- *
- * @param provider The provider being edited, or undefined when adding.
- * @param defaults The chosen driver's seed mappings, used only when adding:
- *   an existing provider's own mappings are the whole truth about it,
- *   including the deliberate decision to have none.
- * @returns Form data.
+ * @param provider The provider, or undefined when adding.
+ * @param defaults Seeds for a provider being added.
+ * @returns Flat form data.
  */
 export function toFormData(
   provider: Record<string, any> | undefined,
@@ -474,6 +258,7 @@ export function toFormData(
     // on the login page, and reading the key back as false would take a
     // site's login buttons away on upgrade.
     show_in_login: provider.show_in_login ?? true,
+    // The upload envelope the backend sends, handed to the widget unchanged.
     icon: provider.icon ?? '',
     background_color: provider.background_color ?? '',
     foreground_color: provider.foreground_color ?? '',
@@ -488,6 +273,11 @@ export function toFormData(
 
 /**
  * Turn submitted form data back into the API payload.
+ *
+ * Only shape, never validation. Every rule about what a value may be lives on
+ * the backend schema now — a colour it cannot parse, an icon that is not SVG,
+ * a redirect URI a browser could execute — so trimming here would only hide
+ * which value the refusal is about.
  *
  * @param formData What the form submitted.
  * @returns The body for POST or PATCH.
@@ -511,15 +301,8 @@ export function fromFormData(
   }
 
   payload.config = config;
-  payload.title = String(payload.title ?? '').trim();
   payload.enabled = Boolean(payload.enabled);
   payload.show_in_login = Boolean(payload.show_in_login);
-  // Trimmed, because the backend refuses a colour it cannot parse and a
-  // trailing space pasted from a brand page is not a mistake worth a 400.
-  // The icon keeps its whitespace: it is a document, and the sanitizer
-  // strips what it does not want.
-  payload.background_color = String(payload.background_color ?? '').trim();
-  payload.foreground_color = String(payload.foreground_color ?? '').trim();
   if (typeof payload.id === 'string') {
     payload.id = payload.id.trim();
   }

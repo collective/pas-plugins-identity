@@ -7,6 +7,8 @@ against recorded payload fixtures with no provider in the loop.
 
 from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.core.interfaces import ClaimsError
+from pas.plugins.identity.core.drivers.settings import IDriverSettings
+from pas.plugins.identity.core.drivers.settings import IOAuth2Settings
 from pas.plugins.identity.core.interfaces import IDriver
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.interfaces import ProviderEmail
@@ -27,43 +29,6 @@ def text(payload: JSONDict, *keys: str) -> str:
     return ""
 
 
-#: Config fields every OAuth2/OIDC driver needs.
-#:
-#: Every descriptor carries an ``order``, because a schema travels as a JSON
-#: object and plone.restapi serialises those with ``sort_keys=True`` -- so the
-#: order these are declared in is gone by the time a form is built from them.
-#: The numbers are spaced by ten so a driver can slot a field of its own
-#: between two of these without renumbering anything.
-OAUTH_FIELDS: dict[str, JSONDict] = {
-    "client_id": {
-        "type": "string",
-        "title": "Client ID",
-        "required": True,
-        "secret": False,
-        "order": 20,
-    },
-    "client_secret": {
-        "type": "string",
-        "title": "Client secret",
-        "required": True,
-        "secret": True,
-        "order": 30,
-    },
-    "scope": {
-        "type": "list",
-        "title": "Scope",
-        "description": (
-            "One permission per entry. They are joined with spaces when the "
-            "authorize URL is built, which is the encoding OAuth 2 defines "
-            "-- a scope containing a space is not one scope."
-        ),
-        "required": False,
-        "secret": False,
-        "order": 40,
-    },
-}
-
-
 @implementer(IDriver)
 class BaseDriver:
     """Common behavior for drivers.
@@ -75,9 +40,19 @@ class BaseDriver:
     driver_id: str = ""
     title: str = ""
 
+    #: The schema an operator fills in for a provider using this driver.
+    #:
+    #: An ``Interface``, serialized by ``@identity-drivers`` through
+    #: ``plone.restapi``'s own machinery -- so a form is built from it the way
+    #: a form is built from anything else in Plone, in the site's language,
+    #: with validation, and by Classic UI as readily as by Volto. See
+    #: :mod:`pas.plugins.identity.core.drivers.settings` for what replaced the
+    #: hand-built dict this used to be.
+    settings_schema: type[IDriverSettings] = IOAuth2Settings
+
     #: Default for the ``userid_source`` config field.
     #:
-    #: A class attribute rather than a literal in :meth:`config_schema`, so a
+    #: A class attribute rather than a field default in the schema, so a
     #: driver that knows something about its provider can move it. A random
     #: id is right for a provider this site has no particular trust in; a peer
     #: running this same package is a different case.
@@ -135,9 +110,6 @@ class BaseDriver:
     #: come from the profile instead.
     supports_manual_link: bool = True
 
-    #: Extra config fields beyond :data:`OAUTH_FIELDS`.
-    extra_fields: dict[str, JSONDict] = {}  # noqa: RUF012
-
     #: Seeded into a new provider's attribute mapping.
     #:
     #: Written against the *normalized* claim names rather than any one
@@ -156,92 +128,6 @@ class BaseDriver:
         "email": "email",
         "fullname": "fullname",
     }
-
-    def config_schema(self) -> JSONDict:
-        """Return the configuration schema for this driver.
-
-        :returns: Mapping of field name to descriptor. Secret fields are
-            flagged so every API surface can mask them.
-        """
-        schema: JSONDict = {k: dict(v) for k, v in OAUTH_FIELDS.items()}
-        schema["scope"]["default"] = list(self.default_scope)
-        schema["trust_email_verification"] = {
-            "type": "bool",
-            "title": "This provider's email verification counts",
-            "description": (
-                "When this provider says it verified an address, record the "
-                "address as verified here too -- exactly as a magic link "
-                "from this site would. Switch it on only for a provider that "
-                "really does check, since a verified address is what an "
-                "account can be attached to. Anything left off still shows "
-                "what the provider claimed; it just proves nothing."
-            ),
-            "required": False,
-            "secret": False,
-            "default": self.default_trust_email_verification,
-            "order": 55,
-        }
-        # Off by default, and it needs the switch above as well: a provider
-        # whose verification this site does not trust cannot attach itself to
-        # an account on the strength of an address.
-        schema["auto_link_by_email"] = {
-            "type": "bool",
-            "title": "Attach to an existing account with the same verified email",
-            "description": (
-                "Matches a verified address: one this site confirmed with a "
-                "magic link, or one a provider it trusts confirmed. Needs "
-                "this provider's own verification to be trusted too, since "
-                "the address being matched on is the one it just sent."
-            ),
-            "required": False,
-            "secret": False,
-            "default": False,
-            "order": 60,
-        }
-        schema["userid_source"] = {
-            "type": "choice",
-            "title": "Userid taken from",
-            "description": (
-                "What the Plone userid is minted from the first time "
-                "somebody signs in with this provider. A random id is the "
-                "safe default: it leaks nothing and never has to change. "
-                "The others are readable, which matters when a person has "
-                "to be recognised in Plone -- and they are claims, so two "
-                "providers can offer the same one. A userid already in use "
-                "is never handed out: the new one gets a numeric suffix."
-            ),
-            "required": False,
-            "secret": False,
-            "default": self.default_userid_source,
-            "order": 50,
-            "choices": [
-                ["uuid", "A random id"],
-                ["username", "The provider's username"],
-                ["email", "The email address"],
-                ["subject", "The provider's subject identifier"],
-            ],
-        }
-        if self.default_group_claim:
-            schema["group_claim"] = {
-                "type": "string",
-                "title": "Groups arrive in the claim",
-                "description": (
-                    "Which claim carries the group names this provider "
-                    "asserts. A dotted path reaches into a nested claim, so "
-                    "a provider putting them under realm_access.roles is "
-                    "reachable without a driver of its own. What the names "
-                    "then grant is the group map, which is empty until an "
-                    "operator fills it in -- an unmapped group grants "
-                    "nothing and is never created here."
-                ),
-                "required": False,
-                "secret": False,
-                "default": self.default_group_claim,
-                "order": 80,
-            }
-        for name, descriptor in self.extra_fields.items():
-            schema[name] = dict(descriptor)
-        return schema
 
     def subject(self, payload: JSONDict) -> str:
         """Extract the immutable provider-side subject identifier.

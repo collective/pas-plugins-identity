@@ -1,6 +1,7 @@
 """The GitHub driver."""
 
 from pas.plugins.identity.core.drivers.base import BaseDriver
+from pas.plugins.identity.core.drivers.settings import IGitHubSettings
 from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.interfaces import ProviderEmail
@@ -37,6 +38,7 @@ class GitHubDriver(BaseDriver):
 
     driver_id = "github"
     title = "GitHub"
+    settings_schema = IGitHubSettings
     default_scope = ("read:user", "user:email")
     subject_keys = ("id", "node_id")
 

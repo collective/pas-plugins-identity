@@ -17,10 +17,10 @@ an API as somebody, not a token for learning who they are.
 """
 
 from pas.plugins.identity.server.claims import claims_for
-from pas.plugins.identity.server.clients import get_client
-from pas.plugins.identity.server.tokens import decode_access_token
-from pas.plugins.identity.server.tokens import TOKEN_TYPE
-from pas.plugins.identity.server.tokens import TokenError
+from pas.plugins.identity.server.controlpanel.clients import get_client
+from pas.plugins.identity.server.grants.tokens import decode_access_token
+from pas.plugins.identity.server.grants.tokens import TOKEN_TYPE
+from pas.plugins.identity.server.grants.tokens import TokenError
 from Products.Five.browser import BrowserView
 
 import json

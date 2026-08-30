@@ -1,15 +1,15 @@
 from . import PROFILE_ID
-from pas.plugins.identity.server.clients import authenticate
-from pas.plugins.identity.server.clients import ClientConfig
-from pas.plugins.identity.server.clients import get_client
-from pas.plugins.identity.server.clients import get_clients
-from pas.plugins.identity.server.clients import hash_secret
-from pas.plugins.identity.server.clients import new_secret
-from pas.plugins.identity.server.clients import PUBLIC_AUTH_METHOD
-from pas.plugins.identity.server.clients import remove_client
-from pas.plugins.identity.server.clients import rotate_secret
-from pas.plugins.identity.server.clients import set_clients
-from pas.plugins.identity.server.clients import verify_secret
+from pas.plugins.identity.server.controlpanel.clients import authenticate
+from pas.plugins.identity.server.controlpanel.clients import ClientConfig
+from pas.plugins.identity.server.controlpanel.clients import get_client
+from pas.plugins.identity.server.controlpanel.clients import get_clients
+from pas.plugins.identity.server.controlpanel.clients import hash_secret
+from pas.plugins.identity.server.controlpanel.clients import new_secret
+from pas.plugins.identity.server.controlpanel.clients import PUBLIC_AUTH_METHOD
+from pas.plugins.identity.server.controlpanel.clients import remove_client
+from pas.plugins.identity.server.controlpanel.clients import rotate_secret
+from pas.plugins.identity.server.controlpanel.clients import set_clients
+from pas.plugins.identity.server.controlpanel.clients import verify_secret
 from pas.plugins.identity.server.interfaces import ServerError
 
 import pytest

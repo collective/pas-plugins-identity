@@ -140,7 +140,7 @@ def _asks_for_an_issuer(provider: ProviderConfig) -> bool:
         "nowhere to discover from", and the right one.
     """
     driver = provider.driver
-    return driver is not None and ISSUER_FIELD in driver.config_schema()
+    return driver is not None and ISSUER_FIELD in driver.settings_schema
 
 
 def discover(issuer: str) -> JSONDict:

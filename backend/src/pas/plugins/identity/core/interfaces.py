@@ -26,7 +26,7 @@ class ProviderEmail(TypedDict):
     :ivar verified: Whether the provider says it checked it. What that is
         worth here is the operator's decision, per provider: see
         ``trust_email_verification`` in
-        :meth:`~pas.plugins.identity.core.drivers.base.BaseDriver.config_schema`.
+        :attr:`~pas.plugins.identity.core.drivers.base.BaseDriver.settings_schema`.
         A provider the site does not trust still has its word carried and
         shown; it simply proves nothing.
     :ivar primary: Whether the provider calls it the account's main address.
@@ -106,6 +106,16 @@ class IDriver(Interface):
         "deployment's directory, not about a driver."
     )
 
+    settings_schema = Attribute(
+        "The ``Interface`` an operator fills in for a provider using this "
+        "driver. Serialized by ``@identity-drivers`` through "
+        "``plone.restapi``'s own schema machinery, so a form is built from it "
+        "the way a form is built from anything else in Plone -- translated, "
+        "validated, and by Classic UI as readily as by Volto. Extend "
+        "``IOAuth2Settings`` for an OAuth2 provider, or ``IDriverSettings`` "
+        "for something that is not one."
+    )
+
     default_trust_email_verification = Attribute(
         "Whether this provider's own ``email_verified`` is worth anything "
         "here, as the default for the ``trust_email_verification`` config "
@@ -120,14 +130,6 @@ class IDriver(Interface):
         "box there verifies any value rather than one already known to be "
         "theirs."
     )
-
-    def config_schema() -> JSONDict:
-        """Return the configuration schema for this driver.
-
-        :returns: Mapping of field name to a descriptor with at least
-            ``type``, ``title``, ``required`` and ``secret`` keys. The Volto
-            control panel widget is generated from this.
-        """
 
     def normalize_claims(payload: JSONDict) -> Claims:
         """Map a provider payload onto the documented claims schema.
@@ -407,11 +409,13 @@ class DriverProtocol(Protocol):
 
     driver_id: str
     title: str
+    settings_schema: type[Interface]
     default_propertymap: dict[str, str]
     default_group_claim: str
     default_groupmap: dict[str, str]
-
-    def config_schema(self) -> JSONDict: ...
+    default_scope: tuple[str, ...]
+    default_userid_source: str
+    default_trust_email_verification: bool
 
     def normalize_claims(self, payload: JSONDict) -> Claims: ...
 

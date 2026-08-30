@@ -12,6 +12,9 @@ returned exactly once, when it is minted, and is unrecoverable afterwards.
 """
 
 from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity.server.interfaces import AUTHORIZATION_CODE
+from pas.plugins.identity.server.interfaces import GRANT_TYPES
+from pas.plugins.identity.server.interfaces import PUBLIC_AUTH_METHOD
 from pas.plugins.identity.server.interfaces import ServerError
 from plone import api
 
@@ -24,10 +27,10 @@ import secrets
 #: Registry key holding the client list.
 CLIENTS_RECORD = "pas.plugins.identity.server_clients"
 
-#: Auth method of a client that has no secret. Public clients are the ones
-#: PKCE is mandatory for (S8): a native or browser app cannot keep a secret,
-#: so the proof of possession has to come from the exchange itself.
-PUBLIC_AUTH_METHOD = "none"
+#: Re-exported so every existing importer keeps working. It is declared in
+#: ``server.interfaces`` because the client schema needs it too, and a schema
+#: must not import the storage it describes.
+__all__ = ["PUBLIC_AUTH_METHOD"]
 
 #: scrypt parameters. Deliberately named rather than inlined, because they are
 #: stored in each hash and must stay readable when they are changed later.
@@ -91,6 +94,60 @@ def verify_secret(secret: str, stored: str) -> bool:
     return hmac.compare_digest(derived.hex(), expected)
 
 
+def validated_redirect_uris(uris: list[str] | None) -> list[str]:
+    """Return redirect URIs this server will actually redirect to.
+
+    Applied in the constructor, so every route in is held to it: the
+    registration endpoint, a GenericSetup profile, a test, and the
+    deserialization of what is already stored. Before this the endpoint stored
+    whatever it was sent -- see
+    :func:`~pas.plugins.identity.server.controlpanel.interfaces.is_redirect_uri`
+    for the four rules and why each one matters.
+
+    :param uris: URIs as supplied.
+    :returns: The same URIs, stripped.
+    :raises ServerError: When one of them is not usable, naming which and why.
+        A ``ServerError`` rather than the schema's ``Invalid`` because every
+        caller here already turns that into a 400 with the message attached.
+    """
+    from pas.plugins.identity.server.controlpanel.interfaces import (
+        is_redirect_uri,
+    )
+    from zope.interface import Invalid
+
+    checked = []
+    for uri in uris or []:
+        try:
+            is_redirect_uri(uri)
+        except Invalid as exc:
+            raise ServerError(f"{uri!r}: {exc.args[0]}") from exc
+        checked.append(uri.strip())
+    return checked
+
+
+def validated_grants(grants: list[str] | None) -> list[str]:
+    """Return the grants a client may be registered for.
+
+    An unknown grant used to be stored and then refused at the token endpoint,
+    where it reads as a client bug rather than as a registration mistake. The
+    server advertises :data:`GRANT_TYPES` in its discovery document, so that
+    is the list, and registering outside it is refused where it is typed.
+
+    :param grants: Grants as supplied. Empty means the authorization code
+        grant, which is what a client that says nothing wants.
+    :returns: The grants to store.
+    :raises ServerError: When one of them is not implemented here.
+    """
+    wanted = list(grants or [AUTHORIZATION_CODE])
+    unknown = [grant for grant in wanted if grant not in GRANT_TYPES]
+    if unknown:
+        raise ServerError(
+            f"{', '.join(repr(g) for g in unknown)}: not implemented here. "
+            f"This server issues {', '.join(GRANT_TYPES)}."
+        )
+    return wanted
+
+
 class ClientConfig:
     """One registered OAuth client.
 
@@ -134,13 +191,53 @@ class ClientConfig:
         """
         self.client_id = client_id
         self.title = title
-        self.redirect_uris = redirect_uris or []
-        self.grant_types = grant_types or ["authorization_code"]
+        self.redirect_uris = redirect_uris
+        self.grant_types = grant_types
         self.scope = scope
         self.auth_method = auth_method
         self.secret_hash = secret_hash
         self.enabled = enabled
         self.service_user = service_user
+
+    @property
+    def redirect_uris(self) -> list[str]:
+        """Return where this client may be sent back to.
+
+        :returns: The registered URIs, in the order they were given.
+        """
+        return self._redirect_uris
+
+    @redirect_uris.setter
+    def redirect_uris(self, value: list[str] | None) -> None:
+        """Store redirect URIs, refusing any this server will not send to.
+
+        A property rather than a plain attribute because a plain one is only
+        as good as the constructor, and this package assigns to it directly --
+        the demo's own setup handler does. Validating here is what makes "no
+        route in escapes the rule" true rather than nearly true.
+
+        :param value: URIs as supplied.
+        :raises ServerError: When one of them is not usable.
+        """
+        self._redirect_uris = validated_redirect_uris(value)
+
+    @property
+    def grant_types(self) -> list[str]:
+        """Return the grants this client may use.
+
+        :returns: The registered grants.
+        """
+        return self._grant_types
+
+    @grant_types.setter
+    def grant_types(self, value: list[str] | None) -> None:
+        """Store grants, refusing any this server does not implement.
+
+        :param value: Grants as supplied; empty means the authorization code
+            grant.
+        :raises ServerError: When one of them is not implemented here.
+        """
+        self._grant_types = validated_grants(value)
 
     @property
     def is_public(self) -> bool:

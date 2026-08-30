@@ -35,9 +35,10 @@ round-trips as an ``int``. For a provider whose driver is gone there is no
 schema to consult, and the type is inferred from the stored value instead.
 
 Secrets are stored here but never leave the backend in readable form:
-:func:`mask` replaces every field the driver flagged ``secret`` with
-:data:`SECRET_SENTINEL`, and :func:`unmask` puts the stored value back when a
-PATCH echoes the sentinel unchanged.
+:func:`mask` replaces every :class:`~zope.schema.Password` field in the
+driver's schema with :data:`SECRET_SENTINEL`, and :func:`unmask` puts the
+stored value back when a PATCH echoes the sentinel unchanged. The field type
+*is* the flag -- there is no separate ``secret`` marker to forget.
 """
 
 from pas.plugins.identity import logger
@@ -46,12 +47,19 @@ from pas.plugins.identity.core.drivers import get_driver
 from pas.plugins.identity.core.drivers.base import BaseDriver
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.interfaces import ProviderUnusable
+from pas.plugins.identity.core.utils.svg import decode_upload
+from pas.plugins.identity.core.utils.svg import encode_upload
 from pas.plugins.identity.core.utils.svg import sanitize as sanitize_svg
 from plone import api
 from plone.registry import field as registry_field
 from plone.registry.interfaces import IRegistry
 from plone.registry.record import Record
 from zope.component import getUtility
+from zope.schema import getFieldsInOrder
+from zope.schema.interfaces import IBool
+from zope.schema.interfaces import ICollection
+from zope.schema.interfaces import IInt
+from zope.schema.interfaces import IPassword
 
 import copy
 import re
@@ -113,28 +121,45 @@ def normalize_color(value: str) -> str:
     return text.lower()
 
 
+def _settings_fields(driver_id: str) -> dict[str, object]:
+    """Return a driver's settings fields, keyed by name.
+
+    One place asks the schema what it holds, so the three functions below --
+    coercion, defaults and masking -- cannot disagree about which fields exist
+    or drift apart when the schema changes.
+
+    :param driver_id: Driver that declares the schema.
+    :returns: Field name to ``zope.schema`` field, empty when the driver is
+        gone. An orphaned provider has no schema left to consult and each
+        caller has its own safe answer for that.
+    """
+    driver = get_driver(driver_id)
+    if driver is None:
+        return {}
+    return dict(getFieldsInOrder(driver.settings_schema))
+
+
 def _stored_types(driver_id: str, config: JSONDict) -> JSONDict:
     """Coerce settings into the types their registry records accept.
 
-    Only sequences need it today. A ``list`` setting is held in a
-    ``Tuple`` record, and JSON has one sequence type that decodes to a Python
-    list -- so a scope arriving over the API is a list and the record refuses
-    it. The refusal comes at write time, as a ``WrongType`` naming the value
-    rather than the shape, well away from the request that caused it.
+    Only sequences need it today. A ``Tuple`` field is held in a ``Tuple``
+    record, and JSON has one sequence type that decodes to a Python list -- so
+    a scope arriving over the API is a list and the record refuses it. The
+    refusal comes at write time, as a ``WrongType`` naming the value rather
+    than the shape, well away from the request that caused it.
 
     :param driver_id: Driver that declares the schema.
     :param config: Settings as supplied.
     :returns: Those settings, with sequences as tuples.
     """
-    driver = get_driver(driver_id)
-    if driver is None:
+    fields = _settings_fields(driver_id)
+    if not fields:
         # An orphan is stored as whatever it already was; there is no schema
         # left to say what any of it should be.
         return dict(config)
-    schema = driver.config_schema()
     return {
         name: tuple(value)
-        if schema.get(name, {}).get("type") == "list" and isinstance(value, list)
+        if ICollection.providedBy(fields.get(name)) and isinstance(value, list)
         else value
         for name, value in config.items()
     }
@@ -143,13 +168,13 @@ def _stored_types(driver_id: str, config: JSONDict) -> JSONDict:
 def _with_driver_defaults(driver_id: str, config: JSONDict) -> JSONDict:
     """Fill in the settings the caller did not supply.
 
-    A driver declares a ``default`` for every setting that has a sensible
-    one -- the scope its API actually needs, the userid source that leaks
-    nothing -- and a provider created without them should get them rather
-    than an empty string that silently breaks the first sign-in. A key that
-    *is* present wins, empty or not: clearing a setting is a decision, and
-    reinstating the default over it would be this function overruling an
-    operator.
+    Two sources, in this order. The schema's field defaults come first --
+    ``picture_over_http`` is false, a magic link lives fifteen minutes -- and
+    then the *driver's* own, because which scope GitHub needs and which userid
+    source suits a peer are facts about a driver rather than about a field.
+    A key that *is* present wins over both, empty or not: clearing a setting
+    is a decision, and reinstating the default over it would be this function
+    overruling an operator.
 
     It runs on the way in, not on the way out, so what a control panel shows
     and what the registry stores are the same values.
@@ -163,15 +188,40 @@ def _with_driver_defaults(driver_id: str, config: JSONDict) -> JSONDict:
         # No schema to consult -- the add-on that registered this driver is
         # gone. Whatever was stored is all there is.
         return dict(config)
-    schema = driver.config_schema()
     defaults = {
-        name: copy.deepcopy(descriptor["default"])
-        for name, descriptor in schema.items()
-        # deepcopy because a `list` or `dict` default is one object on the
-        # descriptor, and two providers sharing it would share every edit.
-        if "default" in descriptor
+        # deepcopy because a sequence default is one object on the field, and
+        # two providers sharing it would share every edit.
+        name: copy.deepcopy(field.default)
+        for name, field in _settings_fields(driver_id).items()
+        if field.default is not None
     }
+    defaults.update(_driver_defaults(driver))
     return _stored_types(driver_id, {**defaults, **config})
+
+
+def _driver_defaults(driver: BaseDriver) -> JSONDict:
+    """Return the settings this particular driver starts a provider with.
+
+    Kept on the driver class rather than as field defaults: a subinterface
+    changing a default would have to redeclare the field, and a redeclared
+    field takes a fresh creation order -- so the price of GitHub wanting its
+    own scope would be a scope box that jumps to the end of the form.
+
+    Only the settings a driver actually has an opinion about. ``group_claim``
+    is omitted entirely when the driver has none, so a provider with no groups
+    to map does not carry an empty mapping nobody asked for.
+
+    :param driver: The driver.
+    :returns: Settings to seed, which may be empty.
+    """
+    seeded: JSONDict = {
+        "scope": tuple(driver.default_scope),
+        "userid_source": driver.default_userid_source,
+        "trust_email_verification": driver.default_trust_email_verification,
+    }
+    if driver.default_group_claim:
+        seeded["group_claim"] = driver.default_group_claim
+    return seeded
 
 
 class ProviderConfig:
@@ -248,18 +298,30 @@ class ProviderConfig:
         return self._icon
 
     @icon.setter
-    def icon(self, value: str) -> None:
-        """Sanitize and store an icon.
+    def icon(self, value: object) -> None:
+        """Sanitize and store an icon, however it arrived.
 
-        On assignment rather than on render, so what is stored is what is
-        served: an icon sanitized on the way out would leave the dangerous
+        Two shapes, both ordinary: a form sends the ``filenameb64:…;datab64:…``
+        envelope Plone's own file widgets produce -- the one ``site_logo`` is
+        stored in -- while an import or a GenericSetup profile sends the SVG
+        source itself. :func:`~pas.plugins.identity.core.utils.svg.decode_upload`
+        tells them apart on the prefix, which is exact.
+
+        Sanitized on assignment rather than on render, so what is stored is
+        what is served: sanitizing on the way out would leave the dangerous
         version in the registry, in a GenericSetup export, and in whatever
         else reads a record directly.
 
-        :param value: The SVG document as supplied.
+        What is *kept* is the source rather than the envelope. Every reader
+        here wants the document -- the login listing inlines it so it can take
+        the button's colour -- and the envelope is put back on only at the two
+        boundaries that need it: the registry record and the control panel's
+        own form.
+
+        :param value: The SVG document, or the envelope carrying one.
         :raises InvalidSVG: When it is not a storable SVG document.
         """
-        self._icon = sanitize_svg(value)
+        self._icon = sanitize_svg(decode_upload(value))
 
     @property
     def background_color(self) -> str:
@@ -363,7 +425,11 @@ class ProviderConfig:
             "title": self.title or (self.driver.title if self.driver else ""),
             "enabled": self.enabled,
             "show_in_login": self.show_in_login,
-            "icon": self.icon,
+            # The envelope rather than the source: this is what the control
+            # panel's form is built from, and its file widget round-trips the
+            # value it was given. The login listing below sends the source,
+            # because that is what gets inlined into a button.
+            "icon": encode_upload(self.icon).decode("ascii"),
             "background_color": self.background_color,
             "foreground_color": self.foreground_color,
             "config": config,
@@ -433,18 +499,14 @@ def _secret_fields(driver_id: str, config: JSONDict) -> set[str]:
     :param config: The configuration being masked or unmasked.
     :returns: Names of the fields to treat as secret.
     """
-    driver = get_driver(driver_id)
-    if driver is None:
+    fields = _settings_fields(driver_id)
+    if not fields:
         logger.warning(
             "Unknown driver %r: treating every config value as secret",
             driver_id,
         )
         return set(config)
-    return {
-        name
-        for name, descriptor in driver.config_schema().items()
-        if descriptor.get("secret")
-    }
+    return {name for name, field in fields.items() if IPassword.providedBy(field)}
 
 
 def mask(driver_id: str, config: JSONDict) -> JSONDict:
@@ -513,30 +575,37 @@ def _registry():
     return getUtility(IRegistry)
 
 
-def _field_for(descriptor: JSONDict | None, value: object):
+def _field_for(declared: object | None, value: object):
     """Build the registry field a config value should be stored in.
 
-    The driver's descriptor is the authority when there is one. Without it
-    -- an orphaned provider, or a key the driver does not declare -- the
+    The driver's own schema field is the authority when there is one. Without
+    it -- an orphaned provider, or a key the driver does not declare -- the
     type is taken from the value, so that an int or a bool still round-trips
     as itself rather than as its ``repr``.
 
-    :param descriptor: The driver's schema entry, or ``None``.
+    A registry field rather than the schema field itself: the two hierarchies
+    look alike but a record needs ``plone.registry``'s persistent variety, and
+    the schema field carries a title, a description and a vocabulary that have
+    no business being copied into every provider's records.
+
+    :param declared: The ``zope.schema`` field from the driver's settings
+        schema, or ``None``.
     :param value: The value about to be stored.
     :returns: An unbound persistent field instance.
     """
-    declared = (descriptor or {}).get("type")
-    if declared == "bool" or (declared is None and isinstance(value, bool)):
+    if IBool.providedBy(declared) or (declared is None and isinstance(value, bool)):
         return registry_field.Bool(title="", required=False)
-    if declared == "int" or (declared is None and isinstance(value, int)):
+    if IInt.providedBy(declared) or (declared is None and isinstance(value, int)):
         return registry_field.Int(title="", required=False)
-    if declared == "list" or (declared is None and isinstance(value, (list, tuple))):
+    if ICollection.providedBy(declared) or (
+        declared is None and isinstance(value, (list, tuple))
+    ):
         return registry_field.Tuple(
             title="",
             required=False,
             value_type=registry_field.TextLine(title=""),
         )
-    if (descriptor or {}).get("secret"):
+    if IPassword.providedBy(declared):
         # Marks it as a secret wherever the record is inspected. It is not
         # encryption: a GS export still carries the value, exactly as the
         # single JSON record did before.
@@ -724,8 +793,7 @@ def _write_provider(provider: ProviderConfig, order: int) -> None:
     """
     registry = _registry()
     prefix = f"{PROVIDERS_PREFIX}{provider.provider_id}."
-    driver = provider.driver
-    schema = driver.config_schema() if driver is not None else {}
+    fields = _settings_fields(provider.driver_id)
 
     # The same interface a profile's registry XML binds to, registered under
     # the same prefix, so a provider created here and a provider imported from
@@ -744,7 +812,7 @@ def _write_provider(provider: ProviderConfig, order: int) -> None:
     registry[f"{prefix}enabled"] = bool(provider.enabled)
     registry[f"{prefix}show_in_login"] = bool(provider.show_in_login)
     registry[f"{prefix}order"] = int(order)
-    registry[f"{prefix}icon"] = provider.icon
+    registry[f"{prefix}icon"] = encode_upload(provider.icon)
     registry[f"{prefix}background_color"] = provider.background_color
     registry[f"{prefix}foreground_color"] = provider.foreground_color
     registry[f"{prefix}propertymap"] = dict(provider.propertymap)
@@ -752,7 +820,7 @@ def _write_provider(provider: ProviderConfig, order: int) -> None:
 
     for key, value in provider.config.items():
         registry.records[f"{prefix}{CONFIG_SEGMENT}{key}"] = Record(
-            _field_for(schema.get(key), value),
+            _field_for(fields.get(key), value),
             value,
         )
 

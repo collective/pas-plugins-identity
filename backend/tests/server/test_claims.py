@@ -14,7 +14,7 @@ from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from pas.plugins.identity.server.claims import claims_for
 from pas.plugins.identity.server.claims import released
-from pas.plugins.identity.server.tokens import ISSUER_RECORD
+from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
 from plone import api
 from zope.lifecycleevent import modified
 

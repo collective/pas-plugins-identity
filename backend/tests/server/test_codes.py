@@ -8,13 +8,13 @@ therefore about refusal.
 from datetime import datetime
 from datetime import timedelta
 from datetime import UTC
-from pas.plugins.identity.server.codes import AuthorizationCode
-from pas.plugins.identity.server.codes import AuthorizationCodeStore
-from pas.plugins.identity.server.codes import ChallengeError
-from pas.plugins.identity.server.codes import check_challenge
-from pas.plugins.identity.server.codes import CODE_TTL
-from pas.plugins.identity.server.codes import CodeError
-from pas.plugins.identity.server.codes import make_verifier
+from pas.plugins.identity.server.grants.codes import AuthorizationCode
+from pas.plugins.identity.server.grants.codes import AuthorizationCodeStore
+from pas.plugins.identity.server.grants.codes import ChallengeError
+from pas.plugins.identity.server.grants.codes import check_challenge
+from pas.plugins.identity.server.grants.codes import CODE_TTL
+from pas.plugins.identity.server.grants.codes import CodeError
+from pas.plugins.identity.server.grants.codes import make_verifier
 
 import pytest
 

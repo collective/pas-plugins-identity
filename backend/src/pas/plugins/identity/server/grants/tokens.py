@@ -20,9 +20,9 @@ from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.server.claims import claims_for
 from pas.plugins.identity.server.claims import OPENID_SCOPE
 from pas.plugins.identity.server.interfaces import ServerError
-from pas.plugins.identity.server.keys import ALGORITHM
-from pas.plugins.identity.server.keys import current_key
-from pas.plugins.identity.server.keys import key_set
+from pas.plugins.identity.server.utils.keys import ALGORITHM
+from pas.plugins.identity.server.utils.keys import current_key
+from pas.plugins.identity.server.utils.keys import key_set
 from plone import api
 
 import secrets

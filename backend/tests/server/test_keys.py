@@ -7,15 +7,15 @@ the ring rather than about any single key.
 
 from . import PROFILE_ID
 from pas.plugins.identity.server.interfaces import ServerError
-from pas.plugins.identity.server.keys import current_key
-from pas.plugins.identity.server.keys import ensure_keys
-from pas.plugins.identity.server.keys import generate_key
-from pas.plugins.identity.server.keys import get_keys
-from pas.plugins.identity.server.keys import key_set
-from pas.plugins.identity.server.keys import public_jwks
-from pas.plugins.identity.server.keys import RING_SIZE
-from pas.plugins.identity.server.keys import rotate_keys
-from pas.plugins.identity.server.keys import set_keys
+from pas.plugins.identity.server.utils.keys import current_key
+from pas.plugins.identity.server.utils.keys import ensure_keys
+from pas.plugins.identity.server.utils.keys import generate_key
+from pas.plugins.identity.server.utils.keys import get_keys
+from pas.plugins.identity.server.utils.keys import key_set
+from pas.plugins.identity.server.utils.keys import public_jwks
+from pas.plugins.identity.server.utils.keys import RING_SIZE
+from pas.plugins.identity.server.utils.keys import rotate_keys
+from pas.plugins.identity.server.utils.keys import set_keys
 
 import pytest
 

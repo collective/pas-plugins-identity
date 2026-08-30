@@ -29,7 +29,7 @@ class TestPloneIdentityDriver:
     def test_asks_for_the_address_scope(self):
         """The peer releases an address claim behind a scope of its own, and
         the mapping below resolves to nothing without it."""
-        assert "address" in self.driver.config_schema()["scope"]["default"]
+        assert "address" in self.driver.default_scope
 
     def test_userid_defaults_to_the_peers_username(self):
         """One person is known by one name across the federation.
@@ -39,12 +39,12 @@ class TestPloneIdentityDriver:
         would only be readable when the peer happened to mint readable
         userids of its own.
         """
-        assert self.driver.config_schema()["userid_source"]["default"] == "username"
+        assert self.driver.default_userid_source == "username"
 
     def test_the_generic_driver_still_defaults_to_a_random_id(self):
         """The premise of the test above: this is a decision about a *peer*,
         not a change to what an arbitrary provider gets."""
-        assert GenericOIDCDriver().config_schema()["userid_source"]["default"] == "uuid"
+        assert GenericOIDCDriver().default_userid_source == "uuid"
 
     def test_subject_is_sub(self):
         """The peer's userid, verbatim."""

@@ -18,8 +18,8 @@ from identitydemo import settings
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.server.claims import SCOPE_CLAIMS
-from pas.plugins.identity.server.clients import get_client
-from pas.plugins.identity.server.clients import verify_secret
+from pas.plugins.identity.server.controlpanel.clients import get_client
+from pas.plugins.identity.server.controlpanel.clients import verify_secret
 from plone.registry.interfaces import IRegistry
 from zope.component import getUtility
 

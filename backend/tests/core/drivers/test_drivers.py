@@ -17,11 +17,16 @@ from pas.plugins.identity.core.drivers.emaillink import EmailDriver
 from pas.plugins.identity.core.drivers.github import GitHubDriver
 from pas.plugins.identity.core.drivers.google import GoogleDriver
 from pas.plugins.identity.core.drivers.oidc import GenericOIDCDriver
+from pas.plugins.identity.core.drivers.settings import IDriverSettings
 from pas.plugins.identity.core.interfaces import ClaimsError
 from pas.plugins.identity.core.interfaces import IDriver
 from plone.app.users.browser.schemaeditor import getFromBaseSchema
 from plone.app.users.schema import IUserDataSchema
 from zope.interface.verify import verifyObject
+
+from zope.i18nmessageid import Message
+from zope.schema import getFieldsInOrder
+from zope.schema.interfaces import IPassword
 
 import pytest
 
@@ -43,25 +48,32 @@ class TestDriverContract:
         assert driver.title
 
     @pytest.mark.parametrize("factory", ALL_DRIVERS)
-    def test_config_schema_descriptors_complete(self, factory: type[BaseDriver]):
-        """Every field declares the keys the Volto widget generator needs."""
-        for name, descriptor in factory().config_schema().items():
-            assert {"type", "title", "required", "secret", "order"} <= set(
-                descriptor
-            ), name
+    def test_settings_schema_is_an_interface(self, factory: type[BaseDriver]):
+        """Not a dict this package invented.
+
+        The whole point of the change these tests were rewritten for: a
+        schema `plone.restapi` can serialize, `plone.autoform` can order, a
+        z3c.form can render, and the translation machinery can reach.
+        """
+        schema = factory().settings_schema
+
+        assert issubclass(schema, IDriverSettings)
 
     @pytest.mark.parametrize("factory", ALL_DRIVERS)
-    def test_config_schema_order_is_unambiguous(self, factory: type[BaseDriver]):
-        """No two fields claim the same position.
+    def test_every_field_is_translatable(self, factory: type[BaseDriver]):
+        """A title that is a plain `str` never reaches a `.po` file, and the
+        field would be English on every site in the world."""
+        for name, field in getFieldsInOrder(factory().settings_schema):
+            assert isinstance(field.title, Message), name
 
-        A schema is serialised as a JSON object with sorted keys, so ``order``
-        is the only thing the form has to go on. Two fields sharing a number
-        would be separated alphabetically instead -- which is the bug this
-        replaced, hiding in one driver rather than all of them.
-        """
-        orders = [d["order"] for d in factory().config_schema().values()]
+    @pytest.mark.parametrize("factory", ALL_DRIVERS)
+    def test_field_order_is_the_declaration_order(self, factory: type[BaseDriver]):
+        """There is no `order` key to keep unique any more -- a schema has an
+        order, so nothing can claim the same position as anything else."""
+        names = [name for name, _field in getFieldsInOrder(factory().settings_schema)]
 
-        assert len(orders) == len(set(orders))
+        assert len(names) == len(set(names))
+        assert names
 
     @pytest.mark.parametrize("factory", ALL_DRIVERS)
     def test_driver_ids_are_unique(self, factory: type[BaseDriver]):
@@ -135,20 +147,30 @@ class TestSecretFlagging:
     """Every surface must be able to mask secrets."""
 
     @pytest.mark.parametrize("factory", OAUTH_DRIVERS)
-    def test_client_secret_is_flagged(self, factory: type[BaseDriver]):
-        """OAuth drivers mark ``client_secret`` secret."""
-        assert factory().config_schema()["client_secret"]["secret"] is True
+    def test_client_secret_is_a_password_field(self, factory: type[BaseDriver]):
+        """Which is what marks it secret now.
+
+        There is no `secret` flag to set and therefore none to forget: the
+        field type is the declaration, and `mask` reads `IPassword`.
+        """
+        field = factory().settings_schema["client_secret"]
+
+        assert IPassword.providedBy(field)
 
     @pytest.mark.parametrize("factory", OAUTH_DRIVERS)
-    def test_client_id_is_not_secret(self, factory: type[BaseDriver]):
+    def test_client_id_is_not(self, factory: type[BaseDriver]):
         """The client id is public by design and must not be masked."""
-        assert factory().config_schema()["client_id"]["secret"] is False
+        field = factory().settings_schema["client_id"]
+
+        assert not IPassword.providedBy(field)
 
     def test_email_driver_has_no_secrets(self):
         """Magic link holds no provider credentials at all."""
-        schema = EmailDriver().config_schema()
+        schema = EmailDriver().settings_schema
 
-        assert not any(f["secret"] for f in schema.values())
+        assert not any(
+            IPassword.providedBy(field) for _name, field in getFieldsInOrder(schema)
+        )
         assert "client_secret" not in schema
 
 

@@ -1,618 +1,214 @@
-import { testIntl } from '../testing';
+/**
+ * The provider form is composed, not invented.
+ *
+ * This file used to be 618 lines, and most of them asserted things about a
+ * schema language this package had made up: that a `secret` descriptor became
+ * a password widget, that `order` sorted the fields, that a `choice` became a
+ * select. None of that is decided here any more — the backend serializes two
+ * interfaces with `plone.restapi` and this helper merges them — so what is
+ * left to test is the merge, and the one thing the merge must never do, which
+ * is have an opinion about a field.
+ */
 import { describe, expect, it } from 'vitest';
-import { createIntl } from 'react-intl';
 
 import {
   CONFIG_PREFIX,
+  MAPPING_FIELDSET,
+  SETTINGS_FIELDSET,
   fromFormData,
-  orderedFields,
-  propertyFor,
-  suggestedProviderId,
   providerSchema,
+  suggestedProviderId,
   toFormData,
 } from './providerSchema';
-import {
-  GROUPS_VOCABULARY,
-  USER_FIELDS_VOCABULARY,
-} from '../constants/vocabularies';
 import type { Driver } from '../types';
 
-const OIDC: Driver = {
-  id: 'oidc-generic',
-  title: 'Generic OIDC',
-  schema: {
-    issuer: {
-      type: 'string',
-      title: 'Issuer',
-      secret: false,
-      required: true,
-      order: 10,
-    },
-    client_secret: {
-      type: 'string',
-      title: 'Client secret',
-      secret: true,
-      order: 30,
-    },
-    timeout: { type: 'int', title: 'Timeout', secret: false, order: 70 },
-    auto_link: { type: 'bool', title: 'Auto link', secret: false, order: 60 },
-    scope: {
-      type: 'string',
-      title: 'Scope',
-      secret: false,
-      default: 'openid email profile',
-      order: 40,
-    },
-    allowed_groups: {
-      type: 'list',
-      title: 'Allowed groups',
-      secret: false,
-      order: 80,
-    },
-    userid_source: {
-      type: 'choice',
-      title: 'Userid taken from',
-      secret: false,
-      default: 'uuid',
-      order: 50,
-      choices: [
-        ['uuid', 'A random id'],
-        ['username', "The provider's username"],
-      ],
-    },
+const intl = {
+  formatMessage: (m: { defaultMessage: string }) => m.defaultMessage,
+} as any;
+
+/** What `@identity-providers` sends: `IProviderRecords`, serialized. */
+const SERVED = {
+  type: 'object',
+  properties: {
+    title: { title: 'Title', type: 'string' },
+    enabled: { title: 'Enabled', type: 'boolean' },
+    icon: { title: 'Icon', type: 'string', widget: 'provider_icon' },
+    background_color: { title: 'Background colour', widget: 'color_picker' },
   },
+  required: ['title'],
+  fieldsets: [
+    { id: 'default', title: 'Default', fields: ['title', 'enabled'] },
+    { id: 'style', title: 'Style', fields: ['icon', 'background_color'] },
+  ],
 };
 
-const GITHUB: Driver = { id: 'github', title: 'GitHub', schema: {} };
-
-/**
- * A driver whose providers have groups.
- *
- * The backend says so by putting a `group_claim` field in the schema, and
- * that is the same switch the form reads. GITHUB above is the other case.
- */
-const WITH_GROUPS: Driver = {
-  id: 'keycloak',
-  title: 'Keycloak',
+/** What one entry of `@identity-drivers` sends: the driver's settings. */
+const GITHUB: Driver = {
+  id: 'github',
+  title: 'GitHub',
   schema: {
-    group_claim: {
-      type: 'string',
-      title: 'Groups arrive in the claim',
-      secret: false,
-      default: 'groups',
-      order: 80,
+    properties: {
+      client_id: { title: 'Client ID', type: 'string' },
+      client_secret: { title: 'Client secret', widget: 'password' },
     },
+    required: ['client_id', 'client_secret'],
+    fieldsets: [
+      {
+        id: 'default',
+        title: 'Default',
+        fields: ['client_id', 'client_secret'],
+      },
+    ],
   },
-};
+} as Driver;
 
-describe('propertyFor', () => {
-  it('renders a secret with the password widget', () => {
-    expect(propertyFor(OIDC.schema.client_secret).widget).toBe('password');
+const DRIVERS = [GITHUB];
+
+describe('providerSchema', () => {
+  it('carries the served properties through untouched', () => {
+    // The point of the whole change: whatever the backend decided about a
+    // field — its widget, its title, its type — arrives unaltered.
+    const schema = providerSchema(SERVED, DRIVERS, 'github', false, intl);
+
+    expect(schema.properties.icon).toEqual(SERVED.properties.icon);
+    expect(schema.properties.background_color).toEqual(
+      SERVED.properties.background_color,
+    );
   });
 
-  it('renders an int as a number', () => {
-    expect(propertyFor(OIDC.schema.timeout).type).toBe('number');
+  it('keeps the backend fieldsets and their order', () => {
+    const schema = providerSchema(SERVED, DRIVERS, 'github', false, intl);
+
+    expect(schema.fieldsets.map((f) => f.id)).toEqual([
+      'default',
+      'style',
+      SETTINGS_FIELDSET,
+      MAPPING_FIELDSET,
+    ]);
   });
 
-  it('renders a bool as a boolean', () => {
-    expect(propertyFor(OIDC.schema.auto_link).type).toBe('boolean');
-  });
+  it('prefixes the driver settings so the two halves cannot collide', () => {
+    // A driver may perfectly well declare a `title`, and it is not the
+    // provider's.
+    const schema = providerSchema(SERVED, DRIVERS, 'github', false, intl);
 
-  it('renders anything else as text', () => {
-    expect(propertyFor(OIDC.schema.issuer).type).toBe('string');
-  });
-
-  it('renders a list as a repeating value, not a text box', () => {
-    // Typing several groups into one input and hoping they are split is
-    // exactly the failure this avoids.
-    expect(propertyFor(OIDC.schema.allowed_groups)).toMatchObject({
-      type: 'array',
-      widget: 'token',
+    expect(schema.properties[`${CONFIG_PREFIX}client_id`]).toEqual({
+      title: 'Client ID',
+      type: 'string',
     });
+    expect(schema.properties.title).toEqual(SERVED.properties.title);
   });
 
-  it('renders a choice as a select over the options the driver names', () => {
-    expect(propertyFor(OIDC.schema.userid_source).choices).toEqual([
-      ['uuid', 'A random id'],
-      ['username', "The provider's username"],
+  it('carries required through from both halves', () => {
+    const schema = providerSchema(SERVED, DRIVERS, 'github', false, intl);
+
+    expect(schema.required).toContain('title');
+    expect(schema.required).toContain(`${CONFIG_PREFIX}client_secret`);
+  });
+
+  it('renders the driver settings in the order the driver declared', () => {
+    const schema = providerSchema(SERVED, DRIVERS, 'github', false, intl);
+    const settings = schema.fieldsets.find((f) => f.id === SETTINGS_FIELDSET);
+
+    expect(settings?.fields).toEqual([
+      `${CONFIG_PREFIX}client_id`,
+      `${CONFIG_PREFIX}client_secret`,
     ]);
   });
 
-  it("carries the driver's default into the form", () => {
-    // A blank scope field is how a GitHub provider ends up configured with
-    // OIDC scopes and never sees an email address.
-    expect(propertyFor(OIDC.schema.scope).default).toBe('openid email profile');
+  it('asks for the driver and the id only while adding', () => {
+    const adding = providerSchema(SERVED, DRIVERS, 'github', true, intl);
+    const editing = providerSchema(SERVED, DRIVERS, 'github', false, intl);
+
+    expect(adding.fieldsets[0].fields.slice(0, 2)).toEqual(['driver', 'id']);
+    expect(editing.properties.driver).toBeUndefined();
+    expect(editing.properties.id).toBeUndefined();
   });
 
-  it('omits default entirely when the driver declares none', () => {
-    expect('default' in propertyFor(OIDC.schema.issuer)).toBe(false);
-  });
+  it('survives a backend that sent no schema', () => {
+    // A client talking to an older backend, or a request that failed. An
+    // empty form is recoverable; a crash on `schema.fieldsets` is not.
+    const schema = providerSchema(undefined, DRIVERS, 'github', false, intl);
 
-  it('carries the driver description through', () => {
-    expect(
-      propertyFor({
-        type: 'string',
-        title: 'X',
-        description: 'why',
-        secret: false,
-      }).description,
-    ).toBe('why');
-  });
-});
-
-describe('orderedFields', () => {
-  it('sorts on the position the driver declared, not the key', () => {
-    // What arrives from the server is alphabetical -- plone.restapi
-    // serialises a schema with sorted keys -- so auto_link would otherwise
-    // render above issuer and client_secret.
-    expect(orderedFields(OIDC.schema).map(([name]) => name)).toEqual([
-      'issuer',
-      'client_secret',
-      'scope',
-      'userid_source',
-      'auto_link',
-      'timeout',
-      'allowed_groups',
+    expect(schema.fieldsets.map((f) => f.id)).toEqual([
+      SETTINGS_FIELDSET,
+      MAPPING_FIELDSET,
     ]);
   });
 
-  it('sinks a field that declares no position, rather than dropping it', () => {
-    const schema = {
-      late: { type: 'string', title: 'Late', secret: false },
-      early: { type: 'string', title: 'Early', secret: false, order: 10 },
-    };
+  it('survives a driver that is not registered', () => {
+    const schema = providerSchema(SERVED, DRIVERS, 'gone', false, intl);
 
-    expect(orderedFields(schema).map(([name]) => name)).toEqual([
-      'early',
-      'late',
+    expect(schema.fieldsets.map((f) => f.id)).toEqual([
+      'default',
+      'style',
+      MAPPING_FIELDSET,
     ]);
-  });
-
-  it('breaks a tie by name, so the result is stable', () => {
-    const schema = {
-      b: { type: 'string', title: 'B', secret: false, order: 10 },
-      a: { type: 'string', title: 'A', secret: false, order: 10 },
-    };
-
-    expect(orderedFields(schema).map(([name]) => name)).toEqual(['a', 'b']);
   });
 });
 
 describe('suggestedProviderId', () => {
-  it('names the provider after the driver', () => {
-    expect(suggestedProviderId([OIDC, GITHUB], 'github')).toBe('github');
-  });
-
-  it('slugifies a title that is not already one', () => {
-    expect(suggestedProviderId([OIDC], 'oidc-generic')).toBe('generic-oidc');
+  it('slugifies the driver title', () => {
+    expect(suggestedProviderId(DRIVERS, 'github')).toBe('github');
   });
 
   it('turns punctuation into separators rather than dropping it', () => {
-    // signinbeta would be a worse id than sign-in-beta, not a shorter one.
-    const driver = { id: 'x', title: 'Sign in (beta)', schema: {} };
+    const drivers = [{ id: 'x', title: 'Sign in (beta)' } as Driver];
 
-    expect(suggestedProviderId([driver], 'x')).toBe('sign-in-beta');
+    expect(suggestedProviderId(drivers, 'x')).toBe('sign-in-beta');
   });
 
-  it("falls back to the driver's own id when the title slugifies to nothing", () => {
-    const driver = { id: 'kerberos', title: '???', schema: {} };
-
-    expect(suggestedProviderId([driver], 'kerberos')).toBe('kerberos');
-  });
-
-  it('suggests nothing before a driver is chosen', () => {
-    expect(suggestedProviderId([OIDC], undefined)).toBe('');
-    expect(suggestedProviderId([OIDC], 'no-such-driver')).toBe('');
-  });
-});
-
-describe('toFormData seeding', () => {
-  it("seeds a new provider's mapping from the driver", () => {
-    const data = toFormData(undefined, {
-      propertymap: { email: 'email', fullname: 'fullname' },
-    });
-
-    // The rows also carry the `@id` the list widget keys on; what matters
-    // here is that the driver's pairs arrived, in its own order.
-    expect(data.propertymap).toMatchObject([
-      { claim: 'email', field: 'email' },
-      { claim: 'fullname', field: 'fullname' },
-    ]);
-  });
-
-  it('seeds nothing when the driver declares no mapping', () => {
-    expect(toFormData(undefined).propertymap).toEqual([]);
-  });
-
-  it("leaves an existing provider's own mapping alone", () => {
-    // Including the deliberate decision to have none: a stored provider is
-    // the whole truth about itself, and a seed here would resurrect rows
-    // somebody removed on purpose.
-    const data = toFormData(
-      { propertymap: {} },
-      { propertymap: { email: 'email' } },
-    );
-
-    expect(data.propertymap).toEqual([]);
-  });
-});
-
-describe('providerSchema', () => {
-  it('asks for an id and a driver only when adding', () => {
-    const adding = providerSchema([OIDC], 'oidc-generic', true, testIntl);
-    const editing = providerSchema([OIDC], 'oidc-generic', false, testIntl);
-
-    expect(adding.properties.id).toBeTruthy();
-    expect(adding.required).toContain('id');
-    expect(editing.properties.id).toBeUndefined();
-  });
-
-  it('offers every installed driver as a choice', () => {
-    const schema = providerSchema([OIDC, GITHUB], undefined, true, testIntl);
-
-    expect(schema.properties.driver.choices).toEqual([
-      ['oidc-generic', 'Generic OIDC'],
-      ['github', 'GitHub'],
-    ]);
-  });
-
-  it('asks which driver before asking anything about it', () => {
-    // The driver decides which fields the rest of the form has at all.
-    const schema = providerSchema([OIDC], 'oidc-generic', true, testIntl);
-
-    expect(schema.fieldsets[0].fields).toEqual([
-      'driver',
-      'id',
-      'title',
-      'enabled',
-      'show_in_login',
-    ]);
-  });
-
-  it("renders the driver's settings in the order it asked for", () => {
-    const schema = providerSchema([OIDC], 'oidc-generic', true, testIntl);
-    const settings = schema.fieldsets.find((f) => f.id === 'settings');
-
-    expect(settings?.fields).toEqual([
-      `${CONFIG_PREFIX}issuer`,
-      `${CONFIG_PREFIX}client_secret`,
-      `${CONFIG_PREFIX}scope`,
-      `${CONFIG_PREFIX}userid_source`,
-      `${CONFIG_PREFIX}auto_link`,
-      `${CONFIG_PREFIX}timeout`,
-      `${CONFIG_PREFIX}allowed_groups`,
-    ]);
-  });
-
-  it('renders the chosen driver fields, namespaced', () => {
-    const schema = providerSchema([OIDC], 'oidc-generic', true, testIntl);
-
-    expect(schema.properties[`${CONFIG_PREFIX}issuer`]).toBeTruthy();
-    // Namespaced so a driver cannot collide with title or enabled.
-    expect(schema.properties.issuer).toBeUndefined();
-  });
-
-  it('carries the driver required flags into the schema', () => {
-    const schema = providerSchema([OIDC], 'oidc-generic', false, testIntl);
-
-    expect(schema.required).toContain(`${CONFIG_PREFIX}issuer`);
-    expect(schema.required).not.toContain(`${CONFIG_PREFIX}timeout`);
-  });
-
-  it('shows no settings fieldset before a driver is chosen', () => {
-    // An empty fieldset reads as a broken form. The style fieldset is always
-    // there: an icon and two colours are the operator's whatever the driver
-    // turns out to be.
-    const schema = providerSchema([OIDC], undefined, true, testIntl);
-
-    expect(schema.fieldsets.map((f) => f.id)).toEqual([
-      'default',
-      'style',
-      'mapping',
-    ]);
-  });
-
-  it('shows no settings fieldset for a driver that declares none', () => {
-    const schema = providerSchema([GITHUB], 'github', true, testIntl);
-
-    expect(schema.fieldsets.map((f) => f.id)).toEqual([
-      'default',
-      'style',
-      'mapping',
-    ]);
-  });
-
-  it('keeps the look in a fieldset of its own', () => {
-    // None of it changes what the provider does, and mixing presentation
-    // into the tab that decides whether people can sign in is how a colour
-    // edit gets made nervously.
-    const schema = providerSchema([OIDC], 'oidc-generic', false, testIntl);
-    const style = schema.fieldsets.find((f) => f.id === 'style');
-
-    expect(style?.fields).toEqual([
-      'icon',
-      'background_color',
-      'foreground_color',
-    ]);
-  });
-
-  it('titles the settings fieldset after the driver', () => {
-    const schema = providerSchema([OIDC], 'oidc-generic', true, testIntl);
-
-    expect(schema.fieldsets[1]).toMatchObject({
-      id: 'settings',
-      title: 'Generic OIDC',
-    });
-  });
-
-  it('takes the user field from the vocabulary', () => {
-    const schema = providerSchema([OIDC], 'oidc-generic', true, testIntl);
-    const rows = schema.properties.propertymap as any;
-
-    expect(rows.widget).toBe('object_list');
-    expect(rows.schema.properties.field.vocabulary).toEqual({
-      '@id': USER_FIELDS_VOCABULARY,
-    });
-    // Claim names come from the provider, so no vocabulary can know them.
-    expect(rows.schema.properties.claim.vocabulary).toBeUndefined();
-  });
-
-  it('survives a driver that is not installed', () => {
-    const schema = providerSchema([], 'gone', false, testIntl);
-
-    expect(schema.fieldsets.map((f) => f.id)).toEqual([
-      'default',
-      'style',
-      'mapping',
-    ]);
+  it('is empty for a driver that is not there', () => {
+    expect(suggestedProviderId(DRIVERS, 'nope')).toBe('');
   });
 });
 
 describe('toFormData', () => {
-  it('defaults a new provider to enabled, shown, with no mapping', () => {
-    expect(toFormData(undefined)).toEqual({
-      enabled: true,
-      show_in_login: true,
-      propertymap: [],
-      groupmap: [],
-    });
-  });
-
-  it('reads a provider stored before show_in_login existed as shown', () => {
-    // Reading the absent key as false would take a site's login buttons away
-    // on upgrade.
-    const data = toFormData({ title: 'Dex', enabled: true });
-
-    expect(data.show_in_login).toBe(true);
-  });
-
-  it('carries the stored look into the form', () => {
+  it('flattens the driver settings under the prefix', () => {
     const data = toFormData({
-      title: 'Dex',
-      icon: '<svg/>',
-      background_color: '#24292f',
+      title: 'GitHub',
+      config: { client_id: 'abc' },
     });
 
-    expect(data.icon).toBe('<svg/>');
-    expect(data.background_color).toBe('#24292f');
-    expect(data.foreground_color).toBe('');
+    expect(data[`${CONFIG_PREFIX}client_id`]).toBe('abc');
   });
 
-  it('flattens config onto prefixed keys', () => {
-    const data = toFormData({
-      title: 'Dex',
-      enabled: true,
-      config: { issuer: 'http://dex' },
-    });
-
-    expect(data[`${CONFIG_PREFIX}issuer`]).toBe('http://dex');
+  it('reads an absent show_in_login as shown', () => {
+    // A provider stored before the setting existed was on the login page, and
+    // reading the key back as false would take a site's buttons away.
+    expect(toFormData({ title: 'x' }).show_in_login).toBe(true);
   });
 
-  it('turns the stored mapping into rows', () => {
-    const data = toFormData({
-      config: {},
-      propertymap: { login: 'username' },
-    });
+  it('hands the icon envelope to the widget unchanged', () => {
+    const envelope = 'filenameb64:aWNvbi5zdmc=;datab64:PHN2Zy8+';
 
-    expect(data.propertymap).toEqual([
-      { '@id': expect.any(String), claim: 'login', field: 'username' },
-    ]);
+    expect(toFormData({ icon: envelope }).icon).toBe(envelope);
   });
 });
 
 describe('fromFormData', () => {
-  it('nests the prefixed keys back under config', () => {
+  it('nests the prefixed settings back under config', () => {
     const payload = fromFormData({
-      title: 'Dex',
-      enabled: true,
-      [`${CONFIG_PREFIX}issuer`]: 'http://dex',
+      title: 'GitHub',
+      [`${CONFIG_PREFIX}client_id`]: 'abc',
     });
 
-    expect(payload.config).toEqual({ issuer: 'http://dex' });
-    expect(payload.title).toBe('Dex');
+    expect(payload.config).toEqual({ client_id: 'abc' });
+    expect(payload.title).toBe('GitHub');
   });
 
-  it('turns rows back into a mapping', () => {
-    const payload = fromFormData({
-      propertymap: [{ '@id': 'a', claim: 'login', field: 'username' }],
-    });
-
-    expect(payload.propertymap).toEqual({ login: 'username' });
-  });
-
-  it('drops the @id Volto adds to form data', () => {
-    const payload = fromFormData({ '@id': '/somewhere', title: 'X' });
+  it('drops the keys Volto adds to its own form data', () => {
+    const payload = fromFormData({ '@id': '/x', title: 'GitHub' });
 
     expect(payload['@id']).toBeUndefined();
   });
 
-  it('trims the id and the title', () => {
-    const payload = fromFormData({ id: '  dex  ', title: '  Dex  ' });
+  it('does not validate anything', () => {
+    // Every rule about what a value may be lives on the backend schema now.
+    // Trimming or correcting here would only hide which value a refusal is
+    // about.
+    const payload = fromFormData({ background_color: '  not a colour  ' });
 
-    expect(payload.id).toBe('dex');
-    expect(payload.title).toBe('Dex');
-  });
-
-  it('trims the colours', () => {
-    // The backend refuses a colour it cannot parse, and a trailing space
-    // pasted from a brand page is not a mistake worth a 400.
-    const payload = fromFormData({ background_color: ' #24292f ' });
-
-    expect(payload.background_color).toBe('#24292f');
-  });
-
-  it('leaves the icon whitespace alone', () => {
-    // It is a document, and the sanitizer strips what it does not want.
-    const payload = fromFormData({ icon: '<svg>\n  <path/>\n</svg>' });
-
-    expect(payload.icon).toBe('<svg>\n  <path/>\n</svg>');
-  });
-
-  it('always sends the visibility flag', () => {
-    // An unchecked checkbox submits nothing, and a PATCH that omitted the
-    // key would leave a provider shown after somebody unticked it.
-    const payload = fromFormData({ title: 'Dex' });
-
-    expect(payload.show_in_login).toBe(false);
-  });
-
-  it('always sends config, even when the driver has no fields', () => {
-    // Otherwise a PATCH would leave the previous config in place rather
-    // than reflecting what the form showed.
-    expect(fromFormData({ title: 'X' }).config).toEqual({});
-  });
-
-  it('coerces enabled to a boolean', () => {
-    expect(fromFormData({}).enabled).toBe(false);
-    expect(fromFormData({ enabled: true }).enabled).toBe(true);
-  });
-});
-
-describe('the group mapping', () => {
-  it('is offered for a driver whose providers have groups', () => {
-    const schema = providerSchema([WITH_GROUPS], 'keycloak', false, testIntl);
-
-    expect(schema.properties.groupmap).toBeTruthy();
-    expect(schema.fieldsets.at(-1).fields).toEqual(['propertymap', 'groupmap']);
-  });
-
-  it('is not offered for a driver that has none', () => {
-    // Asking an operator to map the groups of a magic link is asking a
-    // question with no answer. The backend applies the same switch: a map
-    // stored against such a provider grants nothing.
-    const schema = providerSchema([GITHUB], 'github', false, testIntl);
-
-    expect(schema.properties.groupmap).toBeUndefined();
-    expect(schema.fieldsets.at(-1).fields).toEqual(['propertymap']);
-  });
-
-  it('is not offered before a driver is chosen', () => {
-    const schema = providerSchema([WITH_GROUPS], undefined, true, testIntl);
-
-    expect(schema.properties.groupmap).toBeUndefined();
-  });
-
-  it('picks the local group from a vocabulary, and takes the other as text', () => {
-    // The halves are not symmetric. This site cannot enumerate the far end's
-    // directory, but a local group that does not exist grants nothing -- so
-    // the side we can check is the side we make a picker.
-    const { schema } = providerSchema(
-      [WITH_GROUPS],
-      'keycloak',
-      false,
-      testIntl,
-    ).properties.groupmap as any;
-
-    expect(schema.properties.local.vocabulary).toEqual({
-      '@id': GROUPS_VOCABULARY,
-    });
-    expect(schema.properties.group.type).toBe('string');
-    expect(schema.properties.group.vocabulary).toBeUndefined();
-  });
-
-  it('seeds a new provider from the driver', () => {
-    const data = toFormData(undefined, {
-      groupmap: { editors: 'site-editors' },
-    });
-
-    expect(data.groupmap).toMatchObject([
-      { group: 'editors', local: 'site-editors' },
-    ]);
-  });
-
-  it("leaves an existing provider's own map alone", () => {
-    const data = toFormData(
-      { groupmap: {} },
-      { groupmap: { editors: 'site-editors' } },
-    );
-
-    expect(data.groupmap).toEqual([]);
-  });
-
-  it('turns the stored map into rows and back', () => {
-    const data = toFormData({ config: {}, groupmap: { editors: 'staff' } });
-
-    expect(data.groupmap).toEqual([
-      { '@id': expect.any(String), group: 'editors', local: 'staff' },
-    ]);
-    expect(fromFormData({ groupmap: data.groupmap }).groupmap).toEqual({
-      editors: 'staff',
-    });
-  });
-});
-
-describe('the schema is translatable', () => {
-  // Proof rather than inspection: a catalogue that overrides the ids gives
-  // different labels back. Reading the English out again would pass just as
-  // well with every string hardcoded, which is what this replaces.
-  const pt = createIntl({
-    locale: 'pt-BR',
-    defaultLocale: 'en',
-    onError: () => {},
-    messages: {
-      Title: 'Título',
-      Mapping: 'Mapeamento',
-      'Add a provider': 'Adicionar um provedor',
-      'Attribute mapping': 'Mapeamento de atributos',
-      'Provider claim': 'Claim do provedor',
-    },
-  });
-
-  it('translates a field title', () => {
-    const schema = providerSchema([OIDC], 'oidc-generic', true, pt);
-
-    expect(schema.properties.title.title).toBe('Título');
-  });
-
-  it('translates the form title', () => {
-    const schema = providerSchema([OIDC], 'oidc-generic', true, pt);
-
-    expect(schema.title).toBe('Adicionar um provedor');
-  });
-
-  it('translates a fieldset title', () => {
-    const schema = providerSchema([OIDC], 'oidc-generic', true, pt);
-    const mapping = schema.fieldsets.find((f) => f.id === 'mapping');
-
-    expect(mapping?.title).toBe('Mapeamento');
-  });
-
-  it('translates the mapping widget and its rows', () => {
-    const schema = providerSchema([OIDC], 'oidc-generic', true, pt);
-    const propertymap = schema.properties.propertymap as any;
-
-    expect(propertymap.title).toBe('Mapeamento de atributos');
-    expect(propertymap.schema.properties.claim.title).toBe('Claim do provedor');
-  });
-
-  it("leaves a driver's own field labels as the backend sent them", () => {
-    // They arrive over `@identity-drivers` as plain strings rather than
-    // message ids, so nothing here can translate them. Asserted so the
-    // limitation is visible rather than discovered.
-    const schema = providerSchema([OIDC], 'oidc-generic', true, pt);
-
-    expect(schema.properties[`${CONFIG_PREFIX}issuer`].title).toBe(
-      OIDC.schema.issuer.title,
-    );
+    expect(payload.background_color).toBe('  not a colour  ');
   });
 });

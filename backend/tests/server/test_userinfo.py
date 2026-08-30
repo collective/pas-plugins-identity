@@ -15,10 +15,10 @@ message.
 from . import PROFILE_ID
 from pas.plugins.identity.server.browser.userinfo import UserInfoView
 from pas.plugins.identity.server.pas import PLUGIN_ID
-from pas.plugins.identity.server.tokens import ISSUER_RECORD
-from pas.plugins.identity.server.tokens import mint_access_token
-from pas.plugins.identity.server.tokens import mint_id_token
-from pas.plugins.identity.server.tokens import token_response
+from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
+from pas.plugins.identity.server.grants.tokens import mint_access_token
+from pas.plugins.identity.server.grants.tokens import mint_id_token
+from pas.plugins.identity.server.grants.tokens import token_response
 from plone import api
 
 import json
@@ -68,8 +68,8 @@ def decode_id_token(token: str) -> dict:
     :returns: The validated claims.
     """
     from authlib.jose import JsonWebToken
-    from pas.plugins.identity.server.keys import ALGORITHM
-    from pas.plugins.identity.server.keys import key_set
+    from pas.plugins.identity.server.utils.keys import ALGORITHM
+    from pas.plugins.identity.server.utils.keys import key_set
 
     claims = JsonWebToken([ALGORITHM]).decode(token, key=key_set())
     claims.validate()
@@ -211,7 +211,7 @@ class TestUserInfo:
         """With no denylist (D3), unregistering a client is the only
         revocation this server has -- and it has to reach here too, or
         userinfo becomes the one endpoint a withdrawn client keeps using."""
-        from pas.plugins.identity.server.clients import remove_client
+        from pas.plugins.identity.server.controlpanel.clients import remove_client
 
         token = self.token()
         remove_client("app")

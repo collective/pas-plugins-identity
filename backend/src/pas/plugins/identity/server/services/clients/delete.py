@@ -1,7 +1,7 @@
 """``DELETE @identity-clients/<id>`` -- unregister."""
 
 from pas.plugins.identity.core.interfaces import JSONDict
-from pas.plugins.identity.server.clients import remove_client
+from pas.plugins.identity.server.controlpanel.clients import remove_client
 from pas.plugins.identity.server.interfaces import ServerError
 from pas.plugins.identity.server.services.clients import ClientsService
 

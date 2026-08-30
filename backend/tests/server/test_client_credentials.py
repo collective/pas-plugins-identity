@@ -10,10 +10,10 @@ is a registration mistake somebody has to be able to read.
 
 from . import PROFILE_ID
 from pas.plugins.identity.server.browser.token import TokenView
-from pas.plugins.identity.server.clients import get_clients
-from pas.plugins.identity.server.clients import set_clients
-from pas.plugins.identity.server.tokens import decode_access_token
-from pas.plugins.identity.server.tokens import ISSUER_RECORD
+from pas.plugins.identity.server.controlpanel.clients import get_clients
+from pas.plugins.identity.server.controlpanel.clients import set_clients
+from pas.plugins.identity.server.grants.tokens import decode_access_token
+from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
 from plone import api
 
 import json

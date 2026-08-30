@@ -1,6 +1,7 @@
 """The driver for a Plone site running this same package as an IdP."""
 
 from pas.plugins.identity.core.drivers.oidc import GenericOIDCDriver
+from pas.plugins.identity.core.drivers.settings import IPloneIdentitySettings
 
 
 class PloneIdentityDriver(GenericOIDCDriver):
@@ -14,6 +15,7 @@ class PloneIdentityDriver(GenericOIDCDriver):
     """
 
     driver_id = "plone-identity"
+    settings_schema = IPloneIdentitySettings
     title = "Plone site"
 
     #: ``address`` on top of the generic three.
@@ -65,18 +67,3 @@ class PloneIdentityDriver(GenericOIDCDriver):
     #: here. Two Plone sites in a federation do not have the same groups just
     #: because they run the same package.
     default_groupmap = {}  # noqa: RUF012
-
-    extra_fields = {  # noqa: RUF012
-        "issuer": {
-            "type": "string",
-            "title": "Issuer URL",
-            "required": True,
-            "secret": False,
-            "description": (
-                "The other site's URL, as it serves "
-                "/.well-known/openid-configuration -- for a Plone site that "
-                "is the site root, with no path segment after it."
-            ),
-            "order": 10,
-        },
-    }

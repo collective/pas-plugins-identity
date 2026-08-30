@@ -208,7 +208,7 @@ preview = true
 "src/pas/plugins/identity/core/pas/profile.py" = ["A002"]
 # A002: ``id``/``title`` are the Zope factory signature here too.
 "src/pas/plugins/identity/server/pas.py" = ["A002"]
-"src/pas/plugins/identity/server/session.py" = ["A002"]
+"src/pas/plugins/identity/server/utils/session.py" = ["A002"]
 # A002: ``id`` is the IUserEnumerationPlugin and IGroupEnumerationPlugin
 # signature. PAS calls these by keyword, so the name is the contract.
 "tests/core/pas/stubs.py" = ["A002"]

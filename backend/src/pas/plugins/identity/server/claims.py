@@ -144,7 +144,7 @@ def portrait_url(userid: str) -> str:
     :returns: An absolute URL, or an empty string.
     """
     from pas.plugins.identity.core.portraits import has_picture
-    from pas.plugins.identity.server.tokens import ISSUER_RECORD
+    from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
 
     if not has_picture(userid):
         return ""

@@ -15,7 +15,7 @@ class TestGitHubDriver:
     def test_userid_defaults_to_the_login(self):
         """A GitHub login is unique on the provider and readable here, so it
         beats 32 hex characters as a Plone userid."""
-        assert self.driver.config_schema()["userid_source"]["default"] == "username"
+        assert self.driver.default_userid_source == "username"
 
     def test_subject_is_numeric_id_as_string(self):
         """The numeric id is stringified so the store key is stable."""

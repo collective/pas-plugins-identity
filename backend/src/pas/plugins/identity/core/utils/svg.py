@@ -33,6 +33,7 @@ Parsing is ``defusedxml``: an SVG is XML, and the entity-expansion attacks
 against an XML parser are older than the scripting ones.
 """
 
+from binascii import Error as BinasciiError
 from defusedxml import ElementTree as DefusedET
 from xml.etree import ElementTree as ET
 
@@ -139,6 +140,14 @@ class InvalidSVG(ValueError):
     """Raised when an icon cannot be stored as an SVG document."""
 
 
+#: How a file widget marks an upload rather than pasted source.
+#:
+#: The envelope Plone's own ``site_logo`` is stored in, produced by
+#: ``plone.formwidget.namedfile``. No SVG document can begin with it, so the
+#: prefix is an exact test rather than a guess.
+UPLOAD_PREFIX = "filenameb64:"
+
+
 def _localname(tag: str) -> str:
     """Return an element or attribute name without its namespace.
 
@@ -215,4 +224,82 @@ def sanitize(source: str) -> str:
     return ET.tostring(cleaned, encoding="unicode")
 
 
-__all__ = ["ALLOWED_ATTRIBUTES", "ALLOWED_ELEMENTS", "InvalidSVG", "sanitize"]
+def decode_upload(value: object) -> str:
+    """Return the SVG source inside an uploaded value.
+
+    Two shapes reach this, and both are ordinary. A form sends what Plone's
+    own file widgets send -- ``filenameb64:<name>;datab64:<bytes>``, the
+    envelope ``site_logo`` is stored in -- while an import, a test or a
+    GenericSetup profile sends the source itself. Telling them apart on the
+    prefix is exact: no SVG document begins with ``filenameb64:``.
+
+    :param value: The uploaded value, as text or bytes.
+    :returns: The SVG source, unsanitized. The empty string when nothing was
+        supplied, because clearing an icon is an ordinary edit.
+    :raises InvalidSVG: When the envelope is malformed, or its payload is not
+        valid base64.
+    """
+    from plone.formwidget.namedfile.converter import b64decode_file
+
+    if not value:
+        return ""
+    text = value.decode("utf-8", "replace") if isinstance(value, bytes) else str(value)
+    if not text.startswith(UPLOAD_PREFIX):
+        return text
+    try:
+        _filename, data = b64decode_file(text.encode("utf-8"))
+    except (ValueError, TypeError, BinasciiError) as exc:
+        raise InvalidSVG(f"the uploaded file could not be decoded: {exc}") from exc
+    return data.decode("utf-8", "replace")
+
+
+def encode_upload(source: str, filename: str = "icon.svg") -> bytes:
+    """Wrap SVG source in the envelope a file widget round-trips.
+
+    What is wrapped is whatever the caller hands over, so callers wrap the
+    *sanitized* source -- the dangerous version must never reach the registry,
+    a GenericSetup export, or a form that hands it back.
+
+    :param source: The SVG source to carry.
+    :param filename: Name to record. Only the widget's label uses it.
+    :returns: The envelope, or empty bytes for an empty icon.
+    """
+    from plone.formwidget.namedfile.converter import b64encode_file
+
+    if not source:
+        return b""
+    return b64encode_file(filename, source.encode("utf-8"))
+
+
+def is_svg_upload(value: object) -> bool:
+    """Refuse an uploaded file that is not an SVG document.
+
+    A field constraint, so the refusal happens where every other schema
+    refusal happens rather than somewhere further in. It runs the real parser
+    rather than sniffing the extension or the MIME type the browser guessed:
+    an icon is inlined into the login page as markup, so "is this SVG" is a
+    question about the bytes and nothing else.
+
+    :param value: The uploaded value.
+    :returns: True, or the constraint has raised.
+    :raises InvalidSVG: When the upload is not an SVG document this package
+        will store. The message names what was wrong with it.
+    """
+    if not value:
+        # Clearing the icon. A required field is what says an icon is
+        # mandatory, and this one deliberately is not.
+        return True
+    sanitize(decode_upload(value))
+    return True
+
+
+__all__ = [
+    "ALLOWED_ATTRIBUTES",
+    "ALLOWED_ELEMENTS",
+    "UPLOAD_PREFIX",
+    "InvalidSVG",
+    "decode_upload",
+    "encode_upload",
+    "is_svg_upload",
+    "sanitize",
+]

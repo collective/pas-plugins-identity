@@ -21,4 +21,4 @@ class TestGenericOIDCDriver:
 
     def test_issuer_is_required(self):
         """Discovery needs an issuer; the control panel must enforce it."""
-        assert self.driver.config_schema()["issuer"]["required"] is True
+        assert self.driver.settings_schema["issuer"].required is True

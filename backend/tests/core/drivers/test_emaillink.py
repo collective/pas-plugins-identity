@@ -31,4 +31,4 @@ class TestEmailDriver:
 
     def test_ttl_default_is_fifteen_minutes(self):
         """The default matches the ceiling the token layer enforces."""
-        assert self.driver.config_schema()["token_ttl"]["default"] == 900
+        assert self.driver.settings_schema["token_ttl"].default == 900
