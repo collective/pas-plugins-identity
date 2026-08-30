@@ -20,42 +20,56 @@ CLAIMS = {
 
 
 class TestResolveClaim:
-    def test_normalized_claim_wins(self):
-        """The package's own derivation beats the raw payload."""
-        assert resolve_claim("fullname", CLAIMS) == "Ada Lovelace"
+    """One lookup, ten answers.
 
-    def test_falls_through_to_raw(self):
-        """A key the normalization does not produce still resolves."""
-        assert resolve_claim("login", CLAIMS) == "ada"
+    Every case is the same call with a different path, so the table *is* the
+    test; what used to be nine near-identical methods is the nine rows below.
+    The reasoning that lived in their docstrings lives in the comments beside
+    the rows it explains.
+    """
 
-    def test_empty_normalized_falls_through_to_raw(self):
-        """A blank normalized value is not an answer."""
-        # ``username`` is normalized to "" here while the raw payload has a
-        # usable ``login``; mapping ``username`` must not yield "".
-        assert resolve_claim("username", CLAIMS) is None
-
-    def test_dotted_path_reaches_into_raw(self):
-        """Nesting is addressed by path rather than by a nested map."""
-        assert resolve_claim("address.formatted", CLAIMS) == "London"
-
-    def test_unknown_path_is_none(self):
-        assert resolve_claim("nope.not.here", CLAIMS) is None
-
-    def test_empty_path_is_none(self):
-        assert resolve_claim("", CLAIMS) is None
-
-    def test_path_through_a_non_mapping_is_none(self):
-        """Walking into a string must not raise."""
-        assert resolve_claim("email.something", CLAIMS) is None
-
-    def test_empty_leaf_is_none(self):
-        assert resolve_claim("address.country", CLAIMS) is None
-
-    def test_non_string_value_survives(self):
-        assert resolve_claim("groups", CLAIMS) == ["staff", "math"]
+    @pytest.mark.parametrize(
+        "path,expected",
+        [
+            # The package's own derivation beats the raw payload.
+            ("fullname", "Ada Lovelace"),
+            # A key the normalization does not produce still resolves.
+            ("login", "ada"),
+            # A blank normalized value is not an answer: ``username`` is
+            # normalized to "" here while the raw payload has a usable
+            # ``login``, and mapping ``username`` must not yield "".
+            ("username", None),
+            # Nesting is addressed by path rather than by a nested map.
+            ("address.formatted", "London"),
+            ("nope.not.here", None),
+            ("", None),
+            # Walking into a string must not raise.
+            ("email.something", None),
+            ("address.country", None),
+            ("groups", ["staff", "math"]),
+        ],
+        ids=[
+            "normalized-claim-wins",
+            "falls-through-to-raw",
+            "empty-normalized-falls-through-to-raw",
+            "dotted-path-reaches-into-raw",
+            "unknown-path-is-none",
+            "empty-path-is-none",
+            "path-through-a-non-mapping-is-none",
+            "empty-leaf-is-none",
+            "non-string-value-survives",
+        ],
+    )
+    def test_resolution(self, path: str, expected):
+        assert resolve_claim(path, CLAIMS) == expected
 
     def test_missing_raw_is_tolerated(self):
-        """Claims built by hand need not carry a raw payload."""
+        """Claims built by hand need not carry a raw payload.
+
+        Left out of the table above because it is the one case with a
+        different payload, and folding it in would have meant a column that
+        is the same value in every other row.
+        """
         assert resolve_claim("email", {"email": "x@example.org"}) == "x@example.org"
 
 

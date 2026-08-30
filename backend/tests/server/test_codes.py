@@ -157,23 +157,27 @@ class TestCheckChallenge:
     def test_a_missing_challenge_is_allowed_when_not_required(self):
         assert check_challenge("", "", required=False) == ""
 
-    def test_a_missing_challenge_is_refused_when_required(self):
-        """S8: public clients must use PKCE."""
-        with pytest.raises(ChallengeError, match="must use PKCE"):
-            check_challenge("", "", required=True)
-
-    def test_plain_is_refused(self):
-        """`plain` puts the verifier in the authorization request, which is
-        the exact place PKCE exists to protect."""
-        with pytest.raises(ChallengeError, match="Unsupported"):
-            check_challenge("abc", "plain", required=True)
-
-    def test_an_omitted_method_is_refused(self):
-        """RFC 7636 defaults it to `plain`, which this server does not accept.
-        Saying so beats silently treating it as S256 and failing later with
-        something that reads like a client bug."""
-        with pytest.raises(ChallengeError, match="must be S256"):
-            check_challenge("abc", "", required=False)
+    @pytest.mark.parametrize(
+        "challenge,method,required,message",
+        [
+            # S8: public clients must use PKCE.
+            ("", "", True, "must use PKCE"),
+            # `plain` puts the verifier in the authorization request, which
+            # is the exact place PKCE exists to protect.
+            ("abc", "plain", True, "Unsupported"),
+            # RFC 7636 defaults an omitted method to `plain`, which this
+            # server does not accept. Saying so beats silently treating it as
+            # S256 and failing later with something that reads like a client
+            # bug.
+            ("abc", "", False, "must be S256"),
+        ],
+        ids=["a-missing-challenge-when-required", "plain", "an-omitted-method"],
+    )
+    def test_it_is_refused(
+        self, challenge: str, method: str, required: bool, message: str
+    ):
+        with pytest.raises(ChallengeError, match=message):
+            check_challenge(challenge, method, required=required)
 
 
 class TestSweeping:

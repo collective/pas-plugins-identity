@@ -1,0 +1,7 @@
+Seven groups of near-identical tests became tables.
+
+Normalising every test body to its structure — literals replaced by a placeholder — found 56 groups within a class whose members differed only in their constants. Most are pairs, and folding a pair trades a sentence of real explanation for a param id, so the pairs were left alone. The groups of three and more were not: there the shape never varied, only the case did, and the case is what a table carries better than a method name.
+
+`TestResolveClaim` had nine methods that were one call each; `TestDropsWhatRuns` had eight, one per way of getting script or network access past an element-name filter. Both now read as the thing they always were — a lookup table and a threat model. The reasoning that lived in the docstrings lives in comments beside the rows it explains, and every case keeps its name through `ids=`.
+
+Also folded: `TestKeepsWhatAnIconNeeds`, `TestTheDocument`, `TestCheckChallenge`, `TestSearching` and `TestTheStore`. No case was lost — the suite goes from 2401 tests to 2413, and the twelve added are the new publisher tests. @ericof

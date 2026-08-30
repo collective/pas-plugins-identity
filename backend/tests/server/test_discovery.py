@@ -67,11 +67,6 @@ class TestTheDocument:
     def test_it_advertises_the_algorithm_actually_used(self):
         assert self.doc["id_token_signing_alg_values_supported"] == [ALGORITHM]
 
-    def test_it_advertises_only_s256(self):
-        """`plain` is in RFC 7636 and worth nothing: it puts the verifier in
-        the authorization request, which is what PKCE protects."""
-        assert self.doc["code_challenge_methods_supported"] == ["S256"]
-
     def test_it_advertises_the_grants_the_token_endpoint_serves(self):
         from pas.plugins.identity.server.browser.token import GRANT_TYPES
 
@@ -82,16 +77,28 @@ class TestTheDocument:
 
         assert set(self.doc["scopes_supported"]) == {"openid", *SCOPE_CLAIMS}
 
-    def test_only_the_code_flow_is_offered(self):
-        """OAuth 2.1 removes the implicit grant and this server has no reason
-        to put a token in a URL fragment."""
-        assert self.doc["response_types_supported"] == ["code"]
-
-    def test_subjects_are_public(self):
-        """`sub` is the Plone userid and every relying party sees the same
-        one. Pairwise subjects would need a per-client mapping this server
-        does not keep."""
-        assert self.doc["subject_types_supported"] == ["public"]
+    @pytest.mark.parametrize(
+        "key,advertised",
+        [
+            # `plain` is in RFC 7636 and worth nothing: it puts the verifier
+            # in the authorization request, which is what PKCE protects.
+            ("code_challenge_methods_supported", ["S256"]),
+            # OAuth 2.1 removes the implicit grant, and this server has no
+            # reason to put a token in a URL fragment.
+            ("response_types_supported", ["code"]),
+            # `sub` is the Plone userid and every relying party sees the same
+            # one. Pairwise subjects would need a per-client mapping this
+            # server does not keep.
+            ("subject_types_supported", ["public"]),
+        ],
+        ids=["only-s256", "only-the-code-flow", "public-subjects"],
+    )
+    def test_the_document_offers_exactly_one_option(self, key: str, advertised: list):
+        """Three places where the choice is deliberate and the list is one
+        item long. Asserting equality rather than membership is the point:
+        each of these would be a downgrade if anything else appeared beside
+        it."""
+        assert self.doc[key] == advertised
 
     def test_it_is_byte_stable(self):
         """A client that caches the document and diffs it on change should

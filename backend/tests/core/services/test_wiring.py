@@ -39,7 +39,7 @@ PNG = (
 
 
 @pytest.fixture
-def site(functional):
+def portal(functional):
     """Return the portal from the functional layer, with a provider set up."""
     portal = functional["portal"]
     set_providers([ProviderConfig.deserialize(DEX_PROVIDER)])
@@ -49,13 +49,13 @@ def site(functional):
 
 
 @pytest.fixture
-def url(site) -> str:
+def url(portal) -> str:
     """Return the portal URL as served by the test WSGI server.
 
-    :param site: The portal.
+    :param portal: The portal.
     :returns: The URL.
     """
-    return site.absolute_url()
+    return portal.absolute_url()
 
 
 class TestPublished:
@@ -250,22 +250,25 @@ class TestPublished:
 
 
 @pytest.fixture
-def principals(site):
+def principals(portal):
     """Create one Profile and one Group for the principal services to answer about.
 
     The three services below read principals rather than configuration, so
-    unlike the rest of this module they need something to read. The container
-    is created here the way a first login would: ``tests/core/conftest.py``
-    does it for the modules that use a ``portal`` fixture, and this one runs
-    on the functional layer.
+    unlike the rest of this module they need something to read.
 
-    :param site: The Plone site.
+    The Profile container is not created here. ``tests/core/conftest.py``'s
+    autouse ``_profile_container`` makes it, having found this module's
+    ``portal`` through ``request.fixturenames`` -- which is what that lookup
+    exists for, and the reason the fixture above is named ``portal`` rather
+    than something local. The Group container is a different registry setting
+    and still has to be asked for.
+
+    :param portal: The Plone site.
     :returns: The Profile's userid.
     """
     with api.env.adopt_roles(["Manager"]):
-        container = get_container(create=True)
         api.content.create(
-            container=container,
+            container=portal["identity-profiles"],
             type=PROFILE_PORTAL_TYPE,
             id=USERID,
             userid=USERID,

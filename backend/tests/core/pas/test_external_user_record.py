@@ -15,7 +15,7 @@ The plugin does not create the object itself. A subscriber to
 credential to whoever owns one -- and the subscriber below is this module's
 stand-in for the shipped one, with a stub type in place of ``UserProfile``.
 Using the real type here would prove only that the plugin works with the one
-type this package happens to ship; see ``tests/core/test_external_user_record.py``
+type this package happens to ship; see ``tests/core/test_shipped_user_record.py``
 for that half.
 """
 

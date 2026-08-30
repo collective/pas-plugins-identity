@@ -7,11 +7,16 @@ twice over -- once as a row nothing keeps in step, once as the object that is
 actually the user.
 
 Core declines that row on a site that keeps its users as content, and the
-the shipped subscriber creates the Profile from the login event.
+shipped subscriber creates the Profile from the login event.
 :mod:`tests.core.pas.test_external_user_record` proves core's half against a
 stub type and a stand-in subscriber; this module is the shipped pair, because
 a plugin that declines correctly and a layer that claims correctly can still
 fail to add up to a user.
+
+Named apart from that module rather than beside it. The two used to share the
+basename ``test_external_user_record.py`` in different directories, which put
+the whole of one of them a single mistyped path away from being overwritten
+by a tool that reports "updated" rather than refusing.
 """
 
 from pas.plugins.identity.core.pas import EXTRACTOR

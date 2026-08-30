@@ -117,15 +117,17 @@ class TestTheStore:
 
         assert self.store.granted("alice", "app", "") is True
 
-    def test_agreements_do_not_leak_between_users(self):
+    @pytest.mark.parametrize(
+        "userid,client_id",
+        [("bob", "app"), ("alice", "other")],
+        ids=["between-users", "between-clients"],
+    )
+    def test_agreements_do_not_leak(self, userid: str, client_id: str):
+        """An agreement names both a person and an application, and changing
+        either one is a different agreement."""
         self.store.record("alice", "app", "read")
 
-        assert self.store.granted("bob", "app", "read") is False
-
-    def test_agreements_do_not_leak_between_clients(self):
-        self.store.record("alice", "app", "read")
-
-        assert self.store.granted("alice", "other", "read") is False
+        assert self.store.granted(userid, client_id, "read") is False
 
 
 class TestThePrompt:

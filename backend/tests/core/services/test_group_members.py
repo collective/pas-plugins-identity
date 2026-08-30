@@ -198,23 +198,22 @@ class TestSearching(GroupMembersCase):
         self.member("alice", "staff", fullname="Alice Liddell")
         self.member("bob", "staff", fullname="Bob Cratchit")
 
-    def test_matches_a_full_name(self):
-        """Searching *within* a group is the thing @groups cannot do."""
-        ids = [i["id"] for i in self.listing("staff", query="liddell")["items"]]
+    @pytest.mark.parametrize(
+        "query,found",
+        [
+            # Searching *within* a group is the thing @groups cannot do.
+            ("liddell", "alice"),
+            # People are looked up by full name or by login.
+            ("bob@", "bob"),
+            # Nobody types the case a name was stored in.
+            ("ALICE", "alice"),
+        ],
+        ids=["a-full-name", "a-login", "the-wrong-case"],
+    )
+    def test_it_matches(self, query: str, found: str):
+        ids = [i["id"] for i in self.listing("staff", query=query)["items"]]
 
-        assert ids == ["alice"]
-
-    def test_matches_a_login(self):
-        """People are looked up by either."""
-        ids = [i["id"] for i in self.listing("staff", query="bob@")["items"]]
-
-        assert ids == ["bob"]
-
-    def test_is_case_insensitive(self):
-        """Nobody types the case a name was stored in."""
-        ids = [i["id"] for i in self.listing("staff", query="ALICE")["items"]]
-
-        assert ids == ["alice"]
+        assert ids == [found]
 
     def test_an_empty_query_returns_everybody(self):
         """A blank search box is not a filter."""

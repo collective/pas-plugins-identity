@@ -1,0 +1,10 @@
+Four test modules moved to where their subject already lives.
+
+`tests/core/` held 21 modules directly beside fifteen subdirectories that already had names for most of what they test. Mapping each flat module to the source modules it imports separated the misfiled from the genuinely cross-cutting:
+
+- `test_export.py` imports only `core.controlpanel`, and is now in `tests/core/controlpanel/`.
+- `test_property_writes.py` and `test_groups.py` are both about `core.pas.profile`, and are now in `tests/core/pas/`.
+
+What stays flat stays for a reason. `test_uninstalled_site.py` reaches eleven source modules and `test_login_ordering.py` five; those are claims about the package as a whole, and a flat module is the honest place for them.
+
+The fourth move is a rename. Two modules were called `test_external_user_record.py`, one in `tests/core/` and one in `tests/core/pas/`, testing the same feature at two levels and cross-referencing each other to explain the split. The split is right; the shared basename put each of them one mistyped path away from silently replacing the other. The integration half is now `test_shipped_user_record.py`, which is also what it is. @ericof

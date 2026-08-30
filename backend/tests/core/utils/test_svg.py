@@ -21,6 +21,11 @@ ICON = (
 )
 
 
+#: The opening tag every attack below is wrapped in, bar the one that
+#: carries its payload on the root element itself.
+ROOT = '<svg xmlns="http://www.w3.org/2000/svg">'
+
+
 class TestKeepsWhatAnIconNeeds:
     def test_the_root_survives(self):
         """An ordinary icon comes back as an SVG document."""
@@ -33,17 +38,20 @@ class TestKeepsWhatAnIconNeeds:
         assert 'd="M8 0a8 8 0 0 0-2.5 15.6"' in result
         assert 'viewBox="0 0 16 16"' in result
 
-    def test_presentation_survives(self):
-        """A fill is what makes a monochrome icon the brand's colour."""
-        assert 'fill="#24292f"' in sanitize(ICON)
-
-    def test_the_title_survives_with_its_text(self):
-        """It is what a screen reader announces."""
-        assert "<title>GitHub</title>" in sanitize(ICON)
-
-    def test_the_namespace_is_written_back(self):
-        """Without it a browser renders nothing at all."""
-        assert 'xmlns="http://www.w3.org/2000/svg"' in sanitize(ICON)
+    @pytest.mark.parametrize(
+        "fragment",
+        [
+            # A fill is what makes a monochrome icon the brand's colour.
+            'fill="#24292f"',
+            # The title is what a screen reader announces.
+            "<title>GitHub</title>",
+            # Without the namespace a browser renders nothing at all.
+            'xmlns="http://www.w3.org/2000/svg"',
+        ],
+        ids=["presentation", "the-title-with-its-text", "the-namespace"],
+    )
+    def test_it_survives(self, fragment: str):
+        assert fragment in sanitize(ICON)
 
     def test_empty_is_not_an_error(self):
         """Clearing an icon is an ordinary edit."""
@@ -52,96 +60,94 @@ class TestKeepsWhatAnIconNeeds:
 
 
 class TestDropsWhatRuns:
-    def test_a_script_element_goes_with_its_text(self):
-        """Unwrapping it would keep the payload, which is the whole element."""
-        source = (
-            '<svg xmlns="http://www.w3.org/2000/svg">'
-            '<script>fetch("//evil.example")</script>'
-            '<path d="M0 0"/>'
-            "</svg>"
-        )
+    """The sanitizer's threat model, as a table.
 
+    Each row is one way to get script, network access or markup past a filter
+    that looked at element names alone. They were eight near-identical methods
+    before; the shape never varied, only the attack did, so the attack is what
+    the table carries.
+    """
+
+    #: ``(source, what must be gone, what must survive)``. The root element
+    #: is written out per row rather than wrapped around a fragment, because
+    #: one of these attacks is *on* the root.
+    ATTACKS = [
+        (
+            # Unwrapping it would keep the payload, which is the whole element.
+            f'{ROOT}<script>fetch("//evil.example")</script><path d="M0 0"/></svg>',
+            ("script", "evil.example"),
+            ('d="M0 0"',),
+        ),
+        (
+            # Excluded by the allowlist rather than by matching ``on*``.
+            '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"/>',
+            ("onload",),
+            (),
+        ),
+        (
+            # foreignObject is the documented way to put a whole HTML
+            # document inside an SVG.
+            f'{ROOT}<foreignObject><iframe src="//evil.example"/>'
+            f"</foreignObject></svg>",
+            ("foreignObject", "iframe"),
+            (),
+        ),
+        (
+            # CSS is a second language, and it can fetch.
+            f"{ROOT}<style>@import url(//evil.example)</style></svg>",
+            ("evil.example",),
+            (),
+        ),
+        (
+            # Same reason, in the place people forget to look.
+            f'{ROOT}<path d="M0 0" style="background:url(//evil.example)"/></svg>',
+            ("evil.example",),
+            (),
+        ),
+        (
+            # A ``use`` pulls in a document from somewhere else.
+            f'{ROOT}<use href="https://evil.example/x.svg#i"/></svg>',
+            ("use", "evil.example"),
+            (),
+        ),
+        (
+            # The element is fine; what it points at is not.
+            f'{ROOT}<path d="M0 0" fill="url(#x)"/></svg>',
+            ("url(#x)",),
+            ('d="M0 0"',),
+        ),
+        (
+            # A shape's text means nothing in SVG, so keeping it is only a
+            # way past a filter that looked at tags alone.
+            f'{ROOT}<path d="M0 0">alert(1)</path></svg>',
+            ("alert(1)",),
+            (),
+        ),
+    ]
+
+    @pytest.mark.parametrize(
+        "source,must_go,must_stay",
+        ATTACKS,
+        ids=[
+            "a-script-element-goes-with-its-text",
+            "an-event-handler-is-not-an-allowed-attribute",
+            "foreign-object-is-arbitrary-html",
+            "a-style-element-goes",
+            "a-style-attribute-goes",
+            "an-external-reference-goes",
+            "a-url-valued-attribute-goes-even-on-an-allowed-element",
+            "text-content-on-a-shape-is-dropped",
+        ],
+    )
+    def test_it_is_removed(
+        self, source: str, must_go: tuple[str, ...], must_stay: tuple[str, ...]
+    ):
         result = sanitize(source)
 
-        assert "script" not in result
-        assert "evil.example" not in result
-        assert 'd="M0 0"' in result
-
-    def test_an_event_handler_is_not_an_allowed_attribute(self):
-        """Excluded by the allowlist rather than by matching ``on*``."""
-        source = '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"/>'
-
-        assert "onload" not in sanitize(source)
-
-    def test_foreign_object_is_arbitrary_html(self):
-        """It is the documented way to put a whole HTML document in an SVG."""
-        source = (
-            '<svg xmlns="http://www.w3.org/2000/svg">'
-            '<foreignObject><iframe src="//evil.example"/></foreignObject>'
-            "</svg>"
-        )
-
-        result = sanitize(source)
-
-        assert "foreignObject" not in result
-        assert "iframe" not in result
-
-    def test_a_style_element_goes(self):
-        """CSS is a second language, and it can fetch."""
-        source = (
-            '<svg xmlns="http://www.w3.org/2000/svg">'
-            "<style>@import url(//evil.example)</style>"
-            "</svg>"
-        )
-
-        assert "evil.example" not in sanitize(source)
-
-    def test_a_style_attribute_goes(self):
-        """Same reason, in the place people forget to look."""
-        source = (
-            '<svg xmlns="http://www.w3.org/2000/svg">'
-            '<path d="M0 0" style="background:url(//evil.example)"/>'
-            "</svg>"
-        )
-
-        assert "evil.example" not in sanitize(source)
-
-    def test_an_external_reference_goes(self):
-        """A ``use`` pulls in a document from somewhere else."""
-        source = (
-            '<svg xmlns="http://www.w3.org/2000/svg">'
-            '<use href="https://evil.example/x.svg#i"/>'
-            "</svg>"
-        )
-
-        result = sanitize(source)
-
-        assert "use" not in result
-        assert "evil.example" not in result
-
-    def test_a_url_valued_attribute_goes_even_on_an_allowed_element(self):
-        """The element is fine; what it points at is not."""
-        source = (
-            '<svg xmlns="http://www.w3.org/2000/svg">'
-            '<path d="M0 0" fill="url(#x)"/>'
-            "</svg>"
-        )
-
-        result = sanitize(source)
-
-        assert 'd="M0 0"' in result
-        assert "url(#x)" not in result
-
-    def test_text_content_on_a_shape_is_dropped(self):
-        """A shape's text means nothing in SVG, so keeping it is only a way
-        past a filter that looked at tags alone."""
-        source = (
-            '<svg xmlns="http://www.w3.org/2000/svg">'
-            '<path d="M0 0">alert(1)</path>'
-            "</svg>"
-        )
-
-        assert "alert(1)" not in sanitize(source)
+        for fragment in must_go:
+            assert fragment not in result
+        for fragment in must_stay:
+            assert fragment in result
 
 
 class TestRefuses:
