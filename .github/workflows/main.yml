@@ -35,13 +35,19 @@ jobs:
       contents: read
       packages: write
 
+  # Built whenever the docs changed, and unconditionally on the branch that
+  # publishes. `deploy-docs` assembles this run's artifacts, and
+  # `download-artifact` only ever looks in this run -- so a push that changes
+  # no docs path would leave the deploy with nothing to fetch, and the
+  # published site would have to be stale or the deploy red. Building it is
+  # cheaper than either.
   docs:
     uses: ./.github/workflows/docs.yaml
     needs:
         - config
     with:
         python-version: ${{ needs.config.outputs.python-version }}
-    if: ${{ needs.config.outputs.docs == 'true' }}
+    if: ${{ needs.config.outputs.docs == 'true' || (needs.config.outputs.deploy-docs == 'true' && github.ref == 'refs/heads/main') }}
     permissions:
       contents: read
 
@@ -92,11 +98,13 @@ jobs:
       pages: write
       id-token: write
     with:
-      # A skipped job reports no outputs, so fall back to the name the builder
-      # would have computed. Both halves are rebuilt together, so an artifact
-      # from this same ref is the current one either way.
-      artifacts-docs-name: ${{ needs.docs.outputs.artifacts-name || format('docs-artifacts-{0}', github.ref_name) }}
-      artifacts-storybook-name: ${{ needs.storybook.outputs.artifacts-name || format('storybook-artifacts-{0}', github.ref_name) }}
+      # Both builders run on this branch, so both artifacts exist in this run.
+      # The fallback that used to be here named an artifact rather than
+      # producing one, and `download-artifact` only looks in the current run --
+      # so it turned a skipped builder into a failed deploy instead of
+      # rescuing it.
+      artifacts-docs-name: ${{ needs.docs.outputs.artifacts-name }}
+      artifacts-storybook-name: ${{ needs.storybook.outputs.artifacts-name }}
 
   report:
     name: "Final report"

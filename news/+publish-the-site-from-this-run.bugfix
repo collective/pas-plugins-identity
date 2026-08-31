@@ -1,0 +1,5 @@
+A push that changes no documentation no longer breaks the published site.
+
+`deploy-docs` assembles the artifacts uploaded by this run, and `download-artifact` only ever looks in this run. The docs job is path-filtered, so a backend-only push skipped it, left no artifact to fetch, and failed the deploy on its first step — with the site's own content unchanged and perfectly publishable.
+
+The fallback that was supposed to cover this named the artifact the skipped builder would have produced, which is a name rather than a file: it turned a skipped job into a failed deploy instead of rescuing it. Documentation and Storybook are both built unconditionally on the branch that publishes now, so the site always matches the commit it was built from, and the deploy takes its inputs from the jobs that actually ran. @ericof
