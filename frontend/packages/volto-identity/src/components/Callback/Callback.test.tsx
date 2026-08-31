@@ -102,6 +102,32 @@ describe('Callback', () => {
     expect(screen.getByTestId('where').textContent).toBe('/some/page');
   });
 
+  it('resumes an authorization request instead of routing to it', () => {
+    // The demo stack, end to end: the relying party sends the browser to
+    // `@@oauth-authorize`, the backend has no session yet and bounces it
+    // through `require_login`, and Plone hands `came_from` back
+    // *site-relative*. Routing that renders Volto's 404 at exactly the
+    // authorization URL, with the request's parameters replaced by Volto's
+    // own `expand=` ones -- so the relying party gets neither a code nor an
+    // error (Érico, 2026-08-30).
+    renderCallback({
+      identityCallback: {
+        loaded: true,
+        data: {
+          token: 'a-token',
+          came_from: '/@@oauth-authorize?response_type=code&client_id=demo-rp',
+        },
+      },
+      magicLinkConfirm: {},
+    });
+
+    // The router stayed where it was: this is a real navigation.
+    expect(screen.getByTestId('where').textContent).toBe('/login-identity');
+    expect(window.location.href).toBe(
+      '/@@oauth-authorize?response_type=code&client_id=demo-rp',
+    );
+  });
+
   it('falls back to the site root when the flow named nowhere', () => {
     renderCallback({
       identityCallback: { loaded: true, data: { token: 'a-token' } },

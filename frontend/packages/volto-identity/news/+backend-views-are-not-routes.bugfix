@@ -1,0 +1,7 @@
+Signing in to a relying party through this provider no longer ends on a Volto 404.
+
+The whole flow, from the demo stack: the relying party sends a browser to `@@oauth-authorize`, the backend has no session yet, and Plone's `require_login` bounces the visitor to the login page with the authorization request in `came_from` — *site-relative*. `helpers/navigate` read "starts with a slash" as "a route this app owns" and handed it to the router, so after the provider callback Volto asked plone.restapi for the content at `/@@oauth-authorize`, replaced the authorization request's parameters with its own `expand=` ones, got a 400 and rendered its own 404 at exactly that URL. The relying party received neither a code nor an error (Érico, 2026-08-30).
+
+Same origin is not the same application. `isBackendView` names the traversal grammar Zope publishes alongside Volto's routes — `@@` for a view, `++api++` / `++resource++` / `++plone++` for a namespace, `acl_users` for PAS — matched per segment, because a view can hang off any object. Those get a real navigation; every other site-relative path still goes through the router, and the open-redirect check on absolute targets is unchanged.
+
+The profile gate held a second copy of the same premise and returned a completed profile to `@@oauth-authorize` through the router as well — a 404 at the end of the journey the gate exists to protect. It calls `helpers/navigate` now, so the decision is made in one place, which is what it was supposed to be. @ericof

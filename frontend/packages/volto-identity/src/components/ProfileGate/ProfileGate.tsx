@@ -49,11 +49,11 @@ import { addMessage } from '@plone/volto/actions';
 import { getMyProfile } from '../../actions';
 import {
   gateTarget,
-  goTo,
   handedOverReturn,
   rememberReturn,
   takeReturn,
 } from '../../helpers/profileGate';
+import { goTo } from '../../helpers/navigate';
 
 const messages = defineMessages({
   title: {

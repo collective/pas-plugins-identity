@@ -68,6 +68,25 @@ function mountAt(pathname: string, state: any): { path: string } {
   return seen;
 }
 
+/**
+ * Run with a stubbed `window.location`, so a real navigation is observable.
+ *
+ * jsdom refuses to navigate and only logs; the assignment is the thing under
+ * test, so it has to land somewhere that can be read back.
+ */
+function withLocation(run: () => void): void {
+  const original = Object.getOwnPropertyDescriptor(window, 'location');
+  delete (window as any).location;
+  (window as any).location = { href: '' };
+  try {
+    run();
+  } finally {
+    if (original) {
+      Object.defineProperty(window, 'location', original);
+    }
+  }
+}
+
 function withStorage(run: () => void): void {
   const original = Object.getOwnPropertyDescriptor(window, 'sessionStorage');
   const values = new Map<string, string>();
@@ -196,23 +215,58 @@ describe('ProfileGate', () => {
     // The bug Érico hit: held mid-way through signing in to another site,
     // he completed his profile and was left on the identity provider with
     // no way onward.
-    withStorage(() => {
-      rememberReturn('/@@oauth-authorize?client_id=x');
+    //
+    // With a real navigation, and the query string intact. The destination
+    // is `@@oauth-authorize`, a backend view: this test used to assert the
+    // router had been given it, which renders Volto's 404 at exactly that
+    // URL and drops the authorization request's parameters on the way.
+    withLocation(() => {
+      withStorage(() => {
+        rememberReturn('/@@oauth-authorize?client_id=x');
 
-      const seen = mountAt('/news', {
-        userSession: { token: 'a-token' },
-        myProfile: profileState({
-          data: {
-            '@id': '/@my-profile',
-            userid: 'alice',
-            profile: PROFILE,
-            review_state: 'complete',
-            missing: [],
-          },
-        }),
+        const seen = mountAt('/news', {
+          userSession: { token: 'a-token' },
+          myProfile: profileState({
+            data: {
+              '@id': '/@my-profile',
+              userid: 'alice',
+              profile: PROFILE,
+              review_state: 'complete',
+              missing: [],
+            },
+          }),
+        });
+
+        expect(seen.path).toBe('/news');
+        expect(window.location.href).toBe('/@@oauth-authorize?client_id=x');
       });
+    });
+  });
 
-      expect(seen.path).toBe('/@@oauth-authorize');
+  it('routes a return the app owns, rather than reloading', () => {
+    // The other half: a real navigation is for the backend's addresses, and
+    // paying for one to reach a route already running is the waste this
+    // helper exists to avoid.
+    withLocation(() => {
+      withStorage(() => {
+        rememberReturn('/news/an-article');
+
+        const seen = mountAt('/news', {
+          userSession: { token: 'a-token' },
+          myProfile: profileState({
+            data: {
+              '@id': '/@my-profile',
+              userid: 'alice',
+              profile: PROFILE,
+              review_state: 'complete',
+              missing: [],
+            },
+          }),
+        });
+
+        expect(seen.path).toBe('/news/an-article');
+        expect(window.location.href).toBe('');
+      });
     });
   });
 

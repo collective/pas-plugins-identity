@@ -116,27 +116,6 @@ export function handedOverReturn(search: string): string | null {
 }
 
 /**
- * Send the browser to a remembered destination.
- *
- * A site-relative path is a route this app owns, so the router handles it and
- * the page never reloads. An absolute URL is not: the one this exists for is
- * `@@oauth-authorize`, a backend view, and asking the router for it would
- * render a Volto page that does not exist. That case needs a real navigation.
- *
- * @param target Where to go.
- * @param replace The router's replace, for the paths it owns.
- */
-export function goTo(target: string, replace: (path: string) => void): void {
-  if (target.startsWith('/') && !target.startsWith('//')) {
-    replace(target);
-    return;
-  }
-  if (typeof window !== 'undefined') {
-    window.location.href = target;
-  }
-}
-
-/**
  * Take the remembered destination, clearing it.
  *
  * Reading and clearing together, so a return can never fire twice: the second

@@ -13,8 +13,8 @@
  *
  * A second reason to ask it in one place: `came_from` and `return_url` reach
  * this app from a query string, and handing an absolute one to the browser is
- * an open redirect. Everything site-relative goes through the router;
- * everything else is checked against the current origin first.
+ * an open redirect. Everything site-relative and routable goes through the
+ * router; everything else is checked against the current origin first.
  * @module helpers/navigate
  */
 
@@ -29,6 +29,42 @@
  */
 export function isInternal(target: string): boolean {
   return target.startsWith('/') && !target.startsWith('//');
+}
+
+/**
+ * Whether a path on this origin is published by the backend rather than Volto.
+ *
+ * Same origin is not the same as same application. Zope publishes a whole
+ * grammar of traversal namespaces alongside Volto's routes — `@@` for a view,
+ * `++api++` / `++resource++` / `++plone++` for a namespace, `acl_users` for
+ * PAS — and the router owns none of them.
+ *
+ * The premise this replaces was "site-relative means a route this app owns",
+ * and `came_from` is where it breaks. Plone's `require_login` hands back a
+ * *site-relative* `/@@oauth-authorize?…`, so an authorization request paused
+ * for sign-in came back through the router: Volto asked plone.restapi for the
+ * content at that path, dropped the authorization request's query string on
+ * the way, got a 400 and rendered its own 404. The relying party that sent
+ * the visitor received neither a code nor an error (Érico, 2026-08-30,
+ * running the demo stack).
+ *
+ * Matched per segment rather than by prefix: a view can be traversed to
+ * anywhere, and `/profiles/x/@@something` is as much a backend view as
+ * `/@@something` is.
+ *
+ * @param target A path or URL.
+ * @returns Whether reaching it needs a real navigation.
+ */
+export function isBackendView(target: string): boolean {
+  const path = target.split('?')[0].split('#')[0];
+  return path
+    .split('/')
+    .some(
+      (segment) =>
+        segment.startsWith('@@') ||
+        segment.startsWith('++') ||
+        segment === 'acl_users',
+    );
 }
 
 /**
@@ -71,14 +107,16 @@ export function goTo(
   if (!target) {
     return;
   }
-  if (isInternal(target)) {
+  if (isInternal(target) && !isBackendView(target)) {
     push(target);
     return;
   }
   if (typeof window === 'undefined') {
     return;
   }
-  if (options.external || isSameOrigin(target)) {
+  // A site-relative backend path is same-origin by construction, so it needs
+  // no permission from the caller — only a real navigation.
+  if (options.external || isInternal(target) || isSameOrigin(target)) {
     window.location.href = target;
     return;
   }
