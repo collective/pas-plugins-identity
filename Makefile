@@ -213,13 +213,19 @@ stack-rm:  ## Local Stack: Remove Services and Volumes
 # backend/tests/federation, which is headless and runs in CI.
 DEMO_COMPOSE_FILE=docker-compose.demo.yml
 
+# Both demo hosts live under this. `localhost` needs no DNS and no hosts
+# file, which is why it is the default; override it when a provider refuses
+# to register a redirect URI on a `.localhost` host, as Google does.
+DEMO_STACK_DOMAIN ?= localhost
+export DEMO_STACK_DOMAIN
+
 .PHONY: demo-stack-start
 demo-stack-start:  ## Demo Stack: Start the two-site federation scenario
 	@echo "Start the federation demo stack"
 	@docker compose -f $(DEMO_COMPOSE_FILE) up -d --build
 	@echo ""
-	@echo "  Relying party:     http://plone.localhost"
-	@echo "  Identity provider: http://id.localhost"
+	@echo "  Relying party:     http://plone.$(DEMO_STACK_DOMAIN)"
+	@echo "  Identity provider: http://id.$(DEMO_STACK_DOMAIN)"
 	@echo ""
 	@echo "  Sign in at plone.localhost as dana / dana-demo-password."
 	@echo "  She exists only on id.localhost."

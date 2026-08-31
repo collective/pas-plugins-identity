@@ -16,6 +16,13 @@
 #
 #   make demo-stack-start     then open http://plone.localhost
 #
+# Both hosts are `<name>.$DEMO_STACK_DOMAIN`, defaulting to `localhost`.
+# Google refuses to register a redirect URI on a `.localhost` host, so a
+# provider that insists on a real domain needs another one: set
+# DEMO_STACK_DOMAIN to a domain you control, point `id.` and `plone.` at
+# 127.0.0.1 in /etc/hosts, and the whole stack follows -- Traefik's rules,
+# the virtual-host rewrites, the issuer and the redirect URI alike.
+#
 # Sign in with dana / dana-demo-password. They exist only on id.localhost,
 # as a UserProfile: this stack keeps its users, and their passwords,
 # as content rather than in source_users.
@@ -48,9 +55,9 @@ x-frontend-build: &frontend-build
 # site at the root of its own hostname.
 x-demo-env: &demo-env
   IDENTITY_DEMO: '1'
-  DEMO_IDP_URL: http://id.localhost
-  DEMO_RP_URL: http://plone.localhost
-  DEMO_REDIRECT_URI: http://plone.localhost/login-identity
+  DEMO_IDP_URL: http://id.${DEMO_STACK_DOMAIN:-localhost}
+  DEMO_RP_URL: http://plone.${DEMO_STACK_DOMAIN:-localhost}
+  DEMO_REDIRECT_URI: http://plone.${DEMO_STACK_DOMAIN:-localhost}/login-identity
   SITE: Plone
   CONFIGURE_PACKAGES: plone.restapi,plone.volto,identitydemo
 
@@ -67,8 +74,8 @@ services:
     networks:
       default:
         aliases:
-          - id.localhost
-          - plone.localhost
+          - id.${DEMO_STACK_DOMAIN:-localhost}
+          - plone.${DEMO_STACK_DOMAIN:-localhost}
     labels:
       - traefik.enable=true
       - traefik.constraint-label=public
@@ -111,7 +118,7 @@ services:
       - traefik.enable=true
       - traefik.constraint-label=public
       - traefik.http.services.svc-idp-frontend.loadbalancer.server.port=3000
-      - traefik.http.routers.rt-idp-frontend.rule=Host(`id.localhost`)
+      - traefik.http.routers.rt-idp-frontend.rule=Host(`id.${DEMO_STACK_DOMAIN:-localhost}`)
       - traefik.http.routers.rt-idp-frontend.entrypoints=http
       - traefik.http.routers.rt-idp-frontend.service=svc-idp-frontend
       - traefik.http.routers.rt-idp-frontend.middlewares=gzip
@@ -139,11 +146,11 @@ services:
 
       ## VHM rewrite /++api++/
       - "traefik.http.middlewares.mw-idp-vhm-api.replacepathregex.regex=^/\\+\\+api\\+\\+($$|/.*)"
-      - "traefik.http.middlewares.mw-idp-vhm-api.replacepathregex.replacement=/VirtualHostBase/http/id.localhost/Plone/++api++/VirtualHostRoot$$1"
+      - "traefik.http.middlewares.mw-idp-vhm-api.replacepathregex.replacement=/VirtualHostBase/http/id.${DEMO_STACK_DOMAIN:-localhost}/Plone/++api++/VirtualHostRoot$$1"
 
       ## VHM rewrite /ClassicUI/
       - "traefik.http.middlewares.mw-idp-vhm-classic.replacepathregex.regex=^/ClassicUI($$|/.*)"
-      - "traefik.http.middlewares.mw-idp-vhm-classic.replacepathregex.replacement=/VirtualHostBase/http/id.localhost/Plone/VirtualHostRoot/_vh_ClassicUI$$1"
+      - "traefik.http.middlewares.mw-idp-vhm-classic.replacepathregex.replacement=/VirtualHostBase/http/id.${DEMO_STACK_DOMAIN:-localhost}/Plone/VirtualHostRoot/_vh_ClassicUI$$1"
 
       ## VHM rewrite for the OAuth endpoints, which are Zope views on the site
       ## root and not REST API services. Without this router they are simply
@@ -152,19 +159,19 @@ services:
       ## the decision to configure the issuer rather than derive it from the
       ## portal URL load-bearing rather than fussy.
       - "traefik.http.middlewares.mw-idp-vhm-oauth.replacepathregex.regex=^/(.*)"
-      - "traefik.http.middlewares.mw-idp-vhm-oauth.replacepathregex.replacement=/VirtualHostBase/http/id.localhost/Plone/VirtualHostRoot/$$1"
+      - "traefik.http.middlewares.mw-idp-vhm-oauth.replacepathregex.replacement=/VirtualHostBase/http/id.${DEMO_STACK_DOMAIN:-localhost}/Plone/VirtualHostRoot/$$1"
 
       ## Basic Authentication for ClassicUI. Defaults to admin:admin.
       - traefik.http.middlewares.mw-idp-auth.basicauth.headerField=X-Auth-ClassicUI
       - traefik.http.middlewares.mw-idp-auth.basicauth.users=admin:$$apr1$$uZPT5Fgu$$AmlIdamxT5ipBvPlsdfD70
 
       # Routers
-      - traefik.http.routers.rt-idp-api.rule=Host(`id.localhost`) && PathPrefix(`/++api++`)
+      - traefik.http.routers.rt-idp-api.rule=Host(`id.${DEMO_STACK_DOMAIN:-localhost}`) && PathPrefix(`/++api++`)
       - traefik.http.routers.rt-idp-api.entrypoints=http
       - traefik.http.routers.rt-idp-api.service=svc-idp-backend
       - traefik.http.routers.rt-idp-api.middlewares=gzip,mw-idp-vhm-api
 
-      - traefik.http.routers.rt-idp-classic.rule=Host(`id.localhost`) && PathPrefix(`/ClassicUI`)
+      - traefik.http.routers.rt-idp-classic.rule=Host(`id.${DEMO_STACK_DOMAIN:-localhost}`) && PathPrefix(`/ClassicUI`)
       - traefik.http.routers.rt-idp-classic.entrypoints=http
       - traefik.http.routers.rt-idp-classic.service=svc-idp-backend
       - traefik.http.routers.rt-idp-classic.middlewares=gzip,mw-idp-auth,mw-idp-vhm-classic
@@ -173,7 +180,7 @@ services:
       ## authorization server: discovery, the authorize view (which also serves
       ## and receives the consent screen), the token endpoint, the public keys
       ## and userinfo.
-      - traefik.http.routers.rt-idp-oauth.rule=Host(`id.localhost`) && (PathPrefix(`/.well-known`) || PathPrefix(`/@@oauth-authorize`) || PathPrefix(`/@@oauth-token`) || PathPrefix(`/@@oauth-jwks`) || PathPrefix(`/@@oauth-userinfo`) || PathPrefix(`/@@backchannel-logout`))
+      - traefik.http.routers.rt-idp-oauth.rule=Host(`id.${DEMO_STACK_DOMAIN:-localhost}`) && (PathPrefix(`/.well-known`) || PathPrefix(`/@@oauth-authorize`) || PathPrefix(`/@@oauth-token`) || PathPrefix(`/@@oauth-jwks`) || PathPrefix(`/@@oauth-userinfo`) || PathPrefix(`/@@backchannel-logout`))
       - traefik.http.routers.rt-idp-oauth.entrypoints=http
       - traefik.http.routers.rt-idp-oauth.service=svc-idp-backend
       - traefik.http.routers.rt-idp-oauth.middlewares=gzip,mw-idp-vhm-oauth
@@ -184,7 +191,7 @@ services:
       ## visitor signs in there with a password, and the server layer's
       ## session plugin reads the resulting Volto token when the browser
       ## comes back to the authorization endpoint.
-      - traefik.http.routers.rt-idp-login.rule=Host(`id.localhost`) && (PathPrefix(`/acl_users/credentials_cookie_auth`) || PathPrefix(`/++resource++`) || PathPrefix(`/++plone++`))
+      - traefik.http.routers.rt-idp-login.rule=Host(`id.${DEMO_STACK_DOMAIN:-localhost}`) && (PathPrefix(`/acl_users/credentials_cookie_auth`) || PathPrefix(`/++resource++`) || PathPrefix(`/++plone++`))
       - traefik.http.routers.rt-idp-login.entrypoints=http
       - traefik.http.routers.rt-idp-login.service=svc-idp-backend
       - traefik.http.routers.rt-idp-login.middlewares=gzip,mw-idp-vhm-oauth
@@ -220,7 +227,7 @@ services:
       - traefik.enable=true
       - traefik.constraint-label=public
       - traefik.http.services.svc-rp-frontend.loadbalancer.server.port=3000
-      - traefik.http.routers.rt-rp-frontend.rule=Host(`plone.localhost`)
+      - traefik.http.routers.rt-rp-frontend.rule=Host(`plone.${DEMO_STACK_DOMAIN:-localhost}`)
       - traefik.http.routers.rt-rp-frontend.entrypoints=http
       - traefik.http.routers.rt-rp-frontend.service=svc-rp-frontend
       - traefik.http.routers.rt-rp-frontend.middlewares=gzip
@@ -241,20 +248,20 @@ services:
       - traefik.http.services.svc-rp-backend.loadbalancer.server.port=8080
 
       - "traefik.http.middlewares.mw-rp-vhm-api.replacepathregex.regex=^/\\+\\+api\\+\\+($$|/.*)"
-      - "traefik.http.middlewares.mw-rp-vhm-api.replacepathregex.replacement=/VirtualHostBase/http/plone.localhost/Plone/++api++/VirtualHostRoot$$1"
+      - "traefik.http.middlewares.mw-rp-vhm-api.replacepathregex.replacement=/VirtualHostBase/http/plone.${DEMO_STACK_DOMAIN:-localhost}/Plone/++api++/VirtualHostRoot$$1"
 
       - "traefik.http.middlewares.mw-rp-vhm-classic.replacepathregex.regex=^/ClassicUI($$|/.*)"
-      - "traefik.http.middlewares.mw-rp-vhm-classic.replacepathregex.replacement=/VirtualHostBase/http/plone.localhost/Plone/VirtualHostRoot/_vh_ClassicUI$$1"
+      - "traefik.http.middlewares.mw-rp-vhm-classic.replacepathregex.replacement=/VirtualHostBase/http/plone.${DEMO_STACK_DOMAIN:-localhost}/Plone/VirtualHostRoot/_vh_ClassicUI$$1"
 
       - traefik.http.middlewares.mw-rp-auth.basicauth.headerField=X-Auth-ClassicUI
       - traefik.http.middlewares.mw-rp-auth.basicauth.users=admin:$$apr1$$uZPT5Fgu$$AmlIdamxT5ipBvPlsdfD70
 
-      - traefik.http.routers.rt-rp-api.rule=Host(`plone.localhost`) && PathPrefix(`/++api++`)
+      - traefik.http.routers.rt-rp-api.rule=Host(`plone.${DEMO_STACK_DOMAIN:-localhost}`) && PathPrefix(`/++api++`)
       - traefik.http.routers.rt-rp-api.entrypoints=http
       - traefik.http.routers.rt-rp-api.service=svc-rp-backend
       - traefik.http.routers.rt-rp-api.middlewares=gzip,mw-rp-vhm-api
 
-      - traefik.http.routers.rt-rp-classic.rule=Host(`plone.localhost`) && PathPrefix(`/ClassicUI`)
+      - traefik.http.routers.rt-rp-classic.rule=Host(`plone.${DEMO_STACK_DOMAIN:-localhost}`) && PathPrefix(`/ClassicUI`)
       - traefik.http.routers.rt-rp-classic.entrypoints=http
       - traefik.http.routers.rt-rp-classic.service=svc-rp-backend
       - traefik.http.routers.rt-rp-classic.middlewares=gzip,mw-rp-auth,mw-rp-vhm-classic
