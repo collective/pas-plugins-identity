@@ -1,13 +1,13 @@
 """Access tokens.
 
-Self-encoded, per C7: everything a resource server needs to accept the token
+Self-encoded: everything a resource server needs to accept the token
 is inside the token, so issuing one is a signature over data already in hand
 and writes nothing. That is what keeps the token endpoint's ZODB write
 frequency at human-login frequency rather than at API-call frequency, and it
 is the reason authorization codes and refresh tokens -- which genuinely must
 be single-use -- are the only things this layer persists.
 
-The cost of that choice is stated in D3 and has to stay stated: there is no
+The cost of that choice has to stay stated: there is no
 denylist in v1, so a token remains good until it expires. The access-token
 lifetime is therefore also the worst case between revoking a client and the
 last token minted for it going quiet.
@@ -107,7 +107,7 @@ def get_issuer() -> str:
 def get_ttl() -> int:
     """Return the access-token lifetime in seconds.
 
-    :returns: The configured lifetime, or the D3 default of fifteen minutes
+    :returns: The configured lifetime, or the default of fifteen minutes
         when the record is missing.
     """
     return api.portal.get_registry_record(TTL_RECORD, default=900) or 900

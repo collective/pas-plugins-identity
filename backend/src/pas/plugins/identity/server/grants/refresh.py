@@ -1,7 +1,7 @@
 """Refresh tokens, rotated on every use.
 
 The second thing this layer persists, and for the same reason as the first:
-an access token is self-encoded and proves itself (C7), but a refresh token
+an access token is self-encoded and proves itself, but a refresh token
 has to be *revocable and single-use*, and both of those are claims about
 something remembered.
 

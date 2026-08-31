@@ -41,7 +41,8 @@ class TestServerInstall:
             assert api.portal.get_registry_record(record, default=None) is not None
 
     def test_the_ttl_default_is_fifteen_minutes(self):
-        """D3."""
+        """Short by design. With no denylist, the lifetime is the only thing
+        limiting how long a token stays good after access is withdrawn."""
         assert (
             api.portal.get_registry_record(
                 "pas.plugins.identity.server_access_token_ttl"

@@ -9,7 +9,7 @@ server.
 
 That chain is what makes a logout at the top of a federation reach the bottom
 of it. What it cannot reach is an access token already in flight: those are
-self-encoded and there is no denylist (D3), so they live out their lifetime.
+self-encoded and there is no denylist, so they live out their lifetime.
 The refresh tokens are the part that would otherwise let a client keep
 renewing access long after the person behind it signed out somewhere else.
 """

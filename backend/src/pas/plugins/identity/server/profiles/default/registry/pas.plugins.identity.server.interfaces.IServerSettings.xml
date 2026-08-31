@@ -15,7 +15,7 @@
          initial state: the server signs nothing until it is told what it is
          called. -->
 
-    <!-- D3: fifteen minutes. There is no denylist in v1, so this doubles as
+    <!-- Fifteen minutes. There is no denylist, so this doubles as
          the worst case between revoking a client and the last access token
          minted for it expiring. -->
     <value key="server_access_token_ttl">900</value>

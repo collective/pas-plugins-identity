@@ -139,7 +139,7 @@ class TestClaims:
         assert claims["website"] == "https://alice.example.org"
 
     def test_preferred_username_is_the_login_not_the_userid(self):
-        """Userids are uuid4 hex (D10) and mean nothing to a person. The
+        """Userids are uuid4 hex and mean nothing to a person. The
         login is what they typed."""
         assert claims_for(USERID, "profile")["preferred_username"] == USERID
 

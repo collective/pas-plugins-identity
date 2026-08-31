@@ -42,7 +42,7 @@ class BackChannelLogoutView(BrowserView):
         # Set on the success path too, and not only because the error bodies
         # are JSON. Zope's `finalize` turns a 200 with an empty body and no
         # content type into a 204, and OpenID Connect Back-Channel Logout
-        # §2.8 asks for a 200 -- so without this the endpoint answers a
+        # 1.0 §2.8 asks for a 200 -- so without this the endpoint answers a
         # status the specification does not list, which a strict provider is
         # entitled to treat as a failed delivery and retry.
         response.setHeader("Content-Type", "application/json")
@@ -62,9 +62,9 @@ class BackChannelLogoutView(BrowserView):
         plugin = api.portal.get_tool("acl_users")[PLUGIN_ID]
         jti = claims["jti"]
         if plugin.logout_jtis.seen(jti):
-            # §2.6 requires a replay to be refused. Recorded before any work
-            # is done below, so a token cannot be acted on twice even if the
-            # first attempt failed halfway.
+            # Back-Channel Logout 1.0 §2.6 requires a replay to be refused.
+            # Recorded before any work is done below, so a token cannot be
+            # acted on twice even if the first attempt failed halfway.
             return self._error(response, 400, "logout_token replayed.")
         plugin.logout_jtis.record(jti)
 

@@ -1,4 +1,4 @@
-"""C7: issuing an access token writes nothing to the ZODB.
+"""Issuing an access token writes nothing to the ZODB.
 
 The claim the self-encoded token design was chosen for, and the reason
 authorization codes and refresh tokens -- which genuinely must be single-use
@@ -17,7 +17,7 @@ zero-wake test:
 * a **scaling check**, because "zero" is a claim about the shape of the cost
   and one request cannot show a shape.
 
-The assertion turned out to be stronger than C7 needed. It is not that this
+The assertion turned out to be stronger than the claim needed. It is not that this
 layer's stores are untouched while something else writes -- a token request
 registers *nothing at all*, so there is no transaction to commit. The counter
 is therefore unfiltered: naming the classes to watch for would have meant
@@ -164,7 +164,7 @@ class TestAccessTokensWriteNothing:
         assert self.writes == []
 
     def test_many_issuances_write_nothing(self):
-        """C7 in one line. Twenty tokens, no transaction to commit."""
+        """The claim in one line. Twenty tokens, no transaction to commit."""
         for _ in range(BATCH):
             mint(self.portal, self.secret)
 

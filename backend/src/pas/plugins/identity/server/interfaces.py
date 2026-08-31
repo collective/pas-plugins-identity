@@ -127,7 +127,7 @@ class IServerSettings(Interface):
     server_access_token_ttl = schema.Int(
         title=_("Access token lifetime (seconds)"),
         description=_(
-            "D3: access tokens are self-encoded and there is no denylist, so "
+            "Access tokens are self-encoded and there is no denylist, so "
             "this is also the worst-case window between a revocation and the "
             "last token honouring it."
         ),

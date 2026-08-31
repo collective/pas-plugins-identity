@@ -9,7 +9,7 @@ Three things make this harder than it looks, and each is a decision recorded
 below rather than a detail.
 
 **Whose session.** The ``sub`` in a logout token is the *provider's* subject,
-not a Plone userid -- this package mints uuid4 userids (D10) that no provider
+not a Plone userid -- this package mints uuid4 userids that no provider
 has ever seen. The identity store is what turns one into the other, and a
 logout for an identity this site has never seen is a success rather than an
 error: there is nothing to end, and saying so would tell an unauthenticated
@@ -24,7 +24,7 @@ so a site that wants back-channel logout has to turn it on, and this module
 says so loudly rather than silently doing nothing.
 
 **What cannot be undone.** Access tokens this site issued as an authorization
-server are self-encoded and there is no denylist (D3), so they live out their
+server are self-encoded and there is no denylist, so they live out their
 lifetime. Refresh tokens *are* revocable, and the ``[server]`` layer revokes
 them by subscribing to the event this module fires -- which is how the two
 layers cooperate without core importing server.
@@ -195,7 +195,8 @@ def validate_logout_token(token: str) -> tuple[str, JSONDict]:
         raise LogoutError("logout_token rejected: unreadable") from exc
 
     claims = dict(claims)
-    # §2.4: a logout token must say it is one, must identify a session or a
+    # Back-Channel Logout 1.0 §2.4: a logout token must say it is one, must identify a
+    # session or a
     # subject, and must not carry a nonce -- the last because a nonce would
     # mean somebody is trying to pass an id_token off as a logout token.
     events = claims.get("events") or {}

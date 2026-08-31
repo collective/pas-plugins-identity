@@ -163,14 +163,16 @@ class TestTokenValidation:
             validate_logout_token(self.mint(aud="some-other-client"))
 
     def test_a_token_without_the_logout_event_is_refused(self):
-        """§2.4. Without this an `id_token` would be accepted as a logout
-        instruction, which is a way to log anybody out at will."""
+        """Back-Channel Logout 1.0 §2.4. Without this an `id_token` would be
+        accepted as a logout instruction, which is a way to log anybody out at
+        will."""
         with pytest.raises(LogoutError, match="not a back-channel logout"):
             validate_logout_token(self.mint(events={"http://other/event": {}}))
 
     def test_a_token_carrying_a_nonce_is_refused(self):
-        """§2.4 again, and the same attack from the other side: a nonce means
-        somebody is passing an id_token off as a logout token."""
+        """Back-Channel Logout 1.0 §2.4 again, and the same attack from the
+        other side: a nonce means somebody is passing an id_token off as a
+        logout token."""
         with pytest.raises(LogoutError, match="carries no nonce"):
             validate_logout_token(self.mint(nonce="xyzzy"))
 
@@ -298,9 +300,9 @@ class TestTheEndpoint:
         assert status == 400
 
     def test_a_replay_is_refused(self):
-        """§2.6. The identifier is recorded before any work is done, so a
-        token cannot be acted on twice even if the first attempt failed
-        halfway through."""
+        """Back-Channel Logout 1.0 §2.6. The identifier is recorded before any
+        work is done, so a token cannot be acted on twice even if the first
+        attempt failed halfway through."""
         token = self.mint()
         post(self.portal, logout_token=token)
 

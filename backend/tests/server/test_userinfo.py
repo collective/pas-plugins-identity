@@ -199,7 +199,7 @@ class TestUserInfo:
         assert status == 401
 
     def test_a_token_for_a_removed_client_is_refused(self):
-        """With no denylist (D3), unregistering a client is the only
+        """With no denylist, unregistering a client is the only
         revocation this server has -- and it has to reach here too, or
         userinfo becomes the one endpoint a withdrawn client keeps using."""
         from pas.plugins.identity.server.controlpanel.clients import remove_client

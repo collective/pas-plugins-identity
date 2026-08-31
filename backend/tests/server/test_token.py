@@ -406,7 +406,8 @@ class TestBasicClientAuthentication:
         assert status == 401
 
     def test_credentials_are_url_decoded(self):
-        """§2.3.1 says both halves are form-urlencoded before the base64.
+        """RFC 6749 §2.3.1 says both halves are form-urlencoded before the
+        base64.
         Nothing this server mints needs it, so this is for a client
         registered elsewhere."""
         raw = b"basic-client:" + self.secret.encode()

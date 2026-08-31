@@ -160,7 +160,7 @@ class IdentityServerPlugin(BasePlugin):
         and it is still alive; they say nothing about whether the client it
         was minted for is still allowed to exist. Looking the audience up in
         the registry is what makes deleting or disabling a client take effect
-        on tokens already in the wild -- which, with no denylist (D3), is the
+        on tokens already in the wild -- which, with no denylist, is the
         only revocation this server has.
 
         :param credentials: Mapping from :meth:`extractCredentials`.

@@ -71,7 +71,7 @@ class UserInfoView(BrowserView):
         client = get_client(claims.get("aud", ""))
         if client is None or not client.enabled:
             # The same audience check the Bearer plugin makes. With no
-            # denylist (D3), unregistering a client is this server's only
+            # denylist, unregistering a client is this server's only
             # revocation, and it has to apply here too or userinfo becomes
             # the one endpoint a withdrawn client keeps reaching.
             return self._refuse(response, 401, "invalid_token")

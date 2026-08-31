@@ -35,7 +35,7 @@ KEY_SIZE = 2048
 
 #: How many keys the ring holds. One signs; the rest are kept only so tokens
 #: minted before a rotation still verify. Access tokens live fifteen minutes
-#: (D3), so two spares is already generous, and an unbounded ring would grow a
+#: so two spares is already generous, and an unbounded ring would grow a
 #: registry record forever.
 RING_SIZE = 3
 

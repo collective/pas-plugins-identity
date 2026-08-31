@@ -63,7 +63,8 @@ class TestTTL:
         self.portal = portal
 
     def test_the_default_is_fifteen_minutes(self):
-        """D3."""
+        """Short by design. With no denylist, the lifetime is the only thing
+        limiting how long a token stays good after access is withdrawn."""
         assert get_ttl() == 900
 
     def test_it_is_configurable(self):

@@ -1,7 +1,7 @@
 """Authorization codes.
 
 The one thing this layer genuinely has to persist. Access tokens are
-self-encoded and write nothing (C7), but an authorization code must be
+self-encoded and write nothing, but an authorization code must be
 single-use, and "single-use" is a claim about something remembered: the only
 way to refuse the second redemption is to have recorded the first.
 

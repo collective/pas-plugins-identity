@@ -148,7 +148,7 @@ class TestAuthentication:
         assert self.authenticate() is None
 
     def test_a_token_for_a_removed_client_is_refused(self):
-        """With no denylist (D3), unregistering the client is the only
+        """With no denylist, unregistering the client is the only
         revocation this server has. The signature is still perfectly good."""
         remove_client("app")
 

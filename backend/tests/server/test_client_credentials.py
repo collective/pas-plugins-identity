@@ -148,7 +148,7 @@ class TestTheGrant:
 
     def test_no_code_is_written(self):
         """This grant has no code to burn, and the write frequency it avoids
-        is the reason C7 says tokens are self-encoded."""
+        is the reason tokens are self-encoded."""
         codes = self.portal.acl_users["identity_server"].codes
 
         post(

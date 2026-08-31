@@ -5,7 +5,8 @@ to configure: point a conforming client at the issuer URL and everything else
 in this document is how it finds the endpoints, the keys and the capabilities.
 
 Every URL here is built from the *configured issuer*, never from the portal
-URL. That is the S1b decision paying off rather than a stylistic choice. A
+URL. That is the issuer being configured rather than derived from the
+portal URL, paying off rather than a stylistic choice. A
 client fetches this document from ``<issuer>/.well-known/openid-configuration``
 and then compares the ``issuer`` field to the URL it used, byte for byte; if
 the two disagree it must refuse the document. Deriving the endpoints from

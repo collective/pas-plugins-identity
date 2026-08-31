@@ -318,8 +318,8 @@ class TestBearerAuthentication:
         assert response.status_code == 401
 
     def test_the_client_credentials_grant_yields_a_usable_token(self):
-        """The whole of S1d in one test: a server with a client secret and no
-        human anywhere gets a token, and that token is a session."""
+        """The machine-to-machine path in one test: a client with a secret
+        and no human anywhere gets a token, and that token is a session."""
         minted = requests.post(
             f"{self.url}/@@oauth-token",
             data={
