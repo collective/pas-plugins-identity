@@ -56,7 +56,7 @@ def main() -> int:
         for message in offences(base / name)
     ]
     if found:
-        print("Coverage pragma policy violations (see PLAN section 8.2):")
+        print("Coverage pragma policy violations:")
         for message in found:
             print(f"  {message}")
         print(

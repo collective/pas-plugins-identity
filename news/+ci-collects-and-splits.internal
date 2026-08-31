@@ -1,0 +1,3 @@
+The backend workflow builds what the container tests need, and stops asking every job for it.
+
+`Backend: Container integration` builds the federation demo image and runs the tests that drive real containers. The three-Python matrix, the two extras configurations and the coverage job no longer collect them, so none of them needs Docker or an image built from this tree. @ericof

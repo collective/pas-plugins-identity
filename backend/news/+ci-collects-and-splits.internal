@@ -1,0 +1,7 @@
+`make install` provides the demo package, and the container tests get a job of their own.
+
+Two test modules import `identitydemo` at module scope, and one of them is a `conftest.py` — so an environment without it does not skip a directory, it aborts the whole pytest session with `Interrupted: 2 errors during collection`. `make install` now installs it, because an environment built by that target has to be one the suite can collect in. It reaches neither the published package nor the production image: neither runs `make install`, and the demo deliberately stays out of `mx.ini`.
+
+`make test` leaves out the `docker` marker — 2568 tests, no containers, and faster for it. The 38 that drive Dex, Keycloak and two Plone sites are `make test-docker`, and `make test-all` is still the whole thing. Use `test-all` before pushing anything touching the flow, the server layer or the demo, because `test` cannot see those.
+
+The split is what the container tests needed: they run from two Plone sites built by `make demo-image-build`, an image that is built rather than pulled, so every caller of the default target would have needed it. They have their own job now, which builds the image first and fails rather than skips when Docker is missing — a job that exists only for these tests would otherwise go green having proved nothing. @ericof

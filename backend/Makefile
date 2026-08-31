@@ -95,8 +95,16 @@ instance/etc/zope.ini instance/etc/zope.conf: instance.yaml ## Create instance c
 .PHONY: config
 config: instance/etc/zope.ini
 
+# `install-demo` is part of this, not an optional afterthought: two test
+# modules import `identitydemo` at module scope, and a conftest that cannot
+# import aborts the whole pytest session rather than skipping a directory. An
+# environment built by `make install` has to be one the suite can collect in.
+#
+# It does not reach the published package or the production image. Neither
+# runs `make install` -- the Dockerfile drives mxdev directly -- and the demo
+# stays out of `mx.ini` for exactly that reason.
 .PHONY: install
-install: $(VENV_FOLDER) config ## Install Plone and dependencies
+install: $(VENV_FOLDER) config install-demo ## Install Plone and dependencies
 
 # Optional dependency layers. The base install is core-only on purpose, so
 # the CI matrix layers the extra on top: core / +server.
@@ -191,7 +199,7 @@ dex-stop: ## Stop Dex
 	@docker compose -f $(COMPOSE_FILE) down
 
 .PHONY: check-pragmas
-check-pragmas: ## Enforce the coverage pragma policy (PLAN section 8.2)
+check-pragmas: ## Every coverage pragma carries a reason on the same line
 	@echo "$(GREEN)==> Check coverage pragmas$(RESET)"
 	@$(BIN_FOLDER)/python scripts/check_pragmas.py
 
@@ -238,13 +246,30 @@ i18n: $(VENV_FOLDER) ## Update locales
 	@$(BIN_FOLDER)/python -m $(PACKAGE_NAME).locales
 
 # Tests
+#
+# `test` deliberately leaves out the `docker` marker. Those tests drive real
+# containers -- Dex, Keycloak, and two Plone sites built from the demo image --
+# and the demo image is built by `make demo-image-build`, not pulled. Running
+# them from the default target means every caller needs that image, which is
+# why CI gives them a job of their own that builds it first.
+#
+# `test-all` is the full run. Use it before pushing anything that touches the
+# flow, the server layer or the demo, because `test` cannot see those.
 .PHONY: test
-test: $(VENV_FOLDER) ## run tests
+test: $(VENV_FOLDER) ## run the tests that need no container
+	@$(BIN_FOLDER)/pytest -m "not docker"
+
+.PHONY: test-docker
+test-docker: $(VENV_FOLDER) ## run the tests that drive real containers
+	@$(BIN_FOLDER)/pytest -m docker
+
+.PHONY: test-all
+test-all: $(VENV_FOLDER) ## run every test, containers included
 	@$(BIN_FOLDER)/pytest
 
 .PHONY: test-coverage
 test-coverage: $(VENV_FOLDER) ## run tests with coverage
-	@$(BIN_FOLDER)/pytest --cov=$(PACKAGE_NAME) --cov-report term-missing
+	@$(BIN_FOLDER)/pytest -m "not docker" --cov=$(PACKAGE_NAME) --cov-report term-missing
 
 # Build Docker images
 .PHONY: build-image

@@ -85,10 +85,6 @@ jobs:
 
       - name: Test
         run: make test
-        env:
-          # Fail rather than skip if Docker is missing: the flow tests are the
-          # only thing proving the protocol integration works.
-          PAS_IDENTITY_REQUIRE_DOCKER: "1"
 
   # "pip install . in a clean venv imports". The extras matrix cannot
   # cover this -- every one of its jobs installs [test] -- so a runtime
@@ -141,6 +137,40 @@ jobs:
       - name: Check the coverage pragma policy
         run: make check-pragmas
 
+  # The tests that drive real containers, in a job that builds what they need.
+  # `make test` leaves them out, so this is the only thing running them: Dex
+  # and Keycloak are pulled, but the two Plone sites are built here from
+  # Dockerfile.demo and exist nowhere else.
+  docker:
+    name: "Backend: Container integration"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup codebase
+        uses: plone/meta/.github/actions/setup_backend_uv@2.x
+        with:
+          python-version: ${{ inputs.python-version }}
+          plone-version: ${{ inputs.plone-version }}
+          working-directory: ${{ inputs.working-directory }}
+
+      - name: Build the federation demo image
+        run: make demo-image-build
+
+      - name: Test
+        run: make test-docker
+        env:
+          # Fail rather than skip if Docker is missing. This job exists only
+          # for these tests, so a silent skip would leave it green having
+          # proved nothing.
+          PAS_IDENTITY_REQUIRE_DOCKER: "1"
+
   coverage:
     name: "Backend: Coverage"
     uses: plone/meta/.github/workflows/backend-pytest-coverage.yml@2.x
@@ -155,6 +185,7 @@ jobs:
     needs:
       - lint
       - test
+      - docker
       - extras
       - clean_install
       - imports
