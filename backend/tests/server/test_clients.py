@@ -110,7 +110,7 @@ class TestRedirectURIs:
         ],
     )
     def test_anything_else_does_not(self, uri):
-        """S8 is exact matching. Every one of these has been somebody's open
+        """Matching is exact. Every one of these has been somebody's open
         redirect: a trailing slash, an added query, a prefix match, a scheme
         downgrade, a case fold."""
         assert not self.client.check_redirect_uri(uri)
@@ -140,7 +140,7 @@ class TestPublicClients:
         assert not self.confidential.is_public
 
     def test_pkce_is_required_for_a_public_client(self):
-        """S8."""
+        """It has no secret, so the exchange itself has to prove possession."""
         assert self.public.requires_pkce
 
     def test_pkce_is_not_forced_for_a_confidential_one(self):

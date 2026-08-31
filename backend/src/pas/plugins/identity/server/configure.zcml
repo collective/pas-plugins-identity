@@ -7,12 +7,11 @@
 
   <include file="profiles.zcml" />
 
-  <!-- Nothing is registered here yet beyond the layer itself. The endpoints
-       arrive with the rest of Gate S1 and will every one of them be bound to
-       ``.interfaces.IIdentityServerLayer``: an /authorize endpoint in a site
-       that never switched the server on is an attack surface, not an idle
-       feature, so the browser layer is what keeps it absent rather than
-       merely unused. -->
+  <!-- Every endpoint this package publishes is registered in ``.browser``,
+       and every one of them is bound to ``.interfaces.IIdentityServerLayer``.
+       An /authorize endpoint in a site that never switched the server on is
+       an attack surface rather than an idle feature, so the browser layer is
+       what keeps it absent rather than merely unused. -->
 
   <include package=".browser" />
 

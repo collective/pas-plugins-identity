@@ -251,7 +251,7 @@ def check_challenge(challenge: str, method: str, required: bool) -> str:
 
     :param challenge: The ``code_challenge`` parameter, possibly empty.
     :param method: The ``code_challenge_method`` parameter, possibly empty.
-    :param required: Whether this client must use PKCE (S8: public ones do).
+    :param required: Whether this client must use PKCE. Public ones must.
     :returns: The challenge to record with the code, empty when none was sent
         and none was required.
     :raises ChallengeError: When PKCE is required and absent, or when a

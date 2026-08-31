@@ -39,7 +39,7 @@ GRANT_TYPES = (AUTHORIZATION_CODE, CLIENT_CREDENTIALS, REFRESH_TOKEN)
 
 #: Auth method of a client that has no secret.
 #:
-#: Public clients are the ones PKCE is mandatory for (S8): a native or browser
+#: Public clients are the ones PKCE is mandatory for: a native or browser
 #: app cannot keep a secret, so the proof of possession has to come from the
 #: exchange itself. Named here rather than in ``clients`` because the client
 #: *schema* needs it and the schema must not import the storage it describes.

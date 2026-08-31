@@ -160,7 +160,7 @@ class TestCheckChallenge:
     @pytest.mark.parametrize(
         "challenge,method,required,message",
         [
-            # S8: public clients must use PKCE.
+            # A public client must use PKCE.
             ("", "", True, "must use PKCE"),
             # `plain` puts the verifier in the authorization request, which
             # is the exact place PKCE exists to protect.

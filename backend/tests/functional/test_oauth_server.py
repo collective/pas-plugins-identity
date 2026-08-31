@@ -1,6 +1,7 @@
 """Plone as an authorization server, driven by a third-party OAuth client.
 
-The gate S1 check. Every other test of the ``[server]`` layer is this package
+The check that this package's authorization server works for somebody who did
+not write it. Every other test of the ``[server]`` layer is this package
 talking to itself: the requests are built by tests that were written against
 the same reading of RFC 6749 as the endpoints, so the two agree about things
 neither of them has any right to assume.
@@ -15,11 +16,10 @@ middle, because a redirect to a browser is the one thing a library cannot do
 for itself.
 
 No Docker here. Dex is a *provider* and is the right shape for testing this
-package as a client; there is no equivalent container to point at Plone as a
-server until the discovery document lands in Gate S2 and `oauth2-proxy`
-becomes configurable without hand-wiring every endpoint. An off-the-shelf
-client library is what the plan names as the alternative, and it is a real
-one.
+package as a client, but it is the wrong shape for pointing at Plone as a
+server. An off-the-shelf client library is the alternative, and it is a real
+one: `authlib` is no more willing to accept a malformed response here than a
+container would be.
 """
 
 from authlib.integrations.requests_client import OAuth2Session
@@ -248,8 +248,8 @@ class TestAThirdPartyClientCompletesTheFlow:
 
 
 class TestDiscovery:
-    """The Gate S2 check: an off-the-shelf OIDC client is given an issuer URL
-    and nothing else, and everything it needs follows from that."""
+    """An off-the-shelf OIDC client is given an issuer URL and nothing else,
+    and everything it needs follows from that."""
 
     @pytest.fixture(autouse=True)
     def _setup(self, server, rp) -> None:

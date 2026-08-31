@@ -19,8 +19,8 @@ server on does not publish an endpoint for managing one.
 The secret handling is the part that differs from the provider API, and the
 difference is deliberate. A provider's secret is *masked*: this package is the
 client there, has to keep sending it, and a round trip that echoes the mask
-back leaves the stored value alone. Here this package is the server, and S8
-says store a hash -- so there is nothing to mask and nothing to echo. A secret
+back leaves the stored value alone. Here this package is the server, and what
+is stored is a hash -- so there is nothing to mask and nothing to echo. A secret
 exists exactly once, in the response that mints it, and is unrecoverable
 afterwards. An operator who loses it rotates.
 """

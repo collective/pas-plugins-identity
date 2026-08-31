@@ -1,0 +1,5 @@
+Code says why, instead of citing a document its readers do not have.
+
+Fifteen docstrings, comments and ZCML notes justified themselves with a gate identifier — `S1`, `S2`, `S8` — from a planning file that ships with nobody. `Exact string comparison, per S8` looks authoritative and carries nothing: a contributor, a reviewer, or the author in a year has no way to follow it. Each now states the reason, or cites something a reader can actually reach. Two test docstrings whose entire body was `"""S8."""` say what they assert.
+
+Two of them were stale as well as opaque, which is the other cost of a reference nobody can check. The server's `configure.zcml` said nothing was registered there yet and that the endpoints would arrive "with the rest of Gate S1", while including five of them, every one bound to the server layer. `test_oauth_server.py` said there was no container to point at Plone as a server "until the discovery document lands in Gate S2" — discovery is tested by a class in that same file. @ericof

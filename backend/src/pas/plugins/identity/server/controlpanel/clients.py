@@ -7,8 +7,8 @@ and importable.
 The difference from a provider is the secret. A provider's client secret is
 *masked* on the way out and can be echoed back unchanged, because this package
 is the client and has to send it somewhere. Here this package is the server:
-nothing ever needs the plaintext again, so S8 says store a hash. A secret is
-returned exactly once, when it is minted, and is unrecoverable afterwards.
+nothing ever needs the plaintext again, so what is stored is a hash. A secret
+is returned exactly once, when it is minted, and is unrecoverable afterwards.
 """
 
 from pas.plugins.identity.core.interfaces import JSONDict
@@ -247,7 +247,7 @@ class ClientConfig:
 
     @property
     def requires_pkce(self) -> bool:
-        """Whether PKCE is mandatory for this client (S8).
+        """Whether PKCE is mandatory for this client.
 
         Public clients must use it. Confidential ones are not forced to here,
         because a client that authenticates at the token endpoint already
@@ -262,9 +262,11 @@ class ClientConfig:
     def check_redirect_uri(self, uri: str) -> bool:
         """Whether a redirect URI is registered for this client.
 
-        Exact string comparison, per S8. No prefix matching, no ignoring the
-        query string, no treating a trailing slash as equivalent: every one of
-        those has been an open-redirect in somebody's authorization server.
+        Exact string comparison. Matching is what binds an authorization
+        code to the client it was issued for, so no prefix matching, no
+        ignoring the query string, no treating a trailing slash as
+        equivalent: every one of those has been an open redirect in
+        somebody's authorization server.
 
         :param uri: The redirect URI as presented.
         :returns: Whether it is registered.

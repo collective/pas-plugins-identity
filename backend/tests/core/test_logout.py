@@ -7,7 +7,8 @@ has closed the tab.
 The tokens here are minted with a key this test controls and the provider's
 JWKS is stubbed to match, because the thing under test is what this package
 does with a *valid* token and what it refuses. A real provider signing a real
-logout token is Gate S2's Keycloak check, and is a different kind of evidence.
+logout token is what the Keycloak federation stack exercises, and is a
+different kind of evidence.
 """
 
 from datetime import datetime

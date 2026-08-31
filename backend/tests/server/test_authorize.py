@@ -359,7 +359,8 @@ class TestPKCERequired:
         consented("spa")
 
     def test_a_public_client_without_pkce_is_refused(self):
-        """S8."""
+        """Refused here, at the authorization endpoint, rather than later at
+        redemption -- where the code has already been issued."""
         _status, location, _body = call(
             self.portal,
             response_type="code",
