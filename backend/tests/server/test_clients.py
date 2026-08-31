@@ -115,12 +115,115 @@ class TestRedirectURIs:
         downgrade, a case fold."""
         assert not self.client.check_redirect_uri(uri)
 
+    def test_a_wildcard_registration_does_not_widen_a_plain_one(self):
+        """The client above registered no wildcard, so nothing about this
+        change reaches it."""
+        assert not self.client.check_redirect_uri("https://app.example.org/other")
+
     def test_a_client_with_no_uris_matches_nothing(self):
         """Including the empty string, which is what a missing parameter
         arrives as."""
         bare = ClientConfig(client_id="bare")
 
         assert not bare.check_redirect_uri("")
+
+
+class TestWildcardMatching:
+    """What a wildcard registration covers, and what it deliberately does not.
+
+    Érico asked for this so a site with many hosts does not register them one
+    at a time (2026-08-30). Each entry is a widening, so the refusals below
+    are the more important half of the class: a wildcard that crossed a dot,
+    a scheme, or a port would be a bigger widening than the one asked for.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self) -> None:
+        self.host = ClientConfig(
+            client_id="host", redirect_uris=["https://*.plone.org/callback"]
+        )
+        self.path = ClientConfig(
+            client_id="path", redirect_uris=["https://plone.org/*"]
+        )
+        self.both = ClientConfig(
+            client_id="both", redirect_uris=["https://*.plone.org/*"]
+        )
+
+    @pytest.mark.parametrize(
+        "uri",
+        [
+            "https://community.plone.org/callback",
+            "https://app.plone.org/callback",
+        ],
+    )
+    def test_a_host_wildcard_covers_one_label(self, uri: str):
+        assert self.host.check_redirect_uri(uri)
+
+    @pytest.mark.parametrize(
+        "uri",
+        [
+            # A wildcard that crossed a dot would cover a name space nobody
+            # registered.
+            "https://a.b.plone.org/callback",
+            # The bare domain is a different host; one more entry registers it.
+            "https://plone.org/callback",
+            # `.plone.org` -- the empty label.
+            "https://.plone.org/callback",
+            # The suffix has to be the whole tail, not any old ending.
+            "https://evilplone.org/callback",
+            # The path is not wildcarded here, so it is still exact.
+            "https://community.plone.org/callback/",
+            "https://community.plone.org/callback?next=/",
+            # Neither the scheme nor the port is ever widened.
+            "http://community.plone.org/callback",
+            "https://community.plone.org:8443/callback",
+        ],
+    )
+    def test_a_host_wildcard_covers_nothing_else(self, uri: str):
+        assert not self.host.check_redirect_uri(uri)
+
+    @pytest.mark.parametrize(
+        "uri",
+        [
+            "https://plone.org/login-identity",
+            "https://plone.org/",
+            # A path wildcard stands for any query with it; requiring an
+            # empty one would make it useless.
+            "https://plone.org/cb?next=/x",
+        ],
+    )
+    def test_a_path_wildcard_covers_the_host(self, uri: str):
+        assert self.path.check_redirect_uri(uri)
+
+    @pytest.mark.parametrize(
+        "uri",
+        [
+            # A path wildcard says nothing about the host.
+            "https://community.plone.org/foobar",
+            "http://plone.org/foobar",
+        ],
+    )
+    def test_a_path_wildcard_stays_on_its_host(self, uri: str):
+        assert not self.path.check_redirect_uri(uri)
+
+    def test_a_path_wildcard_does_not_prefix_match_a_segment(self):
+        """The trailing slash stays in the prefix, so `/app/*` covers
+        `/app/anything` and never `/application`."""
+        client = ClientConfig(
+            client_id="seg", redirect_uris=["https://plone.org/app/*"]
+        )
+
+        assert client.check_redirect_uri("https://plone.org/app/x")
+        assert not client.check_redirect_uri("https://plone.org/application")
+
+    def test_both_together_are_the_case_this_exists_for(self):
+        """Érico's example: one entry for the whole site."""
+        assert self.both.check_redirect_uri("https://community.plone.org/foobar")
+        assert self.both.check_redirect_uri("https://plone.org/login-identity") is False
+
+    def test_an_empty_uri_never_matches_a_wildcard(self):
+        """Which is what a missing parameter arrives as."""
+        assert not self.both.check_redirect_uri("")
 
 
 class TestPublicClients:

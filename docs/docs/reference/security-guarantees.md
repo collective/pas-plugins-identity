@@ -42,6 +42,23 @@ There is no merge, and adding one is out of scope.
 **Magic-link tokens are single-use**, expire in at most fifteen minutes, and are burned server-side.
 The send endpoint is rate limited per address and per IP, and answers identically for known and unknown addresses.
 
+**A client's redirect URIs are matched exactly, unless the operator registered a wildcard.**
+Matching is what binds an authorization code to the client it was issued for, so a registration without a `*` is compared as a string and nothing else -- no prefix matching, no ignoring the query string, no treating a trailing slash as equivalent.
+
+A `*` is allowed in two positions, so a site with many hosts need not register them one at a time:
+
+`https://*.example.org/callback`
+: Stands for exactly one further label. It covers `app.example.org`. It does not cover `a.b.example.org`, nor the bare `example.org` -- both fall outside the single label the `*` stands for, and each needs its own entry.
+
+`https://example.org/*`
+: Stands for any path on that host, and any query string with it.
+
+A wildcard is refused anywhere else: in a port, a user name, a query string, in the middle of a label such as `https://a*.example.org`, in the middle of a path, or directly under a public suffix such as `https://*.com`.
+The scheme and the port are never widened, so a wildcard registration cannot be downgraded to plain HTTP.
+
+Registering a wildcard is a real widening, and it should be a deliberate one: every name it covers is somewhere this server will send a browser carrying an authorization code.
+A subdomain that is taken over, forgotten, or serving somebody else's content is a valid redirect target for as long as the registration stands.
+
 **Post-login redirect targets are validated** against the portal, on both the backend and the frontend.
 A target that never reaches the backend cannot be checked by it.
 

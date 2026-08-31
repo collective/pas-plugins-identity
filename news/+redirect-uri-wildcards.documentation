@@ -1,0 +1,3 @@
+The security guarantees describe how a client's redirect URIs are matched.
+
+Matching was documented nowhere a reader could reach: the rule lived in a docstring and in a planning file that ships with nobody. The reference page now states it — exact comparison by default, the two positions a wildcard is allowed in, and every position it is refused in — alongside a plain statement of what registering one costs, since every name a wildcard covers is somewhere this server will send a browser carrying an authorization code. @ericof

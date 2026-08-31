@@ -33,6 +33,12 @@ ACCEPTED = [
     "http://id.localhost:8081/login-identity",
     # RFC 8252's private-use scheme, which is how a native app comes back.
     "com.example.app:/oauth2redirect",
+    # The two wildcard positions, so a site does not register its hosts one
+    # by one. What each one covers is TestWildcardMatching, next door.
+    "https://*.example.com/callback",
+    "https://app.example.com/*",
+    "https://*.example.com/*",
+    "https://app.example.com/console/*",
 ]
 
 #: Every shape it will not, and what is wrong with each.
@@ -42,8 +48,15 @@ REFUSED = [
     ("vbscript:msgbox(1)", "executable in a browser"),
     ("http://evil.example.com/callback", "plain HTTP off the loopback"),
     ("https://app.example.com/cb#fragment", "carries a fragment"),
-    ("https://app.example.com/*", "wildcard that can never match"),
-    ("https://*.example.com/cb", "wildcard that can never match"),
+    # A wildcard is allowed in two positions and refused everywhere else.
+    ("https://*.com/cb", "wildcard directly under a public suffix"),
+    ("https://a*.example.com/cb", "wildcard that is only part of a label"),
+    ("https://*.*.example.com/cb", "two host wildcards"),
+    ("https://app.example.com/*/cb", "wildcard in the middle of a path"),
+    ("https://app.example.com/*/*", "two path wildcards"),
+    ("https://app.example.com/cb?next=*", "wildcard in a query string"),
+    ("https://*.example.com:*/cb", "wildcard in a port"),
+    ("https://*@example.com/cb", "wildcard in a user name"),
     ("/relative/callback", "not absolute"),
     ("https:///callback", "names no host"),
     ("", "empty"),
@@ -73,6 +86,22 @@ class TestTheRule:
             is_redirect_uri("https://app.example.com/cb#x")
 
         assert "fragment" in str(caught.value)
+
+    def test_a_misplaced_wildcard_says_where_it_may_go(self):
+        """The operator pasted the shape every other provider uses. Saying
+        "invalid" would leave them guessing which half was wrong."""
+        with pytest.raises(Invalid) as caught:
+            is_redirect_uri("https://a*.example.com/cb")
+
+        assert "leftmost label" in str(caught.value)
+
+    def test_a_public_suffix_wildcard_is_refused(self):
+        """``https://*.com`` is every site on the internet with a `.com`
+        name, which is not a widening anybody means to ask for."""
+        with pytest.raises(Invalid) as caught:
+            is_redirect_uri("https://*.com/cb")
+
+        assert "registered domain" in str(caught.value)
 
 
 class TestNoWayRound:

@@ -262,16 +262,32 @@ class ClientConfig:
     def check_redirect_uri(self, uri: str) -> bool:
         """Whether a redirect URI is registered for this client.
 
-        Exact string comparison. Matching is what binds an authorization
-        code to the client it was issued for, so no prefix matching, no
-        ignoring the query string, no treating a trailing slash as
-        equivalent: every one of those has been an open redirect in
-        somebody's authorization server.
+        Matching a redirect URI is what binds an authorization code to the
+        client it was issued for, so a registration with no wildcard is still
+        compared as a string and nothing else: no prefix matching, no ignoring
+        the query string, no treating a trailing slash as equivalent. Every
+        one of those has been an open redirect in somebody's authorization
+        server, and none of them is what a wildcard asks for.
+
+        A registration *with* a wildcard is a deliberate widening, and the
+        widening is bounded: see
+        :func:`~pas.plugins.identity.server.controlpanel.interfaces.redirect_uri_matches`
+        for what each position covers, and ``check_wildcards`` beside it for
+        where a ``*`` is refused. Registering one means accepting that every
+        name it covers is somewhere this server will send a browser carrying
+        an authorization code, which is the trade a site makes to avoid
+        listing its hosts one by one (Érico, 2026-08-30).
 
         :param uri: The redirect URI as presented.
         :returns: Whether it is registered.
         """
-        return uri in self.redirect_uris
+        from pas.plugins.identity.server.controlpanel.interfaces import (
+            redirect_uri_matches,
+        )
+
+        return any(
+            redirect_uri_matches(registered, uri) for registered in self.redirect_uris
+        )
 
     def check_secret(self, secret: str) -> bool:
         """Whether a presented client secret is correct.

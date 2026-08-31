@@ -81,6 +81,178 @@ def is_loopback(host: str | None) -> bool:
 SAFE_SCHEMES = frozenset({"https"})
 
 
+#: Fewest labels a wildcard may be followed by.
+#:
+#: ``https://*.example.com`` leaves two, which is a name somebody registered.
+#: ``https://*.com`` leaves one, which is a public suffix -- the wildcard
+#: would then span every site on it. The check is deliberately crude: a real
+#: public-suffix list is a moving target and a dependency, and this rule
+#: catches the shape that makes the mistake catastrophic rather than merely
+#: wide.
+MIN_LABELS_UNDER_WILDCARD = 2
+
+
+def split_host_port(netloc: str) -> tuple[str, str]:
+    """Split a netloc without validating the port.
+
+    :func:`urllib.parse.urlsplit`'s ``port`` raises when the port is not a
+    number, and ``*`` is exactly the value this module has to inspect and
+    report on rather than crash over.
+
+    :param netloc: The authority component.
+    :returns: ``(host, port)``, the port empty when there is none. The host
+        keeps its brackets for an IPv6 literal.
+    """
+    if netloc.endswith("]") or ":" not in netloc:
+        return netloc, ""
+    host, _sep, port = netloc.rpartition(":")
+    if host.endswith("]") or "]" not in netloc:
+        return host, port
+    return netloc, ""
+
+
+def check_host_wildcard(netloc: str) -> None:
+    """Refuse a host wildcard that is not the whole leftmost label.
+
+    ``https://*.example.com/cb`` stands for one label, so it matches
+    ``https://app.example.com/cb`` and not ``https://a.b.example.com/cb`` -- a
+    wildcard that crossed dots would cover a name space nobody registered. It
+    does not match the bare ``https://example.com/cb`` either: that is a
+    different host, and one more entry registers it.
+
+    :param netloc: The authority component, known to contain a ``*``.
+    :raises Invalid: When the wildcard is anywhere but the leftmost label.
+    """
+    if "@" in netloc:
+        raise Invalid(_("A redirect URI may not use a wildcard with a user name."))
+    host, port = split_host_port(netloc)
+    if "*" in port:
+        raise Invalid(_("A redirect URI may not use a wildcard in its port."))
+    host = host.lower()
+    if not host.startswith("*."):
+        raise Invalid(
+            _(
+                "A wildcard host must be the whole leftmost label,"
+                " as in https://*.example.com/callback."
+            )
+        )
+    rest = host[2:]
+    if "*" in rest:
+        raise Invalid(_("A redirect URI may use only one host wildcard."))
+    labels = rest.split(".")
+    if len(labels) < MIN_LABELS_UNDER_WILDCARD or not all(labels):
+        raise Invalid(
+            _(
+                "A wildcard host needs a registered domain under it,"
+                " as in https://*.example.com/callback."
+            )
+        )
+
+
+def check_path_wildcard(path: str) -> None:
+    """Refuse a path wildcard that is not the whole last segment.
+
+    ``https://example.com/*`` stands for any path on that host, and for any
+    query string with it. A ``*`` in the middle reads as a prefix match and is
+    not one.
+
+    :param path: The path component, known to contain a ``*``.
+    :raises Invalid: When the wildcard is anywhere but the last segment.
+    """
+    if not path.endswith("/*"):
+        raise Invalid(
+            _(
+                "A wildcard path must be the whole last segment,"
+                " as in https://example.com/app/*."
+            )
+        )
+    if "*" in path[:-2]:
+        raise Invalid(_("A redirect URI may use only one path wildcard."))
+
+
+def check_wildcards(parts) -> None:
+    """Refuse a ``*`` anywhere it does not belong.
+
+    Two positions are allowed, because two are what a site actually needs: the
+    whole leftmost host label, and the whole last path segment. See
+    :func:`check_host_wildcard` and :func:`check_path_wildcard` for what each
+    one covers.
+
+    Everywhere else it is refused, and the refusals are the point. A ``*`` in
+    the query string, the user name or the port is not a widening anybody
+    asked for; a ``*`` in the middle of a label -- ``https://a*.example.com``
+    -- reads as a prefix match and is not one; and a wildcard directly under a
+    public suffix would hand every site on it a valid redirect target.
+
+    The scheme needs no check: :func:`urllib.parse.urlsplit` only recognises
+    one matching ``[a-zA-Z][a-zA-Z0-9+.-]*``, so ``http*://x`` parses as a
+    relative path and :func:`is_redirect_uri` has already refused it for
+    having no scheme.
+
+    :param parts: The result of :func:`urllib.parse.urlsplit`.
+    :raises Invalid: When a ``*`` appears anywhere but the two allowed spots.
+    """
+    if "*" in parts.query:
+        raise Invalid(_("A redirect URI may not use a wildcard in its query string."))
+    if "*" in parts.netloc:
+        check_host_wildcard(parts.netloc)
+    if "*" in parts.path:
+        check_path_wildcard(parts.path)
+
+
+def redirect_uri_matches(pattern: str, uri: str) -> bool:
+    """Whether a presented redirect URI is covered by a registered one.
+
+    A pattern with no ``*`` is compared as a string and nothing else, which
+    is what every previously registered client still gets. A pattern with one
+    is taken apart, because the comparison is no longer about the text:
+
+    * The scheme and the port must be equal. Neither is ever widened, so a
+      registration cannot be downgraded to plain HTTP by a presented URI.
+    * The host is equal, or -- for a ``*.`` pattern -- one further label under
+      it, compared case-insensitively as host names are.
+    * The path is equal, or beneath a ``/*`` pattern.
+    * The query must be equal, *unless* the path carries the wildcard: a
+      pattern that stands for any path on a host stands for any query with
+      it, and requiring an empty one would make the wildcard useless.
+
+    :param pattern: One registered redirect URI, possibly with a wildcard.
+    :param uri: The redirect URI as presented in the request.
+    :returns: Whether the request may be redirected there.
+    """
+    if "*" not in pattern:
+        return pattern == uri
+    if not uri:
+        return False
+    registered = urlsplit(pattern)
+    presented = urlsplit(uri)
+
+    if registered.scheme != presented.scheme:
+        return False
+    if split_host_port(registered.netloc)[1] != split_host_port(presented.netloc)[1]:
+        return False
+
+    wanted = split_host_port(registered.netloc)[0].lower()
+    got = (presented.hostname or "").lower()
+    if wanted.startswith("*."):
+        suffix = wanted[2:]
+        if not got.endswith(f".{suffix}"):
+            return False
+        label = got[: -(len(suffix) + 1)]
+        # One label, and a real one. `a.b.example.com` is a name space nobody
+        # registered, and the empty string is `.example.com`.
+        if not label or "." in label:
+            return False
+    elif wanted != got:
+        return False
+
+    if registered.path.endswith("/*"):
+        # The trailing slash stays in the prefix, so `/app/*` covers
+        # `/app/anything` and not `/application`.
+        return presented.path.startswith(registered.path[:-1])
+    return registered.path == presented.path and registered.query == presented.query
+
+
 def is_redirect_uri(value: str) -> bool:
     """Refuse a redirect URI this server will not send a browser to.
 
@@ -95,9 +267,10 @@ def is_redirect_uri(value: str) -> bool:
       fragment silently changes what the browser receives.
     * **A safe scheme.** ``https``, a private-use scheme for a native app, or
       ``http`` on loopback. Never ``javascript:`` or ``data:``.
-    * **No wildcard.** A ``*`` anywhere means somebody expected prefix
-      matching, which this server does not do -- so the URI would never match
-      and the flow would fail late, in a way that reads like a client bug.
+    * **A wildcard only where one is allowed.** ``*`` may stand for the whole
+      leftmost host label, or for the last segment of the path, and nowhere
+      else -- see :func:`is_wildcard_pattern` for what each one widens and
+      what it deliberately does not.
 
     :param value: One redirect URI.
     :returns: True, or the constraint has raised.
@@ -106,15 +279,13 @@ def is_redirect_uri(value: str) -> bool:
     uri = (value or "").strip()
     if not uri:
         raise Invalid(_("A redirect URI cannot be empty."))
-    if "*" in uri:
-        raise Invalid(
-            _("Redirect URIs are matched exactly, so a wildcard never matches.")
-        )
     parts = urlsplit(uri)
     if not parts.scheme:
         raise Invalid(_("A redirect URI must be absolute, with a scheme."))
     if parts.fragment or uri.endswith("#"):
         raise Invalid(_("A redirect URI may not carry a fragment."))
+    if "*" in uri:
+        check_wildcards(parts)
     scheme = parts.scheme.lower()
     if scheme in SAFE_SCHEMES:
         if not parts.netloc:
