@@ -256,11 +256,27 @@ omit = [
   "src/pas/plugins/identity/locales/*.py",
 ]
 
-# The floor is 100% *branch* coverage, and it is enforced rather than
-# reported. An authentication plugin has no line that is fine to leave
-# unexercised, and the cheapest moment to cover one is when it is written.
+# Branch coverage, enforced rather than reported. An authentication plugin
+# has no line that is fine to leave unexercised, and the cheapest moment to
+# cover one is when it is written -- that is still the standard this package
+# holds itself to, and 100 is still the target.
+#
+# The floor is 95 while the gap is closed (Érico's call, 2026-08-31). Two
+# numbers matter to whoever raises it back, both measured rather than
+# estimated:
+#
+#   full suite, 2606 tests   99.15%   124 statements uncovered
+#   `make test`, 2568 tests  97.52%   498 statements uncovered
+#
+# The difference is not untested code. 374 of those statements are covered by
+# the `docker`-marked tests, which `make test-coverage` does not run because
+# they need containers and an image built from this tree. So the real
+# outstanding surface is 124 statements, and a floor set near 97.5 would have
+# written off the 374 as well.
+#
+# Raise this as the gap closes. It is a ratchet, not a setting.
 [tool.coverage.report]
-fail_under = 100
+fail_under = 95
 show_missing = true
 skip_covered = true
 
