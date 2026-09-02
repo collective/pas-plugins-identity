@@ -227,7 +227,7 @@ class IProviderRecords(Interface):
         required=False,
         default="",
     )
-    directives.widget("background_color", frontendOptions={"widget": "color_picker"})
+    # directives.widget("background_color", frontendOptions={"widget": "color_picker"})
 
     foreground_color = schema.TextLine(
         title=_("Foreground colour"),
@@ -238,7 +238,7 @@ class IProviderRecords(Interface):
         required=False,
         default="",
     )
-    directives.widget("foreground_color", frontendOptions={"widget": "color_picker"})
+    # directives.widget("foreground_color", frontendOptions={"widget": "color_picker"})
 
     model.fieldset(
         STYLE_FIELDSET,
