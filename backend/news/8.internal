@@ -1,0 +1,1 @@
+Raised the coverage floor from 95 to 97. Measured, not estimated: the full suite covers 99.16% with 125 statements outstanding, and the container-free run CI gates on covers 97.57%. 100 remains the target. @ericof
