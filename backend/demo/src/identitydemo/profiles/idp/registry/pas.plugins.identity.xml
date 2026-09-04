@@ -49,9 +49,17 @@
        comes from the driver's config_schema at runtime, so each carries its
        own field element. A record with neither an interface nor a field
        element imports only into a site that already has it. -->
-  <!-- Magic-link login. First on the login page, and it is the one way in
-       that needs nothing configured anywhere else: no OAuth client, no
-       secret, no account at a third party. The mailbox is the provider.
+  <!-- Magic-link login: the one way in that needs nothing configured
+       anywhere else. No OAuth client, no secret, no account at a third
+       party. The mailbox is the provider.
+
+       Kept off the login page here. It is still enabled, so an account can
+       still be linked to a mailbox and the address still verifies; what it
+       does not do is offer itself as a way to sign in. That is the
+       distinction between `enabled` and `show_in_login`, and this stack is
+       where it can be seen: the sign-in methods page stops promising a magic
+       link nobody can use, which is the whole of what a provider hidden from
+       the login page should do.
 
        Nothing is actually delivered in this stack: the site's MailHost is
        Products.PrintingMailhost, which writes the message to the log
@@ -62,6 +70,7 @@
   >
     <value key="driver">email</value>
     <value key="title">Email</value>
+    <value key="show_in_login">False</value>
     <value key="enabled">True</value>
     <value key="order">0</value>
     <value key="propertymap">
