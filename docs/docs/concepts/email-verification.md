@@ -70,6 +70,29 @@ Both are truthy in Python, and both would pass a casual check.
 Drivers must normalize `email_verified` to a boolean, and every place that reads it compares against `True` itself rather than testing truthiness.
 A forged unverified address that happens to read as truthy is an account takeover, so the comparison is deliberately unforgiving.
 
+### When a provider gets the type wrong
+
+The cost of that strictness is that it is invisible.
+
+Oracle Access Manager sends `email_verified` as the string `"true"`, and so do some Keycloak configurations.
+Against such a provider every user here is silently unverified: automatic linking by email never fires, an address the provider genuinely checked is recorded as unchecked, and nothing in the log explains it.
+The sign-in itself succeeds, which is what makes it hard to spot -- what is missing is the linking that should have happened.
+
+If that is what you are seeing, switch on **This provider sends verification flags as text** for that provider.
+It reads `"true"` and `"false"` as the boolean each one spells, before anything else sees the claim, so the strict comparison above is untouched: there is one path through the verification logic, and a malformed payload is made well-formed before it reaches it.
+
+Three things it deliberately does not do.
+
+It is per-provider, never site-wide.
+A site-wide switch would weaken the check for every provider that never needed it.
+
+It reads two spellings and guesses at nothing.
+`1`, `yes` and `on` are left alone and refused, because each is a guess about what somebody meant and guessing wrong grants a verified address.
+A provider sending one of those is a bug report rather than a case to accommodate quietly.
+
+It does not rewrite what the provider said.
+The identity record still carries the provider's own words, so the string stays visible as the evidence that this setting is the one you want.
+
 ## What this site exports
 
 When the site acts as an authorization server, it releases `email_verified` under the rule above.

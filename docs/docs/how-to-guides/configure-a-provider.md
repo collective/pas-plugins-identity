@@ -124,6 +124,17 @@ Turn the first switch on only where you know the provider refuses to call an add
 Turning it off later stops it verifying anything new; addresses already recorded as verified stay that way, because they are identities and removing one is an unlink rather than a configuration change.
 ```
 
+{guilabel}`This provider sends verification flags as text`
+:   For a provider that sends `email_verified` as the string `"true"` rather than as a boolean.
+    Oracle Access Manager does, and so do some Keycloak configurations.
+    Leave it off unless you have established that this is what your provider does.
+
+```{note}
+The symptom is that nothing visibly goes wrong.
+Sign-in works, and only the linking silently does not: every address arrives unverified, so the switch above it can never fire, and no error says so.
+If verification is configured and never seems to take effect, look at what the provider actually sends before looking anywhere else.
+```
+
 See {doc}`/concepts/email-verification` for the whole rule.
 
 ## Configure magic-link sign-in
@@ -157,12 +168,6 @@ Every login reconciles, so a membership revoked at the provider stops granting a
 
 A login only ever takes back what that same provider granted.
 The identity record remembers each provider's own grant, so a group you granted by hand survives every sign-in, and two providers cannot revoke each other's grants.
-
-```{note}
-Clearing a map does **not** strip the groups it had granted.
-Clearing is at least as likely to mean "I am rewriting this" as "revoke everything", so a provider with an empty map touches no membership at all.
-To take its grants back, empty the map's *values* rather than the map, and let one login reconcile.
-```
 
 ## Next steps
 

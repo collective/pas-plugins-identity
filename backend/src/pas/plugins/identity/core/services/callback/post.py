@@ -40,6 +40,33 @@ import plone.protect.interfaces
 class IdentityCallback(IdentityService):
     """Complete an authorization-code flow."""
 
+    def _claims_from(self, provider: ProviderConfig, payload: JSONDict) -> Claims:
+        """Normalize a provider's payload into claims.
+
+        A thin wrapper around the driver's own :meth:`normalize_claims`, which
+        exists for one provider setting: ``accept_string_booleans``, for a
+        provider that sends ``email_verified`` as the string ``"true"``. The
+        repair happens here rather than in the driver because
+        ``normalize_claims`` is a documented override point -- the driver
+        how-to shows its signature -- and threading a keyword through it would
+        break every driver written against that page.
+
+        ``raw`` is put back afterwards. It is documented as the provider's own
+        words, and the string this repaired is exactly the evidence an
+        operator diagnosing the provider needs to see.
+
+        :param provider: The provider configuration this login came from.
+        :param payload: The provider's payload.
+        :returns: Normalized claims.
+        """
+        from pas.plugins.identity.core.utils.flags import repaired_flags
+
+        if not provider.config.get("accept_string_booleans"):
+            return provider.driver.normalize_claims(payload)
+        claims = provider.driver.normalize_claims(repaired_flags(payload))
+        claims["raw"] = dict(payload)
+        return claims
+
     def reply(self) -> JSONDict:
         """Finish the flow and answer with a token.
 
@@ -82,7 +109,7 @@ class IdentityCallback(IdentityService):
         try:
             attempt, payload = self._exchange(provider, data["state"], data["code"])
             subject = provider.driver.subject(payload)
-            claims = provider.driver.normalize_claims(payload)
+            claims = self._claims_from(provider, payload)
         except ProviderUnusable as exc:
             # Not an authentication failure: nothing was wrong with the
             # credential, the provider simply cannot take part in this flow.

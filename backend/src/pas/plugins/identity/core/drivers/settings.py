@@ -135,6 +135,22 @@ class IOAuth2Settings(IDriverSettings):
         default=False,
     )
 
+    accept_string_booleans = schema.Bool(
+        title=_("This provider sends verification flags as text"),
+        description=_(
+            'Some providers send email_verified as the string "true" rather '
+            "than as a boolean -- Oracle Access Manager does, and so do some "
+            "Keycloak configurations. Only a real boolean counts here, so "
+            "against such a provider every address arrives unverified and "
+            "nothing explains why. Switch this on for that provider only, "
+            "having established that this is what it does: it repairs the "
+            "value before anything reads it, and changes nothing about what "
+            "a verified address then means."
+        ),
+        required=False,
+        default=False,
+    )
+
     auto_link_by_email = schema.Bool(
         title=_("Attach to an existing account with the same verified email"),
         description=_(

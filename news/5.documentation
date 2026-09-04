@@ -1,0 +1,1 @@
+Documented the provider that sends verification flags as text, and its symptom: sign-in works and only the linking silently does not. @ericof

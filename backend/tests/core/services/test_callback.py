@@ -8,6 +8,7 @@ a token, a stable userid, and a flat refusal for every way a flow can fail.
 
 from .. import body
 from . import DEX_METADATA
+from . import DEX_PROVIDER
 from . import USERINFO
 from pas.plugins.identity.core.audit import AUTHENTICATED
 from pas.plugins.identity.core.audit import FLOW_REFUSED
@@ -444,3 +445,78 @@ class TestAuditTrail(CallbackCase):
         self.finish("forged")
 
         assert "ip" not in self.log.entries()[0].detail
+
+
+class TestAProviderThatSendsStringBooleans(CallbackCase):
+    """``email_verified`` arriving as the string ``"true"``.
+
+    Only a literal boolean satisfies the link-by-email gate, so against such a
+    provider every address is silently unverified -- automatic linking never
+    fires and nothing says why. The repair is per-provider and off by default,
+    which is what the first test here is about: the strict reading has to stay
+    the strict reading for everybody who did not ask.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(
+        self, portal, request_, configured, stub_metadata, stub_provider
+    ) -> None:
+        self.portal = portal
+        self.request = request_
+        self.stub_provider = stub_provider
+        stub_metadata(DEX_METADATA)
+
+    def sign_in(self, accept_strings: bool, verified: object = "true") -> dict:
+        """Complete a login against a provider sending a string flag.
+
+        :param accept_strings: Whether the provider is configured to have its
+            verification flags read as text.
+        :param verified: What the provider sends as ``email_verified``.
+        :returns: The stored claims for the identity that signed in.
+        """
+        provider = ProviderConfig.deserialize(DEX_PROVIDER)
+        provider.config["accept_string_booleans"] = accept_strings
+        set_providers([provider])
+        self.stub_provider({**USERINFO, "email_verified": verified})
+        state = self.start_flow()
+        self.finish(state)
+        record = self.plugin()._store.get("dex", USERINFO["sub"])
+        return dict(record.claims)
+
+    def test_off_by_default_the_string_is_not_verified(self):
+        """The behaviour the issue is about, asserted so the repair cannot be
+        mistaken for having always been there."""
+        assert self.sign_in(accept_strings=False)["email_verified"] is False
+
+    def test_the_setting_makes_the_string_count(self):
+        assert self.sign_in(accept_strings=True)["email_verified"] is True
+
+    def test_the_string_false_still_does_not_count(self):
+        """Repair reads both directions. One that only ever said True would be
+        a switch that grants verification rather than one that reads it."""
+        claims = self.sign_in(accept_strings=True, verified="false")
+
+        assert claims["email_verified"] is False
+
+    def test_the_reported_address_is_verified_too(self):
+        """``emails`` is derived from the same flag, so repairing one and not
+        the other would record an address as unchecked on the account while
+        the claim beside it said otherwise."""
+        claims = self.sign_in(accept_strings=True)
+
+        assert claims["emails"][0]["verified"] is True
+
+    def test_raw_still_says_what_the_provider_said(self):
+        """The string is the evidence an operator diagnosing this provider
+        needs, and ``raw`` is documented as the provider's own words."""
+        claims = self.sign_in(accept_strings=True)
+
+        assert claims["raw"]["email_verified"] == "true"
+
+    def test_a_value_nobody_can_read_is_still_refused(self):
+        """The repair reads two spellings and guesses at nothing: ``"1"``
+        granting a verified address would be this feature causing the bug it
+        exists to fix."""
+        claims = self.sign_in(accept_strings=True, verified="1")
+
+        assert claims["email_verified"] is False
