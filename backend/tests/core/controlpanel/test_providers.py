@@ -475,3 +475,45 @@ class TestAListInTheConfigurationIsStorable:
         set_providers([provider])
 
         assert get_provider("p").config["scope"] == ("openid",)
+
+
+class TestAScopeIsSeededOnlyWhereThereIsOne:
+    """A driver that has no scope should not carry an empty one.
+
+    The rule ``group_claim`` already followed, applied to ``scope``, which was
+    seeded for every driver regardless. On the magic-link provider that meant
+    an empty tuple under a key its schema does not declare: invisible on the
+    form, meaningless to a mailbox, impossible to clear -- and the value
+    behind the 500, since it left the backend as ``[]`` and came back a list.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+
+    def test_a_mailbox_has_no_scope(self):
+        assert "scope" not in ProviderConfig("m", "email").config
+
+    def test_an_oauth_provider_still_gets_its_scope(self):
+        """The half that keeps this from being a deletion: GitHub's API
+        returns no address without one, so a provider created without it is a
+        sign-in that half works."""
+        assert ProviderConfig("gh", "github").config["scope"] == (
+            "read:user",
+            "user:email",
+        )
+
+    def test_the_other_seeded_settings_are_untouched(self):
+        """Every driver has an opinion on these two, mailbox included."""
+        config = ProviderConfig("m", "email").config
+
+        assert config["userid_source"] == "uuid"
+        assert config["trust_email_verification"] is False
+
+    def test_a_scope_supplied_anyway_is_kept(self):
+        """Seeding is about what is missing. An operator or an import that
+        states one is not overruled, and a stored provider that already
+        carries the key keeps it."""
+        provider = ProviderConfig("m", "email", config={"scope": ["openid"]})
+
+        assert provider.config["scope"] == ("openid",)

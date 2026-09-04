@@ -1,0 +1,1 @@
+A provider is no longer seeded a `scope` its driver's schema does not declare. The magic-link provider carried an empty one it could neither show nor clear, which is the value that surfaced the crash above. @ericof

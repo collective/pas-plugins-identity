@@ -262,14 +262,28 @@ def _driver_defaults(driver: BaseDriver) -> JSONDict:
     is omitted entirely when the driver has none, so a provider with no groups
     to map does not carry an empty mapping nobody asked for.
 
+    ``scope`` is held to the same rule, and was not. It was seeded for every
+    driver, which for the magic-link one meant an empty tuple under a key its
+    schema does not declare: invisible on the form, meaningless to a mailbox,
+    and impossible to clear. It was also the value behind a 500 -- serialized
+    to ``[]``, round-tripped back by the panel as a list, and refused by the
+    ``Tuple`` record it belongs to. The refusal is fixed where it belongs, in
+    :func:`_stored_types`; this stops the site carrying the key at all.
+
+    The schema is asked rather than the driver's own default, because the
+    question is whether a provider *has* a scope setting, not what it starts
+    at -- a driver may perfectly well declare the field and leave the default
+    empty for an operator to fill in.
+
     :param driver: The driver.
     :returns: Settings to seed, which may be empty.
     """
     seeded: JSONDict = {
-        "scope": tuple(driver.default_scope),
         "userid_source": driver.default_userid_source,
         "trust_email_verification": driver.default_trust_email_verification,
     }
+    if "scope" in dict(getFieldsInOrder(driver.settings_schema)):
+        seeded["scope"] = tuple(driver.default_scope)
     if driver.default_group_claim:
         seeded["group_claim"] = driver.default_group_claim
     return seeded
