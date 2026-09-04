@@ -48,6 +48,18 @@
   /* The login card, sized the way Volto's own login page is. */
   --identity-login-width: 350px;
 
+  /* The card's body never gets shorter than this. Every state of the login
+     page occupies it -- the picker, either form, a wait, a refusal -- and
+     without a floor the card resized on each of them, which read as the page
+     jumping about rather than as one card changing what it says. */
+  --identity-login-min-height: 260px;
+
+  /* What a wait or a refusal is drawn on: the card's own grey, near enough
+     opaque. Not white, which read as a hole in the card rather than as
+     something over it; and not transparent enough to leave the buttons
+     underneath looking pressable while they are not. */
+  --identity-overlay-veil: rgba(237, 241, 242, 0.96);
+
   /* Provider buttons: geometry and per-provider colours, also from
      volto-authomatic. */
   --identity-provider-width: 300px;
@@ -150,4 +162,42 @@
 .identity-note {
   color: var(--identity-muted);
   font-size: 0.9em;
+}
+
+/**
+ * A wait, drawn rather than described.
+ *
+ * Its own rule rather than `@plone/components`' `Spinner` for the reason the
+ * field border above is: that package ships its components and its CSS
+ * separately, and this add-on loads a stylesheet per widget it uses. A
+ * spinner is a border and a rotation, which is less than the note explaining
+ * why the imported one came through unstyled.
+ *
+ * Decorative: whatever is waiting says so in text beside this, and that text
+ * is what a screen reader should reach.
+ */
+.identity-spinner {
+  display: inline-block;
+  width: 1.15em;
+  height: 1.15em;
+  flex: none;
+  border: 2px solid var(--identity-surface-border);
+  border-radius: 50%;
+  border-top-color: var(--identity-accent);
+  animation: identity-spin 0.7s linear infinite;
+}
+
+@keyframes identity-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* A spin that cannot be stopped is a spin somebody has to look away from. */
+@media (prefers-reduced-motion: reduce) {
+  .identity-spinner {
+    border-top-color: var(--identity-accent);
+    animation: none;
+    opacity: 0.6;
+  }
 }

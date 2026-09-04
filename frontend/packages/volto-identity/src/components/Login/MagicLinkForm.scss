@@ -1,10 +1,25 @@
-/** The "email me a link" form, and what it says once the link is on its way. */
+/**
+ * The "email me a link" form, and what it says once the link is on its way.
+ *
+ * The form itself wears `.PloneAuth`, so its field, its underline and its
+ * action row are styled by `PasswordForm.scss` -- the two forms on this card
+ * are the same form and are styled once. Only what is particular to this one
+ * lives here: a single field needs no divider above its action row, and the
+ * confirmation that replaces the whole form is not a form at all.
+ */
 .identity-magic-link {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  &.PloneAuth .actions {
+    padding-top: 0;
+    /* `PasswordForm` rules a line above its two buttons to separate them from
+       two fields and a password-reset link. Above a single field it is a rule
+       under nothing. */
+    border-top: 0;
+  }
 }
 
 .identity-magic-link--sent {
+  padding: var(--identity-gap) 0;
+  margin: 0;
   color: var(--identity-muted);
+  text-align: center;
 }

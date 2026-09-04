@@ -31,6 +31,8 @@ import clearSVG from '@plone/volto/icons/clear.svg';
 // markup and the class names matching it exactly.
 import '@plone/components/src/styles/basic/TextField.css';
 
+import LoginOverlay, { useDismissibleError } from './LoginOverlay';
+
 import './PasswordForm.scss';
 
 const messages = defineMessages({
@@ -66,6 +68,7 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
   const intl = useIntl();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showError, dismissError] = useDismissibleError(error);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -111,14 +114,6 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
         </p>
       </Container>
 
-      {error ? (
-        // One message for a wrong name and a wrong password alike: telling
-        // them apart is an account-enumeration oracle.
-        <Container className="identity-error" role="alert">
-          {intl.formatMessage(messages.refused)}
-        </Container>
-      ) : null}
-
       <Container className="actions">
         <Button
           id="login-form-submit"
@@ -140,6 +135,23 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
           <Icon className="circled" name={clearSVG} size="30px" />
         </Button>
       </Container>
+
+      {/* Over the form rather than inside it: a refusal that pushed the
+          action row down moved the button the reader was about to press
+          again. The wait carries no dismiss -- it is not theirs to end. */}
+      {loading ? (
+        <LoginOverlay message={intl.formatMessage(messages.signingIn)} />
+      ) : null}
+
+      {/* One message for a wrong name and a wrong password alike: telling
+          them apart is an account-enumeration oracle. */}
+      {showError ? (
+        <LoginOverlay
+          error
+          message={intl.formatMessage(messages.refused)}
+          onDismiss={dismissError}
+        />
+      ) : null}
     </form>
   );
 };

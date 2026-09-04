@@ -1,11 +1,17 @@
 import type { Meta, StoryObj } from '@storybook/react';
 
 import LoginForm from './LoginForm';
-import { EMAIL, FAILED, PROVIDERS } from '../../stories/fixtures';
+import {
+  EMAIL,
+  FAILED,
+  PROVIDERS,
+  withLoginCard,
+} from '../../stories/fixtures';
 
 const meta: Meta<typeof LoginForm> = {
   title: 'Identity/Login/LoginForm',
   component: LoginForm,
+  decorators: [withLoginCard()],
   args: {
     providers: PROVIDERS,
     loading: false,
@@ -25,7 +31,13 @@ type Story = StoryObj<typeof LoginForm>;
 
 export const Providers: Story = {};
 
-/** The magic link is a form rather than a redirect, so it gets no button. */
+/**
+ * Email as one of the buttons.
+ *
+ * It is not a redirect, so pressing it opens its field on the next step
+ * rather than leaving this origin -- but on the picker it is a way in like
+ * any other, which is the only thing the picker is about.
+ */
 export const WithMagicLink: Story = {
   args: { providers: [...PROVIDERS, EMAIL] },
 };
@@ -61,7 +73,14 @@ export const TheOnlyWayInFailed: Story = {
   },
 };
 
-/** A site whose only way in is a link in the post. */
+/**
+ * A site whose only way in is a link in the post.
+ *
+ * Also what the Email button opens on a site with a choice: one way in is
+ * not a choice, so the step it would lead to is the page itself. The step
+ * reached by pressing the button is an interaction rather than a state, so
+ * it is pinned in `LoginForm.test.tsx` rather than here.
+ */
 export const MagicLinkOnly: Story = {
   args: { showPloneLogin: false, providers: [EMAIL] },
 };
@@ -70,4 +89,24 @@ export const Redirecting: Story = { args: { starting: true } };
 
 export const StartFailed: Story = { args: { error: FAILED.error } };
 
-export const PasswordRefused: Story = { args: { passwordError: FAILED.error } };
+/**
+ * A refused password, on the page that shows it.
+ *
+ * `passwordError` reaches `PasswordForm`, and that form is only on screen
+ * once it has been opened -- so with providers configured this story rendered
+ * the picker and showed nothing at all. A site with no providers *is* the
+ * password form, which is the state worth looking at.
+ */
+export const PasswordRefused: Story = {
+  args: { providers: [], passwordError: FAILED.error },
+};
+
+/** The same form while the attempt is still in flight. */
+export const Authenticating: Story = {
+  args: { providers: [], passwordLoading: true },
+};
+
+/** A refusal from the provider listing, over the options it could not load. */
+export const StartFailedDismissible: Story = {
+  args: { error: FAILED.error },
+};
