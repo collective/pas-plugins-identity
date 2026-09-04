@@ -351,7 +351,7 @@ export interface OAuthClient {
   title: string;
   redirect_uris: string[];
   grant_types: string[];
-  scope: string;
+  scope: string[];
   auth_method: string;
   public: boolean;
   enabled: boolean;

@@ -28,6 +28,7 @@ to the same rule.
 from pas.plugins.identity import _
 from pas.plugins.identity.server.interfaces import GRANT_TYPES
 from pas.plugins.identity.server.interfaces import PUBLIC_AUTH_METHOD
+from pas.plugins.identity.server.vocabularies.scopes import SCOPES_VOCABULARY
 from plone.autoform import directives
 from plone.supermodel import model
 from urllib.parse import urlsplit
@@ -382,15 +383,18 @@ class IClientRecords(Interface):
         default=("authorization_code",),
     )
 
-    scope = schema.TextLine(
-        title=_("Scope"),
+    scope = schema.Tuple(
+        title=_("Scopes"),
         description=_(
-            "The scopes this client may ask for, separated by spaces. A "
-            "request for anything outside this is narrowed rather than "
-            "refused."
+            "What this client may ask for. Only what this server issues is "
+            "offered, so a registration cannot name a scope that would be "
+            "narrowed away later. A request for anything outside this is "
+            "narrowed rather than refused."
         ),
+        value_type=schema.Choice(vocabulary=SCOPES_VOCABULARY),
         required=False,
-        default="",
+        missing_value=(),
+        default=(),
     )
 
     service_user = schema.TextLine(

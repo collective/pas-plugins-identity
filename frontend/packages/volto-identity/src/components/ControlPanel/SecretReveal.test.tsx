@@ -11,7 +11,7 @@ const CLIENT: OAuthClient = {
   title: 'Example App',
   redirect_uris: [],
   grant_types: ['authorization_code'],
-  scope: '',
+  scope: [],
   auth_method: 'client_secret_post',
   public: false,
   enabled: true,

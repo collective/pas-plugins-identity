@@ -11,7 +11,7 @@ const CLIENT: OAuthClient = {
   title: 'Example App',
   redirect_uris: ['https://app.example.org/cb'],
   grant_types: ['authorization_code'],
-  scope: 'openid profile',
+  scope: ['openid', 'profile'],
   auth_method: 'client_secret_post',
   public: false,
   enabled: true,
@@ -133,7 +133,9 @@ describe('ClientsPanel', () => {
     renderPanel();
 
     expect(screen.getByText('authorization_code')).toBeTruthy();
-    expect(screen.getByText('openid profile')).toBeTruthy();
+    // Comma-separated, the way the grants beside them read. The record holds
+    // a list now, and rendering it straight would run the scopes together.
+    expect(screen.getByText('openid, profile')).toBeTruthy();
   });
 
   it('opens the edit form for a client', () => {

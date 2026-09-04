@@ -336,7 +336,7 @@ class TokenView(BrowserView):
                 "This client is not registered for the client credentials grant.",
             )
 
-        scope = self._param("scope") or client.scope
+        scope = self._param("scope") or client.scope_string
         extra = set(scope.split()) - client.scopes()
         if extra:
             raise GrantError(

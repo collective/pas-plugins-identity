@@ -1,0 +1,1 @@
+Documented that a client's `scope` is a list, that the control panel offers the scopes this server releases claims for, and that a scope outside that list is still accepted through the API for a client whose own resource server checks it. @ericof

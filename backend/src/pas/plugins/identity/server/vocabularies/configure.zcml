@@ -1,0 +1,9 @@
+<configure xmlns="http://namespaces.zope.org/zope">
+
+  <utility
+      provides="zope.schema.interfaces.IVocabularyFactory"
+      name="pas.plugins.identity.Scopes"
+      component=".scopes.ScopesVocabularyFactory"
+      />
+
+</configure>
