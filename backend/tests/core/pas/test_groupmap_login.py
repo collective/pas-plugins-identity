@@ -18,9 +18,11 @@ before. Everything else is somebody else's to manage.
 from . import CLAIMS
 from . import DEX_IDENTITY
 from . import GITHUB_IDENTITY
+from pas.plugins.identity.core.audit import SIGNIN_REFUSED
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.pas import EXTRACTOR
+from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from plone import api
 
 import pytest
@@ -400,3 +402,241 @@ class TestTheProviderMayBeDeniedGroupMembership(GroupMapCase):
         userid = self.authenticate(with_groups("staff"), identity=SECOND_IDENTITY)
 
         assert self.groups_of(userid) == {"site-staff"}
+
+
+class TestOnlySomeGroupsMaySignIn(GroupMapCase):
+    """``allowed_groups``: sign-in restricted to members of named groups.
+
+    Checked on every login rather than only the first, because somebody
+    removed from the group at the provider has to stop getting in -- and an
+    account that predates the policy is exactly the case that would otherwise
+    keep working for ever.
+
+    An entry matches a name the provider sent *or* a local group id the map
+    turns one into. That is two vocabularies for one policy, which is a real
+    cost: what stops it being a trap is that the refusal names both sets.
+    """
+
+    def refused(self, claims) -> bool:
+        """Whether a login was turned away.
+
+        :param claims: Claims to authenticate with.
+        :returns: Whether the plugin declined.
+        """
+        return (
+            self.plugin.authenticateCredentials({
+                "extractor": EXTRACTOR,
+                "provider": PROVIDER,
+                "subject": SUBJECT,
+                "claims": claims,
+            })
+            is None
+        )
+
+    def test_an_empty_list_restricts_nothing(self):
+        """The default, and the behaviour of every site that never sets it."""
+        configure(config={"allowed_groups": ()})
+
+        assert not self.refused(with_groups("wheel"))
+
+    def test_a_provider_side_name_admits(self):
+        configure(config={"allowed_groups": ("editors",)})
+
+        assert not self.refused(with_groups("editors"))
+
+    def test_a_local_group_id_admits(self):
+        """The other vocabulary: `editors` maps to `site-editors`, and the
+        policy may be written in whichever one reads better."""
+        configure(config={"allowed_groups": ("site-editors",)})
+
+        assert not self.refused(with_groups("editors"))
+
+    def test_someone_in_no_allowed_group_is_refused(self):
+        configure(config={"allowed_groups": ("editors",)})
+
+        assert self.refused(with_groups("wheel"))
+
+    def test_someone_with_no_groups_at_all_is_refused(self):
+        configure(config={"allowed_groups": ("editors",)})
+
+        assert self.refused(with_groups())
+
+    def test_one_match_out_of_several_is_enough(self):
+        configure(config={"allowed_groups": ("editors", "auditors")})
+
+        assert not self.refused(with_groups("auditors"))
+
+    def test_no_account_is_created_for_a_refused_sign_in(self):
+        """The refusal has to happen before the userid is minted, or turning
+        somebody away would still leave an account behind for them."""
+        configure(config={"allowed_groups": ("editors",)})
+
+        self.refused(with_groups("wheel"))
+
+        assert self.plugin.store.get(PROVIDER, SUBJECT) is None
+
+    def test_it_is_checked_on_every_login_not_just_the_first(self):
+        """Removed from the group at the provider, and out."""
+        configure(config={"allowed_groups": ("editors",)})
+        assert not self.refused(with_groups("editors"))
+
+        assert self.refused(with_groups("wheel"))
+
+    def test_a_policy_on_a_driver_with_no_groups_refuses_everybody(self):
+        """Worth its own test because it is a configuration mistake that
+        looks like a directory problem.
+
+        Emptying ``group_claim`` is not this case: the driver's own default
+        fills in, which is why the claim still arrives for ``oidc-generic``.
+        The case is a driver that has no groups at all -- GitHub -- which a
+        provider can end up on by having its driver swapped, exactly as the
+        group sync already guards against.
+        """
+        set_providers([
+            ProviderConfig(
+                provider_id=PROVIDER,
+                driver_id="github",
+                title="GitHub",
+                config={"allowed_groups": ("editors",)},
+                groupmap=GROUPMAP,
+            )
+        ])
+
+        assert self.refused(with_groups("editors"))
+
+    def test_that_refusal_says_the_claim_is_missing(self, caplog):
+        """Rather than "not in an allowed group", which would send an
+        operator looking at the directory instead of at the field they left
+        empty."""
+        set_providers([
+            ProviderConfig(
+                provider_id=PROVIDER,
+                driver_id="github",
+                title="GitHub",
+                config={"allowed_groups": ("editors",)},
+                groupmap=GROUPMAP,
+            )
+        ])
+
+        self.refused(with_groups("editors"))
+
+        assert "no group claim configured" in caplog.text
+
+    def test_emptying_the_claim_still_uses_the_driver_default(self):
+        """The counterpart, asserted so the test above cannot quietly become
+        a test of the wrong thing."""
+        configure(config={"allowed_groups": ("editors",), "group_claim": ""})
+
+        assert not self.refused(with_groups("editors"))
+
+    def test_the_refusal_names_both_vocabularies(self, caplog):
+        """The whole mitigation for matching two of them: an operator reading
+        the log can see what arrived and what it mapped to, and tell which
+        spelling their entry should have used."""
+        configure(config={"allowed_groups": ("auditors",)})
+
+        self.refused(with_groups("editors"))
+
+        assert "auditors" in caplog.text
+        assert "editors" in caplog.text
+        assert "site-editors" in caplog.text
+
+    def test_the_refusal_is_audited(self, log):
+        """The operator-facing half. The audit log is manager-only, so the
+        reason can be recorded in full there while the person signing in is
+        told nothing.
+
+        :param log: The site's audit log, emptied.
+        """
+        configure(config={"allowed_groups": ("auditors",)})
+
+        self.refused(with_groups("editors"))
+
+        entry = log.entries()[0]
+        assert entry.event == SIGNIN_REFUSED
+        assert entry.success is False
+        assert "auditors" in entry.detail["reason"]
+
+
+class TestAProviderMayBeDeniedAccountCreation(GroupMapCase):
+    """``create_user`` off: authenticate here, but admit only known people.
+
+    A site federating with a large directory usually does not want everybody
+    who *can* authenticate to *get* an account. The account is found by
+    matching a verified address, which is why the two linking switches have to
+    be on -- and why saving the combination without them is refused elsewhere.
+    """
+
+    def signed_in(self, config: dict, claims=None) -> bool:
+        """Whether a login was admitted.
+
+        :param config: Driver settings for the provider.
+        :param claims: Claims to authenticate with.
+        :returns: Whether the plugin resolved a userid.
+        """
+        configure(groupmap={}, config=config)
+        return (
+            self.plugin.authenticateCredentials({
+                "extractor": EXTRACTOR,
+                "provider": PROVIDER,
+                "subject": SUBJECT,
+                "claims": CLAIMS if claims is None else claims,
+            })
+            is not None
+        )
+
+    def test_accounts_are_created_by_default(self):
+        """The behaviour that already exists, and the reason the field
+        defaults on."""
+        assert self.signed_in({})
+
+    def test_switched_off_an_unknown_person_is_refused(self):
+        assert not self.signed_in({
+            "create_user": False,
+            "auto_link_by_email": True,
+            "trust_email_verification": True,
+        })
+
+    def test_no_userid_is_minted_for_a_refused_sign_in(self):
+        self.signed_in({
+            "create_user": False,
+            "auto_link_by_email": True,
+            "trust_email_verification": True,
+        })
+
+        assert self.plugin.store.get(PROVIDER, SUBJECT) is None
+
+    def test_somebody_who_already_has_an_account_is_admitted(self):
+        """The half that matters: a gate refusing everybody would pass every
+        test above. The account is found by matching the verified address,
+        which is what the two linking switches are for.
+        """
+        address = CLAIMS["email"]
+        api.user.create(
+            username="already-here",
+            email=address,
+            password="a-long-enough-password",
+        )
+        self.plugin.store.add(EMAIL_PROVIDER, address, "already-here", {})
+
+        admitted = self.signed_in({
+            "create_user": False,
+            "auto_link_by_email": True,
+            "trust_email_verification": True,
+        })
+
+        assert admitted
+        assert self.plugin.store.userid_for(PROVIDER, SUBJECT) == "already-here"
+
+    def test_the_switch_only_gates_creation_not_the_identity(self):
+        """An identity linked on an earlier login keeps working after the
+        switch goes off: it resolves to its account without creating one."""
+        assert self.signed_in({})
+        userid = self.plugin.store.userid_for(PROVIDER, SUBJECT)
+
+        assert self.signed_in({
+            "create_user": False,
+            "auto_link_by_email": True,
+            "trust_email_verification": True,
+        })
+        assert self.plugin.store.userid_for(PROVIDER, SUBJECT) == userid

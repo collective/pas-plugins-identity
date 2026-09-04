@@ -13,6 +13,7 @@ from . import USERINFO
 from pas.plugins.identity.core.audit import AUTHENTICATED
 from pas.plugins.identity.core.audit import FLOW_REFUSED
 from pas.plugins.identity.core.audit import PAYLOAD_REJECTED
+from pas.plugins.identity.core.audit import SIGNIN_REFUSED
 from pas.plugins.identity.core.audit import UNATTRIBUTED
 from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.controlpanel import ProviderConfig
@@ -520,3 +521,58 @@ class TestAProviderThatSendsStringBooleans(CallbackCase):
         claims = self.sign_in(accept_strings=True, verified="1")
 
         assert claims["email_verified"] is False
+
+
+class TestASignInThisSiteDoesNotAdmit(CallbackCase):
+    """The provider authenticated them; this site's policy said no.
+
+    Worth going through the real service rather than the plugin, because the
+    plugin declines by returning ``None`` and the callback used to unpack that
+    into ``userid, _login``. A refusal was therefore a ``TypeError`` and a 500
+    -- a site telling the world it is broken when it is doing exactly what it
+    was configured to do.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(
+        self, portal, request_, configured, stub_metadata, stub_provider, log
+    ) -> None:
+        self.portal = portal
+        self.request = request_
+        self.log = log
+        stub_metadata(DEX_METADATA)
+        stub_provider()
+        provider = ProviderConfig.deserialize(DEX_PROVIDER)
+        provider.config["allowed_groups"] = ("nobody-is-in-this",)
+        set_providers([provider])
+        self.flow = self.start_flow()
+
+    def test_it_is_refused_rather_than_crashing(self):
+        self.finish(self.flow)
+
+        assert self.status() == 401
+
+    def test_it_reads_as_a_failed_sign_in(self):
+        """The same answer a wrong credential gets. Naming the group somebody
+        is missing would tell anyone who can reach the login page which
+        groups matter."""
+        result = self.finish(self.flow)
+
+        assert result["error"]["type"] == "Authentication failed"
+
+    def test_the_answer_names_no_group(self):
+        result = self.finish(self.flow)
+
+        assert "nobody-is-in-this" not in str(result)
+
+    def test_no_token_is_issued(self):
+        assert "token" not in self.finish(self.flow)
+
+    def test_the_operator_gets_the_detail_in_the_audit_log(self):
+        """The other half of telling the caller nothing: a manager can still
+        find out exactly why."""
+        self.finish(self.flow)
+
+        entry = self.log.entries()[0]
+        assert entry.event == SIGNIN_REFUSED
+        assert "nobody-is-in-this" in entry.detail["reason"]

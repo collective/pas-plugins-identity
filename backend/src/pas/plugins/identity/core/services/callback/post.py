@@ -134,7 +134,35 @@ class IdentityCallback(IdentityService):
         if attempt.link_for is not None:
             return self._link(attempt.link_for, provider.provider_id, subject, claims)
 
-        userid = self._authenticate(provider.provider_id, subject, claims)
+        return self._signed_in(provider.provider_id, subject, claims, attempt)
+
+    def _signed_in(
+        self, provider_id: str, subject: str, claims: Claims, attempt: FlowAttempt
+    ) -> JSONDict:
+        """Authenticate the identity and answer with a token.
+
+        Split out of :meth:`reply` to keep that method under the complexity
+        gate once this site's own policy gained a way to refuse a sign-in the
+        provider authenticated.
+
+        :param provider_id: Provider id.
+        :param subject: Provider-side subject identifier.
+        :param claims: Normalized claims.
+        :param attempt: The flow attempt, for where to go next.
+        :returns: The token body, or an error body.
+        """
+        userid = self._authenticate(provider_id, subject, claims)
+        if userid is None:
+            # The provider authenticated them and this site's policy did not
+            # admit them. The plugin has already logged and audited why; the
+            # caller is told what a failed sign-in is always told, because
+            # naming the group somebody is missing tells anyone who can reach
+            # the login page which groups matter.
+            return self._error(
+                401,
+                "Authentication failed",
+                "This site did not admit that sign-in.",
+            )
         token = self._token_for(userid)
         if isinstance(token, dict):
             return token
@@ -290,7 +318,9 @@ class IdentityCallback(IdentityService):
             code,
         )
 
-    def _authenticate(self, provider_id: str, subject: str, claims: Claims) -> str:
+    def _authenticate(
+        self, provider_id: str, subject: str, claims: Claims
+    ) -> str | None:
         """Resolve an external identity to a canonical userid.
 
         Goes through the PAS plugin rather than around it, so first-login user
@@ -305,7 +335,10 @@ class IdentityCallback(IdentityService):
         :param provider_id: Provider id.
         :param subject: Provider-side subject identifier.
         :param claims: Normalized claims.
-        :returns: The canonical userid.
+        :returns: The canonical userid, or ``None`` where this site's own
+            policy refused a sign-in the provider authenticated -- an
+            ``allowed_groups`` list nobody matched, or a new account at a
+            provider not allowed to create one.
         """
         plugin = api.portal.get_tool("acl_users")[PLUGIN_ID]
         self.request.other[CREDENTIALS_KEY] = {
@@ -313,7 +346,10 @@ class IdentityCallback(IdentityService):
             "subject": subject,
             "claims": claims,
         }
-        userid, _login = plugin.authenticateCredentials(
+        resolved = plugin.authenticateCredentials(
             plugin.extractCredentials(self.request)
         )
+        if resolved is None:
+            return None
+        userid, _login = resolved
         return userid

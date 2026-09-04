@@ -1,10 +1,12 @@
 """``POST @identity-providers`` -- create, or run an action."""
 
 from pas.plugins.identity import logger
+from pas.plugins.identity.core.controlpanel import check_signin_policy
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.controlpanel import InvalidColor
 from pas.plugins.identity.core.controlpanel import InvalidProviderId
+from pas.plugins.identity.core.controlpanel import InvalidSignInPolicy
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.controlpanel import validate_provider_id
@@ -57,6 +59,11 @@ class ProvidersPost(ProvidersService):
             return self._error(
                 409, "Already configured", f"{provider_id!r} already exists."
             )
+
+        try:
+            check_signin_policy(data.get("config", {}) or {})
+        except InvalidSignInPolicy as error:
+            return self._error(400, "Nobody could sign in", str(error))
 
         try:
             provider = ProviderConfig(

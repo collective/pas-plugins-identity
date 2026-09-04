@@ -59,6 +59,14 @@ MAGIC_LINK_SENT = "magic-link-sent"
 MAGIC_LINK_CONFIRMED = "magic-link-confirmed"
 MAGIC_LINK_REFUSED = "magic-link-refused"
 
+#: A sign-in the provider authenticated and this site's policy refused:
+#: a person outside every allowed group, or a new account at a provider
+#: not allowed to create one. Distinct from ``flow-refused``, which
+#: means the credential itself did not check out -- an operator looking
+#: at a run of these is looking at their own configuration, not at an
+#: attack.
+SIGNIN_REFUSED = "signin-refused"
+
 
 class AuditEntry(Persistent):
     """One recorded authentication event.

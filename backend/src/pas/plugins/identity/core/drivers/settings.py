@@ -135,6 +135,26 @@ class IOAuth2Settings(IDriverSettings):
         default=False,
     )
 
+    create_user = schema.Bool(
+        title=_("Let this provider create accounts"),
+        description=_(
+            "Switch it off to authenticate against this provider while "
+            "admitting only people who already have an account here. A site "
+            "federating with a large directory usually does not want "
+            "everybody who *can* authenticate to *get* an account: "
+            "membership is decided elsewhere, and the provider only proves "
+            "who somebody is. An account is found by matching the verified "
+            "address, so the two switches below have to be on as well -- "
+            "without them there is nothing to match on and nobody would ever "
+            "be admitted."
+        ),
+        required=False,
+        # True for the same reason as the group switch below: it names
+        # behaviour that already exists, and defaulting it off would stop
+        # every federated site admitting anybody new.
+        default=True,
+    )
+
     accept_string_booleans = schema.Bool(
         title=_("This provider sends verification flags as text"),
         description=_(
@@ -191,6 +211,24 @@ class IOIDCSettings(IOAuth2Settings):
         required=False,
         default="",
     )
+
+    allowed_groups = schema.Tuple(
+        title=_("Only these groups may sign in"),
+        description=_(
+            "Leave it empty and anybody this provider authenticates may sign "
+            "in. Name groups here and a sign-in is refused unless the "
+            "provider says the person is in one of them. An entry matches "
+            "either a name the provider sends or a local group id the map "
+            "turns one into, so it can be written in whichever vocabulary "
+            "the policy is easier to state in. This needs a group claim: "
+            "with none configured no groups arrive, and nobody matches."
+        ),
+        value_type=schema.TextLine(),
+        required=False,
+        missing_value=(),
+        default=(),
+    )
+    directives.widget("allowed_groups", frontendOptions={"widget": "token"})
 
     sync_groups = schema.Bool(
         title=_("Let this provider set group membership"),

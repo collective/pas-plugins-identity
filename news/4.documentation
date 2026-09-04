@@ -1,0 +1,1 @@
+Documented restricting sign-in to certain groups, including that it needs a group claim and that a provider whose driver has none refuses everybody. @ericof

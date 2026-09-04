@@ -1,7 +1,9 @@
 """``PATCH @identity-providers/<id>`` -- update in place."""
 
+from pas.plugins.identity.core.controlpanel import check_signin_policy
 from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.controlpanel import InvalidColor
+from pas.plugins.identity.core.controlpanel import InvalidSignInPolicy
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.controlpanel import unmask
 from pas.plugins.identity.core.interfaces import JSONDict
@@ -64,7 +66,12 @@ class ProvidersPatch(ProvidersService):
         if "config" in data:
             # A round trip echoes the mask back, and that must not overwrite
             # the stored secret with a row of bullets.
-            target.config = unmask(target.driver_id, data["config"], target.config)
+            merged = unmask(target.driver_id, data["config"], target.config)
+            try:
+                check_signin_policy(merged)
+            except InvalidSignInPolicy as error:
+                return self._error(400, "Nobody could sign in", str(error))
+            target.config = merged
         return None
 
     def _apply_style(self, target, data: JSONDict) -> JSONDict | None:

@@ -1,0 +1,1 @@
+Added `create_user`, a per-provider switch for authenticating against a provider while admitting only people who already have an account here. The account is found by matching a verified address, so saving it without the two linking switches is refused rather than leaving a provider nobody can sign in through. @ericof
