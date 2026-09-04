@@ -134,10 +134,7 @@ export function toFormData(client?: OAuthClient): Record<string, unknown> {
     enabled: client.enabled ?? true,
     grant_types: [...(client.grant_types ?? [])],
     redirect_uris: [...(client.redirect_uris ?? [])],
-    // A scope arrives as the space-joined string OAuth 2 puts on the wire
-    // and is edited as the list of permissions it actually is -- the same
-    // reason a provider's scope is a list rather than one text box.
-    scope: (client.scope ?? '').split(/\s+/).filter(Boolean),
+    scope: [...(client.scope ?? [])],
     service_user: client.service_user ?? '',
   };
 }
@@ -165,7 +162,7 @@ export function fromFormData(
     title: data.title ?? '',
     grant_types: [...(data.grant_types ?? [])],
     redirect_uris: (data.redirect_uris ?? []).filter(Boolean),
-    scope: (data.scope ?? []).filter(Boolean).join(' '),
+    scope: (data.scope ?? []).filter(Boolean),
     service_user: data.service_user ?? '',
   };
 

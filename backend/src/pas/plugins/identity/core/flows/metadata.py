@@ -17,10 +17,13 @@ from datetime import timedelta
 from datetime import UTC
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.controlpanel import ProviderConfig
+from pas.plugins.identity.core.controlpanel.interfaces import DEFAULT_DISCOVERY_TIMEOUT
 from pas.plugins.identity.core.interfaces import FlowError
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.interfaces import ProviderUnusable
+from plone.registry.interfaces import IRegistry
 from urllib.parse import urlparse
+from zope.component import queryUtility
 
 import requests
 
@@ -68,12 +71,30 @@ DISCOVERY_PATH = "/.well-known/openid-configuration"
 #: How long a discovery document is trusted before it is fetched again.
 DISCOVERY_TTL = timedelta(hours=12)
 
-#: Network timeout for discovery, in seconds. A provider that cannot answer
-#: this quickly is down, and a login should say so rather than hang.
-DISCOVERY_TIMEOUT = 10
+#: Registry record holding the network timeout for discovery. A provider that
+#: cannot answer inside it is down, and a login should say so rather than
+#: hang -- but how long that is depends on where the provider is, so it is a
+#: setting rather than a constant.
+DISCOVERY_TIMEOUT_RECORD = "pas.plugins.identity.discovery_timeout"
 
 #: Issuer -> (fetched at, metadata).
 _CACHE: dict[str, tuple[datetime, JSONDict]] = {}
+
+
+def discovery_timeout() -> int:
+    """Return how long to wait for a discovery document.
+
+    Read through the component registry rather than :mod:`plone.api` because
+    this module is reachable with no site at all -- the flow layer takes its
+    provider as an argument and is tested that way -- and a missing registry
+    is then the ordinary case rather than an error.
+
+    :returns: The site's setting, or the schema's default where there is no
+        site, no record, or no value.
+    """
+    registry = queryUtility(IRegistry)
+    value = None if registry is None else registry.get(DISCOVERY_TIMEOUT_RECORD)
+    return int(value or DEFAULT_DISCOVERY_TIMEOUT)
 
 
 def forget(issuer: str | None = None) -> None:
@@ -198,7 +219,7 @@ def _fetch(url: str, issuer: str, secure: bool) -> JSONDict:
     if secure and urlparse(url).scheme != "https":
         raise FlowError(f"{issuer}: refusing to downgrade to {url!r}")
     try:
-        response = requests.get(url, timeout=DISCOVERY_TIMEOUT)
+        response = requests.get(url, timeout=discovery_timeout())
         response.raise_for_status()
         document = response.json()
     except (requests.RequestException, ValueError) as exc:

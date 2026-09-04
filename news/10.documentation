@@ -1,0 +1,1 @@
+Documented that the avatar fetch's timeout and size cap are settings rather than constants, on both pages that describe what the fetch enforces. @ericof

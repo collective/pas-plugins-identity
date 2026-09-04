@@ -18,6 +18,15 @@
   <record name="pas.plugins.identity.sync_portraits"
           remove="true"
   />
+  <record name="pas.plugins.identity.portrait_timeout"
+          remove="true"
+  />
+  <record name="pas.plugins.identity.portrait_max_bytes"
+          remove="true"
+  />
+  <record name="pas.plugins.identity.discovery_timeout"
+          remove="true"
+  />
   <record name="pas.plugins.identity.user_content_type"
           remove="true"
   />

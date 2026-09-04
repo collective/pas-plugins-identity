@@ -367,7 +367,7 @@ export const CLIENT: OAuthClient = {
   title: 'Intranet',
   redirect_uris: ['https://intranet.example.org/login-identity'],
   grant_types: ['authorization_code', 'refresh_token'],
-  scope: 'openid email profile',
+  scope: ['openid', 'email', 'profile'],
   auth_method: 'client_secret_post',
   public: false,
   enabled: true,

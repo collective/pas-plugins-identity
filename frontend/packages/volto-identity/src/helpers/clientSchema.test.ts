@@ -40,7 +40,7 @@ const SERVED = {
         ['refresh_token', 'refresh_token'],
       ],
     },
-    scope: { title: 'Scope', type: 'string' },
+    scope: { title: 'Scopes', type: 'array' },
     service_user: { title: 'Acts as', type: 'string' },
   },
   required: ['title'],
@@ -115,17 +115,38 @@ describe('toFormData', () => {
   });
 
   it('edits a scope as the list of permissions it is', () => {
-    const client = { scope: 'openid profile email' } as OAuthClient;
+    // The backend field is a tuple of choices, so nothing here splits a
+    // string any more -- the two conversions this helper used to do existed
+    // only because the record was one line of space-separated text.
+    const client = { scope: ['openid', 'profile', 'email'] } as OAuthClient;
 
     expect(toFormData(client).scope).toEqual(['openid', 'profile', 'email']);
+  });
+
+  it('copies the scopes rather than sharing them', () => {
+    // The form mutates what it is given, and the client in the store is not
+    // the form's to edit.
+    const client = { scope: ['openid'] } as OAuthClient;
+
+    expect(toFormData(client).scope).not.toBe(client.scope);
+  });
+
+  it('has no scopes for a client that carries none', () => {
+    expect(toFormData({} as OAuthClient).scope).toEqual([]);
   });
 });
 
 describe('fromFormData', () => {
-  it('joins the scope back into what OAuth 2 puts on the wire', () => {
+  it('sends the scopes as the list the record now holds', () => {
     const payload = fromFormData({ scope: ['openid', 'email'] }, true);
 
-    expect(payload.scope).toBe('openid email');
+    expect(payload.scope).toEqual(['openid', 'email']);
+  });
+
+  it('drops the scope widget’s empty rows too', () => {
+    const payload = fromFormData({ scope: ['openid', '', null] }, true);
+
+    expect(payload.scope).toEqual(['openid']);
   });
 
   it('drops a list widget’s empty rows', () => {

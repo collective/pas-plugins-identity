@@ -326,7 +326,7 @@ const ClientsPanel: React.FC<ClientsPanelProps> = ({
                   <Table.Cell>
                     {client.grant_types.join(', ') || NOTHING}
                   </Table.Cell>
-                  <Table.Cell>{client.scope || NOTHING}</Table.Cell>
+                  <Table.Cell>{client.scope.join(', ') || NOTHING}</Table.Cell>
                   <Table.Cell>
                     {intl.formatMessage(
                       client.enabled ? messages.yes : messages.no,

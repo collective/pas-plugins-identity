@@ -16,6 +16,9 @@
          ``interface`` attribute above creates every field it declares.
          The numeric and boolean records are stated so the shipped defaults
          are visible without reading the interface. -->
+    <value key="portrait_timeout">5</value>
+    <value key="portrait_max_bytes">2097152</value>
+    <value key="discovery_timeout">10</value>
     <value key="audit_max_entries">500</value>
     <value key="audit_max_days">180</value>
     <value key="audit_record_pii">False</value>

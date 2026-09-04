@@ -146,6 +146,38 @@ def validated_grants(grants: list[str] | None) -> list[str]:
     return wanted
 
 
+def as_scope_list(scopes: list[str] | tuple[str, ...] | str | None) -> list[str]:
+    """Return scopes as a list, whatever shape they arrived in.
+
+    ``scope`` was a single free-text line holding space-separated scopes, so
+    everything registered before this holds a string -- the demo's own profile
+    does -- and a space-delimited string is also what an OAuth request carries
+    on the wire (RFC 6749 §3.3). The field is a list now, so both are accepted
+    and one shape is stored.
+
+    Nothing is refused here, deliberately. The control panel offers only the
+    scopes this server releases claims for, which is what
+    :data:`~pas.plugins.identity.server.vocabularies.scopes.SCOPES_VOCABULARY`
+    is for; but a scope this server does not release a claim for is still a
+    legitimate registration. A client-credentials client for a resource server
+    is registered with the API scopes that resource server checks, and this
+    server's job for those is to carry them in the token, not to know what
+    they mean. Refusing them would delete that, and the discovery document
+    never claimed to list them.
+
+    :param scopes: Scopes as supplied: a sequence, a space-separated string,
+        or nothing.
+    :returns: The scopes to store, in the order given, without duplicates.
+    """
+    if isinstance(scopes, str):
+        scopes = scopes.split()
+    stored: list[str] = []
+    for scope in scopes or ():
+        if scope not in stored:
+            stored.append(scope)
+    return stored
+
+
 class ClientConfig:
     """One registered OAuth client.
 
@@ -153,7 +185,7 @@ class ClientConfig:
     :ivar title: Label shown to the user on the consent screen.
     :ivar redirect_uris: The exact URIs this client may be redirected to.
     :ivar grant_types: Grants this client may use.
-    :ivar scope: Space-separated scopes the client may ask for.
+    :ivar scope: The scopes the client may ask for.
     :ivar auth_method: Token-endpoint authentication method;
         :data:`PUBLIC_AUTH_METHOD` for a client with no secret.
     :ivar secret_hash: Stored hash of the client secret, empty for a public
@@ -169,7 +201,7 @@ class ClientConfig:
         title: str = "",
         redirect_uris: list[str] | None = None,
         grant_types: list[str] | None = None,
-        scope: str = "",
+        scope: list[str] | tuple[str, ...] | str | None = None,
         auth_method: str = PUBLIC_AUTH_METHOD,
         secret_hash: str = "",
         enabled: bool = True,
@@ -181,7 +213,7 @@ class ClientConfig:
         :param title: Label for the consent screen.
         :param redirect_uris: Exact redirect URIs.
         :param grant_types: Grants this client may use.
-        :param scope: Space-separated scopes.
+        :param scope: Scopes this client may ask for.
         :param auth_method: Token-endpoint auth method.
         :param secret_hash: Stored secret hash.
         :param enabled: Whether the client is usable.
@@ -236,6 +268,38 @@ class ClientConfig:
         :raises ServerError: When one of them is not implemented here.
         """
         self._grant_types = validated_grants(value)
+
+    @property
+    def scope(self) -> list[str]:
+        """Return the scopes this client may ask for.
+
+        :returns: The registered scopes.
+        """
+        return self._scope
+
+    @scope.setter
+    def scope(self, value: list[str] | tuple[str, ...] | str | None) -> None:
+        """Store scopes in one shape, whatever shape they arrived in.
+
+        A property rather than a plain attribute for the reason
+        :attr:`redirect_uris` is one: this package assigns to it directly, the
+        PATCH endpoint included, so normalising in the constructor alone would
+        leave ``scope`` holding a string on some paths and a list on others.
+
+        :param value: Scopes as supplied; a space-separated string is
+            accepted, which is what everything registered before this held.
+        """
+        self._scope = as_scope_list(value)
+
+    @property
+    def scope_string(self) -> str:
+        """Return the scopes as an OAuth request would carry them.
+
+        :returns: The registered scopes, space-separated. RFC 6749 §3.3 makes
+            ``scope`` a space-delimited string on the wire, and the token
+            endpoint compares what was asked for against this.
+        """
+        return " ".join(self.scope)
 
     @property
     def is_public(self) -> bool:
@@ -309,11 +373,12 @@ class ClientConfig:
         return grant_type in self.grant_types
 
     def scopes(self) -> set[str]:
-        """Return the scopes this client may ask for.
+        """Return the scopes this client may ask for, as a set.
 
-        :returns: The scope string split on whitespace.
+        :returns: The registered scopes, for the subset tests the
+            authorization and token endpoints do.
         """
-        return set(self.scope.split())
+        return set(self.scope)
 
     def serialize(self, include_hash: bool = False) -> JSONDict:
         """Render the client for storage or for an API response.
@@ -329,7 +394,7 @@ class ClientConfig:
             "title": self.title,
             "redirect_uris": list(self.redirect_uris),
             "grant_types": list(self.grant_types),
-            "scope": self.scope,
+            "scope": list(self.scope),
             "auth_method": self.auth_method,
             "public": self.is_public,
             "enabled": self.enabled,
@@ -351,7 +416,7 @@ class ClientConfig:
             title=data.get("title", ""),
             redirect_uris=list(data.get("redirect_uris", [])),
             grant_types=list(data.get("grant_types", ["authorization_code"])),
-            scope=data.get("scope", ""),
+            scope=data.get("scope", ()),
             auth_method=data.get("auth_method", PUBLIC_AUTH_METHOD),
             secret_hash=data.get("secret_hash", ""),
             enabled=data.get("enabled", True),
@@ -404,7 +469,7 @@ def add_client(
     title: str = "",
     redirect_uris: list[str] | None = None,
     grant_types: list[str] | None = None,
-    scope: str = "",
+    scope: list[str] | tuple[str, ...] | str | None = None,
     public: bool = False,
     service_user: str = "",
 ) -> tuple[ClientConfig, str]:
@@ -414,7 +479,7 @@ def add_client(
     :param title: Label for the consent screen.
     :param redirect_uris: Exact redirect URIs.
     :param grant_types: Grants this client may use.
-    :param scope: Space-separated scopes.
+    :param scope: Scopes this client may ask for.
     :param public: Whether the client authenticates with no secret.
     :param service_user: Plone userid a client-credentials token acts as.
     :returns: The stored client and its plaintext secret. The secret is empty

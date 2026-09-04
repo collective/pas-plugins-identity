@@ -1,0 +1,1 @@
+A client's scopes are edited as the list they are, and `OAuthClient.scope` is `string[]`. The two conversions the client form used to do existed only because the backend record was one line of space-separated text; the record is a list now, so the form binds to it directly and the listing renders the scopes comma-separated, the way the grants beside them already read. @ericof

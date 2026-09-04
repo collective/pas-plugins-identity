@@ -327,6 +327,85 @@ class TestScopes:
     def test_no_scope_is_an_empty_set(self):
         assert ClientConfig(client_id="app").scopes() == set()
 
+    def test_a_list_is_stored_as_one(self):
+        """What the control panel now sends: the field is a tuple of choices,
+        not a line of text."""
+        client = ClientConfig(client_id="app", scope=["openid", "email"])
+
+        assert client.scope == ["openid", "email"]
+
+    def test_a_string_is_still_accepted(self):
+        """Every client registered before the field changed holds one, and so
+        does the demo's own profile. Reading them back must not need a
+        migration."""
+        client = ClientConfig(client_id="app", scope="openid email")
+
+        assert client.scope == ["openid", "email"]
+
+    def test_nothing_is_an_empty_list(self):
+        assert ClientConfig(client_id="app").scope == []
+
+    def test_a_repeated_scope_is_stored_once(self):
+        """A token widget can send the same term twice, and asking for a
+        scope twice means asking for it once."""
+        client = ClientConfig(client_id="app", scope=["openid", "email", "openid"])
+
+        assert client.scope == ["openid", "email"]
+
+    def test_the_order_typed_is_the_order_kept(self):
+        """It is what the consent screen reads out, so it should not be
+        reshuffled between the form and the page."""
+        client = ClientConfig(client_id="app", scope=["profile", "openid", "email"])
+
+        assert client.scope == ["profile", "openid", "email"]
+
+    def test_the_wire_form_is_space_joined(self):
+        """RFC 6749 §3.3: ``scope`` is space-delimited on the wire, which is
+        what the token endpoint hands back to a client that named none."""
+        client = ClientConfig(client_id="app", scope=["openid", "email"])
+
+        assert client.scope_string == "openid email"
+
+    def test_an_api_scope_is_not_refused(self):
+        """The vocabulary lists what this server releases claims for. A
+        client-credentials client is registered with the scopes its resource
+        server checks, and this server's job for those is to carry them."""
+        client = ClientConfig(client_id="app", scope=["read", "write"])
+
+        assert client.scopes() == {"read", "write"}
+
+    def test_assigning_afterwards_normalizes_too(self):
+        """``PATCH @identity-clients/<id>`` assigns straight to the attribute,
+        so normalising in the constructor alone would leave ``scope`` holding
+        a string on that path."""
+        client = ClientConfig(client_id="app")
+
+        client.scope = "openid profile"
+
+        assert client.scope == ["openid", "profile"]
+
+    def test_a_string_and_a_list_serialize_the_same(self):
+        """A stored registration and a freshly edited one must not differ in
+        the record, or an export would show a change nobody made."""
+        typed = ClientConfig(client_id="app", scope="openid email")
+        picked = ClientConfig(client_id="app", scope=["openid", "email"])
+
+        assert typed.serialize() == picked.serialize()
+
+    def test_a_stored_string_round_trips_to_a_list(self):
+        """The shape in the demo profile today."""
+        restored = ClientConfig.deserialize({
+            "client_id": "app",
+            "scope": "openid email profile address",
+        })
+
+        assert restored.serialize()["scope"] == [
+            "openid",
+            "email",
+            "profile",
+            "address",
+        ]
+
     def test_a_registered_grant_is_allowed(self):
         client = ClientConfig(client_id="app", grant_types=["client_credentials"])
 

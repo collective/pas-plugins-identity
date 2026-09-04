@@ -25,6 +25,9 @@ POST @identity-clients
 
 Send the title, the redirect URIs, the grants, the scope, and the authentication method.
 
+`scope` is a list, not a line of space-separated text, and the control panel offers the scopes this server releases claims for -- the same ones the discovery document advertises.
+A scope it does not offer is still accepted through the API: a client-credentials client is registered with the scopes its own resource server checks, and this server's job for those is to carry them in the token rather than to know what they mean.
+
 ```{important}
 The response to this call contains the client secret, and it is the only response that ever will.
 Capture it now.

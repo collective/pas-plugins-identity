@@ -15,6 +15,11 @@
 
   <include package=".browser" />
 
+  <!-- Registered outside the browser layer: a vocabulary is looked up by
+       name while a schema field is validated, and that happens wherever the
+       client registry is written from, a setup handler included. -->
+  <include package=".vocabularies" />
+
   <include package=".controlpanel" />
   <include package=".services" />
   <include package=".subscribers" />

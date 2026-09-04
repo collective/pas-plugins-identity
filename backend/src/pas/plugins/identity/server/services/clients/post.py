@@ -64,7 +64,7 @@ class ClientsPost(ClientsService):
                 title=data.get("title", ""),
                 redirect_uris=redirect_uris,
                 grant_types=grant_types,
-                scope=data.get("scope", ""),
+                scope=data.get("scope", ()),
                 public=public,
                 service_user=data.get("service_user", ""),
             )
