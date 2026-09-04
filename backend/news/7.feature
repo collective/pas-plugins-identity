@@ -1,0 +1,1 @@
+Added `sync_groups`, a per-provider switch for keeping a provider to sign in with while deciding group membership locally. Groups it already granted stay, exactly as they do when the map is emptied. @ericof

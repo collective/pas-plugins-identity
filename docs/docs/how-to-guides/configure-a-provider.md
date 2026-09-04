@@ -169,6 +169,16 @@ Every login reconciles, so a membership revoked at the provider stops granting a
 A login only ever takes back what that same provider granted.
 The identity record remembers each provider's own grant, so a group you granted by hand survives every sign-in, and two providers cannot revoke each other's grants.
 
+### Keep the provider, decide the groups yourself
+
+Switch off **Let this provider set group membership** to sign people in with the provider while deciding membership here.
+A site may trust a provider to say who somebody is without trusting it to say what they may do, and group membership is usually what grants permissions.
+
+Groups the provider already granted stay.
+Taking those away is a separate decision, and one to make deliberately rather than at the next login: it is the same rule as emptying the map.
+
+It is per-provider, so refusing one provider is not refusing all of them.
+
 ## Next steps
 
 -   {doc}`enable-back-channel-logout`, so a sign-out at the provider ends the session here.

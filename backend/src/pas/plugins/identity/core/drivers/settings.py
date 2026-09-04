@@ -192,6 +192,26 @@ class IOIDCSettings(IOAuth2Settings):
         default="",
     )
 
+    sync_groups = schema.Bool(
+        title=_("Let this provider set group membership"),
+        description=_(
+            "Switch it off to keep the provider for signing in while "
+            "deciding group membership here. A site may trust a provider to "
+            "say who somebody is without trusting it to say what they may "
+            "do, and group membership is usually what grants permissions. "
+            "Switching it off leaves the groups this provider already "
+            "granted in place: taking those away is a separate decision, and "
+            "one to make deliberately rather than at the next login."
+        ),
+        required=False,
+        # True, unlike every other switch on this form. The others are off
+        # because the safe answer is to do less; this one names behaviour
+        # that already exists, and defaulting it off would stop group
+        # federation on every site that has it configured, silently, at the
+        # next login.
+        default=True,
+    )
+
     picture_over_http = schema.Bool(
         title=_("Allow the avatar to be fetched over plain HTTP"),
         description=_(

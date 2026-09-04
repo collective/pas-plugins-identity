@@ -852,7 +852,8 @@ class IdentityPlugin(BasePlugin):
         touched; neither is a group granted by a second provider, which keeps
         its own record.
 
-        A provider with an empty map returns immediately rather than
+        A provider whose operator switched ``sync_groups`` off returns
+        immediately, and so does one with an empty map, rather than
         reconciling against nothing. Otherwise clearing a map would silently
         strip every group it had granted, at the next login, with no other
         sign -- and an operator clearing a map is at least as likely to be
@@ -877,6 +878,22 @@ class IdentityPlugin(BasePlugin):
 
         config = get_provider(provider)
         if config is None or not config.groupmap:
+            return
+        if not config.config.get("sync_groups", True):
+            # The operator kept this provider for signing in and took group
+            # membership back. Returning here rather than reconciling against
+            # an empty set leaves what the provider granted before in place,
+            # exactly as clearing the map does: withdrawing those grants is a
+            # separate decision, and one nobody makes by editing a checkbox.
+            #
+            # ``True`` on the read as well as on the field. A stored
+            # provider always carries the key -- reading one back composes
+            # its config from the current schema, so every field's default is
+            # seeded -- which makes this the answer for a ``ProviderConfig``
+            # built in code and never stored. ``True`` rather than letting
+            # ``get`` answer ``None`` because the two failure directions are
+            # not equal: this way a config that somehow lost the key keeps
+            # federating, instead of silently ceasing to.
             return
 
         claim_path = (config.config.get("group_claim") or "").strip() or getattr(

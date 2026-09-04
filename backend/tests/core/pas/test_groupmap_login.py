@@ -74,7 +74,15 @@ def configure(
     ])
 
 
-class TestGroupMapOnLogin:
+class GroupMapCase:
+    """The harness both groups of these tests drive.
+
+    A base with no tests of its own, like ``CallbackCase`` next door: a test
+    class that inherits from another *test* class re-runs every one of its
+    tests under the second name, which is duplicated runtime and a test count
+    that no longer means anything.
+    """
+
     @pytest.fixture(autouse=True)
     def _setup(self, portal, plugin) -> None:
         self.portal = portal
@@ -117,6 +125,8 @@ class TestGroupMapOnLogin:
         """
         return self.plugin.store.get(provider, subject).groups
 
+
+class TestGroupMapOnLogin(GroupMapCase):
     # -- the feature ----------------------------------------------------
 
     def test_a_mapped_claim_grants_the_local_group(self):
@@ -284,3 +294,109 @@ class TestGroupMapOnLogin:
 
         assert self.groups_of(userid) == {"site-editors"}
         assert self.granted_by(PROVIDER, SUBJECT) == ("site-editors",)
+
+
+class TestTheProviderMayBeDeniedGroupMembership(GroupMapCase):
+    """``sync_groups`` off: sign in with the provider, decide groups here.
+
+    A site may trust a provider to say *who somebody is* without trusting it
+    to say *what they may do*, and group membership is usually what grants
+    permissions. Today the only way to express that is to stop offering the
+    provider.
+
+    The switch defaults on, unlike every other one on that form, because it
+    names behaviour that already exists: defaulting it off would stop group
+    federation on every site that has it configured, silently, at the next
+    login. That is what the first two tests here are for.
+    """
+
+    def test_the_field_defaults_on(self):
+        """Asserted on the stored config rather than inferred from behaviour.
+
+        Storing a provider and reading it back composes its config from the
+        current schema, so every field's default is seeded -- which means a
+        provider that never mentions this switch still carries it, and the
+        shipped default is the only thing deciding what it says.
+        """
+        from pas.plugins.identity.core.controlpanel import get_provider
+
+        configure()
+
+        assert get_provider(PROVIDER).config["sync_groups"] is True
+
+    def test_it_syncs_by_default(self):
+        """And that default is the behaviour that already existed: switching
+        this on was not allowed to require an edit to every site."""
+        configure()
+
+        assert self.groups_of(self.authenticate(with_groups("editors"))) == {
+            "site-editors"
+        }
+
+    def test_switching_it_on_explicitly_syncs_too(self):
+        configure(config={"sync_groups": True})
+
+        assert self.groups_of(self.authenticate(with_groups("editors"))) == {
+            "site-editors"
+        }
+
+    def test_switched_off_the_claim_grants_nothing(self):
+        configure(config={"sync_groups": False})
+
+        assert self.groups_of(self.authenticate(with_groups("editors"))) == set()
+
+    def test_the_login_still_works(self):
+        """The whole point: the provider is kept for signing in."""
+        configure(config={"sync_groups": False})
+
+        assert self.authenticate(with_groups("editors"))
+
+    def test_nothing_is_recorded_as_granted(self):
+        """So switching it back on later grants from a clean slate rather
+        than trying to take away something never given."""
+        configure(config={"sync_groups": False})
+
+        self.authenticate(with_groups("editors"))
+
+        assert self.granted_by(PROVIDER, SUBJECT) == ()
+
+    def test_groups_granted_before_it_was_switched_off_stay(self):
+        """Withdrawing them is a separate decision, and one nobody makes by
+        editing a checkbox. Same rule as clearing the map."""
+        configure()
+        userid = self.authenticate(with_groups("editors"))
+        assert self.groups_of(userid) == {"site-editors"}
+
+        configure(config={"sync_groups": False})
+        self.authenticate(with_groups())
+
+        assert self.groups_of(userid) == {"site-editors"}
+
+    def test_a_local_grant_is_untouched(self):
+        """It was never this provider's to take, switch or no switch."""
+        configure(config={"sync_groups": False})
+        userid = self.authenticate(with_groups("editors"))
+        api.group.add_user(groupname="granted-by-hand", username=userid)
+
+        self.authenticate(with_groups("editors"))
+
+        assert self.groups_of(userid) == {"granted-by-hand"}
+
+    def test_a_second_provider_still_syncs(self):
+        """The switch is per-provider: one refused is not all refused."""
+        configure(
+            config={"sync_groups": False},
+            extra=[
+                ProviderConfig(
+                    provider_id=SECOND_PROVIDER,
+                    driver_id="oidc-generic",
+                    title="Partner",
+                    groupmap=GROUPMAP,
+                )
+            ],
+        )
+
+        self.authenticate(with_groups("editors"))
+        userid = self.authenticate(with_groups("staff"), identity=SECOND_IDENTITY)
+
+        assert self.groups_of(userid) == {"site-staff"}
