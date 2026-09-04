@@ -6,12 +6,27 @@
  * bare ids, which is not something to show somebody -- and when they last
  * authenticated, which nothing in Plone records at all.
  *
- * Presentational: the row in the users control panel owns the request and the
- * modal, so this can be rendered in a story and in a test without a store.
+ * Presentational: the route that shows this owns the request, so it can be
+ * rendered in a story and in a test without a store.
+ *
+ * Three sections, and they are tabs rather than a column of headings. It is
+ * three separate questions about one person -- how they get in, which
+ * addresses are theirs, what they have done lately -- and an administrator
+ * opening this page has one of them in mind, not all three. The same tabs the
+ * sign-in methods page wears, since that page is this question asked by the
+ * account's owner.
  * @module components/ControlPanel/UserAccountPanel
  */
 import React from 'react';
 import { defineMessages, useIntl } from 'react-intl';
+import { Tabs } from '@plone/components';
+import { Tab, TabList, TabPanel } from 'react-aria-components';
+
+// `@plone/components` ships its CSS separately from its components, so a Tabs
+// rendered without this is unstyled -- the same split `PasswordForm` documents
+// for TextField.css. `.identity-tabs` in the root stylesheet adds the add-on's
+// own colours on top.
+import '@plone/components/src/styles/basic/Tabs.css';
 
 import type { UserAccount } from '../../types';
 
@@ -72,6 +87,10 @@ const messages = defineMessages({
     defaultMessage: 'This account has no profile, so it carries no addresses.',
   },
   events: { id: 'Recent activity', defaultMessage: 'Recent activity' },
+  sections: {
+    id: 'user-account-sections',
+    defaultMessage: 'What this account is made of',
+  },
   noEvents: {
     id: 'user-account-no-events',
     defaultMessage: 'Nothing recorded.',
@@ -139,94 +158,114 @@ const UserAccountPanel: React.FC<UserAccountPanelProps> = ({
         )}
       </p>
 
-      <h3>{intl.formatMessage(messages.providers)}</h3>
-      {account.identities.length ? (
-        <ul className="identity-account__list">
-          {account.identities.map((identity) => (
-            <li key={identity.provider} data-provider={identity.provider}>
-              <span className="identity-account__title">{identity.title}</span>
-              {!identity.provider_configured ? (
-                <span
-                  className="identity-account__badge"
-                  data-state="gone"
-                  title={intl.formatMessage(messages.goneHelp)}
-                >
-                  {intl.formatMessage(messages.gone)}
-                </span>
-              ) : !identity.provider_enabled ? (
-                <span
-                  className="identity-account__badge"
-                  data-state="disabled"
-                  title={intl.formatMessage(messages.disabledHelp)}
-                >
-                  {intl.formatMessage(messages.disabled)}
-                </span>
-              ) : null}
-              <span className="identity-note">
-                {intl.formatMessage(messages.linked, {
-                  date: formatDate(identity.created) ?? identity.created,
-                })}
-                {', '}
-                {identity.last_login
-                  ? intl.formatMessage(messages.lastUsed, {
-                      date: formatDate(identity.last_login),
-                    })
-                  : intl.formatMessage(messages.neverUsed)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="identity-note">
-          {intl.formatMessage(messages.noProviders)}
-        </p>
-      )}
+      <Tabs className="identity-tabs">
+        <TabList aria-label={intl.formatMessage(messages.sections)}>
+          <Tab id="providers">{intl.formatMessage(messages.providers)}</Tab>
+          <Tab id="addresses">{intl.formatMessage(messages.addresses)}</Tab>
+          <Tab id="events">{intl.formatMessage(messages.events)}</Tab>
+        </TabList>
 
-      <h3>{intl.formatMessage(messages.addresses)}</h3>
-      {account.emails.length ? (
-        <ul className="identity-account__list">
-          {account.emails.map((entry) => (
-            <li key={entry.address} data-address={entry.address}>
-              <span className="identity-account__title">{entry.address}</span>
-              {entry.verified ? (
-                <span className="identity-account__badge" data-state="verified">
-                  {intl.formatMessage(messages.verified)}
-                </span>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="identity-note">
-          {intl.formatMessage(messages.noAddresses)}
-        </p>
-      )}
+        <TabPanel id="providers">
+          {account.identities.length ? (
+            <ul className="identity-account__list">
+              {account.identities.map((identity) => (
+                <li key={identity.provider} data-provider={identity.provider}>
+                  <span className="identity-account__title">
+                    {identity.title}
+                  </span>
+                  {!identity.provider_configured ? (
+                    <span
+                      className="identity-account__badge"
+                      data-state="gone"
+                      title={intl.formatMessage(messages.goneHelp)}
+                    >
+                      {intl.formatMessage(messages.gone)}
+                    </span>
+                  ) : !identity.provider_enabled ? (
+                    <span
+                      className="identity-account__badge"
+                      data-state="disabled"
+                      title={intl.formatMessage(messages.disabledHelp)}
+                    >
+                      {intl.formatMessage(messages.disabled)}
+                    </span>
+                  ) : null}
+                  <span className="identity-note">
+                    {intl.formatMessage(messages.linked, {
+                      date: formatDate(identity.created) ?? identity.created,
+                    })}
+                    {', '}
+                    {identity.last_login
+                      ? intl.formatMessage(messages.lastUsed, {
+                          date: formatDate(identity.last_login),
+                        })
+                      : intl.formatMessage(messages.neverUsed)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="identity-note">
+              {intl.formatMessage(messages.noProviders)}
+            </p>
+          )}
+        </TabPanel>
 
-      <h3>{intl.formatMessage(messages.events)}</h3>
-      {account.events.length ? (
-        <ul className="identity-account__list">
-          {account.events.map((event, index) => (
-            <li
-              // Nothing in an audit entry is unique -- two sign-ins a second
-              // apart through the same provider are identical but for the
-              // timestamp -- and the list is a fixed newest-first slice that
-              // is never reordered, so the position is the honest key.
-              key={`${event.timestamp}-${index}`}
-              data-event={event.event}
-              data-success={String(event.success)}
-            >
-              <span className="identity-account__title">{event.event}</span>
-              <span className="identity-note">
-                {event.provider}
-                {' · '}
-                {formatDate(event.timestamp) ?? event.timestamp}
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="identity-note">{intl.formatMessage(messages.noEvents)}</p>
-      )}
+        <TabPanel id="addresses">
+          {account.emails.length ? (
+            <ul className="identity-account__list">
+              {account.emails.map((entry) => (
+                <li key={entry.address} data-address={entry.address}>
+                  <span className="identity-account__title">
+                    {entry.address}
+                  </span>
+                  {entry.verified ? (
+                    <span
+                      className="identity-account__badge"
+                      data-state="verified"
+                    >
+                      {intl.formatMessage(messages.verified)}
+                    </span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="identity-note">
+              {intl.formatMessage(messages.noAddresses)}
+            </p>
+          )}
+        </TabPanel>
+
+        <TabPanel id="events">
+          {account.events.length ? (
+            <ul className="identity-account__list">
+              {account.events.map((event, index) => (
+                <li
+                  // Nothing in an audit entry is unique -- two sign-ins a second
+                  // apart through the same provider are identical but for the
+                  // timestamp -- and the list is a fixed newest-first slice that
+                  // is never reordered, so the position is the honest key.
+                  key={`${event.timestamp}-${index}`}
+                  data-event={event.event}
+                  data-success={String(event.success)}
+                >
+                  <span className="identity-account__title">{event.event}</span>
+                  <span className="identity-note">
+                    {event.provider}
+                    {' · '}
+                    {formatDate(event.timestamp) ?? event.timestamp}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="identity-note">
+              {intl.formatMessage(messages.noEvents)}
+            </p>
+          )}
+        </TabPanel>
+      </Tabs>
     </div>
   );
 };

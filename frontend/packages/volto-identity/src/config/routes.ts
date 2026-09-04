@@ -7,6 +7,7 @@ import Consent from '../components/Consent/Consent';
 import FirstLogin from '../components/FirstLogin/FirstLogin';
 import ClientsControlPanel from '../components/ControlPanel/ClientsControlPanel';
 import ProvidersControlPanel from '../components/ControlPanel/ProvidersControlPanel';
+import UserAccount from '../components/ControlPanel/UserAccount';
 import Identities from '../components/Identities/Identities';
 import Login from '../components/Login/Login';
 import VoltoLogin from '@plone/volto/components/theme/Login/Login';
@@ -57,6 +58,32 @@ export const CONSENT_PATH = '/oauth-consent';
  */
 export const FALLBACK_LOGIN_PATH = '/fallback_login';
 
+/**
+ * Where a Manager reads one user's account.
+ *
+ * Under `/controlpanel/users`, because that is the listing it is reached
+ * from and the page is a control-panel page: Volto's own
+ * `/\/controlpanel\/.*$/` already keeps everything below there out of the
+ * content routes, so this needs no entry of its own.
+ *
+ * A route rather than the modal it used to be. What it shows is a page's
+ * worth of read-only facts about one person, it is not a form with an
+ * outcome, and as an overlay it could not be linked to, bookmarked, opened
+ * in a new tab or reached with the back button.
+ */
+export const USER_ACCOUNT_PATH = '/controlpanel/users/:userid/account';
+
+/**
+ * That route for one user.
+ *
+ * @param userid The account to show.
+ * @returns The path, with the userid escaped -- a userid is whatever the
+ *   provider minted and may carry characters a path segment may not.
+ */
+export function userAccountUrl(userid: string): string {
+  return `/controlpanel/users/${encodeURIComponent(userid)}/account`;
+}
+
 /** Where a Manager configures providers. */
 export const CONTROLPANEL_PATH = '/controlpanel/identity-providers';
 
@@ -86,6 +113,7 @@ export default function install(config: ConfigType) {
     { path: IDENTITIES_PATH, exact: true, component: Identities },
     { path: CONSENT_PATH, exact: true, component: Consent },
     { path: APPLICATIONS_PATH, exact: true, component: Applications },
+    { path: USER_ACCOUNT_PATH, exact: true, component: UserAccount },
     { path: CONTROLPANEL_PATH, exact: true, component: ProvidersControlPanel },
     {
       path: CLIENTS_CONTROLPANEL_PATH,

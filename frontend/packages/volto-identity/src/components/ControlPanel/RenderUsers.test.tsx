@@ -6,15 +6,20 @@
  * user whose fields live in `portal_memberdata` still gets Volto's modal.
  * Both halves matter — the second is the site's own `admin`, and any account
  * that predates the add-on and has not signed in since.
+ *
+ * The Account action is pinned here for the same reason: it is a link to a
+ * route rather than something that opens an overlay in this row, and nothing
+ * else would notice it going back to being a modal.
  */
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '../../testing';
+import { fireEvent, render, screen } from '../../testing';
 import { MemoryRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import React from 'react';
 import { Table } from 'semantic-ui-react';
 
 import RenderUsers, { profileEditUrl } from './RenderUsers';
+import { userAccountUrl } from '../../config/routes';
 
 const ROLES = [{ id: 'Member' }, { id: 'Manager' }];
 
@@ -115,5 +120,26 @@ describe('RenderUsers', () => {
     renderRow({});
 
     expect(screen.getByText(/Alice Liddell/)).toBeTruthy();
+  });
+});
+
+describe('the Account action', () => {
+  it('is a link to the account page', () => {
+    // A navigation, so it is an anchor: middle-click, open-in-new-tab and a
+    // visible target in the status bar all work, and none of them do for a
+    // menu item with an onClick that opens a modal.
+    renderRow({ profile_url: null });
+
+    const item = document.querySelector('#user-account-button');
+    expect(item?.tagName).toBe('A');
+    expect(item?.getAttribute('href')).toBe(userAccountUrl('alice'));
+  });
+
+  it('opens nothing in the row itself', () => {
+    renderRow({ profile_url: null });
+
+    fireEvent.click(screen.getByText('Account'));
+
+    expect(document.querySelector('.ui.modal')).toBeNull();
   });
 });
