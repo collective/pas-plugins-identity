@@ -1,8 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import React from 'react';
-import { MemoryRouter } from 'react-router-dom';
-
 import MenuItem from './MenuItem';
+import { withMenuList, withPersonalTools } from '../../storybook/withUserMenu';
 
 /**
  * One entry of the personal-tools menu.
@@ -14,19 +12,9 @@ const meta: Meta<typeof MenuItem> = {
   title: 'Identity/UserMenu/MenuItem',
   component: MenuItem,
   args: { id: 'toolbar-example', label: 'Preferences' },
-  decorators: [
-    (Story) => (
-      <MemoryRouter>
-        <div className="personal-tools pastanaga-menu">
-          <div className="pastanaga-menu-list">
-            <ul>
-              <Story />
-            </ul>
-          </div>
-        </div>
-      </MemoryRouter>
-    ),
-  ],
+  // Innermost first, so this reads in the order the DOM nests.
+  decorators: [withMenuList, withPersonalTools],
+  parameters: { fullBleed: true },
 };
 export default meta;
 

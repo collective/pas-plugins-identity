@@ -1380,6 +1380,12 @@ importers:
       '@types/react-router-dom':
         specifier: ^5.3.3
         version: 5.3.3
+      react-aria-components:
+        specifier: 'catalog:'
+        version: 1.20.0(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      react-cookie:
+        specifier: 8.1.2
+        version: 8.1.2(@types/react@18.3.31)(react@18.2.0)
       react-intl:
         specifier: 3.12.1
         version: 3.12.1(@types/react@18.3.31)(react@18.2.0)

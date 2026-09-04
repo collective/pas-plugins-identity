@@ -6,6 +6,8 @@ import enMessages from '@root/../locales/en.json';
 
 import '@root/theme';
 
+import { withPage } from '@plone-collective/volto-identity/storybook/withPage';
+
 export const parameters = {
   controls: {
     matchers: {
@@ -15,6 +17,9 @@ export const parameters = {
   },
 };
 
+// Storybook applies these outermost-last, so `withPage` wraps the rest --
+// which is the order Volto's own `start-client.jsx` has: the cookie provider
+// is outside the router and the intl provider, not inside them.
 export const decorators = [
   (Story) => (
     <IntlProvider messages={enMessages} locale="en" defaultLocale="en">
@@ -23,4 +28,5 @@ export const decorators = [
       </StaticRouter>
     </IntlProvider>
   ),
+  withPage,
 ];

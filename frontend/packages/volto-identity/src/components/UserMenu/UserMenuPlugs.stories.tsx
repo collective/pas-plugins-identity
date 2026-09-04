@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
-import { MemoryRouter } from 'react-router-dom';
 
 import {
   Pluggable,
@@ -14,6 +13,7 @@ import {
   SiteSetupMenuItem,
 } from './UserMenuPlugs';
 import { LOADED, USER, withStore } from '../../stories/fixtures';
+import { withPersonalTools } from '../../storybook/withUserMenu';
 
 /**
  * Volto's own menu entries, re-registered as plugs.
@@ -26,6 +26,8 @@ import { LOADED, USER, withStore } from '../../stories/fixtures';
 const meta: Meta<typeof PreferencesMenuItem> = {
   title: 'Identity/UserMenu/UserMenuPlugs',
   component: PreferencesMenuItem,
+  decorators: [withPersonalTools],
+  parameters: { fullBleed: true },
 };
 export default meta;
 
@@ -37,27 +39,28 @@ const withState = (user: Record<string, unknown>, actions: unknown[] = []) =>
     actions: { actions: { user: actions } },
   });
 
-/** Every entry the add-on registers, in the menu's own markup. */
+/**
+ * Every entry the add-on registers, in the menu's own markup.
+ *
+ * The markup comes from `withPersonalTools` rather than from here: it is
+ * Volto's, it has to sit inside `#toolbar` to be styled at all, and five
+ * copies of it across these stories is five things to fix when Volto moves
+ * one of them.
+ */
 const menu = () => (
-  <MemoryRouter>
-    <PluggablesProvider>
-      <PersonalInformationMenuItem />
-      <PreferencesMenuItem />
-      <SiteSetupMenuItem />
-      <IdentitiesMenuItem />
-      <ProfileMenuItem />
-      <div className="personal-tools pastanaga-menu">
-        <div className="pastanaga-menu-list">
-          <ul>
-            <Pluggable
-              name="toolbar-user-menu"
-              params={{ loadComponent: () => {} }}
-            />
-          </ul>
-        </div>
-      </div>
-    </PluggablesProvider>
-  </MemoryRouter>
+  <PluggablesProvider>
+    <PersonalInformationMenuItem />
+    <PreferencesMenuItem />
+    <SiteSetupMenuItem />
+    <IdentitiesMenuItem />
+    <ProfileMenuItem />
+    <ul>
+      <Pluggable
+        name="toolbar-user-menu"
+        params={{ loadComponent: () => {} }}
+      />
+    </ul>
+  </PluggablesProvider>
 );
 
 /**

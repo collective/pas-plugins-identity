@@ -1,17 +1,19 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import React from 'react';
-import { MemoryRouter } from 'react-router-dom';
 
 import {
   Pluggable,
   PluggablesProvider,
 } from '@plone/volto/components/manage/Pluggable';
 import ApplicationsMenuItem from './ApplicationsMenuItem';
+import { withPersonalTools } from '../../storybook/withUserMenu';
 import { LOADED, USER, withStore } from '../../stories/fixtures';
 
 const meta: Meta<typeof ApplicationsMenuItem> = {
   title: 'Identity/UserMenu/ApplicationsMenuItem',
   component: ApplicationsMenuItem,
+  decorators: [withPersonalTools],
+  parameters: { fullBleed: true },
 };
 export default meta;
 
@@ -22,14 +24,12 @@ type Story = StoryObj<typeof ApplicationsMenuItem>;
  * story includes the pluggable that consumes it, the way the user menu does.
  */
 const inTheMenu = () => (
-  <MemoryRouter>
-    <PluggablesProvider>
-      <ApplicationsMenuItem />
-      <ul>
-        <Pluggable name="toolbar-user-menu" />
-      </ul>
-    </PluggablesProvider>
-  </MemoryRouter>
+  <PluggablesProvider>
+    <ApplicationsMenuItem />
+    <ul>
+      <Pluggable name="toolbar-user-menu" />
+    </ul>
+  </PluggablesProvider>
 );
 
 const withGrants = (grants: Record<string, unknown>) =>

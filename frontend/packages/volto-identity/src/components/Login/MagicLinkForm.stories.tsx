@@ -1,11 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react';
 
 import MagicLinkForm from './MagicLinkForm';
-import { FAILED } from '../../stories/fixtures';
+import { FAILED, withLoginCard } from '../../stories/fixtures';
 
 const meta: Meta<typeof MagicLinkForm> = {
   title: 'Identity/Login/MagicLinkForm',
   component: MagicLinkForm,
+  decorators: [withLoginCard()],
   args: { sent: false, loading: false, onSend: () => {} },
 };
 export default meta;
