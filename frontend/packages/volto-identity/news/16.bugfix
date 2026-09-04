@@ -1,0 +1,7 @@
+The sign-in methods page stops offering email as a way in on a site that took it off the login page.
+
+A provider with `show_in_login` off is deliberately absent from `@login-providers` and present in `@identities`: a site can stop offering a provider to new sign-ins while people who already linked it keep using it. That is the right rule for an ordinary provider and the wrong one for email — if the magic link is not on the login page, nobody can sign in with it, and a page called "Sign-in methods" that lists it is telling the user something untrue.
+
+The page now asks for `@identities?expand=login-providers`, which is what the expandable component was added for and what nothing had used, and keys on whether the email driver is among the providers the login page actually offers.
+
+What changes is the claim, not the button. Verifying an address does a second job the login page has no say over — it is how a later provider login is recognised as the same person — so the verification stays and the sentence that promised a sign-in goes. Removing the button would have taken the account matching with it. @ericof

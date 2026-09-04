@@ -12,6 +12,7 @@ const meta: Meta<typeof ProfileEmails> = {
     loading: false,
     busy: false,
     sent: false,
+    canSignInWithLink: true,
     onVerify: () => {},
     onPrefer: () => {},
   },
@@ -19,6 +20,17 @@ const meta: Meta<typeof ProfileEmails> = {
 export default meta;
 
 type Story = StoryObj<typeof ProfileEmails>;
+
+/**
+ * The same panel on a site that took the email provider off its login page.
+ *
+ * Verifying still recognises the person behind a later provider login, so the
+ * button stays -- but signing in with a link is not one of the ways in here,
+ * and the panel stops saying it is.
+ */
+export const WithoutLinkSignIn: Story = {
+  args: { canSignInWithLink: false },
+};
 
 /** One address proved, one still to prove. */
 export const Several: Story = {};

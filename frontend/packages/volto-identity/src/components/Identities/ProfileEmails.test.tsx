@@ -25,6 +25,7 @@ function renderPanel(
   render(
     <ProfileEmails
       emails={[PREFERRED, OTHER]}
+      canSignInWithLink
       loading={false}
       busy={false}
       sent={false}
@@ -93,6 +94,33 @@ describe('ProfileEmails', () => {
           .getByRole('button', { name: 'Make preferred' })
           .hasAttribute('disabled'),
       ).toBe(true);
+    });
+  });
+
+  describe('when the email provider is off the login page', () => {
+    it('stops saying a verified address can sign you in', () => {
+      // The panel is reached from a page called "Sign-in methods". Listing
+      // something there that cannot sign anybody in is the page telling the
+      // user something untrue.
+      renderPanel({ canSignInWithLink: false });
+
+      expect(document.body.textContent).not.toContain('sign in with a link');
+      expect(document.body.textContent).toContain('recognises you');
+    });
+
+    it('still offers the verification', () => {
+      // Verifying does a second job the login page has no say over: it is
+      // how a later provider login is matched to this account. Removing the
+      // button would take that away too.
+      renderPanel({ canSignInWithLink: false });
+
+      expect(document.querySelector('[data-action="verify"]')).toBeTruthy();
+    });
+
+    it('says both halves when the link is a way in', () => {
+      renderPanel({ canSignInWithLink: true });
+
+      expect(document.body.textContent).toContain('sign in with a link');
     });
   });
 
