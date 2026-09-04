@@ -1,0 +1,1 @@
+Fixed a 500 when editing a provider whose configuration carries a list. JSON has one sequence type, so every array in a request body arrives as a list, while the record it is stored in is always a tuple. The coercion asked the driver's schema, which left a key the schema does not declare, and a provider whose driver is gone, going through uncoerced. @ericof
