@@ -121,6 +121,45 @@ def normalize_color(value: str) -> str:
     return text.lower()
 
 
+class InvalidSignInPolicy(ValueError):
+    """Raised when a provider's sign-in policy could admit nobody at all."""
+
+
+def check_signin_policy(config: dict) -> None:
+    """Refuse a provider configuration that would lock everybody out.
+
+    ``create_user`` off means "admit only people who already have an account
+    here", and the only thing that finds one is a match on a verified address
+    -- which needs ``auto_link_by_email`` to look, and
+    ``trust_email_verification`` for this provider's word about the address to
+    count. With either of those off there is nothing to match on, so every
+    sign-in through the provider is refused: the first login, every login, and
+    with nothing on the login page to say why.
+
+    Checked where an operator's edit arrives rather than in
+    :class:`ProviderConfig`, because that is what "refuse to save it" means.
+    A profile or a script that assembles the config itself is not held to it,
+    the same way neither is held to any other form validation.
+
+    :param config: The driver settings as they would be stored.
+    :raises InvalidSignInPolicy: When the combination admits nobody.
+    """
+    if config.get("create_user", True):
+        return
+    missing = [
+        name
+        for name in ("auto_link_by_email", "trust_email_verification")
+        if not config.get(name)
+    ]
+    if missing:
+        raise InvalidSignInPolicy(
+            "A provider that may not create accounts has to be able to find "
+            "the existing one, which is a match on a verified address. Switch "
+            f"on {' and '.join(sorted(missing))}, or let this provider create "
+            "accounts."
+        )
+
+
 def _settings_fields(driver_id: str) -> dict[str, object]:
     """Return a driver's settings fields, keyed by name.
 

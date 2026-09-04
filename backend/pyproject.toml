@@ -261,22 +261,31 @@ omit = [
 # cover one is when it is written -- that is still the standard this package
 # holds itself to, and 100 is still the target.
 #
-# The floor is 95 while the gap is closed (Érico's call, 2026-08-31). Two
-# numbers matter to whoever raises it back, both measured rather than
-# estimated:
+# The floor was 95 while the gap was closed (Érico's call, 2026-08-31), and is
+# 97 as of 2026-09-04. Two numbers matter to whoever raises it further, both
+# measured rather than estimated -- re-measure with `pytest --cov` for the
+# first and `make test-coverage` for the second, and do not update these from
+# either one alone:
 #
-#   full suite, 2606 tests   99.15%   124 statements uncovered
-#   `make test`, 2568 tests  97.52%   498 statements uncovered
+#   full suite, 2712 tests   99.16%   125 statements uncovered
+#   `make test`, 2674 tests  97.57%   499 statements uncovered
 #
 # The difference is not untested code. 374 of those statements are covered by
 # the `docker`-marked tests, which `make test-coverage` does not run because
 # they need containers and an image built from this tree. So the real
-# outstanding surface is 124 statements, and a floor set near 97.5 would have
-# written off the 374 as well.
+# outstanding surface is 125 statements.
+#
+# 97 rather than 97.5: this gates the container-free job, so the floor has to
+# leave room for the measurement it actually runs against. Setting it flush
+# with 97.57 would fail an unrelated pull request over a single uncovered
+# line, which is how a ratchet stops being one and starts being lowered
+# again. It is emphatically not a declaration that the remaining 125 are
+# acceptable -- 100 is still the target, and an authentication plugin has no
+# line that is fine to leave unexercised.
 #
 # Raise this as the gap closes. It is a ratchet, not a setting.
 [tool.coverage.report]
-fail_under = 95
+fail_under = 97
 show_missing = true
 skip_covered = true
 

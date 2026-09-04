@@ -593,3 +593,98 @@ class TestGenericSetupRoundTrip(ControlPanelCase):
         rendered = self.call(ProvidersGet)
 
         assert "plone-secret" not in json.dumps(rendered)
+
+
+class TestASignInPolicyThatAdmitsNobody(ControlPanelCase):
+    """``create_user`` off with nothing to match an existing account on.
+
+    Switching it off means "admit only people who already have an account
+    here", and the only thing that finds one is a match on a verified address.
+    Without ``auto_link_by_email`` to look, and ``trust_email_verification``
+    for this provider's word to count, there is nothing to match on: every
+    sign-in is refused, on the first login and every login after it, with
+    nothing on the login page to say why.
+
+    So the combination is refused where an operator's edit arrives, rather
+    than saved and discovered by a user who cannot get in.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_, manager, configured) -> None:
+        self.portal = portal
+        self.request = request_
+
+    def create(self, config: dict):
+        """POST a new provider carrying a config.
+
+        :param config: The driver settings to send.
+        :returns: The service's reply.
+        """
+        return self.call(
+            ProvidersPost,
+            payload={
+                "id": "gated",
+                "driver": "oidc-generic",
+                "config": {"issuer": "https://idp.example", **config},
+            },
+        )
+
+    def test_creating_it_is_refused(self):
+        self.create({"create_user": False})
+
+        assert self.status() == 400
+
+    def test_the_refusal_says_what_to_switch_on(self):
+        """An error naming neither switch would leave an operator guessing at
+        which of two unrelated-looking fields it meant."""
+        result = self.create({"create_user": False})
+
+        assert "auto_link_by_email" in result["error"]["message"]
+        assert "trust_email_verification" in result["error"]["message"]
+
+    def test_nothing_is_stored(self):
+        self.create({"create_user": False})
+
+        assert get_provider("gated") is None
+
+    def test_half_of_it_is_still_refused(self):
+        """Both switches are needed, so one of them is not enough."""
+        self.create({"create_user": False, "auto_link_by_email": True})
+
+        assert self.status() == 400
+
+    def test_the_workable_combination_is_accepted(self):
+        """The half that keeps this from being a switch nobody can use."""
+        self.create({
+            "create_user": False,
+            "auto_link_by_email": True,
+            "trust_email_verification": True,
+        })
+
+        assert self.status() == 201
+
+    def test_leaving_it_on_needs_neither_switch(self):
+        """The default, and every site that never touches this."""
+        self.create({"create_user": True})
+
+        assert self.status() == 201
+
+    def test_patching_into_it_is_refused_too(self):
+        """The edit that turns a working provider into a locked one, which is
+        the likelier way to arrive here."""
+        self.call(
+            ProvidersPatch,
+            "dex",
+            payload={"config": {"create_user": False}},
+        )
+
+        assert self.status() == 400
+
+    def test_the_patch_leaves_the_provider_alone(self):
+        self.call(
+            ProvidersPatch,
+            "dex",
+            payload={"config": {"create_user": False}},
+        )
+
+        assert get_provider("dex").config.get("create_user") is not False

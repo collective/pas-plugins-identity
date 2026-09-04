@@ -103,6 +103,7 @@ It does **not** delete the identities linked through it.
 Those are account data, and a configuration change is not an instruction to lock people out.
 If you want the identities gone as well, remove them first.
 
+(configure-provider-verification)=
 ## Decide whether the provider's email verification counts
 
 Two switches on the provider's form, both off unless a driver knows better, and both about the same question: how far this site trusts what the provider says about an address.
@@ -122,6 +123,17 @@ A provider that marks addresses verified according to weaker rules than yours is
 Turn the first switch on only where you know the provider refuses to call an address verified until the account has answered mail at it.
 
 Turning it off later stops it verifying anything new; addresses already recorded as verified stay that way, because they are identities and removing one is an unlink rather than a configuration change.
+```
+
+{guilabel}`This provider sends verification flags as text`
+:   For a provider that sends `email_verified` as the string `"true"` rather than as a boolean.
+    Oracle Access Manager does, and so do some Keycloak configurations.
+    Leave it off unless you have established that this is what your provider does.
+
+```{note}
+The symptom is that nothing visibly goes wrong.
+Sign-in works, and only the linking silently does not: every address arrives unverified, so the switch above it can never fire, and no error says so.
+If verification is configured and never seems to take effect, look at what the provider actually sends before looking anywhere else.
 ```
 
 See {doc}`/concepts/email-verification` for the whole rule.
@@ -157,6 +169,48 @@ Every login reconciles, so a membership revoked at the provider stops granting a
 
 A login only ever takes back what that same provider granted.
 The identity record remembers each provider's own grant, so a group you granted by hand survives every sign-in, and two providers cannot revoke each other's grants.
+
+### Keep the provider, decide the groups yourself
+
+Switch off **Let this provider set group membership** to sign people in with the provider while deciding membership here.
+A site may trust a provider to say who somebody is without trusting it to say what they may do, and group membership is usually what grants permissions.
+
+Groups the provider already granted stay.
+Taking those away is a separate decision, and one to make deliberately rather than at the next login: it is the same rule as emptying the map.
+
+It is per-provider, so refusing one provider is not refusing all of them.
+
+## Restrict sign-in to certain groups
+
+Leave **Only these groups may sign in** empty and anybody the provider authenticates may sign in.
+Name groups in it and a sign-in is refused unless the provider says the person is in one of them.
+
+An entry matches either a name the provider sends or a local group id the map turns one into, so write the policy in whichever vocabulary is clearer.
+The cost of accepting both is that an entry alone does not say which one it was read as, which is why a refusal records both: what the provider sent, and what the map made of it.
+
+This is checked on every sign-in, not only the first.
+Somebody removed from the group at the provider stops getting in, and an account created before you wrote the policy is held to it like any other.
+
+```{warning}
+This needs a group claim.
+A provider whose driver has no groups at all -- GitHub, magic link -- sends none, so a list here refuses everybody.
+The log says so in as many words rather than reporting a group mismatch, because the mistake is in the configuration rather than in the directory.
+```
+
+The person refused is told only that the sign-in failed.
+Naming the group they are missing would tell anyone who can reach the login page which groups matter here.
+The reason goes to the log and to the audit trail, which needs `Manage portal` to read.
+
+## Decide whether the provider may create accounts
+
+Switch off **Let this provider create accounts** to authenticate against the provider while admitting only people who already have an account here.
+A site federating with a large directory usually does not want everybody who *can* authenticate to *get* an account: membership is decided elsewhere, and the provider only proves who somebody is.
+
+The existing account is found by matching a verified address, so both switches under {ref}`the verification section <configure-provider-verification>` have to be on as well.
+Saving the combination without them is refused: with nothing to match on, every sign-in through the provider would be turned away and nothing on the login page would say why.
+
+An identity that signed in before you switched it off keeps working.
+The switch gates *creating* an account, not resolving one that already exists.
 
 ```{note}
 Clearing a map does **not** strip the groups it had granted.

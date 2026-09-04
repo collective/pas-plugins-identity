@@ -309,6 +309,13 @@ class IdentityPlugin(BasePlugin):
         plugin enumerates it, and a second record of the same person is the
         thing that then outlives the object it shadows.
 
+        Two site policies can turn a sign-in away here even though the
+        provider authenticated it: ``allowed_groups``, checked on every login,
+        and ``create_user``, checked only where a login would bring a new
+        account into being. Both answer ``None`` -- the PAS contract for
+        declining -- and record why in the log and the audit trail rather than
+        in anything the person signing in gets to read.
+
         :param credentials: Mapping from :meth:`extractCredentials`.
         :returns: ``(userid, login)`` on success, ``None`` otherwise.
         """
@@ -318,6 +325,11 @@ class IdentityPlugin(BasePlugin):
         provider = credentials["provider"]
         subject = credentials["subject"]
         claims: Claims = credentials.get("claims", {})
+
+        refusal = self._group_refusal(provider, claims)
+        if refusal is not None:
+            self._refuse(provider, refusal)
+            return None
 
         userid = self._store.userid_for(provider, subject)
         is_new_identity = userid is None
@@ -329,6 +341,13 @@ class IdentityPlugin(BasePlugin):
         if is_new_identity:
             userid = self._adopt_by_verified_email(provider, claims)
             if userid is None:
+                if not self._may_create_user(provider):
+                    self._refuse(
+                        provider,
+                        "this provider may not create accounts, and no "
+                        "existing account matched a verified address it sent",
+                    )
+                    return None
                 is_new_user = True
                 userid = mint_userid(
                     source=self._userid_source(provider),
@@ -837,6 +856,91 @@ class IdentityPlugin(BasePlugin):
             return ""
         return str(record.claims.get("picture_url") or "")
 
+    def _refuse(self, provider: str, reason: str) -> None:
+        """Record a sign-in this site's policy turned away.
+
+        The person is told nothing beyond "that did not work", deliberately:
+        naming the group somebody is missing tells anyone who can reach the
+        login page which groups matter, and that is reconnaissance. The
+        operator needs the opposite, so the whole reason goes to the log and
+        to the audit trail, which only a manager can read.
+
+        :param provider: Provider the sign-in came from.
+        :param reason: Why it was refused, in full.
+        """
+        from pas.plugins.identity.core import audit
+
+        logger.warning("Refused a %s sign-in: %s", provider, reason)
+        audit.record(None, audit.SIGNIN_REFUSED, provider, False, {"reason": reason})
+
+    def _group_refusal(self, provider: str, claims: Claims) -> str | None:
+        """Decide whether this site's group policy admits a sign-in.
+
+        Checked on every login rather than only the first, because somebody
+        removed from the group at the provider has to stop getting in -- and
+        an account created before the policy existed is exactly the case that
+        would otherwise slip through.
+
+        An entry matches a name the provider sent **or** a local group id the
+        map turns one into. Two vocabularies for one policy is a real cost --
+        an operator cannot tell from the entry alone which one it was read as
+        -- so the refusal message names both sets, which is what makes the
+        log worth reading (Érico, 2026-09-04).
+
+        :param provider: Provider id.
+        :param claims: Normalized claims from the provider.
+        :returns: The reason to refuse, or ``None`` to admit.
+        """
+        from pas.plugins.identity.core.controlpanel import get_provider
+        from pas.plugins.identity.core.utils.groupmap import claimed_groups
+        from pas.plugins.identity.core.utils.groupmap import map_groups
+
+        config = get_provider(provider)
+        if config is None:
+            return None
+        allowed = {
+            name.strip()
+            for name in config.config.get("allowed_groups") or ()
+            if name.strip()
+        }
+        if not allowed:
+            return None
+
+        claim_path = (config.config.get("group_claim") or "").strip() or getattr(
+            config.driver, "default_group_claim", ""
+        )
+        if not claim_path:
+            # Nothing arrives, so nobody can match. Named as its own reason:
+            # the operator has written a policy that refuses everybody, and
+            # "not in an allowed group" would send them looking at the
+            # directory rather than at the field they left empty.
+            return (
+                f"{sorted(allowed)} are required, and this provider has no "
+                "group claim configured, so no groups arrive at all"
+            )
+        claimed = set(claimed_groups(claim_path, claims))
+        mapped = map_groups(config.groupmap, list(claimed))
+        if allowed & (claimed | mapped):
+            return None
+        return (
+            f"none of {sorted(allowed)} matched; the provider sent "
+            f"{sorted(claimed)}, which the map turns into {sorted(mapped)}"
+        )
+
+    def _may_create_user(self, provider: str) -> bool:
+        """Whether this provider may bring a new account into being.
+
+        :param provider: Provider id.
+        :returns: Whether to mint a userid for an identity that matched no
+            existing account.
+        """
+        from pas.plugins.identity.core.controlpanel import get_provider
+
+        config = get_provider(provider)
+        if config is None:
+            return True
+        return bool(config.config.get("create_user", True))
+
     def _sync_federated_groups(
         self, userid: str, provider: str, subject: str, claims: Claims
     ) -> None:
@@ -852,7 +956,8 @@ class IdentityPlugin(BasePlugin):
         touched; neither is a group granted by a second provider, which keeps
         its own record.
 
-        A provider with an empty map returns immediately rather than
+        A provider whose operator switched ``sync_groups`` off returns
+        immediately, and so does one with an empty map, rather than
         reconciling against nothing. Otherwise clearing a map would silently
         strip every group it had granted, at the next login, with no other
         sign -- and an operator clearing a map is at least as likely to be
@@ -877,6 +982,22 @@ class IdentityPlugin(BasePlugin):
 
         config = get_provider(provider)
         if config is None or not config.groupmap:
+            return
+        if not config.config.get("sync_groups", True):
+            # The operator kept this provider for signing in and took group
+            # membership back. Returning here rather than reconciling against
+            # an empty set leaves what the provider granted before in place,
+            # exactly as clearing the map does: withdrawing those grants is a
+            # separate decision, and one nobody makes by editing a checkbox.
+            #
+            # ``True`` on the read as well as on the field. A stored
+            # provider always carries the key -- reading one back composes
+            # its config from the current schema, so every field's default is
+            # seeded -- which makes this the answer for a ``ProviderConfig``
+            # built in code and never stored. ``True`` rather than letting
+            # ``get`` answer ``None`` because the two failure directions are
+            # not equal: this way a config that somehow lost the key keeps
+            # federating, instead of silently ceasing to.
             return
 
         claim_path = (config.config.get("group_claim") or "").strip() or getattr(
