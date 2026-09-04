@@ -384,3 +384,94 @@ class TestProviderConfig:
     def test_repr(self):
         """The object has a readable repr for debugging."""
         assert repr(self.provider) == "<ProviderConfig gh (github)>"
+
+
+class TestAListInTheConfigurationIsStorable:
+    """JSON has one sequence type, and it decodes to a Python list.
+
+    So every array in a POST or PATCH body arrives as a list, while
+    ``_field_for`` answers ``Tuple`` for anything that looks like a
+    collection. Storing a list against a ``Tuple`` record raised
+    ``WrongType([], tuple, '')`` from inside ``plone.registry``: a 500 on an
+    ordinary edit, naming no field, with the traceback pointing at
+    ``set_providers`` rather than at the value.
+
+    Érico hit it on 2026-09-04 unchecking "show on the login page" for the
+    magic-link provider. That is the case worth reading twice: the email
+    driver's schema declares two integers and no collection at all, so the
+    coercion that asked the schema had nothing to match and let the list
+    through. The provider being edited need not be the one that breaks
+    either -- ``set_providers`` rewrites every provider there is.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+
+    def store(self, driver_id: str, config: dict):
+        """Store one provider and read its configuration back.
+
+        :param driver_id: The driver to store it against.
+        :param config: The settings to store.
+        :returns: The configuration as it comes back out of the registry.
+        """
+        set_providers([ProviderConfig("p", driver_id, config=config)])
+        return get_provider("p").config
+
+    def test_a_declared_collection_is_stored(self):
+        """The case that always worked, kept so a fix cannot break it."""
+        assert self.store("github", {"scope": ["read:user"]})["scope"] == ("read:user",)
+
+    def test_an_undeclared_list_is_stored(self):
+        """The magic-link case. ``IEmailSettings`` declares two integers, so
+        asking the schema whether this key is a collection answered no while
+        the field chosen for it was a ``Tuple`` regardless."""
+        assert self.store("email", {"scope": ["openid"]})["scope"] == ("openid",)
+
+    def test_an_empty_list_is_stored(self):
+        """The value in the traceback. Empty is the likeliest thing a form
+        sends for a collection nobody filled in, and ``[] != ()`` to a
+        ``Tuple`` field just as much as a full list does."""
+        assert self.store("email", {"allowed_groups": []})["allowed_groups"] == ()
+
+    def test_an_orphaned_provider_takes_one_too(self):
+        """A driver that is gone has no schema to consult, which used to mean
+        no coercion at all rather than coercion by another route."""
+        assert self.store("no-such-driver", {"anything": ["a", "b"]})["anything"] == (
+            "a",
+            "b",
+        )
+
+    def test_a_tuple_is_left_alone(self):
+        assert self.store("github", {"scope": ("read:user",)})["scope"] == (
+            "read:user",
+        )
+
+    def test_nothing_else_is_converted(self):
+        """It coerces sequences, not everything that can be iterated: a
+        string is a sequence and turning one into a tuple of characters would
+        be a far worse bug than the one being fixed."""
+        stored = self.store("email", {"token_ttl": 60, "issuer": "https://x"})
+
+        assert stored["token_ttl"] == 60
+        assert stored["issuer"] == "https://x"
+
+    def test_a_list_assigned_after_construction_is_coerced(self):
+        """``PATCH`` assigns to ``config`` rather than building a provider,
+        so the setter is the route that has to hold."""
+        provider = ProviderConfig("p", "email")
+
+        provider.config = {"scope": ["openid"]}
+
+        assert provider.config["scope"] == ("openid",)
+
+    def test_a_list_mutated_into_place_still_stores(self):
+        """The one route that goes round the setter. A setup handler doing
+        ``provider.config[key] = [...]`` is doing something reasonable, and it
+        must not be the thing that puts a list in front of a Tuple field."""
+        provider = ProviderConfig("p", "email")
+        provider.config["scope"] = ["openid"]
+
+        set_providers([provider])
+
+        assert get_provider("p").config["scope"] == ("openid",)

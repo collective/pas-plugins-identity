@@ -181,25 +181,37 @@ def _settings_fields(driver_id: str) -> dict[str, object]:
 def _stored_types(driver_id: str, config: JSONDict) -> JSONDict:
     """Coerce settings into the types their registry records accept.
 
-    Only sequences need it today. A ``Tuple`` field is held in a ``Tuple``
-    record, and JSON has one sequence type that decodes to a Python list -- so
-    a scope arriving over the API is a list and the record refuses it. The
-    refusal comes at write time, as a ``WrongType`` naming the value rather
-    than the shape, well away from the request that caused it.
+    Only sequences need it. A ``Tuple`` field is held in a ``Tuple`` record,
+    and JSON has one sequence type that decodes to a Python list -- so a scope
+    arriving over the API is a list and the record refuses it. The refusal
+    comes at write time, as a ``WrongType`` naming the value rather than the
+    shape, well away from the request that caused it.
 
-    :param driver_id: Driver that declares the schema.
+    **Every** list, not only one the schema declares as a collection. This
+    used to ask the driver's schema, which left two holes that reached
+    operators as a 500 on an ordinary edit (Érico, 2026-09-04, unchecking
+    "show on the login page" for the magic-link provider):
+
+    * a key the schema does not declare -- the email driver declares two
+      integers and nothing else, so *any* list in its configuration fell
+      straight through;
+    * a provider whose driver is gone, which took the early return above and
+      was coerced not at all.
+
+    In both cases :func:`_field_for` still chose a ``Tuple`` field, because it
+    answers ``Tuple`` for a collection it was handed as readily as for one it
+    was told about. So the rule here has to be the same rule: a list is stored
+    as a tuple, full stop. Asking the schema was asking a question whose
+    answer never mattered.
+
+    :param driver_id: Driver that declares the schema. Unused now, and kept
+        because it is what makes this a statement about *this provider's*
+        settings rather than a general-purpose converter.
     :param config: Settings as supplied.
     :returns: Those settings, with sequences as tuples.
     """
-    fields = _settings_fields(driver_id)
-    if not fields:
-        # An orphan is stored as whatever it already was; there is no schema
-        # left to say what any of it should be.
-        return dict(config)
     return {
-        name: tuple(value)
-        if ICollection.providedBy(fields.get(name)) and isinstance(value, list)
-        else value
+        name: tuple(value) if isinstance(value, list) else value
         for name, value in config.items()
     }
 
@@ -652,6 +664,30 @@ def _field_for(declared: object | None, value: object):
     return registry_field.TextLine(title="", required=False)
 
 
+def _record_for(declared: object | None, value: object) -> Record:
+    """Build the registry record one config value is stored in.
+
+    The field and the value are decided together, which is the whole point of
+    this existing rather than the two being chosen a line apart.
+    :func:`_field_for` answers ``Tuple`` for every collection -- a declared
+    one, and an undeclared value that merely looks like one -- while the value
+    went into the record untouched. JSON has no tuple, so every array in a
+    ``POST`` or ``PATCH`` body arrives as a ``list``, and storing one against
+    that field raised ``WrongType([], tuple, '')`` from deep inside
+    ``plone.registry``: a 500 on an ordinary edit, naming no field, for any
+    provider whose configuration has a collection in it.
+
+    :param declared: The ``zope.schema`` field from the driver's settings
+        schema, or ``None``.
+    :param value: The value about to be stored.
+    :returns: The record to store.
+    """
+    field = _field_for(declared, value)
+    if ICollection.providedBy(field) and isinstance(value, list):
+        value = tuple(value)
+    return Record(field, value)
+
+
 def _provider_ids() -> set[str]:
     """Return the id of every provider that has records.
 
@@ -858,9 +894,8 @@ def _write_provider(provider: ProviderConfig, order: int) -> None:
     registry[f"{prefix}groupmap"] = dict(provider.groupmap)
 
     for key, value in provider.config.items():
-        registry.records[f"{prefix}{CONFIG_SEGMENT}{key}"] = Record(
-            _field_for(fields.get(key), value),
-            value,
+        registry.records[f"{prefix}{CONFIG_SEGMENT}{key}"] = _record_for(
+            fields.get(key), value
         )
 
 

@@ -688,3 +688,87 @@ class TestASignInPolicyThatAdmitsNobody(ControlPanelCase):
         )
 
         assert get_provider("dex").config.get("create_user") is not False
+
+
+class TestEditingAProviderWhoseConfigHasAList(ControlPanelCase):
+    """``PATCH @identity-providers/<id>`` with an array in the body.
+
+    The route from the traceback, driven end to end: the frontend round-trips
+    a provider's whole configuration back, JSON turns every tuple into an
+    array, and an array decodes to a list. The write then put that list
+    against a ``Tuple`` record and answered 500.
+
+    Worth going through the service rather than the storage helpers, because
+    what made this reach an operator is that it happens on an edit nobody
+    would associate with configuration at all -- a checkbox.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_, manager, configured) -> None:
+        self.portal = portal
+        self.request = request_
+
+    def test_toggling_a_checkbox_does_not_fail(self):
+        """The reported symptom: unchecking "show on the login page".
+
+        204 rather than 200: the service answers with no body, and Zope
+        downgrades an empty 200. What matters here is that it is not a 500.
+        """
+        self.call(
+            ProvidersPatch,
+            "dex",
+            payload={"show_in_login": False, "config": {"scope": ["openid"]}},
+        )
+
+        assert self.status() == 204
+
+    def test_the_toggle_took_effect(self):
+        """So the fix cannot be a service that swallows the write."""
+        self.call(
+            ProvidersPatch,
+            "dex",
+            payload={"show_in_login": False, "config": {"scope": ["openid"]}},
+        )
+
+        assert get_provider("dex").show_in_login is False
+
+    def test_the_list_is_stored_as_a_tuple(self):
+        self.call(
+            ProvidersPatch, "dex", payload={"config": {"scope": ["openid", "email"]}}
+        )
+
+        assert get_provider("dex").config["scope"] == ("openid", "email")
+
+    def test_an_empty_array_is_stored(self):
+        """The value in the traceback, and what a form sends for a collection
+        nobody filled in."""
+        self.call(ProvidersPatch, "dex", payload={"config": {"scope": []}})
+
+        assert get_provider("dex").config["scope"] == ()
+
+    def test_a_driver_with_no_collection_in_its_schema(self):
+        """The magic-link provider, which is where this was found. Its schema
+        declares two integers, so nothing about the key being sent says it
+        should be a tuple -- and the record it lands in is one anyway."""
+        self.call(
+            ProvidersPost,
+            payload={"id": "magic", "driver": "email", "config": {"scope": []}},
+        )
+
+        assert self.status() == 201
+        assert get_provider("magic").config["scope"] == ()
+
+    def test_creating_one_with_an_array_works_too(self):
+        """``POST`` builds a provider where ``PATCH`` assigns to one, and both
+        have to hold."""
+        self.call(
+            ProvidersPost,
+            payload={
+                "id": "new-one",
+                "driver": "oidc-generic",
+                "config": {"issuer": "https://idp.example", "scope": ["openid"]},
+            },
+        )
+
+        assert self.status() == 201
+        assert get_provider("new-one").config["scope"] == ("openid",)
