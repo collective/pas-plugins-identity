@@ -39,6 +39,7 @@ function renderList(
       identities={[DEX]}
       available={[GITHUB]}
       emails={[ADDRESS]}
+      canSignInWithLink
       loading={false}
       busy={false}
       emailSent={false}
@@ -124,6 +125,45 @@ describe('IdentitiesList', () => {
   });
 });
 
+/**
+ * Select one of the panel's tabs by its label.
+ *
+ * Only the selected panel is in the document, so the addresses are reached by
+ * pressing their tab rather than by querying for them.
+ */
+function openTab(label: string) {
+  fireEvent.click(screen.getByRole('tab', { name: label }));
+}
+
+describe('IdentitiesList sections', () => {
+  it('splits the page into the two questions it answers', () => {
+    // Stacked, this read as a pile of everything that could be said about how
+    // you get in, with the addresses below whatever length the provider list
+    // happened to be.
+    renderList();
+
+    const tabs = screen.getAllByRole('tab').map((tab) => tab.textContent);
+    expect(tabs).toEqual(['Sign-in methods', 'Email addresses']);
+  });
+
+  it('opens on the methods rather than the addresses', () => {
+    renderList();
+
+    expect(screen.getByRole('tab', { selected: true }).textContent).toBe(
+      'Sign-in methods',
+    );
+    expect(screen.queryByText('Your email addresses')).toBeNull();
+  });
+
+  it('wears the same tabs the account page does', () => {
+    // The control panel's account page is this question asked by an
+    // administrator; the two being recognisably one design is the point.
+    renderList();
+
+    expect(document.querySelector('.identity-tabs')).toBeTruthy();
+  });
+});
+
 describe('IdentitiesList and your own addresses', () => {
   it('lists the addresses on the profile', () => {
     // Not a box to type one into. The address a magic link proves is
@@ -131,6 +171,7 @@ describe('IdentitiesList and your own addresses', () => {
     // all -- and a verified address is what a new provider account can be
     // auto-attached to.
     renderList();
+    openTab('Email addresses');
 
     expect(screen.queryByLabelText('Email address')).toBeNull();
     expect(screen.getByText('erico@plone.org')).toBeTruthy();
@@ -138,6 +179,7 @@ describe('IdentitiesList and your own addresses', () => {
 
   it('offers to verify one that is not verified yet', () => {
     const { onVerifyEmail } = renderList();
+    openTab('Email addresses');
 
     fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
 
@@ -146,6 +188,7 @@ describe('IdentitiesList and your own addresses', () => {
 
   it('says so rather than offering to verify a verified one', () => {
     renderList({ emails: [{ ...ADDRESS, verified: true }] });
+    openTab('Email addresses');
 
     expect(screen.queryByRole('button', { name: 'Verify' })).toBeNull();
     expect(screen.getByText('Verified')).toBeTruthy();
@@ -153,18 +196,21 @@ describe('IdentitiesList and your own addresses', () => {
 
   it('marks the address the site uses', () => {
     renderList();
+    openTab('Email addresses');
 
     expect(screen.getByText('Preferred')).toBeTruthy();
   });
 
   it('says the mail is out once it is', () => {
     renderList({ emailSent: true });
+    openTab('Email addresses');
 
     expect(screen.getByRole('status')).toBeTruthy();
   });
 
   it('points at the profile when there is nothing to verify', () => {
     renderList({ emails: [], profileUrl: '/identity-profiles/erico' });
+    openTab('Email addresses');
 
     expect(screen.getByText(/carries no email address/i)).toBeTruthy();
     expect(screen.getByText('Edit your profile')).toBeTruthy();

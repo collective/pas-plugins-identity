@@ -47,6 +47,11 @@ const Identities: React.FC = () => {
   const linkableProviders = useSelector(
     (state: any) => state.linkableProviders,
   );
+  // The login page's own listing, which arrives expanded on `@identities`.
+  // Hidden providers are absent from it -- that is what `show_in_login` means
+  // -- so it is the only thing that can say whether a method here is one
+  // anybody can actually sign in with.
+  const loginProviders = useSelector((state: any) => state.loginProviders);
   const linking = useSelector((state: any) => state.identityLinking);
   const removing = useSelector((state: any) => state.identityUnlink);
   const preferring = useSelector((state: any) => state.preferredEmail);
@@ -55,7 +60,11 @@ const Identities: React.FC = () => {
   const myProfile = useSelector((state: any) => state.myProfile);
 
   useEffect(() => {
-    dispatch(listIdentities());
+    // Expanded, so the login page's own listing rides along: this page has to
+    // know which of these methods actually signs anybody in, and that is the
+    // question `@login-providers` answers. One request rather than two, which
+    // is what the expandable component exists for.
+    dispatch(listIdentities(true));
     dispatch(getMyProfile());
   }, [dispatch]);
 
@@ -69,12 +78,20 @@ const Identities: React.FC = () => {
   // page stays where it is to say so.
   const emailSent = Boolean(linking?.loaded && linking?.data?.sent);
 
+  // An operator who takes the email provider off the login page has turned
+  // off signing in with a link. Verifying an address still does its other
+  // job -- recognising the same person behind a later provider login -- so
+  // what changes here is what this page claims, not what it offers.
+  const canSignInWithLink = (loginProviders?.data ?? []).some(
+    (provider: LoginProvider) => provider.driver === EMAIL_DRIVER,
+  );
+
   useEffect(() => {
     if (removing?.loaded) {
       // The list is stale the moment an unlink succeeds, and can_unlink may
       // have changed for everything left. So are the addresses: removing an
       // email identity is exactly what un-verifies one.
-      dispatch(listIdentities());
+      dispatch(listIdentities(true));
       dispatch(getMyProfile());
     }
   }, [dispatch, removing?.loaded]);
@@ -157,6 +174,7 @@ const Identities: React.FC = () => {
             identities={mine?.data ?? []}
             available={linkableProviders?.data ?? []}
             emails={myProfile?.data?.emails ?? []}
+            canSignInWithLink={canSignInWithLink}
             profileUrl={myProfile?.data?.profile ?? null}
             loading={Boolean(mine?.loading)}
             busy={

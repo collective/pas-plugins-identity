@@ -26,9 +26,9 @@ function renderForm(
   const onSelectProvider = vi.fn();
   const onSendMagicLink = vi.fn();
   const onPasswordLogin = vi.fn();
-  // The password form links to /passwordreset, the way volto-authomatic's
-  // does, so it needs a router.
-  render(
+  const tree = (extra: Partial<React.ComponentProps<typeof LoginForm>>) => (
+    // The password form links to /passwordreset, the way volto-authomatic's
+    // does, so it needs a router.
     <MemoryRouter>
       <LoginForm
         providers={[DEX]}
@@ -44,10 +44,30 @@ function renderForm(
         onSendMagicLink={onSendMagicLink}
         onPasswordLogin={onPasswordLogin}
         {...props}
+        {...extra}
       />
-    </MemoryRouter>,
+    </MemoryRouter>
   );
-  return { onSelectProvider, onSendMagicLink, onPasswordLogin };
+  const result = render(tree({}));
+  return {
+    onSelectProvider,
+    onSendMagicLink,
+    onPasswordLogin,
+    // Re-render with the same component instance, so state a click put there
+    // -- which provider was chosen -- survives the container answering.
+    update: (extra: Partial<React.ComponentProps<typeof LoginForm>>) =>
+      result.rerender(tree(extra)),
+  };
+}
+
+/**
+ * Reach the magic-link form the way a visitor does, from the picker.
+ *
+ * Only needed where the picker is on screen: with email as the single way
+ * in, the form is the page and there is no button to press.
+ */
+function openEmail() {
+  fireEvent.click(screen.getByText('Email'));
 }
 
 describe('LoginForm', () => {
@@ -81,6 +101,62 @@ describe('LoginForm', () => {
     renderForm({ loading: true });
 
     expect(screen.getByRole('status').textContent).toContain('Loading');
+  });
+
+  it('draws the wait as well as describing it', () => {
+    renderForm({ loading: true });
+
+    // Decorative: the text beside it is what a screen reader reads, which is
+    // why the spinner is hidden from one rather than labelled twice.
+    const overlay = document.querySelector('.identity-overlay--waiting');
+    expect(overlay).toBeTruthy();
+    const spinner = overlay?.querySelector('.identity-spinner');
+    expect(spinner).toBeTruthy();
+    expect(spinner?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('draws the redirect the same way', () => {
+    // It is the same kind of wait -- something happening this page cannot
+    // show -- and used to be the one state rendered as bare body text.
+    renderForm({ showPloneLogin: false, providers: [DEX] });
+
+    const overlay = document.querySelector('.identity-overlay--waiting');
+    expect(overlay).toBeTruthy();
+    expect(overlay?.querySelector('.identity-spinner')).toBeTruthy();
+    expect(overlay?.textContent).toContain('Dex');
+  });
+
+  it('says where it is going while the options stay put', () => {
+    // Greying the buttons says they cannot be pressed, not that anything is
+    // happening or where it is going. Both used to be true only on the
+    // single-provider page.
+    renderForm({ providers: [DEX, EMAIL] });
+    fireEvent.click(screen.getByText('Dex'));
+
+    // `starting` is the container's answer, so it is passed rather than
+    // observed -- what this pins is that the picker is still underneath.
+    expect(document.querySelector('.identity-providers')).toBeTruthy();
+  });
+
+  it('names the provider it is redirecting to', () => {
+    const { update } = renderForm({ providers: [DEX, EMAIL] });
+    fireEvent.click(screen.getByText('Dex'));
+    update({ starting: true });
+
+    const overlay = document.querySelector('.identity-overlay--waiting');
+    expect(overlay?.textContent).toContain('Dex');
+    expect(document.querySelector('.identity-providers')).toBeTruthy();
+  });
+
+  it('lets a refusal be dismissed so the options can be used again', () => {
+    // Left up, it covers the buttons the reader would press to try again.
+    renderForm({ error: { status: 502 } });
+
+    expect(screen.getByRole('alert')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+
+    expect(document.querySelector('.identity-overlay--error')).toBeNull();
+    expect(screen.getByText('Dex')).toBeTruthy();
   });
 
   it('is just the password form on a site with no providers', () => {
@@ -142,8 +218,19 @@ describe('LoginForm', () => {
     fireEvent.click(screen.getByText('Back to sign-in options'));
 
     expect(screen.getByText('Dex')).toBeTruthy();
-    expect(screen.getByLabelText('Email address')).toBeTruthy();
+    expect(screen.getByText('Email')).toBeTruthy();
     expect(screen.queryByLabelText('Login name')).toBeNull();
+  });
+
+  it('offers a way back out of the email form too', () => {
+    // The same escape, from the step that replaced the inline form.
+    renderForm({ providers: [DEX, EMAIL] });
+    fireEvent.click(screen.getByText('Email'));
+
+    fireEvent.click(screen.getByText('Back to sign-in options'));
+
+    expect(screen.getByText('Dex')).toBeTruthy();
+    expect(screen.queryByLabelText('Email address')).toBeNull();
   });
 
   it('offers a password alongside the providers', () => {
@@ -245,12 +332,47 @@ describe('LoginForm', () => {
     expect(document.querySelector('.identity-providers')).toBeNull();
   });
 
-  it('keeps the email provider out of the button list', () => {
+  it('offers the email provider as a button, not an open field', () => {
     renderForm({ providers: [DEX, EMAIL] });
 
-    // The magic link is a form, not a redirect, so a button for it would do
-    // the wrong thing.
-    expect(screen.queryByText('Email')).toBeNull();
+    // It was the one way in that did not look like one: a labelled input
+    // standing open under a page asking which method to use.
+    const list = document.querySelector('.identity-providers');
+    expect(list?.textContent).toContain('Email');
+    expect(screen.queryByLabelText('Email address')).toBeNull();
+  });
+
+  it('opens the email field on the next step', () => {
+    renderForm({ providers: [DEX, EMAIL] });
+
+    fireEvent.click(screen.getByText('Email'));
+
+    // The same second step the password button already had: the picker is
+    // replaced rather than added to.
+    expect(document.querySelector('.identity-providers')).toBeNull();
+    expect(screen.getByLabelText('Email address')).toBeTruthy();
+  });
+
+  it('does not redirect when the email button is pressed', () => {
+    // It answers with a message rather than an authorize URL, so treating it
+    // like the others would start a flow that cannot finish.
+    const { onSelectProvider } = renderForm({ providers: [DEX, EMAIL] });
+
+    fireEvent.click(screen.getByText('Email'));
+
+    expect(onSelectProvider).not.toHaveBeenCalled();
+  });
+
+  it('closes the password form when the email one opens', () => {
+    // One disclosure, not one boolean each: two open forms is not a state
+    // this page has.
+    renderForm({ providers: [DEX, EMAIL] });
+    fireEvent.click(screen.getByText('Sign in with a password'));
+    fireEvent.click(screen.getByText('Back to sign-in options'));
+
+    fireEvent.click(screen.getByText('Email'));
+
+    expect(screen.queryByLabelText('Login name')).toBeNull();
     expect(screen.getByLabelText('Email address')).toBeTruthy();
   });
 
@@ -264,42 +386,69 @@ describe('LoginForm', () => {
 describe('MagicLinkForm', () => {
   it('sends the address typed in', () => {
     const { onSendMagicLink } = renderForm({ providers: [EMAIL] });
+    openEmail();
 
     fireEvent.change(screen.getByLabelText('Email address'), {
       target: { value: 'erico@plone.org' },
     });
-    fireEvent.click(screen.getByText('Email me a link'));
+    // An icon button since the form took the password form's shape, so it
+    // is found by its accessible name rather than its text.
+    fireEvent.click(screen.getByRole('button', { name: 'Email me a link' }));
 
     expect(onSendMagicLink).toHaveBeenCalledWith('erico@plone.org');
   });
 
   it('will not send an empty address', () => {
     const { onSendMagicLink } = renderForm({ providers: [EMAIL] });
+    openEmail();
 
-    fireEvent.click(screen.getByText('Email me a link'));
+    // An icon button since the form took the password form's shape, so it
+    // is found by its accessible name rather than its text.
+    fireEvent.click(screen.getByRole('button', { name: 'Email me a link' }));
 
     expect(onSendMagicLink).not.toHaveBeenCalled();
   });
 
   it('trims what was typed', () => {
     const { onSendMagicLink } = renderForm({ providers: [EMAIL] });
+    openEmail();
 
     fireEvent.change(screen.getByLabelText('Email address'), {
       target: { value: '  erico@plone.org  ' },
     });
-    fireEvent.click(screen.getByText('Email me a link'));
+    // An icon button since the form took the password form's shape, so it
+    // is found by its accessible name rather than its text.
+    fireEvent.click(screen.getByRole('button', { name: 'Email me a link' }));
 
     expect(onSendMagicLink).toHaveBeenCalledWith('erico@plone.org');
   });
 
   it('does not say whether the address is known', () => {
     renderForm({ providers: [EMAIL], magicLinkSent: true });
+    openEmail();
 
     // The backend answers identically for known and unknown addresses; a UI
     // that distinguished them would undo that.
     const message = screen.getByRole('status').textContent ?? '';
     expect(message).toContain('If that address');
     expect(screen.queryByLabelText('Email address')).toBeNull();
+  });
+});
+
+describe('MagicLinkForm shape', () => {
+  it('is the same form the password one is', () => {
+    // A bare label and input beside a fully dressed PloneAuth, on the same
+    // card, one click apart: the two forms on this page ask for one and two
+    // fields and are otherwise the same form.
+    renderForm({ providers: [DEX, EMAIL] });
+    openEmail();
+
+    const form = document.querySelector('form.PloneAuth.identity-magic-link');
+    expect(form).toBeTruthy();
+    expect(form?.querySelector('.form .react-aria-TextField')).toBeTruthy();
+    expect(
+      form?.querySelector('.actions #magic-link-form-submit'),
+    ).toBeTruthy();
   });
 });
 

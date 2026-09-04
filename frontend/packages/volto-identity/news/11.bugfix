@@ -1,0 +1,7 @@
+The login page no longer shows the password form for a moment before the providers arrive.
+
+`LoginForm` decided what to render from `providers` and `loading`, and the store slice starts neither loading nor loaded — so between the first render and the effect that dispatches, `loading` was false and `data` was empty. That is indistinguishable, to anything reading those two, from a site with no providers configured, and the branch for that is the local password form. It was drawn, then replaced a tick later by the buttons.
+
+The container now keys on whether the listing has *answered* — loaded, or failed — rather than on the emptiness of a list nobody has asked for yet. A failure is deliberately treated as an answer: the form's own fallbacks are what a site with no reachable provider list should get, and holding the wait for one would leave it with a spinner instead of the way in that still works.
+
+The description strip made the same guess in prose, naming the local password form and then replacing the sentence, so it waits too. @ericof

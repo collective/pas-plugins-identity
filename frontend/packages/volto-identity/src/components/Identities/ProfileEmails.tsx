@@ -43,6 +43,13 @@ const messages = defineMessages({
       'recognise you when you add another provider. Add an address on your ' +
       'profile first, then verify it here.',
   },
+  introNoSignIn: {
+    id: 'profile-emails-intro-no-sign-in',
+    defaultMessage:
+      'A verified address is how this site recognises you when you add ' +
+      'another provider. Add an address on your profile first, then verify ' +
+      'it here.',
+  },
   verify: { id: 'Verify', defaultMessage: 'Verify' },
   makePreferred: {
     id: 'Make preferred',
@@ -82,6 +89,21 @@ interface ProfileEmailsProps {
   busy: boolean;
   /** Whether a confirmation mail has just gone out. */
   sent: boolean;
+  /**
+   * Whether signing in with a link is one of the ways in.
+   *
+   * Verifying does two jobs -- it enables the magic link, and it is how a
+   * later provider login is recognised as the same person -- and an operator
+   * can turn the first one off by taking the email provider off the login
+   * page. When they have, this panel must stop offering the half that is not
+   * there: a page called "sign-in methods" that lists something which cannot
+   * sign anybody in is telling the user something untrue.
+   *
+   * The other half survives, which is why this changes the wording rather
+   * than removing the button: recognition still works, and a user who cannot
+   * verify an address here loses the account matching too.
+   */
+  canSignInWithLink: boolean;
   onVerify: (address: string) => void;
   /**
    * Move an address to the front of the list.
@@ -99,6 +121,7 @@ const ProfileEmails: React.FC<ProfileEmailsProps> = ({
   loading,
   busy,
   sent,
+  canSignInWithLink,
   onVerify,
   onPrefer,
 }) => {
@@ -111,7 +134,11 @@ const ProfileEmails: React.FC<ProfileEmailsProps> = ({
   return (
     <div className="identity-emails">
       <h3>{intl.formatMessage(messages.heading)}</h3>
-      <p className="identity-note">{intl.formatMessage(messages.intro)}</p>
+      <p className="identity-note">
+        {intl.formatMessage(
+          canSignInWithLink ? messages.intro : messages.introNoSignIn,
+        )}
+      </p>
       {onPrefer && emails.length > 1 ? (
         <p className="identity-note">{intl.formatMessage(messages.choose)}</p>
       ) : null}

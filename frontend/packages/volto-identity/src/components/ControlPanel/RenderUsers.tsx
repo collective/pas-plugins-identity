@@ -41,13 +41,19 @@
  *   second because nothing in Plone records it. `@user-account/<id>` answers
  *   both, one user at a time, and this is the action that opens it.
  *
+ *   A `Link` to a route rather than a modal it fetched into itself, for the
+ *   same reason Edit above is an anchor: it is a navigation to a page's worth
+ *   of facts about one person, and an overlay could not be linked to,
+ *   bookmarked or opened in a new tab. The request moved with it -- the page
+ *   knows who it is about from the route.
+ *
  * @module components/ControlPanel/RenderUsers
  */
 import React, { useState } from 'react';
 import { FormattedMessage, useIntl } from 'react-intl';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { Dropdown, Modal, Table, Checkbox } from 'semantic-ui-react';
+import { Dropdown, Table, Checkbox } from 'semantic-ui-react';
 
 import Icon from '@plone/volto/components/theme/Icon/Icon';
 import Toast from '@plone/volto/components/manage/Toast/Toast';
@@ -61,9 +67,8 @@ import ploneSVG from '@plone/volto/icons/plone.svg';
 import trashSVG from '@plone/volto/icons/delete.svg';
 import { toast } from 'react-toastify';
 
-import { getUserAccount } from '../../actions';
 import type { UserProfile } from '../../types';
-import UserAccountPanel from './UserAccountPanel';
+import { userAccountUrl } from '../../config/routes';
 
 /** A role as the control panel lists them. */
 interface Role {
@@ -104,12 +109,10 @@ export function profileEditUrl(
 
 const RenderUsers: React.FC<RenderUsersProps> = (props) => {
   const [user, setUser] = useState<Record<string, any>>({});
-  const [showAccount, setShowAccount] = useState(false);
 
   const intl = useIntl();
   const dispatch = useDispatch();
   const updateRequest = useSelector((state: any) => state.users?.update);
-  const accountRequest = useSelector((state: any) => state.userAccount);
 
   const {
     user: propsUser,
@@ -123,17 +126,6 @@ const RenderUsers: React.FC<RenderUsersProps> = (props) => {
   } = props;
 
   const editUrl = profileEditUrl(propsUser.profile_url);
-
-  // One slice in the store, and one row's modal open at a time -- but a
-  // stale answer from the row opened a moment ago would render under this
-  // person's name, which is the one mistake this panel must not make.
-  const account =
-    accountRequest?.data?.userid === propsUser.id ? accountRequest.data : null;
-
-  const openAccount = () => {
-    setShowAccount(true);
-    (dispatch as any)(getUserAccount(propsUser.id));
-  };
 
   const updateUserData = (userId: string, userData: object) => {
     (dispatch as any)(updateUser(userId, userData))
@@ -232,8 +224,9 @@ const RenderUsers: React.FC<RenderUsersProps> = (props) => {
                 )
               )}
               <Dropdown.Item
+                as={Link}
+                to={userAccountUrl(propsUser.id)}
                 id="user-account-button"
-                onClick={openAccount}
                 value={propsUser['@id']}
               >
                 <Icon name={ploneSVG} size="15px" />
@@ -251,20 +244,6 @@ const RenderUsers: React.FC<RenderUsersProps> = (props) => {
           </Dropdown>
         )}
       </Table.Cell>
-      {showAccount && (
-        <Modal open onClose={() => setShowAccount(false)} size="small">
-          <Modal.Header>
-            {propsUser.fullname || propsUser.username || propsUser.id}
-          </Modal.Header>
-          <Modal.Content>
-            <UserAccountPanel
-              account={account}
-              loading={Boolean(accountRequest?.loading)}
-              error={accountRequest?.error}
-            />
-          </Modal.Content>
-        </Modal>
-      )}
       {Object.keys(user).length > 0 && userschema?.loaded && (
         <ModalForm
           className="modal"

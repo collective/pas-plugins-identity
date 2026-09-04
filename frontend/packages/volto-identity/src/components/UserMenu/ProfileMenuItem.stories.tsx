@@ -6,11 +6,14 @@ import {
   PluggablesProvider,
 } from '@plone/volto/components/manage/Pluggable';
 import ProfileMenuItem from './ProfileMenuItem';
+import { withPersonalTools } from '../../storybook/withUserMenu';
 import { withUser } from '../../stories/fixtures';
 
 const meta: Meta<typeof ProfileMenuItem> = {
   title: 'Identity/UserMenu/ProfileMenuItem',
   component: ProfileMenuItem,
+  decorators: [withPersonalTools],
+  parameters: { fullBleed: true },
 };
 export default meta;
 

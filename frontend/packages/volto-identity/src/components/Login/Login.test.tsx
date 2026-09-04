@@ -36,12 +36,23 @@ function captureNavigation() {
   };
 }
 
-function storeWith(token?: string) {
+/**
+ * The listing slice as the reducer leaves it after a successful request.
+ *
+ * `loaded` is not decoration here: it is the flag the page uses to tell "the
+ * providers are not here yet" from "there are none", so a fixture without it
+ * is a fixture of a request that never answered.
+ */
+const LOADED_PROVIDERS = {
+  loading: false,
+  loaded: true,
+  error: null,
+  data: [{ id: 'github', title: 'GitHub' }],
+};
+
+function storeWith(token?: string, loginProviders: any = LOADED_PROVIDERS) {
   const state = {
-    loginProviders: {
-      loading: false,
-      data: [{ id: 'github', title: 'GitHub' }],
-    },
+    loginProviders,
     providerLogin: {},
     magicLinkSend: {},
     userSession: { token, login: {} },
@@ -56,9 +67,10 @@ function storeWith(token?: string) {
 function renderLogin(
   token?: string,
   search = '?came_from=%2F%40%40oauth-authorize',
+  loginProviders?: any,
 ) {
   render(
-    <Provider store={storeWith(token) as any}>
+    <Provider store={storeWith(token, loginProviders) as any}>
       <MemoryRouter initialEntries={[`/login${search}`]}>
         <Login />
       </MemoryRouter>
@@ -121,5 +133,57 @@ describe('Login', () => {
     renderLogin(undefined);
 
     expect(capture.navigated).toEqual([]);
+  });
+
+  it('waits rather than guessing before the listing has answered', () => {
+    // The slice as it is on the very first render: the effect has not
+    // dispatched yet, so it is neither loading nor loaded. Reading only
+    // `loading` and `data` made that indistinguishable from a site with no
+    // providers, and the page rendered the local password form -- the
+    // no-providers fallback -- for a tick before replacing it.
+    renderLogin(undefined, undefined, {
+      loading: false,
+      loaded: false,
+      error: null,
+      data: [],
+    });
+
+    expect(document.body.textContent).toContain('Loading');
+    expect(document.body.textContent).not.toContain('Sign in with a password');
+    expect(document.querySelector('#login-form-submit')).toBeNull();
+  });
+
+  it('names what is below only once it knows', () => {
+    // The description strip is the same guess in prose. Naming the local
+    // password form and then replacing the sentence is the flicker with
+    // words instead of fields.
+    renderLogin(undefined, undefined, {
+      loading: true,
+      loaded: false,
+      error: null,
+      data: [],
+    });
+
+    expect(document.body.textContent).not.toContain(
+      'Sign in with your account on this site.',
+    );
+    expect(document.body.textContent).not.toContain(
+      'Choose how you would like to sign in.',
+    );
+  });
+
+  it('falls back to the password form when the listing fails', () => {
+    // A failure has answered -- with nothing. Holding the loading state for
+    // it would leave a site whose provider list is unreachable with a
+    // spinner instead of the one way in that still works.
+    renderLogin(undefined, undefined, {
+      loading: false,
+      loaded: false,
+      error: { status: 500 },
+      data: [],
+    });
+
+    expect(document.body.textContent).not.toContain('Loading');
+    expect(document.querySelector('#login-form-submit')).toBeTruthy();
   });
 });

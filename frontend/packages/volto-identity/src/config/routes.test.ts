@@ -6,6 +6,8 @@ import install, {
   CONSENT_PATH,
   CONTROLPANEL_PATH,
   FALLBACK_LOGIN_PATH,
+  USER_ACCOUNT_PATH,
+  userAccountUrl,
 } from './routes';
 
 /**
@@ -27,6 +29,45 @@ describe('the routes install step', () => {
     expect(paths).toContain(CALLBACK_PATH);
     expect(paths).toContain(CONSENT_PATH);
     expect(paths).toContain(CONTROLPANEL_PATH);
+    expect(paths).toContain(USER_ACCOUNT_PATH);
+  });
+
+  describe('the user account route', () => {
+    it('is a page rather than an overlay', () => {
+      // What it shows is a page's worth of read-only facts about one person.
+      // As a modal it could not be linked to, bookmarked, opened in a new
+      // tab or reached with the back button.
+      const config = emptyConfig();
+
+      install(config);
+
+      const route = config.addonRoutes.find(
+        (each: any) => each.path === USER_ACCOUNT_PATH,
+      );
+      expect(route).toBeTruthy();
+      expect(route.exact).toBe(true);
+    });
+
+    it('needs no nonContentRoutes entry of its own', () => {
+      // Volto's own `/\/controlpanel\/.*$/` already covers everything below
+      // there, which is why this route lives under the users control panel.
+      expect(USER_ACCOUNT_PATH.startsWith('/controlpanel/')).toBe(true);
+    });
+
+    it('escapes a userid that a path segment could not carry', () => {
+      expect(userAccountUrl('a b/c')).toBe(
+        '/controlpanel/users/a%20b%2Fc/account',
+      );
+    });
+
+    it('builds a URL the route matches', () => {
+      // The constant and the builder are two spellings of one path, and
+      // nothing else would catch them drifting apart.
+      const pattern = new RegExp(
+        `^${USER_ACCOUNT_PATH.replace(':userid', '[^/]+')}$`,
+      );
+      expect(pattern.test(userAccountUrl('erico'))).toBe(true);
+    });
   });
 
   it('keeps its pages out of the content routes', () => {

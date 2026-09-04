@@ -3,6 +3,7 @@ import React from 'react';
 
 import { PluggablesProvider } from '@plone/volto/components/manage/Pluggable';
 import PersonalTools from './PersonalTools';
+import { withToolbar } from '../../storybook/withUserMenu';
 import IdentitiesMenuItem from '../UserMenu/IdentitiesMenuItem';
 import ProfileMenuItem from '../UserMenu/ProfileMenuItem';
 import {
@@ -27,6 +28,11 @@ import { LOADED, USER, withStore } from '../../stories/fixtures';
 const meta: Meta<typeof PersonalTools> = {
   title: 'Identity/UserMenu/PersonalTools',
   component: PersonalTools,
+  // It renders `.personal-tools.pastanaga-menu` itself, but every rule for
+  // that class is nested under `#toolbar` in `toolbar.less` -- so without
+  // this ancestor the menu came out as an unstyled column of links.
+  decorators: [withToolbar],
+  parameters: { fullBleed: true },
   args: {
     loadComponent: () => {},
     unloadComponent: () => {},

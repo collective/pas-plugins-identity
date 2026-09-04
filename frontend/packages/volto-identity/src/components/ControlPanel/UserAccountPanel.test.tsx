@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '../../testing';
+import { fireEvent, render, screen } from '../../testing';
 import React from 'react';
 
 import UserAccountPanel, { formatDate } from './UserAccountPanel';
@@ -53,6 +53,16 @@ describe('formatDate', () => {
     expect(formatDate('not a date')).toBeNull();
   });
 });
+
+/**
+ * Select one of the panel's tabs by its label.
+ *
+ * Only the selected panel is in the document, so a section other than the
+ * first is reached by pressing its tab rather than by querying for it.
+ */
+function openTab(label: string) {
+  fireEvent.click(screen.getByRole('tab', { name: label }));
+}
 
 describe('UserAccountPanel', () => {
   it('names the providers rather than their ids', () => {
@@ -115,6 +125,7 @@ describe('UserAccountPanel', () => {
 
   it('shows which addresses are verified', () => {
     renderPanel();
+    openTab('Email addresses');
 
     expect(screen.getByText('alice@example.com')).toBeTruthy();
     expect(screen.getByText('Verified')).toBeTruthy();
@@ -122,8 +133,30 @@ describe('UserAccountPanel', () => {
 
   it('lists the recent events', () => {
     renderPanel();
+    openTab('Recent activity');
 
     expect(screen.getByText('authenticated')).toBeTruthy();
+  });
+
+  it('opens on the sign-in methods', () => {
+    // Three questions about one person, and this is the one an administrator
+    // came for: the other two are reachable, not in the way.
+    renderPanel();
+
+    expect(screen.getByRole('tab', { selected: true }).textContent).toBe(
+      'Sign-in methods',
+    );
+    expect(screen.queryByText('alice@example.com')).toBeNull();
+  });
+
+  it('keeps the last sign-in outside the tabs', () => {
+    // It is not one of the three sections: it is the fact the page is about,
+    // and hiding it behind a tab would make it the answer to a question
+    // nobody thought to ask.
+    renderPanel();
+    openTab('Recent activity');
+
+    expect(document.body.textContent).toContain('Last signed in');
   });
 
   it('says so while loading', () => {

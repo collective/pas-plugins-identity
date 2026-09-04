@@ -1,63 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react';
 
 import UserAccountPanel from './UserAccountPanel';
-import type { UserAccount } from '../../types';
-
-const ACCOUNT: UserAccount = {
-  '@id': '/@user-account/erico',
-  userid: 'erico',
-  fullname: 'Érico Andrei',
-  profile_url: '/identity-profiles/erico',
-  identities: [
-    {
-      provider: 'github',
-      title: 'GitHub',
-      subject: '99',
-      created: '2026-03-02T11:40:00+00:00',
-      last_login: '2026-08-21T18:03:00+00:00',
-      provider_configured: true,
-      provider_enabled: true,
-      groups: ['site-editors'],
-    },
-    {
-      provider: 'email',
-      title: 'Email',
-      subject: 'erico@plone.org',
-      created: '2026-01-14T09:12:00+00:00',
-      last_login: null,
-      provider_configured: true,
-      provider_enabled: true,
-      groups: [],
-    },
-  ],
-  emails: [
-    { address: 'erico@plone.org', verified: true, preferred: true },
-    { address: 'erico@example.com', verified: false, preferred: false },
-  ],
-  last_authenticated: '2026-08-21T18:03:00+00:00',
-  events_total: 2,
-  events: [
-    {
-      event: 'authenticated',
-      provider: 'github',
-      success: true,
-      timestamp: '2026-08-21T18:03:00+00:00',
-      detail: {},
-    },
-    {
-      event: 'magic-link-sent',
-      provider: 'email',
-      success: true,
-      timestamp: '2026-08-20T09:00:00+00:00',
-      detail: {},
-    },
-  ],
-};
+import { USER_ACCOUNT } from '../../stories/fixtures';
 
 const meta: Meta<typeof UserAccountPanel> = {
   title: 'Identity/ControlPanel/UserAccountPanel',
   component: UserAccountPanel,
-  args: { account: ACCOUNT, loading: false },
+  args: { account: USER_ACCOUNT, loading: false },
 };
 export default meta;
 
@@ -69,7 +18,7 @@ export const Linked: Story = {};
 /** A password account: nothing linked, and nothing wrong with that. */
 export const PasswordOnly: Story = {
   args: {
-    account: { ...ACCOUNT, identities: [], events: [], events_total: 0 },
+    account: { ...USER_ACCOUNT, identities: [], events: [], events_total: 0 },
   },
 };
 
@@ -82,8 +31,8 @@ export const PasswordOnly: Story = {
 export const DisabledProvider: Story = {
   args: {
     account: {
-      ...ACCOUNT,
-      identities: [{ ...ACCOUNT.identities[0], provider_enabled: false }],
+      ...USER_ACCOUNT,
+      identities: [{ ...USER_ACCOUNT.identities[0], provider_enabled: false }],
     },
   },
 };
@@ -92,10 +41,10 @@ export const DisabledProvider: Story = {
 export const RemovedProvider: Story = {
   args: {
     account: {
-      ...ACCOUNT,
+      ...USER_ACCOUNT,
       identities: [
         {
-          ...ACCOUNT.identities[0],
+          ...USER_ACCOUNT.identities[0],
           provider_configured: false,
           provider_enabled: false,
         },
@@ -113,7 +62,7 @@ export const RemovedProvider: Story = {
 export const Dormant: Story = {
   args: {
     account: {
-      ...ACCOUNT,
+      ...USER_ACCOUNT,
       last_authenticated: null,
       events: [],
       events_total: 0,

@@ -1,11 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react';
 
 import PasswordForm from './PasswordForm';
-import { FAILED } from '../../stories/fixtures';
+import { FAILED, withLoginCard } from '../../stories/fixtures';
 
 const meta: Meta<typeof PasswordForm> = {
   title: 'Identity/Login/PasswordForm',
   component: PasswordForm,
+  // The sentence the real page carries above this form when it is the
+  // only way in, which is the case it is worth comparing against.
+  decorators: [withLoginCard('Sign in with your account on this site.')],
   args: { loading: false, onSubmit: () => {} },
 };
 export default meta;

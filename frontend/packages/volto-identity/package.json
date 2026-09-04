@@ -34,6 +34,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-redux": "^8.1.2",
+    "react-aria-components": "catalog:",
     "react-router-dom": "^5.2.0",
     "@plone/components": "workspace:*"
   },
@@ -55,6 +56,8 @@
     "@types/react-redux": "^7.1.34",
     "@types/react-router-dom": "^5.3.3",
     "@plone/components": "workspace:*",
+    "react-aria-components": "catalog:",
+    "react-cookie": "8.1.2",
     "@storybook/react": "^8.0.4"
   }
 }

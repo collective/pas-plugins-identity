@@ -22,6 +22,25 @@
     margin: 1rem 0;
   }
 
+  /* The card's body. Two things it must do beyond holding what is in it:
+     never get shorter than the floor -- every state of the page lives here,
+     and a card that resized on each of them read as the page jumping about
+     -- and be the positioned ancestor a wait or a refusal is drawn against,
+     so an overlay covers this and nothing else. */
+  .form {
+    position: relative;
+    display: flex;
+    min-height: var(--identity-login-min-height);
+    flex-direction: column;
+    /* Centred rather than stacked from the top. The floor above means a short
+       state -- the first-login decision, the callback's one line -- otherwise
+       sits against the top of a box more than twice its height, which reads as
+       a card that failed to fill rather than one with little to say. Anything
+       taller than the floor makes the box grow, so nothing is ever centred out
+       of reach. */
+    justify-content: center;
+  }
+
   .description {
     padding: 12px;
     background-color: var(--identity-surface-header-bg);

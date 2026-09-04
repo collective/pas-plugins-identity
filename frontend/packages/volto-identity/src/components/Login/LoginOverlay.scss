@@ -1,0 +1,44 @@
+/**
+ * The wait and the refusal, drawn over the card's body.
+ *
+ * Absolutely positioned against `LoginPanel`'s `.form`, which is what makes
+ * this an overlay rather than a third state of the page: whatever it covers
+ * keeps its size and its place, and comes back unchanged when this goes.
+ *
+ * The veil is the card's own grey, near enough opaque: what is underneath
+ * keeps its size and its place, but is not left looking usable while it is
+ * not. A paler veil read as a hole in the card, and a translucent one left
+ * buttons showing through that could not be pressed.
+ */
+.identity-overlay {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Twice the gap at the sides: the card is 350px wide and a refusal is a
+     sentence, so with only the rhythm's own padding it ran to both edges and
+     read as text pasted over the card rather than as a message on it. */
+  padding: var(--identity-gap) calc(var(--identity-gap) * 2);
+  background: var(--identity-overlay-veil);
+  inset: 0;
+}
+
+.identity-overlay__body {
+  display: flex;
+  max-width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.identity-overlay__message {
+  margin: 0;
+  color: var(--identity-muted);
+  font-size: 14px;
+}
+
+.identity-overlay--error .identity-overlay__message {
+  color: var(--identity-error);
+}

@@ -21,6 +21,7 @@ const meta: Meta<typeof IdentitiesList> = {
     loading: false,
     busy: false,
     emailSent: false,
+    canSignInWithLink: true,
     onLink: () => {},
     onVerifyEmail: () => {},
     onUnlink: () => {},

@@ -17,6 +17,8 @@ import React from 'react';
 import type { ReactNode } from 'react';
 import { Provider } from 'react-redux';
 
+import LoginPanel from '../components/Login/LoginPanel';
+
 import type {
   ConfiguredProvider,
   ConsentRequest,
@@ -26,6 +28,7 @@ import type {
   OAuthClient,
   OAuthGrants,
   SigningKeyRing,
+  UserAccount,
   UserProfile,
   ProfileEmail,
 } from '../types';
@@ -464,9 +467,121 @@ export const KEYRING: SigningKeyRing = {
  * @param state The store's whole state, as the component's selectors read it.
  * @returns A Storybook decorator.
  */
+/**
+ * One account as `@user-account` serves it.
+ *
+ * Shared, because two stories show it: the panel on its own, and the control
+ * panel page that fetches it.
+ */
+export const USER_ACCOUNT: UserAccount = {
+  '@id': '/@user-account/erico',
+  userid: 'erico',
+  fullname: 'Érico Andrei',
+  profile_url: '/identity-profiles/erico',
+  identities: [
+    {
+      provider: 'github',
+      title: 'GitHub',
+      subject: '99',
+      created: '2026-03-02T11:40:00+00:00',
+      last_login: '2026-08-21T18:03:00+00:00',
+      provider_configured: true,
+      provider_enabled: true,
+      groups: ['site-editors'],
+    },
+    {
+      provider: 'email',
+      title: 'Email',
+      subject: 'erico@plone.org',
+      created: '2026-01-14T09:12:00+00:00',
+      last_login: null,
+      provider_configured: true,
+      provider_enabled: true,
+      groups: [],
+    },
+  ],
+  emails: [
+    { address: 'erico@plone.org', verified: true, preferred: true },
+    { address: 'erico@example.com', verified: false, preferred: false },
+  ],
+  last_authenticated: '2026-08-21T18:03:00+00:00',
+  events_total: 2,
+  events: [
+    {
+      event: 'authenticated',
+      provider: 'github',
+      success: true,
+      timestamp: '2026-08-21T18:03:00+00:00',
+      detail: {},
+    },
+    {
+      event: 'magic-link-sent',
+      provider: 'email',
+      success: true,
+      timestamp: '2026-08-20T09:00:00+00:00',
+      detail: {},
+    },
+  ],
+};
+
+/**
+ * Render a story inside the login card, at the real page's dimensions.
+ *
+ * `LoginForm`, `PasswordForm` and `MagicLinkForm` are never seen anywhere but
+ * inside `LoginPanel`, and the panel is what sizes them: the card is
+ * `--identity-login-width` wide and the forms lay themselves out against
+ * that. On Storybook's full-width canvas they stretched to whatever the
+ * viewport was, so a story could look fine and the page wrong -- and two
+ * forms meant to be indistinguishable could not be compared at all.
+ *
+ * The real component rather than a `<div>` of the same width, so the stories
+ * cannot drift from the page: a change to the card's width or padding shows
+ * up here without anybody remembering to copy it.
+ *
+ * @param description The strip under the heading, which names what is below
+ *   -- the real page picks between two sentences depending on what a site has
+ *   configured, so a story showing only the password form passes the other.
+ * @returns A Storybook decorator.
+ */
+export function withLoginCard(
+  description = 'Choose how you would like to sign in.',
+) {
+  const Decorator = (Story: () => ReactNode) => (
+    <LoginPanel title="Log in" description={description}>
+      {Story()}
+    </LoginPanel>
+  );
+  return Decorator;
+}
+
+/**
+ * The store slices Volto's own chrome reads, which no story is about.
+ *
+ * Five pages here portal Volto's `Toolbar`, and it selects these four out of
+ * the store whatever the page is. A story that left them out did not render
+ * at all -- the failure was a TypeError from inside Volto, which reads as the
+ * add-on being broken rather than as a fixture missing furniture.
+ *
+ * Exactly four, established by removing each in turn: `apierror`, `intl` and
+ * `workflow` were guesses and are not read.
+ */
+export const VOLTO_CHROME = {
+  actions: { actions: {} },
+  content: { data: null },
+  types: { types: [] },
+  userSession: { token: null },
+};
+
+/**
+ * A store for a story, over the chrome every page needs.
+ *
+ * The story's own state wins, so a story about being signed in can say so by
+ * passing its own `userSession`.
+ */
 export function withStore(state: Record<string, unknown>) {
+  const merged = { ...VOLTO_CHROME, ...state };
   const store = {
-    getState: () => state,
+    getState: () => merged,
     dispatch: (action: unknown) => action,
     subscribe: () => () => {},
   };

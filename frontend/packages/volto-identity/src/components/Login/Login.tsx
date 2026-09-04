@@ -111,12 +111,30 @@ const Login: React.FC = () => {
     [dispatch],
   );
 
+  // Whether the listing has answered at all -- which is not the same thing as
+  // `loading`. The slice starts neither loading nor loaded, so between the
+  // first render and the effect below dispatching, `loading` is false and
+  // `data` is empty: indistinguishable, to anything reading those two, from a
+  // site with no providers configured. That is the state the page used to
+  // render the local password form in, for a tick, before replacing it.
+  //
+  // A failed listing is deliberately *not* held here. It has answered -- with
+  // nothing -- and the form's own fallbacks are what a site with no reachable
+  // provider list should get: the password form is the way in when this page
+  // cannot draw the other ones.
+  const answered = Boolean(providers?.loaded || providers?.error);
+
   // The description names what is actually below, which differs by site: a
-  // provider list, a password form, or both.
+  // provider list, a password form, or both. Until the listing answers there
+  // is nothing below to name, so the strip is left out rather than guessing
+  // -- guessing means the wrong sentence on screen and then a second one
+  // replacing it.
   const hasProviders = Boolean(providers?.data?.length);
-  const description = intl.formatMessage(
-    hasProviders ? messages.chooseHow : messages.signInLocally,
-  );
+  const description = answered
+    ? intl.formatMessage(
+        hasProviders ? messages.chooseHow : messages.signInLocally,
+      )
+    : undefined;
 
   return (
     <LoginPanel
@@ -125,7 +143,7 @@ const Login: React.FC = () => {
     >
       <LoginForm
         providers={providers?.data ?? []}
-        loading={Boolean(providers?.loading)}
+        loading={!answered}
         starting={redirecting}
         error={started?.error}
         magicLinkSent={Boolean(magic?.data)}

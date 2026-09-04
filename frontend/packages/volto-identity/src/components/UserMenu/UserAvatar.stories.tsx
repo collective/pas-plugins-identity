@@ -4,6 +4,7 @@ import React from 'react';
 
 import UserAvatar from './UserAvatar';
 import { LOADED, PORTRAIT, USER, withUser } from '../../stories/fixtures';
+import { withToolbarButton } from '../../storybook/withUserMenu';
 
 const meta: Meta<typeof UserAvatar> = {
   title: 'Identity/UserMenu/UserAvatar',
@@ -12,6 +13,22 @@ const meta: Meta<typeof UserAvatar> = {
 export default meta;
 
 type Story = StoryObj<typeof UserAvatar>;
+
+/**
+ * Where it is actually seen.
+ *
+ * This add-on's `Toolbar.jsx` puts it on `#toolbar-personal` in place of
+ * Volto's camera icon, at 30px on the toolbar's own ground. The stories below
+ * show the component; this one shows the component in its place, which is the
+ * only one that says whether 30px is enough to tell two people apart.
+ */
+export const OnTheToolbarButton: Story = {
+  args: { size: '30px' },
+  decorators: [withUser({ portrait: null }), withToolbarButton],
+  // The toolbar is fixed and full width; boxing it in the page wrapper would
+  // show it somewhere it never is.
+  parameters: { fullBleed: true },
+};
 
 /** The user uploaded a portrait, so it is the portrait. */
 export const WithPortrait: Story = {

@@ -9,7 +9,23 @@ const meta: Meta<typeof LoginPanel> = {
   args: {
     title: 'Log in',
     description: 'Choose how you would like to sign in.',
-    children: <p style={{ padding: 10 }}>The sign-in options go here.</p>,
+    children: (
+      // Centred and padded, so the story shows the card's body as the page
+      // fills it rather than a line of text against its top-left corner.
+      <p
+        style={{
+          display: 'flex',
+          height: '100%',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 'var(--identity-gap)',
+          margin: 0,
+          textAlign: 'center',
+        }}
+      >
+        The sign-in options go here.
+      </p>
+    ),
   },
 };
 export default meta;
