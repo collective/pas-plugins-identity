@@ -17,6 +17,22 @@ from zope import schema
 from zope.interface import Interface
 
 
+#: Seconds to wait for a provider's avatar. Short on purpose: a user is
+#: watching a login spinner while this runs.
+#:
+#: The default lives here rather than beside the fetch, because the schema is
+#: what a site changes it through -- and the two would otherwise be two
+#: numbers to keep in step. The fetching modules import it as the value to
+#: fall back on when there is no registry to read at all.
+DEFAULT_PORTRAIT_TIMEOUT = 5
+
+#: Largest avatar accepted, in bytes.
+DEFAULT_PORTRAIT_MAX_BYTES = 2 * 1024 * 1024
+
+#: Seconds to wait for a provider's discovery document.
+DEFAULT_DISCOVERY_TIMEOUT = 10
+
+
 class IIdentitySettings(Interface):
     """Site-wide settings for external identity providers.
 
@@ -106,6 +122,44 @@ class IIdentitySettings(Interface):
         ),
         required=False,
         default=False,
+    )
+
+    portrait_timeout = schema.Int(
+        title=_("Avatar fetch timeout in seconds"),
+        description=_(
+            "How long to wait for a provider's avatar. This runs while "
+            "somebody is waiting to log in, so the right number depends on "
+            "where the provider is: a container on this host answers in "
+            "milliseconds, a distant CDN may not. A fetch that times out is "
+            "a missing picture, never a failed login."
+        ),
+        required=False,
+        default=DEFAULT_PORTRAIT_TIMEOUT,
+    )
+
+    portrait_max_bytes = schema.Int(
+        title=_("Largest avatar accepted, in bytes"),
+        description=_(
+            "Counted off the stream rather than taken from a header, so a "
+            "provider cannot understate it. This is a limit on what a "
+            "user-supplied URL may make this site read into memory: raise it "
+            "knowing that, and see the documentation on why avatar syncing "
+            "is off by default."
+        ),
+        required=False,
+        default=DEFAULT_PORTRAIT_MAX_BYTES,
+    )
+
+    discovery_timeout = schema.Int(
+        title=_("Provider discovery timeout in seconds"),
+        description=_(
+            "How long to wait for a provider's metadata document. Separate "
+            "from the avatar timeout because it fails differently: an avatar "
+            "that does not arrive is a missing picture, while metadata that "
+            "does not arrive is a login that cannot start."
+        ),
+        required=False,
+        default=DEFAULT_DISCOVERY_TIMEOUT,
     )
 
     audit_max_entries = schema.Int(

@@ -13,6 +13,8 @@ from io import BytesIO
 from pas.plugins.identity.core import portraits
 from pas.plugins.identity.core.pas import EXTRACTOR
 from plone import api
+from plone.registry.interfaces import IRegistry
+from zope.component import getUtility
 
 import pytest
 
@@ -95,6 +97,18 @@ def on(portal):
     """
     api.portal.set_registry_record(portraits.ENABLED_RECORD, True)
     return portal
+
+
+def blank(record: str) -> None:
+    """Empty a registry record.
+
+    Through the registry rather than :mod:`plone.api`, which refuses to write
+    ``None`` -- while the control-panel form writes exactly that when an
+    optional number is cleared, which is the case these tests are about.
+
+    :param record: Dotted name of the record.
+    """
+    getUtility(IRegistry)[record] = None
 
 
 def portrait_of(userid: str):
@@ -226,7 +240,7 @@ class TestGuards:
     def test_oversized_body_is_refused(self):
         """Counted off the stream, not taken from a header a server can lie
         about."""
-        self.answers(FakeResponse(b"\x00" * (portraits.MAX_BYTES + 1)))
+        self.answers(FakeResponse(b"\x00" * (portraits.max_bytes() + 1)))
 
         assert portraits.sync_portrait("alice", "https://cdn/a.png") is False
 
@@ -252,6 +266,86 @@ class TestGuards:
         monkeypatch.setattr(portraits.requests, "get", explode)
 
         assert portraits.sync_portrait("alice", "https://cdn/a.png") is False
+
+
+class TestTheLimitsAreSettings:
+    """Both were module constants, so a site could not change either.
+
+    A test that only used the shipped numbers would pass just as well against
+    the constants, so each of these moves the record to something the default
+    is not and asserts the fetch obeyed the record.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, answers, on, monkeypatch) -> None:
+        self.portal = portal
+        self.answers = answers
+        self.on = on
+        self.monkeypatch = monkeypatch
+
+    def timeouts(self) -> list:
+        """Record the timeout every fetch is given.
+
+        :returns: The list the recorder appends to, one entry per fetch.
+        """
+        seen: list = []
+
+        def fake_get(url, timeout=None, stream=False):
+            """Record the timeout and answer with a valid PNG.
+
+            :param url: Ignored.
+            :param timeout: What the caller asked to wait.
+            :param stream: Ignored.
+            :returns: A response carrying a small PNG.
+            """
+            seen.append(timeout)
+            return FakeResponse(_png())
+
+        self.monkeypatch.setattr(portraits.requests, "get", fake_get)
+        return seen
+
+    def test_the_shipped_timeout_is_what_the_profile_set(self):
+        assert portraits.timeout() == 5
+
+    def test_the_timeout_the_site_set_is_the_one_used(self):
+        api.portal.set_registry_record(portraits.TIMEOUT_RECORD, 2)
+        seen = self.timeouts()
+
+        portraits.sync_portrait("alice", "https://cdn/a.png")
+
+        assert seen == [2]
+
+    def test_an_unset_timeout_falls_back_to_the_default(self):
+        """The record can hold ``None``, and waiting zero seconds for every
+        avatar is not what an empty field means."""
+        blank(portraits.TIMEOUT_RECORD)
+
+        assert portraits.timeout() == 5
+
+    def test_the_shipped_cap_is_what_the_profile_set(self):
+        assert portraits.max_bytes() == 2 * 1024 * 1024
+
+    def test_a_body_over_the_sites_cap_is_refused(self):
+        """The same valid PNG as the test below, and small enough to pass the
+        shipped cap -- so only the record can be refusing it."""
+        api.portal.set_registry_record(portraits.MAX_BYTES_RECORD, 8)
+        self.answers(FakeResponse(_png()))
+
+        assert portraits.sync_portrait("alice", "https://cdn/a.png") is False
+
+    def test_a_body_under_the_sites_cap_is_kept(self):
+        """The other half of the pair: a cap that refused everything would
+        pass the test above just as well."""
+        api.portal.set_registry_record(portraits.MAX_BYTES_RECORD, 64 * 1024)
+        self.answers(FakeResponse(_png()))
+
+        assert portraits.sync_portrait("alice", "https://cdn/a.png") is True
+
+    def test_an_unset_cap_falls_back_to_the_default(self):
+        """Zero bytes would refuse every avatar there is."""
+        blank(portraits.MAX_BYTES_RECORD)
+
+        assert portraits.max_bytes() == 2 * 1024 * 1024
 
 
 class TestStoring:

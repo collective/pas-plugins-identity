@@ -57,6 +57,8 @@ it would be a far worse bug than the missing picture.
 from io import BytesIO
 from OFS.Image import Image
 from pas.plugins.identity import logger
+from pas.plugins.identity.core.controlpanel.interfaces import DEFAULT_PORTRAIT_MAX_BYTES
+from pas.plugins.identity.core.controlpanel.interfaces import DEFAULT_PORTRAIT_TIMEOUT
 from pas.plugins.identity.core.subscribers import get_profile
 from pas.plugins.identity.core.subscribers import remember_picture_url
 from pas.plugins.identity.core.subscribers import remembered_picture_url
@@ -73,13 +75,13 @@ import requests
 #: module docstring for why.
 ENABLED_RECORD = "pas.plugins.identity.sync_portraits"
 
-#: Seconds to wait for the image. Short on purpose: a user is watching a login
-#: spinner while this runs.
-TIMEOUT = 5
-
-#: Largest avatar accepted, in bytes. Counted off the stream rather than taken
-#: from ``Content-Length``, which a hostile server is free to lie about.
-MAX_BYTES = 2 * 1024 * 1024
+#: Registry records for the two limits on the fetch. Both were module
+#: constants, which made "how long may a login wait for a picture" a question
+#: only a code change could answer -- and the right number depends on where
+#: the provider is, which is a fact about the site rather than about this
+#: package.
+TIMEOUT_RECORD = "pas.plugins.identity.portrait_timeout"
+MAX_BYTES_RECORD = "pas.plugins.identity.portrait_max_bytes"
 
 #: Chunk size for the capped read.
 CHUNK = 64 * 1024
@@ -208,6 +210,36 @@ def enabled() -> bool:
     return bool(api.portal.get_registry_record(ENABLED_RECORD, default=False))
 
 
+def timeout() -> int:
+    """Return how long to wait for an avatar.
+
+    :returns: The site's setting, or the schema's default where there is no
+        record -- which is the same number, restated so this module still has
+        an answer when it runs somewhere without a registry.
+    """
+    return int(
+        api.portal.get_registry_record(TIMEOUT_RECORD, default=DEFAULT_PORTRAIT_TIMEOUT)
+        or DEFAULT_PORTRAIT_TIMEOUT
+    )
+
+
+def max_bytes() -> int:
+    """Return the largest avatar this site accepts.
+
+    A limit on what a user-supplied URL may make the backend read into
+    memory, so it is read fresh on every fetch rather than cached: a site
+    lowering it means it from the next login, not from the next restart.
+
+    :returns: The site's setting, or the schema's default.
+    """
+    return int(
+        api.portal.get_registry_record(
+            MAX_BYTES_RECORD, default=DEFAULT_PORTRAIT_MAX_BYTES
+        )
+        or DEFAULT_PORTRAIT_MAX_BYTES
+    )
+
+
 def _fetch(url: str, allow_http: bool = False) -> bytes:
     """Fetch an avatar, refusing anything that fails a guard.
 
@@ -224,7 +256,7 @@ def _fetch(url: str, allow_http: bool = False) -> bytes:
             f"{parsed.scheme or 'relative'} is not {' or '.join(sorted(allowed))}"
         )
 
-    response = requests.get(url, timeout=TIMEOUT, stream=True)
+    response = requests.get(url, timeout=timeout(), stream=True)
     if response.status_code != 200:
         raise PortraitRefused(f"answered {response.status_code}")
 
@@ -232,11 +264,12 @@ def _fetch(url: str, allow_http: bool = False) -> bytes:
     if not content_type.startswith("image/"):
         raise PortraitRefused(f"answered {content_type or 'no content type'}")
 
+    cap = max_bytes()
     data = b""
     for chunk in response.iter_content(CHUNK):
         data += chunk
-        if len(data) > MAX_BYTES:
-            raise PortraitRefused(f"larger than {MAX_BYTES} bytes")
+        if len(data) > cap:
+            raise PortraitRefused(f"larger than {cap} bytes")
     return data
 
 

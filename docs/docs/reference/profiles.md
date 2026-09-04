@@ -320,6 +320,8 @@ Turning it into a server-side fetch makes the sign-in path a request forger.
 ```
 
 When enabled, the fetch is HTTPS-only, short-timeout, size-capped by counting bytes off the stream, and refused unless the server claims an image content type.
+The timeout and the size cap are settings, `portrait_timeout` and `portrait_max_bytes`.
+Both were constants, and how long a login may wait for a picture depends on where the provider is rather than on this package.
 
 ## Maintenance
 

@@ -118,6 +118,8 @@ A user who points their avatar at an address only your backend can reach gets yo
 That is server-side request forgery with a rendering step attached.
 
 When enabled, the fetch is HTTPS-only, short-timeout, size-capped by counting bytes off the stream, and refused unless the server claims an image content type.
+The timeout and the size cap are settings, `portrait_timeout` and `portrait_max_bytes`.
+Both were constants, and how long a login may wait for a picture depends on where the provider is rather than on this package.
 
 None of that makes fetching a user-supplied URL safe.
 A hostile URL can still name a public host that resolves to an internal address.

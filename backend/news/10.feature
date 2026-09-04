@@ -1,0 +1,1 @@
+Moved three hard-coded network limits into the registry: `portrait_timeout`, `portrait_max_bytes` and `discovery_timeout`. How long a login may wait for a provider, and how much of a user-supplied URL the backend will read, are facts about where the provider is rather than about this package. @ericof

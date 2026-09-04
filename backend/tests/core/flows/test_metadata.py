@@ -12,6 +12,9 @@ from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.flows import metadata as md
 from pas.plugins.identity.core.interfaces import FlowError
 from pas.plugins.identity.core.interfaces import JSONDict
+from plone import api
+from plone.registry.interfaces import IRegistry
+from zope.component import getUtility
 
 import pytest
 import requests
@@ -430,3 +433,69 @@ class TestCache:
         assert (
             md.metadata_for(self.dex)["token_endpoint"] == DISCOVERY["token_endpoint"]
         )
+
+
+class TestTheTimeoutIsASetting:
+    """It was a module constant, so a site could not change it.
+
+    How long a login may wait for a provider's metadata depends on where that
+    provider is, and the number that suits a container on this host is not the
+    one that suits an issuer across an ocean.
+    """
+
+    def timeouts(self, monkeypatch) -> list:
+        """Record the timeout every fetch is given.
+
+        :param monkeypatch: pytest's patcher.
+        :returns: The list the recorder appends to, one entry per fetch.
+        """
+        seen: list = []
+
+        def fake_get(url: str, **kwargs: object) -> StubResponse:
+            """Record the timeout and answer as a healthy Dex would.
+
+            :param url: Requested URL.
+            :param kwargs: Where the timeout is.
+            :returns: The canned response.
+            :raises requests.ConnectionError: When the URL is not mapped.
+            """
+            seen.append(kwargs.get("timeout"))
+            responses = working_provider()
+            if url not in responses:
+                raise requests.ConnectionError(f"unmapped {url}")
+            return responses[url]
+
+        monkeypatch.setattr(requests, "get", fake_get)
+        return seen
+
+    def test_without_a_site_it_is_the_schema_default(self, monkeypatch, dex):
+        """This module is reachable with no portal at all -- most of the flow
+        suite runs that way -- so a missing registry is an ordinary case."""
+        seen = self.timeouts(monkeypatch)
+        md.forget()
+
+        md.metadata_for(dex)
+
+        assert seen == [10, 10]
+
+    def test_the_timeout_the_site_set_is_the_one_used(self, monkeypatch, portal, dex):
+        api.portal.set_registry_record(md.DISCOVERY_TIMEOUT_RECORD, 3)
+        seen = self.timeouts(monkeypatch)
+        md.forget()
+
+        md.metadata_for(dex)
+
+        assert seen == [3, 3]
+
+    def test_an_unset_timeout_falls_back_to_the_default(self, portal):
+        """The record can hold ``None``, and waiting zero seconds for every
+        provider is not what an empty field means."""
+        # Through the registry rather than ``plone.api``, which refuses to
+        # write ``None`` -- while the control-panel form writes exactly that
+        # when an optional number is cleared.
+        getUtility(IRegistry)[md.DISCOVERY_TIMEOUT_RECORD] = None
+
+        assert md.discovery_timeout() == 10
+
+    def test_the_shipped_timeout_is_what_the_profile_set(self, portal):
+        assert md.discovery_timeout() == 10
