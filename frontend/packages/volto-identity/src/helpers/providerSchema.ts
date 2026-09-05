@@ -195,18 +195,39 @@ export function providerSchema(
       required.push(key);
     }
   }
-  if (settingFields.length) {
+  // The driver's own fieldsets, kept rather than flattened. A driver groups
+  // its settings for a reason -- how to reach the provider, what to do with
+  // the person it returns, how its groups map -- and collapsing that into one
+  // Settings tab put a dozen unrelated fields in a single column.
+  //
+  // The driver's `default` fieldset is the one it did not name, so it takes
+  // this form's own Settings label; the rest keep the titles the backend
+  // translated. A driver that declares no fieldsets at all still gets exactly
+  // one tab, which is what every driver did before this.
+  const driverFieldsets = settings.fieldsets ?? [];
+  if (settingFields.length && driverFieldsets.length) {
+    driverFieldsets.forEach((driverFieldset) => {
+      const fields = driverFieldset.fields.map(
+        (name) => `${CONFIG_PREFIX}${name}`,
+      );
+      if (!fields.length) return;
+      fieldsets.push({
+        id:
+          driverFieldset.id === 'default'
+            ? SETTINGS_FIELDSET
+            : `${SETTINGS_FIELDSET}-${driverFieldset.id}`,
+        title:
+          driverFieldset.id === 'default'
+            ? intl.formatMessage(messages.settings)
+            : driverFieldset.title,
+        fields,
+      });
+    });
+  } else if (settingFields.length) {
     fieldsets.push({
       id: SETTINGS_FIELDSET,
       title: intl.formatMessage(messages.settings),
-      // The driver's own fieldset order, flattened: a provider form shows one
-      // Settings tab rather than repeating the driver's internal grouping
-      // beside the provider's.
-      fields: (settings.fieldsets ?? []).length
-        ? (settings.fieldsets ?? []).flatMap((f) =>
-            f.fields.map((name) => `${CONFIG_PREFIX}${name}`),
-          )
-        : settingFields,
+      fields: settingFields,
     });
   }
 

@@ -3,11 +3,26 @@
     i18n_domain="pas.plugins.identity"
     >
 
-  <!-- The default sink writes into the identity plugin's own bounded log.
-       A deployment that wants entries elsewhere overrides this utility. -->
+  <!-- The built-in sink writes into the identity plugin's own bounded log,
+       and is the only one a site records to until its audit_sinks setting
+       names others. Registered under a name rather than anonymously: a
+       deployment adding a database or a syslog feed should be adding a
+       destination, not silently replacing the one the control panel reads. -->
   <utility
       factory=".PluginAuditSink"
       provides="pas.plugins.identity.core.interfaces.IAuditSink"
+      name="plugin"
+      />
+
+  <!-- Write-only, and registered whether or not anything uses it: a site
+       starts recording here by naming it in audit_sinks, and a sink that is
+       not registered cannot be named. Provides no IAuditSource, so a site
+       recording only here is told its records are elsewhere rather than
+       shown an empty log. -->
+  <utility
+      factory=".logsink.LoggingAuditSink"
+      provides="pas.plugins.identity.core.interfaces.IAuditSink"
+      name="log"
       />
 
   <!-- Successes are recorded from the event contract, so anything that fires

@@ -946,14 +946,19 @@ requires-dist = [
     { name = "plone-volto", marker = "extra == 'test'" },
     { name = "products-cmfplone" },
     { name = "products-printingmailhost", marker = "extra == 'test'" },
+    { name = "psycopg", extras = ["binary"], marker = "extra == 'sql'", specifier = ">=3.2" },
     { name = "pytest", marker = "extra == 'test'" },
     { name = "pytest-cov", marker = "extra == 'test'" },
     { name = "pytest-docker", marker = "extra == 'test'" },
     { name = "pytest-plone", marker = "extra == 'test'", specifier = ">=1.1.0" },
     { name = "requests" },
     { name = "requests", marker = "extra == 'test'" },
+    { name = "sqlalchemy", marker = "extra == 'sql'", specifier = ">=2.0" },
+    { name = "sqlalchemy", marker = "extra == 'test'", specifier = ">=2.0" },
+    { name = "zope-sqlalchemy", marker = "extra == 'sql'", specifier = ">=3.1" },
+    { name = "zope-sqlalchemy", marker = "extra == 'test'", specifier = ">=3.1" },
 ]
-provides-extras = ["server", "test"]
+provides-extras = ["server", "sql", "test"]
 
 [[package]]
 name = "pas-plugins-identity-docs"

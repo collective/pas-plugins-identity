@@ -21,6 +21,7 @@ from datetime import timedelta
 from datetime import UTC
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.interfaces import IAuditSink
+from pas.plugins.identity.core.interfaces import IAuditSource
 from pas.plugins.identity.core.interfaces import JSONDict
 from persistent import Persistent
 from persistent.list import PersistentList
@@ -38,6 +39,15 @@ MAX_DAYS_RECORD = "pas.plugins.identity.audit_max_days"
 
 #: Registry key opting in to storing IP address and user agent.
 RECORD_PII_RECORD = "pas.plugins.identity.audit_record_pii"
+
+#: Registry key naming which sinks a site records to.
+SINKS_RECORD = "pas.plugins.identity.audit_sinks"
+
+#: Name the built-in ZODB sink is registered under, and the only one a
+#: site records to unless it says otherwise. Named rather than anonymous
+#: so that adding a second destination adds to the list instead of
+#: replacing the log the control panel reads.
+DEFAULT_SINK = "plugin"
 
 #: Bucket for entries that cannot be attributed to a userid. A callback with
 #: an unknown state has, by construction, no user to attribute it to, and
@@ -220,12 +230,19 @@ def request_detail(request: HTTPRequest | None) -> JSONDict:
 
 
 @implementer(IAuditSink)
+@implementer(IAuditSink, IAuditSource)
 class PluginAuditSink:
-    """Default sink: writes into the identity plugin's own log.
+    """The built-in sink: writes into the identity plugin's own log.
 
-    Registered as a global utility, but resolves the plugin on every call, so
-    it writes to whichever Plone site is being served. A deployment that wants
-    entries somewhere else -- syslog, a SIEM -- overrides the utility.
+    Registered under :data:`DEFAULT_SINK`, and the one destination a site
+    records to until its ``audit_sinks`` setting names others. Resolves the
+    plugin on every call rather than holding one, so it writes to whichever
+    Plone site is being served.
+
+    Provides :class:`IAuditSource` as well as :class:`IAuditSink`, which is
+    what makes it the log the control panel and ``@audit-log`` read: a
+    deployment can add destinations without giving up the one thing on the
+    site that can answer a question about them.
     """
 
     def record(
@@ -275,6 +292,51 @@ def _log() -> AuditLog | None:
     return plugin.audit
 
 
+def sink_names() -> tuple[str, ...]:
+    """Return the sinks this site records to, in the order it named them.
+
+    :returns: Utility names. Falls back to :data:`DEFAULT_SINK` alone when
+        the record is missing or empty, so a site that has never touched the
+        setting behaves exactly as it did before there was one.
+    """
+    configured = api.portal.get_registry_record(SINKS_RECORD, default=None)
+    if not configured:
+        return (DEFAULT_SINK,)
+    return tuple(configured)
+
+
+def source() -> IAuditSource | None:
+    """Return the first configured sink that can be read back.
+
+    Order matters and is the operator's: the sinks are tried as listed, so a
+    site fanning out to both a database and the built-in log decides which of
+    them answers the control panel by which it names first.
+
+    :returns: The source, or ``None`` when nothing configured can answer --
+        which is a configuration answer rather than an error, and is reported
+        as such rather than as an empty log.
+    """
+    from zope.component import queryUtility
+
+    for name in sink_names():
+        sink = queryUtility(IAuditSink, name=name, default=None)
+        if IAuditSource.providedBy(sink):
+            return sink
+    return None
+
+
+def entries(userid: str | None = None) -> list:
+    """Return recorded entries, newest first.
+
+    :param userid: Restrict to one user; ``None`` returns site-wide.
+    :returns: The entries, empty when nothing configured can be read back.
+        A caller that has to tell "no readable sink" from "nothing recorded"
+        asks :func:`source` instead.
+    """
+    reader = source()
+    return [] if reader is None else reader.entries(userid)
+
+
 def record(
     userid: str | None,
     event: str,
@@ -283,12 +345,18 @@ def record(
     detail: JSONDict | None = None,
     request: HTTPRequest | None = None,
 ) -> None:
-    """Record one event through the configured sink.
+    """Record one event to every configured sink.
 
-    The single entry point every caller in this package uses, so that
-    replacing the sink replaces it everywhere. A failure to audit is logged
-    and swallowed: refusing a login because the audit log is unwritable would
-    turn a bookkeeping problem into an outage.
+    The single entry point every caller in this package uses, so that adding
+    a destination adds it everywhere. Each sink is written independently and
+    a failure in one is logged and swallowed: refusing a login because an
+    audit destination is unwritable would turn a bookkeeping problem into an
+    outage, and a database on the far side of a network is a much better
+    reason to hold that line than the ZODB ever was.
+
+    A configured name that resolves to no utility is logged too. It is almost
+    always a sink whose extra is not installed, and silence there would leave
+    a site recording to fewer places than its operator believes.
 
     :param userid: Userid the event concerns, ``None`` when unresolved.
     :param event: Event name.
@@ -299,11 +367,22 @@ def record(
     """
     from zope.component import queryUtility
 
-    sink = queryUtility(IAuditSink, default=None)
-    if sink is None:
-        return
     payload = {**(detail or {}), **request_detail(request)}
-    try:
-        sink.record(userid, event, provider, success, payload)
-    except Exception:
-        logger.exception("Could not write an audit entry for %r", event)
+    for name in sink_names():
+        sink = queryUtility(IAuditSink, name=name, default=None)
+        if sink is None:
+            logger.warning(
+                "No audit sink registered under %r; dropping a %r entry. "
+                "Is the extra that provides it installed?",
+                name,
+                event,
+            )
+            continue
+        try:
+            sink.record(userid, event, provider, success, payload)
+        except Exception:
+            logger.exception(
+                "Could not write an audit entry for %r to the %r sink",
+                event,
+                name,
+            )

@@ -148,7 +148,7 @@ Voila! Your Plone site should be live and kicking! 🎉
 Deploy a local Docker Compose environment that includes the following.
 
 - Docker images for Backend and Frontend 🖼️
-- A stack with a Traefik router and a PostgreSQL database 🗃️
+- A stack with a Traefik router and a ZEO server 🗃️
 - Accessible at [http://pas-plugins-identity.localhost](http://pas-plugins-identity.localhost) 🌐
 
 Run the following commands in a shell session.
@@ -163,6 +163,8 @@ And... you're all set! Your Plone site is up and running locally! 🚀
 ### The federation demo 🤝
 
 A second stack runs two Plone sites and signs one into the other, which is the fastest way to see what this package is for.
+
+It runs on a single PostgreSQL rather than a ZEO server, with a database each for the two sites' ZODBs and a third for authentication records. Only the identity provider writes its records there; the relying party keeps the bounded log inside its own plugin, so the two arrangements are visible side by side.
 
 ```shell
 make demo-stack-start

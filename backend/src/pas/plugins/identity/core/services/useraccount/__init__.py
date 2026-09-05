@@ -32,12 +32,10 @@ show one panel.
 from pas.plugins.identity import logger
 from pas.plugins.identity.core import audit
 from pas.plugins.identity.core.controlpanel import get_provider
-from pas.plugins.identity.core.interfaces import IAuditSink
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from plone import api
 from Products.CMFCore.permissions import ManageUsers
-from zope.component import queryUtility
 
 
 #: What a caller needs to ask about somebody else.
@@ -102,12 +100,11 @@ def audit_entries(userid: str) -> list:
     """Return a user's recorded authentication events, newest first.
 
     :param userid: Canonical Plone userid.
-    :returns: The entries, empty when a site has unregistered the sink --
-        which is a configuration answer rather than an error, exactly as it
-        is for ``@audit-log``.
+    :returns: The entries, empty when nothing this site records to can be
+        read back -- which is a configuration answer rather than an error,
+        exactly as it is for ``@audit-log``.
     """
-    sink = queryUtility(IAuditSink, default=None)
-    return [] if sink is None else sink.entries(userid)
+    return audit.entries(userid)
 
 
 def last_authenticated(entries: list) -> str | None:

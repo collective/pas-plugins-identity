@@ -25,6 +25,7 @@ VOCABULARY_PERMISSION = "Modify portal content"
 PUBLISHED = (
     "pas.plugins.identity.UserFields",
     "pas.plugins.identity.Groups",
+    "pas.plugins.identity.AuditSinks",
 )
 
 

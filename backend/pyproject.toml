@@ -61,6 +61,22 @@ dependencies = [
 server = [
     "cryptography>=42",
 ]
+# Authentication records in a relational database. SQLAlchemy and
+# zope.sqlalchemy are the integration; psycopg2 is the PostgreSQL driver.
+#
+# psycopg2 rather than psycopg 3, which was here first. RelStorage uses
+# psycopg2, and the Plone container images ship it for that reason, so asking
+# for psycopg 3 as well put two PostgreSQL drivers in every image that runs
+# both -- one compiled dependency more, and two connection URL spellings for
+# whoever writes the DSN.
+#
+# SQLite needs no driver at all, being in the standard library, which is what
+# makes it the one the test suite uses.
+sql = [
+    "SQLAlchemy>=2.0",
+    "zope.sqlalchemy>=3.1",
+    "psycopg2>=2.9",
+]
 test = [
     "collective.MockMailHost",
     "Products.PrintingMailHost",
@@ -79,6 +95,13 @@ test = [
     "pytest-docker",
     "pytest-plone>=1.1.0",
     "requests",
+    # The audit sink for a relational database is tested against SQLite, so
+    # the suite needs these even though no test needs PostgreSQL. Spelled out
+    # rather than as a self-referencing ``[sql]`` extra, and psycopg left out:
+    # a compiled driver nothing in the suite connects with is a slow install
+    # in every CI job for no test.
+    "SQLAlchemy>=2.0",
+    "zope.sqlalchemy>=3.1",
 ]
 
 [project.scripts]
@@ -304,6 +327,15 @@ name = "Core never imports the server layer"
 type = "forbidden"
 source_modules = ["pas.plugins.identity.core"]
 forbidden_modules = ["pas.plugins.identity.server"]
+
+# The same boundary for the SQL layer, and for the same reason: a site that
+# installs no extra must not be carrying SQLAlchemy, and the only way to keep
+# that true is to have CI fail when core reaches for it.
+[[tool.importlinter.contracts]]
+name = "Core never imports the SQL layer"
+type = "forbidden"
+source_modules = ["pas.plugins.identity.core"]
+forbidden_modules = ["pas.plugins.identity.sql"]
 
 # exportimport is a leaf: it reads core and writes through it, and nothing in
 # the add-on's request path may depend on it. A tool that moves accounts in

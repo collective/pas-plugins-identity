@@ -7,6 +7,16 @@
     <value key="audit_max_days">180</value>
     <value key="audit_max_entries">500</value>
     <value key="audit_record_pii">False</value>
+    <!-- The default, stated rather than left out, because this site is
+         half of a deliberate contrast: the provider records to PostgreSQL
+         and this one keeps the bounded log inside its own plugin, which is
+         what a site that installs the add-on and changes nothing gets.
+
+         There is no IDENTITY_AUDIT_DSN on this container either, so naming
+         the sql sink here would find a sink with nothing to write to. -->
+    <value key="audit_sinks">
+      <element>plugin</element>
+    </value>
     <value key="discovery_timeout">10</value>
     <value key="portrait_max_bytes">2097152</value>
     <value key="portrait_timeout">5</value>

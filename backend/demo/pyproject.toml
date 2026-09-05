@@ -15,7 +15,10 @@ classifiers = [
     "Framework :: Plone :: Addon",
 ]
 dependencies = [
-    "pas.plugins.identity[content,server]",
+    # ``content`` was merged into core; the extra is gone. ``sql`` is
+    # here because the demo records its authentication events to the
+    # PostgreSQL service in docker-compose.demo.yml.
+    "pas.plugins.identity[server,sql]",
     # Replaces the site's MailHost with one that prints the message to the
     # log instead of delivering it. The demo has magic-link login switched
     # on and no mail server anywhere near it; without this, asking for a

@@ -57,6 +57,11 @@ class TestDemoIdPRegistry:
         """
         assert [p.provider_id for p in get_providers()] == ["email", "github"]
 
+    def test_the_provider_records_to_the_database(self):
+        """And nowhere else, so its control panel reads rows out of
+        PostgreSQL rather than the bounded log inside its own plugin."""
+        assert self.registry["pas.plugins.identity.audit_sinks"] == ("sql",)
+
     def test_the_property_map_is_a_mapping(self):
         """Written as a Python ``repr`` it imports as one long string, and the
         login that applies it resolves nothing."""
@@ -103,6 +108,14 @@ class TestDemoRPRegistry:
         self.portal = portal
         self.registry = getUtility(IRegistry)
         demo_registry("rp")
+
+    def test_the_relying_party_keeps_the_built_in_log(self):
+        """The other half of the contrast: the provider records to PostgreSQL
+        and this site keeps the bounded log inside its own plugin, which is
+        what an install that changed nothing gets. There is no audit DSN on
+        its container either, so naming the sql sink here would find a sink
+        with nothing to write to."""
+        assert self.registry["pas.plugins.identity.audit_sinks"] == ("plugin",)
 
     def test_provider_is_readable_through_the_api(self):
         provider = get_provider("demo-idp")

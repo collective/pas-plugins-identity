@@ -1,10 +1,9 @@
 """``GET @audit-log`` -- read authentication events."""
 
-from pas.plugins.identity.core.interfaces import IAuditSink
+from pas.plugins.identity.core import audit
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.services.base import IdentityService
 from plone import api
-from zope.component import queryUtility
 
 
 #: Permission a caller needs to read beyond their own entries.
@@ -30,10 +29,13 @@ class AuditLogGet(IdentityService):
             return self._error(401, "Not authenticated", "Log in first.")
         caller = api.user.get_current().getId()
 
-        sink = queryUtility(IAuditSink, default=None)
-        if sink is None:
-            # A site that unregistered the sink has no log to read, which is
-            # a configuration answer rather than an error.
+        reader = audit.source()
+        if reader is None:
+            # Every configured sink is write-only, or the site named one
+            # that is not installed. Either way the records are somewhere
+            # this site cannot query, which is a configuration answer
+            # rather than an error -- and emphatically not an empty log,
+            # which would read as nothing having happened.
             return {"@id": self._base(), "items": [], "scope": "none"}
 
         scope = self.request.form.get("scope", "")
@@ -53,7 +55,7 @@ class AuditLogGet(IdentityService):
         else:
             userid = caller
 
-        entries = sink.entries(userid)
+        entries = reader.entries(userid)
         return {
             "@id": self._base(),
             "scope": "site" if userid is None else userid,

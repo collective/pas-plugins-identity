@@ -6,6 +6,17 @@
     <value key="audit_max_days">180</value>
     <value key="audit_max_entries">500</value>
     <value key="audit_record_pii">False</value>
+    <!-- The provider records to the database and nowhere else, so its
+         control panel is reading rows out of PostgreSQL rather than the
+         bounded log inside its own plugin.
+
+         The relying party is configured the opposite way, and the pair is
+         the point: one site whose authentication log is a table anything
+         can query, one behaving exactly as an install that changed nothing.
+         A site wanting both at once lists both here. -->
+    <value key="audit_sinks">
+      <element>sql</element>
+    </value>
     <value key="callback_url">/login-identity</value>
     <value key="discovery_timeout">10</value>
     <value key="portrait_max_bytes">2097152</value>

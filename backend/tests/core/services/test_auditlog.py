@@ -186,13 +186,18 @@ class TestRendering:
         assert MAX_LIMIT < 10_000
 
 
-class TestWithoutASink:
+class TestWithoutAReadableSink:
+    """Every destination this site records to is write-only, or the one that
+    could be read is not installed any more."""
+
     @pytest.fixture(autouse=True)
     def _setup(self, portal, request_, member, monkeypatch) -> None:
         self.portal = portal
         self.request = request_
         self.member = member
-        monkeypatch.setattr(auditlog, "queryUtility", lambda *a, **kw: None)
+        # The service asks the module for a source rather than looking a
+        # utility up itself, so this is the seam that decides its answer.
+        monkeypatch.setattr(auditlog.audit, "source", lambda: None)
 
     def _read(self, **form) -> dict:
         """GET the audit log for this test's portal and request.
@@ -202,9 +207,11 @@ class TestWithoutASink:
         """
         return read(self.portal, self.request, **form)
 
-    def test_no_sink_is_an_empty_log(self):
-        """A site that unregistered the sink has nothing to read, which is a
-        configuration answer rather than an error."""
+    def test_nothing_readable_is_not_an_error(self):
+        """The records exist; they are somewhere this site cannot query. A
+        configuration answer rather than an error, and reported as ``none``
+        rather than as an empty log, which would read as nothing having
+        happened."""
         result = self._read()
 
         assert result["items"] == []

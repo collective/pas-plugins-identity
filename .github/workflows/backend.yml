@@ -64,6 +64,8 @@ jobs:
             extras: ''
           - name: +server
             extras: 'server'
+          - name: +sql
+            extras: 'sql'
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}

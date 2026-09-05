@@ -1,0 +1,1 @@
+Fixed the demo answering magic-link requests with a 500. `Products.PrintingMailHost` was missing from the image, and the demo package now installs *and* loads it rather than relying on an environment variable set in the compose file. @ericof

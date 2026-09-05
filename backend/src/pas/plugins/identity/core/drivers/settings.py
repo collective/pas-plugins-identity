@@ -36,6 +36,7 @@ labels and widgets; the driver says what a new provider starts with.
 
 from pas.plugins.identity import _
 from plone.autoform import directives
+from plone.supermodel.directives import fieldset
 from zope import schema
 from zope.interface import Interface
 from zope.schema.vocabulary import SimpleTerm
@@ -104,6 +105,26 @@ class IOAuth2Settings(IDriverSettings):
         default=(),
     )
     directives.widget("scope", frontendOptions={"widget": "token"})
+
+    # Everything above is what this site needs in order to talk to the
+    # provider at all, and it stays on the first tab because a provider that
+    # cannot connect has no other question worth answering.
+    #
+    # Everything in this fieldset is the opposite question: the provider has
+    # answered, and these decide who that answer makes the person here. They
+    # are the settings an operator revisits, and they were previously mixed
+    # in among the credentials as one undifferentiated column.
+    fieldset(
+        "accounts",
+        label=_("Accounts"),
+        fields=[
+            "userid_source",
+            "create_user",
+            "auto_link_by_email",
+            "trust_email_verification",
+            "accept_string_booleans",
+        ],
+    )
 
     userid_source = schema.Choice(
         title=_("Userid taken from"),
@@ -229,6 +250,24 @@ class IOIDCSettings(IOAuth2Settings):
         default=(),
     )
     directives.widget("allowed_groups", frontendOptions={"widget": "token"})
+
+    # Group mapping is a subject of its own, and a long one: which claim
+    # carries the groups, which of them this site accepts, and whether a
+    # login is allowed to take a group away again.
+    fieldset(
+        "groups",
+        label=_("Groups"),
+        fields=["group_claim", "allowed_groups", "sync_groups"],
+    )
+
+    # One field, and it still earns a tab rather than trailing after the
+    # group settings it has nothing to do with. It is also the one setting
+    # here that makes this site fetch from a third party during a login.
+    fieldset(
+        "profile",
+        label=_("Profile"),
+        fields=["picture_over_http"],
+    )
 
     sync_groups = schema.Bool(
         title=_("Let this provider set group membership"),

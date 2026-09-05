@@ -12,4 +12,10 @@
       component=".groups.GroupsVocabularyFactory"
       />
 
+  <utility
+      provides="zope.schema.interfaces.IVocabularyFactory"
+      name="pas.plugins.identity.AuditSinks"
+      component=".auditsinks.AuditSinksVocabularyFactory"
+      />
+
 </configure>

@@ -186,6 +186,25 @@ class IIdentitySettings(Interface):
         default=False,
     )
 
+    audit_sinks = schema.Tuple(
+        title=_("Audit destinations"),
+        description=_(
+            "Where authentication events are written, in order. Every "
+            "destination listed gets every event, and one that is "
+            "unreachable is logged and stepped over rather than allowed to "
+            "fail the sign-in. Reads answer from the first destination that "
+            "can be read back, so list that one first if you record to "
+            "several. Leave empty to record only to this site's own log."
+        ),
+        value_type=schema.Choice(
+            title=_("Destination"),
+            vocabulary="pas.plugins.identity.AuditSinks",
+        ),
+        required=False,
+        missing_value=(),
+        default=("plugin",),
+    )
+
 
 #: Fieldset the look of a login button is edited in.
 STYLE_FIELDSET = "style"
