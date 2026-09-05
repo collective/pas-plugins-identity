@@ -26,26 +26,52 @@ Do {doc}`install` first.
 
 ## Add the add-on
 
-1. Add `@plone-collective/volto-identity` to your project's `package.json`
-   dependencies.
+A [cookieplone](https://github.com/plone/cookieplone) project has an add-on
+package of its own under `frontend/packages/`, and that package is where a
+project's add-ons are declared. Volto loads it from `volto.config.js`, and
+everything it names comes with it—so `volto.config.js` is not edited here.
 
-2. Register it in `volto.config.js`:
+1. Edit `frontend/packages/<your-addon>/package.json`, naming
+   `@plone-collective/volto-identity` in **both** keys:
 
-   ```js
-   const addons = ["@plone-collective/volto-identity"];
-   const theme = "";
-
-   module.exports = {
-     addons,
-     theme,
-   };
+   ```json
+   {
+     "addons": [
+       "@plone-collective/volto-identity"
+     ],
+     "dependencies": {
+       "@plone-collective/volto-identity": "*"
+     }
+   }
    ```
 
-3. Install and start:
+   The two do different jobs, and one without the other fails quietly.
+   `dependencies` is what fetches the package. `addons` is what Volto reads to
+   register it—an add-on only in `dependencies` is installed and never loaded,
+   so its routes and components simply do not exist.
+
+2. Install:
 
    ```shell
-   pnpm install
-   pnpm start
+   make frontend-install
+   ```
+
+   Or from the frontend directory:
+
+   ```shell
+   cd frontend && make install
+   ```
+
+3. Start:
+
+   ```shell
+   make frontend-start
+   ```
+
+   Or:
+
+   ```shell
+   cd frontend && make start
    ```
 
 ## Verify
@@ -58,7 +84,9 @@ The page lists the providers the backend has configured and enabled, and no othe
 ```
 
 
-If the page is Volto's own username-and-password form instead, the add-on is not registered—check `volto.config.js` and that `pnpm install` linked the package.
+If the page is Volto's own username-and-password form instead, the add-on is not
+registered. Check that it is in the `addons` key of your add-on's `package.json`,
+not only in `dependencies`, and re-run `make frontend-install`.
 
 If the page loads but lists no providers, the backend has none enabled yet: see {doc}`providers/index`.
 
