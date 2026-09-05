@@ -1,0 +1,11 @@
+Rewrote the documentation against the source, and grew it from 33 pages to 57.
+
+Eight reference pages did not exist and are now written: every endpoint with the permission it enforces, every registry record with its type and default, the provider form as the control panel actually composes it, the Volto add-on's surface, the six permissions, every GenericSetup profile, the driver contract, and what the alpha promises. Seven provider recipes join them, along with how-to guides for installing the frontend, troubleshooting by symptom, upgrading, linking accounts by email, mapping provider groups, and controlling account creation. Two concept pages are new: a mental model with diagrams, and a threat model.
+
+Writing them against the code found things the documentation had wrong. `google` and `github` have no group settings at all — their schema is `IOAuth2Settings`, which carries no group claim, no allowed-groups list and no sync switch — so the pages that told an operator to configure those fields were describing a form that does not exist. The `email` driver has no account settings either, and a missing `create_user` reads as `True`, so an `email` provider always creates accounts. The whole `IProfileSettings` group of twelve records was undocumented, as was `server_issuer`. Nine endpoints take sub-paths that the endpoint table listed as bare, where a bare POST is a `400`. ORCID was advertised as a shipped provider and no such driver exists.
+
+Reference pages are tables now rather than prose, and the reasoning that was mixed into them moved to the concept pages where it belongs. Every page ends somewhere. `reference/profiles.md` became `reference/profiles-and-groups.md`, because "profiles" already meant GenericSetup profiles two files away.
+
+The tutorial was run end to end before it was rewritten, which is how five more defects surfaced — including a magic-link section that could not be performed as written.
+
+Screenshots are captured by a committed Playwright harness rather than by hand, and a test fails when a page references one that nothing captures. Diagrams are Mermaid, so a typo in one is a diff. `docs/STYLE.md` records the house rules the rewrite followed. @ericof
