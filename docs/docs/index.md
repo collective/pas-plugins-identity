@@ -12,7 +12,7 @@ myst:
 Multi-provider external authentication for Plone, built on [authlib](https://authlib.org/).
 
 ```{warning}
-**Alpha software.** The current release is `1.0.0a0`.
+**Alpha software.**
 Endpoints, registry keys, and the driver contract may change without a migration path until 1.0.0.
 Read {doc}`reference/stability` for what is settled and what is not.
 ```
@@ -20,6 +20,22 @@ Read {doc}`reference/stability` for what is settled and what is not.
 One canonical Plone user id maps to many external identities for the same person.
 GitHub, Google, any OpenID Connect provider, another Plone site, or an emailed magic link.
 You get that mapping without running a separate identity broker, and the package never guesses it.
+
+## Two add-ons, installed separately
+
+This is one solution in two packages, and a working site needs both.
+
+| Package | Is | Gives you |
+|---|---|---|
+| `pas.plugins.identity` | A Plone backend add-on | The PAS plugins, the identity store, the providers control panel, the audit log, the REST API, and optionally the authorization server. |
+| `@plone-collective/volto-identity` | A Volto frontend add-on | The login page, the callback route, the sign-in methods page, the provider form, and the control panels a person actually clicks. |
+
+They are versioned and released together, and neither is useful alone: the
+backend publishes the endpoints and the frontend is what calls them. Install
+{doc}`the backend <how-to-guides/install>` first, then
+{doc}`the frontend <how-to-guides/install-the-frontend>`.
+
+Volto is not optional today: Classic UI sign-in is not supported yet.
 
 ```{image} /_static/screens/login-card.png
 :alt: A sign-in card headed "Choose how you would like to sign in", offering a GitHub button above a "Sign in with a password" button

@@ -12,16 +12,14 @@ myst:
 
 What you can build against today, and what may change before 1.0.0.
 
-## Versions
+## The two packages
 
 | | |
 |---|---|
-| Backend | `1.0.0a0` |
-| Frontend | `1.0.0-alpha.0` |
-| Published to PyPI | no |
-| Published to npm | no |
+| Backend | `pas.plugins.identity` |
+| Frontend | `@plone-collective/volto-identity` |
 
-Both packages are installed from the repository. See {doc}`/how-to-guides/install` and {doc}`/how-to-guides/install-the-frontend`.
+They are versioned and released together. See {doc}`/how-to-guides/install` and {doc}`/how-to-guides/install-the-frontend`.
 
 ## What alpha means here
 

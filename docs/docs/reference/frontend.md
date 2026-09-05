@@ -19,15 +19,13 @@ Everything `@plone-collective/volto-identity` adds to a Volto project.
 | | |
 |---|---|
 | Name | `@plone-collective/volto-identity` |
-| Version | `1.0.0-alpha.0` |
-| Published to npm | **no** |
 | Developed against Volto | 19.3.0 |
 | Peer dependencies | React 18, `react-redux` ^8.1.2, `react-router-dom` ^5.2.0, `@plone/components` |
 
-`peerDependencies` does not name `@plone/volto` itself. The version above is what
-the monorepo builds against (`frontend/mrs.developer.json`).
+`peerDependencies` does not name `@plone/volto` itself. The Volto version above
+is what the monorepo builds against (`frontend/mrs.developer.json`).
 
-Install from the repository—see {doc}`/how-to-guides/install-the-frontend`.
+Installing it is {doc}`/how-to-guides/install-the-frontend`.
 
 ```{note}
 Every component in this package has a story. **[Browse them in Storybook](https://collective.github.io/pas-plugins-identity/storybook/)**

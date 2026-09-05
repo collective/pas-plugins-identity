@@ -40,15 +40,7 @@ See {doc}`upgrade` before taking any new alpha, and {doc}`/reference/stability` 
 
 ## Install the backend
 
-```{note}
-The package is **not published to PyPI** yet, so install it from the repository.
-```
-
-1. Add the package to your backend's requirements, from the repository:
-
-   ```shell
-   pip install "pas.plugins.identity @ git+https://github.com/collective/pas-plugins-identity.git#subdirectory=backend"
-   ```
+1. Add `pas.plugins.identity` to your backend's requirements.
 
    Two extras exist. Ask for the ones you want, comma-separated:
 
@@ -58,7 +50,7 @@ The package is **not published to PyPI** yet, so install it from the repository.
    | `sql` | An audit sink writing a row per event to a relational database. | `IDENTITY_AUDIT_DSN`, and `sql` named in `audit_sinks` |
 
    ```shell
-   pip install "pas.plugins.identity[server] @ git+https://github.com/collective/pas-plugins-identity.git#subdirectory=backend"
+   pip install "pas.plugins.identity[server]"
    ```
 
    Neither is needed for ordinary sign-in. See {doc}`/reference/audit-log` for

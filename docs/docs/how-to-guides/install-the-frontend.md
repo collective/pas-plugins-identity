@@ -24,24 +24,10 @@ Do {doc}`install` first.
 | React | 18 |
 | Also needs | `react-redux` 8, `react-router-dom` 5, `@plone/components` |
 
-```{note}
-The package is **not published to npm** yet, and there is no publish workflow.
-Install it from the repository.
-```
-
 ## Add the add-on
 
-1. Add the package to your project's `package.json` dependencies, from the repository:
-
-   ```json
-   {
-     "dependencies": {
-       "@plone-collective/volto-identity": "github:collective/pas-plugins-identity#main&path:/frontend/packages/volto-identity"
-     }
-   }
-   ```
-
-   If your project vendors its add-ons with `mrs-developer` instead, add the repository there and point at `frontend/packages/volto-identity`.
+1. Add `@plone-collective/volto-identity` to your project's `package.json`
+   dependencies.
 
 2. Register it in `volto.config.js`:
 
