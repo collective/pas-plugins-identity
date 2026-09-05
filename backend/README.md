@@ -7,6 +7,9 @@
 
 <div align="center">
 
+[![PyPI](https://img.shields.io/pypi/v/pas.plugins.identity)](https://pypi.org/project/pas.plugins.identity/)
+[![Python versions](https://img.shields.io/pypi/pyversions/pas.plugins.identity)](https://pypi.org/project/pas.plugins.identity/)
+
 [![Documentation](https://img.shields.io/badge/docs-collective.github.io-0083be)](https://collective.github.io/pas-plugins-identity/)
 [![CI](https://github.com/collective/pas-plugins-identity/actions/workflows/main.yml/badge.svg)](https://github.com/collective/pas-plugins-identity/actions/workflows/main.yml)
 

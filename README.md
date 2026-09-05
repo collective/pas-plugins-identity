@@ -6,6 +6,9 @@
 
 <div align="center">
 
+[![PyPI](https://img.shields.io/pypi/v/pas.plugins.identity)](https://pypi.org/project/pas.plugins.identity/)
+[![npm](https://img.shields.io/npm/v/@plone-collective/volto-identity)](https://www.npmjs.com/package/@plone-collective/volto-identity)
+
 [![Built with Cookieplone](https://img.shields.io/badge/built%20with-Cookieplone-0083be.svg?logo=cookiecutter)](https://github.com/plone/cookieplone-templates/)
 [![Documentation](https://img.shields.io/badge/docs-collective.github.io-0083be)](https://collective.github.io/pas-plugins-identity/)
 [![Storybook](https://img.shields.io/badge/-Storybook-ff4785?logo=Storybook&logoColor=white&style=flat-square)](https://collective.github.io/pas-plugins-identity/storybook/)
@@ -248,8 +251,8 @@ This repository holds two packages, released separately and each under its own l
 
 | Package | Location | Registry | License |
 | ------- | -------- | -------- | ------- |
-| `pas.plugins.identity` | [backend/](./backend/) | PyPI | GPL-2.0-only |
-| `@plone-collective/volto-identity` | [frontend/](./frontend/) | npm | MIT |
+| `pas.plugins.identity` | [backend/](./backend/) | [PyPI](https://pypi.org/project/pas.plugins.identity/) | GPL-2.0-only |
+| `@plone-collective/volto-identity` | [frontend/](./frontend/) | [npm](https://www.npmjs.com/package/@plone-collective/volto-identity) | MIT |
 
 The backend package is usable on its own: it needs no frontend to authenticate a user against an external provider, link an identity, or serve any of it over the REST API. The frontend package requires the backend, because everything it renders comes from what the backend serves.
 

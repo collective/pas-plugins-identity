@@ -2,6 +2,9 @@
 
 Multi-provider external authentication for Plone.
 
+[![npm](https://img.shields.io/npm/v/@plone-collective/volto-identity)](https://www.npmjs.com/package/@plone-collective/volto-identity)
+[![Backend on PyPI](https://img.shields.io/pypi/v/pas.plugins.identity?label=backend)](https://pypi.org/project/pas.plugins.identity/)
+
 [![Documentation](https://img.shields.io/badge/docs-collective.github.io-0083be)](https://collective.github.io/pas-plugins-identity/)
 [![Storybook](https://img.shields.io/badge/-Storybook-ff4785?logo=Storybook&logoColor=white&style=flat-square)](https://collective.github.io/pas-plugins-identity/storybook/)
 [![CI](https://github.com/collective/pas-plugins-identity/actions/workflows/main.yml/badge.svg)](https://github.com/collective/pas-plugins-identity/actions/workflows/main.yml)
