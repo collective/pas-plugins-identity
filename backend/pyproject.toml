@@ -62,14 +62,20 @@ server = [
     "cryptography>=42",
 ]
 # Authentication records in a relational database. SQLAlchemy and
-# zope.sqlalchemy are the integration; psycopg is here because PostgreSQL is
-# the database this is written against and tested on in the demo stack.
-# SQLite needs no driver -- it is in the standard library, which is what makes
-# it the one the test suite uses.
+# zope.sqlalchemy are the integration; psycopg2 is the PostgreSQL driver.
+#
+# psycopg2 rather than psycopg 3, which was here first. RelStorage uses
+# psycopg2, and the Plone container images ship it for that reason, so asking
+# for psycopg 3 as well put two PostgreSQL drivers in every image that runs
+# both -- one compiled dependency more, and two connection URL spellings for
+# whoever writes the DSN.
+#
+# SQLite needs no driver at all, being in the standard library, which is what
+# makes it the one the test suite uses.
 sql = [
     "SQLAlchemy>=2.0",
     "zope.sqlalchemy>=3.1",
-    "psycopg[binary]>=3.2",
+    "psycopg2>=2.9",
 ]
 test = [
     "collective.MockMailHost",

@@ -6,14 +6,15 @@
     <value key="audit_max_days">180</value>
     <value key="audit_max_entries">500</value>
     <value key="audit_record_pii">False</value>
-    <!-- Both destinations, which is the arrangement worth showing:
-         the site keeps its own bounded log, and every event is also
-         written to the PostgreSQL service in the compose file, where
-         it is unbounded and outlives the container. ``plugin`` is
-         first, so the control panel still reads the ZODB log; swap
-         the order to read from the database instead. -->
+    <!-- The provider records to the database and nowhere else, so its
+         control panel is reading rows out of PostgreSQL rather than the
+         bounded log inside its own plugin.
+
+         The relying party is configured the opposite way, and the pair is
+         the point: one site whose authentication log is a table anything
+         can query, one behaving exactly as an install that changed nothing.
+         A site wanting both at once lists both here. -->
     <value key="audit_sinks">
-      <element>plugin</element>
       <element>sql</element>
     </value>
     <value key="callback_url">/login-identity</value>

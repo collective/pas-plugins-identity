@@ -24,8 +24,15 @@ to ``pas.plugins.identity.audit_sinks``. Recording to ``plugin`` and ``sql``
 together is a reasonable thing to want; listing ``sql`` first is what makes it
 the store the control panel reads.
 
-PostgreSQL is what this is written against and what the demo stack runs.
-SQLite is what the test suite uses, because it needs no driver and no service.
+PostgreSQL is what this is written against, through psycopg2::
+
+    IDENTITY_AUDIT_DSN=postgresql+psycopg2://user:password@host:5432/database
+
+psycopg2 rather than psycopg 3 because RelStorage uses it and the Plone
+container images ship it already, so a site keeping both its ZODB and its
+audit records in PostgreSQL carries one driver rather than two.
+
+SQLite is what the test suite uses, needing no driver and no service.
 
 The schema
 ==========

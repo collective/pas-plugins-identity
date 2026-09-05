@@ -55,12 +55,6 @@ x-frontend-build: &frontend-build
 # site at the root of its own hostname.
 x-demo-env: &demo-env
   IDENTITY_DEMO: '1'
-  # Where the sql audit sink writes. Read from the environment rather than
-  # the registry because a DSN carries a password, and the registry is
-  # exported by GenericSetup and readable through the control panel. Both
-  # sites point at the same database; the rows say which site wrote them.
-  IDENTITY_AUDIT_DSN: >-
-    postgresql+psycopg://identity:identity-demo-password@audit-db:5432/identity_audit
   DEMO_IDP_URL: http://id.${DEMO_STACK_DOMAIN:-localhost}
   DEMO_RP_URL: http://plone.${DEMO_STACK_DOMAIN:-localhost}
   DEMO_REDIRECT_URI: http://plone.${DEMO_STACK_DOMAIN:-localhost}/login-identity
@@ -134,7 +128,22 @@ services:
     environment:
       <<: *demo-env
       DEMO_PROFILE: identitydemo:idp
-      ZEO_ADDRESS: 'idp-zeo:8100'
+      ## This site's ZODB lives in the `idp` database. RelStorage and psycopg2
+      ## are already in the Plone base image, and the entrypoint switches to
+      ## relstorage.conf on seeing this variable, so there is nothing to
+      ## install and nothing to configure beyond the DSN. The schema is
+      ## created on first start: RELSTORAGE_CREATE_SCHEMA defaults to true.
+      RELSTORAGE_DSN: >-
+        dbname='idp' user='identity' host='db' password='identity-demo-password'
+      ## And its authentication records go to the `audit` database. Only this
+      ## site: the relying party keeps the built-in log, so the stack shows
+      ## both arrangements side by side.
+      ##
+      ## Read from the environment rather than the registry because a DSN
+      ## carries a password, and the registry is exported by GenericSetup and
+      ## readable through the control panel.
+      IDENTITY_AUDIT_DSN: >-
+        postgresql+psycopg2://identity:identity-demo-password@db:5432/audit
       ## Magic-link login is switched on here and there is no mail server in
       ## this stack. Products.PrintingMailHost patches MailHost to write the
       ## message to the log instead of opening an SMTP connection, so the
@@ -142,13 +151,11 @@ services:
       ## the site that sends anything.
       ENABLE_PRINTING_MAILHOST: 'true'
     depends_on:
-      idp-zeo:
-        condition: service_started
-      # Waited for, unlike the ZEO server: the backends do not retry the
-      # audit database, so a login in the first seconds after `up` would be
-      # logged and dropped rather than recorded. That is the design working,
-      # and a poor first impression of it.
-      audit-db:
+      # Waited for rather than merely started: this site's ZODB is in there.
+      # It was worth waiting for even when only the audit rows were, since
+      # nothing retries that database and an early login would have been
+      # logged and dropped; now the site cannot open its database at all.
+      db:
         condition: service_healthy
     volumes:
       - ./backend/demo/src/identitydemo/setuphandlers/idpcontent:/example-content
@@ -211,11 +218,6 @@ services:
       ## Higher than the frontend's catch-all Host() rule.
       - traefik.http.routers.rt-idp-login.priority=100
 
-  idp-zeo:
-    image: plone/plone-zeo:6.0.0
-    volumes:
-      - vol-idp-data:/data
-
   # ------------------------------------------------------------------
   # plone.localhost -- the relying party
   # ------------------------------------------------------------------
@@ -250,15 +252,19 @@ services:
     environment:
       <<: *demo-env
       DEMO_PROFILE: identitydemo:rp
-      ZEO_ADDRESS: 'rp-zeo:8100'
+      ## Its own database in the same server, so the two sites share a
+      ## PostgreSQL and not a ZODB.
+      RELSTORAGE_DSN: >-
+        dbname='rp' user='identity' host='db' password='identity-demo-password'
+      ## No IDENTITY_AUDIT_DSN here, deliberately. This site records to the
+      ## bounded log inside its own plugin, which is what a site that installs
+      ## the add-on and changes nothing does.
     depends_on:
-      rp-zeo:
-        condition: service_started
-      # Waited for, unlike the ZEO server: the backends do not retry the
-      # audit database, so a login in the first seconds after `up` would be
-      # logged and dropped rather than recorded. That is the design working,
-      # and a poor first impression of it.
-      audit-db:
+      # Waited for rather than merely started: this site's ZODB is in there.
+      # It was worth waiting for even when only the audit rows were, since
+      # nothing retries that database and an early login would have been
+      # logged and dropped; now the site cannot open its database at all.
+      db:
         condition: service_healthy
     volumes:
       - ./backend/demo/src/identitydemo/setuphandlers/rpcontent:/example-content
@@ -286,48 +292,58 @@ services:
       - traefik.http.routers.rt-rp-classic.service=svc-rp-backend
       - traefik.http.routers.rt-rp-classic.middlewares=gzip,mw-rp-auth,mw-rp-vhm-classic
 
-  rp-zeo:
-    image: plone/plone-zeo:6.0.0
-    volumes:
-      - vol-rp-data:/data
-
   # ------------------------------------------------------------------
-  # The audit database, shared by both sites
+  # One PostgreSQL, three databases
   # ------------------------------------------------------------------
   #
-  # One database for the pair, on purpose. Every row carries the id of the
-  # site that wrote it, so a shared database is the arrangement that shows
-  # what that column is for: after signing in at id.localhost and then at
-  # plone.localhost, one query has both halves of the journey.
+  #   idp     the ZODB of id.localhost, through RelStorage
+  #   rp      the ZODB of plone.localhost, through RelStorage
+  #   audit   the identity provider's authentication records
   #
-  # Not exposed through Traefik and no host port published: nothing outside
-  # the stack should reach it, and the two backends reach it by service name.
-  # To read it:
+  # The two ZEO servers this replaces were the ordinary way to run a Plone
+  # container, and RelStorage is the other one. It is worth showing here
+  # because the base image already carries it: no package changes, and the
+  # entrypoint switches config on seeing RELSTORAGE_DSN.
   #
-  #   docker compose -f docker-compose.demo.yml exec audit-db \
-  #       psql -U identity -d identity_audit \
+  # Only the provider records its authentication events to `audit`. The
+  # relying party keeps the bounded log inside its own plugin, so the stack
+  # shows both arrangements at once: one site whose log is a table you can
+  # query, and one behaving exactly as an unconfigured install does.
+  #
+  # `idp` and `rp` are created by an init script, because the official image
+  # makes only the one database POSTGRES_DB names. It runs once, on an empty
+  # data directory. To read the audit table:
+  #
+  #   docker compose -f docker-compose.demo.yml exec db \
+  #       psql -U identity -d audit \
   #       -c 'select site, userid, event, success, timestamp
   #           from identity_audit order by timestamp desc limit 20;'
-  audit-db:
+  #
+  # Not exposed through Traefik and no host port published: nothing outside
+  # the stack should reach it, and the backends reach it by service name.
+  db:
     image: postgres:18-alpine
     environment:
       POSTGRES_USER: identity
       POSTGRES_PASSWORD: identity-demo-password
-      POSTGRES_DB: identity_audit
+      POSTGRES_DB: audit
     volumes:
-      - vol-audit-db:/var/lib/postgresql/data
-    # The backends do not wait for the database, so this is what stops the
-    # first few logins after `up` writing to a database that is not listening
-    # yet. Those would be logged and dropped rather than failing the login,
-    # which is the design working exactly as intended and still a confusing
-    # first impression of the demo.
+      # `/var/lib/postgresql`, not `/var/lib/postgresql/data`. From 18 the
+      # image stores data in a major-version-specific subdirectory so that
+      # `pg_upgrade --link` can work across a single mount, and it refuses to
+      # start when it finds a volume mounted at the old path. The container
+      # exits 1 with an explanation, which `docker compose config` cannot see.
+      - vol-db-data:/var/lib/postgresql
+      # Read once, on first start, in filename order.
+      - ./backend/demo/postgres/create-databases.sh:/docker-entrypoint-initdb.d/10-create-databases.sh:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U identity -d identity_audit"]
+      test: ["CMD-SHELL", "pg_isready -U identity -d audit"]
       interval: 5s
       timeout: 3s
       retries: 20
 
 volumes:
-  vol-idp-data: {}
-  vol-rp-data: {}
-  vol-audit-db: {}
+  # One volume now: both ZODBs and the audit table live in the same
+  # PostgreSQL. `down --volumes` resets the whole stack, which is also what
+  # re-runs the database creation script.
+  vol-db-data: {}
