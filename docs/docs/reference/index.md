@@ -14,21 +14,49 @@ Reference material is information-oriented.
 
 Look things up here.
 For directions toward a result, read {doc}`/how-to-guides/index`.
+For the reasoning behind any of it, read {doc}`/concepts/index`.
+
+## Configuration
 
 ```{toctree}
 :maxdepth: 1
 
+settings
+provider-form
 shipped-drivers
-events
-audit-log
-claims
-profiles
-user-content
-migration-reports
-principal-documents
-security-guarantees
+install-profiles
 ```
 
-```{seealso}
-<https://diataxis.fr/reference/>
+## Interfaces
+
+```{toctree}
+:maxdepth: 1
+
+endpoints
+frontend
+events
+claims
+driver-contract
+```
+
+## Data and storage
+
+```{toctree}
+:maxdepth: 1
+
+audit-log
+user-content
+profiles-and-groups
+principal-documents
+migration-reports
+```
+
+## Security and support
+
+```{toctree}
+:maxdepth: 1
+
+permissions
+security-guarantees
+stability
 ```

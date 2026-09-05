@@ -10,8 +10,7 @@ myst:
 
 # Security guarantees
 
-These are the properties the test suite enforces.
-Each has at least one test that fails if the property stops holding.
+Each property below has at least one test that fails if it stops holding.
 
 ```{seealso}
 To report a vulnerability, follow [SECURITY.md](https://github.com/collective/pas-plugins-identity/blob/main/SECURITY.md).
@@ -20,112 +19,105 @@ Please do not use the public issue tracker.
 
 ## What the package guarantees
 
-**Every flow carries state, PKCE, and a nonce**, and a callback is bound to the session that started it.
-A linking flow additionally requires an authenticated session at initiation and completion by the same session.
-Holding the code, the state, and the flow cookie is not enough to attach an identity to somebody else's account.
+### Authentication flows
 
-**Automatic linking by email needs two switches, and both are off by default.**
-It matches only an address this site holds as verified, and only when the provider now asserting it is one the operator marked as trusting -- so a provider nobody trusts cannot reach an account by asserting an address some other route verified.
-Only a literal `True` counts.
-A forged unverified email claim cannot link.
+| Property | Detail |
+|---|---|
+| Every flow carries `state`, PKCE and a `nonce` | A callback is bound to the session that started it. |
+| A linking flow needs an authenticated session | At initiation **and** at completion, and by the same session. Holding the code, the state and the flow cookie is not enough to attach an identity to somebody else's account. |
+| A link collision is a hard error | An external identity already linked to one userid is never attached to another. There is no merge, and adding one is out of scope. |
+| Unlinking your last way in is refused | Unless you have a verified email identity or a real password. |
+| Post-login redirect targets are validated | Against the portal, on the backend **and** the frontend. A target that never reaches the backend cannot be checked by it. |
 
-**A provider's `email_verified` counts only where an operator said it does.**
-{guilabel}`This provider's email verification counts` is off unless a driver knows the provider really checks; Google and GitHub ship with it on, everything else off.
-Switched on, that provider's verified addresses are recorded exactly as a magic link records one -- there is one notion of verified and no second flag to drift.
+### Email verification and linking
 
-**A link collision is a hard error.**
-An external identity already linked to one user id is never attached to another.
-There is no merge, and adding one is out of scope.
+| Property | Detail |
+|---|---|
+| Automatic linking needs two switches, both off by default | It matches only an address this site holds as verified, and only when the provider now asserting it is one the operator marked as trusting. |
+| Only a literal `True` counts | A forged unverified email claim cannot link. |
+| A provider's `email_verified` counts only where an operator said it does | Off unless a driver knows the provider really checks. `google` and `github` ship with it on; everything else off. |
+| There is one notion of verified | A trusted provider's verified addresses are recorded exactly as a magic link records one. No second flag to drift. |
+| A magic link only goes to an address already on your profile | The proof is proof of control over whatever address it was sent to, so a free-text box would verify any mailbox somebody can reach. A caller with no profile is not held to this: there is no list to name an address on. |
+| Magic-link tokens | Single use, burned server side, at most fifteen minutes. The send endpoint is rate limited per address **and** per IP, and answers identically for known and unknown addresses. |
 
-**Unlinking your last way in is refused**, unless you have a verified email identity or a real password.
+### The authorization server
 
-**Magic-link tokens are single-use**, expire in at most fifteen minutes, and are burned server-side.
-The send endpoint is rate limited per address and per IP, and answers identically for known and unknown addresses.
+| Property | Detail |
+|---|---|
+| Redirect URIs are matched exactly | Unless the operator registered a wildcard. See below. |
+| The scheme and the port are never widened | A wildcard registration cannot be downgraded to plain HTTP. |
+| Client secrets are hashed with scrypt | Parameters are stored in each hash, so a hash written before a parameter change keeps verifying. |
+| A malformed stored secret verifies as false | Never an exception. This runs on the token endpoint, where a raised error would be a distinguishable answer. |
+| A public client has no secret | Presenting any is wrong. |
+| Grants are validated at registration | Not at the token endpoint, where an unknown grant reads as a client bug rather than a registration mistake. |
 
-**A client's redirect URIs are matched exactly, unless the operator registered a wildcard.**
-Matching is what binds an authorization code to the client it was issued for, so a registration without a `*` is compared as a string and nothing else -- no prefix matching, no ignoring the query string, no treating a trailing slash as equivalent.
+#### What a redirect URI must satisfy to be registered
 
-A `*` is allowed in two positions, so a site with many hosts need not register them one at a time:
+<!-- source: backend/src/pas/plugins/identity/server/controlpanel/interfaces.py -->
 
-`https://*.example.org/callback`
-: Stands for exactly one further label. It covers `app.example.org`. It does not cover `a.b.example.org`, nor the bare `example.org` -- both fall outside the single label the `*` stands for, and each needs its own entry.
+| Rule | Refused because |
+|---|---|
+| Absolute, with a scheme and a host | Matching is exact string comparison, and a relative value can never match what a client sends. |
+| No fragment | The Security BCP requires refusing one: the authorization response appends its own, and a registered fragment silently changes what the browser receives. |
+| A safe scheme | `https`, a private-use reverse-domain scheme for a native app, or `http` on loopback. Never `javascript:` or `data:`. |
+| A `*` only where one is allowed | See the next table. |
 
-`https://example.org/*`
-: Stands for any path on that host, and any query string with it.
+#### What a wildcard covers
 
-A wildcard is refused anywhere else: in a port, a user name, a query string, in the middle of a label such as `https://a*.example.org`, in the middle of a path, or directly under a public suffix such as `https://*.com`.
-The scheme and the port are never widened, so a wildcard registration cannot be downgraded to plain HTTP.
+| Pattern | Stands for | Does **not** cover |
+|---|---|---|
+| `https://*.example.org/callback` | Exactly one further label: `app.example.org` | `a.b.example.org`, or the bare `example.org`. Each needs its own entry. |
+| `https://example.org/*` | Any path on that host, and any query string with it | A different host or port. |
 
-Registering a wildcard is a real widening, and it should be a deliberate one: every name it covers is somewhere this server will send a browser carrying an authorization code.
-A subdomain that is taken over, forgotten, or serving somebody else's content is a valid redirect target for as long as the registration stands.
+A `*` is refused anywhere else: in a port, a user name, a query string, in the
+middle of a label such as `https://a*.example.org`, in the middle of a path, or
+directly under a public suffix such as `https://*.com`.
 
-**Post-login redirect targets are validated** against the portal, on both the backend and the frontend.
-A target that never reaches the backend cannot be checked by it.
+```{warning}
+Registering a wildcard is a real widening and should be a deliberate one. Every
+name it covers is somewhere this server will send a browser carrying an
+authorization code. A subdomain that is taken over, forgotten, or serving
+somebody else's content is a valid redirect target for as long as the
+registration stands.
+```
 
-**This package's vocabularies require a permission.**
-`plone.restapi` serves a vocabulary to anonymous callers unless it is named in `plone.app.content.browser.vocabulary.PERMISSIONS`, and `pas.plugins.identity.Groups` lists every group on the site.
-Both of this package's vocabularies are registered at `Modify portal content`.
+### Storage and exposure
 
-**Secrets are write-only everywhere**, including GenericSetup export.
-The audit log never records credentials or tokens.
+| Property | Detail |
+|---|---|
+| Secrets are write-only everywhere | Including GenericSetup export. The audit log never records credentials or tokens. |
+| This package's vocabularies require a permission | `plone.restapi` serves a vocabulary anonymously unless it is named in `plone.app.content.browser.vocabulary.PERMISSIONS`, and `pas.plugins.identity.Groups` lists every group on the site. Both vocabularies are registered at `Modify portal content`. |
+| A provider icon is sanitized **as it is stored** | An icon is an SVG rendered inline so it can take the button's colour, which makes it markup: it can carry a script, a stylesheet, and references to other documents. Only shapes and attributes on a fixed list survive; an element off the list is dropped with everything inside it rather than unwrapped; no attribute value may reference an address elsewhere; the result is serialized from the parsed tree rather than sliced out of the input. A document that is not an SVG is refused. |
 
-**A magic link is only ever sent to an address already on your profile.**
-The proof it produces is proof of control over whatever address it was sent to, so a free-text box would verify any mailbox somebody can reach -- which is exactly what automatic linking attaches an account to.
-A caller with no profile is not held to this, because there is no list to name an address on.
+Sanitizing on save rather than on render is what keeps the registry, a
+GenericSetup export, and anything else reading the record from holding the
+dangerous version.
 
-**A provider icon is sanitized as it is stored, not as it is rendered.**
-An icon is an SVG document, rendered inside the page so it can take the button's colour, which means it is markup rather than an image: it can carry a script, a stylesheet, and references to other documents.
-Only the shapes and attributes on a fixed list survive, an element not on that list is dropped with everything inside it rather than unwrapped, no attribute value may reference an address elsewhere, and the result is serialized from the parsed tree rather than sliced out of the input.
-A document that is not an SVG is refused.
-Sanitizing on save rather than on render is what keeps the registry, a GenericSetup export, and anything else reading the record from holding the dangerous version.
+### Enforced in CI
 
-**The layer boundary is enforced in CI.**
-Core never imports from `[server]`.
-See {doc}`/concepts/layers`.
-
-**Protocol messages are never constructed by hand.**
-A grep-level CI rule fails the build if authorization URLs, token requests, or JWT parsing appear outside the flow modules, which delegate to authlib.
+| Rule | Enforced by |
+|---|---|
+| Core never imports from `[server]` | `import-linter`. See {doc}`/concepts/layers`. |
+| Protocol messages are never constructed by hand | A grep-level rule failing the build if authorization URLs, token requests, or JWT parsing appear outside the flow modules, which delegate to authlib. |
 
 ## Things to know before deploying
 
-**The user id is permanent and opaque.**
-It is a random UUID minted once, never derived from an email address or a username, because both change.
-Nothing in this package rewrites it.
+| | |
+|---|---|
+| **The userid is permanent and opaque** | A random UUID minted once, never derived from an email address or a username, because both change. Nothing in this package rewrites it. |
+| **Provider avatars are off by default** | Keep them off unless you have read why. See {doc}`/concepts/profiles-and-groups`. |
+| **IP and user-agent recording stores personal data** | Off by default. See {doc}`audit-log`. |
+| **The audit log is not a session ledger** | It records authentication events, not sessions. |
+| **Deleting a user keeps their identities and audit entries** | Each keeps personal data against a userid that no longer resolves: a claims snapshot on the identity, a login history on the audit entries. Unlink the identities **before** deleting the user if you have an erasure obligation. See {doc}`user-content`. |
+| **A client granted `profile` receives the group list** | `groups` rides on `profile` rather than a scope of its own. `AuthenticatedUsers` is never released, and a user in no other group gets no claim at all. See {doc}`claims`. |
+| **A group inside a group grants through it** | At any depth, so a nesting is a grant and reviewing one group's access means reviewing what feeds into it. An inactive group grants nothing and passes nothing through. A cycle terminates rather than raising; it means both groups grant each other. |
+| **A membership list is personal data about other people** | `@group-members` needs `Manage users` or membership of the group; `@user-account` needs `Manage users` except for a caller asking about themselves. |
+| **A provider's groups grant nothing until you map them** | A group map starts empty, an unmapped provider group grants nothing and is never created locally, and a row pointing at a group this site does not have is skipped and logged. Every sign-in reconciles, and takes back only what that same provider granted. See {doc}`/how-to-guides/map-provider-groups`. |
+| **Access tokens cannot be recalled** | They are self-encoded and there is no denylist, so a revoked client's tokens die when they expire—at most the configured access-token TTL. See {doc}`/how-to-guides/enable-back-channel-logout`. |
 
-**Provider avatars are off by default**, and should stay off unless you have read why.
-See {doc}`/concepts/profiles-and-groups`.
+## Related
 
-**Enabling IP and user-agent recording in the audit log stores personal data.**
-See {doc}`audit-log`.
-
-**The audit log is not a session ledger.**
-It records authentication events, not sessions.
-
-**Deleting a user does not delete their identities or their audit entries.**
-The identity join is what lets somebody sign back in under the same userid, and the audit entries are the record of how the account was used, so both outlive the account by design.
-Each keeps personal data against a userid that no longer resolves: a claims snapshot on the identity, and a login history on the audit entries.
-Unlink the identities before deleting the user if you have an erasure obligation.
-See {doc}`user-content`.
-
-**A relying party granted the `profile` scope receives the group list.**
-`groups` rides on `profile` rather than on a scope of its own, so a client asking for a display scope also learns which groups a user is in.
-`AuthenticatedUsers` is never released, and a user in no other group gets no claim at all.
-If your group names are themselves sensitive, do not grant `profile` to a client you would not grant them to.
-See {doc}`claims`.
-
-**A group inside a group grants through it.**
-Everybody in an inner group is a member of every group it is nested inside, at any depth, so a nesting is a grant and reviewing one group's access means reviewing what feeds into it.
-An inactive group grants nothing and passes nothing through.
-A cycle terminates rather than raising; it means both groups grant each other.
-
-**A membership list is personal data about other people.**
-`@group-members` needs `Manage users` or membership of the group itself, and `@user-account` needs `Manage users` except when a caller asks about their own account.
-
-**A provider's groups grant nothing until you map them.**
-A group map starts empty, an unmapped provider group grants nothing and is never created locally, and a row pointing at a group this site does not have is skipped and logged.
-Every sign-in reconciles, and it takes back only what that same provider granted, so a group granted by hand or by another provider survives.
-See {doc}`/how-to-guides/configure-a-provider`.
-
-**Access tokens cannot be recalled.**
-They are self-encoded and there is no denylist, so a revoked client's tokens die when they expire, at most the configured access-token TTL.
-See {doc}`/how-to-guides/enable-back-channel-logout`.
+- {doc}`/concepts/threat-model`—what this package does and does not defend against
+- {doc}`permissions`—who holds what
+- {doc}`stability`—which of these are contracts
+- {doc}`/concepts/secrets`—where secrets live and where they do not
