@@ -11,17 +11,31 @@ myst:
 
 Multi-provider external authentication for Plone, built on [authlib](https://authlib.org/).
 
+```{warning}
+**Alpha software.** The current release is `1.0.0a0`.
+Endpoints, registry keys, and the driver contract may change without a migration path until 1.0.0.
+Read {doc}`reference/stability` for what is settled and what is not.
+```
+
 One canonical Plone user id maps to many external identities for the same person.
-GitHub, Google, ORCID, a generic OpenID Connect provider, an emailed magic link.
+GitHub, Google, any OpenID Connect provider, another Plone site, or an emailed magic link.
 You get that mapping without running a separate identity broker, and the package never guesses it.
 
-Everything else here is arranged around that one idea.
-To read about it first, start with {doc}`concepts/identities`.
+## Start here
+
+New to the package? Read {doc}`concepts/mental-model` first.
+It names the six things this package deals with, shows what a sign-in actually does, and points you at the right quadrant for your role.
+
+Then, by what you came to do:
+
+- **Run something today**—{doc}`tutorials/federation-demo` starts two Plone sites in Docker and signs in to one against the other.
+- **Set it up for real**—{doc}`how-to-guides/install`, then {doc}`how-to-guides/install-the-frontend`, then a recipe from {doc}`how-to-guides/providers/index`.
+- **Something is broken**—{doc}`how-to-guides/troubleshoot` is organized by symptom.
 
 `````{grid} 1 1 2 2
 :gutter: 3
 
-````{grid-item-card} Tutorials
+````{grid-item-card} 🚀 Tutorials
 :link: tutorials/index
 :link-type: doc
 
@@ -29,31 +43,31 @@ Learn by doing.
 Run two Plone sites and sign in to one against the other.
 ````
 
-````{grid-item-card} How-to guides
+````{grid-item-card} 🧭 How-to guides
 :link: how-to-guides/index
 :link-type: doc
 
-Install the package, configure a provider, migrate from another add-on, write your own driver.
+Install the package and the frontend, configure a provider, troubleshoot a failure, migrate from another add-on, write your own driver.
 ````
 
-````{grid-item-card} Reference
+````{grid-item-card} 📖 Reference
 :link: reference/index
 :link-type: doc
 
-Endpoints, settings, events, claims, and the drivers that ship with the package.
+Endpoints, settings, the provider form, the frontend surface, events, claims, permissions, and the drivers that ship with the package.
 ````
 
-````{grid-item-card} Concepts
+````{grid-item-card} 💡 Concepts
 :link: concepts/index
 :link-type: doc
 
-Why the design works the way it does, and what it refuses to do.
+The mental model, the threat model, and why the design works the way it does.
 ````
 `````
 
 ## The two layers
 
-The package installs as a core and one optional extra.
+The package installs as a core, with one optional layer beside it.
 
 `pas.plugins.identity`
 :   Sign in with one or more external providers, link and unlink identities, an audit log of authentication events, and a control panel.
@@ -67,11 +81,28 @@ The package installs as a core and one optional extra.
 Core never imports from the server layer, and CI enforces that boundary rather than leaving it to discipline.
 So `pip install pas.plugins.identity` with no extras is a configuration that is tested rather than assumed.
 
-Read {doc}`concepts/layers` for what that buys you and what it costs.
+There is a third extra, `[sql]`, which is not a layer.
+It adds one audit sink that writes to a relational database, and installs no profile.
+See {doc}`reference/audit-log`.
+
+Read {doc}`concepts/layers` for what each layer buys you and what it costs.
+
+## What you need
+
+| | |
+|---|---|
+| Plone | 6.2 |
+| Python | 3.12, 3.13, or 3.14 |
+| Frontend | Volto, developed against 19.3.0 |
+
+Sign-in requires the Volto frontend.
+Classic UI is not supported for sign-in yet; support for it is intended.
+See {doc}`reference/stability`.
 
 ```{seealso}
 Report a security vulnerability privately, using the instructions in [SECURITY.md](https://github.com/collective/pas-plugins-identity/blob/main/SECURITY.md).
 For the properties the test suite enforces, see {doc}`reference/security-guarantees`.
+For the reasoning behind each guarantee, see {doc}`concepts/threat-model`.
 ```
 
 ```{toctree}
