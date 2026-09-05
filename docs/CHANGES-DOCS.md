@@ -20,7 +20,7 @@ Counts include each section's own `index.md`.
 | `concepts/` | 8 | 10 |
 | `tutorials/` | 2 | 2 |
 | Mermaid diagrams | 0 | 5 |
-| Screenshots | 0 | 5, all captured by a committed harness |
+| Screenshots | 0 | 6, all captured by a committed harness |
 | Content pages ending with Related or Next steps | 8 | **all 51** (the 6 index pages carry a `toctree` instead) |
 | `sphinx-build -W` | clean | clean |
 | `make vale` | 210 errors | 0 errors |
@@ -85,7 +85,7 @@ All 13 from `AUDIT.md` and all 5 from `TUTORIAL-RUN-LOG.md`.
 | D10 | 25 of 33 pages ended nowhere | Every page ends with Related or Next steps |
 | D11 | ORCID advertised as a shipped provider | Removed from both READMEs; the five real drivers are tabulated |
 | D12 | "one optional extra" | Two: `server` and `sql`, both documented in `install.md` |
-| D13 | `pip install pas.plugins.identity` | The git install, with a note that it is not on PyPI |
+| D13 | `pip install pas.plugins.identity` | Neither. Both guides describe a cookieplone project: the dependency in `pyproject.toml`, the ZCML include, the profile dependency, and the settings as registry XML. |
 | D14 | Tutorial's magic-link section could not be performed | Rewritten around enabling the provider in the control panel first, which also teaches `enabled` versus `show_in_login` |
 | D15 | An unexplained `VOLTO_VERSION` warning twice per command | Stated as harmless |
 | D16 | Tutorial layer table wrong (same as D2) | Fixed |

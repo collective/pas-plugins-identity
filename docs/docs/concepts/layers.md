@@ -50,7 +50,7 @@ seams is somewhere a bug can live that neither combination's tests reach.
 ## Why the remaining boundary is more than tidiness
 
 Two layers that import freely are one layer with two names.
-The moment core reaches into the server layer for something convenient, `pip install pas.plugins.identity` with no extras stops working, and it stops working at import time on somebody else's site rather than in CI.
+The moment core reaches into the server layer for something convenient, depending on `pas.plugins.identity` with no extras stops working, and it stops working at import time on somebody else's site rather than in CI.
 
 An add-on that ships extras is making a promise about what each combination does.
 The only way to keep that promise is to test the combinations, and the only way to keep the combinations meaningfully separate is to forbid the imports that would collapse them.

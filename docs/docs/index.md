@@ -112,7 +112,7 @@ The package installs as a core, with one optional layer beside it.
     See {doc}`reference/claims`.
 
 Core never imports from the server layer, and CI enforces that boundary rather than leaving it to discipline.
-So `pip install pas.plugins.identity` with no extras is a configuration that is tested rather than assumed.
+So depending on `pas.plugins.identity` with no extras is a configuration that is tested rather than assumed.
 
 There is a third extra, `[sql]`, which is not a layer.
 It adds one audit sink that writes to a relational database, and installs no profile.
