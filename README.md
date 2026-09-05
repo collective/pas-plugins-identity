@@ -19,7 +19,7 @@
 
 Multi-provider external authentication for Plone, built on [authlib](https://authlib.org/).
 
-One canonical Plone user id maps to many external identities — GitHub, Google, ORCID, a generic OIDC provider, an emailed magic link — for the same human, without running a separate identity broker.
+One canonical Plone user id maps to many external identities — GitHub, Google, another Plone site, any OpenID Connect provider, an emailed magic link — for the same human, without running a separate identity broker.
 
 📖 **[Read the documentation](https://collective.github.io/pas-plugins-identity/)**
 

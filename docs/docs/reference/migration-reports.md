@@ -28,57 +28,36 @@ Both migrations return a report object.
 
 ## Fields
 
-`dry_run`
-:   Whether the run wrote anything.
-    `True` means it did not.
+<!-- source: backend/src/pas/plugins/identity/migration/ -->
 
-`refused`
-:   Whether the migration refused to proceed.
-    Check this first.
-    When it is `True`, nothing was done and nothing will be until you deal with the reason in `refusals`.
-
-`refusals`
-:   Why the migration refused.
-    Empty when `refused` is `False`.
-
-`identities`
-:   Each identity the migration would claim or did claim, as `[provider, subject, userid]`.
-
-`providers`
-:   The provider ids the migration would create or did create.
-
-`users`
-:   The people the migration produced.
-    On a live run, the migrated userids that have a Profile afterwards; on a dry run, those that would gain one.
-    A migrated person is a user, not only a row in the identity store: they are in `@users`, they can be put in a group and granted a role, and none of that waits for their first sign-in.
-
-`skipped`
-:   What the migration passed over, and why.
-
-`counts`
-:   The lengths of `identities`, `providers`, `users`, and `skipped`.
+| Field | Type | Meaning |
+|---|---|---|
+| `dry_run` | `bool` | Whether the run wrote anything. `True` means it did not. |
+| `refused` | `bool` | **Check this first.** `True` means nothing was done and nothing will be until you deal with `refusals`. |
+| `refusals` | `list` | Why the migration refused. Empty when `refused` is `False`. |
+| `identities` | `list` | Each identity claimed, or that would be claimed, as `[provider, subject, userid]`. |
+| `providers` | `list` | The provider ids created, or that would be created. |
+| `users` | `list` | The migrated userids that have a profile afterwards; on a dry run, those that would gain one. |
+| `skipped` | `list` | What the migration passed over, and why. |
+| `counts` | `dict` | The lengths of `identities`, `providers`, `users` and `skipped`. |
 
 ## Guarantees
 
-Both migrations produce people, not only identities.
-They write through the plugin rather than into the identity store, so the event that mints a Profile is fired for every identity they claim.
-A migrated person is therefore in `@users`, can be granted a role and added to a group, and none of that waits for their first sign-in.
-
-Both migrations are dry-run by default.
-You must pass `dry_run=False` to change anything.
-
-Both are idempotent.
-Running one twice does nothing the second time.
-
-Both are loud about what they cannot do.
-A migration that silently produces a wrong identity join is worse than one that refuses, because the wrong join surfaces months later as somebody signing in to somebody else's account.
+| Guarantee | What it means |
+|---|---|
+| They produce **people**, not only identities | They write through the plugin rather than into the identity store, so the event that mints a profile fires for every identity they claim. A migrated person is in `@users`, can be granted a role and added to a group, and none of it waits for their first sign-in. |
+| Dry run by default | You must pass `dry_run=False` to change anything. |
+| Idempotent | Running one twice does nothing the second time. |
+| Loud about what they cannot do | A migration that silently produces a wrong identity join surfaces months later as somebody signing in to somebody else's account. |
 
 ```{important}
-Both migrations are hard cutovers.
-Running the old plugin and this one side by side is not supported and not tested.
+Both migrations are hard cutovers. Running the old plugin and this one side by
+side is not supported and not tested.
 ```
 
-## The migrations
+## Related
 
--   {doc}`/how-to-guides/migrate-from-authomatic`
--   {doc}`/how-to-guides/migrate-from-oidc`
+- {doc}`/how-to-guides/migrate-from-authomatic`
+- {doc}`/how-to-guides/migrate-from-oidc`
+- {doc}`principal-documents`—the file format one of them consumes
+- {doc}`profiles-and-groups`—what a migrated person ends up as

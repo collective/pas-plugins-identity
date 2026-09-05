@@ -10,67 +10,103 @@ myst:
 
 # How to migrate from `pas.plugins.authomatic`
 
-This guide shows you how to move a site from `pas.plugins.authomatic` to this package.
+Move a site from `pas.plugins.authomatic` to this package, keeping every user id.
 
-`pas.plugins.authomatic` already stores exactly the mapping this package stores, which is `(provider, subject)` to userid.
-The migration reads that mapping rather than reconstructing it, so this is the straightforward migration of the two.
+`pas.plugins.authomatic` already stores exactly the mapping this package stores:
+`(provider, subject)` to userid. The migration reads that mapping rather than
+reconstructing it, which makes this the straightforward migration of the two.
 
 ```{important}
-This is a hard cutover.
-Running the old plugin and this one side by side is not supported and not tested.
-Two plugins both claiming to authenticate the same people is how one person ends up with two accounts.
+This is a hard cutover. Running the old plugin and this one side by side is not
+supported and not tested. Two plugins both claiming to authenticate the same
+people is how one person ends up with two accounts.
 ```
 
-## Run the dry run
+Both plugins must be installed in the same instance. If the old site is somewhere
+this instance cannot reach, use {doc}`export-and-import-principals` instead.
 
-`migrate()` writes nothing unless you tell it to.
+## Steps
 
-```python
-from pas.plugins.identity.migration import authomatic
+1. **Back up the database.** This rewrites the site's principals.
 
-report = authomatic.migrate()
-print(report.as_dict())
-```
+2. **Run the dry run.** `migrate()` writes nothing unless you tell it to.
 
-Read the report before you go further.
-Check `refused` first: when it is true, nothing was done and nothing will be until you deal with the reason in `refusals`.
+   ```python
+   from pas.plugins.identity.migration import authomatic
 
-For every field a report carries, see {doc}`/reference/migration-reports`.
+   report = authomatic.migrate()
+   print(report.as_dict())
+   ```
 
-## Run the migration
+3. **Read the report.** Check `refused` first: when it is true, nothing was done
+   and nothing will be until you deal with the reason in `refusals`.
 
-```python
-report = authomatic.migrate(dry_run=False)
-```
+   Every field a report carries is in {doc}`/reference/migration-reports`.
 
-The migration is idempotent.
-Running it twice does nothing the second time.
+4. **Run the migration.**
 
-## Know what comes across
+   ```python
+   report = authomatic.migrate(dry_run=False)
+   ```
 
-User ids come across verbatim, so every local role, sharing setting, and piece of content ownership keeps pointing at the right person.
-That holds whichever of authomatic's four user-id factories the site used, because they all produce opaque strings that are already stored.
+   It is idempotent. Running it twice does nothing the second time.
 
-Provider credentials are carried over, because without them nothing can sign in.
+5. **Update the redirect URI at every provider.**
 
-The rest of authomatic's per-provider configuration is deliberately left behind: property maps, class references, and its own scope vocabulary.
-Translating that silently would produce a provider that looks configured and behaves differently.
+   authomatic's callback was `<portal_url>/authomatic-handler/<provider>`. This
+   package uses a frontend route instead—the callback URL you set during
+   {doc}`install`, by default:
 
-Passwords are not carried over.
-authomatic gives each user a random secret and uses it as a password, so it is not something a person knows or could type.
+   ```text
+   https://www.example.com/login-identity
+   ```
 
-## Update the redirect URI at each provider
-
-authomatic's callback was `<portal_url>/authomatic-handler/<provider>`.
-This package uses a frontend route instead.
-
-Update the registered redirect URI at every provider to the callback URL you set during {doc}`install`.
-
-Serving the old URL as well was considered and rejected.
-It would mean a second permanent entry point into the sign-in flow, with its own open-redirect and session-binding surface, to save a one-time configuration change.
+6. **Remove the old plugin**, so nothing else claims to authenticate the same
+   people.
 
 ## Verify
 
-Sign in with each configured provider and confirm you land on the account you had before.
-If a sign-in fails, read the audit log.
-See {doc}`read-the-audit-log`.
+1. Sign in with each configured provider.
+2. Confirm you land on the account you had before, not a new one.
+3. Check the audit log has an `authenticated` entry, not `identity-linked`
+   followed by a new account.
+
+If a sign-in fails, read the audit log first—see {doc}`read-the-audit-log` and
+{doc}`troubleshoot`.
+
+## What comes across, and what does not
+
+| Carried over | Left behind |
+|---|---|
+| User ids, verbatim | Property maps |
+| Provider credentials | Class references |
+| The `(provider, subject)` mapping | authomatic's own scope vocabulary |
+| | Passwords |
+
+**User ids come across verbatim**, so every local role, sharing setting, and
+piece of content ownership keeps pointing at the right person. That holds
+whichever of authomatic's four user-id factories the site used, because they all
+produce opaque strings that are already stored.
+
+**Provider credentials are carried over**, because without them nothing can sign
+in.
+
+**The rest of authomatic's per-provider configuration is deliberately left
+behind.** Translating it silently would produce a provider that looks configured
+and behaves differently.
+
+**Passwords are not carried over.** authomatic gives each user a random secret and
+uses it as a password, so it is not something a person knows or could type.
+
+## Why the old callback URL is not served
+
+Serving `<portal_url>/authomatic-handler/<provider>` as well was considered and
+rejected. It would mean a second permanent entry point into the sign-in flow,
+with its own open-redirect and session-binding surface, to save a one-time
+configuration change.
+
+## Next steps
+
+- {doc}`/reference/migration-reports`—every field and refusal
+- {doc}`configure-a-provider`—checking the migrated providers
+- {doc}`troubleshoot`—if somebody lands on a new account

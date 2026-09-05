@@ -1,8 +1,8 @@
 ---
 myst:
   html_meta:
-    "description": "Add, test, edit, and delete an identity provider from the Plone control panel."
-    "property=og:description": "Add, test, edit, and delete an identity provider from the Plone control panel."
+    "description": "Add, test, style, edit, and delete an identity provider from the Plone control panel."
+    "property=og:description": "Add, test, style, edit, and delete an identity provider from the Plone control panel."
     "property=og:title": "How to configure a provider"
 ---
 
@@ -10,215 +10,137 @@ myst:
 
 # How to configure a provider
 
-This guide shows you how to register an identity provider, test it, and remove it.
+Register an identity provider, test it, and remove it.
 
-A provider is a configured instance of a driver.
-The driver knows how to talk to a kind of service, and the provider record holds this site's credentials for one particular service.
-Two GitHub organizations are two providers sharing one driver.
+A provider is a configured instance of a driver. The driver knows how to talk to
+a kind of service; the provider record holds this site's credentials for one
+particular service. Two GitHub organizations are two providers sharing one
+driver.
 
-For the drivers you can choose from, see {doc}`/reference/shipped-drivers`.
+For a specific provider, {doc}`providers/index` has a recipe. This page is the
+part every provider has in common.
 
 ## Add a provider
 
-1.  Open the **Identity providers** control panel.
-2.  Choose a driver.
-3.  Fill in the form.
+1. Open the **Identity providers** control panel.
+2. Choose a driver. See {doc}`/reference/shipped-drivers` for what each one is.
+3. Fill in the form and save.
 
-The form is generated from the driver's published schema, so a site that installs a third-party driver gets that driver's form with no frontend change.
-
-Configuration lives in the registry, one record per setting, under `pas.plugins.identity.providers.<id>.<field>`.
-A GenericSetup export therefore describes a site's providers field by field, and one setting can be changed without rewriting the rest.
-
-## Decide whether it works, and whether it is advertised
-
-Two switches, and they answer different questions.
-
-{guilabel}`Enabled`
-:   Whether the provider works at all.
-    A disabled provider keeps its settings and its stored identities, and nobody can sign in or link through it.
-
-{guilabel}`Show on the login screen`
-:   Whether the login page offers a button for it.
-
-An enabled provider that is not shown is still usable.
-It stays linkable from a user's own {guilabel}`Sign-in methods` page, and an account already linked to it still signs in through it.
-
-That is what a staff-only or invitation-only provider looks like: usable, and not advertised to everybody who reaches the login form.
-
-```{note}
-A provider configured before this setting existed reads back as shown.
-Upgrading a site does not take its login buttons away.
+```{image} /_static/screens/providers-control-panel.png
+:alt: The Identity providers control panel, listing the configured providers
 ```
 
-## Give it a look
 
-The {guilabel}`Style` tab decides how the button is drawn, and none of it changes what the provider does.
+The form is generated from the driver's published schema, so a site that installs
+a third-party driver gets that driver's form with no frontend change. Every field
+is listed in {doc}`/reference/provider-form`.
 
-{guilabel}`Icon`
-:   An SVG document, pasted as its source.
-    Empty means no icon, and the button then shows the title alone rather than a placeholder every provider shares.
+## Enable a provider and show it on the login page
 
-{guilabel}`Background colour` and {guilabel}`Foreground colour`
-:   Hex values such as `#24292f`.
-    Empty leaves the theme's own styling alone.
+Two switches, answering different questions.
 
-The icon is rendered *inside* the page rather than as an image, which is what lets a single-colour icon take the button's own text colour.
-That is also why what you paste is sanitized as it is stored: only the shapes and attributes on a fixed list survive, no attribute may reference an address elsewhere, and a document that is not an SVG is refused rather than quietly emptied.
+{guilabel}`Enabled`
+: Whether the provider works at all. A disabled provider keeps its settings and
+  its stored identities, and nobody can sign in or link through it.
 
-```{warning}
-Sanitizing happens on save, not on render.
-An icon that was refused was never stored, and an icon that was accepted is the version the site serves — not the version you pasted.
-Check the button after saving.
+{guilabel}`Show on the login screen`
+: Whether the login page offers a button for it.
+
+An enabled provider that is not shown is still usable. It stays linkable from a
+user's own {guilabel}`Sign-in methods` page, and an account already linked to it
+still signs in through it.
+
+That is what a staff-only or invitation-only provider looks like: usable, and not
+advertised to everybody who reaches the login form.
+
+```{note}
+A provider configured before this setting existed reads back as shown. Upgrading
+a site does not take its login buttons away.
 ```
 
 ## Test the connection
 
-Each provider has a **Test connection** action.
+Use the **Test connection** action.
 
-It fetches the provider's discovery document, or validates the static configuration for drivers that have no discovery, and reports what it found.
-It clears the discovery cache first, because a button that reports the answer from twelve hours ago is worse than no button at all.
+It fetches the provider's discovery document, or validates the static
+configuration for drivers that have no discovery, and reports what it found. It
+clears the discovery cache first, because a button that reports the answer from
+twelve hours ago is worse than no button at all.
 
-## Change a secret, or keep it
-
-The control panel serializes a stored client secret as a mask, never as its value.
-
--   To keep the stored secret, save the form with the mask unchanged.
--   To replace the secret, type the new one over the mask.
-
-```{warning}
-Do not clear the field to keep the existing secret.
-Blanking it sends an empty string, which is a different instruction, and it destroys the stored secret.
+```{important}
+**Test connection does not sign anybody in.** It tells you the issuer and the
+network are right. It says nothing about the client secret, the redirect URI, or
+the trust switches—those show up only in a real sign-in, in the audit log.
 ```
 
-A GenericSetup export omits secrets, so an export of your provider configuration is not enough to rebuild a working site.
-The secrets have to travel separately, by whatever means your deployment already uses for secrets.
+## Style the login button
 
-Read {doc}`/concepts/secrets` for why secrets behave differently here than they do when the site acts as an authorization server.
+The {guilabel}`Style` tab decides how the button is drawn. None of it changes
+what the provider does.
+
+{guilabel}`Icon`
+: An SVG document, pasted as its source. Empty means no icon, and the button
+  shows the title alone rather than a placeholder every provider shares.
+
+{guilabel}`Background colour` and {guilabel}`Foreground colour`
+: Hex values such as `#24292f`. Empty leaves the theme's own styling alone.
+
+The icon is rendered *inside* the page rather than as an image, which is what
+lets a single-colour icon take the button's own text colour.
+
+```{warning}
+Sanitizing happens on save, not on render. An icon that was refused was never
+stored, and an icon that was accepted is the version the site serves—not the
+version you pasted. Check the button after saving.
+```
+
+See {doc}`/concepts/threat-model` for what the sanitizer removes and why.
+
+## Replace or keep the client secret
+
+The control panel serializes a stored secret as a mask, never as its value.
+
+- To **keep** the stored secret, save the form with the mask unchanged.
+- To **replace** it, type the new one over the mask.
+
+```{warning}
+Do not clear the field to keep the existing secret. Blanking it sends an empty
+string, which is a different instruction, and it destroys the stored secret.
+```
+
+A GenericSetup export omits secrets, so an export of your provider configuration
+is not enough to rebuild a working site. The secrets have to travel separately,
+by whatever means your deployment already uses for secrets.
+
+Read {doc}`/concepts/secrets` for why secrets behave differently here than when
+the site acts as an authorization server.
 
 ## Delete a provider
 
 Deleting a provider removes its configuration.
 
-It does **not** delete the identities linked through it.
-Those are account data, and a configuration change is not an instruction to lock people out.
-If you want the identities gone as well, remove them first.
+It does **not** delete the identities linked through it. Those are account data,
+and a configuration change is not an instruction to lock people out. If you want
+the identities gone as well, remove them first.
 
-(configure-provider-verification)=
-## Decide whether the provider's email verification counts
+## Verify
 
-Two switches on the provider's form, both off unless a driver knows better, and both about the same question: how far this site trusts what the provider says about an address.
+A working provider has all four of these:
 
-{guilabel}`This provider's email verification counts`
-:   Switch it on and an address the provider says it verified is recorded as verified here, exactly as a magic link from this site would record one.
-    That address then satisfies automatic linking, and the site releases `email_verified: true` for it when it acts as an authorization server.
-    Switch it on only for a provider that really checks.
-    `google` and `github` ship with it on; every other driver ships with it off.
+- it appears on `/login`, if you asked for it to be shown
+- **Test connection** reports success
+- a sign-in through it returns you signed in
+- the audit log has an `authenticated` entry for it
 
-{guilabel}`Attach to an existing account with the same verified email`
-:   Whether a person signing in with this provider for the first time is attached to an account that already exists, when the address matches a verified one.
-    It needs the switch above as well: the address being matched on is the one this provider just sent, so a provider whose word the site does not take cannot reach an account with it.
-
-```{warning}
-A provider that marks addresses verified according to weaker rules than yours is an account takeover waiting to happen: somebody registers there with an address that belongs to one of your users, and this site hands them the account.
-Turn the first switch on only where you know the provider refuses to call an address verified until the account has answered mail at it.
-
-Turning it off later stops it verifying anything new; addresses already recorded as verified stay that way, because they are identities and removing one is an unlink rather than a configuration change.
-```
-
-{guilabel}`This provider sends verification flags as text`
-:   For a provider that sends `email_verified` as the string `"true"` rather than as a boolean.
-    Oracle Access Manager does, and so do some Keycloak configurations.
-    Leave it off unless you have established that this is what your provider does.
-
-```{note}
-The symptom is that nothing visibly goes wrong.
-Sign-in works, and only the linking silently does not: every address arrives unverified, so the switch above it can never fire, and no error says so.
-If verification is configured and never seems to take effect, look at what the provider actually sends before looking anywhere else.
-```
-
-See {doc}`/concepts/email-verification` for the whole rule.
-
-## Configure magic-link sign-in
-
-The `email` driver needs no external provider.
-The site emails a signed, single-use token instead.
-
-Add a provider using the `email` driver, and the sign-in option appears on the login page.
-
-The token lives for at most fifteen minutes whatever you configure, and it is burned server-side after one use.
-The send endpoint is rate limited per address and per IP, and answers identically whether or not the address belongs to an account.
-
-## Map the provider's groups to local groups
-
-A provider that asserts group membership can grant local groups.
-Nothing happens until you say which of its groups mean something here: the group map starts empty, and an empty map grants nothing.
-
-Set **Groups arrive in the claim** to the claim the provider puts them in.
-`groups` is the default and what Keycloak, Okta, Entra, and a Plone site running this package's `[server]` layer all emit.
-Use a dotted path for a provider that nests them, such as `realm_access.roles`.
-
-Then fill in the group map: one row per provider-side group name, each pointing at a local group id.
-
-Three rules make this safe to leave running.
-
-A name with no row grants nothing, and no group is ever created.
-A group claim is whatever the provider's own directory happens to be called, so minting local groups from it would let anyone who can name a group at the far end create one here.
-A row pointing at a group this site does not have is skipped and logged.
-
-Every login reconciles, so a membership revoked at the provider stops granting anything here without anyone editing the site.
-
-A login only ever takes back what that same provider granted.
-The identity record remembers each provider's own grant, so a group you granted by hand survives every sign-in, and two providers cannot revoke each other's grants.
-
-### Keep the provider, decide the groups yourself
-
-Switch off **Let this provider set group membership** to sign people in with the provider while deciding membership here.
-A site may trust a provider to say who somebody is without trusting it to say what they may do, and group membership is usually what grants permissions.
-
-Groups the provider already granted stay.
-Taking those away is a separate decision, and one to make deliberately rather than at the next login: it is the same rule as emptying the map.
-
-It is per-provider, so refusing one provider is not refusing all of them.
-
-## Restrict sign-in to certain groups
-
-Leave **Only these groups may sign in** empty and anybody the provider authenticates may sign in.
-Name groups in it and a sign-in is refused unless the provider says the person is in one of them.
-
-An entry matches either a name the provider sends or a local group id the map turns one into, so write the policy in whichever vocabulary is clearer.
-The cost of accepting both is that an entry alone does not say which one it was read as, which is why a refusal records both: what the provider sent, and what the map made of it.
-
-This is checked on every sign-in, not only the first.
-Somebody removed from the group at the provider stops getting in, and an account created before you wrote the policy is held to it like any other.
-
-```{warning}
-This needs a group claim.
-A provider whose driver has no groups at all -- GitHub, magic link -- sends none, so a list here refuses everybody.
-The log says so in as many words rather than reporting a group mismatch, because the mistake is in the configuration rather than in the directory.
-```
-
-The person refused is told only that the sign-in failed.
-Naming the group they are missing would tell anyone who can reach the login page which groups matter here.
-The reason goes to the log and to the audit trail, which needs `Manage portal` to read.
-
-## Decide whether the provider may create accounts
-
-Switch off **Let this provider create accounts** to authenticate against the provider while admitting only people who already have an account here.
-A site federating with a large directory usually does not want everybody who *can* authenticate to *get* an account: membership is decided elsewhere, and the provider only proves who somebody is.
-
-The existing account is found by matching a verified address, so both switches under {ref}`the verification section <configure-provider-verification>` have to be on as well.
-Saving the combination without them is refused: with nothing to match on, every sign-in through the provider would be turned away and nothing on the login page would say why.
-
-An identity that signed in before you switched it off keeps working.
-The switch gates *creating* an account, not resolving one that already exists.
-
-```{note}
-Clearing a map does **not** strip the groups it had granted.
-Clearing is at least as likely to mean "I am rewriting this" as "revoke everything", so a provider with an empty map touches no membership at all.
-To take its grants back, empty the map's *values* rather than the map, and let one login reconcile.
-```
+If any of those fails, {doc}`troubleshoot` is organized by exactly these
+symptoms.
 
 ## Next steps
 
--   {doc}`enable-back-channel-logout`, so a sign-out at the provider ends the session here.
--   {doc}`/reference/audit-log`, to confirm that sign-ins are landing.
+The decisions about what the provider is *allowed to mean* are separate guides,
+because each is a real decision rather than a field to fill in:
+
+- {doc}`link-accounts-by-email`—attaching a sign-in to an account that already exists
+- {doc}`control-account-creation`—admitting only people who already have an account
+- {doc}`map-provider-groups`—turning the provider's groups into local ones, and restricting sign-in
+- {doc}`enable-back-channel-logout`—so a sign-out at the provider ends the session here

@@ -10,89 +10,109 @@ myst:
 
 # How to migrate from `pas.plugins.oidc`
 
-This guide shows you how to move a site from `pas.plugins.oidc` to this package, and how to tell whether your site can move at all.
+Move a site from `pas.plugins.oidc` to this package—and find out whether your
+site can move at all.
 
 This migration is harder than the authomatic one, and it may refuse.
 
-`pas.plugins.oidc` stores no identity mapping.
-It derives a user id from a configurable claim, creates a `source_users` account with that id, and keeps nothing else.
-So the migration has to reconstruct a join that was never written down.
+`pas.plugins.oidc` stores no identity mapping. It derives a user id from a
+configurable claim, creates a `source_users` account with that id, and keeps
+nothing else. So the migration has to reconstruct a join that was never written
+down.
 
 ```{important}
-This is a hard cutover.
-Running the old plugin and this one side by side is not supported and not tested.
+This is a hard cutover. Running the old plugin and this one side by side is not
+supported and not tested.
 ```
 
-## Check `user_property_as_userid` first
+## Steps
 
-Look at the `user_property_as_userid` setting on the old plugin.
+1. **Check `user_property_as_userid` on the old plugin.** This decides whether
+   you can migrate at all.
 
-If it is the default `sub`, the Plone user id is the subject, so the join reconstructs exactly and you can continue.
+   | Value | Outcome |
+   |---|---|
+   | `sub`, the default | The Plone user id **is** the subject, so the join reconstructs exactly. Continue. |
+   | anything else, usually `email` | The `sub` was never written down and cannot be recovered. **The migration refuses.** |
 
-If the site changed it, most likely to `email`, the `sub` was never written down anywhere and cannot be recovered.
-The migration refuses rather than producing a plausible-looking wrong join.
-Those sites should stay on `pas.plugins.oidc` for now.
+   A site in the second row should stay on `pas.plugins.oidc` for now. The
+   migration refuses rather than producing a plausible-looking wrong join.
 
-## Decide which accounts are yours
+2. **Back up the database.**
 
-Nothing marks an account as OIDC-created, so the migration cannot tell one from an account an administrator typed in.
-It will not guess, so you have to choose.
+3. **Decide which accounts are yours.** Nothing marks an account as
+   OIDC-created, so the migration cannot tell one from an account an
+   administrator typed in. It will not guess.
 
-If the site used OIDC exclusively, take every `source_users` account:
+   If the site used OIDC exclusively, take every `source_users` account:
 
-```python
-from pas.plugins.identity.migration import oidc
+   ```python
+   from pas.plugins.identity.migration import oidc
 
-report = oidc.migrate()
-```
+   report = oidc.migrate()
+   ```
 
-If the site has a mix of OIDC and locally created accounts, name the user ids instead:
+   If the site has a mix, name the user ids instead:
 
-```python
-report = oidc.migrate(userids=["sub-alice", "sub-bob"])
-```
+   ```python
+   report = oidc.migrate(userids=["sub-alice", "sub-bob"])
+   ```
 
-```{warning}
-The default claims every `source_users` account as an OIDC identity.
-On a mixed site that is wrong.
-The dry-run report lists exactly which user ids would be claimed, and it is how you find out before it matters.
-```
+   ```{warning}
+   The default claims **every** `source_users` account as an OIDC identity. On a
+   mixed site that is wrong, and it is wrong in a way that is easy to miss.
 
-## Read the dry run
+   The dry-run report lists exactly which user ids would be claimed. That is how
+   you find out before it matters.
+   ```
 
-`migrate()` writes nothing unless you tell it to.
+4. **Read the dry run.** `migrate()` writes nothing unless you tell it to.
 
-```python
-print(report.as_dict())
-```
+   ```python
+   print(report.as_dict())
+   ```
 
-Check `refused` first.
-When it is true, nothing was done and nothing will be until you deal with the reason in `refusals`.
-Then read `identities` and confirm that every user id listed is one you meant to claim.
+   Check `refused` first: when it is true, nothing was done and nothing will be
+   until you deal with the reason in `refusals`. Then read `identities` and
+   confirm every user id listed is one you meant to claim.
 
-For every field a report carries, see {doc}`/reference/migration-reports`.
+   Every field a report carries is in {doc}`/reference/migration-reports`.
 
-## Run the migration
+5. **Run the migration.**
 
-```python
-report = oidc.migrate(dry_run=False)
-```
+   ```python
+   report = oidc.migrate(dry_run=False)
+   ```
 
-Or, for a mixed site:
+   Or, for a mixed site:
 
-```python
-report = oidc.migrate(userids=["sub-alice", "sub-bob"], dry_run=False)
-```
+   ```python
+   report = oidc.migrate(userids=["sub-alice", "sub-bob"], dry_run=False)
+   ```
 
-The migration is idempotent.
-Running it twice does nothing the second time.
+   It is idempotent. Running it twice does nothing the second time.
 
-## Know what comes across
+6. **Update the redirect URI at the provider** to the callback URL you set during
+   {doc}`install`, by default `https://www.example.com/login-identity`.
 
-Provider configuration translates cleanly, because it all lives on the plugin: issuer, client id, client secret, scope, and title.
+7. **Remove the old plugin.**
 
 ## Verify
 
-Sign in with the provider and confirm you land on the account you had before.
-If a sign-in fails, read the audit log.
-See {doc}`read-the-audit-log`.
+1. Sign in with the provider.
+2. Confirm you land on the account you had before, not a new one.
+3. Check the audit log for an `authenticated` entry.
+
+If a sign-in fails, read the audit log first—see {doc}`read-the-audit-log` and
+{doc}`troubleshoot`.
+
+## What comes across
+
+Provider configuration translates cleanly, because it all lives on the plugin:
+issuer, client id, client secret, scope, and title.
+
+## Next steps
+
+- {doc}`/reference/migration-reports`—every field and refusal
+- {doc}`export-and-import-principals`—the alternative when the old site is elsewhere
+- {doc}`troubleshoot`—if somebody lands on a new account

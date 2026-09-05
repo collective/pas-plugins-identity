@@ -18,7 +18,7 @@
 The backend package for multi-provider external authentication in Plone, built on [authlib](https://authlib.org/).
 See also the frontend package [@plone-collective/volto-identity](https://github.com/collective/pas-plugins-identity/tree/main/frontend).
 
-One canonical Plone user id maps to many external identities — GitHub, Google, ORCID, a generic OIDC provider, an emailed magic link — for the same human, without running a separate identity broker.
+One canonical Plone user id maps to many external identities — GitHub, Google, another Plone site, any OpenID Connect provider, an emailed magic link — for the same human, without running a separate identity broker.
 
 ## Features
 
@@ -35,12 +35,17 @@ One canonical Plone user id maps to many external identities — GitHub, Google,
 
 ### The two layers
 
-The package ships as a core plus one optional extra, each switched on by its own GenericSetup profile.
+The package ships as a core plus two optional extras. `[server]` adds a layer with a GenericSetup profile of its own; `[sql]` adds an audit sink and no profile.
 
 | Profile | What it adds |
 | --- | --- |
 | `pas.plugins.identity:default` | Sign in with external providers, identity linking, the audit log, the control panel, and the content types users and groups are. |
 | `pas.plugins.identity.server:default` | An OAuth 2.1 and OpenID Connect authorization server, so the site can *be* a provider for others. |
+
+| Extra | Adds | Profile |
+| --- | --- | --- |
+| `[server]` | The authorization server layer. | `pas.plugins.identity.server:default` |
+| `[sql]` | An audit sink writing a row per event to a relational database. Needs `IDENTITY_AUDIT_DSN`. | none — name `sql` in `audit_sinks`. |
 
 Core never imports from the server layer, and CI fails the build if it starts to.
 Read [the layers page](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/concepts/layers.md) for why the boundary is more than tidiness.

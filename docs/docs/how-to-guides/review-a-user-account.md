@@ -82,8 +82,9 @@ Nothing in this package can read one, and the audit log has never recorded crede
 An IP address or a browser, unless you turned that on.
 See {doc}`read-the-audit-log`.
 
-## Related
+## Next steps
 
 -   {doc}`read-the-audit-log` to query the same events across the whole site.
 -   {doc}`configure-a-provider` to re-enable or recreate a provider a badge is complaining about.
--   {doc}`/reference/profiles` for the endpoint's full answer.
+-   {doc}`troubleshoot` when the account looks right and the sign-in still fails.
+-   {doc}`/reference/profiles-and-groups` for the endpoint's full answer.

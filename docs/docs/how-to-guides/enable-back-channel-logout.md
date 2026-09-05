@@ -63,3 +63,9 @@ That last row is the cost of the self-encoded design.
 The access-token lifetime is also the worst case between a logout and the last token honoring it going quiet.
 
 For what the endpoint refuses and why, see {doc}`/reference/security-guarantees`.
+
+## Next steps
+
+- {doc}`/reference/endpoints`—the `@@backchannel-logout` view
+- {doc}`troubleshoot`—"Back-channel logout returns 200 and the session persists"
+- {doc}`/concepts/threat-model`—why a `sid`-only token is out of scope

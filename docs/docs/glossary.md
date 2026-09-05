@@ -32,8 +32,14 @@ driver
     Drivers are registered as named ZCA utilities, and the utility name is the driver id.
 
 external identity
+identity
     The pair of a provider and that provider's own identifier for a person.
     One Plone user id may have many external identities.
+    An identity is account data: deleting the provider that authenticated it does not delete it.
+
+group
+    A collection of users, stored as content in the same way a Profile is.
+    Membership may be granted locally or by a provider that asserts it, and a login only ever takes back what that same provider granted.
 
 issuer
     The URL that identifies an authorization server.
@@ -86,6 +92,15 @@ Sphinx
     [Sphinx](https://www.sphinx-doc.org/en/master/) is a documentation generator that builds this documentation into HTML.
 
 userid
+user id
     The canonical Plone identifier for a person.
     On accounts this package creates it is a random `uuid4` hex string, minted once and never rewritten.
+    It survives a change of email address, of provider, and of the name the person signs in with.
 ```
+
+
+## Related
+
+- {doc}`/concepts/mental-model`—the same terms, arranged as a picture
+- {doc}`/concepts/index`—why each of them is what it is
+- {doc}`/reference/index`—where each of them is specified

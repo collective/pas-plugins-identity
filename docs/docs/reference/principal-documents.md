@@ -57,37 +57,20 @@ For the commands that produce and consume it, see {doc}`/how-to-guides/export-an
 }
 ```
 
-`version`
-:   The format version, an integer.
-    A document from a later version than the reader understands is refused rather than read optimistically, because guessing at a newer format leaves a site with half its accounts.
-
-`userid`
-:   Required, and carried across verbatim.
-    Every local role, ownership and sharing entry in the target site is written against it, so an import that minted new ids would produce a site full of content belonging to nobody.
-
-`group_ids`
-:   On a user, the groups they are in.
-    On a group, the groups that group is nested inside.
-
-`identities`
-:   The `(provider, subject)` pairs that reach this account.
-    `provider` and `subject` are both required; either alone identifies nobody.
-    `created` and `last_login` may be `null`.
+| Key | Required | Meaning |
+|---|---|---|
+| `version` | yes | The format version, an integer. A document from a **later** version than the reader understands is refused rather than read optimistically: guessing at a newer format leaves a site with half its accounts. |
+| `userid` | yes | Carried across **verbatim**. Every local role, ownership and sharing entry in the target site is written against it, so an import that minted new ids would produce a site full of content belonging to nobody. |
+| `group_ids` | no | On a user, the groups they are in. On a group, the groups that group is nested inside. |
+| `identities` | no | The `(provider, subject)` pairs that reach this account. Both are required on each entry; either alone identifies nobody. `created` and `last_login` may be `null`. |
 
 ## What a document never contains
 
-Passwords
-:   There is no password field, in either direction.
-    A hash kept by the password behavior stays in the site that holds it.
-    A document is a file that gets copied to a laptop, attached to a ticket, and left in a bucket, and the one thing it must never be is a way in.
-
-Provider configuration
-:   Client ids and client secrets are not in the format at all, which is a stronger guarantee than masking them.
-    Configure the providers in the target site before anybody signs in.
-
-Audit entries
-:   The login history is the most sensitive thing this package stores and, on a site that opted in, includes IP addresses.
-    Read it where it lives, under a permission; see {doc}`audit-log`.
+| Never in a document | Instead |
+|---|---|
+| Passwords | There is no password field, in either direction. A hash kept by the password behavior stays in the site that holds it. A document gets copied to a laptop, attached to a ticket, and left in a bucket; the one thing it must never be is a way in. |
+| Provider configuration | Client ids and secrets are not in the format at all, which is stronger than masking them. Configure the providers in the target site before anybody signs in. |
+| Audit entries | The login history is the most sensitive thing this package stores and, on a site that opted in, includes IP addresses. Read it where it lives, under a permission. See {doc}`audit-log`. |
 
 ## Verified addresses
 
@@ -197,11 +180,10 @@ A key with no matching Profile field, such as `picture`, `first_name` or `last_n
 
 `pas.plugins.authomatic` keeps two mappings on its plugin object:
 
-`_userid_by_identityinfo`
-:   `(provider_name, provider_user_id)` to userid. This is the identity join, and it maps directly onto `identities`.
-
-`_useridentities_by_userid`
-:   userid to a `UserIdentities` object, holding one `UserIdentity` per provider and a property sheet derived from each provider's `propertymap`. This is where `properties` comes from.
+| Attribute | Holds | Becomes |
+|---|---|---|
+| `_userid_by_identityinfo` | `(provider_name, provider_user_id)` → userid | `identities` |
+| `_useridentities_by_userid` | userid → a `UserIdentities` object, one `UserIdentity` per provider plus a property sheet derived from each provider's `propertymap` | `properties` |
 
 All four of its user-id factories produce an opaque string already stored against the identity, so preserving `userid` is correct whichever one the old site used.
 
@@ -274,25 +256,25 @@ print(json.dumps(
 Two things in that script are not decoration, and both were found by running it
 against a real authomatic store rather than by reading the source.
 
-`setSite(site)` is required
-:   `UserIdentities.propertysheet` reads authomatic's configuration out of the
-    registry, and the registry is a *local* utility that `queryUtility` finds
-    only once the site is the active component site.
-    Traversing to `app.Plone` does not make it one.
-    Without the call, the script dies on the first user with
-    `AttributeError: 'NoneType' object has no attribute 'forInterface'`.
-    On a site with no authomatic users it exits `0` and prints an empty,
-    perfectly valid dump instead, which is worse.
+**`setSite(site)` is required.**
+`UserIdentities.propertysheet` reads authomatic's configuration out of the
+registry, and the registry is a *local* utility that `queryUtility` finds
+only once the site is the active component site.
+Traversing to `app.Plone` does not make it one.
+Without the call, the script dies on the first user with
+`AttributeError: 'NoneType' object has no attribute 'forInterface'`.
+On a site with no authomatic users it exits `0` and prints an empty,
+perfectly valid dump instead, which is worse.
 
-Read `_identities`, not `propertysheet`
-:   The property sheet is *derived*: it is rebuilt by walking the providers
-    currently in `json_config` and applying each one's `propertymap`.
-    An identity whose provider has since been removed from the
-    configuration, or renamed, or never configured on this site, contributes
-    nothing to it, silently and without an error.
-    The stored `UserIdentity` still holds the name, the address and the rest.
-    Reading the sheet would hand you users with no address at all, and every
-    one of them is then skipped on import for exactly that reason.
+**Read `_identities`, not `propertysheet`.**
+The property sheet is *derived*: it is rebuilt by walking the providers
+currently in `json_config` and applying each one's `propertymap`.
+An identity whose provider has since been removed from the
+configuration, or renamed, or never configured on this site, contributes
+nothing to it, silently and without an error.
+The stored `UserIdentity` still holds the name, the address and the rest.
+Reading the sheet would hand you users with no address at all, and every
+one of them is then skipped on import for exactly that reason.
 
 The keys in `properties` are therefore the provider's own (`name`, `link`,
 `picture`, `first_name`) rather than Plone's.
@@ -308,11 +290,14 @@ No human knows it and none could type it, so moving it moves a credential nobody
 
 ## Alternatives
 
-`pas.plugins.identity.migration`
-:   Moves a site **in place**, with both plugins installed in the same instance.
-    That is the right tool when there is one site and it is staying put; see {doc}`/how-to-guides/migrate-from-authomatic`.
+| Tool | Moves | Use it when |
+|---|---|---|
+| `pas.plugins.identity.migration` | A site **in place**, with both plugins installed in the same instance | There is one site and it is staying put. See {doc}`/how-to-guides/migrate-from-authomatic`. |
+| `plone.exportimport` | Content | Always, alongside this. It does not know about the identity store, so a site restored with it alone has profiles nobody can sign in to. Export content with `plone-exporter` and principals with `identity-exporter`. |
 
-`plone.exportimport`
-:   Moves content.
-    It does not know about the identity store, so a site restored with it alone has Profiles that nobody can sign in to.
-    The two are complementary: export the content with `plone-exporter` and the principals with `identity-exporter`.
+## Related
+
+- {doc}`/how-to-guides/export-and-import-principals`—the commands
+- {doc}`migration-reports`—what a run reports
+- {doc}`profiles-and-groups`—what an imported person becomes
+- {doc}`/concepts/email-verification`—what a verified address means here

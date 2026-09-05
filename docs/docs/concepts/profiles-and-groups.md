@@ -15,7 +15,7 @@ Plone's stock user storage keeps properties in a BTree and knows nothing about w
 That is fine until you want a member directory, an editable profile page, or a group whose membership somebody can review.
 This package backs users with content instead, while keeping the thing that usually goes wrong from going wrong.
 
-For the states, records, and endpoints, see {doc}`/reference/profiles`.
+For the states, records, and endpoints, see {doc}`/reference/profiles-and-groups`.
 For the mechanism underneath, see {doc}`/concepts/users-as-content`.
 
 ## The thing that usually goes wrong
@@ -125,6 +125,43 @@ None of that makes fetching a user-supplied URL safe.
 A hostile URL can still name a public host that resolves to an internal address.
 Which is why there is a switch, defaulting to off, rather than a longer list of guards.
 
+## A list of addresses, and one derived from it
+
+A person has more than one address, signs in with more than one of them, and which one is theirs *here* is a question whose answer changes.
+
+So `emails` is an ordered tuple and `email` is derived from it, rather than two fields that have to agree.
+Two stored values that must agree, with nothing making them agree, is the shape this package already paid for once, with a `userid` that could drift from its object id.
+
+This used to work the other way round.
+An account with several addresses had none of them chosen, arrived without an address, and its owner was held on the edit form until they picked -- because the profile had a single slot and filling it was a guess about which identity the person was here as.
+A list is not a guess, so all of them go on and the person arranges them afterwards.
+
+A later login appends and never replaces, for the same reason.
+An address you deleted stays deleted, the order you chose is not rearranged, and a provider that changes your address adds the new one beside the old.
+Which address stands for you is that order, and choosing one is moving it to the front.
+
+Verification is not a flag on the profile either.
+It is an `email` identity keyed by the address, so a magic link and a trusted provider write the same record and one lookup answers the question.
+That is why confirming or removing one reindexes the owner: `email` is served from catalog metadata everywhere it matters, so without that the derived value would be right on the object and wrong everywhere it is read.
+
+## Owner means owner, and that is more than editing
+
+A user gets `Owner` on their own profile, computed by a local role provider rather than assigned when the profile is created, so there is nothing to keep in step.
+
+`Owner` is the right role because in Plone it is *the* role that says an object belongs to a user, and it is what the sharing tab and every other add-on already understand.
+Inventing a role would mean teaching all of them about it.
+
+But `Owner` carries more than editing.
+Stock Plone grants it sixteen permissions with acquisition on, and most of them are wrong for a profile.
+So `user_profile_workflow` states the ones that matter and stops them at the site administrator: `Delete objects`, `Add portal content`, `Manage properties`, `Undo changes`, `View management screens`, and the rest.
+
+`Delete objects` is the one to keep in mind.
+A user deleting their own profile would break their account while their sign-in kept working -- an identity that authenticates to a userid nothing can serve.
+
+Group membership is the other exception, and it gets a permission rather than a workflow line.
+`group_ids` decides which groups a user is in, and therefore which roles they hold, so writing it on your own profile is granting yourself those roles.
+Filling in your own name is self-service; promoting yourself is not.
+
 ## A second copy of the truth drifts
 
 A dedicated catalog is a second copy of the truth, and second copies drift.
@@ -166,3 +203,11 @@ Verified against `Products.membrane` 7.0.1.dev0, in `plugins/propertymanager.py`
 Membrane is not a dependency here, and its compatibility matrix would make it awkward to install alongside.
 Membrane's design is nonetheless where this one comes from, and the resemblance is not accidental.
 ```
+
+
+## Where to go next
+
+-   {doc}`/reference/profiles-and-groups` for the states, records, permissions and endpoints.
+-   {doc}`users-as-content` for the mechanism underneath, and why a user is content at all.
+-   {doc}`/how-to-guides/map-provider-groups` to put a provider's groups to work.
+-   {doc}`email-verification` for what a verified address is allowed to mean here.

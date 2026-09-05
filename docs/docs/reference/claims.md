@@ -3,37 +3,32 @@ myst:
   html_meta:
     "description": "Endpoints, scopes, and claims released when a Plone site acts as an authorization server."
     "property=og:description": "Endpoints, scopes, and claims released when a Plone site acts as an authorization server."
-    "property=og:title": "The claims contract"
+    "property=og:title": "Claims released by the server layer"
 ---
 
 (reference-claims)=
 
-# The claims contract
+# Claims released by the server layer
 
-This page describes the `[server]` layer.
+What this site tells a relying party about a user when it acts as an
+authorization server, and what a relying party may rely on.
 
-When this site acts as an authorization server, this is what it tells a relying party about a user, and what a relying party may rely on.
+Published only where the `pas.plugins.identity.server:default` profile has been
+applied.
+
+```{note}
+This page is about claims going **out**. For the normalized shape a driver
+produces from a provider's claims coming **in**, see {doc}`events`.
+```
 
 ## Client and key endpoints
 
-Every endpoint here is bound to the `[server]` browser layer, so a site that never applied the server profile does not publish them at all.
-All of them require `Manage portal`.
+Every client and key endpoint is bound to the `[server]` browser layer, so a site
+that never applied the server profile does not publish them at all, and all of
+them require `Manage portal`. They are listed with their exact sub-paths in
+{doc}`endpoints`.
 
-| Endpoint | Effect |
-| --- | --- |
-| `GET @identity-clients` | List registrations. |
-| `GET @identity-clients/<id>` | Read one registration. |
-| `POST @identity-clients` | Register a client. |
-| `POST @identity-clients/<id>/rotate-secret` | Mint a fresh secret. |
-| `PATCH @identity-clients/<id>` | Amend title, redirect URIs, grants, scope, service user, and enabled. |
-| `DELETE @identity-clients/<id>` | Remove a client's registration. |
-| `GET @identity-keys` | Describe the signing ring. |
-| `POST @identity-keys/rotate` | Rotate the signing key. |
-
-`client_id` and `auth_method` are not editable.
-A `PATCH` naming any other unknown field is refused rather than ignored.
-
-For how to use these, see {doc}`/how-to-guides/register-an-oauth-client`.
+To use them, see {doc}`/how-to-guides/register-an-oauth-client`.
 
 ## Discovery
 
@@ -109,37 +104,34 @@ See {doc}`/concepts/layers` for the boundary that makes this necessary.
 
 ## The two claims that are not registered
 
-`description` and `groups` have no registered OIDC claim to be.
-Both are released under `profile` anyway, rather than under a private scope of their own.
+`description` and `groups` have no registered OIDC claim to be. Both are released
+under `profile` anyway, rather than under a private scope.
 
-The reasoning is the same for each.
-A relying party that does not recognise a claim ignores it.
-Both names are read as-is elsewhere: `groups` is what Keycloak, Okta, and Entra all call it.
-And a namespaced claim only this server's own peers would understand buys nothing but a second thing to configure at both ends.
+| Fact | Value |
+|---|---|
+| `AuthenticatedUsers` | Never released. |
+| A user in no other group | The `groups` claim is omitted entirely, not sent as an empty list. |
+| Order | Sorted. |
+| Who receives it | Every client granted `profile`, whether it maps groups or not. |
 
-That is the whole of the extension, and it is not a general one.
-A field a site adds to its `UserProfile` type still has no claim to go in, and inventing one per site would emit something no other implementation can read.
-The extension point for that is a private scope releasing namespaced claims.
-It is deliberately not built, because it needs a naming decision that should be made once, by somebody who has a second implementation to be compatible with.
+```{warning}
+`groups` is authorization data riding on a display scope. If your site's group
+names are themselves sensitive, do not grant `profile` to a client you would not
+grant the group list to.
+```
 
-### `groups` rides on a display scope
-
-This is a deliberate trade, and worth stating plainly.
-
-`profile` is a scope a relying party asks for in order to *show* something about a person.
-Group membership is authorization data.
-Releasing it under `profile` means every relying party granted that scope receives the group list, whether it maps groups or not.
-
-What the server does control is the content:
-
-- `AuthenticatedUsers` is never released.
-  Every principal with a session is in it, so it says nothing about anybody, and a relying party that mapped it would grant its local counterpart to every federated user.
-- The claim is omitted entirely for a user in no other group, rather than sent as an empty list.
-
-If your site's group names are themselves sensitive, do not grant `profile` to clients you would not grant the group list to.
+There is no per-site claim extension. A field a site adds to its `UserProfile`
+type has no claim to go in. See {doc}`/concepts/federation` for why.
 
 ```{note}
 This page describes the contract as of the `[server]` layer's first release.
 Adding a claim to an existing scope is a compatible change.
 Moving one between scopes, or changing what `email_verified` asserts, is not.
 ```
+
+## Related
+
+- {doc}`endpoints`—the client, key and OAuth endpoints, with their sub-paths
+- {doc}`events`—claims coming the other way, in from a provider
+- {doc}`/concepts/federation`—why `description` and `groups` are released under `profile`
+- {doc}`/how-to-guides/register-an-oauth-client`—putting a relying party on the other end

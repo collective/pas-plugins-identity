@@ -1,0 +1,5 @@
+Corrected two claims in the README that the source does not support.
+
+ORCID was listed among the identities a user id maps to, as though a driver shipped for it. None does: the five drivers are `email`, `github`, `google`, `oidc-generic` and `plone-identity`. The line now names what is actually there, including another Plone site.
+
+The package was described as a core plus one optional extra. There are two. `[server]` adds the authorization server layer and a GenericSetup profile of its own; `[sql]` adds an audit sink writing a row per event to a relational database, needs `IDENTITY_AUDIT_DSN`, and installs no profile. Both are tabulated now, because "one extra" left the second one undiscoverable from the README. @ericof

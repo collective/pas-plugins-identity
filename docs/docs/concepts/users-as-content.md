@@ -15,11 +15,10 @@ Plone keeps users in `source_users` and groups in `source_groups`, as records in
 A site that wants a member directory, an editable profile page, or a reviewable group wants those to be content instead.
 This package makes them content, on every site that installs it, and the `UserProfile` and `UserGroup` types it ships are what a user and a group are here.
 
-That used to be an option, a `[content]` extra a site chose, and the choice created two of every code path that touches a user.
-It is not an option any more.
 For what is done with the fields a Profile owns, read {doc}`/concepts/profiles-and-groups`.
 
-What survived the merge is the *indirection*: the plugin that creates a user still does not name the type it creates.
+What it does not do is name those types in the code that creates them.
+The plugin that creates a user reads the type out of the registry, which is the *indirection* the rest of this page is about.
 
 ## The contract is declared, not assumed
 
@@ -167,3 +166,10 @@ Membrane's *design* is nonetheless where this one comes from, and the resemblanc
 {doc}`/concepts/profiles-and-groups` for what is built on top.
 {doc}`/concepts/layers` for why the authorization server is still a layer of its own.
 ```
+
+
+## Where to go next
+
+-   {doc}`/reference/user-content` for the records, the marker contracts and the refusals.
+-   {doc}`profiles-and-groups` for the two types this package builds on the mechanism.
+-   {doc}`layers` for the boundary that lets core create a type it has never heard of.

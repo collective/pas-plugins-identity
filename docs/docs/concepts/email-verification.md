@@ -121,6 +121,6 @@ That is a site not keeping users as content, or an account that predates this ad
 ## Where to go next
 
 -   {doc}`identities` for why the mapping is never guessed in the first place.
--   {doc}`/reference/profiles` for the address list and how `email` is derived from it.
+-   {doc}`/reference/profiles-and-groups` for the address list and how `email` is derived from it.
 -   {doc}`/reference/shipped-drivers` for the magic-link driver that produces the proof.
 -   {doc}`/reference/security-guarantees` for the tests that hold this in place.
