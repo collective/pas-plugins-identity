@@ -29,6 +29,12 @@ the monorepo builds against (`frontend/mrs.developer.json`).
 
 Install from the repository—see {doc}`/how-to-guides/install-the-frontend`.
 
+```{note}
+Every component in this package has a story. **[Browse them in Storybook](https://collective.github.io/pas-plugins-identity/storybook/)**
+to see a widget or a view rendered, with its props, without running a site.
+Storybook is built from this repository and published beside these pages.
+```
+
 ## Routes
 
 <!-- source: frontend/packages/volto-identity/src/config/routes.ts -->
@@ -112,6 +118,7 @@ Reducers, a menu entry, and `appExtras`.
 
 ## Related
 
+- [Storybook](https://collective.github.io/pas-plugins-identity/storybook/)—every component, rendered
 - {doc}`endpoints`—the REST services these routes call
 - {doc}`stability`—what may change between alpha releases
 - {doc}`/how-to-guides/install-the-frontend`—installing it

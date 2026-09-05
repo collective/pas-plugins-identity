@@ -5,4 +5,4 @@ Disallow: /.doctrees/
 Disallow: /*.txt$
 Disallow: /.buildinfo$
 Disallow: /objects.inv$
-Sitemap: https://collective.github.io/pas-plugins-identitysitemap-custom.xml
+Sitemap: https://collective.github.io/pas-plugins-identity/sitemap-custom.xml

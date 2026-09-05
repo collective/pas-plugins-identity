@@ -63,6 +63,13 @@ Endpoints, settings, the provider form, the frontend surface, events, claims, pe
 
 The mental model, the threat model, and why the design works the way it does.
 ````
+
+````{grid-item-card} 🎨 Storybook
+:link: https://collective.github.io/pas-plugins-identity/storybook/
+
+Every component the Volto add-on ships, rendered with its props. Built from
+this repository and published beside these pages.
+````
 `````
 
 ## The two layers
