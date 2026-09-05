@@ -54,26 +54,6 @@ This is what alpha means here. See {doc}`/reference/stability`.
 Reapplying a profile is safe for your data: it rewrites configuration, and leaves
 every `UserProfile` and `UserGroup` object where it is.
 
-## Upgrading from a release that had the `[content]` extra
-
-Users and groups as content used to be a separate `[content]` extra with a
-profile of its own. It was merged into the core profile.
-
-A site installed before the merge has the old arrangement recorded in its
-database, and **no upgrade step fixes it**. Until you reinstall, the site looks
-installed and has:
-
-- no `UserProfile` or `UserGroup` content types
-- no user catalog
-- no `identity_profile` plugin in `acl_users`
-- an empty control panel
-
-Reinstall as above. Every existing `UserProfile` stays where it is.
-
-If your requirements or a Dockerfile still ask for `pas.plugins.identity[content]`,
-remove that extra: it no longer exists, and naming it earns a warning and
-installs nothing.
-
 ## After a change to user or group metadata
 
 Some releases change what the user catalog stores. When that happens, the

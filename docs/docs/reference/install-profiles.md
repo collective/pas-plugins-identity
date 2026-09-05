@@ -81,12 +81,6 @@ existing site **only if the profile is reapplied**.
 This is what the alpha status means in practice. See {doc}`stability` for what
 that implies, and {doc}`/how-to-guides/upgrade` for the procedure.
 
-### The one known migration
-
-Users and groups as content used to be a separate `[content]` extra with a
-profile of its own, merged into `pas.plugins.identity:default`. A site installed
-before the merge needs the add-on reinstalled; nothing does it automatically.
-
 ## Related
 
 - {doc}`/how-to-guides/install`—applying these

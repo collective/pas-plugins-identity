@@ -140,15 +140,6 @@ GitHub and the magic-link driver have no group claim at all, so a list under
 {guilabel}`Only these groups may sign in` can never match. The log says so in as
 many words rather than reporting a group mismatch.
 
-## The site shows the add-on installed, and the control panel is empty
-
-The site was installed by a version that had a separate `[content]` extra, and
-no upgrade step applies the merged profile.
-
-Reinstall the add-on. See the warning at the top of {doc}`install`.
-
-The same cause shows up as `identity_profile` missing from `acl_users`.
-
 ## The client secret disappeared after saving the form
 
 The form shows a stored secret as a mask, never as its value.

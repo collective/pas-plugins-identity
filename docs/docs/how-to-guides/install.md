@@ -15,20 +15,10 @@ Install `pas.plugins.identity` in a Plone site and confirm it works.
 This guide covers the backend only.
 The frontend is a separate package and a separate guide: {doc}`install-the-frontend`.
 
-## Upgrading from an earlier release? Read this first
-
-```{warning}
-Users and groups as content used to be a separate `[content]` extra with a profile of its own.
-It is not one any more, and **no upgrade step applies the merged profile to an existing site**.
-
-Until you reinstall, the site looks installed and has no content types, no catalog, and no profile plugin.
-
-To fix it, reinstall the add-on: uninstall and install it again from the add-ons control panel, or apply `pas.plugins.identity:default` from `portal_setup`.
-Reinstalling leaves every existing `UserProfile` object exactly where it is.
+```{note}
+There are no GenericSetup upgrade steps in this release.
+See {doc}`upgrade` before taking a new alpha, and {doc}`/reference/stability` for what that implies.
 ```
-
-There are no GenericSetup upgrade steps in this release at all.
-See {doc}`upgrade` before taking any new alpha, and {doc}`/reference/stability` for what that implies.
 
 ## Requirements
 
@@ -107,8 +97,6 @@ A working install has all four of these:
 - the `identity_profile` plugin beside it, at the top of `IPropertiesPlugin`
 - at least one provider in the control panel, with a title and a driver
 - a callback URL that matches what the provider has registered
-
-If the second one is missing, the site was installed by an earlier version and needs the add-on reinstalled—see the warning at the top of this page.
 
 ## Uninstalling
 
