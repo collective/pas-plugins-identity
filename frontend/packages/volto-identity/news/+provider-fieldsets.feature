@@ -1,0 +1,1 @@
+The provider form now shows a driver's settings in the tabs the driver groups them into, rather than flattening every one of them into a single Settings column. An OIDC provider gets Settings, Accounts and Groups; a driver that declares no grouping still gets exactly one tab. @ericof

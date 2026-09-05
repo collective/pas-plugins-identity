@@ -1,0 +1,1 @@
+The federation demo stack gained a PostgreSQL service, and both of its sites record their authentication events to it as well as to their own bounded log. CI grew a `+sql` job so the new extra is installed and exercised alongside `core` and `+server`. @ericof

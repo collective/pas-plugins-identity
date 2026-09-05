@@ -161,6 +161,95 @@ class TestDriverMetadata(ControlPanelCase):
 
         assert oidc["schema"]["fieldsets"][0]["fields"][0] == "issuer"
 
+    def _fieldsets(self, driver_id: str) -> dict:
+        """Return one driver's served fieldsets, keyed by id.
+
+        :param driver_id: Which driver to read.
+        :returns: Mapping of fieldset id to its list of field names.
+        """
+        result = self.call(DriversGet)
+        driver = next(i for i in result["items"] if i["id"] == driver_id)
+        return {
+            fieldset["id"]: fieldset["fields"]
+            for fieldset in driver["schema"]["fieldsets"]
+        }
+
+    def test_the_first_fieldset_is_how_to_reach_the_provider(self):
+        """A provider that cannot connect has no other question worth
+        answering, so the credentials stay on the first tab."""
+        fieldsets = self._fieldsets("github")
+
+        assert "client_id" in fieldsets["default"]
+        assert "client_secret" in fieldsets["default"]
+        assert "scope" in fieldsets["default"]
+
+    def test_the_account_questions_are_their_own_fieldset(self):
+        """The provider has answered; these decide who that answer makes the
+        person standing here. Previously mixed in among the credentials."""
+        fieldsets = self._fieldsets("github")
+
+        assert set(fieldsets["accounts"]) == {
+            "userid_source",
+            "create_user",
+            "auto_link_by_email",
+            "trust_email_verification",
+            "accept_string_booleans",
+        }
+
+    def test_group_settings_are_their_own_fieldset(self):
+        """Which claim carries them, which this site accepts, and whether a
+        login may take one away, are one subject."""
+        fieldsets = self._fieldsets("oidc-generic")
+
+        assert set(fieldsets["groups"]) == {
+            "group_claim",
+            "allowed_groups",
+            "sync_groups",
+        }
+
+    def test_a_driver_without_groups_has_no_group_fieldset(self):
+        """GitHub carries no groups, so offering the tab would be offering a
+        question with no answer."""
+        assert "groups" not in self._fieldsets("github")
+
+    def test_the_fieldsets_inherit(self):
+        """`IOIDCSettings` extends `IOAuth2Settings`, and the account
+        fieldset declared on the base has to survive the subclass rather than
+        collapsing back into the default tab."""
+        fieldsets = self._fieldsets("oidc-generic")
+
+        assert "accounts" in fieldsets
+        assert "userid_source" in fieldsets["accounts"]
+
+    def test_every_field_lands_in_exactly_one_fieldset(self):
+        """A field named in no fieldset is invisible in the form; one named
+        twice is edited in two places."""
+        fieldsets = self._fieldsets("plone-identity")
+        placed = [name for fields in fieldsets.values() for name in fields]
+
+        assert len(placed) == len(set(placed))
+        assert set(placed) == {
+            "issuer",
+            "client_id",
+            "client_secret",
+            "scope",
+            "userid_source",
+            "create_user",
+            "auto_link_by_email",
+            "trust_email_verification",
+            "accept_string_booleans",
+            "group_claim",
+            "allowed_groups",
+            "sync_groups",
+            "picture_over_http",
+        }
+
+    def test_the_magic_link_driver_keeps_one_fieldset(self):
+        """Two integers do not need tabs."""
+        fieldsets = self._fieldsets("email")
+
+        assert list(fieldsets) == ["default"]
+
 
 class TestReading(ControlPanelCase):
     @pytest.fixture(autouse=True)

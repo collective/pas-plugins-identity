@@ -290,3 +290,121 @@ describe('fromFormData', () => {
     expect(payload.background_color).toBe('  not a colour  ');
   });
 });
+
+describe('providerSchema and the driver fieldsets', () => {
+  // A driver that groups its settings the way the shipped OIDC one does.
+  const GROUPED = [
+    {
+      id: 'oidc-generic',
+      title: 'OpenID Connect',
+      schema: {
+        properties: {
+          issuer: { title: 'Issuer', type: 'string' },
+          client_id: { title: 'Client ID', type: 'string' },
+          userid_source: { title: 'User id from', type: 'string' },
+          group_claim: { title: 'Group claim', type: 'string' },
+          sync_groups: { title: 'Sync groups', type: 'boolean' },
+        },
+        required: [],
+        fieldsets: [
+          {
+            id: 'default',
+            title: 'Default',
+            fields: ['issuer', 'client_id'],
+          },
+          { id: 'accounts', title: 'Accounts', fields: ['userid_source'] },
+          {
+            id: 'groups',
+            title: 'Groups',
+            fields: ['group_claim', 'sync_groups'],
+          },
+        ],
+      },
+    },
+  ];
+
+  it('gives each driver fieldset a tab of its own', () => {
+    const schema = providerSchema(SERVED, GROUPED, 'oidc-generic', false, intl);
+
+    expect(schema.fieldsets.map((f) => f.id)).toEqual([
+      'default',
+      'style',
+      SETTINGS_FIELDSET,
+      `${SETTINGS_FIELDSET}-accounts`,
+      `${SETTINGS_FIELDSET}-groups`,
+      MAPPING_FIELDSET,
+    ]);
+  });
+
+  it("namespaces them so a driver's fieldset cannot collide with the provider's", () => {
+    // The backend serves a `default` fieldset on both halves of this form,
+    // and two tabs with one id is a form that renders one of them.
+    const schema = providerSchema(SERVED, GROUPED, 'oidc-generic', false, intl);
+    const ids = schema.fieldsets.map((f) => f.id);
+
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("keeps the driver's own titles, which the backend translated", () => {
+    const schema = providerSchema(SERVED, GROUPED, 'oidc-generic', false, intl);
+    const groups = schema.fieldsets.find(
+      (f) => f.id === `${SETTINGS_FIELDSET}-groups`,
+    );
+
+    expect(groups?.title).toBe('Groups');
+  });
+
+  it("labels the driver's unnamed fieldset as Settings", () => {
+    // It is the one the driver did not name, so there is no title to keep.
+    const schema = providerSchema(SERVED, GROUPED, 'oidc-generic', false, intl);
+    const settings = schema.fieldsets.find((f) => f.id === SETTINGS_FIELDSET);
+
+    expect(settings?.title).toBe('Settings');
+    expect(settings?.fields).toEqual([
+      `${CONFIG_PREFIX}issuer`,
+      `${CONFIG_PREFIX}client_id`,
+    ]);
+  });
+
+  it('prefixes every field in every fieldset', () => {
+    const schema = providerSchema(SERVED, GROUPED, 'oidc-generic', false, intl);
+    const driverTabs = schema.fieldsets.filter((f) =>
+      f.id.startsWith(SETTINGS_FIELDSET),
+    );
+
+    for (const tab of driverTabs) {
+      for (const field of tab.fields) {
+        expect(field.startsWith(CONFIG_PREFIX)).toBe(true);
+      }
+    }
+  });
+
+  it('places every driver setting in exactly one tab', () => {
+    // A field in no tab is invisible in the form; one in two tabs is edited
+    // in two places.
+    const schema = providerSchema(SERVED, GROUPED, 'oidc-generic', false, intl);
+    const placed = schema.fieldsets
+      .filter((f) => f.id.startsWith(SETTINGS_FIELDSET))
+      .flatMap((f) => f.fields);
+
+    expect(new Set(placed).size).toBe(placed.length);
+    expect(new Set(placed)).toEqual(
+      new Set(
+        Object.keys(GROUPED[0].schema.properties).map(
+          (name) => `${CONFIG_PREFIX}${name}`,
+        ),
+      ),
+    );
+  });
+
+  it('still gives one tab to a driver that declares no fieldsets', () => {
+    // Which is what every driver looked like before the backend grouped
+    // them, and what a third-party driver that never declares one looks like
+    // now.
+    const schema = providerSchema(SERVED, DRIVERS, 'github', false, intl);
+
+    expect(
+      schema.fieldsets.filter((f) => f.id.startsWith(SETTINGS_FIELDSET)),
+    ).toHaveLength(1);
+  });
+});

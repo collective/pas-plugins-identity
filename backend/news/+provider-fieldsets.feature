@@ -1,0 +1,1 @@
+Driver settings schemas now declare fieldsets, so the provider control panel can group them: what a site needs in order to reach the provider stays on the first tab, the settings deciding who a returning stranger becomes move to Accounts, and group mapping and the profile picture get tabs of their own. @ericof
