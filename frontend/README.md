@@ -1,20 +1,12 @@
-<div align="center">
+# @plone-collective/volto-identity
 
-<h1 align="center">Multi-provider external authentication for Plone</h1>
-<h2 align="center">@plone-collective/volto-identity</h2>
+Multi-provider external authentication for Plone.
 
-</div>
-
-<div align="center">
-
-[![Storybook](https://img.shields.io/badge/-Storybook-ff4785?logo=Storybook&logoColor=white&style=flat-square)](https://collective.github.io/pas-plugins-identity/storybook/)
 [![Documentation](https://img.shields.io/badge/docs-collective.github.io-0083be)](https://collective.github.io/pas-plugins-identity/)
+[![Storybook](https://img.shields.io/badge/-Storybook-ff4785?logo=Storybook&logoColor=white&style=flat-square)](https://collective.github.io/pas-plugins-identity/storybook/)
 [![CI](https://github.com/collective/pas-plugins-identity/actions/workflows/main.yml/badge.svg)](https://github.com/collective/pas-plugins-identity/actions/workflows/main.yml)
-
 [![GitHub contributors](https://img.shields.io/github/contributors/collective/pas-plugins-identity)](https://github.com/collective/pas-plugins-identity)
 [![GitHub Repo stars](https://img.shields.io/github/stars/collective/pas-plugins-identity?style=social)](https://github.com/collective/pas-plugins-identity)
-
-</div>
 
 The frontend package for multi-provider external authentication in Plone: signing in through an external provider, managing the identities linked to your account, and the pages a user and a group are.
 See also the backend package [pas.plugins.identity](https://github.com/collective/pas-plugins-identity/tree/main/backend), which this package requires.
@@ -47,8 +39,7 @@ The check is deliberately not `Boolean(value)`, which reads the string `"false"`
 The form is **off** by default: a site installing this add-on has external providers, and offering a password form beside them invites people to make a second way into the same account.
 A site that is itself an identity provider is the case that wants it on, and sets `config.settings.identityShowPloneLogin` in its own configuration. The environment variable still wins over that.
 
-> [!NOTE]
-> This variable is read at run time, not baked into the bundle. That is why the Login component reads it through `runtimeConfig` rather than writing `process.env.RAZZLE_IDENTITY_SHOW_PLONE_LOGIN` literally: webpack substitutes the literal form while `pnpm build` runs, which would make the answer a property of the image and force two images on two sites wanting two answers.
+**This variable is read at run time, not baked into the bundle.** That is why the Login component reads it through `runtimeConfig` rather than writing `process.env.RAZZLE_IDENTITY_SHOW_PLONE_LOGIN` literally: webpack substitutes the literal form while `pnpm build` runs, which would make the answer a property of the image and force two images on two sites wanting two answers.
 
 ### Shadowed components
 
@@ -74,7 +65,8 @@ Every component this add-on ships is in [Storybook](https://collective.github.io
 
 ## Installation
 
-This add-on supports Volto 18 and above, and requires `pas.plugins.identity` installed on the Plone site.
+This add-on requires Volto 19 and `pas.plugins.identity` installed on the Plone site.
+It is developed against Volto 19.3.0; see [the frontend install guide](https://collective.github.io/pas-plugins-identity/how-to-guides/install-the-frontend.html) for the full requirement table.
 
 Add `@plone-collective/volto-identity` to your `package.json`.
 
@@ -87,8 +79,7 @@ Add `@plone-collective/volto-identity` to your `package.json`.
 }
 ```
 
-> [!IMPORTANT]
-> Adding the package to `dependencies` without listing it under `addons` installs the code but never registers it, so nothing is rendered.
+**Name it in both keys.** Adding the package to `dependencies` without listing it under `addons` installs the code but never registers it, so nothing is rendered.
 
 ## Test installation
 
@@ -98,7 +89,7 @@ Visit http://localhost:3000/ in a browser, login, and check the awesome new feat
 ## Development
 
 The development of this add-on is done in isolation using pnpm workspaces, the latest `mrs-developer`, and other Volto core improvements.
-For these reasons, it only works with pnpm and Volto 18.
+For these reasons, it only works with pnpm and Volto 19.
 
 
 ### Prerequisites ✅

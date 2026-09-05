@@ -33,9 +33,11 @@ One canonical Plone user id maps to many external identities — GitHub, Google,
 - **Migrations from `pas.plugins.authomatic` and `pas.plugins.oidc`.** Dry-run by default, idempotent, and they report what they would do before you let them do it.
 - **Core installs alone.** `uv add pas.plugins.identity` with no extras is a tested configuration, enforced in CI by an import-linter contract rather than by discipline.
 
-### The two layers
+### Layers and extras
 
-The package ships as a core plus two optional extras. `[server]` adds a layer with a GenericSetup profile of its own; `[sql]` adds an audit sink and no profile.
+The package installs as a core, with one optional layer beside it.
+`[server]` is that layer, and it brings a GenericSetup profile of its own.
+`[sql]` is an extra rather than a layer: it adds one audit sink and installs no profile.
 
 | Profile | What it adds |
 | --- | --- |
@@ -64,7 +66,7 @@ Full documentation is published at [collective.github.io/pas-plugins-identity](h
 The pages closest to this package:
 
 - **Start here:** [Install](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/how-to-guides/install.md) and [Configure a provider](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/how-to-guides/configure-a-provider.md).
-- **Concepts:** [identities](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/concepts/identities.md), [the two layers](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/concepts/layers.md), [users as content](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/concepts/users-as-content.md), [secrets](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/concepts/secrets.md).
+- **Concepts:** [identities](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/concepts/identities.md), [layers](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/concepts/layers.md), [users as content](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/concepts/users-as-content.md), [secrets](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/concepts/secrets.md).
 - **Reference:** [shipped drivers](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/reference/shipped-drivers.md), [the event contract](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/reference/events.md), [the audit log](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/reference/audit-log.md), [security guarantees](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/reference/security-guarantees.md).
 - **Writing a driver:** [Write a driver](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/how-to-guides/write-a-driver.md).
 
@@ -132,35 +134,6 @@ To run everything else:
 ```shell
 uv run pytest -m "not docker"
 ```
-
-### Add features using `plonecli` or `bobtemplates.plone`
-
-This package provides markers as strings (`<!-- extra stuff goes here -->`) that are compatible with [`plonecli`](https://github.com/plone/plonecli) and [`bobtemplates.plone`](https://github.com/plone/bobtemplates.plone).
-These markers act as hooks to add all kinds of features through subtemplates, including behaviors, control panels, upgrade steps, or other subtemplates from `bobtemplates.plone`.
-`plonecli` is a command line client for `bobtemplates.plone`, adding autocompletion and other features.
-
-To add a feature as a subtemplate to your package, use the following command pattern.
-
-```shell
-make add <template_name>
-```
-
-For example, you can add a content type to your package with the following command.
-
-```shell
-make add content_type
-```
-
-You can add a behavior with the following command.
-
-```shell
-make add behavior
-```
-
-See also:
-
-- The list of available subtemplates in the [`bobtemplates.plone` `README.md` file](https://github.com/plone/bobtemplates.plone/?tab=readme-ov-file#provided-subtemplates).
-- The documentation of [Mockup and Patternslib](https://6.docs.plone.org/classic-ui/mockup.html) for how to build the UI toolkit for Classic UI.
 
 ## License
 

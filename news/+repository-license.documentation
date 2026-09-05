@@ -1,0 +1,3 @@
+Gave the repository root a `LICENSE.md`.
+
+The two halves are licensed differently — `backend/` is GPL-2.0-only and `frontend/packages/volto-identity/` is MIT — and each carried its own text while the root carried none, so GitHub read the whole repository as unlicensed. The new file says which license covers which path, links both texts, and notes that `frontend/core` is a `mrs.developer` checkout of Volto rather than part of this repository. @ericof

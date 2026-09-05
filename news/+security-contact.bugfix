@@ -1,0 +1,3 @@
+Gave `SECURITY.md` a real reporting address.
+
+It carried the placeholder it was generated with — `security@example.org`, under a TODO saying to replace it before the first public release. Reports now go to `admins@plone.org`. For a package whose whole job is authentication, an address nobody reads is worse than no address at all: the finder concludes the project does not want to hear from them, and publishes instead. @ericof

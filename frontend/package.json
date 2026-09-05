@@ -1,7 +1,7 @@
 {
   "name": "@plone-collective/volto-identity-dev",
   "version": "1.0.0-alpha.0",
-  "description": "A Plone add-on implementing a complete OAuth solution",
+  "description": "Volto add-on for multi-provider external authentication in Plone, with identity linking",
   "author": "Érico Andrei",
   "homepage": "https://github.com/collective/pas-plugins-identity",
   "license": "MIT",

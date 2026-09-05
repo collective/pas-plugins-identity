@@ -1,0 +1,5 @@
+Rewrote the README in plain Markdown, and corrected the Volto version.
+
+This file is the package's README on npm, which renders neither the centred `<div>` header the project was generated with nor GitHub's `> [!NOTE]` and `> [!IMPORTANT]` callouts — the first was dropped by the sanitizer and the second appeared with its marker showing. Both are ordinary Markdown now, and the file contains no HTML at all.
+
+It also claimed Volto 18 and above. The checkout pins 19.3.0, the peer dependencies are the Volto 19 stack, and the frontend install guide already said as much, so the README now says Volto 19 and links to that guide for the full requirement table. @ericof
