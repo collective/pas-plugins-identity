@@ -4,10 +4,10 @@
   <!-- Mail settings, so magic-link login works in a stack with no mail
        server in it.
 
-       Nothing is delivered. Products.PrintingMailHost is installed and the
-       idp-backend service sets ENABLE_PRINTING_MAILHOST, which patches
-       MailHost to write the message to the log instead of opening an SMTP
-       connection; `make demo-stack-logs` is where the link is.
+       Nothing is delivered. This package loads Products.PrintingMailHost on
+       startup (see identitydemo/startup.py), which patches MailHost to write
+       the message to the log instead of opening an SMTP connection;
+       `make demo-stack-logs` is where the link is.
 
        The records are still needed, and that is the part worth writing down:
        plone.api.portal.send_email refuses to run at all while the overview

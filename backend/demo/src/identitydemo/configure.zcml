@@ -4,6 +4,14 @@
     i18n_domain="identitydemo"
     >
 
+  <!-- Products.PrintingMailHost patches MailHost to write messages to the
+       log. Loaded here because the Product ships no ZCML of its own, so
+       nothing else in the image can load it; see startup.py. -->
+  <subscriber
+      for="zope.processlifetime.IProcessStarting"
+      handler=".startup.print_mail_instead_of_sending"
+      />
+
   <genericsetup:registerProfile
       name="idp"
       title="Identity demo: identity provider"

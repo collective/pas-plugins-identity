@@ -144,17 +144,6 @@ services:
       ## readable through the control panel.
       IDENTITY_AUDIT_DSN: >-
         postgresql+psycopg2://identity:identity-demo-password@db:5432/audit
-      ## Magic-link login is switched on here and there is no mail server in
-      ## this stack. Products.PrintingMailHost patches MailHost to write the
-      ## message to the log instead of opening an SMTP connection, so the
-      ## link is in `make demo-stack-logs`. Only on the provider, which is
-      ## the site that sends anything.
-      ##
-      ## This variable is the whole switch and it is read by the Product's
-      ## initialize(), not by any ZCML: the package ships none. Nothing lists
-      ## it in CONFIGURE_PACKAGES for that reason. It went unread for as long
-      ## as it did because the image was not installing the package at all.
-      ENABLE_PRINTING_MAILHOST: 'true'
     depends_on:
       # Waited for rather than merely started: this site's ZODB is in there.
       # It was worth waiting for even when only the audit rows were, since
