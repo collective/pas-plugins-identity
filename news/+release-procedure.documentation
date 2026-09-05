@@ -1,0 +1,3 @@
+Wrote down how a release is cut.
+
+Both packages go out together with one command, `uvx repoplone release <segment>`, and nothing in the repository said so. The contributing guide now names it, lists what each half's release step does, and states the two things that bite if forgotten: you have to be authenticated to PyPI and to npm before you start, and the frontend must be published by `pnpm` rather than `npm`, because only `pnpm` rewrites the `workspace:` and `catalog:` peer dependencies into real ranges. `AGENTS.md` carries the same pointer with an instruction not to run it — publishing, tagging and a GitHub release are not things an agent should do on somebody's credentials. @ericof

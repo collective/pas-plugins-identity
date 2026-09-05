@@ -167,6 +167,42 @@ make i18n
 
 Generates the translation files for both halves.
 
+## Releasing
+
+Both packages are released by one command, from a clean checkout of `main`
+with every gate above green.
+
+```shell
+uvx repoplone release a
+```
+
+The argument is the next version, either spelled out or as a segment—`a`,
+`b`, `rc`, `major`, `minor`, `patch`, or `release` for the final one.
+`uvx repoplone versions next` prints what each of them resolves to for all
+three components, and `--dry-run` walks the pipeline without publishing.
+
+`repoplone` reads `repository.toml` and runs eight steps: it shows the
+changelog it is about to write, settles the version, updates `version.txt` and
+the root changelog, releases the backend, releases the frontend, commits, tags,
+and opens a GitHub release. It asks before it starts.
+
+| Half | What the release step does |
+| --- | --- |
+| Backend | Compiles the `.po` files, writes the version, builds the changelog with towncrier, then `uv build` and `uv publish`. |
+| Frontend | Drives `release-it`, which builds the changelog, copies `frontend/README.md` in as the package README, and publishes with `pnpm publish`. |
+
+Two things follow from that, and both bite if forgotten.
+
+- **You have to be authenticated to PyPI and to npm** before you start. There
+  is no step that stops halfway and asks.
+- **The frontend must be published by `pnpm`, never `npm`.** Its peer
+  dependencies are written as `workspace:*` and `catalog:`, which only `pnpm`
+  rewrites into real version ranges. An `npm publish` uploads those literally,
+  and the result cannot be installed.
+
+towncrier removes each fragment it has consumed, so the news folders come back
+empty and the changelogs carry the entries.
+
 ## Reporting a security vulnerability
 
 Not through the issue tracker. Follow

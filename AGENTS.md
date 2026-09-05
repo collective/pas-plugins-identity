@@ -135,6 +135,18 @@ captured with `make -C docs screenshots`. `make -C docs screenshots-coverage`
 fails when a page references a screenshot nothing captures, or when an image is
 referenced by nothing.
 
+## Releasing
+
+Both packages go out together, with `uvx repoplone release <segment>` from the
+repository root. The procedure is in
+[`docs/docs/contributing.md`](docs/docs/contributing.md#releasing).
+
+**Do not run it.** A release publishes to PyPI and to npm under somebody's
+credentials, tags the repository and opens a GitHub release — none of which can
+be taken back, and the command asks for confirmation exactly once. Preparing a
+release is fair game: fragments, metadata, the READMEs, a dry run. Cutting one
+is a person's job.
+
 ## Security
 
 Do not open an issue for a vulnerability. Follow [SECURITY.md](SECURITY.md).
