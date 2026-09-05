@@ -121,6 +121,37 @@ A real browser, real cookies between sibling `.localhost` hosts, and Volto's rea
 
 Both are driven from the same `identitydemo` package, and they differ only in four URLs that come from the environment.
 
+## Two claims are not registered, and are released anyway
+
+`description` and `groups` have no registered OIDC claim to be.
+Both are released under `profile` anyway, rather than under a private scope of their own.
+
+The reasoning is the same for each.
+A relying party that does not recognise a claim ignores it.
+Both names are read as-is elsewhere: `groups` is what Keycloak, Okta, and Entra all call it.
+And a namespaced claim only this server's own peers would understand buys nothing but a second thing to configure at both ends.
+
+That is the whole of the extension, and it is not a general one.
+A field a site adds to its `UserProfile` type still has no claim to go in, and inventing one per site would emit something no other implementation can read.
+The extension point for that is a private scope releasing namespaced claims.
+It is deliberately not built, because it needs a naming decision that should be made once, by somebody who has a second implementation to be compatible with.
+
+### `groups` rides on a display scope
+
+This is a deliberate trade, and worth stating plainly.
+
+`profile` is a scope a relying party asks for in order to *show* something about a person.
+Group membership is authorization data.
+Releasing it under `profile` means every relying party granted that scope receives the group list, whether it maps groups or not.
+
+What the server does control is the content:
+
+- `AuthenticatedUsers` is never released.
+  Every principal with a session is in it, so it says nothing about anybody, and a relying party that mapped it would grant its local counterpart to every federated user.
+- The claim is omitted entirely for a user in no other group, rather than sent as an empty list.
+
+If your site's group names are themselves sensitive, do not grant `profile` to clients you would not grant the group list to.
+
 ## Where to go next
 
 -   {doc}`/tutorials/federation-demo` to run it.

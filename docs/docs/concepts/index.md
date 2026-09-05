@@ -15,18 +15,18 @@ Explanation is understanding-oriented.
 These pages are about design decisions, not tasks.
 Read them when you want to know why something works the way it does, or why it refuses to do something you expected.
 
+Start with {doc}`mental-model`. It names everything the other pages assume.
+
 ```{toctree}
 :maxdepth: 1
 
+mental-model
 identities
 layers
 email-verification
-secrets
 users-as-content
 profiles-and-groups
+secrets
 federation
-```
-
-```{seealso}
-<https://diataxis.fr/explanation/>
+threat-model
 ```

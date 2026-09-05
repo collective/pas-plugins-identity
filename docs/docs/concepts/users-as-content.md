@@ -167,3 +167,10 @@ Membrane's *design* is nonetheless where this one comes from, and the resemblanc
 {doc}`/concepts/profiles-and-groups` for what is built on top.
 {doc}`/concepts/layers` for why the authorization server is still a layer of its own.
 ```
+
+
+## Where to go next
+
+-   {doc}`/reference/user-content` for the records, the marker contracts and the refusals.
+-   {doc}`profiles-and-groups` for the two types this package builds on the mechanism.
+-   {doc}`layers` for the boundary that lets core create a type it has never heard of.
