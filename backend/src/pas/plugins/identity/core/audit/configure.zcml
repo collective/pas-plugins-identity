@@ -14,6 +14,17 @@
       provides="pas.plugins.identity.core.interfaces.IAuditSink"
       />
 
+  <!-- Write-only, and registered whether or not anything uses it: a site
+       starts recording here by naming it in audit_sinks, and a sink that is
+       not registered cannot be named. Provides no IAuditSource, so a site
+       recording only here is told its records are elsewhere rather than
+       shown an empty log. -->
+  <utility
+      name="log"
+      factory=".logsink.LoggingAuditSink"
+      provides="pas.plugins.identity.core.interfaces.IAuditSink"
+      />
+
   <!-- Successes are recorded from the event contract, so anything that fires
        an event is audited, whoever fired it. -->
   <subscriber handler=".subscribers.record_authentication" />

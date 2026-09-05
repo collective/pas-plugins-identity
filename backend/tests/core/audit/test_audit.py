@@ -7,8 +7,12 @@ from pas.plugins.identity.core.audit import AuditLog
 from pas.plugins.identity.core.audit import AUTHENTICATED
 from pas.plugins.identity.core.audit import DEFAULT_SINK
 from pas.plugins.identity.core.audit import EMAIL_VERIFIED
+from pas.plugins.identity.core.audit import FLOW_REFUSED
 from pas.plugins.identity.core.audit import IDENTITY_LINKED
 from pas.plugins.identity.core.audit import IDENTITY_UNLINKED
+from pas.plugins.identity.core.audit.logsink import LoggingAuditSink
+from pas.plugins.identity.core.audit.logsink import logger as log_sink_logger
+from pas.plugins.identity.core.audit.logsink import SINK_NAME as LOG_SINK_NAME
 from pas.plugins.identity.core.audit import MAX_DAYS_RECORD
 from pas.plugins.identity.core.audit import MAX_ENTRIES_RECORD
 from pas.plugins.identity.core.audit import PluginAuditSink
@@ -35,7 +39,12 @@ from zope.event import notify
 from zope.interface import alsoProvides
 from zope.interface.verify import verifyObject
 
+import logging
 import pytest
+
+
+#: The logger the log-only sink writes to.
+LOGGER_NAME = log_sink_logger.name
 
 
 @pytest.fixture(scope="class")
@@ -715,3 +724,120 @@ class TestReadingComesFromASource(SinkCase):
 
         assert len(audit_entries("userid-1")) == 1
         assert len(readable.written) == 1
+
+
+class TestTheLogOnlySink(SinkCase):
+    """A sink that writes and cannot be read back."""
+
+    @pytest.fixture(autouse=True)
+    def _log_sink(self) -> None:
+        self.sink = getUtility(IAuditSink, name=LOG_SINK_NAME)
+
+    def test_it_is_registered(self):
+        """Registered whether or not a site uses it: a name that resolves to
+        nothing cannot be chosen in the control panel."""
+        assert isinstance(self.sink, LoggingAuditSink)
+
+    def test_it_satisfies_the_sink_interface(self):
+        """Writing is the whole of what it promises."""
+        assert verifyObject(IAuditSink, self.sink)
+
+    def test_it_is_not_a_source(self):
+        """The point of it. A log file is somewhere records go, not somewhere
+        a Plone site can query."""
+        assert not IAuditSource.providedBy(self.sink)
+
+    def test_it_has_no_entries_method_at_all(self):
+        """Not an ``entries`` returning ``[]``, which every caller would read
+        as nothing having happened."""
+        assert not hasattr(self.sink, "entries")
+
+    def test_recording_writes_a_line(self, caplog):
+        """With the facts an operator greps for on it."""
+        self.configure(LOG_SINK_NAME)
+
+        # A successful sign-in is written at INFO, and the package logger
+        # sits at WARNING, so the level has to be lowered to see one at all.
+        with caplog.at_level(logging.INFO, logger=LOGGER_NAME):
+            record("userid-1", AUTHENTICATED, "dex", True)
+
+        assert "userid-1" in caplog.text
+        assert AUTHENTICATED in caplog.text
+        assert "dex" in caplog.text
+
+    def test_it_writes_one_line_per_event(self, caplog):
+        """These are read by grepping, so a record is a line."""
+        self.configure(LOG_SINK_NAME)
+
+        with caplog.at_level(logging.INFO, logger=LOGGER_NAME):
+            record("userid-1", AUTHENTICATED, "dex", True)
+
+        written = [r for r in caplog.records if r.name == LOGGER_NAME]
+        assert len(written) == 1
+
+    def test_a_refusal_is_a_warning(self, caplog):
+        """A run of them is what an operator wants to notice."""
+        self.configure(LOG_SINK_NAME)
+
+        record("userid-1", FLOW_REFUSED, "dex", False)
+
+        levels = {r.levelname for r in caplog.records if r.name == LOGGER_NAME}
+        assert levels == {"WARNING"}
+
+    def test_a_success_is_info(self, caplog):
+        """And a successful sign-in is not, so a site can keep the ordinary
+        traffic below the level it alerts on."""
+        self.configure(LOG_SINK_NAME)
+
+        with caplog.at_level(logging.INFO, logger=LOGGER_NAME):
+            record("userid-1", AUTHENTICATED, "dex", True)
+
+        levels = {r.levelname for r in caplog.records if r.name == LOGGER_NAME}
+        assert levels == {"INFO"}
+
+    def test_an_unresolved_userid_is_written_as_a_dash(self, caplog):
+        """Rather than as the word ``None``, which reads like a userid."""
+        self.configure(LOG_SINK_NAME)
+
+        record(None, FLOW_REFUSED, "dex", False)
+
+        assert "userid=-" in caplog.text
+
+    def test_it_writes_to_its_own_logger(self, caplog):
+        """Which is the reason to choose this sink: authentication events can
+        be routed to their own handler without moving everything else the
+        add-on says."""
+        self.configure(LOG_SINK_NAME)
+
+        with caplog.at_level(logging.INFO, logger=LOGGER_NAME):
+            record("userid-1", AUTHENTICATED, "dex", True)
+
+        assert any(r.name == LOGGER_NAME for r in caplog.records)
+
+
+class TestRecordingToLogAndZODBTogether(SinkCase):
+    """The combination an operator actually wants: keep the readable log,
+    and ship a copy somewhere that outlives the site."""
+
+    def test_both_receive_the_event(self, caplog):
+        """One event, two destinations."""
+        self.configure(DEFAULT_SINK, LOG_SINK_NAME)
+
+        with caplog.at_level(logging.INFO, logger=LOGGER_NAME):
+            record("userid-both", AUTHENTICATED, "dex", True)
+
+        assert len(audit_entries("userid-both")) == 1
+        assert any(r.name == LOGGER_NAME for r in caplog.records)
+
+    def test_the_readable_one_still_answers(self):
+        """A write-only sink in the list must not make the control panel
+        stop showing anything."""
+        self.configure(LOG_SINK_NAME, DEFAULT_SINK)
+
+        assert isinstance(source(), PluginAuditSink)
+
+    def test_log_alone_leaves_nothing_readable(self):
+        """And a site recording only to the log is told so."""
+        self.configure(LOG_SINK_NAME)
+
+        assert source() is None
