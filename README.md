@@ -76,7 +76,7 @@ Then install **pas.plugins.identity** from the add-ons control panel, and config
 
 ### Frontend
 
-Requires Volto 18 and above.
+Requires Volto 19. The add-on is developed against 19.3.0.
 
 Add `@plone-collective/volto-identity` to your `package.json`.
 
@@ -213,9 +213,10 @@ make format
 Formatters can also be run within the `backend` or `frontend` folders.
 
 ### Linting the codebase
-or `lint`:
 
- ```shell
+To check the code base without rewriting it, run the following shell command.
+
+```shell
 make lint
 ```
 

@@ -9,10 +9,7 @@ supported.
 
 Please report security issues **privately**, not in the public issue tracker.
 
-<!-- TODO: replace with the project's real reporting address before the first
-     public release. -->
-
-Contact: `security@example.org`
+Contact: `admins@plone.org`
 
 Please include:
 
