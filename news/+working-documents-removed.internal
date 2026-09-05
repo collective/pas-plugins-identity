@@ -1,3 +1,0 @@
-Removed the working documents from the documentation rewrite.
-
-`docs/AUDIT.md`, `docs/AUDIT-CODE.md`, `docs/CHANGES-DOCS.md`, `docs/TUTORIAL-RUN-LOG.md` and `docs/HUMAN-ACTIONS.md` each opened with "Working file, not published" and referred to a branch that no longer exists. They were the scaffolding the rewrite was built on, and the rewrite has shipped. `docs/STYLE.md` stays: it is the house style, and it is still in force. @ericof

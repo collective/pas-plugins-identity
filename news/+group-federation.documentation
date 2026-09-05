@@ -1,1 +1,0 @@
-Documented group federation: the `groups` claim in the claims reference, and how to map a provider's groups to local groups in the provider how-to. Corrected the claims reference's scope table while there — it had listed `profile` as releasing three claims when the server had been releasing five for some time. @ericof

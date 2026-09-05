@@ -1,3 +1,0 @@
-Corrected two things the root README got wrong.
-
-It claimed Volto 18 while the checkout pins 19.3.0 and the frontend install guide already said so, and its "Linting the codebase" section had lost its opening sentence to an orphan fragment reading "or `lint`:". @ericof

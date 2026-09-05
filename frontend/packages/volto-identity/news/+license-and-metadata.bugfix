@@ -1,5 +1,0 @@
-Shipped the licence with the package, and gave it its own description.
-
-`package.json` declared `"license": "MIT"` and the package carried no copy of the terms, which is the one thing the MIT licence asks of a distribution. `LICENSE` now sits beside `package.json`, where npm includes it in every tarball whether or not anything ignores it.
-
-The description was still the sentence the project was generated with — "A Plone add-on implementing a complete OAuth solution" — which is what npm shows in search results. It now says what this half does. `homepage` points at the published documentation rather than at the README anchor, and a `bugs` url was added so npm links the issue tracker. @ericof

@@ -1,5 +1,0 @@
-Corrected the README's account of the layers, and dropped the scaffolding section.
-
-"The two layers" introduced a core and *two* optional extras, then tabulated three things. The heading is now "Layers and extras", and the text says what the documentation says: one optional layer beside the core, `[server]`, plus `[sql]`, which is an extra rather than a layer because it installs no profile.
-
-The `plonecli` and `bobtemplates.plone` section is gone. `pyproject.toml` names this file as the long description, so it was telling everyone reading the package on PyPI how to scaffold subtemplates into it — advice for somebody working on this package, on the page for somebody deciding whether to install it. @ericof

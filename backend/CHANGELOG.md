@@ -8,3 +8,707 @@
 -->
 
 <!-- towncrier release notes start -->
+
+## 1.0.0a1 (2026-09-05)
+
+
+### Breaking
+
+- A registered OAuth client's `scope` is a list picked from a vocabulary rather than one line of space-separated text. The control panel offers the scopes this server releases claims for, which is what the discovery document advertises. A stored string is still read, so nothing needs migrating, but `@identity-clients` now serializes `scope` as a list and `ClientConfig.scope` holds one; the space-joined wire form is `ClientConfig.scope_string`. @ericof [#9](https://github.com/collective/pas-plugins-identity/issues/9)
+- An OAuth client is an interface, and its redirect URIs are validated.
+
+  `POST @identity-clients` stored `redirect_uris` exactly as it received them. No scheme check, no rejection of fragments, no loopback rule — so `javascript:alert(document.cookie)` could be registered and would later be handed to a browser redirect at the end of an authorization flow. `grant_types` was likewise stored unchecked and refused much later at the token endpoint, where it reads as a client bug rather than as a registration mistake.
+
+  `IClientRecords` is the schema now, with the rules on the fields: a redirect URI must be absolute, must carry no fragment, must use `https`, a loopback address or a private-use scheme, and may not contain a wildcard that exact matching can never satisfy. RFC 6761 reserves the whole `.localhost` name space to loopback, so a development host such as `http://id.localhost` is accepted and `http://anything.else` is not. Grants are a `Choice` over what the token endpoint actually implements, which is what discovery advertises.
+
+  `redirect_uris` and `grant_types` are validating properties rather than plain attributes, because a rule only the constructor enforces is a rule with a door in it — this package's own demo assigns to one of them directly.
+
+  `@identity-clients` serves the schema beside the listing, so the panel is built from it rather than from a second description in TypeScript. @ericof 
+- Driver and provider settings are `zope.schema` interfaces, serialized by `plone.restapi`.
+
+  `BaseDriver.config_schema()` returned a dict this package had invented — `{"type": "string", "title": "Client ID", "required": True, "secret": False, "order": 20}` — and the Volto add-on turned it into a form in 529 lines of TypeScript. It was wrong four ways at once: not a title in it could ever reach a `.po` file, no form could be built from it except by whoever reimplemented it, nothing validated a request against it, and `order`, `secret`, `choices` and `type` each reinvented something `zope.schema` already had.
+
+  A driver now names a `settings_schema`. `IOAuth2Settings` carries the fields every OAuth2 provider needs; `IOIDCSettings`, `IGitHubSettings`, `IPloneIdentitySettings` and `IEmailSettings` extend or replace it. `client_secret` is a `Password`, so the field type *is* the secret flag and there is none to forget; `userid_source` is a `Choice` over a vocabulary; `scope` a `Tuple`; the issuer is placed with `order_before` rather than by spacing numbers ten apart. Per-driver defaults stay on the driver class, because a subinterface redeclaring a field to change its default would give it a fresh creation order and the field would silently jump to the end of the form.
+
+  `@identity-drivers` and `@identity-providers` now serve ordinary JSON schemas, built with the same three `plone.restapi` calls that answer `@controlpanels`. The provider's own half comes from `IProviderRecords` — the interface its registry records were already bound to, so the form and the storage cannot describe different things — and it gained a Style fieldset, `color_picker` on both colours, and an `icon` that is a `schema.Bytes` holding the upload envelope Plone stores `site_logo` in. An icon that is not a parseable SVG is refused by a field constraint that runs the real parser, and what is stored is the sanitized document.
+
+  **The consumers read fields rather than dict keys**: coercion on `ICollection`, masking on `IPassword`, the registry field on the field type, and discovery on whether `issuer` is in the schema. A site's own driver must declare `settings_schema` instead of `config_schema()`. @ericof 
+- Users and groups as content is no longer an extra. Installing the add-on installs it, and there is no `pas.plugins.identity.content:default` profile any more.
+
+  **A site installed by an earlier version must reinstall the add-on.** There is no upgrade step, deliberately: the package is `1.0.0a0` and nothing is released. Until it is reinstalled such a site looks installed and has no content types, no catalog and no `identity_profile` plugin — uninstall and install it again from the add-ons control panel, or apply `pas.plugins.identity:default` from `portal_setup`. Reinstalling leaves every existing `UserProfile` where it is.
+
+  The `[content]` extra is gone from `pyproject.toml` and `plone.app.dexterity` is an ordinary dependency. It always was one in practice: it ships with Plone, so the extra spared nobody anything while creating a second configuration of every code path that touches a user. Every bug found in the last week of that arrangement was in the seam.
+
+  `pas.plugins.identity.content` merged into `pas.plugins.identity.core`, flat: `content/catalog.py` is `core/catalog.py`, `content/pas.py` is `core/pas/profile.py`, the markers and the settings schema moved into `core/interfaces.py` and `core/controlpanel/interfaces.py`, and the two `setuphandlers` modules became one package with the catalog builders and the PAS plugin installers in modules of their own. `IIdentityContentLayer` is gone and every registration that was bound to it is bound to `pas.plugins.identity.interfaces.IBrowserLayer`. The `IProfileSupport` utility is gone too — it existed only so core could ask the other layer a question without importing it, and there is nothing on the other side of that boundary any more.
+
+  The GenericSetup profiles merged the same way. One `default` installs the control panel, both PAS plugins, both content types with their workflows, and the catalog; one `uninstall` removes them; `rebuild-catalog` is now `pas.plugins.identity:rebuild-catalog`. The uninstall profile also removes the registry records the old one left behind — the four naming the user and group types, and the gate's three.
+
+  What follows from the merge, rather than from the move:
+
+  *   A federated first login never writes a `source_users` row. It used to, on a site without the extra, because there the row was the only record the user had; now the Profile is, and a row beside it is a second record of the same person that nothing keeps in step.
+  *   `api.user.create` mints a Profile on a site nobody has signed in to yet. The container is created by whoever needs it first rather than at install time, so the gap where the first user added to a fresh site got a `source_users` row and no Profile is closed.
+  *   An offered address list is never settled by guessing. A driver that returned several addresses and no answer used to have the first one taken on a site with nowhere to ask; every site can ask now.
+  *   A login through an identity whose account is gone is restored by the subscriber that mints Profiles, and says so at warning level first — an account reappearing is not what an operator who deleted one expects. @ericof 
+
+
+### Feature
+
+- Added `allowed_groups`, a per-provider list restricting sign-in to members of named groups. An entry matches either a name the provider sends or a local group id the map turns one into. It is checked on every sign-in, so a membership revoked at the provider stops granting access. The person refused is told only that the sign-in failed; the reason, naming both what arrived and what it mapped to, goes to the log and to the manager-only audit trail. @ericof [#4](https://github.com/collective/pas-plugins-identity/issues/4)
+- Added `accept_string_booleans`, a per-provider switch for a provider that sends `email_verified` as the string `"true"` rather than as a boolean, as Oracle Access Manager and some Keycloak configurations do. Against such a provider every address silently arrived unverified. Only `"true"` and `"false"` are read; `1` and `yes` are still refused, and the strict comparison every gate makes is unchanged. @ericof [#5](https://github.com/collective/pas-plugins-identity/issues/5)
+- Added `create_user`, a per-provider switch for authenticating against a provider while admitting only people who already have an account here. The account is found by matching a verified address, so saving it without the two linking switches is refused rather than leaving a provider nobody can sign in through. @ericof [#6](https://github.com/collective/pas-plugins-identity/issues/6)
+- Added `sync_groups`, a per-provider switch for keeping a provider to sign in with while deciding group membership locally. Groups it already granted stay, exactly as they do when the map is emptied. @ericof [#7](https://github.com/collective/pas-plugins-identity/issues/7)
+- Moved three hard-coded network limits into the registry: `portrait_timeout`, `portrait_max_bytes` and `discovery_timeout`. How long a login may wait for a provider, and how much of a user-supplied URL the backend will read, are facts about where the provider is rather than about this package. @ericof [#10](https://github.com/collective/pas-plugins-identity/issues/10)
+- Audit records now go to every destination a site names, rather than to a single replaceable utility. Sinks are named utilities listed in order by `pas.plugins.identity.audit_sinks`, and one that fails or no longer resolves is logged and stepped over rather than allowed to fail the sign-in it was auditing. A new `IAuditSource` splits reading from writing, so a write-only destination is possible and a site with nothing readable is told so rather than shown an empty log. @ericof [#23](https://github.com/collective/pas-plugins-identity/issues/23)
+- A Profile carries a list of addresses, and `email` is derived from it.
+
+  A person has more than one address, signs in with more than one of them, and which one is theirs *here* is a question whose answer changes. So `emails` is what a Profile stores -- an ordered, required tuple -- and `email`, the single value every property sheet, every OIDC claim and every enumeration still reads, is computed: the first verified address, or the first address at all when none is verified. It is read-only, so `plone.restapi` leaves it out of the edit form altogether and there is no second value to disagree with the list. Everything that writes it keeps working: a write moves that address to the front of the list rather than replacing a field, and an empty write is ignored, because a provider that stopped sending an address has not said the person no longer has one.
+
+  **Verification is not a field.** An address counts as verified when this site holds an `email` identity for it owned by that userid, which is exactly what a magic link creates and exactly what `auto_link_by_email` already consults. A second `verified` flag beside it would be a copy of that fact, and the two would drift the first time an identity was unlinked. Linking or unlinking an email identity reindexes the owner's Profile, because `email` is served from catalog metadata everywhere it matters and confirming a link never touches the Profile.
+
+  **Verifying an address now requires it to be yours.** `POST @identities` with the email provider refuses an address that is not on the caller's profile. A magic link proves control of whatever was typed, so the free-text box the identities page used to offer verified *any* mailbox -- and a verified address is what `auto_link_by_email` attaches a new provider account to. Naming the address on your profile first makes it a claim somebody can see and an administrator can audit. A caller with no Profile is not held to it.
+
+  The Profile catalog gains an `emails` KeywordIndex and `emails` / `verified_emails` metadata, so "whose profile carries this address" is one query. `@my-profile` reports `emails` -- each address with whether this site has verified it and which one `email` resolves to. 
+- A `pas.plugins.authomatic` migration can now bring verified addresses across.
+
+  The dump carries the provider's `email_verified` claim, which the converter had been discarding, so everyone arrived a stranger to their own address and stayed that way until their next sign-in. The converter carries it in the identity's `claims` now.
+
+  Who believes it is deliberately two questions rather than one.
+
+  A site that already trusts the provider at a login trusts the same claim in a document, and needs to do nothing: `link` fires `IdentityLinked`, and the subscriber answers it exactly as it answers a login.
+
+  A site that does **not** trust the provider at a login may still want the addresses its old site had already collected — a decision about the history being imported, not about every future sign-in. That is `trust_verified_emails`, or `--trust-verified-emails`, asked for per run. It leaves the site's login policy untouched, which is the point: reusing `trust_email_verification` would mean switching that policy on, importing, and remembering to switch it back, with a window in which real logins are judged by the temporary setting and nothing reporting it if the last step were forgotten.
+
+  `record_verified_addresses` takes an explicit `trust` argument for this; `None`, the default, still asks the provider record, which is what a login and every event handler must do. Only a literal `true` in the dump counts either way — a string `"true"` is truthy and is not a provider saying yes, and the flag means *believe what the dump claims*, never *call everything verified*. Measured on a real 17-person Google dump: 17 of 17 arrive verified, with the site's login policy unchanged. @ericof 
+- A client's redirect URIs may carry a wildcard, in two positions.
+
+  Registering every host a site answers on, one at a time, is the thing this avoids. `https://*.example.org/callback` stands for exactly one further label — `app.example.org`, and deliberately not `a.b.example.org` nor the bare `example.org`. `https://example.org/*` stands for any path on that host, and any query string with it. The two combine.
+
+  A registration without a `*` is unchanged: compared as a string and nothing else, because matching a redirect URI is what binds an authorization code to the client it was issued for. No prefix matching, no ignoring the query string, no treating a trailing slash as equivalent.
+
+  The refusals are the more important half. A `*` is rejected in a port, a user name, a query string, in the middle of a label such as `https://a*.example.org`, in the middle of a path, and directly under a public suffix such as `https://*.com` — which would hand every site with such a name a valid redirect target. The scheme and the port are never widened, so a wildcard registration cannot be downgraded to plain HTTP.
+
+  This is a deliberate widening, and the documentation says so plainly: every name a wildcard covers is somewhere this server will send a browser carrying an authorization code, so a subdomain that is taken over, forgotten, or serving somebody else's content is a valid target for as long as the registration stands. Érico asked for it knowing that, because listing hosts one by one is its own kind of mistake. @ericof 
+- A login now says so in the transaction it commits.
+
+  Zope writes a transaction's description in `ZPublisher.utils.recordMetaData`, which runs after traversal and *before* the view is called. On a federated login the view is where authentication happens, so the one transaction that mints an account, writes several hundred objects and joins a person to a userid was committing as a bare `/plone/@identity-callback` attributed to nobody. The undo log could not say who signed in, or that a login was what it had been looking at.
+
+  `core/txn.py` adds a line per fact, and `Transaction.note` appends rather than replaces, so Zope's path stays where it was:
+
+  ```text
+  /plone/@identity-callback
+  identity: login 8f2c1e... via github (new user, new identity)
+  identity: profile created at /plone/users/8f2c1e...
+  ```
+
+  A login against a local password is recorded the same way, naming the login offered. The transaction is also attributed to the userid, which Zope could not do because at traversal time the person was still anonymous — unless it already names somebody, so a request genuinely made by an administrator keeps its own attribution.
+
+  No claims, no address, no provider subject. A transaction record is never purged short of packing the storage, which makes it the worst available home for personal data; the userid is opaque and a provider id is site configuration. Nothing here joins the transaction either, so a request that wrote nothing goes on writing nothing. @ericof 
+- A person can now see which applications use their data, and cut one off. `GET @oauth-grants` lists the caller's own standing agreements — the application, when they agreed, and what each scope actually releases — and `DELETE @oauth-grants/<client_id>` withdraws one.
+
+  It is the mirror image of `@identities`, and the gap it closes was a real one: a user could see the providers they sign in *with* and unlink one, and had no way at all to see the applications they had signed in *to*. The consent store has recorded exactly this since the consent screen shipped; nothing could read it back, and nothing could forget an entry.
+
+  Not the admin API. `@identity-clients` is the operator asking "who may log in to this site" and needs `Manage portal`; this is a person asking "who did I let in", and needs only that they are the caller.
+
+  Withdrawing does two things, because either alone would be a lie. Forgetting the agreement decides what happens the next time that client asks — it is prompted, as it was the first time; it is not blocked, which is a different thing and an operator's to do. Revoking that client's refresh tokens for that user is what ends the access it already has, and it is narrower than the revocation a back-channel logout performs: the user said no to *this* application, and ending their sessions with every other one would answer a question they did not ask.
+
+  What it cannot reach is reported rather than hidden. Access tokens are self-encoded with no denylist, so one already minted lives out its lifetime whatever anybody withdraws; both endpoints return `access_token_ttl` so a screen can say how long that is instead of implying a cutoff this server cannot deliver. An agreement with a client the operator has since unregistered is still listed and still withdrawable — the record outlived the registration, and hiding it would leave something the user can neither see nor undo. @ericof 
+- Added OpenID Connect back-channel logout. A provider can tell this site directly — server to server, with no browser involved — that somebody's session there has ended, which is exactly why it still works after the user has closed the tab. Register `@@backchannel-logout` as the client's back-channel logout URI; one endpoint serves every configured provider, since the logout token names its issuer and that is how the verifying key is chosen.
+
+  The `sub` in a logout token is the *provider's* subject rather than a Plone userid, so the identity store is what turns one into the other. A logout for an identity this site has never seen answers `200`: there is nothing to end, and answering differently would tell an unauthenticated caller which of a provider's subjects have accounts here. Validation follows the specification — signature, issuer, audience, `iat` and `jti`; the token must declare the back-channel logout event, must carry a `sub` or a `sid`, and must **not** carry a `nonce`, since a nonce means somebody is trying to pass an `id_token` off as a logout instruction. A `jti` already acted on is refused as a replay, recorded before any work is done so a token cannot be acted on twice even if the first attempt failed halfway.
+
+  Ending the session needs `plone.session`'s **`per_user_keyring`**, which is off by default: without it every ticket in the site is signed from one ring, so ending one person's would end everybody's. This package refuses to do that, logs an error naming the switch, and reports `sessions_ended: False` rather than silently doing nothing.
+
+  A logout also revokes the refresh tokens the `[server]` layer issued for that user across every client, because the logout was about the person rather than one application. That crosses a boundary core is forbidden to cross, so it goes through a `SessionsRevoked` event core fires and the server layer subscribes to. Access tokens are **not** revoked: they are self-encoded with no denylist and live out their lifetime, at most the configured TTL. That is the cost of the self-encoded design, and it is documented rather than hidden. @ericof 
+- Added Python 3.14 support. The supported range is now 3.12 to 3.14; the full stack installs on 3.14 against the Plone 6.2 constraints and the whole test suite passes there. @ericof 
+- Added `pas.plugins.identity.exportimport`: a site's users, groups and identity join as a single JSON file, and the same file back into a site.
+
+  `pas.plugins.identity.migration` moves a site in place, with both plugins installed in one instance. It cannot help when the old site is a database you were handed, when the new site is somewhere else, or when what you want is a copy of your accounts that outlives the instance. This is for those.
+
+  Two console scripts, taking the same `zope.conf` and site arguments as `plone-exporter` and `plone-importer`:
+
+  ```shell
+  identity-exporter etc/zope.conf plone var/principals.json
+  identity-importer etc/zope.conf plone var/principals.json --dry-run
+  identity-importer etc/zope.conf plone var/authomatic.json --from-authomatic
+  ```
+
+  Both are a thin wrapper over `export_site()` and `import_site()`, which take and return plain data, so anything the commands do can be scripted.
+
+  Migrating from `pas.plugins.authomatic` offline is the ordinary import: a dump extracted from the old site is converted into a document and read by the same importer, so there is one importer to get right rather than two. The dump format and a working extraction are documented; the script is not shipped, because it has to run where that package is installed.
+
+  The userid travels verbatim in every direction. Every local role, ownership and sharing entry in a site is written against it, so an import that minted new ids would produce a site full of content belonging to nobody, silently.
+
+  No passwords, no client secrets and no audit entries are in the format at all, in either direction — a document is a file that gets copied around, and the one thing it must never be is a way in. A refusal stops the whole run and writes nothing; a single bad record is skipped and reported, so one identity already linked to somebody else does not stop the other nine hundred. A dry run never attempts the write. @ericof 
+- Added a `pas.plugins.identity.Groups` vocabulary, and a Profile's `Groups` field now chooses from it instead of taking free text.
+
+  The field stores group ids, and nothing checked that one named a group. The groups plugin filters an unknown id out rather than failing, so a typo produced a membership that granted nothing and said nothing — the worst shape a mistake about who is in which group can take. Every group PAS knows is offered, not only the ones that are content, because membership names an id without caring which plugin answers for it; `AuthenticatedUsers` is left out, since nobody is explicitly a member of it.
+
+  A Profile that already names a group which has since been deleted stays readable: the vocabulary constrains what may be written, and the doctor goes on reporting the stale id as `unknown-group`. @ericof 
+- Added a container of their own for groups. `group_container_id` and its three companions mirror the profile container's records, and they default to the profile container — so a site that has not asked for anything keeps filing principals together, with no migration and nothing to set.
+
+  Core is now told about the two separately: users resolve through the profile container's path and groups through the group container's. Until this, both records were pointed at one derived path, and a site that put its groups anywhere else got a half-working result rather than a refusal — enumeration reads the catalog, which is not scoped to a container, so the groups listed correctly and every write to one failed. @ericof 
+- Added an optional behavior keeping a user's password on their own content object, off by default.
+
+  Without it a new user's password goes to `source_users`, which is where Plone has always kept one. Turning it on gives a site whose users are content a single object per person holding everything about them, and makes Profile workflow into account suspension: a `deactivated` Profile stops authenticating, which `source_users` cannot do at all.
+
+  The hash is an annotation, not a Dexterity field. A field is serialized by `plone.restapi`, exported by GenericSetup, indexable, and snapshotted by versioning — four separate paths that each fail by disclosing the credential, and each of which would have to be remembered independently. An annotation is invisible to all four without anything being excluded anywhere. Hashing is `AccessControl.AuthEncoding`, so the stored form is one the rest of the stack already understands. Copying a Profile clears it, because copy and paste is a normal thing to do to content and must not hand the copy somebody else's credential.
+
+  Core does the authenticating, through a new `ICredentialStorage` contract the behavior provides. The `[content]` layer serves properties, enumeration and groups and never becomes a way to log in — the plugin that authenticates a userid is the one `@users` reports as its source, and an optional property store must not change a site's answer to where an account came from.
+
+  Nothing is migrated. A user whose credential is already in `source_users` keeps it, and turning this on changes where the *next* password is written rather than moving existing ones behind an operator's back. @ericof 
+- Added email addresses as something you can link to an existing account. `POST @identities` with the email provider mails a confirmation link instead of answering an authorize URL, and `POST @magic-link-confirm` attaches the address to the account that asked for it rather than signing its holder in.
+
+  The two purposes are kept apart in the token itself. A magic link is minted for one or the other, and each endpoint names the purposes it accepts rather than taking anything correctly signed: a confirmation link that could be redeemed as a login would hand the account to whoever holds the mailbox, which is the takeover the flow exists to prevent. The account is recorded in the token rather than in the flow cookie, because a link is very often opened somewhere else — a phone, a webmail tab in another profile — where no cookie of ours exists; the same-session guarantee is kept by requiring the redeeming session to be that user, checked when the link is clicked. A link the wrong person clicks is refused and spent, not left retryable.
+
+  Sending is rate-limited on the same counters as magic-link login, per address and per IP. An authenticated caller is not exempt: an account is cheap, and the mailbox being flooded belongs to somebody else. @ericof 
+- Added identity linking. `GET @identities` lists the identities you own, `POST @identities` starts a flow attaching another provider to your account, and `DELETE @identities/<provider>/<subject>` unlinks one — unless it is your last way in, which is refused rather than allowed to lock somebody out of their own account.
+
+  `@users` now reports `identities`, `source` and `profile_url` for a user. An administrator looking at an account could see its roles and its groups but not the one thing this package exists for: which external identities resolve to it, and which PAS plugin the userid actually came from. @ericof 
+- Added migrations from `pas.plugins.authomatic` and `pas.plugins.oidc`. Both are hard cutovers, dry-run by default, and idempotent.
+
+  The authomatic migration is the straightforward one: that package already stores exactly the `(provider, subject) → userid` mapping this one does, so the migration reads it rather than reconstructing it, and userids come across verbatim — so every local role, sharing setting and piece of content ownership keeps pointing at the right person, whichever of its four user-id factories the site used.
+
+  The OIDC migration is harder and may refuse. `pas.plugins.oidc` stores no identity mapping at all, so the join only reconstructs when its `user_property_as_userid` is the default `sub`; a site that changed it never stored the subject anywhere, and the migration refuses rather than producing a plausible-looking wrong join that would surface months later as somebody logging into somebody else's account. Nothing marks an account as OIDC-created either, so the accounts to claim are named explicitly or defaulted to every local account, with the dry-run report listing exactly which. @ericof 
+- Added optional copying of a provider's avatar into Plone's portrait storage, **off by default**. When switched on, a changed `picture_url` claim is fetched during claims sync and stored as the user's picture.
+
+  Where that is depends on the site, and it is the same answer a preferences upload gets: the Profile on a site running the `[content]` layer, `portal_memberdata` everywhere else. One store per user, whichever writer — an avatar in the other one would leave the Profile content object showing an empty picture field on a site that was displaying a picture. A picture somebody chose is never replaced: the Profile remembers which URL the provider supplied and a provider may replace only its own, so uploading your own ends its claim and clearing yours hands it back.
+
+  Off by default because `picture_url` is a claim, and at plenty of providers a claim is whatever the user typed: turning it into a server-side fetch makes the login path a request forger, and a user who sets their avatar URL to an address only the backend can reach gets the backend to fetch it and reads the bytes back through their own portrait. When it is on, the guards are HTTPS only, a short timeout, a size cap read from the stream rather than trusted from a header, and a content type the server actually claims is an image. None of that makes fetching a user-supplied URL safe, which is why the switch exists rather than a longer list of guards.
+
+  A provider can be configured to allow plain HTTP as well, off unless somebody sets it. It is per provider rather than a second site-wide record because "this issuer is a container on my own machine with no certificate" is a statement about that issuer; it exists because a development or demo stack could not exercise this path at all otherwise, and a feature nobody can run is a feature nobody has tested. It relaxes exactly one scheme — `file://` is refused either way.
+
+  The fetch runs *after* the successful-authentication event rather than before it, and so does the provider's property map. Both are fallbacks — each asks whether something else owns this user's data and writes into core's own store only when the answer is no — and on a first login neither question has an honest answer until the event has been delivered, because the thing that would claim the user is created by a subscriber to it. Asked too early, both were told "nobody owns this user" and wrote to `portal_memberdata`, leaving the claimed store empty on exactly the login that created it; and neither self-corrects, since the property map skips a field that already holds a value and the avatar is refetched only when the provider changes its URL. A fallback runs after everyone entitled to claim has been told.
+
+  Every failure is logged and swallowed. An avatar that would not load is a missing picture, and refusing the login over it would be a far worse bug. @ericof 
+- Added the `[content]` extra: users backed by content objects, installed by its own `pas.plugins.identity.content:default` GenericSetup profile.
+
+  An `UserProfile` Dexterity type, a three-state workflow (`incomplete` / `complete` / `deactivated`), and a dedicated `portal_identity_catalog` carrying the whole PAS property sheet as metadata. Where Profiles live is configuration rather than a constant — the container's parent, id, title and type are four registry records — and the catalog indexes a Profile wherever it actually is, so reorganising content is not a deauthentication. Drift is reported by a read-only consistency check and repaired by a re-runnable import step, kept apart so the check can be scheduled without a side effect. Uninstalling removes the catalog, the type and the workflow and leaves every Profile untouched: uninstalling an add-on is a configuration change, not an instruction to delete accounts.
+
+  Its PAS plugin serves member properties and user enumeration entirely from catalog brains, so a site can back its users with content objects and still answer "what is this user's full name" and "who matches 'liddell'" without loading a single Profile from the ZODB. That is measured rather than asserted: the tests patch `ZODB.Connection.setstate` and require the load count to be zero while enumeration and property reads run, having first proved the objects were ghosts and the counter works. The plugin sits above `mutable_properties`, so a field the user edited is what the site shows rather than the claim their provider sent — including a field they deliberately cleared. Login names match regardless of case at both ends. A `deactivated` Profile stops being enumerated without being deleted, and which states count is a registry setting. Property *writes* go back to the Profile through the same plugin, so changing a name through user preferences, through `@users`, or on the login path is stored rather than silently discarded.
+
+  First login mints a Profile in the `incomplete` state, seeded from the provider's claims through the provider's own attribute mapping — the one the control panel edits — and files it in the configured container. Later logins refresh only the fields the provider still owns: rather than a flag per field the Profile remembers what the provider last wrote, and the provider may write a field only while the current value still equals that. Editing a field ends the provider's claim on it, and so does clearing one — the case a flag-based design usually gets wrong, where a value reappearing at the next login is indistinguishable from a bug. The login name is never synced: it is half of the case-folded index enumeration queries, and a provider renaming somebody should not silently move their account.
+
+  A user gets `Owner` on their own Profile and nothing on anybody else's, computed by a local-role provider rather than assigned at creation so there is nothing to keep in step. `Owner` is what Plone means by "this object is yours", and it carries more than editing: stock Plone hands it sixteen permissions with acquisition on, so `user_profile_workflow` states the ones that matter and stops them at the site administrator. Deleting is the one to keep in mind — a user deleting their own Profile would break their account while their login kept working — and adding content inside somebody's profile, rewriting its view template, editing its ZODB properties and opening it in the management screens are the same shape. Every field declares a read and a write permission, and those permissions are granted to somebody. `GET @my-profile` answers the frontend's first-login routing question from the catalog, so the check every login performs costs no object load.
+
+  The type also carries the picture, in a field named `image`, and it wins over the member portrait: a picture somebody chose beats one a provider supplied. The name is load-bearing rather than a matter of taste — `plone.volto`'s indexer looks for exactly `preview_image_link`, `preview_image` and `image`, and what it finds becomes the `image_field` catalog metadata every Volto listing and summary view reads, so a field called anything else is invisible to all of them however correctly it is stored. Both the read and the write path honour the precedence — a portrait uploaded through user preferences lands on the Profile for a user whose account is one, and on `portal_memberdata` for a user whose account is not, and `@portrait/<id>` serves whichever store answered. One store per user, and it does not change under them.
+
+  Both types are addable in one place only: the container the registry names for them. Each has its own add permission, `rolemap.xml` grants both to no role at all, and the grant that makes either type addable is written on the container itself — when this package creates it, when it installs into a site that already has it, and when a folder appears at the configured path, which is the case a policy profile or a content import reaches. So a `UserProfile` cannot be created or pasted into an ordinary folder by anybody, including a `Manager`, and neither type shows up in the add menu anywhere else. Filing principals somewhere else as well is a grant an operator makes on a folder they chose. The permissions are separate per type so that a site keeping groups apart from users can open each container to one kind only.
+
+  Content-backed groups come with it: an `UserGroup` type, three PAS plugins (`IGroupsPlugin`, `IGroupEnumerationPlugin`, `IGroupIntrospection`) and a `group_ids` field on each Profile, so group membership is content a site can edit and review like any other.
+
+  A Profile's `userid` is genuinely permanent — an identity record, every local role granted on it and the catalog entry the enumeration plugin queries all point at it, and the REST API refuses a change rather than detaching all three — and `email` is required, because the audit log, `@users` and magic-link join all read it. @ericof 
+- Added the `[server]` extra: this site as an OAuth 2.1 authorization server, installed by its own `pas.plugins.identity.server:default` GenericSetup profile, which also registers the browser layer everything in the layer binds to — a site that never applied it does not publish the endpoints at all.
+
+  Clients are registry-backed records, exportable through GenericSetup like providers are, but their secrets are stored hashed with scrypt rather than masked: this package is the server here, so nothing ever needs the plaintext again. A secret is returned once when minted or rotated and cannot be read back. Redirect URIs match exactly, public clients are flagged as requiring PKCE, and an unknown client id costs the same work as a wrong secret so the two cannot be told apart.
+
+  Signing keys are asymmetric and generated when the profile is applied, never shipped — a key inside the package would be the same key in every site running it. Only the public halves are published, as a JWKS. The ring keeps previous keys so a rotation does not invalidate tokens still inside their lifetime, and it is bounded so the record cannot grow forever. Access tokens are self-encoded JWTs, so issuing one writes nothing to the database; the issuer is configured rather than derived from the portal URL, because relying parties compare it byte for byte.
+
+  `@@oauth-authorize` issues a code to a registered client and `@@oauth-token` exchanges it, both as browser views rather than REST services because a relying party sends a browser and posts a form, not JSON. PKCE is mandatory for public clients and only S256 is accepted — `plain` puts the verifier in the authorization request, which is the exact thing PKCE protects. Codes are single-use, short-lived, bound to the client and redirect URI they were issued for, and burned even when the redemption fails, so one intercepted code does not become unlimited guesses at the verifier. The token endpoint accepts HTTP Basic as well as the form, which RFC 6749 §2.3.1 requires and most clients use.
+
+  Refresh tokens are rotated on every use and revoked on replay, issued when a client is **registered** for the grant rather than when it asks. The client-credentials grant and a Bearer plugin complete the picture — an issued token authenticates a request against Plone, with the audience checked against the client registry on every one, which is what makes deleting or disabling a client this server's revocation.
+
+  An unauthenticated end user at the authorization endpoint is sent to log in rather than refused: answering the client `login_required` broke the flow outright for the ordinary case of somebody not signed in yet. A visitor already signed in to Volto is not asked again — the endpoint reads the `jwt_auth` token Volto keeps in a cookie, so a Volto-first identity provider is a coherent thing to build. @ericof 
+- Added the ability to keep a site's users and groups as content, without core knowing what content.
+
+  `IUserContent` and `IGroupContent` are markers a Dexterity type provides, declared in core and implemented by whichever layer owns users — the direction every extension point in this package runs in. A user type promises `userid`, `login` and `group_ids`; a group type promises `group_id`; and for both the object's id within its container *is* that identifier, which is what lets core find one in a single traversal rather than a search. Four registry records say which portal type and which container, so `UserProfile` and `/identity-profiles` are values rather than code.
+
+  The identity PAS plugin then implements `IUserAdderPlugin` and PlonePAS's `IGroupManagement`. There is no `IGroupAdderPlugin` — groups go through a different interface in a different package — but both loop over their plugins and stop at the first that returns true, so both halves work by *declining*. With no type configured, which is every site until somebody sets the records, the plugin returns false and `source_users` or `source_groups` does the job exactly as before.
+
+  That makes being asked first load-bearing rather than cosmetic: registered below the stock plugins this one is never reached, because they never decline. The plugin is moved to the top of both interfaces on install, for the same reason the `[content]` layer sits at the top of `IPropertiesPlugin`.
+
+  Membership is written to the **user**, not to the group, because that is the direction Plone asks the question in: `getGroupsForPrincipal` runs on every permission check that touches a local role, while listing a group's members does not. Nesting a group inside a group is refused rather than stored — a recursive membership answer computed from catalog metadata stops being a single lookup, which is the property this design rests on.
+
+  On a site running the `[content]` extra none of that has to be configured: `UserProfile` and `UserGroup` declare the two markers, and the layer points the four records at itself. It does so with a subscriber rather than a value in `registry.xml`, because where Profiles live is itself configurable and a profile layered on top of this one sets the container's parent and id *after* this package's install handler has run — a path written once at install names the container the layered profile is about to move. Derived and re-derived, an operator who moves the container in the control panel gets core following them with no reinstall.
+
+  The password is not stored on the content object. A Dexterity field holding a credential is serialized by `plone.restapi`, exported by GenericSetup, indexable and snapshotted by versioning: four separate paths that each fail by disclosing it. So the content object is the record a user *is* and `source_users` stays the credential store, which is what already happened for externally authenticated users. Adding a user through the ordinary API therefore produces somebody who can actually sign in.
+
+  Core creates; it does not enumerate. Answering "which users match this?" without waking every object needs a catalog, and that is what the `[content]` extra is for. The two are not independent: PAS looks a principal straight back up after adding it, so a site that configures the records without a layer that enumerates gets a user that cannot be found. The record descriptions say so. @ericof 
+- Added the audit log: a bounded per-user record of authentication events, stored inside the PAS plugin and purged on write against registry-configured limits for entry count and age. Successes are recorded from the event contract, so anything that fires an event is audited whoever fired it; refused callbacks are recorded by the callback service in an unattributed bucket, because being refused is precisely what leaves them with no userid.
+
+  The IP address and user agent are personal data and are stored only when `pas.plugins.identity.audit_record_pii` is switched on, which it is not by default. Credentials, tokens and authorization codes are never recorded at all. The sink is a utility, so a deployment can send entries somewhere else.
+
+  `GET @audit-log` reads it. The default scope is the caller's own authentication events; reading another user's, or the site-wide log including the refusals that could not be attributed to anybody, needs `Manage portal`. @ericof 
+- Added the authorization server's admin API. `@identity-providers` manages who this site lets people log in *with*; `@identity-clients` and `@identity-keys` are the other direction — who may log in *to* it, and what this server signs with. The **OAuth clients** entry is registered in `portal_controlpanel`, so Plone's own listing links to it.
+
+  The secret handling is what differs from the provider API, and the difference is deliberate. A provider's secret is masked: this package is the client there, has to keep sending it, and a round trip that echoes the mask back leaves the stored value alone. Here this package is the server and stores a hash, so there is nothing to mask and nothing to echo — a secret exists exactly once, in the response that mints it, and an operator who loses it rotates.
+
+  A `PATCH` refuses what it will not change rather than dropping it silently: renaming a client would orphan every token already minted for it, and turning a confidential client public would leave a stored secret hash that nothing checks. Both are a delete and a re-register. Deleting or disabling a client is this server's only revocation, since access tokens are self-encoded; rotating a key leaves the previous ones in the ring so tokens already issued keep verifying, up to the ring's bound. @ericof 
+- Added the claims contract and OpenID Connect discovery: the point at which an off-the-shelf OIDC client can be pointed at this site's issuer URL and need nothing else. `<issuer>/.well-known/openid-configuration`, the JWKS endpoint, `id_token` minting and the userinfo endpoint, with every advertised endpoint built from the configured issuer rather than the portal URL — which is whatever the request came in on, while this is a URL handed to another site.
+
+  Claims are read from **Plone user properties**, never from a `UserProfile`. That keeps the `[server]` layer independent of the `[content]` layer as the import-linter contract requires, and is also simply correct, because the content layer serves its fields *as* a property sheet. A federation therefore looks like two mappings and is one: configure the first hop and the second follows, on a site with the content layer or without it.
+
+  `profile` releases `name`, `preferred_username`, `website`, `picture` and `description`; `email` releases `email` and `email_verified`; `address` maps Plone's single-line `location` to the `formatted` member; `sub` is never scope-gated. `preferred_username` is the login name rather than the userid, since a userid may be 32 hex characters and mean nothing to a person. `picture` is a URL the other end can fetch, published only when a picture is actually stored — Plone's `getPersonalPortrait` falls back to a default image, and publishing a claim every user shares would tell a relying party that everybody uploaded the same photograph. Which store holds it is not this layer's business: it asks whether the user has one at all and always publishes `@portrait`, so the claim does not depend on whether the site installed the `[content]` extra. Asking `portal_memberdata` directly would be correct only while every picture landed there, and would silently drop the claim for every user whose picture is on their Profile — a federation that loses everybody's photograph, indistinguishable downstream from a site where nobody uploaded one. `description` is the one claim with no registered name: OIDC has none for a free-text biography, and it is released under `profile` anyway rather than under a private scope, since a relying party that does not know the name ignores it and a scope only this server's own peers would ask for buys nothing but a second thing to configure.
+
+  A claim with no value is omitted rather than sent blank, so a relying party can tell "we do not know" from "it is blank". `email_verified` is the one to read twice: it is true only when *this site* verified the address with a magic link, never because an upstream provider asserted it. The core layer already refuses a provider's word when consuming identities, and a server that passed that word along as its own would export the problem to every relying party downstream. @ericof 
+- Added the consent screen. `@@oauth-authorize` asks the user before issuing a code and remembers the answer per user and client: the prompt appears the first time and again whenever a client comes back for a scope not already agreed to, so an existing session at the authorization server keeps meaning something. Consent is recorded as the whole scope list the user was shown rather than merged into what they agreed to before — merging is how a consent screen ends up recording more than anybody said yes to.
+
+  It sits at the *end* of validation, never the start. A user is never shown a form approving a request that was going to be refused anyway, and a form rendered before the redirect URI is verified would be a phishing page this server hosts on the client's behalf. The request travels back through the screen rather than into a session, so there is no server-side state to expire between the question and the answer, and the answer re-runs every check the first request did — a client disabled while the user was reading is refused on the way out. An answer without a valid `plone.protect` token raises `Forbidden` rather than counting as a denial: forging one is an attempt to authorize an application in somebody else's name, and it should look like the attack it is. A denial reports `access_denied` to the client with the `state` echoed.
+
+  Where the question is asked is configurable. `Consent screen URL` names a frontend route to send the browser to, so the question is rendered in the site's own look; leave it empty and the server renders a standalone page of its own, which is what a site without a frontend gets and what an authorization server needs before anybody has built one. `GET @oauth-consent` is what such a screen reads — the client, the signed-in user, the scopes and the claims each releases. It decides nothing, and it refuses to describe what the server would not honour: an unknown client, a disabled one, or a redirect URI matching nothing registered is an error rather than a page reading "Allow *evil-app* to use your account?" served from the site's own domain.
+
+  There is no way to withdraw consent yet. That belongs with an account screen listing what somebody has agreed to, and neither exists in v1. @ericof 
+- Added the control-panel API and the registry layout behind it. `GET @identity-drivers` describes every registered driver and its configuration schema, which is what the frontend renders a form from; `@identity-providers` supports full CRUD plus a per-provider connection check. The **Identity providers** entry is registered in `portal_controlpanel`, so Plone's own listing links to it.
+
+  Every provider setting is its own registry record — `pas.plugins.identity.providers.<id>.<field>` — rather than one text record holding a JSON list. A GenericSetup export therefore describes a site's providers field by field, a single setting can be changed without rewriting the rest, and `get_provider_record` reads one the way `plone.api.portal.get_registry_record` reads any other.
+
+  Each driver's schema is what makes a provider configurable without frontend work: every field declares its type, whether it is secret, its default and an explicit `order`, because a schema travels as a JSON object and plone.restapi serialises those sorted — so the order a driver declares is gone by the time a form is built from it unless each field carries its position. A driver's defaults are applied when a provider is created, which is what keeps a GitHub provider from being configured with OIDC scopes it does not grant, and a driver may seed the new provider's attribute mapping so a provider created without touching it still syncs something.
+
+  A provider's scope is a list of permissions rather than the space-delimited string OAuth 2 puts on the wire: with the encoding and the value in one field, a trailing space or a stray comma becomes a scope of its own that the provider rejects as unknown. The attribute mapping is a per-provider record of provider claim to Plone user field, so a claim this package has never heard of can be mapped without code; the `pas.plugins.identity.UserFields` vocabulary lists what can be mapped onto, built from `getFromBaseSchema(IUserDataSchema)` so it includes fields a site added. Stored secrets are masked on the way out and restored on the way back unless edited — symmetrically, including for a provider whose driver has been uninstalled, so a round trip that changes a title cannot silently blank a secret.
+
+  The login callback URL is a site-wide setting rather than a per-provider one, since it is one frontend route registered identically with every provider; it accepts a path, resolved against the portal URL, and defaults to `/login-identity`. Reinstalling a layer creates the records its settings interface has gained since the site was set up, so a site that upgrades and reapplies a profile is not left with a control panel that cannot be read. @ericof 
+- Added the core identity layer. An identity store maps `(provider, subject)` pairs to a permanent canonical userid; a driver framework carries GitHub, Google, generic OIDC, email and `plone-identity` drivers; a PAS plugin provides extraction, authentication, credentials reset and opt-in challenge; and authlib-backed authorization-code flows carry state, PKCE and nonce. Five documented events are the package's public API, and everything built on top of it — the audit log, the `[content]` extra's first-login handling — is driven by those events rather than by reaching inside the flow.
+
+  The pending authorization attempts live in a signed cookie keyed from `plone.keyring`, the way `plone.session` keys its auth tickets: Plone 6.2 ships no `session_data_manager`, and an unsigned cookie would let a browser choose which flow it is completing.
+
+  A userid is minted once and stored. It is a random uuid4 by default — it leaks nothing and never has to change — but a provider can be configured to mint a readable one instead, from the provider's username, the email address or the provider's subject, so a GitHub account arrives as `ericof` rather than 32 hex characters. All three are claims, so all three are handled: the value is normalized into something usable as an id, an empty one falls back to a uuid rather than minting something unusable, and one already taken gets a numeric suffix. Availability is checked against **every** PAS source, not just this package's records: otherwise a provider account called `admin` would be handed the site's `admin` userid and inherit its roles. The GitHub and `plone-identity` drivers default to the provider's username, since both publish one that is already the name the person is known by.
+
+  Auto-linking by verified email is opt-in per provider, and matches only addresses this site verified itself with a magic link. A provider asserting `email_verified` is not enough — trusting it would make an account takeover as cheap as an unverified address at any provider a site happens to have configured.
+
+  Provider metadata is resolved once and cached per issuer: published endpoint constants for providers that do not move, OIDC discovery for the rest, so a login costs one round trip rather than three. Which of the two a provider gets is asked of its driver — does it declare an `issuer` field for the operator to fill in — rather than looked up in a list of driver ids, so a driver this package has never heard of is discovered correctly and a subclass is not refused for being one. The token-endpoint authentication method comes from that discovery document rather than authlib's default, and the `id_token` audience is validated against the client id configured for the provider rather than the one the provider advertises. @ericof 
+- Added the login-flow REST services. `GET @login-providers` lists the providers a user may log in with, `GET @login-providers/<id>` starts an authorization-code flow and returns the URL to send the browser to, and `POST @identity-callback` completes one and answers with a `jwt_auth` token — the same token `@login` issues, so everything downstream of signing in is unchanged.
+
+  The callback identifies the flow from the `state` a provider redirects back with, which is what a provider actually sends; requiring the caller to name the provider as well made every browser login fail at the last step.
+
+  `@login-providers` is also a plone.restapi expandable component, because the sign-in buttons are wanted alongside something else more often than on their own: the identities page lists what a user has linked *and* what they could link, which is one screen and now one request.
+
+  Magic-link login is its own driver. `POST @magic-link` mails a signed, single-use, short-lived link and `POST @magic-link-confirm` redeems it for a `jwt_auth` token. Tokens are authlib-signed from the same keyring the flow session uses, rate-limited per address, and the endpoint says the same thing whether or not the address is known — an endpoint that answers differently is an account-enumeration oracle with a friendly message. @ericof 
+- Added the required-information gate. While a profile is `incomplete`, every page its owner asks for is answered with a redirect to the profile's edit form, so a provider that withheld an email address cannot leave a site with an account it knows nothing about.
+
+  Switched on by `pas.plugins.identity.enforce_required_profile_fields`, which ships on. Turning it off makes an incomplete profile a suggestion rather than a gate.
+
+  A gate like this can lock a site out — a required field nobody can supply would leave every user in a loop, with the settings that would undo it on the far side. Two things stop that, and both are in the code rather than in the documentation. Managers and site administrators are never held, because somebody has to be able to reach the control panel. The profile itself is never held, because redirecting the target of the redirect is a loop no configuration escapes.
+
+  The OAuth authorization endpoints are exempt too, by prefix. `@@oauth-authorize` is a browser view answering `text/html` for a `GET`, which is every signal the gate uses to recognise a navigation — gating it strands a visitor who was sent to authorize an application while the relying party that sent them receives neither a code nor an error. A site can name further views in `pas.plugins.identity.gate_exempt_paths`, for a browser-based flow another add-on publishes.
+
+  Three other things pass through, for reasons about the request rather than the user: anything `plone.restapi` answers, because Volto fetches the edit form over the API and gating those would break the page the user is being sent to; anything that is not a browser asking for a page, because a gate on every request is a gate on every stylesheet; and signing out, because a user who would rather leave than fill the form in may. @ericof 
+- Driver settings schemas now declare fieldsets, so the provider control panel can group them: what a site needs in order to reach the provider stays on the first tab, the settings deciding who a returning stranger becomes move to Accounts, and group mapping and the profile picture get tabs of their own. @ericof 
+- Every address a provider reports goes onto the Profile, and a provider the operator trusts can verify one.
+
+  GitHub returns every address on an account. This used to be treated as a question nobody could answer for the user: none of them was chosen, `email` was left empty, the Profile was minted `incomplete`, and the required-information gate held its owner on the edit form until they picked. That design belonged to a Profile with a single address slot, where filling it was a guess about which identity the person was here as. `emails` is a list, so there is nothing to withhold — all of them go on, in the order the provider offers them, and `email` derives from the list as it already did.
+
+  Choosing is arranging. Which address stands for somebody is the order of their list, so a preferred address is moved to the front rather than set in a field of its own — on the edit form, or with **Make preferred** on the sign-in methods page. Nobody is held anywhere to do it.
+
+  A later login **appends**, once. An address a provider has already put on is never put on again, so an address somebody deletes stays deleted; the order they arranged is never rearranged; and a provider that changes their address adds the new one beside the old rather than replacing it. Claims carry `emails`, one entry per address with `address`, `verified` and `primary`, and every driver fills it — with the single entry most providers send, so nothing downstream branches on how many there are. `email_choices`, `@my-profile`'s `email_choices` key, and the `@types` decoration that rendered the addresses as a choice are all gone with the question they answered.
+
+  **A provider's email verification can now count, where an operator says it does.** `trust_email_verification` is a new per-provider setting: switched on, an address the provider says it verified is recorded here exactly as a magic link records one — an `email` identity in the store, one notion of verified and no second flag to drift. `google` and `github` ship with it on, because neither will call an address verified until the account has answered mail at it; every other driver ships with it off. Telling somebody who just signed in with Google to go and prove the address Google proved was a worse flow for no security.
+
+  `auto_link_by_email` now requires it too, which closes a hole rather than opening one: the address auto-linking matches on is the one the incoming provider just sent, so a provider whose word this site does not take could previously reach an account by asserting an address some other, trusted route had verified. Both switches are off by default and both are the operator's.
+
+  `email` is no longer a field the claims sync writes, since the addresses have their own path; a property map naming it is ignored for the Profile and still honoured against the Plone user. @ericof 
+- Gave groups a way across the federation.
+
+  A Plone site acting as an authorization server now releases a `groups` claim under the `profile` scope, carrying the groups PAS resolved for the principal, sorted, and never `AuthenticatedUsers`. `groups` is not a registered OIDC claim, but it is the name Keycloak, Okta and Entra all use, so a relying party that is not a Plone site can read it. Riding on `profile` is a deliberate trade, and the claims reference states it: a display scope now carries authorization data.
+
+  A relying party maps that claim to local groups per provider, not per driver — two realms behind the same driver are two different directories. Nothing is granted until an operator fills the map in, an unmapped name grants nothing and never creates a group, and a group missing from the site is skipped and logged.
+
+  Every login reconciles, so a membership revoked at the provider stops granting here without anyone editing the site. The reconciliation is fenced: each identity records what its own provider granted, so a login only ever takes back what that provider gave. A group granted by hand survives, and two providers cannot revoke each other's grants. @ericof 
+- Gave the federation demo a group that crosses. The provider puts Dana in `site-editors`; the relying party maps that onto its own `Reviewers`, and the two names differ on purpose, because two sites in a federation do not agree on what their groups are called. The provider's other two groups are deliberately unmapped, so the demo also shows that an unmapped group grants nothing. @ericof 
+- Gave the identity provider demo its groups as exported content, filed under `/groups`, and stopped creating one in code.
+
+  The demo showed content-backed users and no groups at all, so the group half of the content layer had nothing on screen. A group created by the setup handler *and* present in the content payload is created twice on a fresh site, which is the shape the export round trip makes easy to reach; the payload is the single source now, and `group_container_id` tells the site where those groups live. @ericof 
+- Groups can contain groups, and membership is a behavior rather than a field on one type.
+
+  `group_ids` has moved off the Profile schema into `pas.plugins.identity.group_membership`, a schema-only behavior in a **Groups** fieldset. The storage is unchanged -- the field still lives on the content object, the catalog still indexes it, and `profile.group_ids` still answers -- but it is now something a type opts into. A site running its own user type gets membership without redeclaring the field, its vocabulary and its two permissions and then keeping all three in step by hand.
+
+  The Group type enables the same behavior, and there `group_ids` means the groups that *group* belongs to. Everybody in an inner group is therefore in every group it names, the way a GitHub child team inherits its parent team's access. Membership stays a fact stored on the member whether the member is a person or a group, so nesting is a walk over one field rather than a second kind of edge.
+
+  This was refused once, on the grounds that a group whose members are groups makes `getGroupsForPrincipal` recursive and that a recursive answer computed from catalog metadata stops being a single lookup. The first half is true and the second turned out not to matter: the recursion is over the group graph, which grows with the number of teams rather than with the number of people, and one catalog query returns all of it. A cycle is an ordinary input rather than an error -- two edit forms that each looked reasonable can produce one -- and the walk terminates on it instead of refusing the second edit for a reason about the first. A deactivated group neither grants nor conducts: cutting it removes the access of everybody who reached something through it.
+
+  `GET @group-members/<id>` is the contextual version of a listing plone.restapi already half-answers. `@groups/<id>` carries member userids and, going through PlonePAS, already sees the nesting; what it cannot do is name each person, search within the group, or say what feeds into it. This does all three from the Profile catalog in one query, and reports `nested_groups` and `parent_groups` so a group page needs no request per level. A manager may read any group; anybody else may read a group they are in. 
+- Made `fullname` a required field on `UserProfile`. It is how a user is named everywhere the site shows them, and a provider is not obliged to send one — GitHub falls back to the login, and plenty of providers send nothing at all. Because the required-information flow reads what the type requires, a profile without a full name is now `incomplete` and its owner is asked for one. @ericof 
+- Made the profile workflow describe the profile rather than its age. `incomplete` now means "missing information the site requires" and `complete` means it is not, and the add-on moves a profile between the two itself — when it is created, when it is written to, and when its owner signs in.
+
+  Nothing used to fire `complete`. Every profile stayed `incomplete` for ever, so the frontend's first-login routing diverted every user on every login, and a user who filled their profile in was sent straight back to the form they had just completed.
+
+  Which fields count is `pas.plugins.identity.required_profile_fields`. Empty, which is how it ships, means the fields the profile type itself marks required — `login` and `email` here, and the right answer for a site running its own user type or a behavior that adds a field. Set, it names them. A field counts as filled when it holds something other than `None`, an empty string, whitespace or an empty collection; `0` and `False` are answers somebody gave.
+
+  `@types` for the user type reports the site's required fields alongside the type's, so the edit form asks for everything the flow insists on. `plone.restapi` builds that list from the schema and nothing else, and without the correction a field required by the record but optional on the type would hold a profile incomplete while the form accepted a save without it — a loop produced by one registry record. The record only ever adds: a field the type requires stays required, because the type is the one that cannot store an empty value.
+
+  This matters because a provider is not obliged to send anything: GitHub withholds an email address the user marked private, a bare OIDC provider may release nothing beyond `sub`, and a magic link knows only the address it was sent to. A profile minted from one of those is missing something, and the site has to be able to insist.
+
+  `deactivated` is never entered or left by any of it. That state is a decision about an account, and "nothing is missing" is not an argument against it. @ericof 
+- Read a GitHub account's address from `GET /user/emails` instead of hoping it is on `/user`.
+
+  `/user` omits the address entirely for anybody who marked it private, and it carries no `email_verified` key at all. So on that call alone a GitHub sign-in arrived with no email claim — the profile was minted `incomplete` and the required-information flow asked the user to type in an address GitHub already knew — and a GitHub identity could never be auto-linked by a verified address, whatever the account's own verification state. `GET /user/emails` answers both, and the `user:email` scope needed to call it has always been requested, so no operator has to change a registration and no existing user has to re-authorize. The primary verified address is preferred, then any verified one, then an unverified primary: an address is worth having even when nobody will auto-link on it. Drivers still perform no I/O — the GitHub driver names the endpoint and merges the answer, and the flow layer makes the call — so the whole driver layer stays testable against recorded payloads with no provider in the loop. The call is best-effort: a token whose scope was narrowed answers 403 and a provider having a bad afternoon answers 5xx, and neither may turn a missing address into a failed login. @ericof 
+- Split a provider's availability from its visibility, and gave it a look.
+
+  `enabled` used to answer two questions at once — whether a provider works, and whether the login screen offers it — so taking a provider off the login page also took it away from every account already signed in through it. It now answers only the first. The new `show_in_login` answers the second: a provider that is enabled but not shown stays linkable from a user's own identities page and still signs in an account already linked to it, which is what a staff-only or invitation-only provider looks like. Providers stored before this setting existed read back as shown, so nobody's login buttons disappear.
+
+  `GET @identities` grew an `available` list for exactly that reason. It is the *enabled* providers minus the ones this caller has already linked, so the identities page no longer has to render the login screen's listing and hope the two questions have the same answer.
+
+  A provider also carries an icon and two colours now — `icon`, `background_color` and `foreground_color`, served on the public login listing so a client can draw a button that looks like the provider it opens. The icon is an SVG document stored as its source, and it is sanitized as it is stored rather than as it is rendered: an icon copied from a brand page carries whatever that page put in it, and what a control panel accepts ends up in the registry, in a GenericSetup export, and in everything else that reads a record. Only an allowlist of elements and attributes survives, no attribute may reference a URL, and anything that is not an SVG document is refused outright rather than quietly emptied. Colours are hex values and nothing else, because the value reaches a style attribute. @ericof 
+- The importer now refuses a document naming a provider this site does not have.
+
+  The identity key is `(provider, subject)`. The subject survives a migration untouched, because it belongs to the provider. The name does not: it is `pas.plugins.authomatic`'s `json_config` key on one side and a string an operator types into a control panel on the other, in a different site, after the import has finished.
+
+  A mismatch used to raise nothing at all. The import reported success, and then every migrated person signed in, matched no identity, and was handed a second account beside the one waiting for them — while the migrated Profile kept their name and their groups and belonged to nobody who could sign in. On a real 17-person dump that turned 17 migrated accounts into 17 new ones.
+
+  The check runs before anything is written, including on a dry run, and the message names what is missing, what is configured, and any name that differs only in case — which is the likeliest mistake and the hardest to see, because the two strings look identical in a control panel listing.
+
+  `allow_unknown_providers`, or `--allow-unknown-providers`, is for the deliberate order: import first, configure the providers afterwards. The identities are written either way, so the join starts working the moment a provider exists under the right name. @ericof 
+- `GET @my-profile` now reports `missing`: the required fields the profile has no value for, and the reason `review_state` is `incomplete`. Read off the same catalog brain as the rest of the answer, so saying *what* is missing costs nothing more than saying *that* something is, and the endpoint still wakes no object. The frontend needs it to explain itself — a user redirected to a form with no reason given cannot tell a requirement from a broken site. @ericof 
+- `GET @user-account/<userid>` answers two questions an administrator could not ask before.
+
+  *Which providers has this person configured?* `@users/<id>` does carry `identities`, but as bare provider ids and subjects. This names each provider, carries its icon and colours so a panel can show the same button the person signs in with, and reports whether the provider is still configured and still enabled -- three states rather than two, because an identity against a provider somebody has since turned off looks like a broken login and reads like nothing.
+
+  *When did this person last authenticate?* Nothing in Plone records it. This package's audit log does, for every route in -- a federated sign-in, a magic link and an ordinary password login all record `authenticated` -- so the answer existed and had never been reachable per user. The endpoint reports it alongside the most recent events, so a panel can show how somebody got in and not only when.
+
+  It also carries the profile's addresses and which of them this site has verified, because a verified address is what `auto_link_by_email` attaches a new provider account to: an administrator looking at one is looking at the other.
+
+  One user at a time, deliberately. The audit log is bounded per user rather than globally, so folding either answer into the `@users` listing would read one bounded log per row on every page of it. `Manage users` throughout, with one exception: a caller asking about themselves, since the same facts are already theirs through `@identities` and `@audit-log` and refusing here would only mean the frontend needing two code paths to draw one panel. 
+- `UserProfile` and `UserGroup` keep a version history.
+
+  A Profile is the record of a person, and "who changed this, to what, and when" is a question sites ask about people more often than about pages. Both types now carry the `plone.versioning` behavior and a `repositorytool.xml` policy — two independent pieces of configuration, only one of which is visible on the FTI. A type with the behavior and no policy entry looks versioned everywhere a person can see and keeps no history at all, so the tests assert `getVersionableContentTypes()` rather than the behavior list.
+
+  **This reopened a question the package had already answered, and the answer had to change.** The optional password behavior keeps its hash in an annotation rather than in a Dexterity field, and three places in the source explained why in the same terms: a field is serialized by `plone.restapi`, exported by GenericSetup, indexable, and snapshotted by versioning, so an annotation is invisible to all four.
+
+  Three of those four are true. CMFEditions deep-copies `__annotations__` into a snapshot, so a versionable Profile would have carried every superseded hash in `portal_repository` — a password change that no longer retired the old credential, accumulating somewhere nobody looks, with nothing to say so. That is worse than the field would have been, because a field at least announces itself.
+
+  So the install handler registers a CMFEditions modifier that keeps the credential out of the snapshot on the way in and restores the working copy's on the way out. Skipping alone would have meant reverting a Profile silently cleared its password, which is an account lockout decided in version history. The uninstall handler removes the modifier again.
+
+  The tests include the mutation: switching the modifier off and proving the old hash comes back, because a regression test that passes with the fix removed is not evidence of anything. @ericof 
+
+
+### Bugfix
+
+- Fixed a 500 when editing a provider whose configuration carries a list. JSON has one sequence type, so every array in a request body arrives as a list, while the record it is stored in is always a tuple. The coercion asked the driver's schema, which left a key the schema does not declare, and a provider whose driver is gone, going through uncoerced. @ericof [#21](https://github.com/collective/pas-plugins-identity/issues/21)
+- A federated first login stopped failing once Profiles became versionable.
+
+  `sync_claims` and `sync_addresses` end in a modification event when they change something, `at_edit_autoversion` answers it by calling `portal_repository.save`, and that is a permission the person being logged in does not have. The callback answered `401` with `"You are not allowed to access 'save' in this context"`, which reads as an authentication failure rather than as a versioning one.
+
+  The Profile *creation* beside it already ran unrestricted, for the reason the docstring gives: the person is mid-login and holds no roles yet. The claim sync now runs the same way — these writes are the package acting, not the user editing. @ericof 
+- A login that resolves to an account nothing created now says so instead of raising `AttributeError`.
+
+  PAS answers with a principal whether or not anything became the record behind it. On an ordinary site core writes a `source_users` row; on a site that keeps its users as content the object *is* the account and creating it is the site's own job. A site with those records set and nothing claiming its users therefore authenticates people into accounts that do not exist, and every later lookup of the userid returns `None`.
+
+  The first line to dereference one was the token minting: `AttributeError: 'NoneType' object has no attribute 'getId'`, from a traceback naming neither the user nor the reason. The warning that says exactly what happened was already being logged two lines above it and read as unrelated.
+
+  `mint_token` now raises `PrincipalUnavailable`, naming the userid and what to look for. The callback and the magic-link confirmation both answer 500 with a message saying the site has no account for the user, and log the detail. Deliberately not the 501 they answer when the JWT plugin is missing: that one means the site cannot mint tokens at all, and reporting one as the other sends whoever reads it to the wrong control panel. @ericof 
+- A login through an identity whose account was deleted now restores the account instead of signing nobody in.
+
+  An identity outlives the account it was minted for — a user deleted while the identity stayed in the store, an export restored without one half. From then on every login through that identity resolved to a userid nothing could serve: no properties, no roles, invisible to every search, and a traceback from the first line that touched the user.
+
+  It never recovered on its own, and that is the part that matters. The identity is *found*, so the branch that creates a user record is not taken; the login is not a first one, not a link, and nothing else looks. The account stayed missing for every sign-in from then on.
+
+  The same userid is restored rather than a fresh one: it is what the identity points at, what anything the person owns is owned by, and what the store would go on resolving to anyway — minting a new one would strand all of it and leave the same dead record behind. It is logged at warning level, because an account reappearing is not what an operator who deleted one expects, and removing the identity as well is what makes the deletion stick.
+
+  Nothing happens on a site that keeps its users as content: there the object is the account and creating it is the site's own business, which is already reported separately when nothing does. @ericof 
+- A provider is no longer seeded a `scope` its driver's schema does not declare. The magic-link provider carried an empty one it could neither show nor clear, which is the value that surfaced the crash above. @ericof 
+- An exported document is no longer refused because it carries verified addresses.
+
+  A verified address is stored as an identity under the `email` provider, keyed by the address, so an export has always carried verification among the other identities. The provider-name check added in the same release required every provider a document names to be configured in the target site, and `email` is not a provider anybody configures — so every document from a site that had ever verified an address was refused, which is most of them.
+
+  `email` is exempt from the check now, because it is the store's own marker rather than a provider. Caught by asking what the export already carried before adding a field for it. @ericof 
+- An offered address list no longer leaves a site without profiles holding no address at all.
+
+  A driver offered several addresses picks none of them and carries the list, so the user can say which is theirs on their profile. That only works on a site that has profiles: without the `[content]` extra there is no profile, no form and no gate, so nobody is ever asked — and a GitHub sign-in produced an account with no email and nothing anywhere requesting one, which is worse than the guess the choice replaced.
+
+  The question is now asked only where it can be answered. A site that keeps its users as content leaves the list alone and the required-information flow holds the user on the form. Anywhere else the first offer is taken, which is the address the driver ordered first: the account's primary verified one where there is one.
+
+  The test for "can this site ask" is deliberately not the one used before creating a user, which also insists the container resolves. The container is created while the first profile is minted — in a subscriber to the event fired later in the same login — so on the very first sign-in to a fresh site it does not exist yet, and the stricter question would have answered "no profiles" for the one user most likely to be handed a list. @ericof 
+- Auto-link-by-verified-email no longer attaches a login to an account that no longer exists.
+
+  The feature attaches a new provider identity to whichever account proved that address to this site with a magic link. It looked the owner up and adopted it, and nothing asked whether that account was still there.
+
+  When it is not — deleted after its address was verified, or a store restored beside a different one — the login *succeeded* and returned a userid nothing resolves: no properties, no roles, invisible to every search, and a traceback from whichever line touched the user first. Signing in with Google after verifying an address produced exactly that, and the callback died in `mint_token`.
+
+  The adoption now checks the account resolves and declines when it does not, saying so at warning level and naming the address so the stale identity can be found. The sign-in then mints a fresh account as it would for any unrecognised identity — not what the operator configured, but a working login, and recoverable: removing the stale identity lets the next attempt link properly. @ericof 
+- Both migrations produce users, not only identities.
+
+  `migrate()` wrote each `(provider, subject) → userid` straight into the identity store. That is half of what `link()` does: the other half is firing `IdentityLinked`, and on a site where principals are content that event is what mints the Profile which *is* the user.
+
+  The distinction is easy to lose, because the migration reads as correct either way — the identity resolves, and the person turns up at their first login. What they could not do is exist before it: they were absent from `@users`, could not be granted a role or added to a group, and vanished entirely once the old plugin was removed, which is what the hard cutover the migrations document tells you to do.
+
+  Both link through the plugin now. The claims the authomatic migration had been building all along reach the Profile too, having previously had no listener: the full name and the address arrive with the person. The address is still never inherited as verified, because authomatic did not record whether the provider asserted it.
+
+  The report gained a `users` field — the userids that have a Profile after a live run, or that would gain one on a dry run — and `counts` gained the matching entry. @ericof 
+- Brought users who did not arrive through a provider into the required-information flow.
+
+  Everything that minted a Profile or reconciled one hung off `ExternalIdentityAuthenticated`, and only a federated sign-in fires that. So a `source_users` account — the administrator's own login, anybody created through `@users` before the layer was installed, anybody added in the ZMI — was never minted a Profile, was never reconciled, and gave the gate nothing to hold them for. `enforce_required_profile_fields` was therefore a rule about where a user came from rather than about what the site requires of them, which is neither what it says nor what it is for. Logging in by any means now mints the Profile when the user has none and reconciles it either way. A Profile minted this way is seeded from what the site already knows about the person — their fullname, address and the rest, read through the ordered property sheets rather than out of `portal_memberdata` by name — so somebody the site has held for years is not asked to type it all in again the first time they sign in after the layer is installed. Nothing happens on a site without the `[content]` layer, and the Zope root user is skipped: it is not a member of this site, and minting a Profile would file the emergency account among the site's users. @ericof 
+- Capped the pending authorization attempts a session keeps, so a browser can still store the flow cookie.
+
+  The attempts live in one signed cookie and nothing bounded how many. Each encodes to roughly 450 bytes, so the ninth pending attempt pushed the `Set-Cookie` past 4096 bytes — the largest a browser is required to store, and over it the cookie is discarded rather than truncated, with nothing said to either side. The browser went on sending the eight-attempt version, the `state` of every login started after that was never stored, and each one came back refused as unknown: {guilabel}`That sign-in link is no longer valid. Please start again.`, with a valid `state` in the URL and a correct one in the log. It cleared up on its own after ten minutes, when the pending attempts aged out, which is what made it look intermittent. Nine abandoned sign-ins in ten minutes is what a person testing a login does. Five are kept now, oldest dropped first: the newest attempt is the flow the person is in, and the cookie stays at about 2.4 KB. @ericof 
+- Corrected the `Groups` field description on the `UserProfile` edit form, which told users something that had stopped being true.
+
+  It said that editing the field was the only way membership changed and that there was no write API. `IGroupManagement` made that false: `api.group.add_user` and the {guilabel}`Users and Groups` control panel reach the identity plugin and write the same field. The description was wrong in the place most likely to be read, and the reference documentation carried the same sentence. Both now say the two paths reach the same place. @ericof 
+- Created the Profile container before importing principals in the demo identity provider, so the demo user gets a Profile.
+
+  `plone.exportimport` runs `plone.importer.principals` before `plone.importer.content`, and the container is created lazily, so `addMember` ran at a moment when nothing resolved at the configured path. The user adder declined exactly as it is designed to, the demo user landed in `source_users` with no Profile, and the container then arrived with the content import — so everybody created afterwards got one. That is what made it easy to miss: the mechanism looks correct the moment you test it by hand, and only the imported user is wrong. The install log had been saying `'profiles' does not resolve to a container` the whole time. @ericof 
+- Declared `defusedxml`, which `core/svg` imports to parse a provider icon.
+
+  It arrives today through another package's dependency graph, which is why every test passed and why nothing said otherwise until a demo image was built from scratch and refused to start on `ModuleNotFoundError: No module named 'defusedxml'`. A package should not depend on what it imports directly arriving through somebody else's requirements. @ericof 
+- Fixed UserGroups being invisible to every group lookup except the plugin's own.
+
+  The `[content]` plugin implements `IGroupIntrospection` and the install handler never activated it. `PlonePAS.pas.getGroup` walks exactly that interface, so it found only `source_groups` and answered `None` for every UserGroup — and with it `api.group.get`, `portal_groups.getGroupById` and anything reaching a group the way Plone reaches one, including the sharing tab.
+
+  The group tests all passed throughout, because every one of them called the plugin's methods directly. The ones added here go through the tool instead. @ericof 
+- Fixed a 500 on every URL outside a Plone site, including the ZMI.
+
+  `IPubAfterTraversal` fires for every published request, and a Zope instance serves more than one site's worth of them: `/manage`, the root `acl_users`, anything mounted beside the site. The gate asked `api.user.is_anonymous()` before establishing that the request had reached a Plone site at all, and with no portal in the acquisition chain that raises `CannotGetPortalError` — so the traceback named a question about the *user* on a request that never got near one.
+
+  The effect was worse than a broken page. `/manage` and the root user folder are where an operator goes to fix a site they cannot otherwise reach, and installing the `[content]` extra closed both. The gate now answers "nothing to say" for any request without a portal, and still gates every request that has one. @ericof 
+- Fixed deleting a group returning a 503 and leaving the group in place.
+
+  `GroupsTool.removeGroup` loops every `IGroupManagement` plugin without guarding the call, and `source_groups` raises `KeyError` for a group it never had. This plugin deleted its content object, the stock one raised on the same id, and the successful delete rolled back with the transaction. The tool now tolerates a plugin that declines by raising, which is the idiom `addGroup` fifteen lines above already used. @ericof 
+- Fixed the OIDC `picture` claim, which no relying party could actually fetch.
+
+  Two defects, both on the read path and both silent. `GET @portrait/<id>` returned `stream_data` without a `Content-Length`; that helper answers with plain bytes while the blob is uncommitted and with a `filestream_range_iterator` once it is on disk, and the publisher calls `len()` on what it is handed — so every picture that had really been stored answered 500, while the tests, which set the field and read it back in the same transaction, saw bytes and passed. And the claim published the URL bare, but `@portrait` is a `plone.restapi` service and `plone.rest` only takes over traversal for a request asking for JSON: the URL 404ed for this package's own fetcher, for any relying party that is not a Plone site, and for a browser rendering the claim in an `<img>`. The claim is now published under `++api++`, which resolves for all of them. @ericof 
+- Fixed the demo answering magic-link requests with a 500. `Products.PrintingMailHost` was missing from the image, and the demo package now installs *and* loads it rather than relying on an environment variable set in the compose file. @ericof 
+- Installing the add-on no longer fails while it is importing its own settings.
+
+  The four registry records naming the user and group content types are derived from the container settings rather than written once, so a subscriber re-derives them whenever a container setting changes. Every registry write in the site reaches that subscriber, and one of the writes that reaches it is this profile's own `registry.xml` — during the very import step that creates the records being written.
+
+  That was safe while the two settings files belonged to two profiles: the core half was always already in place by the time the other one was imported. Merging them inverted the order, and site creation died with `Cannot find a record with name 'pas.plugins.identity.user_content_type'` from a line about syncing.
+
+  Syncing now declines while any record it needs is missing, in either direction — the settings it reads, in a site that has uninstalled, and the records it writes, in a site that is mid-install. `post_install` runs it again once everything exists, so the site ends up with the same values either way.
+
+  Found by the federation demo refusing to start, which is the only thing in this repository that creates a site from scratch in a container. @ericof 
+- Made a Profile's `userid` and a Group's `group_id` the object's own id rather than a field stored beside it.
+
+  They were two values that had to be equal with nothing making them so, and they were read by different code: the PAS plugin traverses `container.get(userid)` while the catalog indexes the field. A rename changed one and not the other, after which enumeration still found the principal and every write was addressed to an object that no longer answered to that name — no error anywhere. Deriving one from the other makes that state unreachable.
+
+  No form offers the value and no deserializer can write it; the property accepts a write and discards it, because Dexterity's factory sets every keyword it is handed and payloads exported earlier still carry the key, but a write that *disagrees* with the id is logged. `UseridIsPermanent` is gone with the field it guarded. Renaming is still allowed and the principal id follows the new name — what the old id was written into, from identity records to sharing entries, does not follow it. @ericof 
+- Made the authorization endpoint insist on a complete profile, so that the required-information flow actually reaches a federated sign-in.
+
+  It did not. Every route such a sign-in touches — `@@oauth-authorize`, the login page, the callback, the consent screen — is exempt from the gate, each for a good reason, and together they added up to no enforcement at all. A user could sign in to a relying party through this provider with a profile the provider had declared incomplete, and the relying party received an account missing the same field. Found by Érico signing in with a GitHub account that keeps its address private: he was never shown the profile form at all.
+
+  `@@oauth-authorize` now pauses the request at the profile's edit form and carries the authorization request along as `return_url`, resuming it once the profile is complete. The client is told nothing in the meantime — the request is paused, exactly as it is while the user signs in — except under `prompt=none`, where interacting with the user is forbidden and the client is told `interaction_required` instead.
+
+  The request to resume travels as `identity_resume`, not `return_url`. That name belongs to Volto: its edit form reads it and pushes it through the router after a save, and an absolute URL pushed that way is resolved against the current path — so the first version navigated the user to `/profiles/<id>/http:/host/@@oauth-authorize` and showed them two 404s before the real redirect caught up.
+
+  Asked through the `IProfileSupport` utility rather than by importing the `[content]` layer, which the import-linter contract forbids: completeness is that layer's idea, and a site without it has no utility and enforces nothing. `enforce_required_profile_fields` turns this off with the rest of the gate. @ericof 
+- Stopped a user from putting themselves in a group by editing their own profile.
+
+  `group_ids` was declared with the same write permission as `fullname`, and the owner of a profile holds that permission on their own profile by design — that is what self-service means. It also meant filling in your name and granting yourself roles were the same action, on the same form, and the form is the one every user is now sent to.
+
+  Group membership has a permission of its own, `pas.plugins.identity: Edit Profile Group Membership`, granted to `Manager` and `Site Administrator` in every workflow state and never to the profile's owner. Every other field is unchanged. Found by Érico editing his own profile in the demo. @ericof 
+- Stopped an empty Profile field erasing the value `portal_memberdata` still holds for it.
+
+  PAS resolves a member property by taking the first ordered sheet that *has* the property, not the first that has a value for it. This layer's plugin sits at the top of that order and declared all five properties on every Profile — deliberately, because a sheet that omits a field also stops routing *writes* to it, quietly leaving the Profile not the store for anything it did not already carry. But declaring a field the Profile had no value for meant answering an empty string and stopping the search there, so a user whose Profile was minted without a fullname read back as having none at all: in the user listing, on the author page, and in the `id_token` the `[server]` layer mints, which omits an empty claim and therefore released neither `name` nor `email` for an account that plainly had both. That is every user who already existed when the layer was installed, and every federated user whose provider withheld a claim — GitHub does exactly that for an address the user has marked private. The sheet still declares every field, so writes are unaffected, and a field the Profile has no value for is now filled from the property plugins below it. A Profile that does carry the field still wins, and a field neither store knows stays absent rather than going out empty. @ericof 
+- Stopped reporting a provider that cannot start a flow as a provider that is down. Asking to link the email provider answered `502 Provider unavailable`, and clicking {guilabel}`Email` on a login page would have answered the same.
+
+  The email driver has no authorization endpoint and never will — its provider is a mailbox — so the refusal was permanent, while `502` told the caller the provider was temporarily unreachable and to try again. Three other conditions read the same way and were equally permanent: an unconfigured issuer, a provider with no `client_id`, and a `callback_url` that is neither a path nor an absolute URL. All four now answer `400 Provider cannot start this flow`, at every endpoint that starts one. A genuine discovery failure or an unreachable provider is still a `502`. @ericof 
+- Stopped serving this package's vocabularies to anonymous callers. `plone.restapi` serves a vocabulary under `zope2.View` unless it is named in `plone.app.content.browser.vocabulary.PERMISSIONS`, so `pas.plugins.identity.UserFields` and `pas.plugins.identity.Groups` were both readable by any visitor — the second listing every group on the site by id and title. Both now require `Modify portal content`, which is what stock Plone puts on `plone.app.vocabularies.Users`. @ericof 
+- Stopped writing a `source_users` account beside the content object on a site that keeps its users as content.
+
+  Every federated first login created one: a placeholder row so that "the stock plugins have a complete record". On a site keeping its users as content there is already a complete record — the plugin enumerates the object, and a site that opted into `ICredentialStorage` authenticates against it — so the row was a second record of the same person, kept in step by nothing and outliving what it shadowed. The demo identity provider showed both of its users twice over in {menuselection}`acl_users --> source_users --> Users`. A site that has *not* configured user content is unchanged, because there the `source_users` account is the only record such a user has. Where nothing at all claims a new user, the login still succeeds and core now says so at warning level, naming the type that was not created. @ericof 
+- The authomatic converter now understands the provider's own property names, not only Plone's.
+
+  A dump read from authomatic's stored `UserIdentity` carries the keys the provider sent — `name`, `link`, `picture`, `first_name` — rather than the Plone field names its derived property sheet would have produced. `link` is the one that mattered: it is what an OAuth2 provider calls a homepage, authomatic's own shipped property maps translate it to `home_page`, and the converter was silently dropping it.
+
+  Found by running the documented extraction against a real `pas.plugins.authomatic` 2.0.0 store on PostgreSQL/RelStorage rather than against a fixture. `fullname` and `name` now both answer for the full name and `home_page` and `link` both for the homepage, with the Plone name winning when a dump carries both. A key with no Profile field is still dropped, because an attribute nothing declares is invisible to every form and permission in the site. @ericof 
+- The federation test stack asks for consent on a page it actually serves.
+
+  The demo points the identity provider's consent screen at a frontend route, which is the interesting configuration and the one the manual stack runs: the question is then rendered in the site's own look rather than by the standalone page the server falls back to.
+
+  The federation test stack runs the two backends and no frontend. It got the same setting, so the first authorization in a fresh stack was redirected to a route nothing serves, the flow test found a 404 where it expected either a consent form or a code, and four tests failed on an assertion about the *URL* for a mistake about the *stack*.
+
+  `DEMO_IDP_CONSENT_URL` now overrides it, and the compose file sets it empty. Empty is a meaningful value rather than "unset", so it is read with `os.environ.get` instead of through the helper that falls back to a default — a helper that could not have expressed it.
+
+  Red since 2026-08-25 and never seen: those tests are docker-marked, and this repository has no remote, so the suite has never run in CI. @ericof 
+- The principal container is only ever created as a type that can actually contain something.
+
+  `Document` is the first fallback when the configured container type may not be added where the container goes, because `plone.volto` makes `Document` folderish and a Volto site refuses `Folder` at the portal root. The same id names an ordinary *item* on a site without that add-on, and nothing checked.
+
+  The result was a container that could hold no Profile and could not even be granted the add permission, reported as `The permission pas.plugins.identity: Add User Profile is invalid` — a message about permissions, from a line about permissions, for a mistake about types. Candidates are now filtered on whether their class is folderish, and when nothing addable in the parent is, the refusal names the record to change and lists the folderish types that were available. @ericof 
+- `api.user.delete` now deletes a user whose account is a Profile.
+
+  It did not, and the failure was silent in the way that matters: PlonePAS hands a deletion to whichever plugins implement `IUserManagement`, this package implemented none, and `source_users` removed whatever it held — nothing at all, for anybody who signed in through a provider. The Profile stayed where it was, kept answering enumeration and kept serving the property sheet, so the user was still there and the site had reported success.
+
+  The profile plugin implements `IUserManagement` and `IDeleteCapability` now: deleting a user deletes their Profile, and the users listing offers the button because the plugin says it can. It declines for a userid it holds no Profile for, which is how PAS is told to try the next plugin.
+
+  The identity records are deliberately left alone. An identity outliving an account is by design here — it is what lets the same person sign back in under the same userid — and removing one is a separate decision. A login through an identity whose account is gone recreates the Profile and says so at warning level first, so the case is reported rather than silent.
+
+  The plugin is not a credential store, so `doChangeUser` refuses with the `RuntimeError` PlonePAS expects from a plugin that cannot set a password, and password changes go on reaching `source_users` exactly as before. @ericof 
+
+
+### Internal
+
+- Raised the coverage floor from 95 to 97. Measured, not estimated: the full suite covers 99.16% with 125 statements outstanding, and the container-free run CI gates on covers 97.57%. 100 remains the target. @ericof [#8](https://github.com/collective/pas-plugins-identity/issues/8)
+- Code says why, instead of citing a document its readers do not have.
+
+  Forty-six docstrings, comments, ZCML notes and one registry XML comment justified themselves with an identifier from a planning file that ships with nobody — `S1`, `S2`, `S8` for gates, and `C7`, `D3`, `D10`, `S1b`, `S1d` for decisions. `Exact string comparison, per S8` looks authoritative and carries nothing: a contributor, a reviewer, or the author in a year has no way to follow it. Each now states the reason, or cites something a reader can actually reach. Test docstrings whose entire body was `"""S8."""` or `"""D3."""` say what they assert.
+
+  One had leaked into the product: a registry field description shown to operators began `D3: access tokens are self-encoded…`. One was undefined even in the planning file — `S1d` names nothing anywhere, which is the clearest argument against the habit.
+
+  Section references now name their specification inline, so `§2.4` reads as `Back-Channel Logout 1.0 §2.4` rather than depending on a module docstring several screens away. Where a `§` already sat beside `RFC 6749` or an OpenID specification it was left alone: those a reader can follow.
+
+  Two were stale as well as opaque, which is the other cost of a reference nobody can check. The server's `configure.zcml` said nothing was registered there yet and that the endpoints would arrive "with the rest of Gate S1", while including five of them, every one bound to the server layer. `test_oauth_server.py` said there was no container to point at Plone as a server "until the discovery document lands in Gate S2" — discovery is tested by a class in that same file. @ericof 
+- Core reaches the optional `[content]` layer through a utility it declares, instead of importing it inside a function. `IProfileSupport` answers the three questions whose answer changes when that layer is installed — where a user's Profile is, which picture represents them, and where a picture should be stored — and the layer registers something that provides it.
+
+  The import it replaces was a contract violation that looked like a way of avoiding one. `core.serializer` imported `profile.subscribers` inside a function body with a `try: … except ImportError`, and import-linter reads function bodies: the "core never imports the optional layers" contract was **broken**, and `make check-imports` said so. It is green again, and the dependency now points the way the contract wants — the layer imports core, core imports nothing of the layer. It is the same shape back-channel logout already uses to reach the `[server]` layer.
+
+  Nothing about a site without the extra changes: `queryUtility` answering `None` means what the `ImportError` meant. @ericof 
+- Gave the vendored container entrypoint a header naming the Plone version it was taken from and what differs from it, and stopped its `import` and `export` verbs passing their last argument twice. The duplicate was harmless only because `plone.exportimport` parses with `parse_known_args`. @ericof 
+- Import order across thirteen modules and ten test modules, as the project's own formatter wants it.
+
+  `make format` had not been run over them, so `ruff check --select I` moved twenty-three files the moment it was. Mechanical, and kept as a commit of its own so that it does not sit inside a change anybody has to read. @ericof 
+- Made the demo identity provider's user a Profile, password and all.
+
+  They were `alice`, imported from a `principals.json` payload, and the principals importer creates users the way Plone always has: a `source_users` row holding the password, in the site whose entire point is that a site does not need that store. They are now `dana`, created through `api.user.create` — the seat every user goes through — so the shipped adder mints the Profile and the demo profile's `types/UserProfile.xml` enables the password behavior that puts the credential on it. A payload could not have carried that password anyway: it lives in an annotation, which is exactly what an export does not serialize, and that is the reason a credential is kept there rather than in a field. Sign in at `plone.localhost` as `dana` / `dana-demo-password`. @ericof 
+- Organised the backend around one concern per module. Each provider driver lives in its own module under `core/drivers/` with the shared normalisation in `core/drivers/base.py`; each REST endpoint family is a package with one module per verb; and the three layers — `core`, `profile`, `server` — are separated well enough that an import-linter contract can hold them apart.
+
+  `requests` is declared as a direct dependency rather than arriving through `Products.CMFPlone`: `core/flows` imports authlib's requests integration at module scope, authlib does not pull it in itself, and a dependency that happens to be there is not a dependency that is there.
+
+  The demo lives in `identitydemo`, a sibling package that is never published — the wheel ships `src/pas` and nothing else. Each demo site is built from data rather than Python: its settings are its profile's `registry` XML, its principals and content are a `plone.exportimport` payload, and what is left in each handler is only what genuinely cannot be static, such as a URL read from the environment. @ericof 
+- Pinned `grimp` below 3.16 so `make check-imports` installs again.
+
+  That release ships no wheel for the Python the throwaway venv is built with, so `uv` falls back to building it from source and `maturin` fails for want of a Rust toolchain. The failed install leaves an empty venv behind, so the symptom is `no such file or directory: .venv-imports/bin/lint-imports` — which reads like a broken target rather than like a missing wheel. @ericof 
+- Pointed the package metadata at the documentation, and stopped shipping the working copy in the sdist.
+
+  `[project.urls]` gained `Documentation` and `Changelog`. PyPI renders both of those in its sidebar, and the published documentation is where every question this README raises is answered.
+
+  The sdist no longer carries `demo/`, the three Dockerfiles and their `.dockerignore`, `mx.ini`, or `bobtemplate.cfg`. All of them build or run *this checkout* and mean nothing once unpacked somewhere else — `demo/` in particular is the federation demo's own package, which is never published to anything. `tests/demo/` goes with them, since it imports `identitydemo` and would otherwise be a test module that cannot import. @ericof 
+- Regrouped `core` by what a module is, rather than leaving twenty-five files at one level.
+
+  `behaviors/` takes one module per behavior, `contents/` the two Dexterity classes, `serializers/`, `indexers/` and `subscribers/` each take their own registrations, and `utils/` takes the helpers that have no policy in them and nothing wired into ZCML — normalising an address, sanitizing an SVG, resolving a claim path, closing a group graph. The line drawn at `utils/` is that line and no other: `catalog`, `completeness`, `container`, `doctor`, `interfaces`, `localroles`, `logout`, `patches`, `portraits` and `verification` all decide something, so they stay one level up beside the things that call them. Eleven files remain where there were twenty-five.
+
+  `core/configure.zcml` is now the four things that cannot move: the sub-package includes, the two class markers, and one adapter. Every other registration lives in the package it registers, next to the code it names.
+
+  `core.subscribers` kept its dotted path by becoming a package whose `__init__` carries what the module carried, which is the shape `core.store` and `core.events` already had. The tests mirror the same folders.
+
+  **This moves two persistent classes.** `UserProfile` and `UserGroup` are stored in the ZODB under their dotted path, so an existing site's profiles and groups are unreadable until it is migrated or rebuilt. The FTI declares the new path, and nothing in Plone can repair an object it cannot unpickle. @ericof 
+- Regrouped the `server` layer by what a module is: sixteen files at the top level, now six.
+
+  `controlpanel/` takes the panel, the client registry and the client schema; `grants/` takes authorization codes, access tokens and refresh tokens, which are one sequence rather than three subjects; `consent/` takes the record and the screen that asks for it; `subscribers/` and `utils/` take the rest. Each carries its own `configure.zcml`, so `server/configure.zcml` is four includes. What stays at the top level is what does not belong to any of them: the claims contract, discovery, the PAS plugin, the interfaces and the setup handlers. @ericof 
+- The coverage floor is 95 while the gap to 100 is closed.
+
+  100% branch coverage is still what this package holds itself to, and still the target: an authentication plugin has no line that is fine to leave unexercised. The floor is lowered so continuous integration has a gate it can pass in the meantime, with the measured numbers recorded beside the setting.
+
+  The full suite covers 99.15%, leaving 124 statements. `make test` covers 97.52%, leaving 498 — and the difference is not untested code but the 374 statements reached only by the tests that drive containers, which the coverage run does not execute. Raising the floor back is a ratchet, and the work it waits on is those 124 statements. @ericof 
+- The federation demo maps `content-site-editors`, and dana is now in it.
+
+  The relying party's group map is keyed on the *provider's* group ids, and the provider releases whatever its users are members of. Moving the map to `content-site-editors` while the only demo user was still in `site-editors` alone would have granted nothing: the claim arrives without that group, the map finds no row, and the federated sign-in produces a user with no `Reviewers` and no error anywhere. dana is a member of both groups now, so the row matches.
+
+  A test keeps it that way. Every key in the demo relying party's map has to be a group at least one exported IdP profile belongs to — the whole failure is silent, so it is checked rather than remembered. @ericof 
+- The property-map fallback is gone, because nothing could reach it.
+
+  `IdentityPlugin._apply_property_map` wrote a provider's mapped claims into `portal_memberdata` for a user whose data nobody else claimed, and `_properties_owned_elsewhere` is what told it to stand aside for a user with a Profile. Every authenticated user has a Profile: `ensure_profile` runs from the login event and declines only where the Profile catalog is absent, which is a site this plugin is not installed in. So the guard always answered yes and the body never ran — across the whole suite, which is how it was found.
+
+  Both methods are removed. Nothing changes for a running site: the subscriber applies the same map to the Profile, and the property sheet a Profile serves is what every reader consults first. `tests/core/test_login_ordering.py` still asserts that nothing lands in `portal_memberdata`, which is now a statement about there being no such writer rather than about one declining — and is what would notice the fallback coming back.
+
+  `IOwnsUserProperties` stays. It is the layer's declaration about its own sheet and it is still true; what it no longer does is switch off a second writer, because there is no second writer. Its docstring says so rather than describing a method that is not there. @ericof 
+- Wired the quality gates. An enforced 100% branch coverage floor; an import-linter contract keeping `core` free of any dependency on the optional `profile` and `server` layers and those two independent of each other; and a coverage pragma policy requiring a same-line justification on every `# pragma: no cover`, since an unjustified pragma is how a coverage gate quietly stops meaning anything.
+
+  The Plone constraints' `pytest-plone==1.0.0` pin is overridden with `>=1.0.0` in `mx.ini`, which takes the full backend run from roughly 45 seconds to 3. @ericof 
+- `make install` provides the demo package, and the container tests get a job of their own.
+
+  Two test modules import `identitydemo` at module scope, and one of them is a `conftest.py` — so an environment without it does not skip a directory, it aborts the whole pytest session with `Interrupted: 2 errors during collection`. `make install` now installs it, because an environment built by that target has to be one the suite can collect in. It reaches neither the published package nor the production image: neither runs `make install`, and the demo deliberately stays out of `mx.ini`.
+
+  `make test` leaves out the `docker` marker — 2568 tests, no containers, and faster for it. The 38 that drive Dex, Keycloak and two Plone sites are `make test-docker`, and `make test-all` is still the whole thing. Use `test-all` before pushing anything touching the flow, the server layer or the demo, because `test` cannot see those.
+
+  The split is what the container tests needed: they run from two Plone sites built by `make demo-image-build`, an image that is built rather than pulled, so every caller of the default target would have needed it. They have their own job now, which builds the image first and fails rather than skips when Docker is missing — a job that exists only for these tests would otherwise go green having proved nothing. @ericof 
+
+
+### Documentation
+
+- Corrected the README's account of the layers, and dropped the scaffolding section.
+
+  "The two layers" introduced a core and *two* optional extras, then tabulated three things. The heading is now "Layers and extras", and the text says what the documentation says: one optional layer beside the core, `[server]`, plus `[sql]`, which is an extra rather than a layer because it installs no profile.
+
+  The `plonecli` and `bobtemplates.plone` section is gone. `pyproject.toml` names this file as the long description, so it was telling everyone reading the package on PyPI how to scaffold subtemplates into it — advice for somebody working on this package, on the page for somebody deciding whether to install it. @ericof 
+- Corrected two claims in the README that the source does not support.
+
+  ORCID was listed among the identities a user id maps to, as though a driver shipped for it. None does: the five drivers are `email`, `github`, `google`, `oidc-generic` and `plone-identity`. The line now names what is actually there, including another Plone site.
+
+  The package was described as a core plus one optional extra. There are two. `[server]` adds the authorization server layer and a GenericSetup profile of its own; `[sql]` adds an audit sink writing a row per event to a relational database, needs `IDENTITY_AUDIT_DSN`, and installs no profile. Both are tabulated now, because "one extra" left the second one undiscoverable from the README. @ericof 
+- Replaced the backend README's "TODO: List our awesome features" with what the package actually does. `pyproject.toml` names this file as the long description, so it is what PyPI will show on the first release: it now carries the feature list, the two layers and their profiles, what is deliberately not in scope, links into the published documentation, and how to run the suite without Docker. @ericof 
+
+
+### Tests
+
+- Added `tests/content_types/`, covering the FTI and versioning of both types.
+
+  There were no FTI tests at all. Nothing asserted the class, the schema, the add permission, or which behaviors either type declares in which order — so a behavior added, removed or reordered was a change no test could see, on the two types the whole add-on is built around.
+
+  The layout follows the house pattern: a package `conftest.py` holding everything type-agnostic, and a module per type supplying only `portal_type` and `payload`. Adding a third content type should mean writing a module, not new fixtures.
+
+  Two things differ from that pattern, and both come from what these types are. Principals may only be created where the add permission is granted — which is the container the registry names and nowhere else — so `container` resolves that instead of defaulting to the portal. And this package is not under `tests/core`, so the autouse fixtures that elect those tests as a manager do not reach it and the factory elevates for itself. @ericof 
+- Added the end-to-end flow tests. Dex runs in Docker through pytest-docker and the suite drives a browser-less authorization-code flow against it — fetch the providers, follow the authorize redirect, log in at Dex's own form, come back through the callback, and get a `jwt_auth` token — plus the token exchange against a genuine RS256 `id_token`, so signature, issuer, audience, expiry and nonce validation are exercised rather than assumed. Keycloak is there too, for the back-channel logout evidence Dex cannot give: Dex does not implement it.
+
+  The other side is tested against `authlib`'s own `OAuth2Session` — the same library this package uses as a *client*, pointed the other way and knowing nothing about this package — through authorization, PKCE, consent, code redemption and a Bearer-authenticated request to Plone, plus the refusal of a replayed code.
+
+  Three properties are pinned by measurement rather than by argument. Every action fires exactly one event and a refused one fires none, because a double-fire duplicates audit entries and runs subscribers twice while a missing fire makes a subscriber look broken. A client-credentials token request registers **zero** objects with the ZODB transaction, which is the claim the self-encoded access-token design was chosen for. And a GenericSetup registry export describes a provider well enough to read back, which nothing otherwise guaranteed for records created at runtime.
+
+  The `[content]` extra's profile is applied per test module with `@pytest.mark.portal(profiles=[...])` rather than a fixture shadowing pytest-plone's, so every test outside that package still runs against a site where the extra was never installed — which is what makes "core installs alone" something the suite proves rather than assumes.
+
+  The demo handlers import their payload through `plone.exportimport`, whose importers commit for real, and a commit escapes the rollback `plone.app.testing` does between tests. Everything the identity-provider handler wrote therefore stayed in the site for the rest of the session — most visibly its demo user, which a later and entirely unrelated module then failed to create with `Duplicate user ID`, hundreds of tests after the one responsible and invisible to anyone running either module alone. Commits are switched off for the duration of those tests, on the importer class rather than through the environment variable, which `plone.exportimport` reads at import time. @ericof 
+- An authorization paused to complete a profile, and resumed, releases the completed claims.
+
+  The scenario a live demo produced on 2026-08-27 and no test covered: somebody is sent here to authorize an application, their profile says nothing about them yet, they fill it in, and the relying party exchanges its code four seconds later — and creates an account with neither an address nor a name. The suspicion was that the server had captured claims when the code was issued, so anything typed afterwards arrived too late.
+
+  It had not. `mint_id_token` calls `claims_for` at token issue, and an authorization code carries a subject and a scope rather than a snapshot of a user. `tests/server/test_paused_authorization.py` holds that from the relying party's side, where it can be seen: the same code redeemed before the form is filled in carries the account as it stands, and redeemed after it carries what was typed. Removing the edit between the two halves is what makes the assertion fail, so it is sensitive to exactly the reported failure rather than to the endpoint working at all.
+
+  Two facts about Plone turned up in the writing and are recorded in the fixture: `api.user.create` refuses a user with no address, and `setMemberProperties` silently drops a write that would blank one. So the fixture starts from a placeholder address and an empty `fullname`, and asserts on both claims changing rather than on either being absent. @ericof 
+- Asserted the login transaction note against the *committed* storage record rather than only against the `Transaction` object.
+
+  Every other test in the module reads the description and user off the object in memory, which is one step short of the claim being made: what an operator reads is the undo log, and a description that never survived the commit would pass all of them. The two new tests run on the functional layer, because the integration one forbids the commit that is the thing under test, and they read the record back through `storage.iterator()` — the same record `undoLog` and every ZODB browser show. Both fields are stored as UTF-8 bytes rather than text, which the tests go through rather than around. @ericof 
+- Asserted the thing a migration is actually asked: that signing in afterwards lands on the account that was imported.
+
+  Everything else in the export/import tests puts a document in and takes one out. None of it covered what happens next, which involves neither the exporter nor the importer — a real person authenticating at the provider, and either arriving in the account migrated for them or being handed a brand-new one beside it.
+
+  The join is `(provider, subject)` and both halves have to survive. The subject does so without translation: `pas.plugins.authomatic` stores the provider's own user id, and for Google that is the `sub` claim, which is exactly what this package's Google driver reads. Confirmed against a real authomatic 2.0.0 store, where the stored subject equalled the `sub` claim in all 17 identities and all 17 people landed in their migrated account.
+
+  The provider id does not, and cannot be made to: authomatic's provider *name* becomes this package's provider *id*, and that is typed by hand in a control panel, in the target site, after the import. Rename it and the import still reports success while every migrated person signs in and gets a second account — with the first left intact, keeping their name and their groups, belonging to nobody who can sign in. Reproduced on the real dump: 17 migrated accounts became 17 new ones and 34 userids. A test class now holds that failure in place. @ericof 
+- Covered group membership through `api.group.add_user` and `api.group.remove_user` rather than through the plugin.
+
+  `addPrincipalToGroup` was exercised only by calling it directly, which cannot tell whether PlonePAS's group tool ever reaches this plugin — the half that has already been wrong twice. The new tests go the way Plone goes, and one of them asserts the membership is visible to `api.group.get_groups` rather than merely written to the Profile, because recording it where nothing reads it would satisfy the other. @ericof 
+- Five REST services were reached through the publisher for the first time.
+
+  `@group-members`, `@portrait`, `@user-account`, `@oauth-consent` and `@oauth-grants` were each well covered by constructing the service directly and had never once been fetched over HTTP. That is the gap the direct-construction convention deliberately leaves, and `test_wiring.py` exists to close it: a wrong `name`, a missing browser layer, a permission that refuses anonymous with a login form instead of a body, or a traversal that drops the path segment carrying the principal's id — none of which a direct call can see.
+
+  `@portrait` was the one that most needed it. The `[server]` layer publishes its URL as the OIDC `picture` claim, and the caller is a relying party with no Plone session; the new test fetches a real PNG anonymously and asserts the bytes and the content type.
+
+  Writing them found nothing broken, and two of the assertions had to be corrected rather than the code: a Profile with no picture correctly answers 404, and withdrawing an agreement that was never made correctly answers 404 too. The consent and grants tests now record an agreement first, so the withdrawal withdraws something — a DELETE against a client the caller never authorized answers 404 whether traversal worked or not, which is the one status that cannot distinguish a reached service from an unreached one.
+
+  Separately, `test_the_whole_oauth_namespace_is_exempt` was passing vacuously for two of its four cases. It asserted only that no `/edit` redirect was issued, and a 404 carries no `Location` either — so `@@oauth-jwks` and `@@oauth-userinfo` would have passed had the views not existed. Only `@@oauth-authorize` had a companion existence test. All four now assert they were reached. @ericof 
+- Four test modules moved to where their subject already lives.
+
+  `tests/core/` held 21 modules directly beside fifteen subdirectories that already had names for most of what they test. Mapping each flat module to the source modules it imports separated the misfiled from the genuinely cross-cutting:
+
+  - `test_export.py` imports only `core.controlpanel`, and is now in `tests/core/controlpanel/`.
+  - `test_property_writes.py` and `test_groups.py` are both about `core.pas.profile`, and are now in `tests/core/pas/`.
+
+  What stays flat stays for a reason. `test_uninstalled_site.py` reaches eleven source modules and `test_login_ordering.py` five; those are claims about the package as a whole, and a flat module is the honest place for them.
+
+  The fourth move is a rename. Two modules were called `test_external_user_record.py`, one in `tests/core/` and one in `tests/core/pas/`, testing the same feature at two levels and cross-referencing each other to explain the split. The split is right; the shared basename put each of them one mistyped path away from silently replacing the other. The integration half is now `test_shipped_user_record.py`, which is also what it is. @ericof 
+- Moved the Dex configuration and the Keycloak realm into `tests/_resources/`. They are fixture data for the container stack rather than test packages, and sitting at the top level of `tests/` they read as two more suites. @ericof 
+- Pinned the *position* of the identity plugin among PAS's user adders and PlonePAS's group managers, not merely its presence.
+
+  Both interfaces work by refusal, and `source_users` and `source_groups` never decline — so registered below either of them the plugin is never reached, and nothing reports it. Every unit test calling the plugin directly still passes while the feature does nothing through `api.user.create`, which is how the missing ordering was found in the first place. Asserting the plugin is in `listPluginIds` cannot see that difference, so the new test asserts it is *first*, and that more than one plugin is registered — being first means nothing when you are alone in the list. @ericof 
+- Removed 48 `api.env.adopt_roles(["Manager"])` blocks that granted a role the harness had already granted.
+
+  The autouse `_manager` fixture in `tests/core/conftest.py` elects every test under `tests/core` as a site manager, and 48 blocks across 16 modules were re-granting it. This was measured rather than reasoned about: all 48 were deleted and the core suite ran 1582 passing, unchanged.
+
+  Two elevations under `tests/core` stay, and the difference is worth naming. `test_completeness.py` adopts `Anonymous`, which is the opposite of a grant. `test_email_linking.py` runs as the `member` fixture rather than as `TEST_USER_ID`, so the role `_manager` grants is not the role that request carries — dropping it there would have been a real regression rather than a cleanup.
+
+  The fixture's own warning is updated: 75 blocks now lean on it across two passes, which raises what is at stake when `plone/pytest-plone#63` finally allows it to go. @ericof 
+- Seven groups of near-identical tests became tables.
+
+  Normalising every test body to its structure — literals replaced by a placeholder — found 56 groups within a class whose members differed only in their constants. Most are pairs, and folding a pair trades a sentence of real explanation for a param id, so the pairs were left alone. The groups of three and more were not: there the shape never varied, only the case did, and the case is what a table carries better than a method name.
+
+  `TestResolveClaim` had nine methods that were one call each; `TestDropsWhatRuns` had eight, one per way of getting script or network access past an element-name filter. Both now read as the thing they always were — a lookup table and a threat model. The reasoning that lived in the docstrings lives in comments beside the rows it explains, and every case keeps its name through `ids=`.
+
+  Also folded: `TestKeepsWhatAnIconNeeds`, `TestTheDocument`, `TestCheckChallenge`, `TestSearching` and `TestTheStore`. No case was lost — the suite goes from 2401 tests to 2413, and the twelve added are the new publisher tests. @ericof 
+- The opaque userid default is asserted where the demo's choice cannot interfere.
+
+  `test_the_local_userid_is_not_the_providers_subject` was `xfail(strict=True)` in the federation suite and could never have passed there: the demo relying party asks for username-derived userids, and the demo user's username at the provider is also its userid, so a userid equal to the subject and a userid correctly derived from the username are the same string.
+
+  The assertion was worth keeping and the place was not. It is now `test_the_default_userid_is_not_the_providers_subject` in `tests/core/pas/test_userid_source.py`, signing in with a subject that is nothing like a userid, so it says what it always meant: reusing the provider's subject would leak it into every URL that names a user and tie the account to the one provider that issued it. The demo keeps its legible userids. @ericof 
+- The server tests stopped redeclaring the same fixtures and constants in every module.
+
+  An `issuer` fixture was written out eight times with byte-identical bodies and eight different docstrings; `plugin` and `userid` twice each. `ISSUER` was declared in ten modules, `REDIRECT` in ten, `SERVICE_USER` in three and `USERID` in five — every copy identical. Meanwhile `tests/server/__init__.py` already existed holding two profile ids, and `tests/core/services/__init__.py` was already the worked example of exactly this: a package `__init__` carrying the values its modules share.
+
+  The constants moved there and the fixtures into `tests/server/conftest.py`. `test_paused_authorization.py` keeps its own `USERID = "dana"`, which was the one deliberate variation in the set. The shared `plugin` fixture now reaches PAS through the `acl_users` fixture rather than `portal.acl_users`. @ericof 
+- The suite stopped minting an RSA key per test site.
+
+  Every test portal that applies the `server` profile runs `ensure_keys`, and each fresh portal generated its own RSA-2048 key. Instrumenting `generate_key` put a number on it: **520 keys and 42.9 seconds, a fifth of the entire run**, all of it thrown away microseconds later. The server suite alone spent 51% of its wall clock there.
+
+  A session fixture now generates four keys once and recycles the RSA maths, handing out a fresh `kid` on every draw. Nothing asserts on key *material* — the ring tests assert on `kid`, and no two draws ever share one — so signing, verification and rotation behave exactly as before, including a `kid` absent from the ring failing to verify. `tests/server/test_keys.py` imports `generate_key` by name, so the three tests of generation itself still exercise the real thing.
+
+  The backend suite went from 211.9s to 172.6s, and `tests/server` from 75.4s to 37.9s. @ericof 
+- Two test classes stopped repeating their own setup, and one duplicated assertion went.
+
+  `TestOutsideASite` opened both of its tests with the same five lines of `monkeypatch`, and `TestGuard` opened two of three with the same `delenv`. Both now use the `_setup` fixture the other 118 modules in the suite already use.
+
+  While in `TestGuard`: `test_refuses_without_the_opt_in` asserted that `guard()` raises, and `test_says_why_it_stopped` asserted that it raises *and* names the variable in the message. The second cannot pass while the first fails, so the first was never able to fail alone. It is gone and the reason is recorded on the test that replaced it. @ericof
