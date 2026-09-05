@@ -38,7 +38,7 @@ script is not theoretical. But it is not covered by CI and will rot.
 **Suggested:** either accept that and note the date it was last run, or add a
 test fixture that stands in for an authomatic plugin.
 
-### 3. Screenshots are five, and could be more
+### 3. Screenshots are six, and could be more
 
 `make -C docs screenshots-coverage` passes: every screenshot a page references
 has a script that captures it. It does **not** assert that pages which *should*
@@ -66,7 +66,7 @@ for, and I would be guessing.
 
 ### 5. Vale warnings and suggestions
 
-`make vale` is clean of **errors**. It still reports 128 warnings and about 1,190
+`make vale` is clean of **errors**. It still reports 133 warnings and about 1,225
 suggestions, almost all of them `Microsoft.Passive`, `Microsoft.Contractions`
 and `Microsoft.SentenceLength`.
 
@@ -101,4 +101,4 @@ script and the placeholder were removed rather than faked.
 - [ ] The demo stack may still be running. `docker compose -f docker-compose.demo.yml down --volumes`.
 - [ ] `docs/AUDIT.md`, `docs/AUDIT-CODE.md`, `docs/TUTORIAL-RUN-LOG.md`, `docs/CHANGES-DOCS.md` and this file are working documents. Decide whether they belong in the repository or only in the PR description.
 - [ ] `docs/STYLE.md` is meant to stay.
-- [ ] A news fragment for the docs work.
+- [x] A news fragment for the docs work. `news/+docs-rewrite.documentation`, `news/+contributing-and-agents.documentation` and `backend/news/+readme-provider-and-extras.documentation`.
