@@ -7,6 +7,16 @@
     <value key="audit_max_days">180</value>
     <value key="audit_max_entries">500</value>
     <value key="audit_record_pii">False</value>
+    <!-- Both destinations, which is the arrangement worth showing:
+         the site keeps its own bounded log, and every event is also
+         written to the PostgreSQL service in the compose file, where
+         it is unbounded and outlives the container. ``plugin`` is
+         first, so the control panel still reads the ZODB log; swap
+         the order to read from the database instead. -->
+    <value key="audit_sinks">
+      <element>plugin</element>
+      <element>sql</element>
+    </value>
     <value key="discovery_timeout">10</value>
     <value key="portrait_max_bytes">2097152</value>
     <value key="portrait_timeout">5</value>

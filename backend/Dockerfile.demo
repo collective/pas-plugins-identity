@@ -19,7 +19,10 @@ COPY . src
 RUN <<EOT
     set -e
     bin/pip install mxdev uv
-    sed -i 's/-e .\[test\]/.[content,server]/g' src/mx.ini
+    # ``content`` was merged into core and the extra no longer exists;
+    # naming it here only earned a warning from the installer. ``sql`` is
+    # what the demo now needs, for the audit sink that writes to PostgreSQL.
+    sed -i 's/-e .\[test\]/.[server,sql]/g' src/mx.ini
     cd /app/src
     rm -rf .venv
     ../bin/mxdev -c mx.ini

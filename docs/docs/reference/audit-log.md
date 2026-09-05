@@ -59,18 +59,61 @@ Under the GDPR and the LGPD that is a processing decision with consequences: a l
 The default is off so that the decision is one you make rather than one you inherit.
 ```
 
-## The sink interface
+## Where entries are written
 
-The default sink writes into a bounded per-user log inside the plugin.
+A site records to every destination `audit_sinks` names, in the order it names them.
 
-A deployment that wants entries elsewhere registers its own `IAuditSink` utility, which overrides the default:
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| `audit_sinks` | `('plugin',)` | The destinations, in order. |
+
+Three sinks ship.
+
+`plugin`
+:   The bounded per-user log inside the PAS plugin, described above. The default, and the only one a site records to until it says otherwise.
+
+`log`
+:   Writes one line per event to the `pas.plugins.identity.audit` logger and nothing else. Available on a plain install.
+
+`sql`
+:   Writes a row per event to a relational database. Needs the `[sql]` extra and `IDENTITY_AUDIT_DSN`.
+
+Every destination listed gets every event. One that fails, or whose extra has been uninstalled since it was configured, is logged and stepped over rather than allowed to fail the sign-in it was auditing.
+
+```{note}
+The setting is a `Choice` over the sinks registered on the site, so a name that does not exist cannot be stored.
+Installing an extra is what makes its sink choosable; naming it is what starts recording to it.
+```
+
+## Reading, and why it is a separate interface
+
+Writing and reading are two interfaces, because not every destination can do both.
+
+`IAuditSink`
+:   `record`. All a destination has to promise.
+
+`IAuditSource`
+:   `entries`. Only a destination that can answer questions about what it holds.
+
+The `log` sink provides the first and not the second: a log file is somewhere records go, not somewhere a Plone site can query. It has no `entries` at all, rather than one returning an empty list that every caller would read as nothing having happened.
+
+Reads answer from the **first configured sink that provides `IAuditSource`**. So the order in `audit_sinks` decides which store the control panel and `@audit-log` show, and a site recording to both a database and the plugin log chooses by listing one first.
+
+When nothing configured can be read back, `@audit-log` answers `"scope": "none"` rather than an empty list.
+
+## Writing your own sink
+
+Register a named utility. Provide `IAuditSource` as well if your destination can answer for what it holds.
 
 ```xml
 <utility
+    name="syslog"
     factory=".sinks.SyslogAuditSink"
     provides="pas.plugins.identity.core.interfaces.IAuditSink"
     />
 ```
+
+Then add `syslog` to `audit_sinks`. Registering the utility installs it; naming it in the setting starts using it.
 
 Recording is driven by events, so a sink sees everything any code fires, including yours.
 See {doc}`events`.

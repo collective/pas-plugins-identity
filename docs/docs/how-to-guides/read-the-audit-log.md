@@ -70,15 +70,20 @@ The log is bounded per user and purged on write, so it cannot grow without limit
 
 ## Send entries to a SIEM
 
-The default sink writes into a bounded per-user log inside the plugin.
-To send entries elsewhere, register your own `IAuditSink` utility, which overrides the default:
+A site records to every destination its `audit_sinks` setting names, and ships three: `plugin` for the bounded log inside the plugin, `log` for one line per event, and `sql` for a row per event in a relational database.
+Adding a destination does not replace the others.
+
+To send entries somewhere else again, register a *named* `IAuditSink` utility and add its name to the setting:
 
 ```xml
 <utility
+    name="syslog"
     factory=".sinks.SyslogAuditSink"
     provides="pas.plugins.identity.core.interfaces.IAuditSink"
     />
 ```
+
+Provide `IAuditSource` too if your destination can be read back; a sink that only writes is fine, and the control panel then answers from whichever configured destination can.
 
 Recording is driven by events, so your sink sees everything any code fires, including your own.
 See {doc}`/reference/events`.

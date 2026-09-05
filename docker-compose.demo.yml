@@ -55,6 +55,12 @@ x-frontend-build: &frontend-build
 # site at the root of its own hostname.
 x-demo-env: &demo-env
   IDENTITY_DEMO: '1'
+  # Where the sql audit sink writes. Read from the environment rather than
+  # the registry because a DSN carries a password, and the registry is
+  # exported by GenericSetup and readable through the control panel. Both
+  # sites point at the same database; the rows say which site wrote them.
+  IDENTITY_AUDIT_DSN: >-
+    postgresql+psycopg://identity:identity-demo-password@audit-db:5432/identity_audit
   DEMO_IDP_URL: http://id.${DEMO_STACK_DOMAIN:-localhost}
   DEMO_RP_URL: http://plone.${DEMO_STACK_DOMAIN:-localhost}
   DEMO_REDIRECT_URI: http://plone.${DEMO_STACK_DOMAIN:-localhost}/login-identity
@@ -136,7 +142,14 @@ services:
       ## the site that sends anything.
       ENABLE_PRINTING_MAILHOST: 'true'
     depends_on:
-      - idp-zeo
+      idp-zeo:
+        condition: service_started
+      # Waited for, unlike the ZEO server: the backends do not retry the
+      # audit database, so a login in the first seconds after `up` would be
+      # logged and dropped rather than recorded. That is the design working,
+      # and a poor first impression of it.
+      audit-db:
+        condition: service_healthy
     volumes:
       - ./backend/demo/src/identitydemo/setuphandlers/idpcontent:/example-content
     labels:
@@ -239,7 +252,14 @@ services:
       DEMO_PROFILE: identitydemo:rp
       ZEO_ADDRESS: 'rp-zeo:8100'
     depends_on:
-      - rp-zeo
+      rp-zeo:
+        condition: service_started
+      # Waited for, unlike the ZEO server: the backends do not retry the
+      # audit database, so a login in the first seconds after `up` would be
+      # logged and dropped rather than recorded. That is the design working,
+      # and a poor first impression of it.
+      audit-db:
+        condition: service_healthy
     volumes:
       - ./backend/demo/src/identitydemo/setuphandlers/rpcontent:/example-content
     labels:
@@ -271,6 +291,43 @@ services:
     volumes:
       - vol-rp-data:/data
 
+  # ------------------------------------------------------------------
+  # The audit database, shared by both sites
+  # ------------------------------------------------------------------
+  #
+  # One database for the pair, on purpose. Every row carries the id of the
+  # site that wrote it, so a shared database is the arrangement that shows
+  # what that column is for: after signing in at id.localhost and then at
+  # plone.localhost, one query has both halves of the journey.
+  #
+  # Not exposed through Traefik and no host port published: nothing outside
+  # the stack should reach it, and the two backends reach it by service name.
+  # To read it:
+  #
+  #   docker compose -f docker-compose.demo.yml exec audit-db \
+  #       psql -U identity -d identity_audit \
+  #       -c 'select site, userid, event, success, timestamp
+  #           from identity_audit order by timestamp desc limit 20;'
+  audit-db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: identity
+      POSTGRES_PASSWORD: identity-demo-password
+      POSTGRES_DB: identity_audit
+    volumes:
+      - vol-audit-db:/var/lib/postgresql/data
+    # The backends do not wait for the database, so this is what stops the
+    # first few logins after `up` writing to a database that is not listening
+    # yet. Those would be logged and dropped rather than failing the login,
+    # which is the design working exactly as intended and still a confusing
+    # first impression of the demo.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U identity -d identity_audit"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
 volumes:
   vol-idp-data: {}
   vol-rp-data: {}
+  vol-audit-db: {}

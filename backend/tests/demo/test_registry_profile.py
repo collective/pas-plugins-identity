@@ -57,6 +57,22 @@ class TestDemoIdPRegistry:
         """
         assert [p.provider_id for p in get_providers()] == ["email", "github"]
 
+    def test_both_audit_destinations_are_configured(self):
+        """The arrangement the demo exists to show: the site keeps its own
+        bounded log, and every event is also written to the PostgreSQL
+        service in the compose file, where it is unbounded and outlives the
+        container."""
+        assert self.registry["pas.plugins.identity.audit_sinks"] == (
+            "plugin",
+            "sql",
+        )
+
+    def test_the_zodb_log_is_still_what_reads_answer_from(self):
+        """``plugin`` first, so the control panel reads the ZODB log. Swapping
+        the order is what makes the database authoritative, and the demo
+        deliberately does not, so both stores are visibly in use."""
+        assert self.registry["pas.plugins.identity.audit_sinks"][0] == "plugin"
+
     def test_the_property_map_is_a_mapping(self):
         """Written as a Python ``repr`` it imports as one long string, and the
         login that applies it resolves nothing."""
