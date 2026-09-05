@@ -110,6 +110,8 @@ identity-importer = "pas.plugins.identity.exportimport.cli:importer_cli"
 
 [project.urls]
 Homepage = "https://github.com/collective/pas-plugins-identity"
+Documentation = "https://collective.github.io/pas-plugins-identity/"
+Changelog = "https://github.com/collective/pas-plugins-identity/blob/main/backend/CHANGELOG.md"
 PyPI = "https://pypi.org/project/pas.plugins.identity"
 Source = "https://github.com/collective/pas-plugins-identity"
 Tracker = "https://github.com/collective/pas-plugins-identity/issues"
@@ -131,9 +133,24 @@ build-backend = "hatchling.build"
 [tool.hatch.build]
 strict-naming = true
 
+# The sdist is the package and its tests, not the working copy. Everything
+# below builds or runs *this checkout* and means nothing once unpacked
+# somewhere else: the container images, the mxdev sources they are built from,
+# the bobtemplates marker file, and `demo/`, which is the federation demo's own
+# package and is never published to anything.
 [tool.hatch.build.targets.sdist]
 exclude = [
   "/.github",
+  "/demo",
+  "/Dockerfile",
+  "/Dockerfile.acceptance",
+  "/Dockerfile.demo",
+  "/.dockerignore",
+  "/mx.ini",
+  "/bobtemplate.cfg",
+  # These import `identitydemo`, which lives in the `demo/` package excluded
+  # above, so shipping them would be shipping a module that cannot import.
+  "/tests/demo",
 ]
 
 [tool.hatch.build.targets.wheel]

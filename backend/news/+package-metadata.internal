@@ -1,0 +1,5 @@
+Pointed the package metadata at the documentation, and stopped shipping the working copy in the sdist.
+
+`[project.urls]` gained `Documentation` and `Changelog`. PyPI renders both of those in its sidebar, and the published documentation is where every question this README raises is answered.
+
+The sdist no longer carries `demo/`, the three Dockerfiles and their `.dockerignore`, `mx.ini`, or `bobtemplate.cfg`. All of them build or run *this checkout* and mean nothing once unpacked somewhere else — `demo/` in particular is the federation demo's own package, which is never published to anything. `tests/demo/` goes with them, since it imports `identitydemo` and would otherwise be a test module that cannot import. @ericof
