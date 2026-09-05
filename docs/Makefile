@@ -39,7 +39,10 @@ init: clean clean-python .venv/bin/python  ## Clean docs build directory and Pyt
 
 .PHONY: clean
 clean:  ## Clean docs build directory
-	cd $(DOCS_DIR) && rm -rf $(BUILDDIR)/
+	# Not `cd $(DOCS_DIR) &&` first: BUILDDIR is relative to this Makefile, so
+	# that removed docs/docs/_build, which never exists, and left the real
+	# build in place -- including pages whose source has since been renamed.
+	rm -rf $(BUILDDIR)/
 
 .PHONY: clean-python
 clean-python: clean
@@ -122,6 +125,27 @@ doctest: .venv/bin/python  ## Test snippets in the documentation
 	@uv run sphinx-build -b doctest $(ALLSPHINXOPTS) $(BUILDDIR)/doctest
 	@echo "Testing of doctests in the sources finished, look at the " \
 	      "results in $(BUILDDIR)/doctest/output.txt."
+
+# screenshots
+.PHONY: screenshots-install
+screenshots-install:  ## Install dependencies and the browser for screenshots
+	@# --inexact: without it, sync removes everything outside this group --
+	@# which would uninstall the Sphinx toolchain this project is built with.
+	@uv sync --inexact --group screenshots
+	@uv run playwright install chromium
+
+.PHONY: screenshots-coverage
+screenshots-coverage:  ## Report which screenshots still have no capture
+	@uv run pytest screenshots/test_coverage.py::test_report -s -q
+
+.PHONY: screenshots-placeholders
+screenshots-placeholders:  ## Regenerate placeholders for uncaptured screenshots
+	@uv run python scripts/generate_placeholders.py
+
+.PHONY: screenshots
+screenshots:  ## Capture every screenshot against the running demo stack
+	@uv run pytest screenshots/ -q
+# /screenshots
 
 .PHONY: vale
 vale: .venv/bin/python  ## Run Vale style, grammar, and spell checks

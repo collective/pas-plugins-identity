@@ -47,6 +47,12 @@ dev = [
     "sphinxext-opengraph",
     "vale",
 ]
+screenshots = [
+    "pillow",
+    "playwright",
+    "pytest",
+    "pytest-playwright",
+]
 
 [project.urls]
 Repository = "https://github.com/collective/pas-plugins-identity"
