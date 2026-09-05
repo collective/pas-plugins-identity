@@ -78,7 +78,7 @@ class GitLabDriver(BaseDriver):
 
 ```{tip}
 Put translatable strings through `_()`, and let the field type carry the meaning: a `Password` is masked everywhere without a flag, a `Choice` over a vocabulary becomes a select, and a `Tuple` becomes a list.
-Defaults that differ per driver — the scope GitLab needs, the userid source — stay on the driver class as `default_scope` and friends, because a subinterface redeclaring a field to change its default gives it a fresh creation order and the field jumps to the end of the form.
+Defaults that differ per driver—the scope GitLab needs, the userid source—stay on the driver class as `default_scope` and friends, because a subinterface redeclaring a field to change its default gives it a fresh creation order and the field jumps to the end of the form.
 ```
 
 If you would rather implement `IDriver` from scratch, the interface asks for `driver_id`, `title`, `settings_schema`, `subject()`, and `normalize_claims()`.
@@ -95,56 +95,28 @@ If you would rather implement `IDriver` from scratch, the interface asks for `dr
 
 ## Follow the rules
 
-**Mark a field secret and it stays secret.**
-Anything you declare as a secret is masked on the way out of every API surface and omitted from GenericSetup export.
-Do not invent your own storage for credentials.
+There are eight, and they are a checklist rather than a narrative:
+{doc}`/reference/driver-contract` lists each one with what enforces it, and
+explains the three that surprise people—why `order` is a number, why only a
+literal `True` counts as verified, and why an empty `default_group_claim` is not
+a neutral default.
 
-**Give every field an `order`, and never let two share one.**
-A configuration schema travels as a JSON object, and `plone.restapi` serializes those with sorted keys, so the order you declare your fields in is gone by the time the control panel builds a form from them.
-The number is what survives.
-The inherited fields are spaced by ten so you can slot yours between two of them.
-A tie fails the driver contract test rather than falling back to the alphabet, which is the bug this replaced.
-
-**Treat a scope as a list, not a sentence.**
-`default_scope` is a tuple of permissions, and the space-delimited form that RFC 6749 puts on the wire is built at the edge, where the request is.
-A scope typed into one text box is how a stray comma becomes a permission of its own that the provider rejects as unknown.
-
-**Seed a mapping with `default_propertymap`, against the normalized claim names.**
-The package writes it into a new provider's attribute mapping as a starting point, and it may only name member fields that a stock site actually has.
-`IUserDataSchema` declares `fullname` and `email`, and nothing else is guaranteed.
-Write it against the normalized claims rather than your provider's own, because `resolve_claim` tries those first, so one default covers every provider.
-Name a raw claim only for something normalization does not already produce.
-
-**Say whether your provider has groups, with `default_group_claim`.**
-Set it to the claim the groups arrive in, usually `groups`, or leave it empty when the provider has none.
-Empty is not a neutral default: it switches the feature off for your driver, so no `group_claim` field appears in the configuration form and nobody is asked to map the groups of a provider that has none.
-A map stored against such a provider grants nothing rather than guessing at a claim name.
-Operators can override the claim with a dotted path, so a provider nesting them under `realm_access.roles` needs no driver of its own.
-
-**Leave `default_groupmap` empty unless you genuinely know the far end's groups.**
-Group names are a fact about one deployment's directory, not about a driver, so seeding this is almost always wrong.
-Even the `plone-identity` driver ships it empty, though it knows its peer releases the claim: two Plone sites do not have the same groups just because they run the same package.
-
-**Make `email_verified` a boolean, and count only `True`.**
-Several providers send the string `"true"`, and several send `1`.
-Normalize it.
-Everything that reads the flag refuses anything that is not literally `True`, because a forged unverified address that reads as truthy is an account takeover.
-See {doc}`/concepts/email-verification`.
-
-**Leave `default_trust_email_verification` alone unless your provider really checks.**
-It is the default for a per-provider switch that makes the provider's word verify an address here, exactly as a magic link would.
-Set it only if the provider refuses to call an address verified until the account has answered mail at it -- which is why `google` and `github` set it and nothing else does.
-An operator can always switch it on for a provider you left off.
+Three of them are worth stating here, because they are about code you are about
+to write rather than values you are about to declare.
 
 **Report every address the provider knows, not the first one.**
-`normalize_claims` fills `emails` with one entry per address -- `address`, `verified`, `primary` -- and the base class does that for you from the single address most providers send.
-Override it only where the provider offers more, and put them in the order they should be offered: primary first, verified before unverified.
-All of them go onto the person's profile, and `email` is the head of the list.
+`normalize_claims` fills `emails` with one entry per address -- `address`,
+`verified`, `primary` -- and the base class does that for you from the single
+address most providers send. Override it only where the provider offers more, and
+put them in the order they should be offered: primary first, verified before
+unverified. All of them go onto the person's profile, and `email` is the head of
+the list.
 
 **Never construct protocol messages by hand.**
-Authorization URLs, token requests, and JWT parsing all go through authlib.
-CI checks this: a grep-level rule fails the build if protocol construction appears outside the flow modules.
-It exists because hand-rolled OAuth is how this goes wrong.
+Authorization URLs, token requests, and JWT parsing all go through authlib. CI
+checks this: a grep-level rule fails the build if protocol construction appears
+outside the flow modules. It exists because hand-rolled OAuth is how this goes
+wrong.
 
 **Put your own data in `raw` and nowhere else.**
 Put the untouched payload in `raw` and read it in your own consumers if you must.
@@ -159,3 +131,10 @@ Normalize against recorded payload fixtures rather than live calls.
 The drivers shipped here are tested that way.
 A real captured response is checked into the test suite, normalized, and asserted field by field.
 It costs nothing to run, it does not need credentials, and it still catches the case that matters, which is a provider changing the shape of its answer.
+
+## Next steps
+
+- {doc}`/reference/driver-contract`—the eight rules, and what enforces each
+- {doc}`/reference/claims`—the claim names to normalize to
+- {doc}`/reference/shipped-drivers`—five worked examples
+- {doc}`configure-a-provider`—configuring a provider that uses your driver

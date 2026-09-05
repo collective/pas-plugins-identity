@@ -1,59 +1,126 @@
 ---
 myst:
   html_meta:
-    "description": "Install pas.plugins.identity in a Plone site, decide whether you need the server extra, and verify the result."
-    "property=og:description": "Install pas.plugins.identity in a Plone site, decide whether you need the server extra, and verify the result."
-    "property=og:title": "How to install the package"
+    "description": "Install the pas.plugins.identity backend in a Plone site and verify the result."
+    "property=og:description": "Install the pas.plugins.identity backend in a Plone site and verify the result."
+    "property=og:title": "How to install the backend"
 ---
 
 (how-to-install)=
 
-# How to install the package
+# How to install the backend
 
-This guide shows you how to install `pas.plugins.identity` in a Plone site and confirm that it works.
+Install `pas.plugins.identity` in a Plone site and confirm it works.
+
+This guide covers the backend only.
+The frontend is a separate package and a separate guide: {doc}`install-the-frontend`.
+
+## Upgrading from an earlier release? Read this first
+
+```{warning}
+Users and groups as content used to be a separate `[content]` extra with a profile of its own.
+It is not one any more, and **no upgrade step applies the merged profile to an existing site**.
+
+Until you reinstall, the site looks installed and has no content types, no catalog, and no profile plugin.
+
+To fix it, reinstall the add-on: uninstall and install it again from the add-ons control panel, or apply `pas.plugins.identity:default` from `portal_setup`.
+Reinstalling leaves every existing `UserProfile` object exactly where it is.
+```
+
+There are no GenericSetup upgrade steps in this release at all.
+See {doc}`upgrade` before taking any new alpha, and {doc}`/reference/stability` for what that implies.
 
 ## Requirements
 
-Plone 6.2, and Python 3.12, 3.13, or 3.14.
+| | |
+|---|---|
+| Plone | 6.2 |
+| Python | 3.12, 3.13, or 3.14 |
+| Frontend | Volto, for sign-in. Classic UI is not supported yet—see {doc}`/reference/stability` |
 
 ## Install the backend
 
-Install the package:
-
-```shell
-pip install pas.plugins.identity
+```{note}
+The package is **not published to PyPI** yet, so install it from the repository.
 ```
 
-Then install the add-on in your site, either through the add-ons control panel or by applying the `pas.plugins.identity:default` GenericSetup profile.
+1. Add the package to your backend's requirements, from the repository:
 
-That one profile installs everything: the control panel, both PAS plugins, the `UserProfile` and `UserGroup` content types with their workflows, and the catalog they are filed in.
-It also sets the four registry records described in {doc}`/reference/user-content` and points them at this package's own types, so there is nothing further to configure.
+   ```shell
+   pip install "pas.plugins.identity @ git+https://github.com/collective/pas-plugins-identity.git#subdirectory=backend"
+   ```
 
-```{warning}
-Users and groups as content used to be a separate `[content]` extra with a profile of its own, and it is not one any more.
+   Two extras exist. Ask for the ones you want, comma-separated:
 
-A site that installed an earlier version has the old arrangement recorded in its database, and the merged profile is not applied to it by an upgrade step.
-**Reinstall the add-on** — uninstall and install it again from the add-ons control panel, or apply `pas.plugins.identity:default` from `portal_setup`.
+   | Extra | Adds | Needs |
+   |---|---|---|
+   | `server` | The authorization server layer, and a GenericSetup profile of its own. | step 4 below |
+   | `sql` | An audit sink writing a row per event to a relational database. | `IDENTITY_AUDIT_DSN`, and `sql` named in `audit_sinks` |
 
-Until you do, the site looks installed and has no content types, no catalog and no profile plugin.
-Reinstalling leaves every existing `UserProfile` where it is; see the note below.
-```
+   ```shell
+   pip install "pas.plugins.identity[server] @ git+https://github.com/collective/pas-plugins-identity.git#subdirectory=backend"
+   ```
 
-If you want the site to act as an authorization server that other applications sign in against, install that extra and apply its profile:
+   Neither is needed for ordinary sign-in. See {doc}`/reference/audit-log` for
+   the `sql` sink.
 
-```shell
-pip install "pas.plugins.identity[server]"
-```
+2. Restart the Plone instance.
+
+   This is a ZCML change, so the site does not see the add-on until it restarts.
+
+3. Install the add-on in your site.
+
+   Either use the add-ons control panel, or apply the GenericSetup profile:
+
+   ```text
+   pas.plugins.identity:default
+   ```
+
+   That one profile installs everything: the control panel, both PAS plugins, the `UserProfile` and `UserGroup` content types with their workflows, and the catalog they are filed in.
+   It also sets the registry records described in {doc}`/reference/user-content` and points them at this package's own types.
+
+4. If you asked for the `server` extra, apply its profile too:
+
+   ```text
+   pas.plugins.identity.server:default
+   ```
+
+   The server layer is its own entry in the add-ons control panel, with its own install and uninstall button.
+   The panel shows no version beside it, because the entry is named after a package rather than a distribution.
+
+## Set the login callback URL
+
+Nothing signs in until this matches what your providers have registered.
+
+1. Open the **Identity providers** control panel.
+2. Set **Callback URL** to the frontend route that providers redirect back to.
+
+   The default is `/login-identity`, which is the route the Volto add-on registers.
+   Most sites never change it.
+
+The value is a path, and the full redirect URI you give a provider is your frontend's base URL plus that path:
 
 ```text
-pas.plugins.identity.server:default
+https://www.example.com/login-identity
 ```
 
-The server layer is its own entry in the add-ons control panel, with its own install and uninstall button.
-The panel shows no version beside it, because the entry is named after a package rather than a distribution.
+It is a route in the Volto frontend rather than a backend view, so the package cannot derive it from the portal URL.
+That is why it is a setting.
 
-Every profile has a matching uninstall profile, and uninstalling is tested.
-The test installs, uninstalls, and asserts that the site still works with no plugin, registry key, or tool left behind.
+## Verify
+
+A working install has all four of these:
+
+- the `identity` plugin in `acl_users`, active for extraction, authentication, and credentials reset
+- the `identity_profile` plugin beside it, at the top of `IPropertiesPlugin`
+- at least one provider in the control panel, with a title and a driver
+- a callback URL that matches what the provider has registered
+
+If the second one is missing, the site was installed by an earlier version and needs the add-on reinstalled—see the warning at the top of this page.
+
+## Uninstalling
+
+Every profile has a matching uninstall profile, and uninstalling is tested: the test installs, uninstalls, and asserts that the site still works with no plugin, registry key, or tool left behind.
 
 ```{note}
 Uninstalling removes the catalog, the content types, and the workflows.
@@ -61,38 +128,8 @@ It leaves every `UserProfile` object and its data exactly where it is.
 Uninstalling an add-on is a configuration change, not an instruction to delete everyone's account data.
 ```
 
-## Install the frontend
+## Next steps
 
-The Volto add-on ships from the same repository, as `@plone-collective/volto-identity`.
-
-It provides `/login`, the callback route, `/identities` for managing your own sign-in methods, and the control panels.
-
-## Set the login callback URL
-
-Nothing signs in until you set this.
-
-The callback URL is the frontend route that providers redirect back to, and it must match the redirect URI you register with every provider.
-It is a route in the Volto frontend rather than a backend view, so the package cannot derive it from the portal URL.
-
-Set it in the **Identity providers** control panel.
-
-## Configure at least one provider
-
-Nothing happens until a provider is configured.
-
-Follow {doc}`configure-a-provider`.
-
-## Verify the install
-
-A working install has all four of these:
-
--   the `identity` plugin in `acl_users`, active for extraction, authentication, and credentials reset
--   the `identity_profile` plugin beside it, at the top of `IPropertiesPlugin`
--   at least one provider in the control panel, with a title and a driver
--   a callback URL that matches what the provider has registered
-
-If the second one is missing, the site was installed by an earlier version and needs the add-on reinstalled.
-
-If sign-in fails, read the audit log before you read the source.
-The log records refusals as well as successes, and it tells an unknown identity apart from a denied group and a link collision.
-See {doc}`read-the-audit-log`.
+1. {doc}`install-the-frontend`—the Volto add-on, without which nobody can sign in.
+2. {doc}`providers/index`—pick the provider you are adding and follow its recipe.
+3. {doc}`troubleshoot`—if sign-in fails, start here rather than in the source.
