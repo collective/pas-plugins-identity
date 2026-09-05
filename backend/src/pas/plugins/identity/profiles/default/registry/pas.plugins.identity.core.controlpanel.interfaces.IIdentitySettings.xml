@@ -22,6 +22,11 @@
     <value key="audit_max_entries">500</value>
     <value key="audit_max_days">180</value>
     <value key="audit_record_pii">False</value>
+    <!-- The site's own log, and nothing else. An extra that ships another
+         sink registers it; naming it here is what starts recording to it. -->
+    <value key="audit_sinks">
+      <element>plugin</element>
+    </value>
   </records>
 
 </registry>

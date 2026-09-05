@@ -15,6 +15,10 @@
   <record name="pas.plugins.identity.audit_record_pii"
           remove="true"
   />
+  <record name="pas.plugins.identity.audit_sinks"
+          remove="true"
+  />
+
   <record name="pas.plugins.identity.sync_portraits"
           remove="true"
   />

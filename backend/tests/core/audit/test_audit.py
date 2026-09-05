@@ -5,14 +5,19 @@ from datetime import timedelta
 from pas.plugins.identity.core import audit as audit_module
 from pas.plugins.identity.core.audit import AuditLog
 from pas.plugins.identity.core.audit import AUTHENTICATED
+from pas.plugins.identity.core.audit import DEFAULT_SINK
 from pas.plugins.identity.core.audit import EMAIL_VERIFIED
 from pas.plugins.identity.core.audit import IDENTITY_LINKED
 from pas.plugins.identity.core.audit import IDENTITY_UNLINKED
 from pas.plugins.identity.core.audit import MAX_DAYS_RECORD
 from pas.plugins.identity.core.audit import MAX_ENTRIES_RECORD
 from pas.plugins.identity.core.audit import PluginAuditSink
+from pas.plugins.identity.core.audit import entries as audit_entries
 from pas.plugins.identity.core.audit import record
 from pas.plugins.identity.core.audit import RECORD_PII_RECORD
+from pas.plugins.identity.core.audit import sink_names
+from pas.plugins.identity.core.audit import SINKS_RECORD
+from pas.plugins.identity.core.audit import source
 from pas.plugins.identity.core.audit import request_detail
 from pas.plugins.identity.core.audit import UNATTRIBUTED
 from pas.plugins.identity.core.events import EmailVerified
@@ -21,10 +26,13 @@ from pas.plugins.identity.core.events import IdentityLinked
 from pas.plugins.identity.core.events import IdentityUnlinked
 from pas.plugins.identity.core.events import UserClaimsRefreshed
 from pas.plugins.identity.core.interfaces import IAuditSink
+from pas.plugins.identity.core.interfaces import IAuditSource
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from plone import api
+from zope.component import getGlobalSiteManager
 from zope.component import getUtility
 from zope.event import notify
+from zope.interface import alsoProvides
 from zope.interface.verify import verifyObject
 
 import pytest
@@ -39,7 +47,7 @@ def portal(portal_class):
 @pytest.fixture
 def utility() -> IAuditSink:
     """Return the installed plugin's audit sink."""
-    return getUtility(IAuditSink)
+    return getUtility(IAuditSink, name=DEFAULT_SINK)
 
 
 class TestSinkRegistration:
@@ -56,6 +64,19 @@ class TestSinkRegistration:
     def test_sink_satisfies_its_interface(self):
         """A replacement sink knows exactly what it has to provide."""
         assert verifyObject(IAuditSink, self.utility)
+
+    def test_sink_is_also_a_source(self):
+        """The built-in sink is the one destination that can be read back,
+        which is what lets the control panel show anything at all."""
+        assert verifyObject(IAuditSource, self.utility)
+
+    def test_nothing_is_registered_unnamed(self):
+        """Registering by name is what makes a second sink an addition
+        rather than a replacement, so there must be no anonymous one left
+        for a lookup to find by accident."""
+        from zope.component import queryUtility
+
+        assert queryUtility(IAuditSink, default=None) is None
 
     def test_sink_writes_to_the_plugin_log(self):
         """The default sink is backed by the plugin's own store."""
@@ -395,3 +416,302 @@ class TestLazyLog:
 
         assert isinstance(log, AuditLog)
         assert plugin.audit is log
+
+
+class Recorder:
+    """A sink that keeps what it was handed, and nothing more."""
+
+    def __init__(self) -> None:
+        """Start with nothing recorded."""
+        self.written: list[tuple] = []
+
+    def record(self, userid, event, provider, success, detail=None) -> None:
+        """Keep the call.
+
+        :param userid: Userid the event concerns.
+        :param event: Event name.
+        :param provider: Provider id.
+        :param success: Whether the attempt succeeded.
+        :param detail: Extra context.
+        """
+        self.written.append((userid, event, provider, success, detail))
+
+
+class Readable(Recorder):
+    """A sink that can also answer for what it kept."""
+
+    def entries(self, userid=None) -> list:
+        """Return what was recorded.
+
+        :param userid: Restrict to one user; ``None`` returns everything.
+        :returns: The matching calls.
+        """
+        if userid is None:
+            return list(self.written)
+        return [call for call in self.written if call[0] == userid]
+
+
+class Exploding:
+    """A sink that always fails."""
+
+    def record(self, *args, **kwargs) -> None:
+        """Fail.
+
+        :raises RuntimeError: Always.
+        """
+        raise RuntimeError("audit backend is down")
+
+
+class SinkCase:
+    """Registering named sinks for the duration of one test.
+
+    Not a test class. Named sinks are global-registry state, so every one
+    registered here is unregistered again in teardown: a leaked sink would
+    be recorded to by every later test in the run, and the failure would
+    surface somewhere else entirely.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+        self.registered: list[tuple[object, str]] = []
+        yield
+        registry = getGlobalSiteManager()
+        for sink, name in self.registered:
+            registry.unregisterUtility(sink, IAuditSink, name=name)
+        api.portal.set_registry_record(SINKS_RECORD, ("plugin",))
+
+    def register(self, name: str, sink: object, readable: bool = False):
+        """Register one sink under a name for this test only.
+
+        :param name: Utility name.
+        :param sink: The sink.
+        :param readable: Whether it should also provide ``IAuditSource``.
+        :returns: The sink, for convenience.
+        """
+        provided = [IAuditSink] + ([IAuditSource] if readable else [])
+        alsoProvides(sink, *provided)
+        getGlobalSiteManager().registerUtility(sink, IAuditSink, name=name)
+        self.registered.append((sink, name))
+        return sink
+
+    def configure(self, *names: str) -> None:
+        """Point the site at these sinks, in this order.
+
+        :param names: Utility names. Each must be registered: the field is a
+            ``Choice`` over the registered sinks, so an unknown name is
+            refused here exactly as it is in the control panel.
+        """
+        api.portal.set_registry_record(SINKS_RECORD, tuple(names))
+
+    def drop(self, name: str) -> None:
+        """Unregister a sink the site is still configured to use.
+
+        The only way a configured name resolves to nothing: the setting was
+        stored while the sink existed, and the extra providing it was removed
+        afterwards. The field cannot be made to store an unknown name.
+
+        :param name: Utility name to unregister.
+        """
+        for entry in list(self.registered):
+            if entry[1] != name:
+                continue
+            getGlobalSiteManager().unregisterUtility(entry[0], IAuditSink, name=name)
+            self.registered.remove(entry)
+
+
+class TestWhichSinksASiteRecordsTo(SinkCase):
+    """``audit_sinks`` names the destinations, and its absence means one."""
+
+    def test_the_shipped_default_is_the_plugin_log(self):
+        """Which is what the profile states."""
+        assert sink_names() == (DEFAULT_SINK,)
+
+    def test_an_empty_setting_falls_back(self):
+        """An operator who clears the field has not asked to stop auditing;
+        they have asked for the default, which is this site's own log."""
+        self.configure()
+
+        assert sink_names() == (DEFAULT_SINK,)
+
+    def test_a_missing_record_falls_back(self, monkeypatch):
+        """A site whose profile predates the record behaves as it did."""
+        monkeypatch.setattr(api.portal, "get_registry_record", lambda *a, **kw: None)
+
+        assert sink_names() == (DEFAULT_SINK,)
+
+    def test_the_configured_order_is_kept(self):
+        """Order decides which destination answers a read, so it is not a
+        set."""
+        self.register("first", Recorder())
+        self.register("second", Recorder())
+        self.configure("second", "first")
+
+        assert sink_names() == ("second", "first")
+
+
+class TestEveryConfiguredSinkGetsTheEvent(SinkCase):
+    """Fan-out is the point: adding a destination adds, never replaces."""
+
+    def test_a_single_extra_sink_receives_it(self):
+        """The simplest case, and the one an operator tries first."""
+        extra = self.register("extra", Recorder())
+        self.configure("extra")
+
+        record("userid-1", AUTHENTICATED, "dex", True)
+
+        assert len(extra.written) == 1
+
+    def test_all_of_them_receive_it(self):
+        """Two destinations means two copies, not a choice between them."""
+        one = self.register("one", Recorder())
+        two = self.register("two", Recorder())
+        self.configure("one", "two")
+
+        record("userid-1", AUTHENTICATED, "dex", True)
+
+        assert (len(one.written), len(two.written)) == (1, 1)
+
+    def test_a_sink_not_configured_is_not_written_to(self):
+        """Registering a sink installs it; naming it starts using it."""
+        idle = self.register("idle", Recorder())
+        self.configure(DEFAULT_SINK)
+
+        record("userid-1", AUTHENTICATED, "dex", True)
+
+        assert idle.written == []
+
+    def test_the_plugin_log_still_receives_it_alongside(self):
+        """The regression that matters: adding a database must not stop the
+        control panel showing anything."""
+        extra = self.register("extra", Recorder())
+        self.configure(DEFAULT_SINK, "extra")
+
+        record("userid-fanout", AUTHENTICATED, "dex", True)
+
+        assert len(extra.written) == 1
+        assert len(audit_entries("userid-fanout")) == 1
+
+    def test_the_payload_is_the_same_for_each(self):
+        """One event, recorded identically, rather than each sink being
+        handed whatever the loop had left."""
+        one = self.register("one", Recorder())
+        two = self.register("two", Recorder())
+        self.configure("one", "two")
+
+        record("userid-1", AUTHENTICATED, "dex", True, {"reason": "why"})
+
+        assert one.written == two.written
+
+
+class TestOneBadSinkDoesNotStopTheRest(SinkCase):
+    """A destination is not allowed to take the others down with it."""
+
+    def test_a_failing_sink_does_not_stop_the_next(self):
+        """The whole reason fan-out swallows per sink rather than per call."""
+        self.register("boom", Exploding())
+        after = self.register("after", Recorder())
+        self.configure("boom", "after")
+
+        record("userid-1", AUTHENTICATED, "dex", True)
+
+        assert len(after.written) == 1
+
+    def test_a_failing_sink_is_logged_with_its_name(self, caplog):
+        """An operator has to know *which* destination is down."""
+        self.register("boom", Exploding())
+        self.configure("boom")
+
+        record("userid-1", AUTHENTICATED, "dex", True)
+
+        assert "boom" in caplog.text
+
+    def test_a_name_that_no_longer_resolves_is_stepped_over(self):
+        """An extra uninstalled after its sink was configured. The name
+        stays in the registry record and resolves to nothing."""
+        after = self.register("after", Recorder())
+        self.register("departed", Recorder())
+        self.configure("departed", "after")
+        self.drop("departed")
+
+        record("userid-1", AUTHENTICATED, "dex", True)
+
+        assert len(after.written) == 1
+
+    def test_a_name_that_no_longer_resolves_is_logged(self, caplog):
+        """Silence would leave a site recording to fewer places than its
+        operator believes."""
+        self.register("departed", Recorder())
+        self.configure("departed")
+        self.drop("departed")
+
+        record("userid-1", AUTHENTICATED, "dex", True)
+
+        assert "departed" in caplog.text
+
+
+class TestTheSettingRefusesAnUnknownSink(SinkCase):
+    """The field is a ``Choice`` over what is registered, so a destination
+    that does not exist cannot be stored in the first place."""
+
+    def test_an_unknown_name_is_refused(self):
+        """Which is the difference between a typo and a silent no-op."""
+        with pytest.raises(Exception) as caught:
+            self.configure("not-installed")
+
+        assert "not-installed" in str(caught.value)
+
+    def test_a_registered_name_is_accepted(self):
+        """And registering the sink is all it takes to make it choosable."""
+        self.register("arrived", Recorder())
+
+        self.configure("arrived")
+
+        assert sink_names() == ("arrived",)
+
+
+class TestReadingComesFromASource(SinkCase):
+    """Only a sink that provides ``IAuditSource`` answers a query."""
+
+    def test_the_plugin_log_is_the_source_by_default(self):
+        """Nothing configured means the built-in one."""
+        assert isinstance(source(), PluginAuditSink)
+
+    def test_the_first_readable_sink_wins(self):
+        """Order is the operator's answer to which store is authoritative."""
+        readable = self.register("readable", Readable(), readable=True)
+        self.configure("readable", DEFAULT_SINK)
+
+        assert source() is readable
+
+    def test_a_write_only_sink_is_skipped(self):
+        """A sink that cannot answer is passed over rather than asked."""
+        self.register("writeonly", Recorder())
+        self.configure("writeonly", DEFAULT_SINK)
+
+        assert isinstance(source(), PluginAuditSink)
+
+    def test_no_readable_sink_is_reported_as_none(self):
+        """Which is what lets a caller say "recorded elsewhere" rather than
+        show an empty log."""
+        self.register("writeonly", Recorder())
+        self.configure("writeonly")
+
+        assert source() is None
+
+    def test_entries_are_empty_without_a_source(self):
+        """The convenience wrapper answers empty rather than raising."""
+        self.register("writeonly", Recorder())
+        self.configure("writeonly")
+
+        assert audit_entries("userid-1") == []
+
+    def test_entries_read_through_the_configured_source(self):
+        """And a readable sink's own records are what comes back."""
+        readable = self.register("readable", Readable(), readable=True)
+        self.configure("readable")
+
+        record("userid-1", AUTHENTICATED, "dex", True)
+
+        assert len(audit_entries("userid-1")) == 1
+        assert len(readable.written) == 1

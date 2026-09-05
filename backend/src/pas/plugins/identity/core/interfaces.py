@@ -201,7 +201,15 @@ class IIdentityStore(Interface):
 
 
 class IAuditSink(Interface):
-    """Destination for authentication events."""
+    """Somewhere authentication events are written.
+
+    Registered as a *named* utility, and a site records to every name its
+    ``audit_sinks`` setting lists. Writing is all this asks for: a sink that
+    forwards to syslog or appends to a file has nothing to answer a query
+    with, and demanding a half-honest ``entries`` of it would put an empty
+    list in front of an operator whose records are somewhere else entirely.
+    A sink that *can* answer provides :class:`IAuditSource` as well.
+    """
 
     def record(
         userid: str | None,
@@ -218,6 +226,17 @@ class IAuditSink(Interface):
         :param success: Whether the attempt succeeded.
         :param detail: Extra, non-credential context. Never tokens.
         """
+
+
+class IAuditSource(Interface):
+    """Somewhere recorded events can be read back from.
+
+    Separate from :class:`IAuditSink` because the two are genuinely separate
+    capabilities. Reads go to the first configured sink that provides this,
+    so a site fanning out to a write-only destination still has its own log
+    to show, and a site with no readable destination at all is told so rather
+    than shown an empty list it would read as "nothing happened".
+    """
 
     def entries(userid: str | None = None) -> list:
         """Return recorded entries, newest first.
