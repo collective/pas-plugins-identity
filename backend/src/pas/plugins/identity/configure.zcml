@@ -31,4 +31,13 @@
       zcml:condition="installed cryptography"
       />
 
+  <!-- The second optional layer, loaded on the same terms: its ZCML is read
+       whenever SQLAlchemy is importable, and a site starts using it by naming
+       the sink in audit_sinks. No profile of its own, because it adds no
+       control panel and no browser layer, only one utility and one table. -->
+  <include
+      package=".sql"
+      zcml:condition="installed sqlalchemy"
+      />
+
 </configure>

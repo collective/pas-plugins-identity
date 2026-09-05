@@ -1,0 +1,13 @@
+<configure xmlns="http://namespaces.zope.org/zope">
+
+  <!-- Registered whenever the extra is installed, whether or not a DSN is
+       set: a site starts recording here by naming it in audit_sinks, and the
+       setting is a Choice over what is registered. A sink with nothing to
+       write to says so in the log rather than refusing to exist. -->
+  <utility
+      name="sql"
+      factory=".SQLAuditSink"
+      provides="pas.plugins.identity.core.interfaces.IAuditSink"
+      />
+
+</configure>
