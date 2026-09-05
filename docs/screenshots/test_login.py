@@ -25,6 +25,20 @@ def test_login_page_options(anonymous_page, shot) -> None:
     shot.capture("login-page-options")
 
 
+def test_login_card(anonymous_page, shot) -> None:
+    """The sign-in card alone, cropped, for the landing page.
+
+    The same page as :func:`test_login_page_options`, framed to the card. A
+    landing page wants the thing itself rather than a browser window that is
+    four fifths empty, and cropping in the capture keeps that decision here
+    rather than in whatever renders the Markdown.
+    """
+    anonymous_page.goto(f"{IDP}/login")
+    anonymous_page.wait_for_selector("button:has-text('Sign in with a password')")
+    anonymous_page.wait_for_selector("button:has-text('GitHub')")
+    shot.capture("login-card", element=anonymous_page.locator(".loginForm"))
+
+
 @pytest.mark.site(RP)
 def test_identities_page(page_as_admin, shot) -> None:
     """A person's own sign-in methods."""
