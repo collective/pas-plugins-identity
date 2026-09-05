@@ -30,6 +30,7 @@ cacheable
 CommonJS
 cookieplone
 doctest
+ESLint
 fieldset
 folderish
 frontend's
@@ -49,6 +50,7 @@ pluggab(le|ility)
 prerendered
 programatically
 psycopg2
+Pyroma
 Razzle
 reindex(es|ed|ing)?
 RelStorage
@@ -57,7 +59,9 @@ Sass
 schema's
 Schuko
 SQLAlchemy
+Stylelint
 subfolder
+towncrier
 transpile[dr]{0,1}
 unregister
 UUID
@@ -67,3 +71,4 @@ Volto
 Vue
 Zitadel
 Zope
+zpretty

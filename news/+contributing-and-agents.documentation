@@ -1,0 +1,5 @@
+Added a Contributing page to the documentation, and an `AGENTS.md` at the root of the repository.
+
+Setting up a checkout, the gates a change has to pass, which formatter owns which file type, the three towncrier scopes and the layer boundary were only in the README, where a reader arriving from the published documentation never saw them. They are a page now, and the README stays the short introduction it was.
+
+`AGENTS.md` is the same ground for coding agents, plus the traps that are only discoverable by hitting them: ruff's configuration lives in `backend/pyproject.toml` and covers the backend alone, `make check-imports` is not part of `make lint`, `frontend/core` is a `mrs.developer` checkout and not ours, and `sphinxcontrib-mermaid` reads its `:config:` option as JSON while claiming any leading `---` block inside the fence. @ericof

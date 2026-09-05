@@ -175,6 +175,7 @@ concepts/index
 :maxdepth: 2
 :hidden: true
 
+contributing
 glossary
 genindex
 ```
