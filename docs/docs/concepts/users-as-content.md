@@ -135,6 +135,33 @@ If you point the registry records at a content type of your own, make sure somet
 `UserProfile` is enumerated by the plugin this package installs; another type is your responsibility.
 ```
 
+## Why not `Products.membrane`
+
+`Products.membrane` solves a similar problem, and has been doing so far longer than this package has existed.
+
+Its published compatibility matrix lists Plone 6.0 and 6.1, not 6.2.
+That is a fact about the current release rather than a judgement, and it may well change.
+
+The other reason is narrower, and it is the property this page is about: serving user properties and enumeration without waking a content object.
+That has to be something the package can assert about its own code on every CI run, and it does, with a test that counts ZODB object activations and requires zero.
+
+Membrane does wake them, and it is worth being precise about where.
+`MembranePropertyManager.getPropertiesForUser` collects property providers through `findMembraneUserAspect`, which adapts `brain._unrestrictedGetObject()`.
+Answering a property lookup therefore loads the content object, one per matching brain.
+The plugin inherits `OFS.Cache.Cacheable`, but that path never calls it, so nothing caches in front of the load.
+Its *user enumeration* is not affected: that goes through `findImplementations`, which stays on the brains.
+
+This is architecture rather than oversight.
+Membrane's property values live on the content object and are read through an adapter on it, so a brain genuinely cannot answer.
+This package copies the values it serves into catalog metadata instead, which is what lets a brain answer and what the zero-wake test measures.
+The trade is real in both directions: metadata has to be kept honest, and the package ships a consistency check and a rebuild step precisely because of that.
+
+```{note}
+Verified against `Products.membrane` 7.0.1.dev0 (`plugins/propertymanager.py`, `utils.py`) by reading the source rather than by measurement.
+Membrane is not a dependency here, and its compatibility matrix would make it awkward to install alongside.
+Membrane's *design* is nonetheless where this one comes from, and the resemblance is not accidental.
+```
+
 ```{seealso}
 {doc}`/reference/user-content` for the records and the contracts.
 {doc}`/concepts/profiles-and-groups` for what is built on top.
