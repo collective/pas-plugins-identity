@@ -27,10 +27,21 @@ RUN <<EOT
     rm -rf .venv
     ../bin/mxdev -c mx.ini
     ../bin/uv pip install -r requirements-mxdev.txt
-    # The demo, explicitly and only here. --no-deps because everything it
-    # needs arrived above under the Plone constraints; letting it resolve
-    # again would be the one place a constraint could be silently dropped.
-    ../bin/uv pip install --no-deps ./demo
+    # The demo, explicitly and only here.
+    #
+    # Installed with its dependencies, under the constraints mxdev just
+    # generated. It used to be --no-deps, on the reasoning that everything it
+    # needed had arrived above -- which was true of every dependency except
+    # its own: Products.PrintingMailHost is declared by the demo package and
+    # by the backend's [test] extra, and the sed above swaps [test] for the
+    # runtime extras, so it reached the image by neither route. The magic
+    # link, which is most of what this stack is for, opened a real SMTP
+    # connection and answered 500.
+    #
+    # Constraints rather than --no-deps: they are what stops a version being
+    # silently resolved past a Plone pin, which is what --no-deps was
+    # reaching for.
+    ../bin/uv pip install -c constraints-mxdev.txt ./demo
     ../bin/python /compile_mo.py
 EOT
 

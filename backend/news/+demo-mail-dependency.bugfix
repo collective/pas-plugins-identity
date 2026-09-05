@@ -1,0 +1,1 @@
+Fixed the demo image installing the demo package without its dependencies, which left `Products.PrintingMailHost` out and made the magic-link request answer 500 by opening a real SMTP connection. @ericof
