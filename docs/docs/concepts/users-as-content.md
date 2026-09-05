@@ -15,11 +15,10 @@ Plone keeps users in `source_users` and groups in `source_groups`, as records in
 A site that wants a member directory, an editable profile page, or a reviewable group wants those to be content instead.
 This package makes them content, on every site that installs it, and the `UserProfile` and `UserGroup` types it ships are what a user and a group are here.
 
-It was an option while this package was being built, a `[content]` extra with a profile of its own, and the option created two of every code path that touches a user.
-It was merged away before the first release, so no site ever had to choose.
 For what is done with the fields a Profile owns, read {doc}`/concepts/profiles-and-groups`.
 
-What survived the merge is the *indirection*: the plugin that creates a user still does not name the type it creates.
+What it does not do is name those types in the code that creates them.
+The plugin that creates a user reads the type out of the registry, which is the *indirection* the rest of this page is about.
 
 ## The contract is declared, not assumed
 

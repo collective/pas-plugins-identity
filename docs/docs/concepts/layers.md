@@ -30,21 +30,22 @@ pas.plugins.identity.server:default
 The add-ons control panel lists both, so the server layer is installed and uninstalled where every other add-on is.
 It shows no version beside that entry, because it is named after a package rather than a distribution and there is no package metadata to read.
 
-## There used to be three
+## What earns a boundary
 
-Content-backed users and groups were a third layer, `[content]`, with a profile of its own.
-They are not any more, and the reason is worth stating because it is the argument against the rest of this page taken too far.
+Two, and not more, because a layer has to earn its boundary twice over.
 
-A layer earns its boundary when the combinations it creates are ones somebody actually wants and somebody actually tests.
-`[content]` failed both halves.
-Its dependency, `plone.app.dexterity`, ships with Plone, so nobody was ever spared anything by leaving it out.
-What the option bought instead was a second configuration of every code path that touches a user: a login that minted a `source_users` row here and a content object there, a property map that wrote to one store or the other, an offered email address that was settled by a guess on one site and asked about on the other.
-Every bug found in the last week of that arrangement was in the seam.
+Its dependency must be one a site has a real reason not to carry, and the
+combinations it creates must be ones somebody actually wants and somebody
+actually tests.
 
-So the two halves merged, and what is left is one layer that has one behaviour.
+`[server]` passes both. `cryptography` is compiled, so a site that is not an
+authorization server has something to gain by leaving it out, and the two
+combinations—with the extra and without it—are the two a deployment
+actually picks between.
 
-The `[server]` boundary survives on the test the other one failed.
-Its dependency is `cryptography`, which is compiled, and a site that is not an authorization server has a real reason not to carry it.
+An optional layer that fails either test is not a smaller install. It is a
+second configuration of every code path it touches, and every one of those
+seams is somewhere a bug can live that neither combination's tests reach.
 
 ## Why the remaining boundary is more than tidiness
 
