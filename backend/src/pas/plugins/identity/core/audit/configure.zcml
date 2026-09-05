@@ -9,9 +9,9 @@
        deployment adding a database or a syslog feed should be adding a
        destination, not silently replacing the one the control panel reads. -->
   <utility
-      name="plugin"
       factory=".PluginAuditSink"
       provides="pas.plugins.identity.core.interfaces.IAuditSink"
+      name="plugin"
       />
 
   <!-- Write-only, and registered whether or not anything uses it: a site
@@ -20,9 +20,9 @@
        recording only here is told its records are elsewhere rather than
        shown an empty log. -->
   <utility
-      name="log"
       factory=".logsink.LoggingAuditSink"
       provides="pas.plugins.identity.core.interfaces.IAuditSink"
+      name="log"
       />
 
   <!-- Successes are recorded from the event contract, so anything that fires

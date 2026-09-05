@@ -5,9 +5,9 @@
        setting is a Choice over what is registered. A sink with nothing to
        write to says so in the log rather than refusing to exist. -->
   <utility
-      name="sql"
       factory=".SQLAuditSink"
       provides="pas.plugins.identity.core.interfaces.IAuditSink"
+      name="sql"
       />
 
 </configure>

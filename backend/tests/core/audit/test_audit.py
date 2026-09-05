@@ -7,23 +7,23 @@ from pas.plugins.identity.core.audit import AuditLog
 from pas.plugins.identity.core.audit import AUTHENTICATED
 from pas.plugins.identity.core.audit import DEFAULT_SINK
 from pas.plugins.identity.core.audit import EMAIL_VERIFIED
+from pas.plugins.identity.core.audit import entries as audit_entries
 from pas.plugins.identity.core.audit import FLOW_REFUSED
 from pas.plugins.identity.core.audit import IDENTITY_LINKED
 from pas.plugins.identity.core.audit import IDENTITY_UNLINKED
-from pas.plugins.identity.core.audit.logsink import LoggingAuditSink
-from pas.plugins.identity.core.audit.logsink import logger as log_sink_logger
-from pas.plugins.identity.core.audit.logsink import SINK_NAME as LOG_SINK_NAME
 from pas.plugins.identity.core.audit import MAX_DAYS_RECORD
 from pas.plugins.identity.core.audit import MAX_ENTRIES_RECORD
 from pas.plugins.identity.core.audit import PluginAuditSink
-from pas.plugins.identity.core.audit import entries as audit_entries
 from pas.plugins.identity.core.audit import record
 from pas.plugins.identity.core.audit import RECORD_PII_RECORD
+from pas.plugins.identity.core.audit import request_detail
 from pas.plugins.identity.core.audit import sink_names
 from pas.plugins.identity.core.audit import SINKS_RECORD
 from pas.plugins.identity.core.audit import source
-from pas.plugins.identity.core.audit import request_detail
 from pas.plugins.identity.core.audit import UNATTRIBUTED
+from pas.plugins.identity.core.audit.logsink import logger as log_sink_logger
+from pas.plugins.identity.core.audit.logsink import LoggingAuditSink
+from pas.plugins.identity.core.audit.logsink import SINK_NAME as LOG_SINK_NAME
 from pas.plugins.identity.core.events import EmailVerified
 from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
 from pas.plugins.identity.core.events import IdentityLinked
