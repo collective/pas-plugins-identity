@@ -87,6 +87,7 @@ migrate-from-oidc
 ```{toctree}
 :maxdepth: 1
 
+add-a-catalog-index
 write-a-driver
 write-a-profile-enricher
 ```

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The dedicated Profile catalog: its lexicon, indexes and metadata columns.
+
+  Read by this package's own ``identity-catalog`` import step, not by
+  GenericSetup's ``catalog`` step. That one resolves its target with
+  ``queryUtility(ICatalogTool)``, which answers ``portal_catalog`` and nothing
+  else, so it can never address a second catalog. The step in
+  ``setuphandlers.catalogxml`` points the stock ``ZCatalogXMLAdapter`` at this
+  tool instead; the filename differs from ``catalog.xml`` for exactly that
+  reason, since two catalogs reading one file would be a collision rather than
+  a feature.
+
+  Additive and re-runnable. The adapter creates an index or a column only when
+  it is missing, so applying the profile twice is a no operation, and an entry
+  carrying ``remove="True"`` deletes one.
+
+  Two things this file cannot do:
+
+  * It does not populate. An index added here is empty until something
+    reindexes, exactly as one added in Python would be. Apply the
+    ``rebuild-catalog`` profile after changing anything below.
+  * It does not decide which columns mean something on which type. One schema
+    serves both ``UserProfile`` and ``UserGroup``, so a Profile's ``group_id``
+    is blank and a Group's ``login`` is. ``PROFILE_METADATA`` and
+    ``GROUP_METADATA`` in ``core.catalog`` are what tell the consistency check
+    to expect that; a new column belongs in one of them too.
+-->
+<object meta_type="Identity Profile Catalog"
+        name="portal_identity_catalog"
+>
+
+  <!--
+    Named and configured exactly as Plone's own lexicon, so that the splitting
+    and accent folding a site already relies on in search applies to user
+    search too.
+  -->
+  <object meta_type="ZCTextIndex Lexicon"
+          name="plone_lexicon"
+  >
+    <element group="Word Splitter"
+             name="Unicode Whitespace splitter"
+    />
+    <element group="Case Normalizer"
+             name="Unicode Ignoring Accents Case Normalizer"
+    />
+  </object>
+
+  <index meta_type="FieldIndex"
+         name="portal_type"
+  >
+    <indexed_attr value="portal_type" />
+  </index>
+
+  <index meta_type="FieldIndex"
+         name="userid"
+  >
+    <indexed_attr value="userid" />
+  </index>
+
+  <!--
+    Lowercased at index time by the indexer in ``core.indexers``, and so it
+    must be lowercased at query time by every caller: login names are case
+    insensitive in Plone and a FieldIndex is not.
+  -->
+  <index meta_type="FieldIndex"
+         name="login"
+  >
+    <indexed_attr value="login" />
+  </index>
+
+  <index meta_type="FieldIndex"
+         name="group_id"
+  >
+    <indexed_attr value="group_id" />
+  </index>
+
+  <index meta_type="KeywordIndex"
+         name="group_ids"
+  >
+    <indexed_attr value="group_ids" />
+  </index>
+
+  <!--
+    Every address a person has, not only the one ``email`` resolves to. A
+    keyword index because the field is a list, and because the question asked
+    of it is an exact match on one entry: whose profile carries this address.
+  -->
+  <index meta_type="KeywordIndex"
+         name="emails"
+  >
+    <indexed_attr value="emails" />
+  </index>
+
+  <index meta_type="FieldIndex"
+         name="review_state"
+  >
+    <indexed_attr value="review_state" />
+  </index>
+
+  <index meta_type="ExtendedPathIndex"
+         name="path"
+  />
+
+  <index meta_type="ZCTextIndex"
+         name="SearchableText"
+  >
+    <indexed_attr value="SearchableText" />
+    <extra name="index_type"
+           value="Okapi BM25 Rank"
+    />
+    <extra name="lexicon_id"
+           value="plone_lexicon"
+    />
+  </index>
+
+  <!--
+    The columns are the point of the catalog. The PAS property sheet and the
+    enumeration results are served from brains alone, so every field a property
+    sheet exposes has to be here or the sheet cannot answer for it without
+    waking the object.
+  -->
+  <column value="portal_type" />
+  <column value="Title" />
+  <column value="review_state" />
+  <column value="userid" />
+  <column value="login" />
+  <column value="fullname" />
+  <column value="email" />
+  <column value="emails" />
+  <column value="verified_emails" />
+  <column value="home_page" />
+  <column value="description" />
+  <column value="location" />
+  <column value="group_id" />
+  <column value="group_ids" />
+
+</object>

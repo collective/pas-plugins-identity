@@ -14,7 +14,9 @@ from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.subscribers import get_profile
 from pas.plugins.identity.exportimport import convert_authomatic
 from pas.plugins.identity.exportimport import import_site
+from pas.plugins.identity.exportimport.authomatic import site_propertymaps
 from pas.plugins.identity.exportimport.authomatic import SOURCE
+from pas.plugins.identity.exportimport.authomatic import unmapped_providers
 from pas.plugins.identity.exportimport.schema import ExportImportError
 
 import pytest
@@ -203,6 +205,242 @@ class TestTheConversion:
 
         assert "a-random-uuid" not in str(converted)
         assert "hunter2" not in str(converted)
+
+
+def github_dump(**properties) -> dict:
+    """Return a dump carrying GitHub's own vocabulary.
+
+    What the documented extraction produces: it merges the provider's document
+    into the stored identity, so the raw API fields (``bio``, ``blog``,
+    ``html_url``) sit beside authomatic's normalized ones (``name``, ``link``).
+
+    :param properties: Property keys to replace.
+    :returns: The dump.
+    """
+    return {
+        "source": SOURCE,
+        "users": [
+            {
+                "userid": USERID,
+                "identities": [{"provider": "github", "subject": "1234567"}],
+                "properties": {
+                    "login": "ericof",
+                    "name": "Érico Andrei",
+                    "bio": "Writes Python for a living.",
+                    "blog": "https://erico.example.com",
+                    # authomatic's GitHub parser sets ``link`` from
+                    # ``html_url``; verified against authomatic 1.3.0.
+                    "link": "https://github.com/ericof",
+                    "html_url": "https://github.com/ericof",
+                    "location": "Berlin",
+                    "email": ADDRESS,
+                    **properties,
+                },
+            }
+        ],
+    }
+
+
+#: What a site running GitHub actually configures, and what the built-in map
+#: cannot know.
+GITHUB_MAP = {"bio": "description", "blog": "home_page", "name": "fullname"}
+
+
+class TestTheSitePropertyMap:
+    """A dump carries the provider's vocabulary, and only the target site's
+    map says what it means. Left to the built-in map, a GitHub migration put
+    everybody's profile URL in ``home_page`` and dropped every biography."""
+
+    def test_the_site_map_supplies_a_field_the_builtin_has_no_name_for(self):
+        user = convert_authomatic(github_dump(), {"github": GITHUB_MAP})["users"][0]
+
+        assert user["description"] == "Writes Python for a living."
+
+    def test_the_site_map_beats_the_builtin_for_the_same_field(self):
+        """``blog`` is the homepage and ``link`` is the GitHub profile URL.
+        The built-in map only knows the second, so without the site's map
+        every user's homepage came out as their GitHub page."""
+        user = convert_authomatic(github_dump(), {"github": GITHUB_MAP})["users"][0]
+
+        assert user["home_page"] == "https://erico.example.com"
+
+    def test_the_builtin_still_fills_what_the_site_map_leaves(self):
+        """The site's map is consulted first, not exclusively -- it names no
+        location, and the dump has one."""
+        user = convert_authomatic(github_dump(), {"github": GITHUB_MAP})["users"][0]
+
+        assert user["location"] == "Berlin"
+
+    def test_without_the_map_the_builtin_still_answers(self):
+        """Omitting the argument converts exactly as before, so a caller that
+        has no site is not broken by this."""
+        user = convert_authomatic(github_dump())["users"][0]
+
+        assert user["home_page"] == "https://github.com/ericof"
+        assert user["description"] == ""
+
+    def test_a_map_for_another_provider_does_not_apply(self):
+        """The map is read for the provider the user actually signed in with.
+        A site with GitHub and Google has two, and they disagree."""
+        user = convert_authomatic(github_dump(), {"google": {"bio": "description"}})[
+            "users"
+        ][0]
+
+        assert user["description"] == ""
+
+    def test_the_first_identity_answers_for_a_field(self):
+        """Two providers, both mapping ``bio``. The dump lists them in an
+        order and that order decides, the same way the built-in map's first
+        matching key wins."""
+        d = github_dump()
+        d["users"][0]["identities"].append({"provider": "google", "subject": "9"})
+        maps = {
+            "github": {"bio": "description"},
+            "google": {"login": "description"},
+        }
+
+        user = convert_authomatic(d, maps)["users"][0]
+
+        assert user["description"] == "Writes Python for a living."
+
+    def test_a_field_no_document_carries_is_dropped(self):
+        """``portrait`` is a real target for a login and not something a
+        document carries, so a site mapping it must not put it in one."""
+        maps = {"github": {"avatar_url": "portrait", "bio": "description"}}
+        d = github_dump(avatar_url="https://example.com/a.png")
+
+        user = convert_authomatic(d, maps)["users"][0]
+
+        assert "portrait" not in user
+        assert user["description"] == "Writes Python for a living."
+
+    def test_a_structured_claim_does_not_reach_a_text_field(self):
+        """A document field is text. A map naming something that resolves to
+        a list means something this format cannot express, so the built-in
+        map answers instead of writing ``['a', 'b']`` into a profile."""
+        maps = {"github": {"topics": "description"}}
+        d = github_dump(topics=["plone", "python"])
+
+        user = convert_authomatic(d, maps)["users"][0]
+
+        assert user["description"] == ""
+
+    def test_an_empty_map_is_not_an_answer(self):
+        """A provider configured with no map at all falls through, rather
+        than blanking every field it does not name."""
+        user = convert_authomatic(github_dump(), {"github": {}})["users"][0]
+
+        assert user["fullname"] == "Érico Andrei"
+        assert user["location"] == "Berlin"
+
+
+class TestReportingWhatHasNoMap:
+    """Falling back to the built-in map is the case that loses data, so it is
+    reported rather than done quietly."""
+
+    def test_a_provider_with_no_record_is_counted(self):
+        assert unmapped_providers(github_dump(), {}) == {"github": 1}
+
+    def test_a_configured_provider_is_not_counted(self):
+        assert unmapped_providers(github_dump(), {"github": GITHUB_MAP}) == {}
+
+    def test_users_are_counted_per_provider(self):
+        d = dump()
+        d["users"][0]["identities"] = [
+            {"provider": "github", "subject": "1"},
+            {"provider": "twitter", "subject": "2"},
+        ]
+
+        assert unmapped_providers(d, {"github": GITHUB_MAP}) == {"twitter": 1}
+
+    def test_one_user_counts_once_per_provider(self):
+        """A user with two identities from the same provider is one user with
+        an unmapped provider, not two."""
+        d = github_dump()
+        d["users"][0]["identities"].append({"provider": "github", "subject": "7654321"})
+
+        assert unmapped_providers(d, {}) == {"github": 1}
+
+    def test_a_malformed_row_is_not_a_refusal(self):
+        """This runs before any row has been validated -- it is what decides
+        whether to warn, and a warning must not be the thing that raises. The
+        importer refuses a bad row later, one at a time."""
+        d = dump(
+            users=[
+                "not a user",
+                {"userid": "u1", "identities": ["not an identity"]},
+                {
+                    "userid": "u2",
+                    "identities": [{"provider": "github", "subject": "1"}],
+                },
+            ]
+        )
+
+        assert unmapped_providers(d, {}) == {"github": 1}
+
+    def test_the_worst_offender_comes_first(self):
+        """An operator reading the warning acts on the biggest number."""
+        d = dump(
+            users=[
+                {
+                    "userid": "u1",
+                    "identities": [{"provider": "twitter", "subject": "1"}],
+                },
+                {
+                    "userid": "u2",
+                    "identities": [{"provider": "twitter", "subject": "2"}],
+                },
+                {
+                    "userid": "u3",
+                    "identities": [{"provider": "github", "subject": "3"}],
+                },
+            ]
+        )
+
+        assert list(unmapped_providers(d, {})) == ["twitter", "github"]
+
+
+class TestReadingTheMapsFromTheSite:
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+
+    def test_a_configured_map_is_read(self):
+        set_providers([
+            ProviderConfig(
+                provider_id="github",
+                driver_id="github",
+                title="GitHub",
+                propertymap=GITHUB_MAP,
+            )
+        ])
+
+        assert site_propertymaps()["github"] == GITHUB_MAP
+
+    def test_a_provider_with_no_map_is_left_out(self):
+        """So that :func:`unmapped_providers` reports it -- an empty map and
+        no map mean the same thing here."""
+        set_providers([
+            ProviderConfig(provider_id="github", driver_id="github", title="GitHub")
+        ])
+
+        assert "github" not in site_propertymaps()
+
+    def test_the_site_map_reaches_the_conversion(self):
+        """The whole path, from the registry to the converted document."""
+        set_providers([
+            ProviderConfig(
+                provider_id="github",
+                driver_id="github",
+                title="GitHub",
+                propertymap=GITHUB_MAP,
+            )
+        ])
+
+        user = convert_authomatic(github_dump(), site_propertymaps())["users"][0]
+
+        assert user["home_page"] == "https://erico.example.com"
+        assert user["description"] == "Writes Python for a living."
 
 
 class TestConvertedThenImported:

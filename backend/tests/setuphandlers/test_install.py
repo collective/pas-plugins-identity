@@ -7,11 +7,10 @@ dependency is compiled, and a site that is not an authorization server has no
 reason to carry it.
 """
 
+from . import declared_catalog
 from pas.plugins.identity import PACKAGE_NAME
 from pas.plugins.identity.core.catalog import CATALOG_ID
 from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
-from pas.plugins.identity.core.catalog import INDEXES
-from pas.plugins.identity.core.catalog import METADATA
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.controlpanel.interfaces import IProfileSettings
 from pas.plugins.identity.core.pas import PLUGIN_ID
@@ -213,11 +212,11 @@ class TestContentInstalled:
 
     def test_indexes_created(self):
         """Every declared index exists; GenericSetup cannot do this for us."""
-        assert set(self.catalog.indexes()) >= {name for name, _ in INDEXES}
+        assert set(self.catalog.indexes()) >= set(declared_catalog()[0])
 
     def test_metadata_created(self):
         """Brains carry the whole property sheet."""
-        assert set(self.catalog.schema()) >= set(METADATA)
+        assert set(self.catalog.schema()) >= declared_catalog()[1]
 
     @pytest.mark.parametrize("portal_type", [PROFILE_PORTAL_TYPE, GROUP_PORTAL_TYPE])
     def test_type_registered(self, portal_type: str):

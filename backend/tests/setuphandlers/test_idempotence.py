@@ -7,12 +7,10 @@ lexicon, or a duplicated metadata column, quietly doubling the size of every
 brain.
 """
 
+from . import declared_catalog
 from pas.plugins.identity import setuphandlers
 from pas.plugins.identity.core import container as container_module
-from pas.plugins.identity.core.catalog import INDEXES
-from pas.plugins.identity.core.catalog import METADATA
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
-from pas.plugins.identity.setuphandlers import catalog as catalog_handlers
 from plone import api
 from plone.app.dexterity.behaviors.exclfromnav import IExcludeFromNavigation
 from plone.dexterity.fti import DexterityFTI
@@ -28,27 +26,37 @@ class Context:
     """
 
 
+#: The profile the catalog step is read from.
+PROFILE = "pas.plugins.identity:default"
+
+#: Id of the step, and of the file it reads minus its suffix.
+STEP = "identity-catalog"
+
+
 class TestIdempotence:
     @pytest.fixture(autouse=True)
     def _setup(self, portal, catalog) -> None:
         self.portal = portal
         self.catalog = catalog
+        self.setup = api.portal.get_tool("portal_setup")
+
+    def _rerun(self) -> None:
+        """Apply the catalog step again, the way an operator would."""
+        self.setup.runImportStepFromProfile(PROFILE, STEP)
 
     def test_lexicon_is_not_duplicated(self):
         """A second import must not add a second lexicon."""
-        catalog_handlers.add_lexicon(self.catalog)
+        self._rerun()
 
         assert [
-            obj_id
-            for obj_id in self.catalog.objectIds()
-            if obj_id == catalog_handlers.LEXICON_ID
-        ] == [catalog_handlers.LEXICON_ID]
+            obj_id for obj_id in self.catalog.objectIds() if obj_id == "plone_lexicon"
+        ] == ["plone_lexicon"]
 
     def test_indexes_are_not_duplicated(self):
         """Indexes are created once."""
         before = sorted(self.catalog.indexes())
 
-        catalog_handlers.add_indexes(self.catalog)
+        self._rerun()
 
         assert sorted(self.catalog.indexes()) == before
 
@@ -56,7 +64,7 @@ class TestIdempotence:
         """Columns are created once; a duplicate would bloat every brain."""
         before = sorted(self.catalog.schema())
 
-        catalog_handlers.add_metadata(self.catalog)
+        self._rerun()
 
         assert sorted(self.catalog.schema()) == before
 
@@ -64,8 +72,9 @@ class TestIdempotence:
         """The whole handler, not just its parts."""
         setuphandlers.post_install(Context())
 
-        assert set(self.catalog.indexes()) >= {name for name, _ in INDEXES}
-        assert set(self.catalog.schema()) >= set(METADATA)
+        indexes, columns = declared_catalog()
+        assert set(self.catalog.indexes()) >= set(indexes)
+        assert set(self.catalog.schema()) >= columns
 
 
 class TestRebuild:

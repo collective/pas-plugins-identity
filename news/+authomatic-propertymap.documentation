@@ -1,0 +1,1 @@
+Documented that an authomatic conversion reads the target site's property map, and that configuring the providers first decides which fields survive it. @ericof

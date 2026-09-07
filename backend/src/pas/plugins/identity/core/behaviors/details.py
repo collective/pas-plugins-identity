@@ -37,9 +37,14 @@ from plone.autoform.interfaces import IFormFieldProvider
 from plone.namedfile.field import NamedBlobImage
 from plone.supermodel import model
 from zope import schema
-from zope.interface import alsoProvides
+from zope.interface import provider
 
 
+# What makes the fields appear on a form at all; see the module docstring.
+# Applied here rather than as a ``provides=`` in ZCML because the marker
+# belongs to the schema, and a schema that is a form field provider on one
+# site and not on another is a difference nobody would think to look for.
+@provider(IFormFieldProvider)
 class IProfileDetails(model.Schema):
     """What a person says about themselves, and their picture."""
 
@@ -73,10 +78,6 @@ class IProfileDetails(model.Schema):
         location="pas.plugins.identity.content.view",
         image="pas.plugins.identity.content.view",
     )
-
-
-# What makes the fields appear on a form at all; see the module docstring.
-alsoProvides(IProfileDetails, IFormFieldProvider)
 
 
 __all__ = ["IProfileDetails"]

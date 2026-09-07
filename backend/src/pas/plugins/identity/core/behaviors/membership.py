@@ -52,13 +52,18 @@ from plone.autoform.directives import write_permission
 from plone.autoform.interfaces import IFormFieldProvider
 from plone.supermodel import model
 from zope import schema
-from zope.interface import alsoProvides
+from zope.interface import provider
 
 
 #: Name the fieldset is registered under, and the id a form renders it with.
 FIELDSET = "groups"
 
 
+# What makes the field appear on a form at all; see the module docstring.
+# Applied here rather than as a ``provides=`` in ZCML because the marker
+# belongs to the schema, and a schema that is a form field provider on one
+# site and not on another is a difference nobody would think to look for.
+@provider(IFormFieldProvider)
 class IGroupMembership(model.Schema):
     """The groups a principal belongs to.
 
@@ -94,13 +99,6 @@ class IGroupMembership(model.Schema):
     # edit permission on it, and this field is what grants roles.
     write_permission(group_ids="pas.plugins.identity.content.editgroups")
     read_permission(group_ids="pas.plugins.identity.content.view")
-
-
-# What makes the field appear on a form at all; see the module docstring.
-# Applied here rather than as a `provides=` in ZCML because the marker belongs
-# to the schema, and a schema that is a form field provider on one site and
-# not on another is a difference nobody would think to look for.
-alsoProvides(IGroupMembership, IFormFieldProvider)
 
 
 __all__ = ["FIELDSET", "IGroupMembership"]
