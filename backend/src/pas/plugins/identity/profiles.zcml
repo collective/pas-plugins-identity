@@ -46,6 +46,36 @@
       name="pas.plugins.identity"
       />
 
+  <!-- GenericSetup for the dedicated Profile catalog.
+
+       The adapter is a one line subclass of the stock ZCatalog one, which is
+       registered for IZCatalog and so already adapts our tool; all it changes
+       is the filename. This registration is the more specific of the two, so
+       it wins for this catalog and leaves every other one alone.
+
+       The steps exist because CMFCore's resolve their target with
+       queryUtility(ICatalogTool), which answers portal_catalog and nothing
+       else. Depends on toolset, which is what creates the tool: without the
+       ordering the step would run against a site that has no catalog yet and
+       quietly do nothing. -->
+  <adapter factory=".setuphandlers.catalogxml.IdentityCatalogXMLAdapter" />
+
+  <genericsetup:importStep
+      name="identity-catalog"
+      title="Identity Profile Catalog"
+      description="Import the dedicated user catalog's indexes, columns and lexicon."
+      handler=".setuphandlers.catalogxml.import_identity_catalog"
+      >
+    <depends name="toolset" />
+  </genericsetup:importStep>
+
+  <genericsetup:exportStep
+      name="identity-catalog"
+      title="Identity Profile Catalog"
+      description="Export the dedicated user catalog's indexes, columns and lexicon."
+      handler=".setuphandlers.catalogxml.export_identity_catalog"
+      />
+
   <include package=".upgrades" />
 
 </configure>

@@ -64,45 +64,15 @@ GROUP_PORTAL_TYPE = "UserGroup"
 #: them all, and nowhere else -- see :func:`brains_of_type`.
 CATALOGUED_TYPES = (PROFILE_PORTAL_TYPE, GROUP_PORTAL_TYPE)
 
-#: Indexes the catalog is created with. ``login`` is lowercased at index time
-#: by the indexer in :mod:`pas.plugins.identity.core.indexers` and must be
-#: lowercased at query time by every caller -- login names are
-#: case-insensitive in Plone, FieldIndex is not.
-INDEXES = (
-    ("portal_type", "FieldIndex"),
-    ("userid", "FieldIndex"),
-    ("login", "FieldIndex"),
-    ("group_id", "FieldIndex"),
-    ("group_ids", "KeywordIndex"),
-    # Every address a person has, not only the one ``email`` resolves to. A
-    # Keyword index because the field is a list and because the question
-    # asked of it -- "whose profile carries this address" -- is an exact
-    # match on one entry.
-    ("emails", "KeywordIndex"),
-    ("review_state", "FieldIndex"),
-    ("path", "ExtendedPathIndex"),
-    ("SearchableText", "ZCTextIndex"),
-)
-
-#: Metadata columns. These are the whole point of the catalog: the PAS
-#: property sheet and the enumeration results are served from brains alone,
-#: so every field a property sheet exposes has to be here.
-METADATA = (
-    "portal_type",
-    "Title",
-    "review_state",
-    "userid",
-    "login",
-    "fullname",
-    "email",
-    "emails",
-    "verified_emails",
-    "home_page",
-    "description",
-    "location",
-    "group_id",
-    "group_ids",
-)
+# The indexes and the metadata columns are not declared here. They live in
+# ``profiles/default/identity-catalog.xml``, applied by the ``identity-catalog``
+# GenericSetup step -- see ``setuphandlers.catalogxml`` for why that step has to
+# exist at all. Adding one is an edit to that file plus the ``rebuild-catalog``
+# profile, and a column also belongs in whichever of the two tuples below
+# describes the type it means something on.
+#
+# A plain comment rather than ``#:``, which would attach it to the tuple that
+# follows as that tuple's own documentation.
 
 #: Columns that mean something on a Profile. The catalog holds one schema for
 #: both types, so a Profile's ``group_id`` is empty and a Group's ``login`` is

@@ -11,7 +11,6 @@ install -> uninstall leaves no plugin behind and the site still works.
 
 from pas.plugins.identity import logger
 from pas.plugins.identity import PACKAGE_NAME
-from pas.plugins.identity.core.catalog import CATALOG_ID
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.container import grant_add_permissions
 from pas.plugins.identity.core.controlpanel.interfaces import IIdentitySettings
@@ -19,9 +18,6 @@ from pas.plugins.identity.core.controlpanel.interfaces import IProfileSettings
 from pas.plugins.identity.core.subscribers.principals import sync_core_records
 from pas.plugins.identity.core.versioning import register_modifier
 from pas.plugins.identity.core.versioning import unregister_modifier
-from pas.plugins.identity.setuphandlers.catalog import add_indexes
-from pas.plugins.identity.setuphandlers.catalog import add_lexicon
-from pas.plugins.identity.setuphandlers.catalog import add_metadata
 from pas.plugins.identity.setuphandlers.plugins import install_plugin
 from pas.plugins.identity.setuphandlers.plugins import install_profile_plugin
 from pas.plugins.identity.setuphandlers.plugins import uninstall_plugin
@@ -119,11 +115,9 @@ def post_install(context: SetupTool) -> None:
     for interface in SETTINGS_INTERFACES:
         register_settings(interface)
 
-    catalog = api.portal.get_tool(CATALOG_ID)
-    add_lexicon(catalog)
-    add_indexes(catalog)
-    add_metadata(catalog)
-
+    # The catalog's lexicon, indexes and columns are not built here any
+    # more: ``identity-catalog.xml`` declares them and the ``identity-catalog``
+    # import step has already applied it by the time this post handler runs.
     acl_users = _acl_users()
     install_plugin(acl_users)
     install_profile_plugin(acl_users)

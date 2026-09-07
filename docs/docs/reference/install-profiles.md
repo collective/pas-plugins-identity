@@ -39,6 +39,24 @@ One profile installs everything the core layer needs:
 - the registry records in {doc}`settings`, pointed at this package's own types
 - the permissions and rolemap in {doc}`permissions`
 
+#### Import and export steps
+
+Beside the steps GenericSetup and Plone already register, this profile carries
+one of its own.
+
+| Step | File | What it does |
+|---|---|---|
+| `identity-catalog` | `identity-catalog.xml` | The user catalog's lexicon, indexes and metadata columns |
+
+It exists because GenericSetup's own `catalog` step resolves its target with
+`queryUtility(ICatalogTool)`, which answers `portal_catalog` and has no notion
+of a second catalog. The filename differs for the same reason: a `catalog.xml`
+here would be read by that step and applied to the site catalog.
+
+The step is additive and re-runnable, and it exports as well as imports. It does
+not populate what it creates—see
+{doc}`/how-to-guides/add-a-catalog-index`.
+
 ### `pas.plugins.identity:rebuild-catalog`
 
 Re-catalogs every principal and reports what it repaired.
