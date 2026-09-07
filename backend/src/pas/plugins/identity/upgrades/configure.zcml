@@ -3,19 +3,15 @@
     xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
     >
 
-  <!-- Example upgrade step
-  <genericsetup:upgradeSteps
-      profile="pas.plugins.identity:default"
-      source="1000"
-      destination="1001"
-      >
-    <genericsetup:upgradeDepends
-        title="Update registry value"
-        import_steps="plone.app.registry"
-        />
-  </genericsetup:upgradeSteps>
-  -->
+  <!-- One package per profile version, each holding the steps that take a
+       site to it. The alternative is a single file that grows a block per
+       release; this way a step is read next to the code it upgrades, and two
+       releases in flight do not edit the same lines.
 
-  <!-- -*- extra stuff goes here -*- -->
+       The include is what registers them. This package's ZCML is pulled in
+       by profiles.zcml, and a version left out below is a step nobody runs
+       and nothing reports. -->
+
+  <include package=".v1001" />
 
 </configure>

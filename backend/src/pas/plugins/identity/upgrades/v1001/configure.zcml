@@ -1,0 +1,28 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    >
+
+  <!-- Groups nest by containment, which needs the UserGroup FTI to allow
+       UserGroup inside it. An FTI is a persistent object written into
+       portal_types at install, so a site installed before this keeps an empty
+       allowed_content_types with filter_content_types on: the add menu offers
+       nothing inside a group, and nothing says why.
+
+       typeinfo rather than a handler of our own, because the value wanted is
+       exactly the one the profile already declares. Re-importing the step is
+       the whole upgrade. It reapplies both types rather than only the one
+       that changed, which is what GenericSetup offers and what the rest of
+       this ecosystem does. -->
+  <genericsetup:upgradeSteps
+      profile="pas.plugins.identity:default"
+      source="1000"
+      destination="1001"
+      >
+    <genericsetup:upgradeDepends
+        title="Allow a UserGroup to be added inside a UserGroup"
+        import_steps="typeinfo"
+        />
+  </genericsetup:upgradeSteps>
+
+</configure>
