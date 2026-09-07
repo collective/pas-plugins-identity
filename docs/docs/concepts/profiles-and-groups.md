@@ -51,13 +51,26 @@ The first is hot and the second is not, so keeping membership on the member make
 
 ## A group can be inside a group
 
-A group carries `group_ids` too, from the same behavior a profile carries, and it means the same thing: the groups this principal belongs to.
-
-So a group named there is an *outer* group, and everybody in the inner group is in the outer one.
+A group belongs to another group, and everybody in the inner group is in the outer one.
 That is how a child team inherits its parent team's access on GitHub, and it is the shape most people already have in mind when they draw groups.
 
-Membership therefore stays a fact stored on the member, whether the member is a person or a group.
-The transitive answer is a walk over one field rather than a second kind of edge.
+There are two ways to say it, and they mean the same thing.
+
+**Containment.** An `UserGroup` may be added inside an `UserGroup`, and a group filed that way belongs to the group it sits in.
+The hierarchy is then the content tree: it is visible in the navigation, a group is moved into a team by moving the object, and nothing has to be typed.
+
+**The `group_ids` field.** A group carries it too, from the same behavior a profile carries, and it means what it means everywhere else: the groups this principal belongs to.
+This is what a provider's group map writes, and it is how an edge is drawn across the tree rather than down it.
+A group can only sit in one place, but it can name any number of groups.
+
+<!-- Both are read by build_edges in core/utils/nesting.py, which unions them. -->
+
+The graph unions the two.
+A group can use either or both, a group that does both contributes the edge once, and nothing downstream can tell which way an edge was written.
+So membership stays a fact about the member, whether the member is a person or a group, and the transitive answer is a walk over one graph rather than over two kinds of relation.
+
+One consequence is worth stating: clearing `group_ids` does not un-nest a group that is nested by containment.
+To take that group out of its parent, move the object.
 
 This was refused once, and the reason was that a group whose members are groups makes `getGroupsForPrincipal` recursive.
 That is true.
@@ -67,7 +80,12 @@ The recursion is not over the thing that is large.
 A site has as many people as it has people and as many groups as it has teams; the group graph is the small one, it lives entirely in catalog metadata, and one query returns all of it.
 The cost grows with the number of teams, not with the number of users, which is the number that grows.
 
-Two consequences worth stating.
+Three consequences worth stating.
+
+A group id is unique across the site, not within a folder.
+Object ids are unique per container, and once groups can live inside groups there is more than one container they live in.
+A second group claiming an id already in use is refused when it is created or renamed.
+It has to be: a group id is what local roles, sharing entries and every `group_ids` value are written in terms of, and two groups answering to one would grant whichever the catalog returned first.
 
 A cycle is an ordinary input.
 Nothing stops an operator putting A in B and B in A through two edit forms that each looked reasonable on their own, so the walk terminates on a cycle rather than refusing the second edit for a reason about the first.

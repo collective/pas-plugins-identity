@@ -11,12 +11,19 @@ Core implements ``IGroupManagement`` over this type -- creating and removing
 the content, and writing membership to the *user* -- so a group can be added
 through ``api.group.create`` like any other.
 
-**Groups nest, in the same direction.** A group carries ``group_ids`` too,
-from the same
+**Groups nest, two ways, and they mean one thing.** A group may be *filed
+inside* another group -- the FTI allows ``UserGroup`` within ``UserGroup`` --
+and it also carries ``group_ids``, from the same
 :class:`~pas.plugins.identity.core.behaviors.membership.IGroupMembership` behavior a
-Profile carries, and it means the same thing: the groups this principal
-belongs to. So everybody in an inner group is in every group the inner group
-names, which is how a GitHub child team inherits its parent's access.
+Profile carries. Both say the group belongs to another group, so everybody in
+an inner group is in the outer one, the way a GitHub child team inherits its
+parent's access.
+
+The two are unioned rather than ranked. Containment is what an operator
+reaches for -- drag a team into a team and the hierarchy is the tree they can
+see -- and the field is what a provider's group map writes and what expresses
+an edge across the tree. A group can use either or both, and a group that does
+both contributes the edge once.
 
 This was refused once, on the grounds that a group whose members are groups
 makes ``getGroupsForPrincipal`` recursive and that a recursive answer computed
@@ -69,8 +76,16 @@ class IUserGroupSchema(model.Schema, IGroupContent):
 class UserGroup(Container):
     """A user group.
 
-    Folderish for the same reason a Profile is: a deployment may want to file
-    content under a group. Nothing in this layer puts anything inside one.
+    Folderish because a group holds groups: the FTI allows ``UserGroup``
+    inside ``UserGroup`` and nothing else, and a group filed inside another is
+    a member of it. See :mod:`pas.plugins.identity.core.utils.nesting`.
+
+    A group id is the object's own id, so it is unique within a folder and
+    nothing more -- which stopped being enough the moment there was more than
+    one folder groups can live in. Local roles, sharing entries and every
+    ``group_ids`` value in the site are written in terms of that id, so a
+    second group claiming one is refused on the way in by
+    :func:`~pas.plugins.identity.core.subscribers.refuse_duplicate_group`.
     """
 
     @property

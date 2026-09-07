@@ -14,12 +14,15 @@ would go missing from every backup taken until somebody noticed. Waking the
 objects costs a few seconds once and cannot be wrong.
 """
 
+from Acquisition import aq_inner
+from Acquisition import aq_parent
 from datetime import datetime
 from datetime import UTC
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
+from pas.plugins.identity.core.interfaces import IGroupContent
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.exportimport.schema import DOCUMENT_VERSION
 from pas.plugins.identity.exportimport.schema import ExportImportError
@@ -95,7 +98,28 @@ def export_group(group) -> dict[str, Any]:
     # The groups this group is nested inside. Applied last on the way in,
     # because it can name a group that comes later in the list.
     exported["group_ids"] = list(getattr(group, "group_ids", None) or ())
+    # The other way of writing the same edge: the group this one is filed
+    # inside, when that is a group rather than a folder. Carried separately
+    # rather than folded into ``group_ids`` because the two are not the same
+    # thing on the way back in -- one is a field to write, the other is a
+    # place to put the object -- and an import that turned a hierarchy into a
+    # flat list of equivalent memberships would round-trip the access while
+    # silently discarding the structure somebody built.
+    exported["container_group"] = _text(_containing_group_id(group))
     return exported
+
+
+def _containing_group_id(group) -> str:
+    """Return the id of the group this one is filed inside, if any.
+
+    :param group: A ``UserGroup`` object.
+    :returns: The containing group's id, or an empty string when this group
+        is not filed inside a group.
+    """
+    parent = aq_parent(aq_inner(group))
+    if parent is None or not IGroupContent.providedBy(parent):
+        return ""
+    return str(getattr(parent, "group_id", "") or parent.getId())
 
 
 def export_user(profile, store) -> dict[str, Any]:

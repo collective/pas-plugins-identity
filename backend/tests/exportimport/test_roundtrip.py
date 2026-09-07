@@ -12,10 +12,14 @@ from . import LOGIN
 from . import PROVIDER
 from . import SUBJECT
 from . import USERID
+from pas.plugins.identity.core.container import get_container
+from pas.plugins.identity.core.container import GROUP
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
+from pas.plugins.identity.core.pas.profile import PLUGIN_ID as PROFILE_PLUGIN_ID
 from pas.plugins.identity.exportimport import export_site
 from pas.plugins.identity.exportimport import import_site
+from plone import api
 
 import json
 import pytest
@@ -91,3 +95,82 @@ class TestARoundTrip:
         groups = {group["group_id"]: group for group in export_site()["groups"]}
 
         assert groups["staff"]["group_ids"] == ["site-editors"]
+
+
+class TestAHierarchyRoundTrips:
+    """The other way of writing the nesting, which is a *place* rather than a
+    field and therefore needs a pass of its own on the way back in.
+
+    Without it a document restores every group into the one configured
+    container, so a restored site keeps the memberships and loses the shape
+    somebody built -- silently, since the access all still resolves.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, make_group) -> None:
+        self.portal = portal
+        staff = make_group("staff", title="Staff")
+        engineering = make_group("engineering", title="Engineering", container=staff)
+        make_group("developers", title="Developers", container=engineering)
+        # Resolved after the first group, which is what creates the container.
+        self.groups = get_container(kind=GROUP)
+        self.plugin = portal.acl_users[PROFILE_PLUGIN_ID]
+
+    def _exported(self) -> dict:
+        """Return the exported groups, keyed by group id.
+
+        :returns: Group records.
+        """
+        return {group["group_id"]: group for group in export_site()["groups"]}
+
+    def test_the_container_is_exported(self):
+        """One record per group, each naming the group it sits in."""
+        groups = self._exported()
+
+        assert groups["staff"]["container_group"] == ""
+        assert groups["engineering"]["container_group"] == "staff"
+        assert groups["developers"]["container_group"] == "engineering"
+
+    def test_the_hierarchy_is_rebuilt(self):
+        """Into a site whose groups have been flattened, which is what a
+        restore amounts to once every group has been created in the one
+        container the importer files them in."""
+        document = export_site()
+        # Flatten it, innermost first so each move is out of a group that is
+        # still where it was. This is the state a fresh import produces, and
+        # it is one an operator can produce by hand too.
+        with api.env.adopt_roles(["Manager"]):
+            api.content.move(
+                source=self.groups["staff"]["engineering"]["developers"],
+                target=self.groups,
+            )
+            api.content.move(
+                source=self.groups["staff"]["engineering"], target=self.groups
+            )
+        assert self._exported()["developers"]["container_group"] == ""
+
+        assert not import_site(document).refused
+
+        groups = self._exported()
+
+        assert groups["engineering"]["container_group"] == "staff"
+        assert groups["developers"]["container_group"] == "engineering"
+
+    def test_a_second_import_leaves_the_shape_alone(self):
+        """The re-import case: every group is already where the document
+        says, and moving it again would be a write for nothing."""
+        assert not import_site(export_site()).refused
+        assert not import_site(export_site()).refused
+
+        groups = self._exported()
+
+        assert groups["developers"]["container_group"] == "engineering"
+
+    def test_membership_follows_the_rebuilt_hierarchy(self):
+        """The point of restoring the shape rather than only the records."""
+        assert not import_site(export_site()).refused
+
+        assert set(self.plugin.getNestedGroupIds("staff")) == {
+            "engineering",
+            "developers",
+        }

@@ -29,6 +29,7 @@ For the contract a site's own types must meet instead, read {doc}`user-content`.
 | Workflow | `user_profile_workflow` | `user_group_workflow` |
 | Identifier | the object's id in its container **is** the userid | the object's id **is** the group id |
 | Membership | `group_ids`, from the `pas.plugins.identity.group_membership` behavior | the same field, naming the groups this group is nested inside |
+| Containment | nothing may be added inside a Profile | `UserGroup` only; a group filed inside a group belongs to it |
 
 Neither type declares `group_ids`. Both enable the behavior, which is what lets a
 site's own user type gain membership without declaring the field, its

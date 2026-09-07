@@ -54,6 +54,7 @@ login.
 """
 
 from pas.plugins.identity import logger
+from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.completeness import reconcile
@@ -582,7 +583,66 @@ def on_email_identity_changed(event) -> None:
         catalog.reindexObject(profile)
 
 
+class DuplicateGroupId(ValueError):
+    """Another group in this site already answers to this group id."""
+
+
+def refuse_duplicate_group(group, event) -> None:
+    """Refuse a second group content object claiming an existing group id.
+
+    A group id is the object's own id, and object ids are unique only within
+    one container. Once a group may be filed *inside* another group, two
+    containers can each hold a ``developers`` -- and a group id is what local
+    roles, sharing entries and every ``group_ids`` field in the site are
+    written in terms of. Two objects answering to one would mean membership
+    that resolves to whichever the catalog returned first, and a removal that
+    deletes one and leaves the other still granting.
+
+    So it is refused at the point it is created, where the message can name
+    the group that is already using the id. The alternative -- letting both
+    exist and picking one -- is a site that looks fine and grants the wrong
+    access.
+
+    Bound to the group marker rather than to the portal type, so a site's own
+    group type is held to the same rule. Registered for the *move* event
+    rather than the add: adding is one of the ways a group arrives at an id
+    and renaming is the other, and a rename fires no add event at all -- so a
+    guard on adding alone is one ``manage_renameObject`` away from the
+    duplicate it exists to prevent.
+
+    Whichever order this and the indexing subscriber run in, the group's own
+    record is the one path that must not count as a collision: it is either
+    already written at the new path, or not yet written anywhere.
+
+    :param group: The group that has just arrived at a path.
+    :param event: The move event; adding and renaming are both one.
+    :raises DuplicateGroupId: When another group already uses this id.
+    """
+    if event.newParent is None:
+        # On its way out of the site. Nothing arrives at an id here.
+        return
+    catalog = query_catalog()
+    if catalog is None:
+        return
+    group_id = group.getId()
+    own_path = "/".join(group.getPhysicalPath())
+    for brain in catalog.unrestrictedSearchResults(
+        portal_type=GROUP_PORTAL_TYPE, group_id=group_id
+    ):
+        # Its own record, whether or not the indexing subscriber has run yet:
+        # both orderings are legal and neither is worth depending on.
+        if brain.getPath() == own_path:
+            continue
+        raise DuplicateGroupId(
+            f"The group id {group_id!r} is already used by the group at "
+            f"{brain.getPath()}. Group ids are what roles and memberships are "
+            f"stored in terms of, so they are unique across the site rather "
+            f"than within a folder."
+        )
+
+
 __all__ = [
+    "DuplicateGroupId",
     "claim_fields",
     "ensure_profile",
     "get_profile",
@@ -592,6 +652,7 @@ __all__ = [
     "on_identity_linked",
     "on_logged_in",
     "profile_url",
+    "refuse_duplicate_group",
     "sync_addresses",
     "sync_claims",
 ]

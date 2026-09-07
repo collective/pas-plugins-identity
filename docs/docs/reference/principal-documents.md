@@ -29,7 +29,8 @@ For the commands that produce and consume it, see {doc}`/how-to-guides/export-an
       "group_id": "site-editors",
       "title": "Site Editors",
       "description": "",
-      "group_ids": ["staff"]
+      "group_ids": ["staff"],
+      "container_group": ""
     }
   ],
   "users": [
@@ -62,6 +63,7 @@ For the commands that produce and consume it, see {doc}`/how-to-guides/export-an
 | `version` | yes | The format version, an integer. A document from a **later** version than the reader understands is refused rather than read optimistically: guessing at a newer format leaves a site with half its accounts. |
 | `userid` | yes | Carried across **verbatim**. Every local role, ownership and sharing entry in the target site is written against it, so an import that minted new ids would produce a site full of content belonging to nobody. |
 | `group_ids` | no | On a user, the groups they are in. On a group, the groups that group is nested inside. |
+| `container_group` | no | Groups only. The group this one is *filed inside*, empty when it is not filed inside a group. Restored by moving the object, so a hierarchy survives a round trip rather than coming back flat. |
 | `identities` | no | The `(provider, subject)` pairs that reach this account. Both are required on each entry; either alone identifies nobody. `created` and `last_login` may be `null`. |
 
 ## What a document never contains
@@ -100,11 +102,13 @@ The flag means *believe what the dump claims*, never *call everything verified*.
 
 ## Reading order matters
 
-The importer makes three passes, and the order is not incidental.
+The importer makes four passes, and the order is not incidental.
 
-1. **Groups**, because a user's `group_ids` names them.
+1. **Groups**, because a user's `group_ids` names them. Every group is created in the configured container, flat.
 2. **Users**, each with the fields the Profile schema declares.
-3. **Membership, then the identity join**, once every principal exists.
+3. **Containment**, filing each group named by a `container_group` inside it.
+   It comes after step 1 because a parent may appear later in the list than its child, and each group is resolved by id at the moment it is moved, so the order within the pass does not matter either.
+4. **Membership, then the identity join**, once every principal exists.
    A group's own `group_ids` can name a group that appears later in the same list, which is why this pass comes last.
 
 ## What is refused, and what is skipped

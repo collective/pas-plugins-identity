@@ -35,17 +35,23 @@ def make_group(portal):
     :returns: The factory.
     """
 
-    def factory(group_id: str, title: str = "", **kwargs):
+    def factory(group_id: str, title: str = "", container=None, **kwargs):
         """Create one group.
 
         :param group_id: Its id.
         :param title: Its title.
+        :param container: Where to file it. Another group, to nest it; the
+            configured group container by default.
         :param kwargs: Any other field.
         :returns: The object.
         """
         with api.env.adopt_roles(["Manager"]):
             return api.content.create(
-                container=get_container(create=True, kind=GROUP),
+                container=(
+                    container
+                    if container is not None
+                    else get_container(create=True, kind=GROUP)
+                ),
                 type=GROUP_PORTAL_TYPE,
                 id=group_id,
                 group_id=group_id,

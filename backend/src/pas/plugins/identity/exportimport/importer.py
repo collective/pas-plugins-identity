@@ -33,6 +33,9 @@ is never attempted, so a dry run cannot leave a half-applied transaction
 behind if something outside this package commits. Read the report first.
 """
 
+from Acquisition import aq_base
+from Acquisition import aq_inner
+from Acquisition import aq_parent
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
@@ -174,6 +177,46 @@ def _import_user(user: dict[str, Any], result: Result, dry_run: bool) -> None:
         **fields,
     )
     result.users.append(userid)
+
+
+def _apply_containment(group: dict[str, Any], result: Result, dry_run: bool) -> None:
+    """File one group inside the group it was exported from.
+
+    Runs after every group has been created, for the reason the membership
+    pass does: a document lists groups in no particular order, and a parent
+    may come after its child.
+
+    Order within this pass does not matter either, because each group is
+    resolved by id at the moment it is moved -- so a parent that has itself
+    already been re-filed is found where it now is, and a child moved before
+    its parent is carried along when the parent moves.
+
+    A named container this document does not carry is reported rather than
+    invented, matching :func:`_apply_membership`: a group nobody stated is a
+    piece of structure nobody decided on.
+
+    :param group: The group record.
+    :param result: The result to record skips into.
+    :param dry_run: Whether to write.
+    """
+    container_id = group.get("container_group") or ""
+    if not container_id or dry_run:
+        return
+    group_id = group["group_id"]
+    obj = _existing(GROUP_PORTAL_TYPE, "group_id", group_id)
+    if obj is None:  # pragma: no cover - written a moment ago
+        return
+
+    parent = _existing(GROUP_PORTAL_TYPE, "group_id", container_id)
+    if parent is None:
+        result.skipped.append(
+            f"group {group_id}: no group {container_id!r} to file it inside"
+        )
+        return
+    if aq_base(aq_parent(aq_inner(obj))) is aq_base(parent):
+        # Already where it belongs, which is the ordinary case on a re-import.
+        return
+    api.content.move(source=obj, target=parent)
 
 
 def _apply_membership(record: dict[str, Any], portal_type: str, dry_run: bool) -> None:
@@ -423,6 +466,8 @@ def import_site(
         for user in users:
             _import_user(user, result, dry_run)
         # Nesting last, so a group may name one that came after it.
+        for group in groups:
+            _apply_containment(group, result, dry_run)
         for group in groups:
             _apply_membership(group, GROUP_PORTAL_TYPE, dry_run)
         for user in users:
