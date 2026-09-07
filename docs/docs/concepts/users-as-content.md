@@ -101,24 +101,16 @@ If users can live in more than one container, `container.get(userid)` no longer 
 To move where users are created, change the records.
 Everything created afterward goes to the new container, and the catalog is not scoped to any container, so what is already there keeps working.
 
-## Membership lives on the member
+## The group contract has no members accessor
 
 `group_ids` is a field on the user, and a group carries no list of its members.
-
-`getGroupsForPrincipal` runs on every permission check that touches a local role.
-Listing a group's members does not.
-Keeping membership on the member makes the hot question a single metadata read, and leaves the cold question to a catalog query.
 
 `IGroupContent` therefore has no members accessor, and will not grow one.
 An accessor would be a second copy of the same fact, and the two would drift the first time anything wrote to one without the other.
 
-A group can be a member of a group, and that is the same fact said in either of two ways.
-A group may be filed inside another group, and it carries `group_ids` as well, naming the groups it is nested inside.
-Both mean everybody in the inner group is in the outer one, and the graph unions them.
+A group belongs to a group the same way a person does, either by being filed inside one or by naming it in `group_ids`, so the marker contract does not grow a second relation to carry nesting.
 
-The answer is closed over on the way out rather than stored expanded.
-That walk is over the group graph, which grows with the number of teams rather than the number of people, and the whole of it is one catalog query.
-See {doc}`profiles-and-groups` for what happens to a cycle and to a deactivated group.
+See {doc}`profiles-and-groups` for why membership is kept on the member, how the graph unions the two kinds of edge, and what happens to a cycle and to a deactivated group.
 
 ## Creating and enumerating are two plugins
 

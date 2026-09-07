@@ -1,10 +1,25 @@
 """The ``UserProfile`` content type.
 
-One Profile per canonical userid. The fields are exactly the PAS property
-sheet :mod:`pas.plugins.identity.core.pas.profile` serves, which is why they
-are listed here rather than borrowed from a Dublin Core behavior: every one of
-them becomes catalog *metadata*, and metadata that nobody serves is dead
-weight in every brain.
+One Profile per canonical userid. What the type itself declares is small on
+purpose: the identifiers a user is known by. Everything a person fills in
+arrives through a behavior, so a site running its own user type composes the
+same Profile out of the same parts rather than redeclaring them.
+
+============================ ====================================
+Fields                       Where they are declared
+============================ ====================================
+``login``, ``fullname``,     here
+``description``
+``emails``, ``email``        :mod:`~pas.plugins.identity.core.behaviors.email`
+``home_page``, ``location``, :mod:`~pas.plugins.identity.core.behaviors.details`
+``image``
+``group_ids``                :mod:`~pas.plugins.identity.core.behaviors.membership`
+============================ ====================================
+
+A behavior here is schema-only, so this is a question of *where a field is
+declared* and not of where its value lives: a Profile still answers
+``profile.emails``, the catalog still indexes ``email``, and the properties
+further down this module are still what runs when anything writes one.
 
 ``userid`` is the join to :mod:`pas.plugins.identity.core.store` and is
 permanent -- an identity, a local role assignment and a catalog entry all
@@ -17,21 +32,14 @@ things keep it that way, because there are three ways to write a field:
 * :mod:`pas.plugins.identity.core.doctor` treats a duplicate as an error
   rather than a merge, for the ones that got in before any of this.
 
-``emails`` is required, and ``email`` is derived from it. A person has more
-than one address, signs in with more than one of them, and which one is
-theirs *here* is a question whose answer changes -- so the list is what is
-stored and the single value everything else reads is computed: the first
-verified address, or the first address at all. An address counts as verified
-when this site holds an ``email`` identity for it, which is what a magic link
-creates; see :mod:`pas.plugins.identity.core.utils.emails`, which also says why
-linking one reindexes the Profile.
-
-``image`` is where a user's picture lives, and it wins over the member
-portrait when it is set -- see
-:func:`pas.plugins.identity.core.serializers.user.portrait_of` for the precedence
-and why it runs that way round. It is not in
-:data:`~pas.plugins.identity.core.pas.profile.PROPERTY_FIELDS`: those are served
-from catalog metadata, and a blob has no business in a brain.
+``login`` is the other identifier, and it is the one a person types. It has a
+write permission of its own, held by ``Manager`` alone once the Profile
+exists: it is half of the case-folded index user enumeration queries, so
+rewriting it moves an account away from every sign-in, Sharing entry and
+provider mapping written against the old name. The field is still offered
+while a principal is being *created*, because the container grants that
+permission beside the add permission -- see
+:data:`pas.plugins.identity.core.container.LOGIN_ROLES`.
 """
 
 from pas.plugins.identity import _
@@ -44,8 +52,6 @@ from pas.plugins.identity.core.utils.emails import verified_addresses
 from plone.autoform.directives import read_permission
 from plone.autoform.directives import write_permission
 from plone.dexterity.content import Container
-from plone.namedfile.field import NamedBlobImage
-from plone.schema import Email
 from plone.supermodel import model
 from zope import schema
 from zope.interface import implementer
@@ -58,9 +64,9 @@ class IUserProfileSchema(model.Schema, IUserContent):
     which is how core knows objects of this type are users and may create
     them. Two of the three attributes that interface promises -- ``userid``
     and ``login`` -- are here; the third, ``group_ids``, comes from the
-    :class:`~pas.plugins.identity.core.behaviors.membership.IGroupMembership` behavior,
-    which the FTI enables and which the Group type enables too. Claiming the
-    marker states the contract rather than adding to it.
+    :class:`~pas.plugins.identity.core.behaviors.membership.IGroupMembership`
+    behavior, which the FTI enables and which the Group type enables too.
+    Claiming the marker states the contract rather than adding to it.
 
     The fourth clause is about placement rather than fields: the object's id
     within its container is the userid. That is what
@@ -84,82 +90,22 @@ class IUserProfileSchema(model.Schema, IUserContent):
         required=True,
     )
 
-    emails = schema.Tuple(
-        title=_("Email addresses"),
-        description=_(
-            "The addresses this person uses, most preferred first. At least "
-            "one is required: a Profile exists to be the thing somebody is "
-            "reached and recognised by. Adding an address here does not "
-            "prove it -- verifying one sends a link to it, and only an "
-            "address this site has verified can be used to sign in or to "
-            "attach a new provider account to this one."
-        ),
-        value_type=Email(title=_("Email")),
-        # ``required`` rather than ``min_length=1``: zope.schema validates a
-        # field's default when the schema is defined, and a one-address
-        # minimum with an empty default fails at import time. Required plus a
-        # ``missing_value`` of ``()`` says the same thing -- an empty tuple is
-        # missing, and a form insists on an entry.
-        required=True,
-        missing_value=(),
-        default=(),
-    )
-
-    email = Email(
-        title=_("Email"),
-        description=_(
-            "The address that stands for this person: the first verified one "
-            "in the list above, or the first one at all when none is "
-            "verified. Derived rather than typed, so there is no second "
-            "value to disagree with the list."
-        ),
-        required=False,
-        readonly=True,
-    )
-
-    home_page = schema.TextLine(
-        title=_("Home page"),
-        required=False,
-    )
-
     description = schema.Text(
         title=_("Biography"),
         required=False,
     )
 
-    location = schema.TextLine(
-        title=_("Location"),
-        required=False,
-    )
-
-    image = NamedBlobImage(
-        title=_("Picture"),
-        description=_(
-            "Shown wherever this user is represented. When it is empty the "
-            "portrait stored on the member is used instead, and failing that "
-            "the user's initials."
-        ),
-        required=False,
-    )
-
+    # Not ``.edit``: see permissions.zcml. The owner of a Profile holds the
+    # edit permission on it, and a login is what an account is enumerated by.
     write_permission(
-        login="pas.plugins.identity.content.edit",
+        login="pas.plugins.identity.content.editlogin",
         fullname="pas.plugins.identity.content.edit",
-        emails="pas.plugins.identity.content.edit",
-        home_page="pas.plugins.identity.content.edit",
         description="pas.plugins.identity.content.edit",
-        location="pas.plugins.identity.content.edit",
-        image="pas.plugins.identity.content.edit",
     )
     read_permission(
         login="pas.plugins.identity.content.view",
         fullname="pas.plugins.identity.content.view",
-        emails="pas.plugins.identity.content.viewpii",
-        email="pas.plugins.identity.content.viewpii",
-        home_page="pas.plugins.identity.content.view",
         description="pas.plugins.identity.content.view",
-        location="pas.plugins.identity.content.view",
-        image="pas.plugins.identity.content.view",
     )
 
 

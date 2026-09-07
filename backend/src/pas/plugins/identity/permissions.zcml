@@ -40,6 +40,27 @@
       title="pas.plugins.identity: Edit Profile Group Membership"
       />
 
+  <!-- A login is not a field its owner may rewrite, and not one a Site
+       Administrator may rewrite either.
+
+       It is half of the case folded index user enumeration queries, so
+       changing it moves an account: every sign in, every Sharing entry
+       written against the old name, and every provider that maps a user by
+       it. The ordinary edit permission is what the owner of a Profile holds,
+       which made "correct my name" and "become somebody else" the same
+       action.
+
+       Only after creation, which is where the split lives rather than in
+       this declaration. The container grants this permission alongside the
+       add permission, so the add form still offers the field to whoever may
+       file a principal there; the workflow grants it to Manager alone in
+       every state, and the workflow is what governs the object once it
+       exists. See core.container.LOGIN_ROLES. -->
+  <permission
+      id="pas.plugins.identity.content.editlogin"
+      title="pas.plugins.identity: Edit Profile Login"
+      />
+
   <permission
       id="pas.plugins.identity.content.view"
       title="pas.plugins.identity: View Profile"

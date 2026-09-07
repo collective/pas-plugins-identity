@@ -3,6 +3,7 @@
 [Bb]oolean
 [Dd]ockerfile
 [Dd]ocstring(s)?
+[Ee]nricher(s)?
 [Ff]ieldset(s)?
 [Ff]ullname
 [Jj]enkins

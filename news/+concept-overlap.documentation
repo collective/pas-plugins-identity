@@ -1,0 +1,3 @@
+Split the two concept pages on the boundary they already declared.
+
+`About users as content` is the mechanism: what the marker contracts promise, and why the plugin creates a type it has never heard of. `About profiles and groups` is what the fields a Profile owns are used for. The comparison with `Products.membrane` and the reason membership is kept on the member had been written out in full on both, so a reader met the same argument twice in slightly different words, and a correction had two places to land — including the version the membrane reading was verified against. Each argument now has one home, and the other page points at it rather than restating it. @ericof

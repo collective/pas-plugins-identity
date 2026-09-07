@@ -88,4 +88,5 @@ migrate-from-oidc
 :maxdepth: 1
 
 write-a-driver
+write-a-profile-enricher
 ```

@@ -68,8 +68,10 @@ class TestTheFTI:
     @pytest.mark.parametrize(
         "idx,behavior",
         enumerate((
-            "plone.shortname",
+            "pas.plugins.identity.profile_details",
+            "pas.plugins.identity.email_addresses",
             "pas.plugins.identity.group_membership",
+            "plone.shortname",
             "plone.versioning",
         )),
     )
@@ -85,7 +87,7 @@ class TestTheFTI:
     def test_no_other_behaviors(self):
         """The list above is the whole list. Without this, a behaviour added
         at the end is a behaviour no test notices."""
-        assert len(self.fti.behaviors) == 3
+        assert len(self.fti.behaviors) == 5
 
     def test_namefromtitle_is_absent(self):
         """``Title()`` here is computed from the full name, which is neither

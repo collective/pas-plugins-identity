@@ -37,4 +37,26 @@
       provides=".membership.IGroupMembership"
       />
 
+  <!-- A person's addresses. Schema only, so the list is stored on the content
+       object exactly as a declared field was, and the class properties on
+       UserProfile are still what normalizes a write and derives the single
+       value. Its own fieldset, because these are the fields carrying the
+       viewpii read permission rather than the ordinary one. -->
+  <plone:behavior
+      name="pas.plugins.identity.email_addresses"
+      title="Email addresses"
+      description="The addresses this person is reached and recognised by."
+      provides=".email.IEmailAddresses"
+      />
+
+  <!-- What a person says about themselves, and their picture. Schema only,
+       and with no fieldset of its own: these belong beside the login and the
+       full name on the default tab. -->
+  <plone:behavior
+      name="pas.plugins.identity.profile_details"
+      title="Profile details"
+      description="Home page, location and picture."
+      provides=".details.IProfileDetails"
+      />
+
 </configure>

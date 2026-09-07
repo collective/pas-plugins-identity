@@ -23,7 +23,7 @@
                 name="pas.plugins.identity: Add User Group"
     />
 
-    <!-- The other three are the field permissions declared on the schema in
+    <!-- The rest are the field permissions declared on the schema in
          ``pas.plugins.identity.core.contents.profile``. Every one of them is also managed by
          ``user_profile_workflow``, which is what decides who may read
          and write a Profile in each of its states; these entries are the
@@ -49,6 +49,21 @@
     >
       <role name="Manager" />
       <role name="Site Administrator" />
+    </permission>
+
+    <!-- A login may be rewritten by a Manager and by nobody else once the
+         Profile exists. It is half of the case folded index that user
+         enumeration queries, so changing it moves the account away from
+         every sign in and Sharing entry written against the old name.
+
+         Site Administrator is absent here on purpose, and is granted this
+         on the container instead: that is what keeps the field on the add
+         form for whoever may file a principal, while the workflow holds the
+         object itself to Manager. See core.container.LOGIN_ROLES. -->
+    <permission acquire="False"
+                name="pas.plugins.identity: Edit Profile Login"
+    >
+      <role name="Manager" />
     </permission>
 
     <permission acquire="False"

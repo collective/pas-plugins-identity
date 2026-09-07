@@ -20,6 +20,7 @@
        Profile, computed by ``content.localroles``. -->
   <permission>pas.plugins.identity: Edit Profile</permission>
   <permission>pas.plugins.identity: Edit Profile Group Membership</permission>
+  <permission>pas.plugins.identity: Edit Profile Login</permission>
   <permission>pas.plugins.identity: View Profile</permission>
   <permission>pas.plugins.identity: View Personal Identifiable Information</permission>
 
@@ -120,6 +121,11 @@
     >
       <permission-role>Manager</permission-role>
       <permission-role>Site Administrator</permission-role>
+    </permission-map>
+    <permission-map acquired="False"
+                    name="pas.plugins.identity: Edit Profile Login"
+    >
+      <permission-role>Manager</permission-role>
     </permission-map>
     <permission-map acquired="False"
                     name="pas.plugins.identity: Edit Profile"
@@ -229,6 +235,11 @@
       <permission-role>Site Administrator</permission-role>
     </permission-map>
     <permission-map acquired="False"
+                    name="pas.plugins.identity: Edit Profile Login"
+    >
+      <permission-role>Manager</permission-role>
+    </permission-map>
+    <permission-map acquired="False"
                     name="pas.plugins.identity: Edit Profile"
     >
       <permission-role>Manager</permission-role>
@@ -329,6 +340,11 @@
     >
       <permission-role>Manager</permission-role>
       <permission-role>Site Administrator</permission-role>
+    </permission-map>
+    <permission-map acquired="False"
+                    name="pas.plugins.identity: Edit Profile Login"
+    >
+      <permission-role>Manager</permission-role>
     </permission-map>
     <permission-map acquired="False"
                     name="pas.plugins.identity: Edit Profile"

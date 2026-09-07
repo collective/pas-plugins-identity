@@ -56,8 +56,8 @@ class TestTheFTI:
     @pytest.mark.parametrize(
         "idx,behavior",
         enumerate((
-            "plone.shortname",
             "pas.plugins.identity.group_membership",
+            "plone.shortname",
             "plone.versioning",
         )),
     )

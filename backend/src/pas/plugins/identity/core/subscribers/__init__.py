@@ -60,6 +60,7 @@ from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.completeness import reconcile
 from pas.plugins.identity.core.container import get_container
 from pas.plugins.identity.core.contents.profile import UserProfile
+from pas.plugins.identity.core.enrichment import enrich_profile
 from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
 from pas.plugins.identity.core.events import IdentityLinked
 from pas.plugins.identity.core.events import UserClaimsRefreshed
@@ -436,6 +437,24 @@ def _handle(userid: str, claims: Claims, provider_id: str) -> None:
     record_verified_addresses(userid, provider_id, claims)
     if profile is None:
         return
+    # After the package's own writes and after verification, so that what an
+    # enricher sees is the Profile this login is leaving behind rather than a
+    # half-written one: claims synced, addresses appended, and the derived
+    # `email` settled by whatever has just been proved. Elevated for the same
+    # reason as the block above, and one reason more -- an enricher writes a
+    # field belonging to somebody else's behavior, which the person signing in
+    # may well not hold the permission for.
+    #
+    # Before `reconcile`, so a required field an enricher has just filled
+    # counts in this login rather than in the next one.
+    with api.env.adopt_roles(["Manager"]):
+        # The provider, not just its id: an enricher needs `driver_id` to know
+        # what shape the payload is in, and `provider_id` to tell two
+        # deployments of the same kind apart. `None` where there is no
+        # provider, which is every path that fires with an empty `raw`.
+        from pas.plugins.identity.core.controlpanel import get_provider
+
+        enrich_profile(profile, claims, get_provider(provider_id))
     # Last: a provider that has just supplied the missing address completes
     # the profile in the same login rather than in the next one.
     reconcile(profile)
