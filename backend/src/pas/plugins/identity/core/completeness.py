@@ -30,12 +30,13 @@ missing anything" has no business reversing it.
 """
 
 from pas.plugins.identity import logger
+from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.container import PREFIX
-from pas.plugins.identity.core.contents.profile import IUserProfileSchema
 from pas.plugins.identity.core.contents.profile import UserProfile
 from plone import api
 from plone.api.exc import InvalidParameterError
 from plone.dexterity.utils import iterSchemata
+from plone.dexterity.utils import iterSchemataForType
 from zope.schema import getFieldsInOrder
 
 
@@ -81,7 +82,7 @@ def _declared(profile: UserProfile) -> tuple[str, ...]:
     """Return the fields the profile's own type marks required.
 
     Read from the object rather than from
-    :class:`~pas.plugins.identity.core.contents.profile.IUserProfileSchema`, and
+    the type's own schema and its behaviors', and
     through ``iterSchemata`` rather than the FTI's own schema, so that a site
     running its own user type or a behavior that adds a required field gets
     the answer for the type it actually has.
@@ -165,15 +166,24 @@ def _brain_declared() -> tuple[str, ...]:
     """Return the required fields of the shipped type, without an object.
 
     :func:`_declared` reads them off the object through ``iterSchemata``,
-    which is right when there is one. There is not here, and the FTI's own
-    schema is the closest honest answer.
+    which is right when there is one. There is not here, so the same question
+    is asked of the *type*: ``iterSchemataForType`` yields the FTI's own
+    schema and then the schemata of every behavior it enables.
+
+    The behaviors are not optional detail. ``emails`` is required and is
+    declared by
+    :class:`~pas.plugins.identity.core.behaviors.email.IEmailAddresses`, so a
+    reader of the FTI schema alone would conclude that a profile with no
+    address is complete -- and this is the path ``@my-profile`` takes on every
+    page load.
 
     :returns: Field names, in schema order.
     """
     names = []
-    for name, field in getFieldsInOrder(IUserProfileSchema):
-        if field.required and name not in NEVER_REQUIRED:
-            names.append(name)
+    for schema in iterSchemataForType(PROFILE_PORTAL_TYPE):
+        for name, field in getFieldsInOrder(schema):
+            if field.required and name not in NEVER_REQUIRED and name not in names:
+                names.append(name)
     return tuple(names)
 
 

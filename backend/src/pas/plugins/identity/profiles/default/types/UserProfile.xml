@@ -36,8 +36,10 @@
        from the full name, which is neither unique nor stable, and every
        Profile is created with an explicit id (the canonical userid). -->
   <property name="behaviors">
-    <element value="plone.shortname" />
+    <element value="pas.plugins.identity.profile_details" />
+    <element value="pas.plugins.identity.email_addresses" />
     <element value="pas.plugins.identity.group_membership" />
+    <element value="plone.shortname" />
     <element value="plone.versioning" />
   </property>
 

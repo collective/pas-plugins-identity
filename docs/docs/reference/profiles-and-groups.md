@@ -40,19 +40,44 @@ member.
 
 ### `UserProfile` fields
 
-| Field | Type | Required | Read permission | Write permission |
-|---|---|---|---|---|
-| `login` | `TextLine` | yes | View Profile | Edit Profile |
-| `fullname` | `TextLine` | yes | View Profile | Edit Profile |
-| `emails` | `Tuple` of `Email` | yes | View PII | Edit Profile |
-| `email` | `Email` | no, **read-only** | View PII | — |
-| `home_page` | `TextLine` | no | View Profile | Edit Profile |
-| `description` | `Text` | no | View Profile | Edit Profile |
-| `location` | `TextLine` | no | View Profile | Edit Profile |
-| `image` | `NamedBlobImage` | no | View Profile | Edit Profile |
-| `group_ids` | from the behavior | no | View Profile | **Edit Profile Group Membership** |
+<!-- The type declares login, fullname and description in
+     core/contents/profile.py; the rest come from the behaviors in
+     core/behaviors/, and the FTI enables them in
+     profiles/default/types/UserProfile.xml. -->
+
+| Field | Type | Required | Declared in | Read permission | Write permission |
+|---|---|---|---|---|---|
+| `login` | `TextLine` | yes | the type | View Profile | **Edit Profile Login** |
+| `fullname` | `TextLine` | yes | the type | View Profile | Edit Profile |
+| `description` | `Text` | no | the type | View Profile | Edit Profile |
+| `home_page` | `TextLine` | no | `profile_details` | View Profile | Edit Profile |
+| `location` | `TextLine` | no | `profile_details` | View Profile | Edit Profile |
+| `image` | `NamedBlobImage` | no | `profile_details` | View Profile | Edit Profile |
+| `emails` | `Tuple` of `Email` | yes | `email_addresses` | View PII | Edit Profile |
+| `email` | `Email` | no, **read-only** | `email_addresses` | View PII | — |
+| `group_ids` | from the behavior | no | `group_membership` | View Profile | **Edit Profile Group Membership** |
 
 Permission titles are shortened here; see {doc}`permissions` for the ids.
+
+Only `login`, `fullname` and `description` are declared by the type. The rest
+arrive through behaviors, each named `pas.plugins.identity.<name>` above, so a
+site running its own user type composes the same Profile out of the same parts.
+Every one of them is schema-only: the values are stored on the content object
+exactly as declared fields were, and the catalog indexes them unchanged.
+
+`emails` and `email` are the only fields on a fieldset of their own, an
+**Email** tab. That is where the read permission differs from every other
+field's.
+
+### `UserProfile` behaviors
+
+| Behavior | Adds |
+|---|---|
+| `pas.plugins.identity.profile_details` | `home_page`, `location`, `image` |
+| `pas.plugins.identity.email_addresses` | `emails`, `email` |
+| `pas.plugins.identity.group_membership` | `group_ids` |
+| `plone.shortname` | the object id |
+| `plone.versioning` | version history |
 
 ### `UserGroup` fields
 
@@ -242,8 +267,8 @@ Controlled by `enforce_required_profile_fields`, on by default.
 ### What counts as complete
 
 `required_profile_fields` names the fields. Empty, which is how it ships, means
-the fields the profile type itself marks required: `login`, `emails` and
-`fullname` for the type in this package.
+the fields the profile type marks required, its behaviors' included: `login`,
+`fullname` and `emails` for the type in this package.
 
 | Value | Counts as filled? |
 |---|---|

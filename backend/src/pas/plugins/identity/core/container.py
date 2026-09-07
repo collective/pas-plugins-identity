@@ -110,6 +110,22 @@ ADD_PERMISSIONS = {
 #: becoming stricter.
 ADD_ROLES = ("Manager", "Site Administrator")
 
+#: The permission to write a Profile's ``login``, by **title**, for the same
+#: reason as :data:`ADD_PERMISSIONS`.
+LOGIN_PERMISSION = "pas.plugins.identity: Edit Profile Login"
+
+#: Roles that may write a ``login`` *inside a container*, which in practice
+#: means on the add form: an add form checks a field's write permission
+#: against the folder, an edit form against the object.
+#:
+#: That split is the whole mechanism behind "a Manager may change a login
+#: after the account exists". ``rolemap.xml`` grants the permission to
+#: ``Manager`` alone and ``user_profile_workflow`` manages it in every state,
+#: so once a Profile exists nobody else holds it. Here the same roles that may
+#: file a principal may name it, or a Site Administrator would meet an add
+#: form with no login on it and a required field they cannot fill.
+LOGIN_ROLES = ADD_ROLES
+
 
 class ContainerNotFound(LookupError):
     """The configured parent path does not resolve to a folder in this site."""
@@ -261,20 +277,36 @@ def grant_add_permission(container: Container, kind: str = PROFILE) -> bool:
     :param kind: :data:`PROFILE` or :data:`GROUP`.
     :returns: Whether anything was written.
     """
-    permission = ADD_PERMISSIONS[kind]
+    written = _grant(container, ADD_PERMISSIONS[kind], ADD_ROLES)
+    if kind == PROFILE:
+        # Only a Profile has a login. Granted here rather than in the rolemap
+        # so that the answer differs between the container and the object;
+        # see :data:`LOGIN_ROLES`.
+        written = _grant(container, LOGIN_PERMISSION, LOGIN_ROLES) or written
+    return written
+
+
+def _grant(container: Container, permission: str, roles: tuple[str, ...]) -> bool:
+    """Give ``roles`` a permission on ``container``, unless they already have it.
+
+    :param container: The folder to write the permission map on.
+    :param permission: The permission, by title.
+    :param roles: The roles to grant it to, and the only ones.
+    :returns: Whether anything was written.
+    """
     granted = {
         entry["name"]
         for entry in container.rolesOfPermission(permission)
         if entry["selected"]
     }
     acquired = bool(container.acquiredRolesAreUsedBy(permission))
-    if granted == set(ADD_ROLES) and not acquired:
+    if granted == set(roles) and not acquired:
         return False
-    container.manage_permission(permission, roles=ADD_ROLES, acquire=0)
+    container.manage_permission(permission, roles=list(roles), acquire=0)
     logger.info(
         "Granted %r to %s on %s",
         permission,
-        ", ".join(ADD_ROLES),
+        ", ".join(roles),
         "/".join(container.getPhysicalPath()),
     )
     return True

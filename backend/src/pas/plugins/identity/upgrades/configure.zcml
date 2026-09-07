@@ -13,5 +13,6 @@
        and nothing reports. -->
 
   <include package=".v1001" />
+  <include package=".v1002" />
 
 </configure>

@@ -1,0 +1,35 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    >
+
+  <!-- The Profile's fields moved onto behaviors, and a login became a
+       permission of its own.
+
+       An FTI is a persistent object written into portal_types at install, so
+       a site installed before this keeps the old behaviors list: the email
+       tab would not exist, and the fields that moved would be gone from the
+       form rather than relocated. typeinfo is the whole of that half,
+       because the value wanted is exactly the one the profile declares.
+
+       The permission needs a handler. A workflow import writes the workflow
+       and leaves every existing Profile carrying the permission map it was
+       last transitioned with, which is the state this upgrade exists to
+       change. See the module docstring. -->
+  <genericsetup:upgradeSteps
+      profile="pas.plugins.identity:default"
+      source="1001"
+      destination="1002"
+      >
+    <genericsetup:upgradeDepends
+        title="Put the Profile's email and personal fields on behaviors"
+        import_steps="typeinfo"
+        />
+    <genericsetup:upgradeStep
+        title="Hold a login to Manager once the account exists"
+        description="Re-imports the rolemap and the workflow, then reapplies the workflow's permission maps to existing Profiles and grants the permission on the containers principals are filed in."
+        handler=".restrict_login"
+        />
+  </genericsetup:upgradeSteps>
+
+</configure>

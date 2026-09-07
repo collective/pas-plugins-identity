@@ -45,11 +45,14 @@ class TestTheStepIsRegistered:
         upgrades = setup_tool.listUpgrades(PROFILE)
 
         assert upgrades, "No upgrade offered to a site at 1000"
-        assert any(
-            step.get("dest") == ("1001",)
+        dests = {
+            step.get("dest")
             for group in upgrades
             for step in (group if isinstance(group, list) else [group])
-        )
+        }
+        # Every version, not merely the first: a package left out of
+        # ``upgrades/configure.zcml`` drops out of exactly this list.
+        assert {("1001",), ("1002",)} <= dests, dests
 
     def test_a_site_at_the_latest_version_is_offered_nothing(self, setup_tool):
         """The other half: an upgrade that keeps being offered after it has
@@ -100,4 +103,31 @@ class TestTheStepDoesTheWork:
 
         self.setup_tool.upgradeProfile(PROFILE)
 
-        assert self.setup_tool.getLastVersionForProfile(PROFILE) == ("1001",)
+        assert self.setup_tool.getLastVersionForProfile(PROFILE) == ("1002",)
+
+
+class TestV1002PutsTheFieldsOnBehaviors:
+    """The FTI half, which ``typeinfo`` carries.
+
+    An FTI is a persistent object written at install, so a site installed
+    before this keeps the old behaviors list: the email tab would not exist
+    and the fields that moved would be missing from the form rather than
+    relocated.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, setup_tool) -> None:
+        self.portal = portal
+        self.setup_tool = setup_tool
+        self.types = api.portal.get_tool("portal_types")
+
+    def test_the_upgrade_restores_them_on_a_site_that_lacks_them(self):
+        fti = self.types["UserProfile"]
+        fti.behaviors = ("plone.shortname", "plone.versioning")
+
+        self.setup_tool.setLastVersionForProfile(PROFILE, "1001")
+        self.setup_tool.upgradeProfile(PROFILE)
+
+        behaviors = self.types["UserProfile"].behaviors
+        assert "pas.plugins.identity.email_addresses" in behaviors
+        assert "pas.plugins.identity.profile_details" in behaviors
