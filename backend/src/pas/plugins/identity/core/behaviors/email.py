@@ -49,13 +49,18 @@ from plone.autoform.interfaces import IFormFieldProvider
 from plone.schema import Email
 from plone.supermodel import model
 from zope import schema
-from zope.interface import alsoProvides
+from zope.interface import provider
 
 
 #: Name the fieldset is registered under, and the id a form renders it with.
 FIELDSET = "email"
 
 
+# What makes the fields appear on a form at all; see the module docstring.
+# Applied here rather than as a ``provides=`` in ZCML because the marker
+# belongs to the schema, and a schema that is a form field provider on one
+# site and not on another is a difference nobody would think to look for.
+@provider(IFormFieldProvider)
 class IEmailAddresses(model.Schema):
     """The addresses a person is reached and recognised by."""
 
@@ -103,13 +108,6 @@ class IEmailAddresses(model.Schema):
         emails="pas.plugins.identity.content.viewpii",
         email="pas.plugins.identity.content.viewpii",
     )
-
-
-# What makes the fields appear on a form at all; see the module docstring.
-# Applied here rather than as a `provides=` in ZCML because the marker belongs
-# to the schema, and a schema that is a form field provider on one site and
-# not on another is a difference nobody would think to look for.
-alsoProvides(IEmailAddresses, IFormFieldProvider)
 
 
 __all__ = ["FIELDSET", "IEmailAddresses"]

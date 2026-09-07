@@ -1,0 +1,3 @@
+The three behaviors mark themselves with `@provider(IFormFieldProvider)` rather than a trailing `alsoProvides`. @ericof
+
+Identical in effect -- a `model.Schema` subclass directly provides nothing, so the `directlyProvides` the decorator performs discards nothing an `alsoProvides` would have kept -- and it is what the behaviors in `plone.app.contenttypes` and `plone.app.dexterity` use. The marker now sits on the class instead of sixty lines below the schema, where its absence is the thing to notice: without it the fields store, index and serialize correctly and appear on no form.
