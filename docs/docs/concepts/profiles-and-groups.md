@@ -38,6 +38,9 @@ It first proves the objects were ghosts and that the counter registers a real lo
 
 This is the property the whole layer is arranged around, and it is why the layer looks more elaborate than adding a content type.
 
+It is also the reason this package does not build on `Products.membrane`, which answers a property lookup by loading the content object.
+See {doc}`users-as-content` for that comparison in full.
+
 ## Membership lives on the member
 
 An `UserGroup` does not hold a list of its members.
@@ -192,36 +195,6 @@ Separating them lets the check run read-only on a schedule, and lets the test su
 
 A randomized churn test creates, edits, transitions, renames, moves, and deletes profiles and groups, running the check after every step.
 Not at the end, after every step, because a bug that self-corrects two operations later is still a window in which enumeration served the wrong answer.
-
-## Why not Products.membrane
-
-`Products.membrane` solves a similar problem and has been doing so for much longer.
-Two reasons this package does not build on it.
-
-Its compatibility matrix lists Plone 6.0 and 6.1, not 6.2.
-That is a fact about the current release, not a judgment.
-
-And the zero-wake property above is the whole point of this design, so it has to be something this package can assert about its own code on every CI run.
-
-Membrane does wake content objects, and it is worth being precise about where.
-`MembranePropertyManager.getPropertiesForUser` collects property providers through `findMembraneUserAspect`, which adapts `brain._unrestrictedGetObject()`.
-So answering a property lookup loads the content object, one per matching brain.
-The plugin inherits `OFS.Cache.Cacheable`, but that path never calls it, so there is no cache in front of the load.
-Membrane's user enumeration is not affected: that goes through `findImplementations`, which stays on the brains.
-
-This is architecture, not oversight.
-Membrane's property values live on the content object and are read through an adapter on it, so a brain genuinely cannot answer.
-This package copies the values it serves into catalog metadata instead, which is what lets a brain answer and what the zero-wake test measures.
-
-The trade is real in both directions.
-Metadata has to be kept honest, and that is why this package ships a consistency check and a rebuild step at all.
-
-```{note}
-Verified against `Products.membrane` 7.0.1.dev0, in `plugins/propertymanager.py` and `utils.py`, by reading the source rather than by measurement.
-Membrane is not a dependency here, and its compatibility matrix would make it awkward to install alongside.
-Membrane's design is nonetheless where this one comes from, and the resemblance is not accidental.
-```
-
 
 ## Where to go next
 
