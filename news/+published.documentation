@@ -1,3 +1,0 @@
-Said in the READMEs that the packages are published.
-
-`1.0.0a1` is on PyPI and on npm, so `uv add pas.plugins.identity` and adding `@plone-collective/volto-identity` are now instructions that work rather than instructions for later. All three READMEs carry the registry badge for what they describe, and the packages table names each registry as a link rather than as a word. @ericof

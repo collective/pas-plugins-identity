@@ -8,6 +8,15 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0-alpha.2 (2026-09-07)
+
+
+### Documentation
+
+- Added the registry badges to the README.
+
+  The package is on npm as of `1.0.0-alpha.1`. The README carries its version badge and, beside it, the version of the backend package it requires — the two are released together, and a reader on npm cannot otherwise see whether the halves they are about to install match. @ericof 
+
 ## 1.0.0-alpha.1 (2026-09-05)
 
 

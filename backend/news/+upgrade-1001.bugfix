@@ -1,3 +1,0 @@
-Added the upgrade step that lets an existing site nest groups by containment.
-
-An FTI is a persistent object written into `portal_types` at install, so a site installed before containment kept an empty `allowed_content_types` on the `UserGroup` type: the add menu offered nothing inside a group, and nothing said why. The profile is now at version `1001`, and a site behind it is offered a step that re-imports `typeinfo`. Upgrade steps live one package per version under `upgrades/`, each with its own `configure.zcml` — this is the first of them, so it sets the shape for the next. @ericof

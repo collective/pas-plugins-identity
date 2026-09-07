@@ -7,6 +7,61 @@
 -->
 
 <!-- towncrier release notes start -->
+## 1.0.0a2 (2026-09-07)
+
+### Backend
+
+
+#### Feature
+
+- Groups nest by containment: a `UserGroup` may be added inside a `UserGroup`, and everybody in the inner group is in the outer one.
+
+  The tree is now a second way of writing the edge `group_ids` already carried, and the two are unioned — a group can be filed inside one group and name others, and a group that does both contributes the edge once. Everything that reads membership walks one graph and cannot tell which way an edge was written, so `getGroupsForPrincipal`, `getGroupMembers`, `getNestedGroupIds` and `@group-members` all follow with no change to their contracts. A contained group is a group of the site like any other: enumerated, grantable on the Sharing tab, and resolvable by id, which it was not before. Because group ids are what local roles and memberships are stored in terms of and object ids are only unique within a folder, a second group claiming an id already in use is now refused when it is created or renamed. Export and import carry the hierarchy in a new optional `container_group` key, so a restored site comes back with the shape it had rather than flat. @ericof 
+
+
+#### Bugfix
+
+- Added the upgrade step that lets an existing site nest groups by containment.
+
+  An FTI is a persistent object written into `portal_types` at install, so a site installed before containment kept an empty `allowed_content_types` on the `UserGroup` type: the add menu offered nothing inside a group, and nothing said why. The profile is now at version `1001`, and a site behind it is offered a step that re-imports `typeinfo`. Upgrade steps live one package per version under `upgrades/`, each with its own `configure.zcml` — this is the first of them, so it sets the shape for the next. @ericof 
+- Deleting a Plone site that holds a Profile no longer fails with `CannotGetPortalError`.
+
+  The indexing subscribers asked the *current* site for the catalog, which is a different question from the one they had the answer to: they are handed the object, and the object knows which site it is in. The two agree on every request and disagree exactly where nothing has called `setSite` — a `zconsole` script working on `app`, and the deletion of a site from the Zope root, which is what `DELETE_EXISTING=1 make create-site` does. There the lookup raised out of the handler and took the deletion with it, naming neither the site nor the catalog. The catalog is now acquired from the object, so the unindex happens rather than merely not raising, and `query_catalog` answers `None` instead of raising when there is no current site at all. @ericof 
+
+
+#### Documentation
+
+- Added the PyPI badges to the README.
+
+  The package is on PyPI as of `1.0.0a1`, and `pyproject.toml` names this file as the long description — so the version and the interpreters it declares are now visible at the top of the page somebody lands on before deciding to install it. @ericof 
+
+
+
+### Frontend
+
+
+#### Documentation
+
+- Added the registry badges to the README.
+
+  The package is on npm as of `1.0.0-alpha.1`. The README carries its version badge and, beside it, the version of the backend package it requires — the two are released together, and a reader on npm cannot otherwise see whether the halves they are about to install match. @ericof 
+
+
+
+### Project
+
+
+#### Documentation
+
+- Documented that groups nest by containment as well as by `group_ids`.
+
+  The concepts page now states both ways of writing the edge and that the graph unions them, along with the two consequences a reader will otherwise meet as surprises: clearing `group_ids` does not un-nest a group that is nested by containment, and a group id is unique across the site rather than within a folder. The reference tables, the glossary entry and the principal-document format gained the same, the last of them describing the new optional `container_group` key and the import pass that reads it. @ericof 
+- Said in the READMEs that the packages are published.
+
+  `1.0.0a1` is on PyPI and on npm, so `uv add pas.plugins.identity` and adding `@plone-collective/volto-identity` are now instructions that work rather than instructions for later. All three READMEs carry the registry badge for what they describe, and the packages table names each registry as a link rather than as a word. @ericof 
+
+
+
 ## 1.0.0a1 (2026-09-05)
 
 ### Backend

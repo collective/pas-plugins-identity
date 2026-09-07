@@ -1,3 +1,0 @@
-Added the PyPI badges to the README.
-
-The package is on PyPI as of `1.0.0a1`, and `pyproject.toml` names this file as the long description — so the version and the interpreters it declares are now visible at the top of the page somebody lands on before deciding to install it. @ericof
