@@ -37,6 +37,9 @@ case will end up doing it.
 """
 
 from pas.plugins.identity.exportimport.authomatic import convert_authomatic
+from pas.plugins.identity.exportimport.authomatic import site_propertymaps
+from pas.plugins.identity.exportimport.authomatic import unmapped_providers
+from pas.plugins.identity.exportimport.authomatic import validate_dump
 from pas.plugins.identity.exportimport.exporter import export_site
 from pas.plugins.identity.exportimport.importer import import_site
 from pas.plugins.identity.exportimport.schema import DOCUMENT_VERSION
@@ -52,5 +55,8 @@ __all__ = [
     "convert_authomatic",
     "export_site",
     "import_site",
+    "site_propertymaps",
+    "unmapped_providers",
     "validate",
+    "validate_dump",
 ]

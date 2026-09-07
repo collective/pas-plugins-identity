@@ -175,10 +175,27 @@ It is checked rather than assumed: the two formats are close enough that reading
 It is in the format because a real migration is moving a site, and membership carried in the same file beats a second one.
 Note that membership is on the group here and on the principal in a document; the conversion inverts it.
 
-`properties` keys are mapped onto Profile fields, in both vocabularies.
-`fullname` and `name` both answer for the full name, `home_page` and `link` both for the homepage, and `location` and `description` for themselves.
-`link` is the one worth naming: it is what an OAuth2 provider calls a homepage, and authomatic's own shipped property maps translate it.
-A key with no matching Profile field, such as `picture`, `first_name` or `last_name`, is dropped rather than carried, because an attribute nothing declares is invisible to every form and permission in the site.
+`properties` keys are mapped onto Profile fields by the **target site's property map** for the provider each user signed in with, read from `pas.plugins.identity.providers.<id>.propertymap`.
+The map is the only thing that says what a dump's keys mean, because a dump carries the provider's own vocabulary and the provider decides it.
+
+| Consulted | Supplies | When |
+|---|---|---|
+| The site's map for the user's provider | Whatever it names, for the four fields a document carries | Always, first |
+| The converter's built-in map | `fullname`/`name`, `home_page`/`link`, `location`, `description` | Only for fields the site's map left unset |
+
+A user with two identities gets both maps, in the order the dump lists them, and the first to answer for a field keeps it.
+
+A key with no matching Profile field is dropped rather than carried, because an attribute nothing declares is invisible to every form and permission in the site.
+That covers `picture`, `first_name` and `last_name`, and equally a site map naming `portrait` or `email`: {py:data}`~pas.plugins.identity.exportimport.schema.USER_FIELDS` is what a document carries, and the address has its own path.
+A map naming a claim that resolves to a list or a mapping is skipped for the same reason—a document field is text.
+
+```{warning}
+**A provider with no record in the target site converts on the built-in map alone.**
+
+That map knows the two vocabularies a dump can carry and nothing about the provider, so any field the provider names its own way is lost.
+`identity-importer` counts those users and warns before importing, worst offender first.
+Configure the providers first, and this does not arise.
+```
 
 ### Where the values come from
 
@@ -281,9 +298,16 @@ Reading the sheet would hand you users with no address at all, and every
 one of them is then skipped on import for exactly that reason.
 
 The keys in `properties` are therefore the provider's own (`name`, `link`,
-`picture`, `first_name`) rather than Plone's.
-The converter understands both vocabularies, because a dump can honestly carry
-either.
+`picture`, `first_name`) rather than Plone's—and, because the extraction merges
+the provider's document into the stored identity, the raw ones beside them.
+A GitHub dump carries `blog` and `html_url` as well as `name` and `link`.
+
+This is exactly why the conversion reads the target site's property map.
+`link` is authomatic's own name for a homepage, and its GitHub parser sets it
+from `html_url`—the GitHub profile page. A site that maps `blog` to `home_page`
+means the person's own site, and only that map can say so. Converted without
+it, every migrated user's homepage is their GitHub profile and a `bio` nothing
+names is dropped.
 
 
 ```{important}

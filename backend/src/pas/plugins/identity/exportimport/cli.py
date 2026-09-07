@@ -23,6 +23,13 @@ and return plain data. Anything this can do can be done from a script, and a
 site that does not fit the general case should be scripted rather than
 argued with on a command line.
 
+**A conversion happens inside the site.** ``--from-authomatic`` reads the
+target site's provider property maps, so the dump is converted after the site
+is up rather than on the way in. Configuring the providers first is therefore
+not only what the first login needs -- it is what decides whether a field in
+the dump arrives at all. The dump's *shape* is still checked before Zope
+starts, so the wrong file is refused without waiting for a site.
+
 **The importer commits; the exporter does not.** An export writes nothing, so
 there is nothing to commit. An import commits once, at the end, after the
 whole document has been applied -- so a failure part way through leaves the
@@ -31,6 +38,9 @@ commit, and never writes in the first place.
 """
 
 from pas.plugins.identity.exportimport.authomatic import convert_authomatic
+from pas.plugins.identity.exportimport.authomatic import site_propertymaps
+from pas.plugins.identity.exportimport.authomatic import unmapped_providers
+from pas.plugins.identity.exportimport.authomatic import validate_dump
 from pas.plugins.identity.exportimport.exporter import export_site
 from pas.plugins.identity.exportimport.importer import import_site
 from pas.plugins.identity.exportimport.schema import ExportImportError
@@ -132,6 +142,32 @@ def exporter_cli(args: list | None = None) -> None:
     )
 
 
+def _convert(document: dict, logger) -> dict:
+    """Convert an authomatic dump against the site's property maps.
+
+    Called with a site, because that is where the maps are. They are the only
+    thing that says what a dump's keys mean: converted without them, every
+    site got the built-in map's guess, and an authomatic GitHub dump carries
+    both ``blog`` and ``html_url`` for the guess to pick the wrong one of.
+
+    :param document: The parsed dump.
+    :param logger: Where to report a provider the site has no map for.
+    :returns: A document in this package's format.
+    """
+    propertymaps = site_propertymaps()
+    for name, count in unmapped_providers(document, propertymaps).items():
+        logger.warning(
+            f" No provider {name!r} is configured here, so its {count} users "
+            f"convert on the built-in property map. Any field that provider "
+            f"names its own way is lost."
+        )
+    try:
+        return convert_authomatic(document, propertymaps)
+    except ExportImportError as error:
+        logger.error(f" {error}")
+        sys.exit(1)
+
+
 def importer_cli(args: list | None = None) -> None:
     """Read a JSON file into a site.
 
@@ -153,8 +189,12 @@ def importer_cli(args: list | None = None) -> None:
         sys.exit(1)
 
     if namespace.from_authomatic:
+        # The shape is checked here, before Zope is started: pointing
+        # ``--from-authomatic`` at one of our own documents is answered in a
+        # second rather than after a site has been opened. The conversion
+        # itself happens below, inside the site.
         try:
-            document = convert_authomatic(document)
+            validate_dump(document)
         except ExportImportError as error:
             logger.error(f" {error}")
             sys.exit(1)
@@ -162,6 +202,9 @@ def importer_cli(args: list | None = None) -> None:
     app = cli_helpers.get_app(namespace.zopeconf)
     site = cli_helpers.get_site(app, namespace.site, logger)
     with hooks.site(site), api.env.adopt_roles(["Manager"]):
+        if namespace.from_authomatic:
+            document = _convert(document, logger)
+
         logger.info(f" Reading {path} into the Plone site at /{site.id}")
         result = import_site(
             document,

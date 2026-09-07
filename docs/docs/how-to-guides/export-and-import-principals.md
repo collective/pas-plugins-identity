@@ -93,8 +93,14 @@ userid is left alone.
 1. Produce the dump on the old site. The format and a working extraction are in
    {ref}`reference-authomatic-dumps`.
 
-2. **Configure the providers in the target site first**, under the same names.
-   See the warning below.
+2. **Configure the providers in the target site first**, under the same names,
+   with the property map you want. See the warning below.
+
+   This is not only about the first login. The conversion reads each provider's
+   `propertymap` to work out what the dump's keys mean, so a provider that is
+   missing—or configured with no map—converts on the built-in map alone, and
+   any field that provider names its own way is lost. The importer warns and
+   names the count, but it cannot invent the map.
 
 3. Dry run, then import:
 

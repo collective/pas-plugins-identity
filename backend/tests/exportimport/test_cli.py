@@ -129,7 +129,8 @@ class TestGivingUpBeforeTheSite:
     ):
         """``--from-authomatic`` on one of our own documents. The two formats
         are close enough that reading one as the other half-works, and the
-        conversion refuses before Zope is ever started."""
+        *shape* is checked before Zope is ever started -- only the conversion
+        itself needs a site."""
         with pytest.raises(SystemExit) as exit_code:
             cli.importer_cli([
                 "identity-importer",
@@ -140,3 +141,60 @@ class TestGivingUpBeforeTheSite:
             ])
 
         assert exit_code.value.code == 1
+
+
+class TestWhereTheConversionHappens:
+    """An authomatic dump is converted against the target site's provider
+    property maps, which only exist once there is a site. Converted on the way
+    in -- which is what this did until the ordering was fixed -- every site got
+    the built-in map's guess at what the dump's keys meant, and a GitHub
+    migration put everybody's profile URL in ``home_page``."""
+
+    @pytest.fixture
+    def dump(self, tmp_path):
+        """Return a path holding a valid authomatic dump.
+
+        :param tmp_path: pytest's temporary directory.
+        :returns: The path.
+        """
+        path = tmp_path / "authomatic.json"
+        path.write_text(
+            json.dumps({
+                "source": "pas.plugins.authomatic",
+                "users": [
+                    {
+                        "userid": "u1",
+                        "identities": [{"provider": "github", "subject": "1"}],
+                        "properties": {"name": "Someone"},
+                    }
+                ],
+            })
+        )
+        return path
+
+    def test_the_site_is_opened_before_the_dump_is_converted(self, dump, monkeypatch):
+        """Proved by never letting the site open: if the conversion ran
+        first, it would have run before this raised."""
+        converted = []
+        monkeypatch.setattr(
+            cli, "convert_authomatic", lambda *a, **kw: converted.append(a)
+        )
+
+        class NoZope(RuntimeError):
+            pass
+
+        def no_app(zopeconf):
+            raise NoZope(zopeconf)
+
+        monkeypatch.setattr(cli.cli_helpers, "get_app", no_app)
+
+        with pytest.raises(NoZope):
+            cli.importer_cli([
+                "identity-importer",
+                "etc/zope.conf",
+                "plone",
+                str(dump),
+                "--from-authomatic",
+            ])
+
+        assert converted == []

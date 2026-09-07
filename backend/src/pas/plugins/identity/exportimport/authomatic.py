@@ -56,19 +56,36 @@ a password. No human knows it and none could type it, so carrying it over
 would move a credential nobody can use. People sign in through their provider
 exactly as before.
 
-*Provider configuration.* Client ids, secrets, property maps and scopes stay
-behind. A document is a file that gets copied around and a client secret must
-never be in one; the rest is configuration whose meaning differs between the
-two packages, and translating it silently would produce a provider that looks
-configured and behaves differently. Configure the providers in the target site
-first -- the import does not need them, but the first login does.
+*Provider configuration.* Client ids, secrets and scopes stay behind. A
+document is a file that gets copied around and a client secret must never be
+in one, and a scope means different things to the two packages. Configure the
+providers in the target site first -- the import does not need them, but the
+first login does.
+
+**The target site's property maps are consulted, and they win.** This is the
+one piece of provider configuration that is not translated but *read*, because
+it is the only thing that says what the dump's keys mean. A dump carries the
+provider's own vocabulary, and the provider decides it: GitHub sends both
+``blog`` and ``html_url``, and only the site's map says which one is a
+homepage. Left to itself this module guessed with :data:`PROPERTY_MAP` and got
+it wrong for every site that had configured better -- ``html_url`` reached
+``home_page``, so everybody's homepage became their GitHub profile, and a
+``bio`` this module has no name for was dropped entirely.
+
+The map is read per user, from the record for the provider *that user actually
+signed in with*, and :data:`PROPERTY_MAP` fills only what it leaves unset. A
+provider with no record in the target site falls back to it, which is reported
+rather than done quietly: it is the case that loses data.
 """
 
+from pas.plugins.identity.core.interfaces import Claims
+from pas.plugins.identity.core.utils.propertymap import apply_property_map
 from pas.plugins.identity.exportimport.schema import DOCUMENT_VERSION
 from pas.plugins.identity.exportimport.schema import ExportImportError
 from pas.plugins.identity.exportimport.schema import GENERATOR
 from pas.plugins.identity.exportimport.schema import USER_FIELDS
 from typing import Any
+from typing import cast
 
 
 #: What an authomatic dump must say it is. Checked rather than assumed: the
@@ -77,7 +94,13 @@ from typing import Any
 #: package exists to avoid.
 SOURCE = "pas.plugins.authomatic"
 
-#: Dump property keys mapped onto Profile fields.
+#: Dump property keys mapped onto Profile fields, when the site's own map has
+#: not answered.
+#:
+#: A **fallback**, applied per field after
+#: :func:`site_propertymaps` has had its say. It knows the two vocabularies a
+#: dump can honestly carry and nothing about the provider beyond them, which is
+#: why it cannot be the only answer -- see the module docstring.
 #:
 #: Both halves of the vocabulary, because a dump can honestly contain either.
 #: A dump built from authomatic's *property sheet* carries Plone field names,
@@ -105,27 +128,67 @@ PROPERTY_MAP = {
 }
 
 
-def _properties(user: dict[str, Any]) -> dict[str, str]:
-    """Map an authomatic property sheet onto Profile fields.
+def _scalar(value: Any) -> str:
+    """Render a claim as the text a document field carries.
+
+    :param value: Whatever the map resolved to.
+    :returns: The text, or ``""`` for anything that is not a single value.
+    """
+    if isinstance(value, (list, tuple, set, dict)):
+        # A document field is text. The same refusal as the login path makes:
+        # a structured claim reaching a text field is a map that means
+        # something this format cannot express.
+        return ""
+    return str(value)
+
+
+def _properties(
+    user: dict[str, Any],
+    propertymaps: dict[str, dict[str, str]],
+) -> dict[str, str]:
+    """Map one user's dump properties onto Profile fields.
+
+    The site's map for the provider the user signed in with is applied first,
+    and :data:`PROPERTY_MAP` fills only the fields it left unset. A user with
+    two identities gets both maps, in the order the dump lists them, so the
+    first provider to answer for a field keeps it.
 
     A key this package has no field for is dropped rather than carried: the
     Profile schema is what a site's forms and permissions are written against,
-    and an attribute nothing declares is invisible to all of them.
+    and an attribute nothing declares is invisible to all of them. That covers
+    a site map naming ``portrait`` or ``email`` as readily as an unmapped
+    ``picture`` -- :data:`~pas.plugins.identity.exportimport.schema.USER_FIELDS`
+    is what a document carries, and the address has its own path.
 
     :param user: One user from the dump.
-    :param returns: Profile field name to value.
-    :returns: The fields that resolved.
+    :param propertymaps: Provider id to that provider's claim map.
+    :returns: Profile field name to value.
     """
     source = user.get("properties") or {}
     resolved: dict[str, str] = {}
+
+    for identity in user.get("identities") or ():
+        mapping = propertymaps.get(identity.get("provider") or "")
+        if not mapping:
+            continue
+        # A dump is flat: the extraction merges the provider's own document
+        # into the stored identity, so there is no separate raw payload for a
+        # dotted path to reach into. ``resolve_claim`` reads it as claims.
+        for field, value in apply_property_map(mapping, cast(Claims, source)).items():
+            text = _scalar(value)
+            if field in USER_FIELDS and field not in resolved and text:
+                resolved[field] = text
+
     for key, field in PROPERTY_MAP.items():
         if field in resolved:
             # An earlier key already answered; ``fullname`` wins over ``name``
-            # because it is the one Plone's own property sheet uses.
+            # because it is the one Plone's own property sheet uses, and the
+            # site's own map wins over both.
             continue
         value = source.get(key)
         if value:
             resolved[field] = str(value)
+
     return {name: resolved.get(name, "") for name in USER_FIELDS}
 
 
@@ -179,16 +242,77 @@ def _claims(user: dict[str, Any], addresses: list[str]) -> dict[str, Any]:
     }
 
 
-def convert_authomatic(dump: Any) -> dict[str, Any]:
-    """Turn an authomatic dump into a document.
+def site_propertymaps() -> dict[str, dict[str, str]]:
+    """Read every configured provider's property map out of the registry.
 
-    Structural conversion only. Whether a userid collides, whether an identity
-    is already linked and whether an address is usable are questions about the
-    *target* site, and the importer asks them there -- one record at a time,
-    so a single bad row is a skip rather than a refusal.
+    Needs an active site, which is why it is not called by
+    :func:`convert_authomatic` -- that stays a function over plain data, so it
+    can be tested and scripted without a Plone site anywhere near it. A caller
+    that has a site reads the maps with this and passes them in.
+
+    A provider with an empty map is left out rather than carried as an empty
+    one: the two mean the same thing here, and leaving it out is what makes
+    :func:`unmapped_providers` report it.
+
+    :returns: Provider id to that provider's claim map.
+    """
+    # Imported here rather than at module scope on purpose. The control panel
+    # pulls in the registry and half of Plone with it, and this module is
+    # otherwise importable with nothing but the standard library -- which is
+    # what lets a dump be converted and inspected outside a Zope instance.
+    from pas.plugins.identity.core.controlpanel import get_providers
+
+    return {
+        provider.provider_id: dict(provider.propertymap)
+        for provider in get_providers()
+        if provider.propertymap
+    }
+
+
+def unmapped_providers(
+    dump: Any,
+    propertymaps: dict[str, dict[str, str]],
+) -> dict[str, int]:
+    """Count the users whose provider the target site has no map for.
+
+    Those users convert on :data:`PROPERTY_MAP` alone, which knows two
+    vocabularies and not the provider's. It is the case that silently loses a
+    field, so a caller reports it rather than discovering it in the site
+    afterwards.
 
     :param dump: The parsed JSON dump.
-    :returns: A document in this package's format.
+    :param propertymaps: Provider id to that provider's claim map.
+    :returns: Provider name to the number of users carrying it, worst first.
+    """
+    counts: dict[str, int] = {}
+    for user in (dump.get("users") if isinstance(dump, dict) else None) or ():
+        if not isinstance(user, dict):
+            continue
+        seen = set()
+        for identity in user.get("identities") or ():
+            if not isinstance(identity, dict):
+                continue
+            name = identity.get("provider") or ""
+            if name and name not in propertymaps and name not in seen:
+                seen.add(name)
+                counts[name] = counts.get(name, 0) + 1
+    return dict(sorted(counts.items(), key=lambda pair: (-pair[1], pair[0])))
+
+
+def validate_dump(dump: Any) -> list:
+    """Check that a dump is one, and return its users.
+
+    Separate from :func:`convert_authomatic` because the conversion needs the
+    target site and this does not. A command reads the file, checks it here,
+    and only then starts Zope -- so pointing ``--from-authomatic`` at one of
+    this package's own documents is answered in a second rather than after a
+    site has been opened.
+
+    Structural and top-level only. A bad *row* is the importer's business, one
+    record at a time, so that one of them is a skip rather than a refusal.
+
+    :param dump: The parsed JSON dump.
+    :returns: The dump's users.
     :raises ExportImportError: When the dump is not one.
     """
     if not isinstance(dump, dict):
@@ -203,6 +327,33 @@ def convert_authomatic(dump: Any) -> dict[str, Any]:
     users = dump.get("users")
     if not isinstance(users, list):
         raise ExportImportError("The dump has no 'users' list")
+    return users
+
+
+def convert_authomatic(
+    dump: Any,
+    propertymaps: dict[str, dict[str, str]] | None = None,
+) -> dict[str, Any]:
+    """Turn an authomatic dump into a document.
+
+    Structural conversion only. Whether a userid collides, whether an identity
+    is already linked and whether an address is usable are questions about the
+    *target* site, and the importer asks them there -- one record at a time,
+    so a single bad row is a skip rather than a refusal.
+
+    **Pass the target site's property maps.** Without them a dump is converted
+    on this module's guess at what its keys mean, which is right for a dump in
+    authomatic's own vocabulary and wrong for one carrying the provider's --
+    the shape the documented extraction produces. :func:`site_propertymaps`
+    reads them, and needs a site; this does not, so the two are separate.
+
+    :param dump: The parsed JSON dump.
+    :param propertymaps: Provider id to that provider's claim map. Omitted,
+        every user converts on :data:`PROPERTY_MAP` alone.
+    :returns: A document in this package's format.
+    :raises ExportImportError: When the dump is not one.
+    """
+    users = validate_dump(dump)
 
     # Group membership is carried on the group in an authomatic dump and on
     # the principal in a document, so it is inverted here rather than in the
@@ -216,6 +367,7 @@ def convert_authomatic(dump: Any) -> dict[str, Any]:
         for member in group.get("members") or ():
             memberships.setdefault(member, []).append(group_id)
 
+    maps = propertymaps or {}
     converted_users = []
     for user in users:
         addresses = _addresses(user)
@@ -232,7 +384,7 @@ def convert_authomatic(dump: Any) -> dict[str, Any]:
             "userid": userid,
             "login": user.get("login") or userid,
             "emails": addresses,
-            **_properties(user),
+            **_properties(user, maps),
             "group_ids": memberships.get(userid, []),
             "identities": [
                 {
@@ -270,4 +422,11 @@ def convert_authomatic(dump: Any) -> dict[str, Any]:
     }
 
 
-__all__ = ["PROPERTY_MAP", "SOURCE", "convert_authomatic"]
+__all__ = [
+    "PROPERTY_MAP",
+    "SOURCE",
+    "convert_authomatic",
+    "site_propertymaps",
+    "unmapped_providers",
+    "validate_dump",
+]
