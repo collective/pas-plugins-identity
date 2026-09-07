@@ -5,6 +5,19 @@ the groups this principal belongs to. So a group named there is an *outer*
 group, and everybody in the inner group is in the outer one -- the way a
 GitHub child team's members inherit the parent team's access.
 
+**Containment says the same thing, and both are read.** A ``UserGroup`` may be
+added inside another ``UserGroup``, and a group filed that way is a member of
+the group it sits in -- the tree is the obvious way to express a team
+hierarchy and it is the one an operator reaches for first. It is not a second
+kind of edge, though: :func:`build_edges` unions the containing group into a
+group's parents alongside whatever ``group_ids`` names, so everything
+downstream walks one graph and cannot tell how a given edge was written.
+
+The union is what makes the two safe together. A group moved into another
+gains that edge without an edit, a group that names an outer group in its
+field keeps it wherever it is filed, and a group that does both contributes
+the edge once.
+
 **Why this used to be refused.** The original note said a group whose members
 are groups makes ``getGroupsForPrincipal`` recursive, and that a recursive
 answer computed from catalog metadata stops being a single lookup. Both halves
@@ -38,18 +51,83 @@ who reached something *through* it, or deactivating is not a control.
 MAX_DEPTH = 20
 
 
+def brain_path(brain) -> str:
+    """Return a brain's physical path, however the brain answers for one.
+
+    Real catalog brains answer ``getPath()``; the mappings a unit test builds
+    a graph from usually carry a ``path`` attribute and nothing else. Both are
+    accepted because the alternative is a function that only works against a
+    running site.
+
+    :param brain: A group brain.
+    :returns: The path, or an empty string when the brain has none.
+    """
+    getter = getattr(brain, "getPath", None)
+    if callable(getter):
+        return getter() or ""
+    return getattr(brain, "path", "") or ""
+
+
+def containment_parents(brains) -> dict[str, str]:
+    """Return the group each group is *filed inside*, where that is a group.
+
+    Derived from the paths already on the brains rather than from a stored
+    field: containment is the tree, and asking the tree costs nothing here
+    because the brains have been read anyway. Only the immediate container
+    counts -- a group two levels down reaches its grandparent through the
+    closure, the same way it would through two field edges.
+
+    :param brains: Group brains, already filtered to the active states.
+    :returns: Group id to the id of the group containing it. Groups filed
+        anywhere other than directly inside another group are absent.
+    """
+    by_path = {}
+    for brain in brains:
+        path = brain_path(brain)
+        if path:
+            by_path[path] = brain.group_id
+
+    parents = {}
+    for brain in brains:
+        path = brain_path(brain)
+        if not path or "/" not in path:
+            continue
+        outer = by_path.get(path.rsplit("/", 1)[0])
+        # A group cannot contain itself, but a catalog carrying two records
+        # for one path would say so; the check costs nothing and the failure
+        # it prevents is a group that is its own parent.
+        if outer is not None and outer != brain.group_id:
+            parents[brain.group_id] = outer
+    return parents
+
+
 def build_edges(brains) -> dict[str, tuple[str, ...]]:
     """Return the group graph, keyed by group id.
+
+    The edges of one group are the union of the two ways of writing one: the
+    ``group_ids`` field, and the group it is contained in. Stored ids come
+    first and the containing group is appended, so a caller rendering the
+    parents of a group shows what somebody typed before what the tree implies.
+
+    A group that both sits inside ``staff`` and names ``staff`` in its field
+    contributes ``staff`` once. That is the whole of the de-duplication the
+    graph needs: everything downstream answers from a ``set``.
 
     :param brains: Group brains, already filtered to the active states.
     :returns: Group id to the ids of the groups it is a member of. Only the
         groups present in ``brains`` appear as keys, so an edge pointing at a
         deactivated or deleted group is simply not followed.
     """
-    return {
-        brain.group_id: tuple(getattr(brain, "group_ids", None) or ())
-        for brain in brains
-    }
+    parents = containment_parents(brains)
+    edges = {}
+    for brain in brains:
+        group_id = brain.group_id
+        claimed = tuple(getattr(brain, "group_ids", None) or ())
+        outer = parents.get(group_id)
+        if outer is not None and outer not in claimed:
+            claimed = (*claimed, outer)
+        edges[group_id] = claimed
+    return edges
 
 
 def close_over(
@@ -122,4 +200,11 @@ def members_of(group_id: str, edges: dict[str, tuple[str, ...]]) -> tuple[str, .
     return tuple(sorted(seen))
 
 
-__all__ = ["MAX_DEPTH", "build_edges", "close_over", "members_of"]
+__all__ = [
+    "MAX_DEPTH",
+    "brain_path",
+    "build_edges",
+    "close_over",
+    "containment_parents",
+    "members_of",
+]

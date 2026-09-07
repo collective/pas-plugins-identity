@@ -538,6 +538,21 @@ class IdentityProfilePlugin(BasePlugin):
         reason: it is what the stock plugins do and therefore what the Sharing
         tab expects.
 
+        Every group, at every depth. A group filed inside another group is a
+        group of this site like any other -- it appears here, it is offered on
+        the Sharing tab, and it can be granted a role. Nesting says where its
+        members also belong; it does not make the group itself less real, and
+        a hierarchy whose inner teams could not be granted anything would be a
+        display feature rather than a membership one.
+
+        One record per group id, though. Two content objects claiming one
+        group id is a site that has already gone wrong -- adding one is
+        refused, see
+        :func:`~pas.plugins.identity.core.subscribers.refuse_duplicate_group`
+        -- but enumerating it twice would put two identical rows in front of
+        somebody with no way to tell them apart, so the second is dropped here
+        and said out loud in the log.
+
         :param id: Group id or ids to match.
         :param exact_match: Require the whole value to equal a term.
         :param sort_by: Sort key; applied by PAS, ignored here.
@@ -555,9 +570,19 @@ class IdentityProfilePlugin(BasePlugin):
             if terms
         ]
         results = []
+        seen: set[str] = set()
         for brain in self.active_group_brains():
             if criteria and not self._brain_matches(brain, criteria, exact_match):
                 continue
+            if brain.group_id in seen:
+                logger.warning(
+                    "Two group objects claim the group id %r; enumerating the "
+                    "first only. The duplicate is at %s",
+                    brain.group_id,
+                    brain.getPath(),
+                )
+                continue
+            seen.add(brain.group_id)
             results.append({
                 "id": brain.group_id,
                 "title": brain.Title,
@@ -678,16 +703,21 @@ class IdentityProfilePlugin(BasePlugin):
     def getGroupParentIds(self, group_id: str) -> tuple[str, ...]:
         """Return the groups one group is directly a member of.
 
-        The stored edges rather than the closure, because this is the value
-        an edit form shows: what somebody typed, not what it implies.
+        The direct edges rather than the closure, because this is what a page
+        shows next to a group: its immediate parents, not everything they in
+        turn imply.
+
+        Both ways of writing an edge are here, because both are true of the
+        group and a reader has no reason to care which was used: the
+        ``group_ids`` field first, then the group this one is filed inside.
+        A group that does both is not listed twice --
+        :func:`~pas.plugins.identity.core.utils.nesting.build_edges` unions
+        them.
 
         :param group_id: The inner group.
-        :returns: Group ids, in stored order.
+        :returns: Group ids, stored ones first.
         """
-        for brain in self.active_group_brains():
-            if brain.group_id == group_id:
-                return tuple(getattr(brain, "group_ids", None) or ())
-        return ()
+        return self.group_edges().get(group_id, ())
 
     # -- IUserManagement / IDeleteCapability -----------------------------
     #

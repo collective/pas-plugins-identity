@@ -22,6 +22,12 @@ a person or a group, so the transitive answer is a walk over the same field
 rather than a second kind of edge. See
 :mod:`pas.plugins.identity.core.utils.nesting`.
 
+This field is one of the two ways to write that edge. The other is where the
+group is *filed*: a group inside another group belongs to it, with nothing
+typed here at all. The graph unions them, so this field says what somebody
+entered and never contradicts the tree -- and clearing it does not un-nest a
+group that is nested by containment.
+
 **Ordering matters on the form, not in the data.** The field lives in a
 ``groups`` fieldset so that a Profile's edit form keeps the personal fields
 together and puts membership on its own tab, where it is also the only field

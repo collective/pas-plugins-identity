@@ -112,8 +112,9 @@ Keeping membership on the member makes the hot question a single metadata read, 
 `IGroupContent` therefore has no members accessor, and will not grow one.
 An accessor would be a second copy of the same fact, and the two would drift the first time anything wrote to one without the other.
 
-A group can be a member of a group, and that is the same fact stored the same way.
-A group carries `group_ids` as well, naming the groups it is nested inside, so everybody in the inner group is in the outer one.
+A group can be a member of a group, and that is the same fact said in either of two ways.
+A group may be filed inside another group, and it carries `group_ids` as well, naming the groups it is nested inside.
+Both mean everybody in the inner group is in the outer one, and the graph unions them.
 
 The answer is closed over on the way out rather than stored expanded.
 That walk is over the group graph, which grows with the number of teams rather than the number of people, and the whole of it is one catalog query.

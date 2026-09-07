@@ -10,9 +10,17 @@
   <property name="description"
             i18n:translate=""
   >A group, backed by content. Membership is a field on each Profile, not a list here.</property>
-  <property name="allowed_content_types" />
+  <!-- A group holds groups and nothing else. Filing one inside another is
+       how a team hierarchy is drawn, and the containing group becomes an
+       outer group of the one inside it. See core.utils.nesting. -->
+  <property name="allowed_content_types">
+    <element value="UserGroup" />
+  </property>
   <property name="filter_content_types">True</property>
-  <!-- Same lock as the UserProfile type: see that FTI. -->
+  <!-- Same lock as the UserProfile type: see that FTI. Structurally addable
+       anywhere, actually addable only where the add permission is granted.
+       A group inside the configured container acquires that grant from it,
+       which is what lets a group be added inside a group. -->
   <property name="global_allow">True</property>
   <property name="icon_expr">string:users</property>
   <property name="klass">pas.plugins.identity.core.contents.group.UserGroup</property>

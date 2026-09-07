@@ -14,6 +14,7 @@ plugin handed out, and never reaches the network.
 from AccessControl.class_init import InitializeClass
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.audit import AuditLog
+from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
 from pas.plugins.identity.core.events import IdentityLinked
 from pas.plugins.identity.core.events import IdentityUnlinked
@@ -773,6 +774,17 @@ class IdentityPlugin(BasePlugin):
     def _content_group(self, group_id: str):
         """Return the content object that *is* this group, if there is one.
 
+        Looked up through the catalog rather than by asking the configured
+        container for a child of that id. A group may be filed *inside*
+        another group -- that is how a hierarchy is drawn -- and a container
+        lookup finds only the top level, so every operation that resolves a
+        group by id would decline for a nested one: no removal, no membership
+        write, no ``@group-members``.
+
+        The container is still what says whether this plugin answers about
+        groups at all, and the type check is still the thing that keeps it
+        from claiming a group ``source_groups`` owns.
+
         :param group_id: The group id.
         :returns: The object, or ``None``.
         """
@@ -782,8 +794,25 @@ class IdentityPlugin(BasePlugin):
         if configured is None:
             return None
         container, portal_type = configured
+
         obj = container.get(group_id)
-        return obj if getattr(obj, "portal_type", None) == portal_type else None
+        if getattr(obj, "portal_type", None) == portal_type:
+            return obj
+
+        catalog = query_catalog()
+        if catalog is None:
+            return None
+        for brain in catalog.unrestrictedSearchResults(
+            portal_type=portal_type, group_id=group_id
+        ):
+            # The unrestricted variant, like every other object read in this
+            # package: these paths are machine paths, already elevated, and
+            # ``getObject`` applies a View check none of them has a reason to
+            # satisfy.
+            obj = brain._unrestrictedGetObject()
+            if IGroupContent.providedBy(obj):
+                return obj
+        return None
 
     def _authenticate_content_password(
         self, credentials: JSONDict

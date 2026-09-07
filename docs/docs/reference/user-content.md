@@ -56,7 +56,7 @@ moving the container in the control panel does not require a reinstall. See
 | `userid` | The canonical Plone userid. Assigned once, never changed. |
 | `login` | The name the user signs in with. |
 | `group_id` | The canonical group id. Assigned once, never changed. |
-| `group_ids` | On a user, the groups it belongs to. On a group, the groups it is nested inside. |
+| `group_ids` | On a user, the groups it belongs to. On a group, the groups it is nested inside, in addition to the group it is filed in. |
 
 `group_ids` is supplied by the `pas.plugins.identity.group_membership` behavior.
 **Neither interface declares it as an `Attribute`, deliberately.** Dexterity

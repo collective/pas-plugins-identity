@@ -99,4 +99,18 @@
       handler=".principals.on_folder_added"
       />
 
+  <!-- Group ids are unique across the site, not within a folder. Object ids
+       alone stopped guaranteeing that the moment a group could be filed
+       inside another group, and a group id is what every local role and
+       every ``group_ids`` entry is written in terms of. Refused where it
+       arrives rather than reported later; see .refuse_duplicate_group.
+
+       The move event rather than the add event, because renaming a group is
+       the other way to arrive at an id and it fires no add event. -->
+  <subscriber
+      for="..interfaces.IGroupContent
+           zope.lifecycleevent.interfaces.IObjectMovedEvent"
+      handler=".refuse_duplicate_group"
+      />
+
 </configure>

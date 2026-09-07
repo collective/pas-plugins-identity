@@ -35,6 +35,7 @@ and are overridden below:
 """
 
 from AccessControl.class_init import InitializeClass
+from Acquisition import aq_get
 from Acquisition import aq_inner
 from Acquisition import aq_parent
 from pas.plugins.identity import logger
@@ -212,19 +213,55 @@ def get_catalog() -> IdentityProfileCatalog:
 
 
 def query_catalog() -> IdentityProfileCatalog | None:
-    """Return the Profile catalog, or ``None`` when the layer is not installed.
+    """Return the Profile catalog, or ``None`` when there is not one to return.
 
     This layer's PAS plugins run in every site of the Zope instance,
     including sites that never applied the ``profile`` profile. They ask this
     rather than :func:`get_catalog` so that "not installed here" is an ordinary
     answer instead of an exception.
 
+    Two ways there is no catalog, and both are ordinary:
+
+    ``InvalidParameterError``
+        A site without this package's ``profile`` profile applied.
+
+    ``CannotGetPortalError``
+        No current site at all. Every caller here reaches this from a
+        subscriber, and a subscriber fires wherever the object is touched --
+        including from a ``zconsole`` script that never called ``setSite``,
+        and including while the site itself is being deleted from the Zope
+        root. Both used to raise out of the handler and take the operation
+        with them: deleting a site with one Profile in it failed with a
+        ``CannotGetPortalError`` naming neither the site nor the catalog.
+
     :returns: The catalog tool, or ``None``.
     """
     try:
         return get_catalog()
-    except api.exc.InvalidParameterError:
+    except (api.exc.InvalidParameterError, api.exc.CannotGetPortalError):
         return None
+
+
+def catalog_for(obj: CMFCatalogAware) -> IdentityProfileCatalog | None:
+    """Return the catalog of the site *this object* is in.
+
+    Acquired from the object rather than looked up from the current site,
+    which is how CMF finds ``portal_catalog`` and for the same two reasons.
+
+    A subscriber is handed the object, and the object knows which site it is
+    in; the thread-local site is a different question that merely happens to
+    have the same answer most of the time. It does not have it when a script
+    touches content without ``setSite``, and it does not have it while a site
+    is being deleted from the Zope root -- and asking the wrong question there
+    meant a Profile went unindexed, or the handler raised.
+
+    :param obj: A Profile or Group, still in its site.
+    :returns: The catalog tool, or ``None`` when the object is not in a site
+        that has one -- which includes an object already detached from the
+        site it used to be in.
+    """
+    catalog = aq_get(obj, CATALOG_ID, None, 1)
+    return catalog if IIdentityProfileCatalog.providedBy(catalog) else None
 
 
 def brains_of_type(

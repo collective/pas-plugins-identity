@@ -58,7 +58,8 @@ plone-sphinx-theme
 
 nested group
     A group that is a member of another group.
-    Membership is stored on the member, so nesting is the same field on the same side, and everybody in the inner group is in the outer one.
+    Written either by filing the group inside the other one or by naming it in the inner group's `group_ids`, and the two are unioned.
+    Everybody in the inner group is in the outer one.
 
 preferred address
     The address a Profile's `email` resolves to: the first verified one in its `emails` list, or the first one at all when none is verified.

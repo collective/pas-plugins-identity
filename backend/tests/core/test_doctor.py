@@ -6,7 +6,10 @@ test too. These damage the catalog on purpose, one mode at a time.
 """
 
 from pas.plugins.identity.core import doctor
+from pas.plugins.identity.core import subscribers
+from pas.plugins.identity.core.subscribers import DuplicateGroupId
 from plone import api
+from plone.api.exc import InvalidParameterError
 
 import pytest
 
@@ -161,10 +164,13 @@ class TestGroups:
 
         assert doctor.STALE in kinds(doctor.check())
 
-    def test_duplicate_group_ids_are_reported(self):
-        """Two groups answering to one id is never legitimate.
+    def test_creating_a_duplicate_group_id_is_refused(self):
+        """The guard, before the check that exists in case it was bypassed.
 
-        As with a duplicate userid, this now takes two containers.
+        A group id is what local roles and every ``group_ids`` entry are
+        written in terms of, and object ids are unique only within a folder --
+        so once a group may live inside another group, nothing but this makes
+        the id unique across the site.
         """
         elsewhere = self.allow_principals(
             api.content.create(
@@ -172,7 +178,46 @@ class TestGroups:
             )
         )
         self.make_group("editors", id="editors")
+
+        with pytest.raises(InvalidParameterError, match="already used by the group"):
+            self.make_group("editors", id="editors", container=elsewhere)
+
+    def test_renaming_onto_an_existing_group_id_is_refused(self):
+        """The other way to arrive at an id, which fires no add event."""
+        elsewhere = self.allow_principals(
+            api.content.create(
+                container=self.portal, type="Folder", id="elsewhere-groups"
+            )
+        )
+        self.make_group("editors", id="editors")
+        self.make_group("reviewers", id="reviewers", container=elsewhere)
+
+        with pytest.raises(DuplicateGroupId):
+            api.content.rename(obj=elsewhere["reviewers"], new_id="editors")
+
+    def test_duplicate_group_ids_are_reported(self, monkeypatch):
+        """Two groups answering to one id is never legitimate.
+
+        Creating one is refused now, which is why this has to get past the
+        guard to set the state up. The check is still worth having and worth
+        provoking: it is what finds the duplicate that arrived without one --
+        a database restored from before the guard existed, or an import that
+        suppressed events -- and a check nobody has watched fire is a check
+        nobody knows works.
+
+        The guard is disabled the way it fails in the field, by taking away
+        the catalog it asks. That leaves every other subscriber running.
+        """
+        elsewhere = self.allow_principals(
+            api.content.create(
+                container=self.portal, type="Folder", id="elsewhere-groups"
+            )
+        )
+        self.make_group("editors", id="editors")
+
+        monkeypatch.setattr(subscribers, "query_catalog", lambda: None)
         self.make_group("editors", id="editors", container=elsewhere)
+        monkeypatch.undo()
 
         assert doctor.DUPLICATE_GROUP_ID in kinds(doctor.check())
 
