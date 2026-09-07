@@ -13,6 +13,7 @@ it also covers a Profile carried along inside a folder somebody moved.
 """
 
 from OFS.interfaces import IObjectWillBeMovedEvent
+from pas.plugins.identity.core.catalog import catalog_for
 from pas.plugins.identity.core.catalog import IdentityProfileCatalog
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.contents.profile import UserProfile
@@ -25,11 +26,18 @@ from zope.lifecycleevent.interfaces import IObjectMovedEvent
 def _catalog_for(obj: UserProfile) -> IdentityProfileCatalog | None:
     """Return the Profile catalog this object should be filed in.
 
+    Acquired from the object, which is the only thing here that knows which
+    site the object is in. Asking the *current* site instead gave the same
+    answer on every request and a wrong one everywhere else: a ``zconsole``
+    script that never called ``setSite``, and the deletion of a site from the
+    Zope root, where there is no current site and the lookup raised out of the
+    handler rather than answering.
+
     :param obj: A Profile.
     :returns: The catalog tool, or ``None`` when the layer is not installed in
         the site the object belongs to.
     """
-    return query_catalog()
+    return catalog_for(obj) or query_catalog()
 
 
 def profile_moved(obj: UserProfile, event: IObjectMovedEvent) -> None:
