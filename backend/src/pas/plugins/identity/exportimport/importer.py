@@ -54,6 +54,7 @@ from pas.plugins.identity.exportimport.schema import USER_FIELDS
 from pas.plugins.identity.exportimport.schema import validate
 from plone import api
 from typing import Any
+from zope.lifecycleevent import modified
 
 
 def _plugin():
@@ -104,7 +105,8 @@ def _import_group(group: dict[str, Any], result: Result, dry_run: bool) -> None:
         if not dry_run:
             for name, value in fields.items():
                 setattr(existing, name, value)
-            existing.reindexObject()
+            # An event, not a reindex: see ``_apply_membership``.
+            modified(existing)
         result.groups.append(group_id)
         return
 
@@ -155,7 +157,8 @@ def _import_user(user: dict[str, Any], result: Result, dry_run: bool) -> None:
                 setattr(existing, name, value)
             existing.login = login
             existing.emails = tuple(emails)
-            existing.reindexObject()
+            # An event, not a reindex: see ``_apply_membership``.
+            modified(existing)
         result.users.append(userid)
         return
 
@@ -255,7 +258,15 @@ def _apply_membership(record: dict[str, Any], portal_type: str, dry_run: bool) -
             ", ".join(missing),
         )
     obj.group_ids = tuple(known)
-    obj.reindexObject()
+    # ``reindexObject`` maintains ``portal_catalog`` and fires no event, while
+    # the identity catalog is maintained *only* by the subscribers in
+    # ``core.indexers``, which answer ``IObjectModifiedEvent`` and three
+    # others. A write followed by a reindex therefore left every object right
+    # and every brain stale -- and ``getGroupsForPrincipal`` reads the brain,
+    # so an import wrote the membership and nobody was in the group. Creation
+    # was never affected: ``api.content.create`` fires ``ObjectAddedEvent``,
+    # which the catalog does listen for. Issue #30.
+    modified(obj)
 
 
 def _import_identities(
