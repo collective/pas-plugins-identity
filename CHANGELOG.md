@@ -7,6 +7,75 @@
 -->
 
 <!-- towncrier release notes start -->
+## 1.0.0a3 (2026-09-07)
+
+### Backend
+
+
+#### Breaking
+
+- A login may be changed by a Manager, and only after the account exists.
+
+  `login` was declared with the same write permission as `fullname`, which the owner of a Profile holds on their own Profile because that is what self-service means. Correcting your name and becoming somebody else were the same action, and a Site Administrator could rename anybody. It is half of the case-folded index user enumeration queries, so rewriting it moves an account away from every sign-in, every Sharing entry written against the old name, and every provider that maps a user by it. It now has a permission of its own, `pas.plugins.identity.content.editlogin`, and the interesting part is where it applies: `user_profile_workflow` grants it to `Manager` alone in every state, while the container Profiles are filed in grants it to `Manager` and `Site Administrator` beside the add permission. An add form checks a field against the container and an edit form against the object, so anybody who may create an account may name it and only a Manager may rename one afterwards. The machine paths are untouched — `doAddUser` elevates to Manager and writes through the Dexterity factory, which consults no field permission. Existing sites need the 1002 upgrade step: a workflow import does not touch content that already exists, and until its permission maps are rewritten the new permission is acquired rather than managed on every Profile a site already has. @ericof 
+- The Profile's fields moved onto behaviors, and the addresses onto a tab of their own.
+
+  `emails` and `email` are now declared by `pas.plugins.identity.email_addresses`, and `home_page`, `location` and `image` by `pas.plugins.identity.profile_details`. The type itself declares `login`, `fullname` and `description` and nothing else. Both behaviors are schema-only, so nothing about storage changed: a Profile still answers `profile.emails`, the catalog still indexes `email`, and the properties that normalize a write and derive the single address are still what runs. A stock site sees the same fields, with the two addresses moved to an **Email** tab — which is where they belong, being the only fields read under `View Personal Identifiable Information` rather than the ordinary view permission. A site running its own user type now composes the same Profile out of the same parts rather than redeclaring five fields and keeping their permissions in step by hand. What breaks is code that read those fields off `IUserProfileSchema`: they are on the behaviors' schemata now, and `iterSchemata` is what sees all of them. `completeness` was one such reader, and would have judged a profile with no address complete. @ericof 
+- `INDEXES` and `METADATA` no longer exist in `pas.plugins.identity.core.catalog`.
+
+  They described the user catalog's shape, and `identity-catalog.xml` describes it now, so keeping a Python copy would only have meant two lists that agree until they do not. `PROFILE_METADATA` and `GROUP_METADATA` stay where they are: they say which columns mean something on which of the two types, which is not something the catalog's own XML can express. Also removes `pas.plugins.identity.setuphandlers.catalog` and the three builders in it, which the import step replaces. @ericof 
+
+
+#### Feature
+
+- A deployment can now write its own fields onto a Profile at login, through a named `IProfileEnricher` utility.
+
+  The claim-to-field property map carries a scalar from a provider document to one of four fields, and an add-on whose behavior adds a field of its own could express nothing through it: the target has to be in `WRITABLE_FIELDS`, and a claim resolving to a list or a mapping is read as an absent claim rather than written as a Python representation. That refusal is deliberate — it is what stops an OIDC `address` object landing in somebody's location — so the answer is a second path rather than a wider map. An enricher runs after this package's own writes and after the addresses have been recorded, is handed the Profile, the whole normalized claims mapping including the provider's `raw` payload, and the provider configuration the login came through, writes what it likes, and returns the names of the fields it changed. The provider is what keeps a site running several of them from turning into guesswork: `driver_id` says what shape the payload is, `provider_id` tells two deployments of one kind apart, and the provider itself is `None` on the paths that carry no payload either. One modification event is fired for all of them together, before `reconcile`, so a required field an enricher fills counts towards completeness in the same login. Each enricher gets a persistent mapping private to its registered name, because this package's own "the provider may replace only what it wrote" fence compares scalars and answers the wrong question about a list — an enricher that ignores the mapping will hand back an entry its owner deleted, on every login. One that raises is logged and skipped: an add-on defect must not lock out the site's users, including whoever would remove it. See the new `docs/how-to-guides/write-a-profile-enricher.md`. @ericof 
+- The user catalog's indexes, columns and lexicon are declared in GenericSetup XML, with import and export steps of their own.
+
+  `profiles/default/identity-catalog.xml` is now the source of truth, applied by a new `identity-catalog` import step and readable back out by the matching export step. Adding an index or a metadata column is an edit to that file: no Python, and `remove="True"` takes one away, which the hand-written handlers could never do. The stock GenericSetup `catalog` step cannot reach this catalog -- it resolves its target with `queryUtility(ICatalogTool)`, which answers `portal_catalog` and has no notion of a second catalog -- so a step of our own is what was missing. The adapter was not: `ZCatalogXMLAdapter` is registered for `IZCatalog` and has adapted this catalog all along, so `IdentityCatalogXMLAdapter` subclasses it to change one thing, the filename. That name is load-bearing rather than cosmetic: a `catalog.xml` in this profile would not be ignored, it would be applied to the site catalog. Applying the profile still does not populate what it creates, so `pas.plugins.identity:rebuild-catalog` remains the second half of any such change. @ericof 
+
+
+#### Bugfix
+
+- Group membership written by an import now takes effect.
+
+  The importer wrote the fields and called `reindexObject()`, which maintains `portal_catalog` and fires no event. The identity catalog is maintained entirely by the subscribers in `core.indexers`, which answer `IObjectModifiedEvent` and three others, so every object came out of an import correct and every brain stayed stale. `getGroupsForPrincipal` reads `group_ids` off the brain, so an import wrote the membership and nobody was in the group; a re-imported login or address was equally invisible, which meant an account could still be enumerated under the name it had stopped using. Newly created principals were never affected, because `api.content.create` fires `ObjectAddedEvent` and the catalog does listen for that: it was only the subsequent field writes that were lost, and applying membership is always one of those. The three call sites now fire `zope.lifecycleevent.modified`, which is what the rest of the package already did. The existing tests missed it because they assert the object, or a count, and the count was right. @ericof [#30](https://github.com/collective/pas-plugins-identity/issues/30)
+- Converting a `pas.plugins.authomatic` dump now reads the target site's property map.
+
+  `convert_authomatic` mapped the dump onto Profile fields with its own hardcoded table, which never consulted the provider record the site had configured. A dump carries the provider's own vocabulary, so that table was a guess, and where it disagreed with the site the site lost. GitHub is the worked example: authomatic's parser sets `link` from `html_url`, so `link` to `home_page` gave every migrated person their GitHub profile page as their homepage and discarded the real one in `blog`, while a `bio` the table had no name for was dropped entirely. The site's map for the provider each user signed in with is now applied first, and the built-in table fills only the fields it leaves unset. `identity-importer --from-authomatic` therefore converts inside the site rather than on the way in; the dump's shape is still checked before Zope starts, so pointing it at the wrong file is still answered in a second. A provider with no record in the target site still converts on the built-in table, and is now counted and warned about rather than losing fields quietly. @ericof 
+
+
+#### Internal
+
+- The three behaviors mark themselves with `@provider(IFormFieldProvider)` rather than a trailing `alsoProvides`.
+
+  Identical in effect -- a `model.Schema` subclass directly provides nothing, so the `directlyProvides` the decorator performs discards nothing an `alsoProvides` would have kept -- and it is what the behaviors in `plone.app.contenttypes` and `plone.app.dexterity` use. The marker now sits on the class instead of sixty lines below the schema, where its absence is the thing to notice: without it the fields store, index and serialize correctly and appear on no form. @ericof 
+
+
+
+### Frontend
+
+No significant changes.
+
+
+
+
+### Project
+
+
+#### Documentation
+
+- Added a how-to for adding an index or a metadata column to the user catalog, and documented the `identity-catalog` import and export steps. @ericof 
+- Added a how-to for writing a profile enricher.
+
+  Covers when the property map is the right answer and when it runs out, the four arguments an enricher is handed, why it keys on the provider rather than on a key it hopes means something, why it has to remember what it wrote, and what `claims["raw"]` actually holds — which is the userinfo document only for a plain OAuth2 provider such as GitHub, the token's claims for any provider issuing an `id_token`, and nothing at all on a magic-link confirmation or an address verification. @ericof 
+- Documented that an authomatic conversion reads the target site's property map, and that configuring the providers first decides which fields survive it. @ericof 
+- Split the two concept pages on the boundary they already declared.
+
+  `About users as content` is the mechanism: what the marker contracts promise, and why the plugin creates a type it has never heard of. `About profiles and groups` is what the fields a Profile owns are used for. The comparison with `Products.membrane` and the reason membership is kept on the member had been written out in full on both, so a reader met the same argument twice in slightly different words, and a correction had two places to land — including the version the membrane reading was verified against. Each argument now has one home, and the other page points at it rather than restating it. @ericof 
+
+
+
 ## 1.0.0a2 (2026-09-07)
 
 ### Backend

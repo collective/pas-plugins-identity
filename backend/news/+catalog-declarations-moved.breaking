@@ -1,3 +1,0 @@
-`INDEXES` and `METADATA` no longer exist in `pas.plugins.identity.core.catalog`. @ericof
-
-They described the user catalog's shape, and `identity-catalog.xml` describes it now, so keeping a Python copy would only have meant two lists that agree until they do not. `PROFILE_METADATA` and `GROUP_METADATA` stay where they are: they say which columns mean something on which of the two types, which is not something the catalog's own XML can express. Also removes `pas.plugins.identity.setuphandlers.catalog` and the three builders in it, which the import step replaces. @ericof
