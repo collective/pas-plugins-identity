@@ -246,6 +246,99 @@ class IAuditSource(Interface):
         """
 
 
+class IProfileEnricher(Interface):
+    """Writes to a Profile from a provider's claims, after the package has.
+
+    Registered as a *named* utility, and every registered name runs on every
+    login. There is no setting listing them: an enricher is code a deployment
+    installed, not a destination it configured, and a site that does not want
+    one does not install it.
+
+    **Why this exists.** The claim-to-field property map carries a scalar from
+    a provider document to one of four Profile fields, and that is all it can
+    do. It cannot transform a value, and it cannot write a field it does not
+    already know about --
+    :data:`~pas.plugins.identity.core.subscribers.WRITABLE_FIELDS` is a closed
+    set, and
+    :func:`~pas.plugins.identity.core.subscribers._scalar` reads a list or a
+    mapping as an absent claim rather than writing a repr into somebody's
+    location. An add-on whose behavior adds a *list* field to the Profile can
+    therefore express nothing through the map, however the payload is shaped.
+
+    **Where it runs.** After the package's own writes and after the addresses
+    have been recorded, so the Profile an enricher sees is the one the login
+    is leaving behind: claims synced, addresses appended, verification
+    recorded and the derived ``email`` settled. Before ``reconcile``, so a
+    field an enricher fills counts towards completeness in the same login.
+
+    **What it is handed.** The Profile, the whole normalized claims mapping
+    whose ``raw`` key is the provider's own payload, and the provider
+    configuration this login came through.
+
+    The provider is what stops an enricher having to guess. A payload is only
+    interpretable against the provider that produced it -- GitHub's
+    ``twitter_username`` and Google's ``hd`` mean nothing in each other's
+    documents -- and sniffing for a key that happens to be present is how an
+    enricher comes to fire on the wrong login. Two fields answer two different
+    questions, and mixing them up is the mistake worth naming:
+    ``driver_id`` is the *kind* of provider and is what a payload's shape
+    follows, while ``provider_id`` is the configured instance. A site with a
+    public GitHub and a GitHub Enterprise has two provider ids and one driver
+    id, so an enricher parsing GitHub payloads keys on the driver and one that
+    means a single deployment keys on the provider.
+
+    Note that ``raw`` is the *userinfo* document only for a plain OAuth2
+    provider such as GitHub; a provider that issues an ``id_token`` never has
+    its userinfo endpoint read, and ``raw`` is then the token's claims. Four
+    paths fire with ``raw`` empty altogether -- a magic-link confirmation, an
+    address verification, and the two authomatic imports -- and those also
+    arrive with no provider at all, which is the other reason to check it
+    before reading the payload.
+
+    **The ownership fence is yours.** The package will not overwrite a value
+    a user has edited since the provider wrote it, which it decides by
+    remembering what it last wrote (see
+    :func:`~pas.plugins.identity.core.subscribers._provider_may_write`). That
+    comparison is a scalar one and says nothing useful about a list, where the
+    provider's contribution and the stored value are not the same object. So
+    an enricher is given a persistent mapping of its own and decides for
+    itself; an enricher that skips the question will hand back an entry its
+    owner deleted, on every login, for ever.
+
+    Running unprivileged is not an option and not a choice: the person is
+    mid-login and holds no roles yet, so enrichers run elevated. An enricher
+    is therefore trusted code, and what it writes is not checked against the
+    permissions of whoever is signing in.
+    """
+
+    def enrich(profile, claims, provider, memory):
+        """Write to the Profile and say what changed.
+
+        Must not raise. An exception is caught, logged and the login carries
+        on -- an add-on that fails must not lock the site's users out, and the
+        administrator who would fix it is one of them. Must not perform I/O
+        either: this runs inside the login request, and a slow enricher is a
+        slow login for everybody.
+
+        :param profile: The Profile, already written to by this package.
+        :param claims: The normalized claims. ``claims["raw"]`` is the
+            provider's payload, and may be empty.
+        :param provider: The
+            :class:`~pas.plugins.identity.core.controlpanel.ProviderConfig`
+            this login came through, carrying ``driver_id`` and
+            ``provider_id``. ``None`` on the paths that have no provider --
+            a magic-link confirmation, an address verification and the two
+            authomatic imports -- so an enricher that reads a payload checks
+            it first.
+        :param memory: A persistent mapping private to this enricher's name,
+            for whatever it needs to remember between logins -- typically what
+            it last wrote, so it can tell its own value from the user's edit.
+        :returns: The names of the fields actually changed. An empty result
+            means nothing was written, and no modification event is fired for
+            it.
+        """
+
+
 class IOwnsUserProperties(Interface):
     """Marker for a PAS plugin that owns where user properties are stored.
 

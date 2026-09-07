@@ -1,0 +1,3 @@
+Added a how-to for writing a profile enricher.
+
+Covers when the property map is the right answer and when it runs out, the four arguments an enricher is handed, why it keys on the provider rather than on a key it hopes means something, why it has to remember what it wrote, and what `claims["raw"]` actually holds — which is the userinfo document only for a plain OAuth2 provider such as GitHub, the token's claims for any provider issuing an `id_token`, and nothing at all on a magic-link confirmation or an address verification. @ericof
