@@ -7,6 +7,40 @@
 -->
 
 <!-- towncrier release notes start -->
+## 1.0.0a4 (2026-09-08)
+
+### Backend
+
+
+#### Bugfix
+
+- The four sign-in endpoints answer on a site whose anonymous visitors cannot view it.
+
+  `@login-providers`, `@identity-callback`, `@magic-link` and `@magic-link-confirm` each said "anonymous by design" in their own registration and were each declared against `zope2.View`, which is not that. `zope2.View` is looked up as a permission and inherited from the root, so a site that takes `View` away from `Anonymous` — a closed intranet, which is the kind of site most likely to want federated login — answered every one of them with a 401. The login page could not list its providers, a provider redirect could not be completed, and neither half of the magic link could be reached; local login kept working throughout, because `plone.restapi` declares its own `@login` as `zope.Public`. All four are declared that way now, which `AccessControl.security.protectClass` special-cases into `declareObjectPublic()` so that no role is required at all. Nothing else moved: the callback is still authorized by the single-use state bound to its signed flow cookie, and the magic link by its rate limiter and its signed, single-use, short-lived token. @ericof [#34](https://github.com/collective/pas-plugins-identity/issues/34)
+- A migrated account reaches the profile enrichers with the provider's payload.
+
+  Both authomatic paths — `migration.authomatic.migrate` on a live site, and the `--from-authomatic` dump conversion — link each identity through the plugin, which fires `IdentityLinked`, whose subscriber runs the site's installed `IProfileEnricher` utilities. That much always worked. What those enrichers were handed did not: each path built its claims snapshot with an empty `raw`, and `raw` is the whole contract, because the property map deliberately refuses a structured claim and an enricher is what a site has instead. So every enricher ran against an empty document, wrote nothing, reported nothing wrong, and a migration produced Profiles missing exactly the fields the enricher had been installed to fill. The payload now comes across: for a live migration, the attributes authomatic parsed out of the provider's response layered over the document it kept in `data`, in the order its own property sheet resolves them; for a dump, the `properties` the documented extraction wrote. Credentials do not come with it. Authomatic keeps a serialized `Credentials` holding the account's access and refresh tokens on every identity, and a claims snapshot is stored on the identity record and written out again by the exporter, so a new `core.utils.claims.scrub_payload` strips that and the other credential-bearing key names on the way in. An identity already linked is still skipped, so re-running an import does not enrich the accounts that arrived the first time. @ericof [#35](https://github.com/collective/pas-plugins-identity/issues/35)
+
+
+
+### Frontend
+
+No significant changes.
+
+
+
+
+### Project
+
+
+#### Documentation
+
+- The profile enricher guide says what a migration hands you.
+
+  Its table of payload shapes listed both authomatic paths as `Empty`, which described the behaviour accurately and made it look intended. It is a fourth shape now — authomatic's own record for that account, closest to the plain OAuth2 row — with the two things an enricher author has to know beside it: the snapshot dates from whenever that person last signed in to the old site, so it can lack a key the provider sends today, and an enricher runs once per identity the import actually links, so re-running an import does not reach accounts that arrived on the first one. @ericof [#35](https://github.com/collective/pas-plugins-identity/issues/35)
+
+
+
 ## 1.0.0a3 (2026-09-07)
 
 ### Backend

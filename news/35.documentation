@@ -1,3 +1,0 @@
-The profile enricher guide says what a migration hands you.
-
-Its table of payload shapes listed both authomatic paths as `Empty`, which described the behaviour accurately and made it look intended. It is a fourth shape now — authomatic's own record for that account, closest to the plain OAuth2 row — with the two things an enricher author has to know beside it: the snapshot dates from whenever that person last signed in to the old site, so it can lack a key the provider sends today, and an enricher runs once per identity the import actually links, so re-running an import does not reach accounts that arrived on the first one. @ericof
