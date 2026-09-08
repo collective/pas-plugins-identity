@@ -76,9 +76,19 @@ The map is read per user, from the record for the provider *that user actually
 signed in with*, and :data:`PROPERTY_MAP` fills only what it leaves unset. A
 provider with no record in the target site falls back to it, which is reported
 rather than done quietly: it is the case that loses data.
+
+**The dump's properties are carried whole, as well as mapped.** The map moves
+the handful of keys this package has a field for; everything else in the dump
+goes into the identity's ``raw`` claims, because the import fires
+``IdentityLinked`` and a site's profile enrichers run against exactly that.
+An enricher exists to reach what the map cannot -- a list field, a key nobody
+here has a name for -- and it can only do so if the payload survives the
+conversion. Credentials do not: see
+:func:`~pas.plugins.identity.core.utils.claims.scrub_payload`.
 """
 
 from pas.plugins.identity.core.interfaces import Claims
+from pas.plugins.identity.core.utils.claims import scrub_payload
 from pas.plugins.identity.core.utils.propertymap import apply_property_map
 from pas.plugins.identity.exportimport.schema import DOCUMENT_VERSION
 from pas.plugins.identity.exportimport.schema import ExportImportError
@@ -208,6 +218,25 @@ def _addresses(user: dict[str, Any]) -> list[str]:
     return found
 
 
+def _carried(identity: dict[str, Any]) -> dict[str, Any]:
+    """Return the claims a dump states for one identity, scrubbed.
+
+    A dump may carry its own snapshot per identity rather than leaving it to
+    be built from ``properties``, and that one is preferred: whoever wrote the
+    extraction knew the provider. It gets the same treatment on the way in,
+    for the same reason :func:`_claims` does -- a snapshot is persisted and
+    re-exported, and the extraction script is not ours.
+
+    :param identity: One identity from the dump.
+    :returns: The claims, with ``raw`` scrubbed, or an empty mapping when the
+        dump states none.
+    """
+    claims = identity.get("claims")
+    if not isinstance(claims, dict) or not claims:
+        return {}
+    return {**claims, "raw": scrub_payload(claims.get("raw"))}
+
+
 def _claims(user: dict[str, Any], addresses: list[str]) -> dict[str, Any]:
     """Build the claims snapshot for one user's identities.
 
@@ -222,6 +251,22 @@ def _claims(user: dict[str, Any], addresses: list[str]) -> dict[str, Any]:
     that is the target provider's ``trust_email_verification``, applied at
     import time, exactly as it would be at a login. A dump cannot grant
     itself trust.
+
+    ``raw`` carries the dump's own ``properties``. That is the one part of a
+    snapshot the next login does *not* make redundant, because the import
+    fires ``IdentityLinked`` and its subscriber runs the site's installed
+    :class:`~pas.plugins.identity.core.interfaces.IProfileEnricher` utilities
+    against these claims. An enricher reads ``raw`` and nothing else: it is
+    what a site has instead of the property map, which refuses a structured
+    claim on purpose. Left empty, every enricher ran against ``{}`` and wrote
+    nothing, so a migrated Profile came out missing exactly the fields an
+    enricher was installed to fill, and no error said so.
+
+    It is scrubbed on the way in. A snapshot is stored on the identity record
+    and written out again by the exporter, so an extraction script that put a
+    whole token response into ``properties`` would otherwise put an access
+    token in the ZODB and in every document exported afterwards. See
+    :func:`~pas.plugins.identity.core.utils.claims.scrub_payload`.
 
     :param user: One user from the dump.
     :param addresses: The addresses already resolved for them.
@@ -238,7 +283,7 @@ def _claims(user: dict[str, Any], addresses: list[str]) -> dict[str, Any]:
         "email": addresses[0],
         "email_verified": verified,
         "emails": [{"address": address, "verified": verified} for address in addresses],
-        "raw": {},
+        "raw": scrub_payload(source),
     }
 
 
@@ -397,7 +442,7 @@ def convert_authomatic(
                     "created": None,
                     "last_login": None,
                     "groups": [],
-                    "claims": identity.get("claims") or _claims(user, addresses),
+                    "claims": _carried(identity) or _claims(user, addresses),
                 }
                 for identity in user.get("identities") or ()
             ],

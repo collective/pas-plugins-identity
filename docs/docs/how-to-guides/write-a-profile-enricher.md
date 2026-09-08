@@ -187,7 +187,7 @@ one shape works for one provider.
 | Any provider issuing an `id_token` | The token's claims—the userinfo endpoint is never read |
 | A magic-link confirmation | Empty |
 | An address verification | Empty |
-| The two authomatic imports | Empty |
+| Either authomatic path | What authomatic stored for that account |
 
 The second row catches people out. A provider that issues an `id_token` has that
 preferred, because it is signed and carries the nonce, and its claims are
@@ -197,6 +197,36 @@ defensively and do nothing when what you need is not there.
 For GitHub specifically, `raw` is the `/user` response. The addresses from
 `/user/emails` are folded into `claims["emails"]` instead and are not in `raw`,
 so nothing downstream sees a key no provider sent.
+
+### What a migration hands you
+
+<!-- _payload_for in backend/src/pas/plugins/identity/migration/authomatic.py
+     and _claims in backend/src/pas/plugins/identity/exportimport/authomatic.py. -->
+
+Both authomatic paths link each identity through the plugin, which fires
+`IdentityLinked`, which runs your enricher. The payload is authomatic's own
+record for that account, not a fresh provider response: the attributes it parsed
+out, layered over the provider document it kept in `data`. The parsed attribute
+wins where both carry a key, which is the order authomatic's own property sheet
+uses.
+
+That is a fourth shape, and the closest to the first row—a GitHub account
+migrated from authomatic carries the `/user` keys it was stored with. It is a
+snapshot of whenever that person last signed in to the old site, so it can be
+years old and can lack a key the provider sends today. Treat it as the same
+defensive read as everything else here.
+
+Credentials never reach you. Authomatic keeps a serialized `Credentials` on
+every identity, holding the account's access and refresh tokens, and the
+conversion strips it along with the other credential-bearing key names. A claims
+snapshot is stored on the identity record and written out again by the exporter,
+so anything carried in would be in the database and in every principal document
+exported afterwards.
+
+An enricher runs once per identity that the import actually links. An identity
+already pointing at the right person is skipped, which is what makes a second
+import a no-op—so installing an enricher and re-running an import does not
+enrich the accounts that arrived the first time.
 
 ## Follow the rules
 

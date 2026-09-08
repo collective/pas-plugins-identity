@@ -465,3 +465,101 @@ class TestTheMigratedPersonIsAUser:
 
         assert second.identities == []
         assert second.users == []
+
+
+#: authomatic's serialized ``Credentials``: the account's access and refresh
+#: tokens. ``User.to_dict()`` puts one on every stored identity, so the live
+#: migration meets it on every user it moves.
+CREDENTIALS = "1|2|ya29.a0AfH6SMBnotarealtoken"
+
+
+class TestTheStoredPayloadComesAcross:
+    """What ``claims["raw"]`` carries after a live migration, and why.
+
+    ``link`` fires ``IdentityLinked``, whose subscriber runs the site's
+    installed ``IProfileEnricher`` utilities against these claims. An enricher
+    reads ``raw`` and nothing else -- it is what a site has instead of the
+    property map, which refuses a structured claim on purpose. This built
+    ``"raw": {}``, so every enricher ran against an empty document and wrote
+    nothing, and the migrated Profiles were missing precisely the fields the
+    enricher existed to fill.
+    """
+
+    USERID = "8f2c1e5b9a7d4c6e8f0a1b2c3d4e5f60"
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, acl_users, authomatic_plugin, legacy, store) -> None:
+        self.portal = portal
+        self.store = store
+        self.legacy = legacy
+
+    def claims(self, **user) -> dict:
+        """Store one identity, migrate, and return the recorded claims.
+
+        :param user: Keys on the stored ``UserIdentity``.
+        :returns: The claims snapshot on the identity record.
+        """
+        self.legacy("github", "12345", self.USERID, **user)
+        migration.migrate(dry_run=False)
+        return dict(self.store.get("github", "12345").claims)
+
+    def test_a_parsed_attribute_is_carried(self):
+        """authomatic's own vocabulary: what its shipped property maps are
+        written against."""
+        assert self.claims(link="https://github.com/ericof")["raw"]["link"] == (
+            "https://github.com/ericof"
+        )
+
+    def test_the_providers_own_document_is_carried(self):
+        """``data`` is the provider's response, and it holds the keys
+        authomatic's fixed vocabulary dropped -- which is the half an enricher
+        is there to read."""
+        raw = self.claims(data={"bio": "Writes Python.", "twitter_username": "ericof"})
+
+        assert raw["raw"]["twitter_username"] == "ericof"
+
+    def test_a_parsed_attribute_beats_the_document(self):
+        """authomatic's own property sheet resolves ``identity.get(key) or
+        identity["data"].get(key)``, so this reproduces its order rather than
+        inventing one."""
+        raw = self.claims(
+            link="https://parsed.example.com",
+            data={"link": "https://document.example.com"},
+        )
+
+        assert raw["raw"]["link"] == "https://parsed.example.com"
+
+    def test_a_credential_does_not_come_across(self):
+        """The reason the payload is scrubbed rather than copied: a snapshot
+        is persisted here and written out again by the exporter."""
+        recorded = self.claims(credentials=CREDENTIALS, data={"bio": "Kept."})
+
+        assert CREDENTIALS not in str(recorded)
+        assert recorded["raw"]["bio"] == "Kept."
+
+    def test_an_unset_birth_date_is_not_carried_as_the_word_None(self):
+        """``to_dict`` stringifies it unconditionally, so an account that
+        never had one carries the four characters "None". A map naming
+        ``birth_date`` would write that into a field."""
+        assert "birth_date" not in self.claims(birth_date="None")["raw"]
+
+    def test_a_real_birth_date_is_carried(self):
+        """The control for the line above: the rule drops authomatic's
+        stringified ``None``, not the field."""
+        assert self.claims(birth_date="1964-02-23")["raw"]["birth_date"] == "1964-02-23"
+
+    def test_the_normalized_claims_are_unchanged(self):
+        """The fix adds a key. It does not restate what was already there."""
+        recorded = self.claims(name="Érico Andrei", email="erico@plone.org")
+
+        assert recorded["fullname"] == "Érico Andrei"
+        assert recorded["email"] == "erico@plone.org"
+        assert recorded["email_verified"] is False
+
+    def test_authomatics_own_bookkeeping_is_not_carried(self):
+        """``provider_name`` is authomatic's, not the provider's. An enricher
+        is handed the provider record as an argument, so carrying it would be
+        a second answer to a question already answered. The documented
+        extraction script drops it too, and the two payloads match on
+        purpose."""
+        assert "provider_name" not in self.claims(link="https://example.com")["raw"]
