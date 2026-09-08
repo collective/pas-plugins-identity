@@ -11,13 +11,11 @@
       name="login-providers"
       />
 
-  <!-- Listing and flow start. Anonymous by design: this is the login page.
-       No secrets and no provider configuration leave here. -->
   <plone:service
       method="GET"
       factory=".get.LoginProviders"
       for="Products.CMFCore.interfaces.ISiteRoot"
-      permission="zope2.View"
+      permission="zope.Public"
       layer="pas.plugins.identity.interfaces.IBrowserLayer"
       name="@login-providers"
       />

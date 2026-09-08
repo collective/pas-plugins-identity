@@ -27,8 +27,16 @@ nothing can log in. Everything else in its per-provider configuration --
 property maps, class references, scopes expressed in its own vocabulary -- is
 left behind deliberately: translating it silently would produce a provider
 that looks configured and behaves differently.
+
+**Access and refresh tokens.** authomatic stores a serialized ``Credentials``
+on every identity. What each account's stored payload *does* carry comes
+across, because ``link`` runs the site's profile enrichers against it and an
+enricher handed an empty document writes nothing; the tokens are stripped on
+the way, since a claims snapshot is persisted and exported. See
+:mod:`pas.plugins.identity.core.utils.claims`.
 """
 
+from collections.abc import Mapping
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.controlpanel import ProviderConfig
@@ -36,10 +44,12 @@ from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.pas import PLUGIN_ID
+from pas.plugins.identity.core.utils.claims import scrub_payload
 from pas.plugins.identity.migration import profiles_for
 from pas.plugins.identity.migration import Report
 from plone import api
 from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
+from typing import Any
 
 
 #: Object id authomatic's plugin is installed under. It refuses to install
@@ -131,12 +141,69 @@ def _identity_pairs(plugin: BasePlugin) -> list[tuple[str, str, str]]:
     return sorted(pairs)
 
 
+def _payload_for(identity: Mapping[str, Any]) -> JSONDict:
+    """Rebuild the provider document out of one stored authomatic identity.
+
+    A ``UserIdentity`` is ``authomatic.core.User.to_dict()`` with the provider
+    name added: the attributes authomatic parsed out of the provider's
+    response, plus ``data``, which is that response itself. Its own property
+    sheet reads the parsed attribute first and falls back to the document, so
+    the parsed half wins where both carry a key; this reproduces that order
+    rather than inventing one.
+
+    Both halves are carried because a migrated site's property map may name
+    either. Neither is complete on its own: authomatic parses a fixed
+    vocabulary and drops the rest, so ``data`` holds the ``bio`` or the
+    ``twitter_username`` an enricher is there to read, while the parsed half
+    holds the ``link`` that a shipped authomatic map is written against.
+
+    Deliberately the same shape the documented extraction script builds for a
+    dump, down to dropping ``provider_name`` and skipping an empty value, so
+    that an enricher meets one payload whichever migration a site ran. The
+    script is in :doc:`/reference/principal-documents`.
+
+    :param identity: authomatic's stored ``UserIdentity``.
+    :returns: The payload, with every credential-bearing key removed by
+        :func:`~pas.plugins.identity.core.utils.claims.scrub_payload`. That is
+        why authomatic's ``credentials``, which holds the account's access and
+        refresh tokens, does not come through.
+    """
+    stored = dict(identity)
+    data = stored.pop("data", None)
+    # authomatic's own bookkeeping, not the provider's vocabulary. An enricher
+    # is handed the provider record as an argument and reads the kind off
+    # that, so this would be a second, differently spelled answer.
+    stored.pop("provider_name", None)
+    payload: JSONDict = dict(data) if isinstance(data, dict) else {}
+    for key, value in stored.items():
+        # ``to_dict`` stringifies ``birth_date`` unconditionally, so an
+        # account that never had one carries the four characters "None". Left
+        # in, a map naming ``birth_date`` writes that string into a field and
+        # somebody has to go and find out where it came from.
+        if key == "birth_date" and value == "None":
+            continue
+        if value in (None, "", [], {}):
+            continue
+        payload[key] = value
+    return scrub_payload(payload)
+
+
 def _claims_for(plugin: BasePlugin, userid: str, provider: str) -> Claims:
     """Build a claims snapshot from authomatic's stored user data.
 
     Best effort on purpose. The snapshot is a convenience -- the next login
     refreshes it from the provider -- so a provider whose stored shape we do
     not recognise yields an empty snapshot rather than a failed migration.
+
+    ``raw`` carries what authomatic held, and it is not a nicety. ``link``
+    fires ``IdentityLinked``, whose subscriber runs the site's installed
+    :class:`~pas.plugins.identity.core.interfaces.IProfileEnricher` utilities
+    against exactly these claims. An enricher reads ``raw``: that is the whole
+    contract, because the property map deliberately refuses a structured
+    claim and an enricher is what a site has instead. Handing it ``{}`` ran
+    every enricher on an empty document, so each one wrote nothing and the
+    migrated Profiles came out missing precisely the fields a site installed
+    an enricher to fill.
 
     :param plugin: The authomatic plugin.
     :param userid: The user id.
@@ -157,7 +224,7 @@ def _claims_for(plugin: BasePlugin, userid: str, provider: str) -> Claims:
         # cannot trace to a verification this site performed.
         "email_verified": False,
         "username": identity.get("username") or "",
-        "raw": {},
+        "raw": _payload_for(identity),
     }
 
 

@@ -18,6 +18,7 @@ from pas.plugins.identity.exportimport.authomatic import site_propertymaps
 from pas.plugins.identity.exportimport.authomatic import SOURCE
 from pas.plugins.identity.exportimport.authomatic import unmapped_providers
 from pas.plugins.identity.exportimport.schema import ExportImportError
+from pas.plugins.identity.exportimport.schema import USER_FIELDS
 
 import pytest
 
@@ -147,10 +148,14 @@ class TestTheConversion:
         assert user["home_page"] == "https://plone.example"
         assert user["fullname"] == "From the sheet"
 
-    def test_a_key_with_no_profile_field_is_dropped(self):
-        """``picture``, ``first_name`` and ``last_name`` are in a real Google
-        property map and have no Profile field. An attribute nothing declares
-        is invisible to every form and permission in the site."""
+    def unmapped(self) -> dict:
+        """Convert a dump whose properties all lack a Profile field.
+
+        ``picture``, ``first_name`` and ``last_name`` are in a real Google
+        property map and this package has a field for none of them.
+
+        :returns: The converted user record.
+        """
         d = dump()
         d["users"][0]["properties"] = {
             "email": ADDRESS,
@@ -158,12 +163,33 @@ class TestTheConversion:
             "first_name": "Erico",
             "last_name": "Andrei",
         }
+        return convert_authomatic(d)["users"][0]
 
-        user = convert_authomatic(d)["users"][0]
+    def test_a_key_with_no_profile_field_becomes_no_field(self):
+        """An attribute nothing declares is invisible to every form and
+        permission in the site, so it does not become one."""
+        user = self.unmapped()
 
         assert "picture" not in user
         assert "first_name" not in user
-        assert "https://example.org/a.png" not in str(user)
+        assert "https://example.org/a.png" not in str({
+            name: user[name] for name in USER_FIELDS
+        })
+
+    def test_a_key_with_no_profile_field_survives_in_the_payload(self):
+        """The other half, and it is not a leak. The claims snapshot is the
+        provider's own document rather than a set of Profile attributes, and a
+        key this package has no name for is exactly what a site installs an
+        ``IProfileEnricher`` to reach: dropping it here leaves the enricher
+        nothing to read. See ``test_enricher_payload``.
+
+        The assertion above used to read ``not in str(user)``, which held only
+        while the snapshot was empty and every enricher therefore did
+        nothing."""
+        raw = self.unmapped()["identities"][0]["claims"]["raw"]
+
+        assert raw["picture"] == "https://example.org/a.png"
+        assert raw["first_name"] == "Erico"
 
     def test_the_generator_says_where_it_came_from(self):
         """A document found on disk in two years should say what made it."""
