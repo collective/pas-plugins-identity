@@ -59,7 +59,8 @@ class SocialLinks:
         if provider is None:
             return []
 
-        if handler := getattr(self, f"enrich_{provider.driver_id}", None) is None:
+        handler = getattr(self, f"enrich_{provider.driver_id}", None)
+        if handler is None:
             return []
         return handler(profile, claims, memory)
 
@@ -79,7 +80,7 @@ class SocialLinks:
         return ["social_links"]
 ```
 
-A detail in that dispatch are load-bearing.
+One detail in that class is load-bearing.
 
 **A handler returns field names, not the mapping.** Returning `memory` is the
 easy slip, and it is not caught: the runner can loop over a mapping, so it reads
