@@ -69,6 +69,29 @@ class BaseDriver:
     #: Keys tried, in order, to find the provider-side subject.
     subject_keys: tuple[str, ...] = ("sub",)
 
+    #: The endpoint set, for a provider whose endpoints do not move.
+    #:
+    #: Empty means "discover them", which is the answer for every OIDC
+    #: provider: the endpoints come from the issuer's discovery document and
+    #: change when the provider says so. A driver fills this in only where
+    #: there is nothing to discover -- GitHub is plain OAuth2 and publishes
+    #: three fixed URLs and no discovery document at all.
+    #:
+    #: Declared here rather than in a table keyed by driver id somewhere else.
+    #: It is a fact about a kind of provider, which is what a driver is for,
+    #: and a driver shipped by another package has no way to add a row to
+    #: somebody else's dict.
+    static_metadata: dict[str, str] = {}  # noqa: RUF012
+
+    #: The issuer to discover from, when the driver knows it.
+    #:
+    #: Empty means the operator supplies it, which is the case for any driver
+    #: whose settings schema declares an ``issuer`` field. A driver fills this
+    #: in when the issuer is not a deployment's choice: nobody should be
+    #: typing Google's issuer URL by hand, and getting it wrong is a login
+    #: that fails at discovery rather than a setting anybody reads.
+    issuer: str = ""
+
     #: Claim this provider's groups arrive in, or ``""`` for none.
     #:
     #: Empty on the base class, and that is what switches the whole feature

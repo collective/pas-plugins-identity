@@ -3,8 +3,14 @@
 Drivers are static declarations and never perform I/O, but something has to
 turn "the ``dex`` provider" into the endpoint set
 :mod:`pas.plugins.identity.core.flows` needs. That is this module, and it
-knows exactly two ways to do it: a published constant for providers whose
-endpoints do not move, and OIDC discovery for everyone else.
+knows exactly two ways to do it: the endpoint set a driver publishes for a
+provider whose endpoints do not move, and OIDC discovery for everyone else.
+
+Which of the two applies is the driver's answer, not this module's. What lives
+here is the resolving: the fetch, the cache, the TTL and :func:`forget`. What
+GitHub's token endpoint *is* lives in ``GitHubDriver``, because it is a fact
+about GitHub -- and because a driver shipped by another package can then
+answer the same question without editing a table in here.
 
 Discovery results are cached per issuer, so a login costs one round trip
 rather than three. The cache is per process and deliberately dumb -- a
@@ -27,27 +33,6 @@ from zope.component import queryUtility
 
 import requests
 
-
-#: Providers whose endpoints are published and stable, so there is nothing to
-#: discover. GitHub is plain OAuth2: it issues no ``id_token`` and the flow
-#: falls back to its userinfo endpoint.
-STATIC_METADATA: dict[str, JSONDict] = {
-    "github": {
-        "authorization_endpoint": "https://github.com/login/oauth/authorize",
-        "token_endpoint": "https://github.com/login/oauth/access_token",
-        "userinfo_endpoint": "https://api.github.com/user",
-        # `/user` omits the address of anybody who marked it private and
-        # carries no `email_verified` at all. This is where both live.
-        "emails_endpoint": "https://api.github.com/user/emails",
-    },
-}
-
-#: Drivers that discover their metadata, but from an issuer the driver fixes
-#: rather than one the operator types. Nobody should be configuring Google's
-#: issuer URL by hand.
-DRIVER_ISSUERS: dict[str, str] = {
-    "google": "https://accounts.google.com",
-}
 
 #: The config field a driver declares when the operator supplies its issuer.
 #:
@@ -121,9 +106,9 @@ def metadata_for(provider: ProviderConfig) -> JSONDict:
         issuer is unconfigured.
     :raises FlowError: When discovery itself fails.
     """
-    static = STATIC_METADATA.get(provider.driver_id)
-    if static is not None:
-        return dict(static)
+    driver = provider.driver
+    if driver is not None and driver.static_metadata:
+        return dict(driver.static_metadata)
     return discover(issuer_for(provider))
 
 
@@ -137,9 +122,9 @@ def issuer_for(provider: ProviderConfig) -> str:
         why they are not the plain :class:`FlowError` a failed discovery
         raises.
     """
-    fixed = DRIVER_ISSUERS.get(provider.driver_id)
-    if fixed is not None:
-        return fixed
+    driver = provider.driver
+    if driver is not None and driver.issuer:
+        return driver.issuer.rstrip("/")
     if not _asks_for_an_issuer(provider):
         raise ProviderUnusable(
             f"{provider.provider_id}: driver {provider.driver_id!r} has no "

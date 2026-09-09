@@ -42,6 +42,41 @@ class GitHubDriver(BaseDriver):
     default_scope = ("read:user", "user:email")
     subject_keys = ("id", "node_id")
 
+    #: GitHub publishes these and they do not move.
+    #:
+    #: There is nothing to discover: GitHub is plain OAuth2 and serves no
+    #: discovery document, so a login needs the URLs written down somewhere.
+    #: Here, because they are a fact about GitHub, and
+    #: :meth:`enrichment_endpoint` reads one of them.
+    static_metadata = {  # noqa: RUF012
+        "authorization_endpoint": "https://github.com/login/oauth/authorize",
+        "token_endpoint": "https://github.com/login/oauth/access_token",
+        "userinfo_endpoint": "https://api.github.com/user",
+        # `/user` omits the address of anybody who marked it private and
+        # carries no `email_verified` at all. This is where both live.
+        "emails_endpoint": "https://api.github.com/user/emails",
+    }
+
+    #: What ``GET /user`` fills in, beyond the name every driver maps.
+    #:
+    #: ``bio``, ``blog`` and ``location`` are fields of the payload rather
+    #: than normalized claims, which is why they are addressed by their
+    #: GitHub names. A profile that leaves one blank sends it as ``null`` and
+    #: the row resolves to nothing, which writes nothing -- an absent claim is
+    #: not an instruction to clear a field.
+    #:
+    #: Seeded into the form of a new provider, which is the whole of what a
+    #: default map does -- a provider already stored carries its own, and a
+    #: GenericSetup profile spells the rows out because it *is* the stored
+    #: configuration. The demo profile in this repository has said exactly
+    #: this since before the driver could.
+    default_propertymap = {  # noqa: RUF012
+        "fullname": "fullname",
+        "bio": "description",
+        "blog": "home_page",
+        "location": "location",
+    }
+
     #: The GitHub login, rather than a random id.
     #:
     #: A GitHub login is already the name the person is known by wherever
@@ -65,9 +100,11 @@ class GitHubDriver(BaseDriver):
     def enrichment_endpoint(self, metadata: JSONDict) -> str:
         """Return GitHub's address list endpoint.
 
-        :param metadata: The provider's resolved metadata.
-        :returns: The ``emails_endpoint`` URL, or empty when the metadata
-            predates it.
+        :param metadata: The provider's resolved metadata, which for this
+            driver is :attr:`static_metadata`.
+        :returns: The ``emails_endpoint`` URL. Empty only when a caller
+            supplies metadata from somewhere else, and then the login keeps
+            whatever ``/user`` answered.
         """
         return metadata.get("emails_endpoint") or ""
 

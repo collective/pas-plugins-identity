@@ -18,38 +18,37 @@ It holds no state and it makes no decisions about accounts.
 Drivers are registered as named ZCA utilities, and the utility name is the driver id.
 This package keeps one module per driver, and doing the same in your own add-on keeps a driver easy to find.
 
+## Where the endpoints come from
+
+Everything else follows from it, and there are three answers.
+
+| Your provider | What the driver declares | Shipped example |
+|---|---|---|
+| Publishes an OpenID Connect discovery document at an issuer the operator runs | nothing—extend `IOIDCSettings`, which asks for the `issuer` | `oidc-generic` |
+| Publishes one at an issuer you know in advance | `issuer = "https://…"` | `google` |
+| Publishes no discovery document at all | `static_metadata = {…}`, with at least an `authorization_endpoint` and a `token_endpoint` | `github` |
+
+A driver that declares none of the three is refused rather than sent to
+discovery with an empty URL, so a login against it fails with
+`has no authorization endpoints`.
+
+This is the trap worth naming: the first field most people reach for is the
+provider's URL, and for a self-hosted provider it already exists. It is
+`issuer`, `IOIDCSettings` declares it, and adding a `base_url` of your own
+means the discovery machinery never sees it.
+
 ## Subclass `BaseDriver`
 
 `BaseDriver` gives you the OAuth configuration fields, the subject extraction, and the shared claim normalization.
-A driver is usually a few class attributes and one override:
+A driver is usually a few class attributes and one override.
 
-First the settings an operator fills in, as an ordinary `zope.schema` interface.
-Extend `IOAuth2Settings` and you inherit the client credentials, the scope, the userid source and the two trust switches; add only what your provider needs.
-
-```python
-from pas.plugins.identity import _
-from pas.plugins.identity.core.drivers.settings import IOAuth2Settings
-from plone.autoform import directives
-from zope import schema
-
-
-class IGitLabSettings(IOAuth2Settings):
-    """What a self-hosted GitLab needs beyond the OAuth2 fields."""
-
-    base_url = schema.TextLine(
-        title=_("GitLab URL"),
-        description=_("The root of your GitLab, with no trailing path."),
-        required=True,
-    )
-    # Ahead of the credentials: everything else is read from what this
-    # discovers. Position is declared, never spaced out by hand.
-    directives.order_before(base_url="client_id")
-```
-
-Then the driver, which names it:
+A self-hosted GitLab is the first row of that table—it is a conforming OpenID
+Connect provider—so its settings are `IOIDCSettings` unchanged, and there is no
+schema to write at all:
 
 ```python
 from pas.plugins.identity.core.drivers.base import BaseDriver
+from pas.plugins.identity.core.drivers.settings import IOIDCSettings
 from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.core.interfaces import JSONDict
 
@@ -59,9 +58,15 @@ class GitLabDriver(BaseDriver):
 
     driver_id = "gitlab"
     title = "GitLab"
-    settings_schema = IGitLabSettings
-    default_scope = ("read_user",)
+    settings_schema = IOIDCSettings
+    default_scope = ("openid", "email", "profile")
     subject_keys = ("sub", "id")
+
+    #: GitLab advertises both `groups` and `groups_direct`; the second is
+    #: memberships held directly rather than inherited from a parent group,
+    #: which is the one an access decision usually means. An operator can
+    #: still override it per provider.
+    default_group_claim = "groups_direct"
 
     def normalize_claims(self, payload: JSONDict) -> Claims:
         """Turn GitLab's answer into the documented schema.
@@ -72,6 +77,29 @@ class GitLabDriver(BaseDriver):
         claims = super().normalize_claims(payload)
         claims["picture_url"] = payload.get("avatar_url", "")
         return claims
+```
+
+When your provider genuinely does need a field nothing else has, declare it as
+an ordinary `zope.schema` interface extending the one you would otherwise use,
+and say where it sits:
+
+```python
+from pas.plugins.identity import _
+from pas.plugins.identity.core.drivers.settings import IOIDCSettings
+from plone.autoform import directives
+from zope import schema
+
+
+class IGitLabSettings(IOIDCSettings):
+    """What a GitLab needs beyond the OpenID Connect fields."""
+
+    project_path = schema.TextLine(
+        title=_("Project path"),
+        description=_("Sign in only members of this project."),
+        required=False,
+    )
+    # Position is declared, never spaced out by hand.
+    directives.order_before(project_path="client_id")
 ```
 
 `@identity-drivers` serializes that interface with `plone.restapi`, so the field appears in the control panel with no frontend change, in the site's language, and validated.
@@ -95,11 +123,11 @@ If you would rather implement `IDriver` from scratch, the interface asks for `dr
 
 ## Follow the rules
 
-There are eight, and they are a checklist rather than a narrative:
+There are ten, and they are a checklist rather than a narrative:
 {doc}`/reference/driver-contract` lists each one with what enforces it, and
-explains the three that surprise people—why `order` is a number, why only a
-literal `True` counts as verified, and why an empty `default_group_claim` is not
-a neutral default.
+explains the four that surprise people—why `order` is a number, why only a
+literal `True` counts as verified, why an empty `default_group_claim` is not a
+neutral default, and why the endpoints belong to the driver.
 
 Three of them are worth stating here, because they are about code you are about
 to write rather than values you are about to declare.
@@ -135,7 +163,7 @@ It costs nothing to run, it does not need credentials, and it still catches the 
 
 ## Next steps
 
-- {doc}`/reference/driver-contract`—the eight rules, and what enforces each
+- {doc}`/reference/driver-contract`—the ten rules, and what enforces each
 - {doc}`/reference/claims`—the claim names to normalize to
 - {doc}`/reference/shipped-drivers`—five worked examples
 - {doc}`configure-a-provider`—configuring a provider that uses your driver

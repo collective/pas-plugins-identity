@@ -56,6 +56,13 @@ GITHUB_USER = {
     "email_verified": True,
     "avatar_url": "https://avatars.githubusercontent.com/u/1234567?v=4",
     "html_url": "https://github.com/ericof",
+    # The three GitHub fills in that a Profile has somewhere to put, and that
+    # `GitHubDriver.default_propertymap` therefore maps. Absent from this
+    # fixture until the map existed, which meant the map could have named
+    # anything at all and the tests would have agreed.
+    "bio": "Plone developer.",
+    "blog": "https://plone.org",
+    "location": "Berlin, Germany",
 }
 
 #: A GitHub account with no display name set.

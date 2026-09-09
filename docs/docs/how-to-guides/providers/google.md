@@ -47,7 +47,7 @@ https://www.example.com/login-identity
 4. Save, then **Test connection**.
 
 There is no issuer field: the driver fixes the issuer at
-`https://accounts.google.com` and discovers everything else from it.
+`https://accounts.google.com`—the driver declares it—and discovers everything else from it.
 
 ## 3. The trust switches
 

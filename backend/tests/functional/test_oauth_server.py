@@ -25,12 +25,12 @@ container would be.
 from authlib.integrations.requests_client import OAuth2Session
 from authlib.oidc.discovery import OpenIDProviderMetadata
 from bs4 import BeautifulSoup
+from joserfc import jwt
+from joserfc.jwk import KeySet
 from pas.plugins.identity import PACKAGE_NAME
 from pas.plugins.identity.server.controlpanel.clients import add_client
 from pas.plugins.identity.server.grants.tokens import decode_access_token
 from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
-from joserfc import jwt
-from joserfc.jwk import KeySet
 from plone import api
 from plone.app.testing import applyProfile
 from urllib.parse import parse_qs

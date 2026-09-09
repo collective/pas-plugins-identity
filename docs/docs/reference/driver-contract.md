@@ -28,6 +28,8 @@ checklist.
 | `settings_schema` | The schema the configuration form is generated from. |
 | `default_scope` | Tuple of scopes requested when the provider names none. |
 | `subject_keys` | Claim keys tried, in order, to find the subject. |
+| `static_metadata` | The endpoint set, for a provider that publishes fixed URLs. Empty means discovery. |
+| `issuer` | The issuer to discover from, when the driver fixes it. Empty means the operator types it. |
 | `default_propertymap` | Claim path → Profile field, seeded into a new provider. |
 | `default_group_claim` | The claim groups arrive in, or empty for a provider with none. |
 | `default_groupmap` | Provider group → local group. Empty for every shipped driver. |
@@ -36,7 +38,8 @@ checklist.
 
 Base class defaults (`core/drivers/base.py`): `settings_schema` is
 `IOAuth2Settings`, `default_scope` is `()`, `subject_keys` is `('sub',)`,
-`default_group_claim` is `''`, `default_trust_email_verification` is `False`.
+`static_metadata` is `{}`, `issuer` is `''`, `default_group_claim` is `''`,
+`default_trust_email_verification` is `False`.
 
 ### Methods
 
@@ -63,6 +66,8 @@ Each is a rule a driver must satisfy, and what catches a violation.
 | 6 | `default_groupmap` is empty unless the driver genuinely knows the far end's groups. | convention; every shipped driver is empty |
 | 7 | `email_verified` is normalized to a boolean, and only `True` counts. | the contract test and `_email_verified` |
 | 8 | `default_trust_email_verification` stays `False` unless the provider refuses to call an address verified until the account has answered mail at it. | review; only `google` and `github` set it |
+| 9 | A driver names one metadata source, not both: endpoints it publishes, or an issuer to discover from. | the contract test |
+| 10 | Every URL a driver declares—each `static_metadata` endpoint, and `issuer`—is absolute and `https`. | the contract test |
 
 ### Why order is a number
 
@@ -83,6 +88,30 @@ A provider that really does send a string is handled by the per-provider
 `accept_string_booleans` switch, not by a driver being lenient.
 
 See {doc}`/concepts/email-verification`.
+
+### Why the endpoints live on the driver
+
+A driver is everything this package knows about a kind of provider, and a
+provider's endpoints are the most basic thing there is to know. They were a
+dict keyed by driver id in `core/flows/metadata.py` until 1.0.0a5, which had
+two costs: `GitHubDriver.enrichment_endpoint` read a key another module
+defined, and a driver shipped by anybody else could not add a row to it.
+
+`metadata.py` keeps every *resolving* concern—the discovery fetch, the
+per-issuer cache, its TTL, `forget()`. Which of the two sources applies is the
+driver's answer.
+
+An empty `static_metadata` means discovery, which is the answer for every
+OpenID Connect provider: the endpoints come from the issuer's document and
+change when the provider says so. `github` fills it in because GitHub is plain
+OAuth2 and publishes no discovery document at all.
+
+An empty `issuer` means the operator supplies one, and that is decided by the
+`issuer` field in `settings_schema` rather than by a list of driver ids—so a
+subclass of `GenericOIDCDriver` this package has never heard of is discovered
+exactly as its parent is. A driver declaring neither is refused rather than
+sent to discovery with an empty URL: `email`, whose magic link never leaves the
+site, is that case.
 
 ### Why an empty group claim is not neutral
 
