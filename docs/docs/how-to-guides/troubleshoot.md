@@ -148,8 +148,9 @@ Clearing the field sends an empty string, which is a different instruction, and
 it destroys the stored secret. To keep the stored secret, save with the mask
 unchanged.
 
-A GenericSetup export omits secrets, so it cannot restore one. Get a new secret
-from the provider. See {doc}`/concepts/secrets`.
+A GenericSetup export carries the secret as its value, so an export taken before
+the value was destroyed restores it. Failing that, get a new secret from the
+provider. See {doc}`/concepts/secrets`.
 
 ## Test connection succeeds and login still fails
 

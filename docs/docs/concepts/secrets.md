@@ -20,10 +20,17 @@ A provider secret is this site's credential at somebody else's service.
 The site has to keep sending it, on every token request, forever.
 So the site has to keep the plaintext.
 
-Given that, the goal is only to stop the plaintext leaving.
+Given that, the goal is to control where the plaintext goes rather than to
+stop it existing.
 The REST API and the control panel serialize a stored secret as a mask.
-GenericSetup export omits it entirely.
 The audit log never records it.
+
+A GenericSetup export does carry it, in the clear.
+The record is a `plone.registry.field.Password`, which marks it as a secret
+wherever a record is inspected, and marking is not encryption.
+That is the right behaviour for a backup—one that omitted the credential would
+not restore a working site—and it makes the export file itself something to
+handle carefully.
 
 The mask is a real value that round-trips.
 Saving the form back with the mask unchanged preserves the stored secret, which is what makes editing a provider possible without retyping its credential every time.
@@ -33,9 +40,9 @@ Blanking the field is not the same instruction as leaving the mask alone.
 An empty string means the secret is now empty, and the package does what it was told.
 
 ```{warning}
-A GenericSetup export of your provider configuration is not enough to rebuild a working site.
-The secrets have to travel separately, by whatever means your deployment already uses for secrets.
-This is a deliberate trade, and the alternative is an export file that is a credential.
+An export of your provider configuration **is** a credential.
+It carries every client secret as its stored value, so it is not something to commit to a repository, attach to an issue, or paste into a chat without reading it first.
+Handle the file the way you handle the secret inside it.
 ```
 
 ## When the site is the server

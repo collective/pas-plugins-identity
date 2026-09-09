@@ -154,13 +154,19 @@ and directly under a public suffix. The scheme and port are never widened.
 **Attack.** Read a GenericSetup export, or the control panel, to recover a client
 secret.
 
-**What prevents it.** Secrets are write-only everywhere, including export. The
-control panel serializes a stored secret as a mask. The audit log never records
-credentials or tokens.
+**What prevents it, and where.** The control panel and the REST API serialize a
+stored secret as a mask, and the audit log never records credentials or tokens.
 
-**What reopens it.** Nothing in configuration—but note the consequence: an
-export is **not** a backup of a working site. Secrets travel separately. See
-{doc}`secrets`.
+**What does not prevent it.** A GenericSetup export carries a client secret as
+its stored value, and so does the fragment
+`@identity-providers/<id>/export` returns. The record is a
+`plone.registry.field.Password`, which marks it as a secret wherever a record is
+inspected; marking is not encryption. Both need `Manage portal`, so what limits
+this is who may take an export rather than what an export contains.
+
+**What reopens it.** Handling an export as a document rather than as a
+credential: committing one to a repository, attaching it to an issue, or copying
+a `Data.fs` to a staging site that more people can reach. See {doc}`secrets`.
 
 ### Script injection through a provider icon
 

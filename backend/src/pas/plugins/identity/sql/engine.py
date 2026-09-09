@@ -7,12 +7,11 @@ Why the environment and not the registry
 ========================================
 
 A DSN carries a password, and the registry is the wrong place for one here.
-It is exported by GenericSetup, readable by anyone who can reach the control
-panel, and kept in the ``Data.fs`` that gets copied to a staging site. The
-package already refuses to put provider secrets into an export for exactly
-that reason, and says so: *"the secrets have to travel separately, by whatever
-means your deployment already uses for secrets."* An environment variable is
-what a deployment already uses.
+It is exported by GenericSetup in the clear, readable by anyone who can reach
+the control panel, and kept in the ``Data.fs`` that gets copied to a staging
+site. A provider secret is in the registry because the site has to keep sending
+it and there is nowhere else for it to live; a DSN has somewhere else, so it
+goes there. An environment variable is what a deployment already uses.
 
 The consequence is that this sink is configured where the process is
 configured rather than through the web, which is the same place a database

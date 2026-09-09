@@ -13,6 +13,7 @@ what a driver needs, and one that manages the provider records themselves.
 ``PATCH @identity-providers/<id>``
 ``DELETE @identity-providers/<id>``
 ``POST @identity-providers/<id>/test-connection``
+``GET @identity-providers/<id>/export``
 
 Everything here needs ``Manage portal``. Secrets are write-only through all of
 it: what leaves is masked, and a PATCH echoing the mask back leaves the stored
@@ -37,6 +38,9 @@ MANAGE_PERMISSION = "Manage portal"
 
 #: Path segment that runs the per-provider connection check.
 TEST_ACTION = "test-connection"
+
+#: Path segment that returns one provider as a registry fragment.
+EXPORT_ACTION = "export"
 
 
 class ControlPanelService(IdentityService):

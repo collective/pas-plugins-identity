@@ -43,6 +43,7 @@ Present in every installation.
 | GET | `@identity-providers` | `Manage portal` | Configured providers, or one with `/<id>`. Secrets are masked. A bare `GET` also carries the form schema. |
 | POST | `@identity-providers` | `Manage portal` | Add a provider. |
 | POST | `@identity-providers/<id>/test-connection` | `Manage portal` | Fetch the provider's discovery document, cache cleared first, and report what came back. |
+| GET | `@identity-providers/<id>/export` | `Manage portal` | One provider as a registry fragment a profile can ship. **Carries the client secret in the clear.** |
 | PATCH | `@identity-providers/<id>` | `Manage portal` | Change one. |
 | DELETE | `@identity-providers/<id>` | `Manage portal` | Remove one. Linked identities are kept. |
 | GET | `@audit-log` | `Manage portal` | Authentication events. |

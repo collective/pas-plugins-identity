@@ -7,6 +7,7 @@ from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.controlpanel import get_provider_record
 from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.controlpanel import provider_record_names
+from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import PROVIDERS_PREFIX
 from pas.plugins.identity.core.controlpanel import SECRET_SENTINEL
 from pas.plugins.identity.core.controlpanel import set_providers
@@ -775,9 +776,14 @@ class TestGenericSetupRoundTrip(ControlPanelCase):
         assert get_provider("dex").config["client_secret"] == "plone-secret"
 
     def test_api_export_omits_the_secret(self):
-        """What the *API* renders is masked even though the registry
-        holds the real value, so an export taken through the REST surface
-        cannot carry a secret out."""
+        """What the *listing* renders is masked even though the registry holds
+        the real value.
+
+        Not a claim about the REST surface as a whole: the registry fragment
+        `@identity-providers/<id>/export` returns carries the stored secret,
+        deliberately, because a fragment without it would import a provider
+        that cannot authenticate.
+        """
         rendered = self.call(ProvidersGet)
 
         assert "plone-secret" not in json.dumps(rendered)
@@ -960,3 +966,71 @@ class TestEditingAProviderWhoseConfigHasAList(ControlPanelCase):
 
         assert self.status() == 201
         assert get_provider("new-one").config["scope"] == ("openid",)
+
+
+class TestExportingOneProvider(ControlPanelCase):
+    """``GET @identity-providers/<id>/export``.
+
+    What the fragment contains, and that it can be read back, are asserted in
+    ``tests/core/controlpanel/test_export.py`` where the import machinery
+    lives. This is the routing around it.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_, manager) -> None:
+        self.portal = portal
+        self.request = request_
+        set_providers([
+            ProviderConfig(
+                provider_id="github",
+                driver_id="github",
+                title="GitHub",
+                config={"client_id": "abc"},
+            )
+        ])
+
+    def test_it_answers_the_fragment(self):
+        reply = self.call(ProvidersGet, "github", "export")
+
+        assert self.status() == 200
+        assert reply["provider"] == "github"
+        assert reply["xml"].lstrip().startswith("<registry")
+
+    def test_it_names_the_file_the_fragment_belongs_in(self):
+        """A profile's ``registry/`` directory files by record name, and
+        somebody pasting this has to put it somewhere."""
+        reply = self.call(ProvidersGet, "github", "export")
+
+        assert reply["filename"] == f"{PROVIDERS_PREFIX}github.xml"
+
+    def test_it_is_addressable(self):
+        reply = self.call(ProvidersGet, "github", "export")
+
+        assert reply["@id"].endswith("/@identity-providers/github/export")
+
+    def test_an_unknown_provider_is_a_404(self):
+        self.call(ProvidersGet, "nope", "export")
+
+        assert self.status() == 404
+
+    def test_an_unknown_action_is_refused(self):
+        """It used to fall through to the provider itself, so a typo was a
+        successful read of something the caller did not ask for."""
+        self.call(ProvidersGet, "github", "expot")
+
+        assert self.status() == 400
+
+    def test_reading_one_provider_still_works(self):
+        """The routing above is new; this is what it must not have broken."""
+        reply = self.call(ProvidersGet, "github")
+
+        assert self.status() == 200
+        assert reply["id"] == "github"
+
+    def test_it_is_not_public(self):
+        """The fragment carries the client secret in the clear."""
+        logout()
+
+        self.call(ProvidersGet, "github", "export")
+
+        assert self.status() == 401
