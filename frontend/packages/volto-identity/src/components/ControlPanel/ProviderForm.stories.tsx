@@ -22,10 +22,12 @@ import { providerSchema, toFormData } from '../../helpers/providerSchema';
  * which say anything about its mappings. Rendering the schema straight into
  * Volto's `Form` is what makes the two mapping editors visible.
  *
- * Both mappings are `object_list` widgets whose sub-fields read a vocabulary
- * over the API, so every story here carries the loaded vocabularies in its
- * store. Without them the pickers render empty, which is also exactly how
- * this looks when the backend refuses `@vocabularies` -- worth recognising.
+ * Both mappings are `object_list` widgets, and one sub-field of one of them
+ * reads a vocabulary over the API: the property map's target, which is a
+ * picker over the four Profile fields a login writes. Every story carries the
+ * loaded vocabularies in its store, so that picker renders its terms rather
+ * than empty -- which is also exactly how it looks when the backend refuses
+ * `@vocabularies`, and is worth recognising.
  */
 const meta: Meta<typeof Form> = {
   title: 'Identity/ControlPanel/ProviderForm',
@@ -56,10 +58,13 @@ const form = (provider: (typeof CONFIGURED)[number], driverId: string) => ({
 /**
  * A provider whose driver has groups.
  *
- * The **Attribute mapping** fieldset carries both editors. The group map's
- * provider side is free text and its local side is a picker: this site
- * cannot enumerate the far end's directory, but it knows its own groups, and
- * a local group that does not exist grants nothing.
+ * The **Attribute mapping** fieldset carries both editors, and the asymmetry
+ * between them is the thing to look at. A claim path and a provider-side
+ * group are text, because neither can be enumerated from here. A property
+ * map's target is a picker over the four Profile fields a login writes. A
+ * local group is text as well, though this site does know its own groups: a
+ * profile may ship a map before the group it points at, and the login skips a
+ * row it cannot resolve rather than the import refusing the map.
  */
 export const WithGroups: Story = {
   args: form(KEYCLOAK, 'oidc-generic'),

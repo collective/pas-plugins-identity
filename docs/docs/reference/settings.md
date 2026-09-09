@@ -175,7 +175,7 @@ unless it names an interface that declares them.
 | `background_color` | `TextLine` | `''` | Button background, such as `#24292f`. |
 | `foreground_color` | `TextLine` | `''` | Button text colour. |
 | `order` | `Int` | `0` | Position among the buttons. |
-| `propertymap` | `Dict` | `{}` | Claim path → Plone property. |
+| `propertymap` | `Dict` | `{}` | Claim path → Profile field. The target is a `Choice` over `fullname`, `home_page`, `description` and `location`; any other value is refused. |
 | `groupmap` | `Dict` | `{}` | Provider group name → local group id. |
 
 Both default to `True`, so a provider added through the API without saying

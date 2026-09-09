@@ -252,7 +252,16 @@ export function providerSchema(
     schema: rowSchema(
       intl.formatMessage(messages.propertymapRow),
       { name: 'claim', title: intl.formatMessage(messages.claimPath) },
-      { name: 'field', title: intl.formatMessage(messages.profileField) },
+      {
+        name: 'field',
+        title: intl.formatMessage(messages.profileField),
+        // A picker over the fields a login writes, not a text box. The two
+        // sides of this row are asymmetric for the same reason the group
+        // map's are: a claim path is whatever the far end publishes and
+        // nothing here can enumerate it, while the target is four fields
+        // this package knows by name.
+        vocabulary: targetVocabulary(served),
+      },
     ),
   };
   // The group map, only for a driver whose providers have groups. The
@@ -299,20 +308,59 @@ export function providerSchema(
  */
 function rowSchema(
   title: string,
-  left: { name: string; title: string },
-  right: { name: string; title: string },
+  left: { name: string; title: string; vocabulary?: VocabularyRef },
+  right: { name: string; title: string; vocabulary?: VocabularyRef },
 ): VoltoSchema {
+  const column = (side: {
+    name: string;
+    title: string;
+    vocabulary?: VocabularyRef;
+  }) => ({
+    title: side.title,
+    type: 'string',
+    // Only when the backend served one. Volto renders a select for a field
+    // carrying `vocabulary['@id']` and a text box for one without, so an
+    // older backend gets the form it has always had rather than an empty
+    // picker.
+    ...(side.vocabulary ? { vocabulary: side.vocabulary } : {}),
+  });
+
   return {
     title,
     fieldsets: [
       { id: 'default', title: 'default', fields: [left.name, right.name] },
     ],
     properties: {
-      [left.name]: { title: left.title, type: 'string' },
-      [right.name]: { title: right.title, type: 'string' },
+      [left.name]: column(left),
+      [right.name]: column(right),
     },
     required: [],
   };
+}
+
+/** A vocabulary, as `plone.restapi` addresses one. */
+interface VocabularyRef {
+  '@id': string;
+}
+
+/**
+ * Read the vocabulary the backend serves for a property map's target.
+ *
+ * `IProviderRecords.propertymap` is a `Dict` whose values are a `Choice` over
+ * `pas.plugins.identity.UserFields`, and `plone.restapi` serializes a named
+ * vocabulary as the URL that enumerates it. Lifted from the served schema
+ * rather than assembled here: the name of the vocabulary, and whether there
+ * is one at all, are the backend's to say.
+ *
+ * @param served The provider schema from `@identity-providers`.
+ * @returns The vocabulary reference, or undefined when none is served.
+ */
+function targetVocabulary(
+  served: JsonSchema | undefined,
+): VocabularyRef | undefined {
+  const value = (served?.properties?.propertymap as any)?.value_type;
+  const reference = value?.additional?.vocabulary;
+  return reference?.['@id'] ? reference : undefined;
 }
 
 /**

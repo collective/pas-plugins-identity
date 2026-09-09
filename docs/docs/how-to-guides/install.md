@@ -16,8 +16,9 @@ This guide covers the backend only.
 The frontend is a separate package and a separate guide: {doc}`install-the-frontend`.
 
 ```{note}
-There are no GenericSetup upgrade steps in this release.
-See {doc}`upgrade` before taking a new alpha, and {doc}`/reference/stability` for what that implies.
+Taking a new alpha into a site that already has this add-on means reapplying the
+profile, and running the upgrade steps `portal_setup` offers.
+See {doc}`upgrade` for the procedure and {doc}`/reference/stability` for what alpha implies.
 ```
 
 ## Requirements

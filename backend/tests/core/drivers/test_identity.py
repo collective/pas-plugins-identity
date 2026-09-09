@@ -64,12 +64,22 @@ class TestPloneIdentityDriver:
         claims = self.driver.normalize_claims(PLONE_IDENTITY_USERINFO)
 
         assert apply_property_map(self.driver.default_propertymap, claims) == {
-            "email": "erico@plone.org",
             "fullname": "Érico Andrei",
             "home_page": "https://plone.org",
             "location": "São Paulo, Brazil",
-            "portrait": "http://id.localhost/portal_memberdata/portraits/ericof",
         }
+
+    def test_what_it_does_not_map(self):
+        """The peer publishes an address and a picture, and this driver used
+        to map both. Neither row was ever applied: an address is appended by
+        ``sync_addresses`` and a portrait is synced from the ``picture_url``
+        claim, so the map is where they looked configured and were not."""
+        claims = self.driver.normalize_claims(PLONE_IDENTITY_USERINFO)
+
+        assert claims["email"] == "erico@plone.org"
+        assert claims["picture_url"]
+        assert "email" not in self.driver.default_propertymap.values()
+        assert "portrait" not in self.driver.default_propertymap.values()
 
     def test_the_address_is_read_through_the_dotted_path(self):
         """``address`` is an object; ``formatted`` is its readable line."""

@@ -34,9 +34,10 @@ class EmailDriver(BaseDriver):
     #: the same rule stated where a person can see it.
     supports_manual_link = False
 
-    # A mailbox asserts an address and nothing else, so seeding a fullname
-    # mapping would only ever resolve to nothing.
-    default_propertymap = {"email": "email"}  # noqa: RUF012
+    # A mailbox asserts an address and nothing else. Seeding a fullname
+    # mapping would only ever resolve to nothing, and the address is not
+    # mapped by anybody: it arrives through ``sync_addresses``.
+    default_propertymap = {}  # noqa: RUF012
 
     def subject(self, payload: JSONDict) -> str:
         """Return the address, lowercased.

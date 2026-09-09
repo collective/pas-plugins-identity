@@ -4,10 +4,16 @@
  */
 
 /**
- * The member fields a provider claim can be written to.
+ * The Profile fields a provider claim can be written to.
  *
- * Served by the backend from the site's live user schema, so it follows
- * whatever the **User Schema** control panel was used to add.
+ * Four of them, and the backend decides which: a login writes a full name, a
+ * home page, a biography and a location, and nothing else. An address and a
+ * portrait both arrive on a login without being mapped, which is why neither
+ * is here.
+ *
+ * The form does not build the vocabulary's URL from this name -- the served
+ * schema carries it -- so this is what the fixtures and the tests address it
+ * by.
  */
 export const USER_FIELDS_VOCABULARY = 'pas.plugins.identity.UserFields';
 

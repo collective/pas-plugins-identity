@@ -10,6 +10,7 @@ a record the site knows about everywhere.
 
 from pas.plugins.identity import _
 from pas.plugins.identity.core.utils.svg import is_svg_upload
+from pas.plugins.identity.core.vocabularies.userfields import USER_FIELDS_VOCABULARY
 from plone.autoform import directives
 from plone.restapi.controlpanels.interfaces import IControlpanel
 from plone.supermodel import model
@@ -375,13 +376,25 @@ class IProviderRecords(Interface):
     propertymap = schema.Dict(
         title=_("Property map"),
         description=_(
-            "Claim path to Plone user field, applied on every login. One "
+            "Claim path to Profile field, applied on every login. One "
             "record rather than one per row: the keys are claim paths an "
             "operator types, so a record each would mean creating and "
             "deleting records as the map is edited."
         ),
         key_type=schema.TextLine(title=_("Claim")),
-        value_type=schema.TextLine(title=_("User field")),
+        # A ``Choice`` rather than the ``TextLine`` this was, because a login
+        # writes four fields and nothing else. The free-text box accepted
+        # ``email`` and ``portrait`` -- both reasonable guesses, both things
+        # this package does handle, elsewhere -- stored them, exported them,
+        # and dropped them on every login without a word. The vocabulary is
+        # built from
+        # :data:`~pas.plugins.identity.core.utils.propertymap.MAPPABLE_FIELDS`,
+        # so the form offers a picker, a profile stating a dead row is refused
+        # at import, and the API answers 400 rather than storing it.
+        value_type=schema.Choice(
+            title=_("Profile field"),
+            vocabulary=USER_FIELDS_VOCABULARY,
+        ),
         required=False,
         default={},
     )

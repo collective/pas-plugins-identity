@@ -85,16 +85,17 @@ every `UserProfile` object and its data exactly where it is.
 
 ## Upgrades
 
-```{important}
-**There are no upgrade steps.**
+<!-- source: backend/src/pas/plugins/identity/upgrades/configure.zcml -->
 
-`upgrades/configure.zcml` contains a commented-out example and nothing else. Both
-installable profiles are at version 1000, and `portal_setup` will never offer to
-upgrade this add-on.
-```
+`pas.plugins.identity:default` is at version 1004. `upgrades/` holds one package
+per version, each registering the steps that take a site to it, and
+`portal_setup` offers them to a site installed against an earlier release.
+`pas.plugins.identity.server:default` is at 1000 and declares none.
+{doc}`/how-to-guides/upgrade` lists what each step does.
 
-A change to a registry record, a content type, a workflow or a plugin reaches an
-existing site **only if the profile is reapplied**.
+An upgrade step is for what a reapplied profile cannot carry. Everything else—a
+registry record, a content type, a workflow, a plugin—reaches an existing site
+**only if the profile is reapplied**.
 
 This is what the alpha status means in practice. See {doc}`stability` for what
 that implies, and {doc}`/how-to-guides/upgrade` for the procedure.

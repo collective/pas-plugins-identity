@@ -1,0 +1,21 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    >
+
+  <!-- A stored map may name a field the form can no longer express. Left
+       alone it refuses the provider's next save, on a row the operator did
+       not add. See the module docstring. -->
+  <genericsetup:upgradeSteps
+      profile="pas.plugins.identity:default"
+      source="1003"
+      destination="1004"
+      >
+    <genericsetup:upgradeStep
+        title="Remove property map rows no login applies"
+        description="Drops the rows of every provider's property map that name a field outside the four a login writes, so the map an operator sees is the map that is applied."
+        handler=".drop_unmappable_rows"
+        />
+  </genericsetup:upgradeSteps>
+
+</configure>

@@ -84,9 +84,9 @@
     <value key="show_in_login">False</value>
     <value key="enabled">True</value>
     <value key="order">0</value>
-    <value key="propertymap">
-      <element key="email">email</element>
-    </value>
+    <!-- No map at all. The one claim a magic link carries is the address,
+         and an address is appended by sync_addresses rather than mapped. -->
+    <value key="propertymap" />
   </records>
 
   <record name="pas.plugins.identity.providers.email.config.token_ttl">
@@ -114,13 +114,16 @@
     <!-- After the magic link, which is the way in this stack can actually
          complete without credentials at a third party. -->
     <value key="order">1</value>
+    <!-- No row for the address and none for the picture. Both arrive without
+         one: addresses are appended by sync_addresses, which never takes one
+         away, and the portrait is synced from the normalized picture_url
+         claim when sync_portraits is on. A map may only write the four fields
+         a login writes, and the field refuses anything else. -->
     <value key="propertymap">
       <element key="name">fullname</element>
-      <element key="email">email</element>
       <element key="bio">description</element>
       <element key="blog">home_page</element>
       <element key="location">location</element>
-      <element key="picture_url">portrait</element>
     </value>
   </records>
 

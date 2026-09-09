@@ -1,8 +1,10 @@
 """``PATCH @identity-providers/<id>`` -- update in place."""
 
+from pas.plugins.identity.core.controlpanel import check_propertymap
 from pas.plugins.identity.core.controlpanel import check_signin_policy
 from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.controlpanel import InvalidColor
+from pas.plugins.identity.core.controlpanel import InvalidPropertyMap
 from pas.plugins.identity.core.controlpanel import InvalidSignInPolicy
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.controlpanel import unmask
@@ -60,6 +62,12 @@ class ProvidersPatch(ProvidersService):
         if refusal is not None:
             return refusal
         if "propertymap" in data:
+            # Checked here rather than left to the registry, which refuses the
+            # same map without naming the row or the alternatives.
+            try:
+                check_propertymap(data["propertymap"] or {})
+            except InvalidPropertyMap as error:
+                return self._error(400, "Invalid property map", str(error))
             target.propertymap = dict(data["propertymap"] or {})
         if "groupmap" in data:
             target.groupmap = dict(data["groupmap"] or {})
