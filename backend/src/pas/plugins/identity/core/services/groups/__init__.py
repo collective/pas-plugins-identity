@@ -87,7 +87,8 @@ def member_brains(
     :param plugin: The profile PAS plugin.
     :param search: Case-insensitive substring matched against full name and
         login. Empty returns everybody.
-    :returns: Profile brains, sorted by the name they are shown under.
+    :returns: Profile brains, ordered by ``sortable_title`` -- the name each
+        person is shown under, decided by the catalog rather than here.
     """
     catalog = query_catalog()
     if catalog is None:
@@ -99,7 +100,13 @@ def member_brains(
     brains = [
         brain
         for brain in catalog.unrestrictedSearchResults(
-            portal_type=PROFILE_PORTAL_TYPE, group_ids=list(feeding)
+            portal_type=PROFILE_PORTAL_TYPE,
+            group_ids=list(feeding),
+            # Ordered by the catalog rather than in Python. The previous
+            # version read every member of the group and sorted the whole list
+            # to render a page of it, which is the sort of thing that is
+            # invisible on a group of twelve.
+            sort_on="sortable_title",
         )
         if brain.review_state in states
     ]
@@ -115,7 +122,9 @@ def member_brains(
             if term in (brain.fullname or "").lower()
             or term in (brain.login or "").lower()
         ]
-    return sorted(brains, key=lambda b: (b.fullname or b.login or "").lower())
+    # Already ordered: the query sorted on `sortable_title`, and filtering a
+    # sorted list keeps it sorted.
+    return brains
 
 
 __all__ = [

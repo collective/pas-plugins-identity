@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from OFS.event import ObjectWillBeRemovedEvent
 from pas.plugins.identity.core.catalog import all_brains
 from pas.plugins.identity.core.catalog import catalog_for
+from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.indexers import profile_moved
 from pas.plugins.identity.core.indexers import profile_will_be_moved
@@ -134,6 +135,85 @@ class TestSearchableText:
 
         assert self.catalog.unrestrictedSearchResults(SearchableText="Liddell")
         assert not self.catalog.unrestrictedSearchResults(SearchableText="rabbits")
+
+
+class TestTheTwoCatalogsAskDifferentQuestions:
+    """One index name, two answers, chosen by which catalog is asking.
+
+    A Profile is a ``Container``, so Plone catalogs it in ``portal_catalog``
+    like any other content and it turns up in site search. Both indexers used
+    to be registered for the object alone, which registers them against *every*
+    catalog -- so a Profile's site-search entry was full name, login and email,
+    and its biography was not searchable at all.
+
+    The enumeration answer is now bound to :class:`IIdentityProfileCatalog` as
+    well, which makes it the more specific registration; the site answer is
+    bound to the object alone and is what every other catalog falls back to.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, catalog, make_profile) -> None:
+        self.portal = portal
+        self.catalog = catalog
+        self.make_profile = make_profile
+        self.make_profile(
+            "alice",
+            fullname="Alice Liddell",
+            email="alice@example.com",
+            description="Fond of white rabbits",
+        )
+        self.site = api.portal.get_tool("portal_catalog")
+
+    def _site_text(self) -> list[str]:
+        """Return the words ``portal_catalog`` indexed for the Profile.
+
+        :returns: The lexicon words, sorted.
+        """
+        brain = self.site.unrestrictedSearchResults(portal_type=PROFILE_PORTAL_TYPE)[0]
+        data = self.site.getIndexDataForRID(brain.getRID())
+        return sorted(data.get("SearchableText") or [])
+
+    def test_a_profile_is_in_the_site_catalog_at_all(self):
+        """The premise. Everything below is about what it says there, and none
+        of it means anything if a Profile were not catalogued as content."""
+        assert self.site.unrestrictedSearchResults(portal_type=PROFILE_PORTAL_TYPE)
+
+    def test_the_site_search_finds_the_biography(self):
+        """It is the one thing on a Profile written to be read."""
+        assert self.site.unrestrictedSearchResults(SearchableText="rabbits")
+
+    def test_the_site_search_finds_the_name_and_the_userid(self):
+        """A visitor types a name; a link carries the id."""
+        assert self.site.unrestrictedSearchResults(SearchableText="Liddell")
+        assert self.site.unrestrictedSearchResults(SearchableText="alice")
+
+    def test_the_site_search_does_not_publish_the_address(self):
+        """The site's own search box is not an email harvester. `example` is
+        asserted too, so this cannot pass merely because the lexicon split the
+        address somewhere unexpected."""
+        assert "example.com" not in self._site_text()
+        assert "example" not in self._site_text()
+
+    def test_enumeration_still_refuses_the_biography(self):
+        """The narrow answer is unchanged, which is the point of scoping it
+        rather than replacing it."""
+        assert not self.catalog.unrestrictedSearchResults(SearchableText="rabbits")
+
+    def test_the_two_catalogs_disagree(self):
+        """Stated once, directly: the same object, the same index name, two
+        different sets of words. A single indexer answering both would make
+        this test impossible to write."""
+        site = set(self._site_text())
+        data = self.catalog.getIndexDataForRID(
+            self.catalog.unrestrictedSearchResults(portal_type=PROFILE_PORTAL_TYPE)[
+                0
+            ].getRID()
+        )
+        enumeration = set(data.get("SearchableText") or [])
+
+        assert site != enumeration
+        assert "rabbits" in site
+        assert "rabbits" not in enumeration
 
 
 class TestWithNoCurrentSite:

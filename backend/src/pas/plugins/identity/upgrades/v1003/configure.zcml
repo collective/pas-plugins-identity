@@ -1,0 +1,21 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    >
+
+  <!-- A group's membership is ordered by the catalog now, which needs an
+       index that did not exist. Re-importing the step creates it empty; the
+       handler is what puts anything in it. See the module docstring. -->
+  <genericsetup:upgradeSteps
+      profile="pas.plugins.identity:default"
+      source="1002"
+      destination="1003"
+      >
+    <genericsetup:upgradeStep
+        title="Order people by name in the identity catalog"
+        description="Adds the sortable_title index to the identity catalog and reindexes it, so a group's membership is ordered by the catalog rather than in Python."
+        handler=".add_sortable_title"
+        />
+  </genericsetup:upgradeSteps>
+
+</configure>
