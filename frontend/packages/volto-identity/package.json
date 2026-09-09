@@ -1,6 +1,6 @@
 {
   "name": "@plone-collective/volto-identity",
-  "version": "1.0.0-alpha.4",
+  "version": "1.0.0-alpha.5",
   "description": "Volto add-on for multi-provider external authentication in Plone, with identity linking",
   "main": "src/index.ts",
   "license": "MIT",

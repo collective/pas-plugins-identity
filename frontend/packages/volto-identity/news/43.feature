@@ -1,1 +1,0 @@
-The property map's target column is a picker over the fields a login writes, built from the vocabulary the provider schema serves rather than from a list held here. It was a text box, which accepted `email`, `portrait` and `username` alike and stored rows that did nothing. A backend that serves no vocabulary still gets the text box. @ericof

@@ -7,6 +7,93 @@
 -->
 
 <!-- towncrier release notes start -->
+## 1.0.0a5 (2026-09-09)
+
+### Backend
+
+
+#### Breaking
+
+- A provider's property map may only write the four Profile fields a login actually writes: `fullname`, `home_page`, `description` and `location`. The target is a `Choice` over `pas.plugins.identity.UserFields` rather than free text, so a row naming anything else is refused by the API with a 400 and by GenericSetup on import, where before it was stored, exported, and dropped on every login without a word. `MAPPABLE_FIELDS` is now the single definition the login filter, the principal document format and the control panel all read. The default maps lost the rows that did nothing: no driver seeds `email` any more, and `plone-identity` no longer seeds `picture_url`. Neither was ever applied — an address is appended by `sync_addresses` and a portrait is synced from the `picture_url` claim. Profile version 1004 removes such rows from a site that has them, logging each one. @ericof [#43](https://github.com/collective/pas-plugins-identity/issues/43)
+- `@group-members` rows now point `@id` at the member's Profile. It was the listing's own URL with the userid appended, which is not a resource: the service takes exactly one path segment, so following it answered `400`. `profile_url` is unchanged and now holds the same URL, so a client already following it needs no change. @ericof [#44](https://github.com/collective/pas-plugins-identity/issues/44)
+
+
+#### Feature
+
+- Order a group's membership in the catalog. The identity catalog gained a `sortable_title` index, filled by Plone's own indexer from a Profile's title, and `@group-members` sorts on it. It previously read every member of a group and sorted the whole list in Python to render a page of it. @ericof [#40](https://github.com/collective/pas-plugins-identity/issues/40)
+- Grouped the identity settings into tabs. `IIdentitySettings` declared thirteen fields and no fieldset, so the settings form was one flat column; it is now four — Login, User and group content, Portraits and Audit log. `IProfileSettings` is grouped into the same three the settings reference already documents it in: where principals are filed, which states count, and the profile gate. @ericof [#41](https://github.com/collective/pas-plugins-identity/issues/41)
+- Put the profile and group settings on the control panel. The thirteen records in `IProfileSettings` decide where principals are filed, which of their workflow states count for enumeration, and what a profile must carry before its owner is let past the gate — and the panel named `IIdentitySettings` alone, so they were reachable through the generic registry editor and nowhere else. Both the REST panel and the Classic form now serve a schema derived from the two, which addresses the records that already exist rather than creating any. @ericof [#42](https://github.com/collective/pas-plugins-identity/issues/42)
+- Moved a `@group-members` row behind `IGroupMemberSerializer`, a multi-adapter on the site and the request, so a deployment can add a field to a membership row by subclassing `GroupMemberSerializer` and registering it for its own browser layer. Adding a field previously meant replacing the service. It adapts the site rather than the brain because a brain carries no `__provides__` and cannot be marked, and the only registration a brain could carry would answer for every brain in the site. @ericof [#45](https://github.com/collective/pas-plugins-identity/issues/45)
+- Added `GET @identity-providers/<id>/export`, which returns one provider as a self-contained registry fragment ready to paste into a profile's `registry/` directory: the `IProviderRecords` fields as one grouped node, and a `<record>` per driver setting carrying its own field type, since those belong to no interface. Exporting the whole registry was not a substitute — `runExportStep` dumps every package's records, and importing that document fails on one of them. A trailing path segment on `@identity-providers/<id>` is now refused rather than ignored. @ericof [#47](https://github.com/collective/pas-plugins-identity/issues/47)
+- A driver now carries the connection facts about its own provider: `static_metadata` for a provider that publishes fixed endpoints, and `issuer` for one whose issuer the driver knows. Both were tables keyed by driver id in `core/flows/metadata.py`, which no driver mentioned and no third-party driver could add a row to. GitHub's four endpoints are now on `GitHubDriver`, beside the `enrichment_endpoint()` that reads one of them, and Google's issuer is on `GoogleDriver`. `GitHubDriver` also seeds the map GitHub can actually fill: `bio`, `blog` and `location`. @ericof [#66](https://github.com/collective/pas-plugins-identity/issues/66)
+
+
+#### Bugfix
+
+- Show a driver's own defaults on the add-provider form. `@identity-drivers` now serves each driver's real starting values as the schema defaults Volto seeds an add form from, so choosing Google no longer presents an empty scope box and an unticked "this provider's email verification counts" while saving a provider that has both. The form and the stored record are filled from one function and can no longer disagree. A `Tuple` field's default is also serialized as a JSON array rather than a Python tuple. @ericof [#37](https://github.com/collective/pas-plugins-identity/issues/37)
+- Stop this package's indexers from answering for every catalog. `login` and `SearchableText` were declared for the Profile alone, which registers an indexer against any catalog that asks — and a Profile is ordinary content, catalogued in `portal_catalog` as well. So a Profile's entry in site search was its full name, login and email, and its biography was not searchable at all. Both are now bound to the identity catalog, where they are unchanged, and site search gets an answer of its own: the title, the userid and the biography. Neither the login nor the address, which have no business in a site's search box. @ericof [#38](https://github.com/collective/pas-plugins-identity/issues/38)
+- `@group-members` no longer wakes one object per row. Rendering a row filled `profile_url` by userid, which searches the catalog a second time and then activates the Profile to ask for its URL, so drawing a page of a group cost one activation per person on it — on the endpoint whose whole premise is that a group of a thousand is one query rather than a thousand object loads. A brain already knows its URL. The endpoint has also joined the activation-counting suite that covered the PAS plugins and never covered it, which is where the regression landed unseen. @ericof [#57](https://github.com/collective/pas-plugins-identity/issues/57)
+
+
+#### Internal
+
+- Replaced `authlib.jose` with `joserfc` everywhere a JWT is minted or read: the authorization server's tokens and key ring, the `id_token` a provider returns, the magic link's own signature, and a back-channel logout token. `authlib.jose` is deprecated and Authlib keeps it only until 2.0.0; the OAuth client that carries every request is not deprecated and stays. `joserfc` is now declared as a dependency rather than arriving through Authlib. Two tokens are refused that were not before: an `id_token` and a magic link with no `exp` claim, which the old library treated as a token that never expires. `tests/test_protocol_libraries.py` fails when either library is imported outside the five modules that own a protocol boundary. @ericof [#48](https://github.com/collective/pas-plugins-identity/issues/48)
+
+
+#### Tests
+
+- Added `tests/core/indexers/test_declarations.py`, asserting that everything the identity catalog declares is actually answered, and that nothing this package declares answers for a catalog it should not.
+
+  The issue asked for an explicit indexer per index and per metadata column. Ten of the fourteen would have restated an attribute name the `IIndexableObject` wrapper already resolves, and a pass-through indexer that has itself gone stale is exactly as silent as no indexer at all. So the risk is tested instead of restated: a fully filled Profile and Group are required to leave a value in every index and every column, which `core.doctor` cannot check for itself — it reads the object through the same attribute the catalog does, and finds both sides equally empty.
+
+  The other half is which catalog answers. `@indexer(IUserProfile)` does not register for one argument; it registers for every catalog in the site, which is what made the leak fixed in #38 invisible. Every `IIndexer` this package registers is now required to name the identity catalog, with the site-search answer the single exception, pinned by identity rather than by name. @ericof [#39](https://github.com/collective/pas-plugins-identity/issues/39)
+- Extended the registry export tests to prove the export can be read back, rather than only that it mentions a provider. The fixture provider now carries an icon, both claim maps and colours, and the module exports it, wipes the site, imports this package's records and compares every field. It also covers the `<records interface= prefix=>` form a hand-written profile uses, which is not the form the exporter emits. @ericof [#46](https://github.com/collective/pas-plugins-identity/issues/46)
+
+
+
+### Frontend
+
+
+#### Feature
+
+- The property map's target column is a picker over the fields a login writes, built from the vocabulary the provider schema serves rather than from a list held here. It was a text box, which accepted `email`, `portrait` and `username` alike and stored rows that did nothing. A backend that serves no vocabulary still gets the text box. @ericof [#43](https://github.com/collective/pas-plugins-identity/issues/43)
+- Both content views now render a `belowTitle` slot, under the heading and above the description, so a deployment can put its own component on a profile or a group page without shadowing either view. `aboveContent` and `belowContent` already reached both pages, because Volto renders those around any view registered in `config.views.contentTypesViews`; nothing outside a view can place anything inside one, which is what the new slot is for. @ericof [#51](https://github.com/collective/pas-plugins-identity/issues/51)
+
+
+#### Bugfix
+
+- Label the rows of a provider's property and group maps. Volto's object-list widget takes a row's label and the add button's noun from the row schema's own title, and neither map declared one, so the Mapping tab read `UNDEFINED #1` above `+ Add undefined`. The two columns of each row are labelled and translated as well, where they had been the raw field names. @ericof [#53](https://github.com/collective/pas-plugins-identity/issues/53)
+- `ProfileView` shows the login when a Profile has no full name, instead of "Unnamed user". It fell back to `content.title`, which a Profile never carries: `title` is computed on the backend rather than stored, so `plone.restapi` does not serialize it, and the test fixture supplied one no real payload has. The heading now follows the same order the backend's own `Title()` does — full name, login, userid. @ericof [#60](https://github.com/collective/pas-plugins-identity/issues/60)
+
+
+#### Internal
+
+- Split `actions/index.ts` and `reducers/index.ts` into one module per domain — login, magic link, identities, profile, groups, account, drivers, providers, clients, keys and consent — with the request-lifecycle factory the reducers share in `reducers/factory.ts`. Both `index.ts` files stay as the re-export surface, so nothing importing from the package root changes. The tests moved with them: 46 test files became 55, and the count is unchanged at 563. @ericof [#49](https://github.com/collective/pas-plugins-identity/issues/49)
+- Split `src/types.ts` into `src/types/api.ts` and a new `src/types/content.ts`, re-exported from `src/types/index.ts` so every existing import keeps resolving. The new file describes `UserProfile` and `UserGroup` as Plone content, tied to `@plone/types` with `Pick` rather than `extends`: neither type carries Dublin Core or blocks behaviors, so most of `Content` is absent from the payload and inheriting it would promise fields no view can read. Every deviation is documented against a measured serialization. `providerFormSchema` and `clientFormSchema` are no longer `Record<string, any>`. @ericof [#50](https://github.com/collective/pas-plugins-identity/issues/50)
+
+
+
+### Project
+
+
+#### Documentation
+
+- Grouped the site-wide settings reference under the control panel's own tabs, so a reader working through the page and an operator working through the form are looking at the same four questions in the same order. @ericof [#41](https://github.com/collective/pas-plugins-identity/issues/41)
+- Documented how to map a provider's claims onto profile fields, in the guide to configuring a provider: the four targets, why an address and a portrait need no row, and what happens to one that names something else. Corrected the claim, repeated on four pages, that this add-on ships no GenericSetup upgrade steps — the default profile is at version 1004 and each step is now listed. @ericof [#43](https://github.com/collective/pas-plugins-identity/issues/43)
+- Documented what a `@group-members` row holds, key by key, how a deployment adds one, and why the serializer adapts the site rather than the brain. The endpoints reference described what the endpoint was for and never said what came back. @ericof [#44](https://github.com/collective/pas-plugins-identity/issues/44)
+- Documented how to ship a provider in a profile, using the new per-provider export, and why the fragment has one grouped node for the provider's own fields and a typed `<record>` per driver setting. @ericof [#47](https://github.com/collective/pas-plugins-identity/issues/47)
+- Said which library does what, in the two READMEs and the documentation index: authlib carries the OAuth requests and `joserfc` reads the tokens. The security guarantees named a grep-level CI rule enforcing that protocol messages are never constructed by hand; no such rule existed, and the table now names the test that does it. @ericof [#48](https://github.com/collective/pas-plugins-identity/issues/48)
+- Added a how-to guide covering the three slots a profile page and a group page expose, with a worked example of a downstream package registering a row of badges into `belowTitle` and narrowing it to profiles with a predicate. The frontend reference lists the three. @ericof [#51](https://github.com/collective/pas-plugins-identity/issues/51)
+- Corrected the claim that a GenericSetup export omits provider secrets. It carries them as their stored values, and the `plone.registry.field.Password` type marks a record rather than encrypting it — so an export of a provider is a credential, not a document. The statement appeared eight times, including in the threat model, where the leak was listed as prevented, and in the security guarantees table. What limits exposure is who may take an export, which needs `Manage portal`. @ericof [#59](https://github.com/collective/pas-plugins-identity/issues/59)
+- The driver contract now lists `static_metadata` and `issuer`, with two rules covering them, and explains why a provider's endpoints belong to its driver. The how-to guide's example driver declared a `base_url` of its own and would have been refused at login for having no metadata source; it now extends `IOIDCSettings` and the guide opens by asking where the endpoints come from. @ericof [#66](https://github.com/collective/pas-plugins-identity/issues/66)
+
+
+#### Tests
+
+- Added a Playwright script that drives the add-provider form through Volto, chooses a driver, and photographs every tab it produces. It writes to the Sphinx build directory rather than to the documentation's screens, so it reports what an operator sees without adding an image any page has to reference. @ericof [#37](https://github.com/collective/pas-plugins-identity/issues/37)
+
+
+
 ## 1.0.0a4 (2026-09-08)
 
 ### Backend

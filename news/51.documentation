@@ -1,1 +1,0 @@
-Added a how-to guide covering the three slots a profile page and a group page expose, with a worked example of a downstream package registering a row of badges into `belowTitle` and narrowing it to profiles with a predicate. The frontend reference lists the three. @ericof

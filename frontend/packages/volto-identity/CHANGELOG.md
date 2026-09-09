@@ -8,6 +8,26 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0-alpha.5 (2026-09-09)
+
+
+### Feature
+
+- The property map's target column is a picker over the fields a login writes, built from the vocabulary the provider schema serves rather than from a list held here. It was a text box, which accepted `email`, `portrait` and `username` alike and stored rows that did nothing. A backend that serves no vocabulary still gets the text box. @ericof [#43](https://github.com/collective/pas-plugins-identity/issues/43)
+- Both content views now render a `belowTitle` slot, under the heading and above the description, so a deployment can put its own component on a profile or a group page without shadowing either view. `aboveContent` and `belowContent` already reached both pages, because Volto renders those around any view registered in `config.views.contentTypesViews`; nothing outside a view can place anything inside one, which is what the new slot is for. @ericof [#51](https://github.com/collective/pas-plugins-identity/issues/51)
+
+
+### Bugfix
+
+- Label the rows of a provider's property and group maps. Volto's object-list widget takes a row's label and the add button's noun from the row schema's own title, and neither map declared one, so the Mapping tab read `UNDEFINED #1` above `+ Add undefined`. The two columns of each row are labelled and translated as well, where they had been the raw field names. @ericof [#53](https://github.com/collective/pas-plugins-identity/issues/53)
+- `ProfileView` shows the login when a Profile has no full name, instead of "Unnamed user". It fell back to `content.title`, which a Profile never carries: `title` is computed on the backend rather than stored, so `plone.restapi` does not serialize it, and the test fixture supplied one no real payload has. The heading now follows the same order the backend's own `Title()` does — full name, login, userid. @ericof [#60](https://github.com/collective/pas-plugins-identity/issues/60)
+
+
+### Internal
+
+- Split `actions/index.ts` and `reducers/index.ts` into one module per domain — login, magic link, identities, profile, groups, account, drivers, providers, clients, keys and consent — with the request-lifecycle factory the reducers share in `reducers/factory.ts`. Both `index.ts` files stay as the re-export surface, so nothing importing from the package root changes. The tests moved with them: 46 test files became 55, and the count is unchanged at 563. @ericof [#49](https://github.com/collective/pas-plugins-identity/issues/49)
+- Split `src/types.ts` into `src/types/api.ts` and a new `src/types/content.ts`, re-exported from `src/types/index.ts` so every existing import keeps resolving. The new file describes `UserProfile` and `UserGroup` as Plone content, tied to `@plone/types` with `Pick` rather than `extends`: neither type carries Dublin Core or blocks behaviors, so most of `Content` is absent from the payload and inheriting it would promise fields no view can read. Every deviation is documented against a measured serialization. `providerFormSchema` and `clientFormSchema` are no longer `Record<string, any>`. @ericof [#50](https://github.com/collective/pas-plugins-identity/issues/50)
+
 ## 1.0.0-alpha.4 (2026-09-08)
 
 No significant changes.

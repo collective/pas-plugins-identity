@@ -1,1 +1,0 @@
-Label the rows of a provider's property and group maps. Volto's object-list widget takes a row's label and the add button's noun from the row schema's own title, and neither map declared one, so the Mapping tab read `UNDEFINED #1` above `+ Add undefined`. The two columns of each row are labelled and translated as well, where they had been the raw field names. @ericof

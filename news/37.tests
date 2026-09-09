@@ -1,1 +1,0 @@
-Added a Playwright script that drives the add-provider form through Volto, chooses a driver, and photographs every tab it produces. It writes to the Sphinx build directory rather than to the documentation's screens, so it reports what an operator sees without adding an image any page has to reference. @ericof

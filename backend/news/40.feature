@@ -1,1 +1,0 @@
-Order a group's membership in the catalog. The identity catalog gained a `sortable_title` index, filled by Plone's own indexer from a Profile's title, and `@group-members` sorts on it. It previously read every member of a group and sorted the whole list in Python to render a page of it. @ericof

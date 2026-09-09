@@ -1,1 +1,0 @@
-Documented what a `@group-members` row holds, key by key, how a deployment adds one, and why the serializer adapts the site rather than the brain. The endpoints reference described what the endpoint was for and never said what came back. @ericof

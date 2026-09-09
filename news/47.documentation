@@ -1,1 +1,0 @@
-Documented how to ship a provider in a profile, using the new per-provider export, and why the fragment has one grouped node for the provider's own fields and a typed `<record>` per driver setting. @ericof

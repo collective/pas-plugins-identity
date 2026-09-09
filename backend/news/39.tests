@@ -1,5 +1,0 @@
-Added `tests/core/indexers/test_declarations.py`, asserting that everything the identity catalog declares is actually answered, and that nothing this package declares answers for a catalog it should not.
-
-The issue asked for an explicit indexer per index and per metadata column. Ten of the fourteen would have restated an attribute name the `IIndexableObject` wrapper already resolves, and a pass-through indexer that has itself gone stale is exactly as silent as no indexer at all. So the risk is tested instead of restated: a fully filled Profile and Group are required to leave a value in every index and every column, which `core.doctor` cannot check for itself — it reads the object through the same attribute the catalog does, and finds both sides equally empty.
-
-The other half is which catalog answers. `@indexer(IUserProfile)` does not register for one argument; it registers for every catalog in the site, which is what made the leak fixed in #38 invisible. Every `IIndexer` this package registers is now required to name the identity catalog, with the site-search answer the single exception, pinned by identity rather than by name. @ericof

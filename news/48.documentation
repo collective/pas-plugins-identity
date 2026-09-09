@@ -1,1 +1,0 @@
-Said which library does what, in the two READMEs and the documentation index: authlib carries the OAuth requests and `joserfc` reads the tokens. The security guarantees named a grep-level CI rule enforcing that protocol messages are never constructed by hand; no such rule existed, and the table now names the test that does it. @ericof
