@@ -83,6 +83,18 @@ const messages = defineMessages({
   mapping: { id: 'Mapping', defaultMessage: 'Mapping' },
   propertymap: { id: 'Property map', defaultMessage: 'Property map' },
   groupmap: { id: 'Group map', defaultMessage: 'Group map' },
+  // The row's own noun. Volto's object_list widget renders it as the label of
+  // each row and as the add button's object -- "Add claim", "CLAIM #1" -- so
+  // without it both read "undefined".
+  propertymapRow: { id: 'Claim', defaultMessage: 'Claim' },
+  groupmapRow: { id: 'Group', defaultMessage: 'Group' },
+  // The two columns of a row, per map. They were the raw field names, which
+  // reached the form as the lowercase identifiers `claim`, `field`, `group`
+  // and `local` -- the only labels here no catalogue could translate.
+  claimPath: { id: 'Claim path', defaultMessage: 'Claim path' },
+  profileField: { id: 'Profile field', defaultMessage: 'Profile field' },
+  providerGroup: { id: 'Provider group', defaultMessage: 'Provider group' },
+  localGroup: { id: 'Local group', defaultMessage: 'Local group' },
 });
 
 /**
@@ -237,7 +249,11 @@ export function providerSchema(
   properties.propertymap = {
     title: intl.formatMessage(messages.propertymap),
     widget: 'object_list',
-    schema: rowSchema(intl, 'claim', 'field'),
+    schema: rowSchema(
+      intl.formatMessage(messages.propertymapRow),
+      { name: 'claim', title: intl.formatMessage(messages.claimPath) },
+      { name: 'field', title: intl.formatMessage(messages.profileField) },
+    ),
   };
   // The group map, only for a driver whose providers have groups. The
   // backend declares that by putting a `group_claim` field in the settings
@@ -250,7 +266,11 @@ export function providerSchema(
     properties.groupmap = {
       title: intl.formatMessage(messages.groupmap),
       widget: 'object_list',
-      schema: rowSchema(intl, 'group', 'local'),
+      schema: rowSchema(
+        intl.formatMessage(messages.groupmapRow),
+        { name: 'group', title: intl.formatMessage(messages.providerGroup) },
+        { name: 'local', title: intl.formatMessage(messages.localGroup) },
+      ),
     };
   }
   fieldsets.push({
@@ -265,17 +285,31 @@ export function providerSchema(
 /**
  * The two-column schema a mapping row is edited with.
  *
- * @param intl For the column labels.
- * @param left Name of the left-hand field.
- * @param right Name of the right-hand field.
+ * The schema's own `title` is not decoration: Volto's `object_list` widget
+ * reads it for the label of every row and for the noun on the add button, so
+ * a schema without one renders `UNDEFINED #1` above `+ Add undefined`. The
+ * column titles are passed in translated for the same reason -- they used to
+ * be the raw field names, and were the only labels on this form that no
+ * message catalogue could reach.
+ *
+ * @param title The row's noun, as shown per row and on the add button.
+ * @param left Name and label of the left-hand field.
+ * @param right Name and label of the right-hand field.
  * @returns A Volto schema for one row.
  */
-function rowSchema(intl: IntlShape, left: string, right: string): VoltoSchema {
+function rowSchema(
+  title: string,
+  left: { name: string; title: string },
+  right: { name: string; title: string },
+): VoltoSchema {
   return {
-    fieldsets: [{ id: 'default', title: 'default', fields: [left, right] }],
+    title,
+    fieldsets: [
+      { id: 'default', title: 'default', fields: [left.name, right.name] },
+    ],
     properties: {
-      [left]: { title: left, type: 'string' },
-      [right]: { title: right, type: 'string' },
+      [left.name]: { title: left.title, type: 'string' },
+      [right.name]: { title: right.title, type: 'string' },
     },
     required: [],
   };

@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Plone\n"
-"POT-Creation-Date: 2026-08-29T19:08:33.377Z\n"
+"POT-Creation-Date: 2026-09-09T00:51:41.946Z\n"
 "Last-Translator: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Language-Team: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -13,11 +13,6 @@ msgstr ""
 "Preferred-Encodings: utf-8\n"
 "Domain: volto\n"
 
-#. Default: "Access"
-#: helpers/clientSchema
-msgid "Access"
-msgstr ""
-
 #. Default: "Access withdrawn"
 #: components/Applications/Applications
 msgid "Access withdrawn"
@@ -25,6 +20,7 @@ msgstr ""
 
 #. Default: "Account"
 #: components/ControlPanel/RenderUsers
+#: components/ControlPanel/UserAccount
 msgid "Account"
 msgstr ""
 
@@ -38,11 +34,6 @@ msgstr ""
 #. Default: "Add"
 #: components/Toolbar/Toolbar
 msgid "Add"
-msgstr ""
-
-#. Default: "Add a provider"
-#: helpers/providerSchema
-msgid "Add a provider"
 msgstr ""
 
 #. Default: "Add another"
@@ -76,11 +67,6 @@ msgstr ""
 msgid "Applications"
 msgstr ""
 
-#. Default: "Attribute mapping"
-#: helpers/providerSchema
-msgid "Attribute mapping"
-msgstr ""
-
 #. Default: "Authorize"
 #: components/Consent/Consent
 msgid "Authorize"
@@ -95,6 +81,7 @@ msgstr ""
 #: components/Applications/Applications
 #: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ProvidersControlPanel
+#: components/ControlPanel/UserAccount
 #: components/Identities/Identities
 #: components/Toolbar/PersonalTools
 #: components/Toolbar/Toolbar
@@ -111,13 +98,9 @@ msgstr ""
 msgid "Back to the list"
 msgstr ""
 
-#. Default: "Background colour"
-#: helpers/providerSchema
-msgid "Background colour"
-msgstr ""
-
 #. Default: "Cancel"
 #: components/ControlPanel/ClientsControlPanel
+#: components/ControlPanel/ConfirmModal
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Cancel"
 msgstr ""
@@ -128,19 +111,29 @@ msgstr ""
 msgid "Changes saved"
 msgstr ""
 
+#. Default: "Choose a file"
+#: components/Widgets/ProviderIconWidget
+msgid "Choose a file"
+msgstr ""
+
 #. Default: "Choose how you would like to sign in."
 #: components/Login/Login
 msgid "Choose how you would like to sign in."
 msgstr ""
 
+#. Default: "Claim"
+#: helpers/providerSchema
+msgid "Claim"
+msgstr ""
+
+#. Default: "Claim path"
+#: helpers/providerSchema
+msgid "Claim path"
+msgstr ""
+
 #. Default: "Clear"
 #: components/Login/PasswordForm
 msgid "Clear"
-msgstr ""
-
-#. Default: "Client"
-#: helpers/clientSchema
-msgid "Client"
 msgstr ""
 
 #. Default: "Client ID"
@@ -157,6 +150,11 @@ msgstr ""
 #. Default: "Client unregistered"
 #: components/ControlPanel/ClientsControlPanel
 msgid "Client unregistered"
+msgstr ""
+
+#. Default: "Close"
+#: components/Login/LoginOverlay
+msgid "Close"
 msgstr ""
 
 #. Default: "Collection"
@@ -195,6 +193,7 @@ msgid "Copy"
 msgstr ""
 
 #. Default: "Delete"
+#: components/ControlPanel/ConfirmModal
 #: components/ControlPanel/ProvidersControlPanel
 #: components/ControlPanel/RenderUsers
 msgid "Delete"
@@ -239,16 +238,6 @@ msgstr ""
 msgid "Edit"
 msgstr ""
 
-#. Default: "Edit client"
-#: helpers/clientSchema
-msgid "Edit client"
-msgstr ""
-
-#. Default: "Edit provider"
-#: helpers/providerSchema
-msgid "Edit provider"
-msgstr ""
-
 #. Default: "Edit your profile"
 #: components/Identities/ProfileEmails
 msgid "Edit your profile"
@@ -261,6 +250,7 @@ msgstr ""
 
 #. Default: "Email addresses"
 #: components/ControlPanel/UserAccountPanel
+#: components/Identities/IdentitiesList
 msgid "Email addresses"
 msgstr ""
 
@@ -272,8 +262,6 @@ msgstr ""
 #. Default: "Enabled"
 #: components/ControlPanel/ClientsPanel
 #: components/ControlPanel/ProvidersControlPanel
-#: helpers/clientSchema
-#: helpers/providerSchema
 msgid "Enabled"
 msgstr ""
 
@@ -299,20 +287,19 @@ msgstr ""
 msgid "Focus on"
 msgstr ""
 
-#. Default: "Foreground colour"
-#: helpers/providerSchema
-msgid "Foreground colour"
-msgstr ""
-
 #. Default: "Grants"
 #: components/ControlPanel/ClientsPanel
-#: helpers/clientSchema
 msgid "Grants"
 msgstr ""
 
-#. Default: "Group mapping"
+#. Default: "Group"
 #: helpers/providerSchema
-msgid "Group mapping"
+msgid "Group"
+msgstr ""
+
+#. Default: "Group map"
+#: helpers/providerSchema
+msgid "Group map"
 msgstr ""
 
 #. Default: "Groups in this group"
@@ -325,14 +312,14 @@ msgstr ""
 msgid "I have saved it"
 msgstr ""
 
-#. Default: "Icon"
-#: helpers/providerSchema
-msgid "Icon"
-msgstr ""
-
 #. Default: "Id"
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Id"
+msgstr ""
+
+#. Default: "Identity"
+#: helpers/providerSchema
+msgid "Identity"
 msgstr ""
 
 #. Default: "Identity providers"
@@ -415,6 +402,11 @@ msgstr ""
 #. Default: "Logout"
 #: components/Toolbar/PersonalTools
 msgid "Logout"
+msgstr ""
+
+#. Default: "Make preferred"
+#: components/Identities/ProfileEmails
+msgid "Make preferred"
 msgstr ""
 
 #. Default: "Mapping"
@@ -549,19 +541,14 @@ msgstr ""
 msgid "Profile"
 msgstr ""
 
-#. Default: "Provider"
+#. Default: "Profile field"
 #: helpers/providerSchema
-msgid "Provider"
+msgid "Profile field"
 msgstr ""
 
-#. Default: "Provider ID"
+#. Default: "Property map"
 #: helpers/providerSchema
-msgid "Provider ID"
-msgstr ""
-
-#. Default: "Provider claim"
-#: helpers/providerSchema
-msgid "Provider claim"
+msgid "Property map"
 msgstr ""
 
 #. Default: "Provider deleted"
@@ -572,6 +559,11 @@ msgstr ""
 #. Default: "Provider group"
 #: helpers/providerSchema
 msgid "Provider group"
+msgstr ""
+
+#. Default: "Provider id"
+#: helpers/providerSchema
+msgid "Provider id"
 msgstr ""
 
 #. Default: "Public (PKCE required)"
@@ -604,15 +596,9 @@ msgstr ""
 msgid "Recent activity"
 msgstr ""
 
-#. Default: "Redirect URIs"
-#: helpers/clientSchema
-msgid "Redirect URIs"
-msgstr ""
-
 #. Default: "Register a client"
 #: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ClientsPanel
-#: helpers/clientSchema
 msgid "Register a client"
 msgstr ""
 
@@ -621,9 +607,20 @@ msgstr ""
 msgid "Registered clients"
 msgstr ""
 
+#. Default: "Registration"
+#: helpers/clientSchema
+msgid "Registration"
+msgstr ""
+
 #. Default: "Remove"
 #: components/Identities/IdentitiesList
+#: components/Widgets/ProviderIconWidget
 msgid "Remove"
+msgstr ""
+
+#. Default: "Replace existing file"
+#: components/Widgets/ProviderIconWidget
+msgid "Replace existing file"
 msgstr ""
 
 #. Default: "Rotate secret"
@@ -644,7 +641,6 @@ msgstr ""
 
 #. Default: "Scope"
 #: components/ControlPanel/ClientsPanel
-#: helpers/clientSchema
 msgid "Scope"
 msgstr ""
 
@@ -658,20 +654,15 @@ msgstr ""
 msgid "Secret for {clientId}"
 msgstr ""
 
-#. Default: "Service user"
-#: helpers/clientSchema
-msgid "Service user"
+#. Default: "Sending"
+#: components/Login/MagicLinkForm
+msgid "Sending"
 msgstr ""
 
 #. Default: "Settings"
 #: components/ControlPanel/ProvidersControlPanel
 #: helpers/providerSchema
 msgid "Settings"
-msgstr ""
-
-#. Default: "Show on the login screen"
-#: helpers/providerSchema
-msgid "Show on the login screen"
 msgstr ""
 
 #. Default: "Shrink toolbar"
@@ -697,6 +688,7 @@ msgstr ""
 #. Default: "Sign-in methods"
 #: components/ControlPanel/UserAccountPanel
 #: components/Identities/Identities
+#: components/Identities/IdentitiesList
 #: components/UserMenu/IdentitiesMenuItem
 msgid "Sign-in methods"
 msgstr ""
@@ -726,11 +718,6 @@ msgstr ""
 #. Default: "Site Setup"
 #: components/UserMenu/UserMenuPlugs
 msgid "Site Setup"
-msgstr ""
-
-#. Default: "Style"
-#: helpers/providerSchema
-msgid "Style"
 msgstr ""
 
 #. Default: "Taking you to {provider}…"
@@ -816,8 +803,6 @@ msgstr ""
 #. Default: "Title"
 #: components/ControlPanel/ClientsPanel
 #: components/ControlPanel/ProvidersControlPanel
-#: helpers/clientSchema
-#: helpers/providerSchema
 msgid "Title"
 msgstr ""
 
@@ -841,11 +826,6 @@ msgstr ""
 msgid "Unregister this client?"
 msgstr ""
 
-#. Default: "User field"
-#: helpers/providerSchema
-msgid "User field"
-msgstr ""
-
 #. Default: "Verified"
 #: components/ControlPanel/UserAccountPanel
 #: components/Identities/ProfileEmails
@@ -857,12 +837,8 @@ msgstr ""
 msgid "Verify"
 msgstr ""
 
-#. Default: "Which integration handles this provider."
-#: helpers/providerSchema
-msgid "Which integration handles this provider."
-msgstr ""
-
 #. Default: "Withdraw access"
+#: components/Applications/Applications
 #: components/Applications/ApplicationsPanel
 msgid "Withdraw access"
 msgstr ""
@@ -913,44 +889,19 @@ msgstr ""
 msgid "Your profile needs a few more details before you can continue."
 msgstr ""
 
-#. Default: "What each provider claim writes onto the Plone user. A field that already has a value locally is left alone."
-#: helpers/providerSchema
-msgid "attribute-mapping-help"
-msgstr ""
-
 #. Default: "Forgot your password?"
 #: components/Login/PasswordForm
 msgid "box_forgot_password_option"
 msgstr ""
 
-#. Default: "A disabled client is refused at every endpoint, and its existing access tokens are refused as well: the audience is checked against this registry on every request."
-#: helpers/clientSchema
-msgid "client-enabled-help"
-msgstr ""
-
-#. Default: "Which flows this client may use. A grant is refused at the token endpoint unless it is listed here."
-#: helpers/clientSchema
-msgid "client-grants-help"
-msgstr ""
-
-#. Default: "Permanent. Every token minted for this client carries it as the audience, so renaming it later would strand them all."
+#. Default: "Permanent. It is what every token already issued is bound to, so it cannot be changed afterwards."
 #: helpers/clientSchema
 msgid "client-id-help"
 msgstr ""
 
-#. Default: "The most this client may ever be granted, one entry per token. A request for more is cut down to this rather than refused."
+#. Default: "A native or browser app, which cannot keep a secret. No secret is minted and PKCE becomes mandatory instead."
 #: helpers/clientSchema
-msgid "client-scope-help"
-msgstr ""
-
-#. Default: "What the consent screen calls this client."
-#: helpers/clientSchema
-msgid "client-title-help"
-msgstr ""
-
-#. Default: "Which of the provider's groups grant a group here. Empty grants nothing. Every sign-in reconciles, so a membership revoked at the provider stops granting here -- but only groups this provider granted are ever taken back, so a group you granted by hand is safe."
-#: helpers/providerSchema
-msgid "group-mapping-help"
+msgid "client-public-help"
 msgstr ""
 
 #. Default: "Loading members…"
@@ -978,14 +929,19 @@ msgstr ""
 msgid "group-view-through"
 msgstr ""
 
-#. Default: "The group it grants on this site. A group that does not exist here grants nothing."
-#: helpers/providerSchema
-msgid "local-group-help"
+#. Default: "How you sign in"
+#: components/Identities/IdentitiesList
+msgid "identities-sections"
 msgstr ""
 
 #. Default: "nothing beyond the fact that you signed in"
 #: components/Consent/ConsentPanel
 msgid "nothing beyond the fact that you signed in"
+msgstr ""
+
+#. Default: "Move an address to the top to make it the one this site uses for you."
+#: components/Identities/ProfileEmails
+msgid "profile-emails-choose"
 msgstr ""
 
 #. Default: "Your profile carries no email address yet."
@@ -996,6 +952,11 @@ msgstr ""
 #. Default: "A verified address can be used to sign in with a link, and to recognise you when you add another provider. Add an address on your profile first, then verify it here."
 #: components/Identities/ProfileEmails
 msgid "profile-emails-intro"
+msgstr ""
+
+#. Default: "A verified address is how this site recognises you when you add another provider. Add an address on your profile first, then verify it here."
+#: components/Identities/ProfileEmails
+msgid "profile-emails-intro-no-sign-in"
 msgstr ""
 
 #. Default: "The address this site uses for you: the first verified one, or the first on your profile when none is verified."
@@ -1013,64 +974,19 @@ msgstr ""
 msgid "profile-view-unnamed"
 msgstr ""
 
-#. Default: "A hex value such as #24292f. Empty leaves the theme's own styling alone."
+#. Default: "Which service this provider talks to. It decides the rest of the form, and it cannot be changed afterwards."
 #: helpers/providerSchema
-msgid "provider-background-colour-help"
+msgid "provider-driver-help"
 msgstr ""
 
-#. Default: "Dotted path into the claims, for example email or address.formatted. Normalized claims are tried before the provider's raw payload."
-#: helpers/providerSchema
-msgid "provider-claim-help"
+#. Default: "An SVG file. It is drawn in the button, so it takes the button colours; anything else is refused."
+#: components/Widgets/ProviderIconWidget
+msgid "provider-icon-hint"
 msgstr ""
 
-#. Default: "Whether this provider works at all. A disabled one keeps its settings and its stored identities, and nobody can sign in or link through it."
-#: helpers/providerSchema
-msgid "provider-enabled-help"
-msgstr ""
-
-#. Default: "The colour of the button text and icon, as a hex value."
-#: helpers/providerSchema
-msgid "provider-foreground-colour-help"
-msgstr ""
-
-#. Default: "The group's name as the provider sends it. Free text: this site cannot enumerate the far end. A name with no row here grants nothing, and is never created."
-#: helpers/providerSchema
-msgid "provider-group-help"
-msgstr ""
-
-#. Default: "An SVG document, pasted as its source. Empty means no icon, and the button then shows the title alone. What is stored is sanitized: scripts, styles and anything referencing a URL are removed, and a document that is not an SVG is refused."
-#: helpers/providerSchema
-msgid "provider-icon-help"
-msgstr ""
-
-#. Default: "Permanent. It is stored on every identity linked through this provider, so renaming it later would orphan them all. Letters, digits, - and _ only."
+#. Default: "Used in URLs and stored with every identity linked through this provider, so it is permanent."
 #: helpers/providerSchema
 msgid "provider-id-help"
-msgstr ""
-
-#. Default: "Whether the login screen offers a button for it. An enabled provider that is not shown still works: it stays linkable from a user's own sign-in methods, and an account already linked to it still signs in."
-#: helpers/providerSchema
-msgid "provider-show-in-login-help"
-msgstr ""
-
-#. Default: "What the sign-in button says. Defaults to the driver name."
-#: helpers/providerSchema
-msgid "provider-title-help"
-msgstr ""
-
-#. Default: "A browser or native app, which cannot keep a secret. PKCE is required for these and no secret is issued. Not editable afterwards: turning a confidential client public would leave a stored secret hash that nothing checks."
-#: helpers/clientSchema
-msgid "public-client-help"
-msgstr ""
-
-#. Default: "Matched exactly -- a trailing slash or an extra query parameter is a different URI. A client using the authorization code grant needs at least one."
-#: helpers/clientSchema
-msgid "redirect-uris-help"
-msgstr ""
-
-#. Default: "The Plone userid a client-credentials token acts as. Only that grant uses it; leave it empty for a client that signs people in."
-#: helpers/clientSchema
-msgid "service-user-help"
 msgstr ""
 
 #. Default: "signing"
@@ -1143,9 +1059,9 @@ msgstr ""
 msgid "user-account-no-providers"
 msgstr ""
 
-#. Default: "Where the value is written on the user's profile."
-#: helpers/providerSchema
-msgid "user-field-help"
+#. Default: "What this account is made of"
+#: components/ControlPanel/UserAccountPanel
+msgid "user-account-sections"
 msgstr ""
 
 #. Default: "verifying only"
