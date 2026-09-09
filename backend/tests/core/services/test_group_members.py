@@ -7,13 +7,19 @@ group, and say what feeds into it.
 """
 
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
+from pas.plugins.identity.core.interfaces import IGroupMemberSerializer
+from pas.plugins.identity.core.serializers.groupmember import GroupMemberSerializer
 from pas.plugins.identity.core.services.groups.get import GroupMembersGet
+from pas.plugins.identity.interfaces import IBrowserLayer
 from plone import api
 from plone.app.testing import login
 from plone.app.testing import logout
 from plone.app.testing import setRoles
 from plone.app.testing import TEST_USER_ID
 from plone.app.testing import TEST_USER_NAME
+from Products.CMFCore.interfaces import ISiteRoot
+from zope.component import getGlobalSiteManager
+from zope.component import getMultiAdapter
 from zope.lifecycleevent import modified
 
 import pytest
@@ -263,3 +269,116 @@ class TestAccess(GroupMembersCase):
         self.listing("staff")
 
         assert self.status() == 200
+
+
+class TestTheRow(GroupMembersCase):
+    """What one member looks like, and what rendering one costs."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_, acl_users, make_group) -> None:
+        self.portal = portal
+        self.request = request_
+        self.acl_users = acl_users
+        setRoles(portal, TEST_USER_ID, ["Manager"])
+        login(portal, TEST_USER_NAME)
+        make_group("staff", title="Staff")
+        self.alice = self.member("alice", "staff", fullname="Alice Liddell")
+        self.member("bob", "staff", fullname="Bob Cratchit")
+
+    def row(self, userid: str = "alice") -> dict:
+        """Return one member's row.
+
+        :param userid: Whose row.
+        :returns: The row.
+        """
+        items = self.listing("staff")["items"]
+        return next(item for item in items if item["id"] == userid)
+
+    def test_the_id_is_the_persons_profile(self):
+        """It used to be the listing's own URL with the userid appended, which
+        is not a resource: the service takes exactly one path segment."""
+        assert self.row()["@id"] == self.alice.absolute_url()
+
+    def test_the_old_id_was_not_a_resource(self):
+        """Stated as behaviour rather than as history, so the URL the row no
+        longer points at is on record as one that never answered."""
+        listing = f"{self.portal.absolute_url()}/@group-members/staff"
+
+        self.listing("staff", "alice")
+
+        assert self.status() == 400
+        assert self.row()["@id"] != f"{listing}/alice"
+
+    def test_profile_url_is_the_same_url(self):
+        """Kept, and deliberately redundant: clients written against the
+        broken ``@id`` were told to follow this one instead, and taking it
+        away would break them a second time."""
+        row = self.row()
+
+        assert row["profile_url"] == row["@id"]
+
+
+class TestTheRowIsAnAdapter(GroupMembersCase):
+    """A deployment can add a field to a membership row.
+
+    Which is the whole point of the indirection: before this, one more field
+    on a row meant replacing the service.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_, acl_users, make_group) -> None:
+        self.portal = portal
+        self.request = request_
+        self.acl_users = acl_users
+        setRoles(portal, TEST_USER_ID, ["Manager"])
+        login(portal, TEST_USER_NAME)
+        make_group("staff", title="Staff")
+        self.member("alice", "staff", fullname="Alice Liddell")
+
+    def test_the_package_registers_one(self):
+        """Without a registration the service raises rather than answering,
+        so this is the premise the rest of the endpoint rests on."""
+        serializer = getMultiAdapter(
+            (self.portal, self.request), IGroupMemberSerializer
+        )
+
+        assert isinstance(serializer, GroupMemberSerializer)
+
+    def test_a_subclass_can_add_a_field(self):
+        """The documented way to extend a row: subclass, call up, add keys,
+        register for your own layer."""
+
+        class WithBadge(GroupMemberSerializer):
+            def __call__(self, brain):
+                row = super().__call__(brain)
+                row["badge"] = "gold"
+                return row
+
+        registry = getGlobalSiteManager()
+        registry.registerAdapter(
+            WithBadge, (ISiteRoot, IBrowserLayer), IGroupMemberSerializer
+        )
+        try:
+            row = self.listing("staff")["items"][0]
+        finally:
+            registry.unregisterAdapter(
+                WithBadge, (ISiteRoot, IBrowserLayer), IGroupMemberSerializer
+            )
+            registry.registerAdapter(
+                GroupMemberSerializer,
+                (ISiteRoot, IBrowserLayer),
+                IGroupMemberSerializer,
+            )
+
+        assert row["badge"] == "gold"
+        # The base row is still there: an override extends rather than
+        # replaces, which is what makes `@id` safe to change downstream.
+        assert row["id"] == "alice"
+        assert row["@id"].endswith("/identity-profiles/alice")
+
+    def test_the_override_is_gone_again(self):
+        """The fixture above restores the package's own registration. Without
+        this, a later test would pass or fail depending on ordering."""
+        row = self.listing("staff")["items"][0]
+
+        assert "badge" not in row

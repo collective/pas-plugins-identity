@@ -9,4 +9,11 @@
        is untouched. -->
   <adapter factory=".user.SerializeIdentityUserToJson" />
 
+  <!-- One row of `@group-members`, built from a Profile brain alone. Adapts
+       the site rather than the brain: a brain has no `__provides__` and so
+       cannot be marked, and a registration for `ICatalogBrain` would answer
+       for every brain in the site. As a summary that would shadow
+       plone.restapi's own default and take over search results. -->
+  <adapter factory=".groupmember.GroupMemberSerializer" />
+
 </configure>

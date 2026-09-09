@@ -20,14 +20,19 @@ person to draw a row and with the nesting made visible.
 Every read is from catalog metadata. That is not an optimisation here so much
 as the reason the endpoint can exist at all: a group with a thousand members
 would otherwise be a thousand object loads on a page view.
+
+That was not true until recently, and the way it was untrue is worth keeping in
+mind: the row called ``profile_url(brain.userid)`` to fill one key, which
+searches the catalog again and then wakes the object to ask its URL. A brain
+already knows its own URL. The row is now
+:class:`~pas.plugins.identity.core.serializers.groupmember.GroupMemberSerializer`,
+which is also where a deployment adds a field to it.
 """
 
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
-from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.pas.profile import PLUGIN_ID as PROFILE_PLUGIN_ID
-from pas.plugins.identity.core.subscribers import profile_url
 from pas.plugins.identity.core.utils.nesting import members_of
 from plone import api
 from Products.CMFCore.permissions import ManageUsers
@@ -36,28 +41,6 @@ from Products.ZCatalog.CatalogBrains import AbstractCatalogBrain
 
 #: What a caller needs to read a group's membership without being in it.
 MANAGE_PERMISSION = ManageUsers
-
-
-def member_row(brain: AbstractCatalogBrain, base: str) -> JSONDict:
-    """Render one member from a Profile brain.
-
-    :param brain: The Profile brain.
-    :param base: URL of the listing this row belongs to.
-    :returns: JSON-ready mapping. Enough to draw a row and to follow through
-        to the person; no address, because a membership listing is not a
-        directory of contact details.
-    """
-    return {
-        "@id": f"{base}/{brain.userid}",
-        "id": brain.userid,
-        "fullname": brain.fullname or brain.login or brain.userid,
-        "login": brain.login,
-        "profile_url": profile_url(brain.userid),
-        # Which groups this person is actually in. A page listing an outer
-        # group's people can then say where each of them came from, rather
-        # than presenting one flat list nobody can account for.
-        "through": sorted(getattr(brain, "group_ids", None) or ()),
-    }
 
 
 def get_profile_plugin():
@@ -131,5 +114,4 @@ __all__ = [
     "MANAGE_PERMISSION",
     "get_profile_plugin",
     "member_brains",
-    "member_row",
 ]
