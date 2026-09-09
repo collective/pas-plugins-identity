@@ -131,10 +131,11 @@ A relying party that does not recognise a claim ignores it.
 Both names are read as-is elsewhere: `groups` is what Keycloak, Okta, and Entra all call it.
 And a namespaced claim only this server's own peers would understand buys nothing but a second thing to configure at both ends.
 
-That is the whole of the extension, and it is not a general one.
-A field a site adds to its `UserProfile` type still has no claim to go in, and inventing one per site would emit something no other implementation can read.
-The extension point for that is a private scope releasing namespaced claims.
-It is deliberately not built, because it needs a naming decision that should be made once, by somebody who has a second implementation to be compatible with.
+Those two are what *this package* ships under a registered scope.
+A site that wants a field of its own released registers a scope serializer, which is a different question: see {doc}`/how-to-guides/serialize-a-claim`.
+
+What this package does not do is invent a claim name on a site's behalf.
+A name only one deployment understands costs a relying party a mapping, so choosing one is a decision for whoever knows the relying party at the other end, and the mechanism leaves it to them rather than guessing.
 
 ### `groups` rides on a display scope
 

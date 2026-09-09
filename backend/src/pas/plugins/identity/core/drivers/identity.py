@@ -39,7 +39,7 @@ class PloneIdentityDriver(GenericOIDCDriver):
     #: and gets a numeric suffix instead.
     default_userid_source = "username"
 
-    #: Everything the peer's ``SCOPE_CLAIMS`` actually releases.
+    #: Everything the peer's scope serializers actually release.
     #:
     #: Written against the normalized names where normalization produces one
     #: (``name`` arrives as ``fullname``, ``picture`` as ``picture_url``) and

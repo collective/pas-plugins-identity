@@ -71,6 +71,7 @@ upgrade
 :maxdepth: 1
 
 register-an-oauth-client
+serialize-a-claim
 ```
 
 ## Moving to this package

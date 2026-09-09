@@ -83,7 +83,16 @@ def portrait(portal, user):
 
 
 class TestScopeRelease:
-    """Which claims a scope releases, with no user in sight."""
+    """Which claims a scope releases, with no user in sight.
+
+    The portal is here because a scope's claims are read off the serializer
+    registered for it, which is an adapter lookup and therefore needs a site.
+    No user is involved in any of these, which is the point of the class.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
 
     def test_openid_alone_releases_nothing(self):
         """`sub` is not scope-gated, so the scope that asks for an identity

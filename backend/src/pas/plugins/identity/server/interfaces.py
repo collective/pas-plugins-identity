@@ -6,6 +6,7 @@ endpoints can all name them without importing each other.
 
 from pas.plugins.identity import _
 from zope import schema
+from zope.interface import Attribute
 from zope.interface import Interface
 from zope.publisher.interfaces.browser import IDefaultBrowserLayer
 
@@ -54,6 +55,66 @@ class ServerError(Exception):
     deliberately *not* used for a bad client secret, which must not be
     distinguishable from an unknown client.
     """
+
+
+class IScopeSerializer(Interface):
+    """Declares one OIDC scope and produces its claims for a user.
+
+    Registered as a *named* multi-adapter on the site and the request, where
+    the name **is** the scope. One serializer per scope, because scope is the
+    unit a relying party asks in and a person consents to: two packages adding
+    different scopes never collide, and replacing one is a deliberate act
+    aimed at that scope rather than at everything this server releases.
+
+    **Two halves, and both are needed.** ``claims`` is a declaration read with
+    no user in hand; :meth:`__call__` produces values for one. A serializer
+    that only did the second could not answer the three callers that ask what
+    this server *could* emit -- the discovery document's ``scopes_supported``
+    and ``claims_supported``, which are published to an unauthenticated
+    caller, and the consent screen, which lists what a scope releases before
+    anybody has agreed to it. A scope whose claims the consent screen cannot
+    enumerate tells a person they are releasing less than they are, which is
+    a consent defect rather than a cosmetic one.
+
+    The two halves must agree. Nothing enforces it -- a serializer returning a
+    claim it did not declare is released and simply never advertised -- but
+    the declaration is what the person consenting was shown, so a value with
+    no declaration is data released outside the consent.
+
+    **Extending.** A downstream package adds a scope by registering another
+    named adapter, and changes a shipped one by subclassing it and registering
+    for its own browser layer, which is more specific and therefore wins. It
+    calls ``super().__call__(user)`` and adds to the result, the way a
+    ``plone.restapi`` serializer does. See
+    :doc:`/how-to-guides/serialize-a-claim`.
+
+    **What is not reachable from here.** ``sub`` is minted by
+    :func:`~pas.plugins.identity.server.claims.claims_for` and belongs to no
+    scope. It is the join every relying party stores against its local
+    account, so a serializer able to change it could silently re-identify
+    every federated user at every relying party, with nothing to migrate back
+    from. ``iss``, ``aud``, ``exp`` and ``iat`` are set when a token is signed
+    and likewise overwrite anything a serializer returns under those names.
+    """
+
+    claims = Attribute(
+        "The claim names this scope releases, as a tuple. Read with no user "
+        "in hand, for the discovery document and the consent screen, so it "
+        "must not depend on who is signing in."
+    )
+
+    def __call__(user):
+        """Return this scope's claims for one user.
+
+        :param user: The Plone user the token acts for.
+        :returns: A mapping of claim name to value. A claim this server has
+            no value for may be omitted or returned as ``None`` or an empty
+            string, list or mapping -- ``claims_for`` drops those either way,
+            so OIDC's "absent rather than blank" rule holds for every
+            serializer without each one having to remember it. ``False`` is a
+            value and survives, which is what lets ``email_verified`` say the
+            site checked and found nothing.
+        """
 
 
 class IServerSettings(Interface):
