@@ -1,14 +1,15 @@
 """``GET @group-members/<id>`` -- the people in one group."""
 
+from pas.plugins.identity.core.interfaces import IGroupMemberSerializer
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.services.base import IdentityService
 from pas.plugins.identity.core.services.groups import get_profile_plugin
 from pas.plugins.identity.core.services.groups import MANAGE_PERMISSION
 from pas.plugins.identity.core.services.groups import member_brains
-from pas.plugins.identity.core.services.groups import member_row
 from plone import api
 from plone.restapi.batching import HypermediaBatch
 from Products.CMFPlone.Portal import PloneSite
+from zope.component import getMultiAdapter
 from zope.interface import implementer
 from zope.publisher.interfaces import IPublishTraverse
 from ZPublisher.HTTPRequest import HTTPRequest
@@ -63,16 +64,20 @@ class GroupMembersGet(IdentityService):
         if refusal is not None:
             return refusal
 
-        base = f"{self.context.absolute_url()}/@group-members/{group_id}"
         brains = member_brains(
             group_id, plugin, search=self.request.form.get("query", "") or ""
         )
         batch = HypermediaBatch(self.request, brains)
+        # Once, not once per row: the adapter is stateless and the lookup is
+        # the only part of rendering a row that is not a dictionary literal.
+        serialize = getMultiAdapter(
+            (self.context, self.request), IGroupMemberSerializer
+        )
         result = {
             "@id": batch.canonical_url,
             "group": group_id,
             "items_total": batch.items_total,
-            "items": [member_row(brain, base) for brain in batch],
+            "items": [serialize(brain) for brain in batch],
             # The nesting, so a group page can say what feeds into it without
             # a second request per level.
             "nested_groups": self._render_groups(

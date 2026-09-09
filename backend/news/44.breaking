@@ -1,0 +1,1 @@
+`@group-members` rows now point `@id` at the member's Profile. It was the listing's own URL with the userid appended, which is not a resource: the service takes exactly one path segment, so following it answered `400`. `profile_url` is unchanged and now holds the same URL, so a client already following it needs no change. @ericof

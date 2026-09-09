@@ -20,6 +20,7 @@ from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.contents.group import UserGroup
 from pas.plugins.identity.core.contents.profile import UserProfile
+from pas.plugins.identity.core.services.groups.get import GroupMembersGet
 from plone import api
 from Products.CMFCore.indexing import processQueue
 
@@ -270,5 +271,66 @@ class TestGroupsWakeNothing:
         self.plugin.getGroupsForPrincipal(self.acl_users.getUserById("user1"))
         self.plugin.enumerateGroups()
         self.plugin.getGroupMembers("editors")
+
+        assert [profile._p_changed for profile in self.profiles] == [None] * 12
+
+
+class TestTheGroupMembersEndpointWakesNothing:
+    """``@group-members`` rides on the same guarantee, and did not.
+
+    The PAS plugins above were covered from the start. The REST endpoint was
+    not, and that is the gap a regression fell straight through: rendering a
+    row called ``profile_url(brain.userid)``, which searches the catalog a
+    second time and then wakes the object to ask for its URL -- one activation
+    per person on the page, on the endpoint whose own module docstring said
+    every read was from catalog metadata.
+
+    Counted here rather than in the endpoint's own tests because this is where
+    the instrument is. Forbidding ``_unrestrictedGetObject`` would have caught
+    that particular regression; counting activations catches one arriving by
+    attribute access or acquisition too.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(
+        self, portal, request_, acl_users, profile_plugin, profiles, loads
+    ) -> None:
+        self.portal = portal
+        self.request = request_
+        self.acl_users = acl_users
+        self.plugin = profile_plugin
+        self.profiles = profiles
+        self.loads = loads
+
+    def listing(self, group_id: str) -> dict:
+        """GET one group's members.
+
+        :param group_id: The group to list.
+        :returns: The service's reply.
+        """
+        service = GroupMembersGet(self.portal, self.request)
+        service.segments = [group_id]
+        return service.reply()
+
+    def test_a_page_of_members_wakes_nothing(self):
+        """Five people drawn, nothing activated."""
+        payload = self.listing("editors")
+
+        assert len(payload["items"]) == 5
+        assert profile_loads(self.loads) == []
+
+    def test_the_rows_still_carry_the_profile_url(self):
+        """The half that keeps the zero honest. Filling that one key is what
+        used to cost the activation, so a zero with the key missing would be
+        the wrong fix passing this test."""
+        row = self.listing("editors")["items"][0]
+
+        assert row["@id"].endswith("/identity-profiles/user1")
+        assert row["@id"] == row["profile_url"]
+        assert profile_loads(self.loads) == []
+
+    def test_everything_is_still_a_ghost(self):
+        """The other half of the claim, as everywhere else in this module."""
+        self.listing("editors")
 
         assert [profile._p_changed for profile in self.profiles] == [None] * 12

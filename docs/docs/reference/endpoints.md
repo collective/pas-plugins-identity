@@ -60,6 +60,32 @@ membership of the group being asked about.
 
 `@user-account` allows a caller asking about themselves without `Manage users`.
 
+### A membership row
+
+<!-- source: backend/src/pas/plugins/identity/core/serializers/groupmember.py -->
+
+Each entry in the `items` of `@group-members`:
+
+| Key | What it holds |
+|---|---|
+| `@id` | The person's `UserProfile`. |
+| `id` | Their userid. |
+| `fullname` | The full name, falling back to the login and then the userid, so a row is never blank. |
+| `login` | The login name. |
+| `profile_url` | The same URL as `@id`. Kept for clients written against the earlier `@id`, which pointed at the listing's own URL with the userid appended and answered `400`. |
+| `through` | The groups this person is directly in, so a page listing an outer group can say where each of them came from. |
+
+No address. A membership listing is personal data about other people, and it is
+not a directory of contact details.
+
+Every value is a catalog metadata column. That is what lets a group of a
+thousand people be one query rather than a thousand object loads, so a
+deployment adding a field to a row adds a metadata column to
+`identity-catalog.xml` first, then subclasses `GroupMemberSerializer`, calls up
+to it, and registers the subclass for its own browser layer. See
+{doc}`/concepts/profiles-and-groups` for why the adapter is on the site rather
+than on the brain.
+
 ## Server layer
 
 Published only where the `pas.plugins.identity.server:default` profile has been

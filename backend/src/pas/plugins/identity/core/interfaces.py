@@ -545,6 +545,47 @@ class DriverProtocol(Protocol):
     def subject(self, payload: JSONDict) -> str: ...
 
 
+class IGroupMemberSerializer(Interface):
+    """Renders one person as a row of ``@group-members``.
+
+    Registered as a multi-adapter on ``(site, request)`` and looked up once
+    per listing rather than once per row, so a group of a thousand costs one
+    adapter lookup.
+
+    **Why not an ``ISerializeToJson`` on the brain.** A row is built from a
+    catalog brain, and a brain cannot carry a marker interface -- ``brain`` is
+    a ``Record`` subclass with no ``__provides__``, so ``alsoProvides`` raises
+    ``AttributeError``. That leaves registering for ``ICatalogBrain`` itself,
+    which is every brain in the site: as ``ISerializeToJsonSummary`` it would
+    shadow ``plone.restapi``'s own default, which is registered for
+    ``(Interface, Interface)``, and take over search results, listings and
+    navigation; as ``ISerializeToJson`` it would be a registration nothing
+    currently looks up, which is how an indexer of this package once came to
+    answer for the site catalog. Adapting the *site* is what can be scoped.
+
+    **What you are handed.** One Profile brain from this package's catalog,
+    already filtered by workflow state and already ordered. Everything a row
+    needs is a metadata column, and that is not an optimisation: it is the
+    reason the endpoint can exist, since a group of a thousand members must
+    not become a thousand object loads to draw one page of it. Reach for
+    ``brain.getObject()`` and you have undone that.
+
+    **To extend it**, subclass
+    :class:`~pas.plugins.identity.core.serializers.groupmember.GroupMemberSerializer`,
+    call ``super().__call__(brain)`` and add keys, then register the subclass
+    for your own browser layer. To add a field, add a metadata column to
+    ``identity-catalog.xml`` first -- a row cannot report what the catalog
+    does not carry.
+    """
+
+    def __call__(brain):
+        """Return the JSON row for one member.
+
+        :param brain: A Profile brain from this package's catalog.
+        :returns: JSON-ready mapping.
+        """
+
+
 class IIdentityCatalogued(Interface):
     """Marker for anything filed in the dedicated identity catalog.
 

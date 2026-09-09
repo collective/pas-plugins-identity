@@ -41,6 +41,31 @@ This is the property the whole layer is arranged around, and it is why the layer
 It is also the reason this package does not build on `Products.membrane`, which answers a property lookup by loading the content object.
 See {doc}`users-as-content` for that comparison in full.
 
+`@group-members`, the endpoint that lists a group's people, is on that surface too—and was not always.
+Rendering a row filled one key by userid, which searches the catalog a second time and then wakes the object to ask for its URL: one activation per person on the page, under a module docstring saying every read came from catalog metadata.
+A brain already knows its own URL.
+The endpoint is now exercised by the same activation-counting test as the plugins, which is the durable half of that fix: the plugins were covered from the start and the endpoint was not, so nothing was watching the place the regression landed.
+
+## Why a row is serialized off the site, not off the brain
+
+A deployment that wants one more field on a membership row—a badge, a job title, a photograph—subclasses the serializer this package ships and registers the subclass for its own browser layer.
+The serializer is a multi-adapter on the site and the request, looked up once per listing.
+
+The obvious design is an `ISerializeToJson` on the brain, the way `@users` is extended for a member.
+That is not available, for two reasons which are both about brains rather than about taste.
+
+A brain cannot be marked.
+It is a `Record` subclass carrying no `__provides__`, so `alsoProvides` raises `AttributeError` and there is no narrow interface to register against.
+
+That leaves registering for `ICatalogBrain`, which means every brain in the site.
+As `ISerializeToJsonSummary` such a registration shadows `plone.restapi`'s own default, which is registered for `(Interface, Interface)`, and takes over search results, listings and navigation.
+As `ISerializeToJson` it is a registration nothing currently looks up—inert by luck, and the same shape as the defect where this package's indexers answered for the site catalog as well as their own.
+
+The site is the thing that can be scoped, so the site is what gets adapted.
+
+One constraint comes with it, and it is the guarantee above seen from the other side: a field the catalog does not carry cannot appear on a row at all.
+Adding one starts with a metadata column in `identity-catalog.xml`.
+
 ## Membership lives on the member
 
 An `UserGroup` does not hold a list of its members.
