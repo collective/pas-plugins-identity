@@ -9,7 +9,10 @@ the effect separately.
 """
 
 from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
+from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
+from pas.plugins.identity.core.catalog import query_catalog
 from plone import api
+from unittest.mock import patch
 
 import pytest
 
@@ -52,7 +55,7 @@ class TestTheStepIsRegistered:
         }
         # Every version, not merely the first: a package left out of
         # ``upgrades/configure.zcml`` drops out of exactly this list.
-        assert {("1001",), ("1002",)} <= dests, dests
+        assert {("1001",), ("1002",), ("1003",)} <= dests, dests
 
     def test_a_site_at_the_latest_version_is_offered_nothing(self, setup_tool):
         """The other half: an upgrade that keeps being offered after it has
@@ -103,7 +106,7 @@ class TestTheStepDoesTheWork:
 
         self.setup_tool.upgradeProfile(PROFILE)
 
-        assert self.setup_tool.getLastVersionForProfile(PROFILE) == ("1002",)
+        assert self.setup_tool.getLastVersionForProfile(PROFILE) == ("1003",)
 
 
 class TestV1002PutsTheFieldsOnBehaviors:
@@ -131,3 +134,116 @@ class TestV1002PutsTheFieldsOnBehaviors:
         behaviors = self.types["UserProfile"].behaviors
         assert "pas.plugins.identity.email_addresses" in behaviors
         assert "pas.plugins.identity.profile_details" in behaviors
+
+
+class TestV1003OrdersPeopleByName:
+    """The index half, which no XML can carry.
+
+    Re-importing ``identity-catalog`` creates the index and leaves it empty,
+    exactly as adding one in Python would. A site that upgraded and stopped
+    there would have the index, no error, and a membership listing ordered by
+    whatever the catalog happened to return.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, setup_tool, container) -> None:
+        self.portal = portal
+        self.setup_tool = setup_tool
+        self.container = container
+        self.catalog = query_catalog()
+
+    def make_profile(self, userid: str, fullname: str) -> object:
+        """Create one Profile in the configured container.
+
+        Inline rather than through the ``make_profile`` fixture, which lives in
+        ``tests/core/conftest.py`` and is not visible here. Widening its scope
+        to reach this module would change every test under ``tests/core`` to
+        make one upgrade test shorter. The container comes from this suite's
+        own fixture, which creates it the way a first login does.
+
+        :param userid: The userid, which is also the object id.
+        :param fullname: The name the Profile is titled and sorted by.
+        :returns: The Profile.
+        """
+        # Elevated: adding a Profile is held to a permission of its own, and
+        # this suite starts from a site that has only been installed.
+        with api.env.adopt_roles(["Manager"]):
+            return api.content.create(
+                container=self.container,
+                type=PROFILE_PORTAL_TYPE,
+                id=userid,
+                userid=userid,
+                login=f"{userid}@example.com",
+                fullname=fullname,
+            )
+
+    def _upgrade_from(self, version: str) -> None:
+        """Run the upgrade machinery as a site at ``version`` would.
+
+        :param version: The profile version the site is pretending to be at.
+        """
+        self.setup_tool.setLastVersionForProfile(PROFILE, version)
+        self.setup_tool.upgradeProfile(PROFILE)
+
+    def test_the_index_exists_after_the_upgrade(self):
+        # Removing it first is what makes this a test of the upgrade rather
+        # than of the install: a fresh test site already has the index.
+        self.catalog.delIndex("sortable_title")
+        assert "sortable_title" not in self.catalog.indexes()
+
+        self._upgrade_from("1002")
+
+        assert "sortable_title" in self.catalog.indexes()
+
+    def test_the_index_is_filled_rather_than_merely_created(self):
+        """The whole reason this is a handler and not an ``upgradeDepends``.
+        An empty index sorts nothing and reports no error."""
+        self.make_profile("zoe", fullname="Zoe Zeta")
+        self.make_profile("alice", fullname="Alice Liddell")
+        self.catalog.delIndex("sortable_title")
+
+        self._upgrade_from("1002")
+
+        # `userid`, not `getId`: this catalog's columns are declared in
+        # `identity-catalog.xml` and `getId` is not among them, so asking for
+        # it acquires the catalog's own method and compares a bound method
+        # against a string.
+        ordered = [
+            brain.userid
+            for brain in self.catalog.unrestrictedSearchResults(
+                portal_type=PROFILE_PORTAL_TYPE, sort_on="sortable_title"
+            )
+        ]
+        assert ordered == ["alice", "zoe"], ordered
+
+    def test_the_site_catalog_entry_is_refreshed(self):
+        """The words changed, not the index. A Profile already catalogued in
+        `portal_catalog` keeps what the previous indexer wrote until something
+        asks again, and nothing does that on its own."""
+        self.make_profile("alice", fullname="Alice Liddell")
+        site = api.portal.get_tool("portal_catalog")
+
+        # Put the old answer back, which is what an upgraded site really holds.
+        brain = site.unrestrictedSearchResults(
+            portal_type=PROFILE_PORTAL_TYPE, userid="alice"
+        )[0]
+        site._catalog.indexes["SearchableText"].unindex_object(brain.getRID())
+        assert not site.unrestrictedSearchResults(SearchableText="Liddell")
+
+        self._upgrade_from("1002")
+
+        assert site.unrestrictedSearchResults(SearchableText="Liddell")
+
+    def test_a_missing_index_after_the_import_is_loud(self):
+        """A reindex against an index that was never created succeeds and does
+        nothing, so the step refuses rather than reporting success."""
+        from pas.plugins.identity.upgrades.v1003 import add_sortable_title
+
+        self.catalog.delIndex("sortable_title")
+        with (
+            patch.object(
+                self.setup_tool, "runImportStepFromProfile", return_value=None
+            ),
+            pytest.raises(ValueError, match="still missing"),
+        ):
+            add_sortable_title(self.setup_tool)

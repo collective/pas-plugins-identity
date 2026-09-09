@@ -98,6 +98,23 @@
     <indexed_attr value="review_state" />
   </index>
 
+  <!--
+    What a listing of people is ordered by. Filled by Plone's own
+    ``sortable_title`` indexer, which is registered for every object and every
+    catalog and reads ``Title()``. On a Profile that is the full name, falling
+    back to the login and then to the userid, so a listing is ordered by the
+    name a person is shown under and never by an empty string.
+
+    An index rather than a column: it is the sort key, and nothing displays it.
+    Before it existed, ``@group-members`` read every member of a group and
+    sorted them in Python, which is a whole group loaded to order a page of it.
+  -->
+  <index meta_type="FieldIndex"
+         name="sortable_title"
+  >
+    <indexed_attr value="sortable_title" />
+  </index>
+
   <index meta_type="ExtendedPathIndex"
          name="path"
   />

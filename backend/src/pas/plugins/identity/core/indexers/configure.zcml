@@ -36,7 +36,9 @@
       />
 
   <!-- Both indexers fold or narrow what the field literally holds; see the
-       module for why. -->
+       module for why. Each names this package's catalog as well as the object,
+       so it applies where enumeration reads and nowhere else: a Profile is
+       ordinary content and is catalogued in portal_catalog too. -->
   <adapter
       factory=".login_index"
       name="login"
@@ -44,6 +46,15 @@
 
   <adapter
       factory=".searchable_text_index"
+      name="SearchableText"
+      />
+
+  <!-- The same index name, answered differently for every other catalog.
+       Registered for the object alone, which makes it the less specific of the
+       two, so the multi-adapter lookup prefers the one above wherever the
+       catalog is ours. -->
+  <adapter
+      factory=".site_searchable_text_index"
       name="SearchableText"
       />
 
