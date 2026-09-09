@@ -234,10 +234,14 @@ extend the token's life past 15 minutes.
 Inherits `IOAuth2Settings` and adds no fields. There is no `issuer`: GitHub is
 not an OpenID Connect provider and the endpoints are built into the driver.
 
-## Secrets are not exported
+## Secrets are exported in the clear
 
-A GenericSetup export omits client secrets, so an export of your provider
-configuration is not enough to rebuild a working site. Secrets travel separately.
+A GenericSetup export carries a client secret as its stored value. The record is
+a `plone.registry.field.Password`, which marks it as a secret wherever a record
+is inspected; marking is not encryption.
+
+So an export of your provider configuration **is** enough to rebuild a working
+site, and is itself a credential. Read one before committing it anywhere.
 
 See {doc}`/concepts/secrets`.
 

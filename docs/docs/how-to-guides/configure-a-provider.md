@@ -108,12 +108,53 @@ Do not clear the field to keep the existing secret. Blanking it sends an empty
 string, which is a different instruction, and it destroys the stored secret.
 ```
 
-A GenericSetup export omits secrets, so an export of your provider configuration
-is not enough to rebuild a working site. The secrets have to travel separately,
-by whatever means your deployment already uses for secrets.
+A GenericSetup export carries the stored secret as its value, so an export of
+your provider configuration **is** enough to rebuild a working site—and is
+itself a credential. Read one before committing it anywhere.
 
 Read {doc}`/concepts/secrets` for why secrets behave differently here than when
 the site acts as an authorization server.
+
+## Ship a provider in a profile
+
+`GET @identity-providers/<id>/export` returns the provider as a registry
+fragment, ready to paste into your own package's
+`profiles/default/registry/`. The response names the file it belongs in.
+
+```shell
+curl -H 'Accept: application/json' -u admin:admin \
+  http://localhost:8080/Plone/@identity-providers/github/export
+```
+
+```json
+{
+  "@id": "http://localhost:8080/Plone/@identity-providers/github/export",
+  "provider": "github",
+  "filename": "pas.plugins.identity.providers.github.xml",
+  "xml": "<registry>\n  <records interface=\"...\" prefix=\"...\">..."
+}
+```
+
+The fragment has two halves, and the split is not cosmetic:
+
+- the provider's own fields arrive as one `<records interface= prefix=>` node,
+  because they are declared on `IProviderRecords` and inherit their types from
+  it;
+- each driver setting arrives as its own `<record>` carrying a `<field type=>`,
+  because a driver's settings belong to no interface—which of them exist comes
+  from the driver at runtime—so a record without its own type cannot be imported
+  into a site that has never seen the provider.
+
+Exporting the whole registry instead does not work: `registry.xml` from
+`runExportStep` carries records belonging to every other package, and importing
+that document into a site fails on one of them.
+
+```{warning}
+The fragment carries the client secret as its stored value, exactly as a
+GenericSetup export does. It is a credential. Read it before committing it
+anywhere, and set the secret per environment instead if the repository is not
+one you already trust with secrets.
+```
 
 ## Delete a provider
 

@@ -122,9 +122,11 @@ package under `src/`.
    deployment's configuration lives in the repository and arrives with the
    profile instead of being typed into a control panel on each environment.
 
-   Provider **secrets** are the exception. They are write-only and a
-   GenericSetup export omits them, so keep them out of these files and set them
-   per environment. See {doc}`/concepts/secrets`.
+   Provider **secrets** need a decision rather than a rule. A GenericSetup
+   export carries them in the clear, so a profile *can* ship one—and a
+   repository is usually the wrong place for a credential. Keep them out of
+   these files and set them per environment unless the repository is one you
+   already trust with secrets. See {doc}`/concepts/secrets`.
 
 5. Restart the Plone instance, then apply your own package's profile.
 
