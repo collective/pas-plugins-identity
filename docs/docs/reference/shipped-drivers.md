@@ -11,7 +11,6 @@ myst:
 # Shipped drivers
 
 <!-- source: backend/src/pas/plugins/identity/core/drivers/ -->
-<!-- source: backend/src/pas/plugins/identity/core/flows/metadata.py -->
 
 A driver is registered as a named ZCA utility providing `IDriver`, and the
 utility name is the driver id. Five ship with the package.
@@ -33,7 +32,7 @@ the deployment, so the operator can override each one per provider.
 | | `oidc-generic` | `plone-identity` | `google` | `github` | `email` |
 |---|---|---|---|---|---|
 | Settings schema | `IOIDCSettings` | `IPloneIdentitySettings` | `IOAuth2Settings` | `IGitHubSettings` | `IEmailSettings` |
-| Endpoints from | discovery, at an issuer you type | discovery, at an issuer you type | discovery, at `https://accounts.google.com` | fixed, built in | none |
+| Endpoints from | discovery, at an issuer you type | discovery, at an issuer you type | discovery, at the issuer the driver declares | the four the driver declares | none |
 | Default scope | `openid email profile` | `openid email profile address` | `openid email profile` | `read:user user:email` | — |
 | Subject read from | `sub` | `sub` | `sub` | `id`, then `node_id` | `email` |
 | Default userid source | `uuid` | `username` | `uuid` | `username` | `uuid` |
@@ -80,8 +79,9 @@ claim names rather than any one provider's.
 
 | Driver | Map |
 |---|---|
-| `oidc-generic`, `google`, `github` | `fullname` → `fullname` |
-| `plone-identity` | that, plus `website` → `home_page`, `description` → `description`, `address.formatted` → `location` |
+| `oidc-generic`, `google` | `fullname` → `fullname` |
+| `github` | that, plus `bio` → `description`, `blog` → `home_page`, `location` → `location` |
+| `plone-identity` | that first row, plus `website` → `home_page`, `description` → `description`, `address.formatted` → `location` |
 | `email` | empty |
 
 A map may only write the four fields in {doc}`/reference/settings`, so no driver
@@ -94,7 +94,8 @@ No driver maps `username`. Providers publish it; a Profile has no such field.
 ## Driver notes
 
 `github`
-:   `GET /user` omits the address of anybody who marked it private and carries no
+:   Not an OpenID Connect provider: it publishes no discovery document, so the
+    driver declares its four endpoints outright. `GET /user` omits the address of anybody who marked it private and carries no
     `email_verified` at all, so the driver names `GET /user/emails` as an
     enrichment endpoint and the flow fetches it after userinfo. That call is
     best-effort: a narrowed scope answers 403, and a login is not the moment to
@@ -102,8 +103,18 @@ No driver maps `username`. Providers publish it; a Profile has no such field.
     profile, the account's own primary first.
 
 `google`
-:   Its issuer is fixed at `https://accounts.google.com` rather than typed. There
-    is nothing to configure and nothing to get wrong.
+:   The driver declares the issuer, `https://accounts.google.com`, rather than
+    asking for it. There is nothing to configure and nothing to get wrong. Its
+    userinfo carries a name, an address and a picture, and nothing a Profile's
+    other three fields could hold, which is why its map has one row.
+
+`oidc-generic`
+:   The one driver that declares neither endpoints nor an issuer: both come
+    from the operator, because "any conforming provider" is exactly the case
+    where the package knows nothing in advance. Its map has one row for the
+    same reason: `website` and `address.formatted` are registered OIDC
+    claims, but whether a given provider fills them in is not something a
+    generic driver can know.
 
 `plone-identity`
 :   A peer is a conforming OIDC provider and gets no special path through the

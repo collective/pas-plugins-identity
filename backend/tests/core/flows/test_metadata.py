@@ -9,6 +9,7 @@ from . import DEX_PROVIDER
 from copy import deepcopy
 from datetime import timedelta
 from pas.plugins.identity.core.controlpanel import ProviderConfig
+from pas.plugins.identity.core.drivers.github import GitHubDriver
 from pas.plugins.identity.core.flows import metadata as md
 from pas.plugins.identity.core.interfaces import FlowError
 from pas.plugins.identity.core.interfaces import JSONDict
@@ -156,9 +157,9 @@ class TestStaticMetadata:
         assert metadata["userinfo_endpoint"] == "https://api.github.com/user"
         assert requested == []
 
-    def test_caller_cannot_mutate_the_constant(self):
-        """Handing out the module's own dict would let one login's metadata
-        edit the next one's."""
+    def test_caller_cannot_mutate_the_driver(self):
+        """Handing out the driver's own dict would let one login's metadata
+        edit every later one's -- the class attribute outlives the request."""
         provider = ProviderConfig.deserialize({
             "id": "gh",
             "driver": "github",
@@ -167,7 +168,7 @@ class TestStaticMetadata:
 
         md.metadata_for(provider)["token_endpoint"] = "https://evil.example"
 
-        assert md.STATIC_METADATA["github"]["token_endpoint"] == (
+        assert GitHubDriver.static_metadata["token_endpoint"] == (
             "https://github.com/login/oauth/access_token"
         )
 

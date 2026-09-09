@@ -14,12 +14,12 @@ from authlib.integrations.requests_client import OAuth2Session
 from datetime import datetime
 from datetime import timedelta
 from datetime import UTC
+from joserfc import jwt
+from joserfc.jwk import RSAKey
 from pas.plugins.identity.core import flows
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.flows import SESSION_KEY
 from pas.plugins.identity.core.interfaces import FlowError
-from joserfc import jwt
-from joserfc.jwk import RSAKey
 from urllib.parse import parse_qs
 from urllib.parse import urlparse
 

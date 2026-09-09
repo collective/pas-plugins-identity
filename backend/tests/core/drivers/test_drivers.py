@@ -24,6 +24,7 @@ from pas.plugins.identity.core.interfaces import IDriver
 from pas.plugins.identity.core.utils.propertymap import MAPPABLE_FIELDS
 from plone.app.users.browser.schemaeditor import getFromBaseSchema
 from plone.app.users.schema import IUserDataSchema
+from urllib.parse import urlparse
 from zope.i18nmessageid import Message
 from zope.interface.verify import verifyObject
 from zope.schema import getFieldsInOrder
@@ -217,3 +218,63 @@ class TestDefaultPropertyMap:
         ``None`` for every provider forever."""
         for claim in factory().default_propertymap:
             assert claim and claim.strip() == claim
+
+
+class TestConnectionFacts:
+    """Where a provider's endpoints come from is the driver's own answer.
+
+    Both attributes used to be tables in ``core/flows/metadata.py`` keyed by
+    driver id, which meant nothing checked them: they were data in a module
+    the driver tests never imported, and a driver shipped by anybody else
+    could not have a row at all.
+    """
+
+    @pytest.mark.parametrize("factory", ALL_DRIVERS)
+    def test_declared_endpoints_are_absolute_https(self, factory: type[BaseDriver]):
+        """A relative or plain-HTTP endpoint is a login sent somewhere else.
+
+        Nothing downstream re-checks these: :func:`metadata_for` hands the
+        dict straight to the flow, and the downgrade guard in ``discover``
+        only ever sees a *discovered* document.
+        """
+        for name, url in factory().static_metadata.items():
+            parsed = urlparse(url)
+
+            assert parsed.scheme == "https", f"{name}: {url}"
+            assert parsed.netloc, f"{name}: {url}"
+
+    @pytest.mark.parametrize("factory", ALL_DRIVERS)
+    def test_a_declared_issuer_is_one_discovery_can_use(
+        self, factory: type[BaseDriver]
+    ):
+        """Same URL rule, plus the trailing slash the cache keys on: ``…/x``
+        and ``…/x/`` are one issuer and would otherwise be two entries."""
+        issuer = factory().issuer
+        if not issuer:
+            return
+
+        assert urlparse(issuer).scheme == "https", issuer
+        assert urlparse(issuer).netloc, issuer
+        assert issuer == issuer.rstrip("/"), issuer
+
+    @pytest.mark.parametrize("factory", ALL_DRIVERS)
+    def test_a_published_set_carries_what_a_flow_needs(self, factory: type[BaseDriver]):
+        """Declaring endpoints means discovery never runs for this driver, so
+        an incomplete set is not filled in later -- it is an authorization
+        request built against ``None``."""
+        static = factory().static_metadata
+        if not static:
+            return
+
+        assert "authorization_endpoint" in static
+        assert "token_endpoint" in static
+
+    @pytest.mark.parametrize("factory", ALL_DRIVERS)
+    def test_a_driver_names_one_metadata_source(self, factory: type[BaseDriver]):
+        """Published endpoints and an issuer to discover from are the two
+        answers, and they are exclusive: ``metadata_for`` takes the published
+        set and never reaches discovery, so declaring both would ship an
+        issuer nothing reads."""
+        driver = factory()
+
+        assert not (driver.static_metadata and driver.issuer)

@@ -11,6 +11,13 @@ class GoogleDriver(BaseDriver):
     default_scope = ("openid", "email", "profile")
     subject_keys = ("sub",)
 
+    #: Google's, and not an operator's to type.
+    #:
+    #: The settings schema asks for no issuer, so this is the only place it
+    #: could come from. Discovery still happens against it exactly as it does
+    #: for a provider whose issuer somebody configured.
+    issuer = "https://accounts.google.com"
+
     #: Google verifies an address before it will call it verified.
     #:
     #: ``email_verified`` on a Google id_token is false for an address the
