@@ -110,6 +110,22 @@ A shadowed file here is a docstring and a re-export; the component itself lives
 under `components/`. That keeps the shadow small enough to re-check against a new
 Volto release.
 
+## Slots
+
+<!-- source: frontend/packages/volto-identity/src/components/Views/BelowTitleSlot.tsx -->
+
+Three slots reach a profile page and a group page.
+
+| Slot | Renders | Rendered by |
+|---|---|---|
+| `aboveContent` | Above the view | Volto's own `View` |
+| `belowTitle` | Under the heading, above the description | `BelowTitleSlot` |
+| `belowContent` | Below the view | Volto's own `View` |
+
+The two outer slots come with registering a view in
+`config.views.contentTypesViews`. `belowTitle` is rendered by each view itself.
+Registering into any of them is {doc}`/how-to-guides/extend-a-profile-page`.
+
 ## Other registrations
 
 Reducers, a menu entry, and `appExtras`.

@@ -12,6 +12,13 @@
  * be there would publish an address on a page whose URL is guessable from a
  * userid. The account's own owner sees their addresses on their sign-in
  * methods page, where verifying one is also possible.
+ *
+ * ## Slots
+ *
+ * `aboveContent` and `belowContent` wrap this view already, because Volto's
+ * own `View` renders both around whatever it resolves. `belowTitle` is
+ * rendered here, under the heading, by `BelowTitleSlot` -- nothing outside a
+ * view can place anything inside it.
  * @module components/Views/ProfileView
  */
 import React from 'react';
@@ -21,6 +28,7 @@ import { Container } from 'semantic-ui-react';
 
 import { Helmet } from '@plone/volto/helpers/Helmet/Helmet';
 
+import BelowTitleSlot from './BelowTitleSlot';
 import type { ProfileUserContent } from '../../types';
 
 import './ProfileView.scss';
@@ -84,6 +92,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ content }) => {
         ) : null}
         <h1 className="documentFirstHeading">{name}</h1>
       </div>
+      <BelowTitleSlot content={content} />
       {content.description ? (
         <p className="documentDescription">{content.description}</p>
       ) : null}

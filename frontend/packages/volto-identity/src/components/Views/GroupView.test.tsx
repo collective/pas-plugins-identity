@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { render, screen } from '../../testing';
 import { Provider } from 'react-redux';
 import React from 'react';
+
+import config from '@plone/volto/registry';
 
 import GroupView from './GroupView';
 import { groupContent } from '../../stories/fixtures';
@@ -48,6 +50,24 @@ function renderView(state: any = {}) {
     </Provider>,
   );
 }
+
+/**
+ * Register a component into `belowTitle`, the way a deployment does.
+ *
+ * @param component What to render.
+ */
+function registerBadge(component: React.ComponentType<any>): void {
+  config.registerSlotComponent({
+    slot: 'belowTitle',
+    name: 'badge',
+    component,
+  });
+}
+
+// A slot registration is global and outlives the test that made it.
+afterEach(() => {
+  delete config.slots.belowTitle;
+});
 
 describe('GroupView', () => {
   it('shows the title and description', () => {
@@ -107,6 +127,26 @@ describe('GroupView', () => {
     expect((screen.getByText('Bob Cratchit') as HTMLElement).tagName).toBe(
       'SPAN',
     );
+  });
+
+  it('renders the belowTitle slot between the heading and the description', () => {
+    // Under the name, where what belongs to the group reads as part of it.
+    // Nothing outside a view can put anything inside one, which is why this
+    // slot is rendered here and `aboveContent` is not.
+    registerBadge(() => <span>Core team</span>);
+
+    renderView({ loaded: true, data: MEMBERS });
+
+    const badge = screen.getByText('Core team');
+    const heading = screen.getByRole('heading', { level: 1 });
+    const description = screen.getByText('Everybody who works here.');
+    expect(
+      heading.compareDocumentPosition(badge) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      description.compareDocumentPosition(badge) &
+        Node.DOCUMENT_POSITION_PRECEDING,
+    ).toBeTruthy();
   });
 
   it('says so while the membership is loading', () => {
