@@ -125,6 +125,14 @@ export interface VoltoSchema {
   properties: Record<string, Record<string, unknown>>;
   required: string[];
   fieldsets: { id: string; title: string; fields: string[] }[];
+  /**
+   * The noun this schema describes one of.
+   *
+   * Optional, because a whole form does not need one — but `object_list`
+   * renders it as the label of each row and as the add button's object, so a
+   * row schema without it shows `UNDEFINED #1` and `+ Add undefined`.
+   */
+  title?: string;
 }
 
 export interface Driver {

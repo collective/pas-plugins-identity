@@ -246,12 +246,22 @@ def _with_driver_defaults(driver_id: str, config: JSONDict) -> JSONDict:
         for name, field in _settings_fields(driver_id).items()
         if field.default is not None
     }
-    defaults.update(_driver_defaults(driver))
+    defaults.update(driver_defaults(driver))
     return _stored_types(driver_id, {**defaults, **config})
 
 
-def _driver_defaults(driver: BaseDriver) -> JSONDict:
+def driver_defaults(driver: BaseDriver) -> JSONDict:
     """Return the settings this particular driver starts a provider with.
+
+    Public, and read from two places on purpose. :func:`_with_driver_defaults`
+    applies it to what gets *stored*; ``@identity-drivers`` lays it over the
+    serialized settings schema so the add form *shows* the same values. They
+    were two answers to one question for as long as only the first caller
+    existed: a Google provider saved from an untouched form stored the scope
+    ``("openid", "email", "profile")`` and ``trust_email_verification`` on,
+    while the form the operator had just read showed an empty scope box and
+    the switch off. Neither value was lost; both were invisible, and one of
+    them decides whether a provider's word on a verified address is taken.
 
     Kept on the driver class rather than as field defaults: a subinterface
     changing a default would have to redeclare the field, and a redeclared

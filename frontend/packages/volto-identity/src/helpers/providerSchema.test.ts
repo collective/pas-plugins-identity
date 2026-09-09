@@ -20,7 +20,7 @@ import {
   suggestedProviderId,
   toFormData,
 } from './providerSchema';
-import type { Driver } from '../types';
+import type { Driver, VoltoSchema } from '../types';
 
 const intl = {
   formatMessage: (m: { defaultMessage: string }) => m.defaultMessage,
@@ -182,6 +182,34 @@ describe('providerSchema', () => {
     expect(
       without.fieldsets.find((f) => f.id === MAPPING_FIELDSET)?.fields,
     ).toEqual(['propertymap']);
+  });
+
+  it('gives each mapping row a noun to be labelled with', () => {
+    // Volto's `object_list` widget reads the row schema's own `title` for the
+    // label of every row and for the noun on the add button. Without it the
+    // tab renders `UNDEFINED #1` above `+ Add undefined`, with the right data
+    // underneath and no error anywhere.
+    const schema = providerSchema(SERVED, DRIVERS, 'oidc', false, intl);
+
+    expect(schema.properties.propertymap?.schema).toHaveProperty(
+      'title',
+      'Claim',
+    );
+    expect(schema.properties.groupmap?.schema).toHaveProperty('title', 'Group');
+  });
+
+  it('labels the mapping columns rather than naming them', () => {
+    // They were the raw field names -- `claim`, `field`, `group`, `local` --
+    // which reached the form lowercase and untranslated, the only labels here
+    // no catalogue could reach.
+    const schema = providerSchema(SERVED, DRIVERS, 'oidc', false, intl);
+    const property = schema.properties.propertymap?.schema as VoltoSchema;
+    const group = schema.properties.groupmap?.schema as VoltoSchema;
+
+    expect(property.properties.claim.title).toBe('Claim path');
+    expect(property.properties.field.title).toBe('Profile field');
+    expect(group.properties.group.title).toBe('Provider group');
+    expect(group.properties.local.title).toBe('Local group');
   });
 
   it('drops the served driver field rather than merging it', () => {

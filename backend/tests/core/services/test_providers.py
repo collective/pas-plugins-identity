@@ -251,6 +251,105 @@ class TestDriverMetadata(ControlPanelCase):
         assert list(fieldsets) == ["default"]
 
 
+class TestTheSchemaShowsWhatWillBeStored(ControlPanelCase):
+    """What the add form seeds itself from.
+
+    Volto builds an add form's initial data out of ``properties[*].default``,
+    so a default missing here is a box the operator reads as empty and a value
+    the provider is saved with anyway. Every assertion below pairs the schema
+    against ``_with_driver_defaults``, which is what actually gets written:
+    the point is not the particular numbers but that the two agree.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_, manager) -> None:
+        self.portal = portal
+        self.request = request_
+
+    def _properties(self, driver_id: str) -> dict:
+        """Return one driver's serialized schema properties.
+
+        :param driver_id: The driver to read.
+        :returns: The ``properties`` mapping.
+        """
+        result = self.call(DriversGet)
+        driver = next(i for i in result["items"] if i["id"] == driver_id)
+        return driver["schema"]["properties"]
+
+    def test_the_scope_box_is_not_empty(self):
+        """The defect this class was written for. Google's scope lives on the
+        driver class because no single default suits every OAuth2 provider,
+        and the field therefore declares an empty tuple."""
+        assert self._properties("google")["scope"]["default"] == [
+            "openid",
+            "email",
+            "profile",
+        ]
+
+    def test_the_scope_is_a_list_rather_than_a_tuple(self):
+        """JSON has no tuple, and a ``Tuple`` field's default is one. Left
+        alone it serializes as an array anyway -- but only because the encoder
+        is forgiving, and the value round-trips back as a list the record then
+        refuses."""
+        default = self._properties("google")["scope"]["default"]
+
+        assert isinstance(default, list)
+
+    def test_each_driver_gets_its_own_scope(self):
+        """The overlay is on the serialized schema, not on the field: the
+        field object is shared by every driver inheriting ``IOAuth2Settings``,
+        so writing Google's default into it would give it to GitHub too."""
+        assert self._properties("github")["scope"]["default"] == [
+            "read:user",
+            "user:email",
+        ]
+
+    def test_a_trusted_provider_shows_as_trusted(self):
+        """The one with consequences. ``trust_email_verification`` decides
+        whether a provider's word on a verified address is taken here, and
+        Google is trusted by default -- so an operator reading the switch off
+        and saving it on is being told the opposite of what happens."""
+        assert self._properties("google")["trust_email_verification"]["default"] is True
+
+    def test_an_untrusted_provider_still_shows_as_untrusted(self):
+        """The control. A default that is simply the schema's own must not be
+        rewritten into something else."""
+        assert (
+            self._properties("oidc-generic")["trust_email_verification"]["default"]
+            is False
+        )
+
+    def test_the_group_claim_is_seeded_where_a_driver_has_one(self):
+        """``oidc-generic`` names the de-facto claim; Google's schema has no
+        group settings at all, which is why this is asked of the one and not
+        the other."""
+        assert self._properties("oidc-generic")["group_claim"]["default"] == "groups"
+
+    def test_the_form_and_the_record_agree(self):
+        """The property this exists to hold. Read every default off the
+        schema, read what would be stored for a provider created with an
+        untouched form, and require them to be the same -- which is what stops
+        the two drifting apart again the next time a driver gains an opinion.
+        """
+        from pas.plugins.identity.core.controlpanel import _with_driver_defaults
+
+        for driver_id in ("google", "github", "oidc-generic", "email"):
+            stored = _with_driver_defaults(driver_id, {})
+            properties = self._properties(driver_id)
+            for name, value in stored.items():
+                if name not in properties:
+                    # A stored setting the schema does not declare is a
+                    # separate defect; `test_seeds_no_setting_the_schema_lacks`
+                    # is what would catch one.
+                    continue
+                shown = properties[name].get("default")
+                expected = list(value) if isinstance(value, tuple) else value
+                assert shown == expected, (
+                    f"{driver_id}.{name}: the form shows {shown!r} and the "
+                    f"record would be written with {expected!r}."
+                )
+
+
 class TestReading(ControlPanelCase):
     @pytest.fixture(autouse=True)
     def _setup(self, portal, request_, manager, configured) -> None:
