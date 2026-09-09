@@ -1,15 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react';
 
 import ProfileView from './ProfileView';
-import { PORTRAIT } from '../../stories/fixtures';
+import { PORTRAIT, profileContent } from '../../stories/fixtures';
 
-const CONTENT = {
+const CONTENT = profileContent({
   '@id': '/identity-profiles/erico',
-  title: 'Érico Andrei',
+  id: 'erico',
+  login: 'erico@plone.org',
   fullname: 'Érico Andrei',
   description: 'Plone developer, and the person this add-on is written for.',
   image: { download: PORTRAIT, scales: { preview: { download: PORTRAIT } } },
-};
+});
 
 const meta: Meta<typeof ProfileView> = {
   title: 'Identity/Views/ProfileView',
@@ -31,4 +32,11 @@ export const WithoutAPicture: Story = {
 /** A profile minted at first login by a provider that sent only a name. */
 export const JustCreated: Story = {
   args: { content: { ...CONTENT, description: '', image: null } },
+};
+
+/** No full name yet, so the heading is the login the person signs in with. */
+export const WithoutAName: Story = {
+  args: {
+    content: { ...CONTENT, fullname: '', description: '', image: null },
+  },
 };

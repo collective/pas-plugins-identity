@@ -3,11 +3,12 @@ import { render, screen } from '../../testing';
 import React from 'react';
 
 import ProfileView, { pictureUrl } from './ProfileView';
+import { profileContent } from '../../stories/fixtures';
 
-const CONTENT = {
-  '@id': '/identity-profiles/alice',
-  title: 'Alice Liddell',
-  fullname: 'Alice Liddell',
+// No `title`. A Profile has no such field -- only a computed `Title()`, which
+// `plone.restapi` does not serialize -- and a fixture that carried one made
+// the fallback below pass for a reason no real payload supplies.
+const CONTENT = profileContent({
   description: 'Reads a lot.',
   image: {
     download: '/identity-profiles/alice/@@images/image',
@@ -15,7 +16,7 @@ const CONTENT = {
       preview: { download: '/identity-profiles/alice/@@images/image/preview' },
     },
   },
-};
+});
 
 describe('pictureUrl', () => {
   it('prefers a scale over the original', () => {
@@ -59,12 +60,29 @@ describe('ProfileView', () => {
     expect(document.querySelector('img')).toBeNull();
   });
 
-  it('falls back to the computed title when there is no full name', () => {
-    // The backend computes `title` from the full name and then the login, so
-    // it is never empty -- which makes it the honest fallback.
+  it('falls back to the login when there is no full name', () => {
+    // The same order the backend's own `Title()` uses. It used to fall back
+    // to `content.title`, which is never in the payload, so a person with a
+    // login and no full name was rendered as "Unnamed user".
     render(<ProfileView content={{ ...CONTENT, fullname: '' }} />);
 
-    expect(screen.getByRole('heading').textContent).toBe('Alice Liddell');
+    expect(screen.getByRole('heading').textContent).toBe('alice@example.com');
+  });
+
+  it('falls back to the userid when there is no login either', () => {
+    // The last rung the backend uses before giving up. A Profile always has
+    // an id, so this is the case that has to stop short of the message.
+    render(<ProfileView content={{ ...CONTENT, fullname: '', login: '' }} />);
+
+    expect(screen.getByRole('heading').textContent).toBe('alice');
+  });
+
+  it('says so when the profile carries no name at all', () => {
+    render(
+      <ProfileView content={{ ...CONTENT, fullname: '', login: '', id: '' }} />,
+    );
+
+    expect(screen.getByRole('heading').textContent).toBe('Unnamed user');
   });
 
   it('never publishes an address', () => {

@@ -21,26 +21,16 @@ import { Container } from 'semantic-ui-react';
 
 import { Helmet } from '@plone/volto/helpers/Helmet/Helmet';
 
+import type { ProfileUserContent } from '../../types';
+
 import './ProfileView.scss';
 
 const messages = defineMessages({
   noName: { id: 'profile-view-unnamed', defaultMessage: 'Unnamed user' },
 });
 
-/** The shape of the fields this view reads off a serialized Profile. */
-interface ProfileContent {
-  '@id': string;
-  title?: string;
-  fullname?: string;
-  description?: string;
-  image?: {
-    download?: string;
-    scales?: Record<string, { download?: string }>;
-  } | null;
-}
-
 interface ProfileViewProps {
-  content: ProfileContent;
+  content: ProfileUserContent;
 }
 
 /**
@@ -53,7 +43,7 @@ interface ProfileViewProps {
  * @param image The serialized image field.
  * @returns The URL, or null when the Profile has no picture.
  */
-export function pictureUrl(image: ProfileContent['image']): string | null {
+export function pictureUrl(image: ProfileUserContent['image']): string | null {
   if (!image) {
     return null;
   }
@@ -67,11 +57,15 @@ export function pictureUrl(image: ProfileContent['image']): string | null {
 
 const ProfileView: React.FC<ProfileViewProps> = ({ content }) => {
   const intl = useIntl();
-  // `title` is computed on the backend from the full name, falling back to
-  // the login -- so it is never empty, and it is the honest thing to fall
-  // back to before preferring a message of our own.
+  // The same order the backend's own `Title()` uses: full name, then login,
+  // then the userid, which is the object's id. Not `content.title` -- that is
+  // computed rather than stored, so `plone.restapi` never serializes it and
+  // this fell through to "Unnamed user" for anybody without a full name.
   const name =
-    content.fullname || content.title || intl.formatMessage(messages.noName);
+    content.fullname ||
+    content.login ||
+    content.id ||
+    intl.formatMessage(messages.noName);
   const picture = pictureUrl(content.image);
 
   return (

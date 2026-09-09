@@ -23,10 +23,12 @@ import type {
   ConfiguredProvider,
   ConsentRequest,
   Driver,
+  GroupContent,
   Identity,
   LoginProvider,
   OAuthClient,
   OAuthGrants,
+  ProfileUserContent,
   SigningKeyRing,
   UserAccount,
   UserProfile,
@@ -637,4 +639,77 @@ export function withUser(user: Partial<UserProfile> | null) {
       data: user === null ? null : { ...USER, ...user },
     },
   });
+}
+
+/**
+ * The keys every serialized object carries, whatever its type.
+ *
+ * Spread into the two factories below rather than restated in each fixture:
+ * a view reads four or five fields and a payload has thirty, and a fixture
+ * that lists them all buries the two lines a test is actually about.
+ */
+const CONTENT_BASE = {
+  '@components': {} as GroupContent['@components'],
+  UID: '0000000000000000000000000000dead',
+  allow_discussion: false,
+  changeNote: '',
+  created: '2026-01-01T00:00:00+00:00',
+  description: '',
+  is_folderish: true,
+  items: [],
+  items_total: 0,
+  layout: 'view',
+  lock: {} as GroupContent['lock'],
+  modified: '2026-01-01T00:00:00+00:00',
+  next_item: {} as GroupContent['next_item'],
+  parent: {} as GroupContent['parent'],
+  previous_item: {} as GroupContent['previous_item'],
+  type_title: null,
+  // The payload carries the working-copy label, not a revision number.
+  version: 'current',
+  versioning_enabled: true,
+  working_copy: null,
+  working_copy_of: null,
+};
+
+/**
+ * Build a serialized `UserProfile`.
+ *
+ * @param overrides What this fixture is actually about.
+ * @returns A complete Profile payload.
+ */
+export function profileContent(
+  overrides: Partial<ProfileUserContent> = {},
+): ProfileUserContent {
+  return {
+    ...CONTENT_BASE,
+    '@id': '/identity-profiles/alice',
+    '@type': 'UserProfile',
+    id: 'alice',
+    login: 'alice@example.com',
+    fullname: 'Alice Liddell',
+    review_state: 'complete',
+    image: null,
+    ...overrides,
+  };
+}
+
+/**
+ * Build a serialized `UserGroup`.
+ *
+ * @param overrides What this fixture is actually about.
+ * @returns A complete Group payload.
+ */
+export function groupContent(
+  overrides: Partial<GroupContent> = {},
+): GroupContent {
+  return {
+    ...CONTENT_BASE,
+    '@id': '/identity-profiles/staff',
+    '@type': 'UserGroup',
+    id: 'staff',
+    title: 'Staff',
+    review_state: 'active',
+    ...overrides,
+  };
 }

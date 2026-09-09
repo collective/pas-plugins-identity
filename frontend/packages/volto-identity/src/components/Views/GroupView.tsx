@@ -29,7 +29,7 @@ import { Helmet } from '@plone/volto/helpers/Helmet/Helmet';
 import { flattenToAppURL } from '@plone/volto/helpers/Url/Url';
 
 import { listGroupMembers } from '../../actions';
-import type { GroupMember, NestedGroup } from '../../types';
+import type { GroupContent, GroupMember, NestedGroup } from '../../types';
 
 import './GroupView.scss';
 
@@ -58,14 +58,6 @@ const messages = defineMessages({
   },
   loading: { id: 'group-view-loading', defaultMessage: 'Loading members…' },
 });
-
-/** The fields this view reads off a serialized group. */
-interface GroupContent {
-  '@id': string;
-  id: string;
-  title?: string;
-  description?: string;
-}
 
 interface GroupViewProps {
   content: GroupContent;
