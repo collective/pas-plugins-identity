@@ -2,7 +2,7 @@
 
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.services.base import IdentityService
-from pas.plugins.identity.server.claims import SCOPE_CLAIMS
+from pas.plugins.identity.server.claims import scope_claims
 from pas.plugins.identity.server.controlpanel.clients import get_client
 from pas.plugins.identity.server.grants.tokens import TTL_RECORD
 from pas.plugins.identity.server.pas import PLUGIN_ID
@@ -77,6 +77,6 @@ class GrantsGet(IdentityService):
         :returns: One mapping per scope, in a stable order.
         """
         return [
-            {"id": scope, "claims": list(SCOPE_CLAIMS.get(scope, ()))}
+            {"id": scope, "claims": list(scope_claims(scope))}
             for scope in sorted(scopes)
         ]

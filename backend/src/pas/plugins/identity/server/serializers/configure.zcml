@@ -1,0 +1,32 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <!-- One named adapter per scope, where the name is the scope. Registered
+       outside ``.interfaces.IIdentityServerLayer``, unlike every endpoint in
+       ``.browser``, and for the same reason the vocabularies are: the scopes
+       vocabulary is looked up while a client registration is validated, and
+       that happens wherever the client registry is written from, a setup
+       handler included. Bound to the server layer these would be invisible
+       there, and the form would offer no scopes at all.
+
+       A serializer releases nothing by itself. It answers a question the
+       token endpoint asks, so being registered on a site that never switched
+       the server on is not the attack surface an /authorize endpoint would
+       be. -->
+
+  <adapter
+      factory=".profile.ProfileScope"
+      name="profile"
+      />
+  <adapter
+      factory=".email.EmailScope"
+      name="email"
+      />
+  <adapter
+      factory=".address.AddressScope"
+      name="address"
+      />
+
+</configure>

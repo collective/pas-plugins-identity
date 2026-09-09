@@ -72,10 +72,13 @@ class TestTheDocument:
 
         assert set(self.doc["grant_types_supported"]) == set(GRANT_TYPES)
 
-    def test_it_advertises_the_scopes_the_claims_module_knows(self):
-        from pas.plugins.identity.server.claims import SCOPE_CLAIMS
+    def test_it_advertises_every_registered_scope(self):
+        """One list. The document is what a client reads to know what it may
+        ask for, so a scope with a serializer and no entry here is a scope
+        nobody can use."""
+        from pas.plugins.identity.server.serializers import declared_scopes
 
-        assert set(self.doc["scopes_supported"]) == {"openid", *SCOPE_CLAIMS}
+        assert set(self.doc["scopes_supported"]) == {"openid", *declared_scopes()}
 
     @pytest.mark.parametrize(
         "key,advertised",

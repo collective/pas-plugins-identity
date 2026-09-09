@@ -120,8 +120,20 @@ names are themselves sensitive, do not grant `profile` to a client you would not
 grant the group list to.
 ```
 
-There is no per-site claim extension. A field a site adds to its `UserProfile`
-type has no claim to go in. See {doc}`/concepts/federation` for why.
+## Adding to this table
+
+Every scope above is a named adapter, registered by this package, and the table
+is what those adapters declare rather than a list held anywhere.
+A downstream package registers one of its own to add a claim to a scope here,
+or to add a scope. See {doc}`/how-to-guides/serialize-a-claim`.
+
+| Fact | Value |
+|---|---|
+| Registered as | A named multi-adapter on the site and the request, `IScopeSerializer` |
+| The name | The scope |
+| Reached by a new scope | `scopes_supported`, `claims_supported`, the client registration form, the consent screen, and issued tokens |
+| Reserved | `sub`, `iss`, `aud`, `exp`, `iat`. A serializer returning one is ignored on that key. |
+| Empty values | `None`, `""`, `[]` and `{}` are dropped for every serializer alike. `False` is a value and survives. |
 
 ```{note}
 This page describes the contract as of the `[server]` layer's first release.
@@ -135,3 +147,4 @@ Moving one between scopes, or changing what `email_verified` asserts, is not.
 - {doc}`events`—claims coming the other way, in from a provider
 - {doc}`/concepts/federation`—why `description` and `groups` are released under `profile`
 - {doc}`/how-to-guides/register-an-oauth-client`—putting a relying party on the other end
+- {doc}`/how-to-guides/serialize-a-claim`—releasing a claim this table does not list

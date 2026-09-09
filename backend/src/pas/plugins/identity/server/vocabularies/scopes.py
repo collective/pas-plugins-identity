@@ -9,16 +9,16 @@ in the server rather than as a mistake in the registration.
 
 The terms come from
 :func:`pas.plugins.identity.server.discovery.scopes_supported`, which is what
-the discovery document advertises. One source, so a site that extends
-:data:`~pas.plugins.identity.server.claims.SCOPE_CLAIMS` gets the new scope
-offered in the form as well as announced to clients, and the form can never
-offer one the token endpoint would drop.
+the discovery document advertises. One source, so a package that registers a
+scope serializer gets the new scope offered in the form as well as announced
+to clients, and the form can never offer one the token endpoint would drop.
 
-A factory rather than a module-level ``SimpleVocabulary`` for two reasons:
-``SCOPE_CLAIMS`` is extensible at runtime and a vocabulary built at import
-time would freeze the shipped three, and a named utility is resolved when the
-field is validated rather than when its module is imported, which keeps the
-control panel's schema out of the server's import graph.
+A factory rather than a module-level ``SimpleVocabulary``, for two reasons.
+The registered serializers are what the terms come from and a vocabulary built
+at import time would freeze whatever was registered first; and a named utility
+is resolved when the field is validated rather than when its module is
+imported, which keeps the control panel's schema out of the server's import
+graph.
 """
 
 from zope.interface import implementer

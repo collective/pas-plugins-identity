@@ -8,8 +8,8 @@ server rather than as a mistake in the registration.
 
 The interesting part is not that the vocabulary lists four scopes. It is that
 it lists *the same* four the discovery document advertises, and keeps doing so
-when a site extends what this server releases: two lists that agree today and
-are computed separately drift the moment somebody adds a scope.
+when a package registers a scope serializer of its own: two lists that agree
+today and are computed separately drift the moment somebody adds a scope.
 """
 
 from pas.plugins.identity.server.controlpanel.interfaces import IClientRecords
@@ -54,13 +54,13 @@ class TestTheVocabulary:
         would show the operator a word no client will ever transmit."""
         assert all(term.title == term.value for term in vocabulary)
 
-    def test_it_grows_with_what_the_server_releases(self, portal, monkeypatch):
+    def test_it_grows_with_what_the_server_releases(self, portal, register_scope):
         """The reason it is a factory and not a module-level vocabulary built
-        at import time: a site that extends ``SCOPE_CLAIMS`` gets the scope
-        advertised to clients, and must get it offered in the form too."""
-        from pas.plugins.identity.server import claims
-
-        monkeypatch.setitem(claims.SCOPE_CLAIMS, "phone", ("phone_number",))
+        at import time: a package that registers a scope serializer gets the
+        scope advertised to clients, and must get it offered in the form too.
+        Otherwise the operator cannot register a client for the very scope
+        their add-on just added."""
+        register_scope("phone", claims=("phone_number",))
         factory = getUtility(IVocabularyFactory, name=SCOPES_VOCABULARY)
 
         assert "phone" in [term.value for term in factory(portal)]

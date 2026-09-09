@@ -52,6 +52,7 @@ Expect these to change without a migration path before 1.0.0.
 | REST endpoint names and payloads | Named in {doc}`endpoints`; no deprecation cycle yet |
 | Registry keys and defaults | Named in {doc}`settings`; a rename means a reinstall |
 | The driver contract | {doc}`driver-contract` is the current shape; a third-party driver may need edits |
+| The scope serializer contract | {doc}`/how-to-guides/serialize-a-claim` is the current shape; a downstream serializer may need edits |
 | Frontend routes and component names | Named in {doc}`frontend`; shadowed components especially |
 | The `[sql]` audit schema | One table today, and no migration tooling for it |
 | Event interfaces | Named in {doc}`events` |

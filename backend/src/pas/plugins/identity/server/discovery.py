@@ -21,8 +21,8 @@ and then gets a surprise has been lied to by it.
 """
 
 from pas.plugins.identity.core.interfaces import JSONDict
-from pas.plugins.identity.server.claims import OPENID_SCOPE
-from pas.plugins.identity.server.claims import SCOPE_CLAIMS
+from pas.plugins.identity.server.claims import scope_claims
+from pas.plugins.identity.server.claims import scopes
 from pas.plugins.identity.server.grants.codes import CHALLENGE_METHOD
 from pas.plugins.identity.server.grants.tokens import get_issuer
 from pas.plugins.identity.server.interfaces import GRANT_TYPES
@@ -51,20 +51,29 @@ ALWAYS_CLAIMS = ("sub", "iss", "aud", "exp", "iat")
 def scopes_supported() -> list[str]:
     """Return the scopes a client may ask for.
 
+    Every scope a serializer is registered for, so a downstream package that
+    registers one reaches this document -- and the client-registration form,
+    whose vocabulary is built from this same function -- without a second
+    registration and without editing this package.
+
     :returns: ``openid`` first, then the scopes that release claims, sorted so
         the document is byte-stable between requests -- a client that caches
         it and diffs on change should see a change only when one happened.
     """
-    return [OPENID_SCOPE, *sorted(SCOPE_CLAIMS)]
+    return scopes()
 
 
 def claims_supported() -> list[str]:
     """Return every claim this server can emit.
 
+    Read from what each scope *declares* rather than by serializing anybody:
+    this document is published to an unauthenticated caller, and what the
+    server can emit must not depend on who is asking.
+
     :returns: The always-present claims followed by every scope-gated one,
         deduplicated and sorted.
     """
-    gated = {claim for claims in SCOPE_CLAIMS.values() for claim in claims}
+    gated = {claim for scope in scopes() for claim in scope_claims(scope)}
     return [*ALWAYS_CLAIMS, *sorted(gated)]
 
 

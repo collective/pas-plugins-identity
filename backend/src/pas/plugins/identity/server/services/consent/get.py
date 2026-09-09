@@ -3,7 +3,7 @@
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.services.base import IdentityService
 from pas.plugins.identity.server.browser.authorize import CARRIED_PARAMS
-from pas.plugins.identity.server.claims import SCOPE_CLAIMS
+from pas.plugins.identity.server.claims import scope_claims
 from pas.plugins.identity.server.controlpanel.clients import get_client
 from plone import api
 from plone.protect.authenticator import createToken
@@ -102,6 +102,6 @@ class ConsentGet(IdentityService):
             order it will have documented them in.
         """
         return [
-            {"id": scope, "claims": list(SCOPE_CLAIMS.get(scope, ()))}
+            {"id": scope, "claims": list(scope_claims(scope))}
             for scope in self._param("scope").split()
         ]

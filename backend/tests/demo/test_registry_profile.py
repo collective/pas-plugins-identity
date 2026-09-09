@@ -18,7 +18,7 @@ from identitydemo import settings
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.utils.propertymap import MAPPABLE_FIELDS
-from pas.plugins.identity.server.claims import SCOPE_CLAIMS
+from pas.plugins.identity.server.claims import scope_claims
 from pas.plugins.identity.server.controlpanel.clients import get_client
 from pas.plugins.identity.server.controlpanel.clients import verify_secret
 from plone.registry.interfaces import IRegistry
@@ -157,7 +157,7 @@ class TestDemoRPRegistry:
     def test_every_mapped_claim_is_one_this_provider_publishes(self):
         """A map addressed by Plone field name instead of claim path resolves
         nothing, and does so silently."""
-        published = set(SCOPE_CLAIMS["profile"]) | set(SCOPE_CLAIMS["email"])
+        published = set(scope_claims("profile")) | set(scope_claims("email"))
         published |= {"address.formatted"}
         # ``fullname`` and ``picture_url`` are this package's own normalized
         # names for ``name`` and ``picture``, which the map may address

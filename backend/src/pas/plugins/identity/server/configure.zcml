@@ -20,6 +20,10 @@
        client registry is written from, a setup handler included. -->
   <include package=".vocabularies" />
 
+  <!-- The scope serializers, registered outside the browser layer for the
+       same reason. See the comment in ``.serializers``' own ZCML. -->
+  <include package=".serializers" />
+
   <include package=".controlpanel" />
   <include package=".services" />
   <include package=".subscribers" />
