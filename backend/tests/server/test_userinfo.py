@@ -51,19 +51,19 @@ def client(portal, issuer, user, add_client):
 def decode_id_token(token: str) -> dict:
     """Decode an ``id_token`` the way a relying party would.
 
-    Through authlib against the published JWKS, not by splitting the string:
-    a test that reads the payload without checking the signature would pass
-    for a token no client would accept.
+    Against the published JWKS, not by splitting the string: a test that
+    reads the payload without checking the signature would pass for a token
+    no client would accept.
 
     :param token: The encoded token.
     :returns: The validated claims.
     """
-    from authlib.jose import JsonWebToken
+    from joserfc import jwt
     from pas.plugins.identity.server.utils.keys import ALGORITHM
     from pas.plugins.identity.server.utils.keys import key_set
 
-    claims = JsonWebToken([ALGORITHM]).decode(token, key=key_set())
-    claims.validate()
+    claims = jwt.decode(token, key_set(), algorithms=[ALGORITHM]).claims
+    jwt.JWTClaimsRegistry().validate(claims)
     return dict(claims)
 
 

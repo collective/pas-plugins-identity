@@ -23,14 +23,14 @@ container would be.
 """
 
 from authlib.integrations.requests_client import OAuth2Session
-from authlib.jose import JsonWebKey
-from authlib.jose import JsonWebToken
 from authlib.oidc.discovery import OpenIDProviderMetadata
 from bs4 import BeautifulSoup
 from pas.plugins.identity import PACKAGE_NAME
 from pas.plugins.identity.server.controlpanel.clients import add_client
 from pas.plugins.identity.server.grants.tokens import decode_access_token
 from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
+from joserfc import jwt
+from joserfc.jwk import KeySet
 from plone import api
 from plone.app.testing import applyProfile
 from urllib.parse import parse_qs
@@ -311,16 +311,17 @@ class TestDiscovery:
             code_verifier="a-verifier-long-enough-to-satisfy-rfc-7636-minimums",
         )
 
-        claims = JsonWebToken(document["id_token_signing_alg_values_supported"]).decode(
+        claims = jwt.decode(
             token["id_token"],
-            key=JsonWebKey.import_key_set(jwks),
-            claims_options={
-                "iss": {"essential": True, "value": document["issuer"]},
-                "aud": {"essential": True, "value": "third-party-app"},
-                "nonce": {"essential": True, "value": nonce},
-            },
-        )
-        claims.validate()
+            KeySet.import_key_set(jwks),
+            algorithms=document["id_token_signing_alg_values_supported"],
+        ).claims
+        jwt.JWTClaimsRegistry(
+            iss={"essential": True, "value": document["issuer"]},
+            aud={"essential": True, "value": "third-party-app"},
+            exp={"essential": True},
+            nonce={"essential": True, "value": nonce},
+        ).validate(claims)
 
         assert claims["sub"] == END_USER
         assert claims["email"] == "elena@example.org"

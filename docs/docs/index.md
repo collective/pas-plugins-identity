@@ -1,15 +1,15 @@
 ---
 myst:
   html_meta:
-    "description": "Multi-provider external authentication for Plone, built on authlib."
-    "property=og:description": "Multi-provider external authentication for Plone, built on authlib."
+    "description": "Multi-provider external authentication for Plone, built on authlib and joserfc."
+    "property=og:description": "Multi-provider external authentication for Plone, built on authlib and joserfc."
     "property=og:title": "pas.plugins.identity"
     "keywords": "Plone, authentication, OAuth, OpenID Connect, OIDC, authlib, single sign-on"
 ---
 
 # pas.plugins.identity
 
-Multi-provider external authentication for Plone, built on [authlib](https://authlib.org/).
+Multi-provider external authentication for Plone, built on [authlib](https://authlib.org/) and [joserfc](https://jose.authlib.org/).
 
 ```{warning}
 **Alpha software.**

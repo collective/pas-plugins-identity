@@ -26,7 +26,16 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
+    # The OAuth client: core/flows imports authlib.integrations.requests_client
+    # at module scope. Its ``authlib.jose`` half is deprecated in favour of
+    # joserfc and goes away at 2.0.0, so nothing here reads a token with it any
+    # more -- but the client is not deprecated and is what carries every
+    # request.
     "Authlib>=1.3",
+    # JWTs: minting, verifying and the key ring. It arrives through Authlib
+    # today, which is exactly why it is declared -- what this package imports
+    # directly must not depend on another package's dependency graph.
+    "joserfc>=1.0",
     # Provider icons are SVG, which is XML, and an operator pastes them in.
     # core/svg parses one before storing it, and the entity-expansion attacks
     # against an XML parser are older than the scripting ones. Declared rather

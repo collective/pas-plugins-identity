@@ -246,28 +246,26 @@ class TestConfirming(MagicLinkCase):
         assert refusals[0].detail["reason"] == "Magic link has already been used"
 
     def test_expired_token_is_refused(self):
-        """The TTL is enforced by authlib, not by hope."""
+        """The TTL is enforced by the library, not by hope."""
         token, _ = magiclink.issue(ADDRESS, ttl=1)
         claims = magiclink.verify(token)
         assert claims["exp"] - claims["iat"] == 1
         # Rather than sleep, mint one that was already expired when issued.
-        from authlib.jose import JsonWebToken
+        from joserfc import jwt
+        from joserfc.jwk import OctKey
 
         now = datetime.now(UTC)
-        stale = (
-            JsonWebToken([magiclink.ALGORITHM])
-            .encode(
-                {"alg": magiclink.ALGORITHM},
-                {
-                    "sub": ADDRESS,
-                    "jti": "stale",
-                    "iat": int((now - timedelta(hours=2)).timestamp()),
-                    "exp": int((now - timedelta(hours=1)).timestamp()),
-                    "purpose": "magic-link",
-                },
-                magiclink.signing_keys()[0],
-            )
-            .decode("utf-8")
+        stale = jwt.encode(
+            {"alg": magiclink.ALGORITHM},
+            {
+                "sub": ADDRESS,
+                "jti": "stale",
+                "iat": int((now - timedelta(hours=2)).timestamp()),
+                "exp": int((now - timedelta(hours=1)).timestamp()),
+                "purpose": "magic-link",
+            },
+            OctKey.import_key(magiclink.signing_keys()[0]),
+            algorithms=[magiclink.ALGORITHM],
         )
 
         self.confirm(token=stale)
@@ -276,21 +274,19 @@ class TestConfirming(MagicLinkCase):
 
     def test_forged_token_is_refused(self):
         """Signed by somebody else is not signed."""
-        from authlib.jose import JsonWebToken
+        from joserfc import jwt
+        from joserfc.jwk import OctKey
 
-        forged = (
-            JsonWebToken([magiclink.ALGORITHM])
-            .encode(
-                {"alg": magiclink.ALGORITHM},
-                {
-                    "sub": "attacker@evil.example",
-                    "jti": "forged",
-                    "exp": int((datetime.now(UTC) + timedelta(minutes=5)).timestamp()),
-                    "purpose": "magic-link",
-                },
-                b"not-our-key-at-all-not-even-close",
-            )
-            .decode("utf-8")
+        forged = jwt.encode(
+            {"alg": magiclink.ALGORITHM},
+            {
+                "sub": "attacker@evil.example",
+                "jti": "forged",
+                "exp": int((datetime.now(UTC) + timedelta(minutes=5)).timestamp()),
+                "purpose": "magic-link",
+            },
+            OctKey.import_key(b"not-our-key-at-all-not-even-close"),
+            algorithms=[magiclink.ALGORITHM],
         )
 
         self.confirm(token=forged)
@@ -300,21 +296,19 @@ class TestConfirming(MagicLinkCase):
     def test_token_for_another_purpose_is_refused(self):
         """A correctly signed token minted for something else must not be
         usable as a login."""
-        from authlib.jose import JsonWebToken
+        from joserfc import jwt
+        from joserfc.jwk import OctKey
 
-        other = (
-            JsonWebToken([magiclink.ALGORITHM])
-            .encode(
-                {"alg": magiclink.ALGORITHM},
-                {
-                    "sub": ADDRESS,
-                    "jti": "other",
-                    "exp": int((datetime.now(UTC) + timedelta(minutes=5)).timestamp()),
-                    "purpose": "something-else",
-                },
-                magiclink.signing_keys()[0],
-            )
-            .decode("utf-8")
+        other = jwt.encode(
+            {"alg": magiclink.ALGORITHM},
+            {
+                "sub": ADDRESS,
+                "jti": "other",
+                "exp": int((datetime.now(UTC) + timedelta(minutes=5)).timestamp()),
+                "purpose": "something-else",
+            },
+            OctKey.import_key(magiclink.signing_keys()[0]),
+            algorithms=[magiclink.ALGORITHM],
         )
 
         self.confirm(token=other)

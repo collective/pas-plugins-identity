@@ -74,7 +74,7 @@ def _signing_key() -> JSONDict:
 def _verification_keys():
     """Return the key set to verify against, as a token-layer failure.
 
-    :returns: The authlib key set.
+    :returns: The key set to verify against.
     :raises TokenError: When the ring is empty.
     """
     try:
@@ -133,7 +133,8 @@ def mint_access_token(
     :returns: The token and its lifetime in seconds.
     :raises TokenError: When there is no issuer or no signing key.
     """
-    from authlib.jose import JsonWebToken
+    from joserfc import jwt
+    from joserfc.jwk import import_key
 
     lifetime = get_ttl() if ttl is None else ttl
     now = datetime.now(UTC)
@@ -152,9 +153,8 @@ def mint_access_token(
         "jti": secrets.token_urlsafe(16),
     }
     header = {"alg": ALGORITHM, "kid": key["kid"], "typ": "at+jwt"}
-    token = JsonWebToken([ALGORITHM]).encode(header, payload, key)
-    # authlib hands back bytes; everything downstream wants a str.
-    return token.decode("ascii"), lifetime
+    token = jwt.encode(header, payload, import_key(key), algorithms=[ALGORITHM])
+    return token, lifetime
 
 
 def decode_access_token(token: str, audience: str | None = None) -> JSONDict:
@@ -171,8 +171,8 @@ def decode_access_token(token: str, audience: str | None = None) -> JSONDict:
         all of them on purpose: telling a caller *which* check failed tells
         an attacker which part of their forgery to work on next.
     """
-    from authlib.jose import JsonWebToken
-    from authlib.jose.errors import JoseError
+    from joserfc import jwt
+    from joserfc.errors import JoseError
 
     claims_options = {
         "iss": {"essential": True, "value": get_issuer()},
@@ -183,19 +183,18 @@ def decode_access_token(token: str, audience: str | None = None) -> JSONDict:
         claims_options["aud"] = {"essential": True, "value": audience}
 
     try:
-        claims = JsonWebToken([ALGORITHM]).decode(
-            token,
-            key=_verification_keys(),
-            claims_options=claims_options,
-        )
-        claims.validate()
+        decoded = jwt.decode(token, _verification_keys(), algorithms=[ALGORITHM])
+        # Two calls rather than one: the decoder proves the token was signed
+        # by a key in the ring, and the registry then says what its claims
+        # have to say. Validation is not part of decoding here.
+        jwt.JWTClaimsRegistry(**claims_options).validate(decoded.claims)
     except JoseError as exc:
         raise TokenError("The access token was refused") from exc
     except (AttributeError, ValueError) as exc:
-        # A token that is not even a JWS reaches authlib as something it
-        # cannot split; that is a refusal, not a server error.
+        # Anything not even shaped like a token. A refusal, not a server
+        # error.
         raise TokenError("The access token was refused") from exc
-    return dict(claims)
+    return dict(decoded.claims)
 
 
 def mint_id_token(
@@ -227,7 +226,8 @@ def mint_id_token(
     :returns: The encoded token.
     :raises TokenError: When there is no issuer or no signing key.
     """
-    from authlib.jose import JsonWebToken
+    from joserfc import jwt
+    from joserfc.jwk import import_key
 
     now = datetime.now(UTC)
     key = _signing_key()
@@ -244,7 +244,7 @@ def mint_id_token(
     if nonce:
         payload["nonce"] = nonce
     header = {"alg": ALGORITHM, "kid": key["kid"], "typ": "JWT"}
-    return JsonWebToken([ALGORITHM]).encode(header, payload, key).decode("ascii")
+    return jwt.encode(header, payload, import_key(key), algorithms=[ALGORITHM])
 
 
 def token_response(

@@ -4,15 +4,13 @@ The two network calls -- the token request and the userinfo request -- are the
 only things stubbed. Everything that matters for security is real: the client
 is authlib's, and the ``id_token`` is a genuine RS256 JWT signed with a key
 generated here, so signature, issuer, audience, expiry and nonce are validated
-by authlib exactly as they would be against Dex.
+exactly as they would be against Dex.
 """
 
 from . import DEX_METADATA
 from . import DEX_PROVIDER
 from . import REDIRECT_URI
 from authlib.integrations.requests_client import OAuth2Session
-from authlib.jose import JsonWebKey
-from authlib.jose import JsonWebToken
 from datetime import datetime
 from datetime import timedelta
 from datetime import UTC
@@ -20,6 +18,8 @@ from pas.plugins.identity.core import flows
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.flows import SESSION_KEY
 from pas.plugins.identity.core.interfaces import FlowError
+from joserfc import jwt
+from joserfc.jwk import RSAKey
 from urllib.parse import parse_qs
 from urllib.parse import urlparse
 
@@ -28,10 +28,10 @@ import pytest
 
 #: The provider's signing key. Generated once per test run: RSA keygen is the
 #: slowest thing in this module by an order of magnitude.
-SIGNING_KEY = JsonWebKey.generate_key("RSA", 2048, {"kid": "test-key"}, True)
+SIGNING_KEY = RSAKey.generate_key(2048, {"kid": "test-key"}, private=True)
 
 #: The JWKS a provider would publish, private half removed.
-JWKS = {"keys": [SIGNING_KEY.as_dict(is_private=False)]}
+JWKS = {"keys": [SIGNING_KEY.as_dict(private=False)]}
 
 #: Discovery metadata including the JWKS, for the OIDC path.
 OIDC_METADATA = {**DEX_METADATA, "jwks": JWKS}
@@ -71,10 +71,9 @@ def id_token(
         "nonce": nonce,
         **extra,
     }
-    token = JsonWebToken(["RS256"]).encode(
-        {"alg": "RS256", "kid": "test-key"}, payload, SIGNING_KEY
+    return jwt.encode(
+        {"alg": "RS256", "kid": "test-key"}, payload, SIGNING_KEY, algorithms=["RS256"]
     )
-    return token.decode("utf-8")
 
 
 class StubResponse:

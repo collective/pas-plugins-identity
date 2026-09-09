@@ -1,7 +1,8 @@
 """Authorization-code flows.
 
-Every byte of OAuth/OIDC wire protocol goes through authlib: this module
-builds authlib clients from provider configuration, holds the per-attempt
+Every byte of OAuth/OIDC wire protocol goes through a library: authlib's
+``OAuth2Session`` carries the requests, and ``joserfc`` reads the tokens. This
+module builds the clients from provider configuration, holds the per-attempt
 security material in the session, and hands the callback's payload back to the
 caller. It constructs no authorize URLs, no token requests and parses no JWTs
 by hand.
@@ -36,6 +37,12 @@ ATTEMPT_TTL = timedelta(minutes=10)
 
 #: PKCE method. ``plain`` is never offered: it defeats the point.
 CODE_CHALLENGE_METHOD = "S256"
+
+#: Signature algorithms an ``id_token`` may be signed with. A whitelist, not
+#: a suggestion: a decoder that accepts whatever the token's own header names
+#: accepts ``none``, and the algorithm a provider actually uses is published
+#: in its metadata rather than chosen by the token in front of us.
+ID_TOKEN_ALGORITHMS = ("RS256", "ES256", "RS512")
 
 #: How many unfinished attempts a session keeps. The attempts live in a
 #: cookie, and every browser discards a ``Set-Cookie`` over 4096 bytes without
@@ -454,9 +461,9 @@ class FlowManager:
     ) -> JSONDict:
         """Validate an ``id_token`` and return its claims.
 
-        Signature, issuer, audience and expiry are checked by authlib; the
-        nonce is checked against the attempt, which is what ties the token to
-        the session that started the flow.
+        Signature, issuer, audience and expiry are checked here; the nonce is
+        checked against the attempt, which is what ties the token to the
+        session that started the flow.
 
         :param token: The token response.
         :param provider: The configured provider, naming the audience.
@@ -465,24 +472,26 @@ class FlowManager:
         :returns: The validated claims.
         :raises FlowError: When validation fails.
         """
-        from authlib.jose import JsonWebToken
-        from authlib.jose.errors import JoseError
+        from joserfc import jwt
+        from joserfc.errors import JoseError
+        from joserfc.jwk import KeySet
 
         jwks = metadata.get("jwks")
         if not jwks:
             raise FlowError("Provider issued an id_token but exposes no JWKS")
         audience = self._client_id(provider)
         try:
-            claims = JsonWebToken(["RS256", "ES256", "RS512"]).decode(
+            claims = jwt.decode(
                 token["id_token"],
-                key=jwks,
-                claims_options={
-                    "iss": {"essential": True, "value": metadata.get("issuer")},
-                    "aud": {"essential": True, "value": audience},
-                    "nonce": {"essential": True, "value": attempt.nonce},
-                },
-            )
-            claims.validate()
+                KeySet.import_key_set(jwks),
+                algorithms=list(ID_TOKEN_ALGORITHMS),
+            ).claims
+            jwt.JWTClaimsRegistry(
+                iss={"essential": True, "value": metadata.get("issuer")},
+                aud={"essential": True, "value": audience},
+                exp={"essential": True},
+                nonce={"essential": True, "value": attempt.nonce},
+            ).validate(claims)
         except JoseError as exc:
             raise FlowError(f"id_token rejected: {exc}") from exc
         return dict(claims)
@@ -495,10 +504,13 @@ class FlowManager:
         document: the audience of an ``id_token`` is the client *we*
         authenticated as, and the provider does not get to name it.
 
-        An empty client id is refused rather than passed on, because authlib
-        reads ``{"value": ""}`` as "no constraint" -- so a misconfigured
-        provider would silently disable the audience check and accept a token
-        minted for any other client.
+        An empty client id is refused rather than passed on. ``joserfc``
+        reads ``{"value": ""}`` as a constraint no token can satisfy, so a
+        misconfigured provider would fail every login with a claim error
+        rather than a configuration one -- and under authlib, which read the
+        same option as "no constraint", it silently disabled the audience
+        check and accepted a token minted for any other client. Refusing here
+        says which of the two it is, whatever the library underneath does.
 
         :param provider: The configured provider.
         :returns: The client id.
