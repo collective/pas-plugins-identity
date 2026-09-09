@@ -9,7 +9,7 @@ was actually created by the profile.
 
 from pas.plugins.identity.core.controlpanel.controlpanel import CONFIGLET_ID
 from pas.plugins.identity.core.controlpanel.interfaces import IIdentityControlpanel
-from pas.plugins.identity.core.controlpanel.interfaces import IIdentitySettings
+from pas.plugins.identity.core.controlpanel.interfaces import IIdentityPanelSchema
 from pas.plugins.identity.core.controlpanel.view import IdentitySettingsControlPanel
 from plone import api
 from zope.schema import getFieldNames
@@ -54,7 +54,7 @@ class TestConfiglet:
         # routes through is asserted separately rather than being implied
         # by the lookup, as it was when this queried for it directly.
         assert IIdentityControlpanel.providedBy(panel)
-        assert panel.schema is IIdentitySettings
+        assert panel.schema is IIdentityPanelSchema
 
 
 class TestSettingsRecords:
@@ -62,9 +62,13 @@ class TestSettingsRecords:
     def _setup(self, portal) -> None:
         self.portal = portal
 
-    @pytest.mark.parametrize("name", getFieldNames(IIdentitySettings))
+    @pytest.mark.parametrize("name", getFieldNames(IIdentityPanelSchema))
     def test_record_exists(self, name: str):
-        """Every field in the schema is a record the profile created."""
+        """Every field the panel serves is a record the profile created.
+
+        Over the combined schema, so this covers both halves: the panel
+        serving a field the registry has no record for is a form that errors
+        on open rather than one that shows a blank."""
         record = f"pas.plugins.identity.{name}"
 
         assert api.portal.get_registry_record(record, default=None) is not None
@@ -107,7 +111,7 @@ class TestClassicView:
         form writes the records the rest of the package reads."""
         view = api.content.get_view("identity-controlpanel", self.portal, self.request)
 
-        assert view.form.schema is IIdentitySettings
+        assert view.form.schema is IIdentityPanelSchema
         assert view.form.schema_prefix == "pas.plugins.identity"
 
     def test_view_renders(self):
