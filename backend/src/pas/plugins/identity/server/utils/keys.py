@@ -43,12 +43,16 @@ RING_SIZE = 3
 def generate_key() -> JSONDict:
     """Mint a signing key.
 
-    :returns: A private JWK, including the ``kid`` authlib derives for it.
+    :returns: A private JWK, including a ``kid``.
     """
-    from authlib.jose import JsonWebKey
+    from joserfc.jwk import RSAKey
 
-    key = JsonWebKey.generate_key("RSA", KEY_SIZE, is_private=True)
-    return key.as_dict(is_private=True)
+    # ``auto_kid`` is not the default and has to be asked for. Without it the
+    # key has no ``kid``, every token minted from it would carry none, and a
+    # relying party with a cached JWKS would have to try each published key
+    # in turn -- or give up, which several do.
+    key = RSAKey.generate_key(KEY_SIZE, private=True, auto_kid=True)
+    return key.as_dict(private=True)
 
 
 def get_keys() -> list[JSONDict]:
@@ -124,22 +128,18 @@ def public_jwks() -> JSONDict:
 
     :returns: ``{"keys": [...]}``, safe to publish.
     """
-    from authlib.jose import JsonWebKey
+    from joserfc.jwk import import_key
 
-    return {
-        "keys": [
-            JsonWebKey.import_key(key).as_dict(is_private=False) for key in get_keys()
-        ]
-    }
+    return {"keys": [import_key(key).as_dict(private=False) for key in get_keys()]}
 
 
 def key_set():
-    """Return the ring as an authlib key set, for verification.
+    """Return the ring as a key set, for verification.
 
-    :returns: A ``KeySet`` authlib can pick the right ``kid`` out of.
+    :returns: A ``KeySet`` the decoder picks the right ``kid`` out of.
     :raises ServerError: When the ring is empty.
     """
-    from authlib.jose import JsonWebKey
+    from joserfc.jwk import KeySet
 
     jwks = public_jwks()
     if not jwks["keys"]:
@@ -147,4 +147,4 @@ def key_set():
             "The authorization server has no signing key; apply the "
             "'server' GenericSetup profile"
         )
-    return JsonWebKey.import_key_set(jwks)
+    return KeySet.import_key_set(jwks)

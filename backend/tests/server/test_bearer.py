@@ -175,19 +175,17 @@ class TestAuthentication:
         """Not reachable through this server's own minting, which always sets
         one -- but the plugin is what stands between a token and a session,
         and it does not get to assume the token came from here."""
-        from authlib.jose import JsonWebToken
+        from joserfc import jwt
+        from joserfc.jwk import import_key
         from pas.plugins.identity.server.utils.keys import ALGORITHM
         from pas.plugins.identity.server.utils.keys import current_key
 
         key = current_key()
-        forged = (
-            JsonWebToken([ALGORITHM])
-            .encode(
-                {"alg": ALGORITHM, "kid": key["kid"], "typ": "at+jwt"},
-                {"iss": ISSUER, "aud": "app", "exp": 9999999999},
-                key,
-            )
-            .decode("ascii")
+        forged = jwt.encode(
+            {"alg": ALGORITHM, "kid": key["kid"], "typ": "at+jwt"},
+            {"iss": ISSUER, "aud": "app", "exp": 9999999999},
+            import_key(key),
+            algorithms=[ALGORITHM],
         )
 
         assert self.authenticate(forged) is None

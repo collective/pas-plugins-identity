@@ -161,8 +161,9 @@ def validate_logout_token(token: str) -> tuple[str, JSONDict]:
     :returns: The provider id and the validated claims.
     :raises LogoutError: When the token is not one this site should act on.
     """
-    from authlib.jose import JsonWebToken
-    from authlib.jose.errors import JoseError
+    from joserfc import jwt
+    from joserfc.errors import JoseError
+    from joserfc.jwk import KeySet
 
     provider = provider_for_issuer(_unverified_issuer(token))
     if provider is None:
@@ -178,23 +179,21 @@ def validate_logout_token(token: str) -> tuple[str, JSONDict]:
         raise LogoutError(f"{provider.provider_id}: no client id configured")
 
     try:
-        claims = JsonWebToken(list(ALGORITHMS)).decode(
-            token,
-            key=jwks,
-            claims_options={
-                "iss": {"essential": True, "value": metadata.get("issuer")},
-                "aud": {"essential": True, "value": audience},
-                "iat": {"essential": True},
-                "jti": {"essential": True},
-            },
+        decoded = jwt.decode(
+            token, KeySet.import_key_set(jwks), algorithms=list(ALGORITHMS)
         )
-        claims.validate()
+        jwt.JWTClaimsRegistry(
+            iss={"essential": True, "value": metadata.get("issuer")},
+            aud={"essential": True, "value": audience},
+            iat={"essential": True},
+            jti={"essential": True},
+        ).validate(decoded.claims)
     except JoseError as exc:
         raise LogoutError(f"logout_token rejected: {exc}") from exc
     except (AttributeError, ValueError) as exc:
         raise LogoutError("logout_token rejected: unreadable") from exc
 
-    claims = dict(claims)
+    claims = dict(decoded.claims)
     # Back-Channel Logout 1.0 §2.4: a logout token must say it is one, must identify a
     # session or a
     # subject, and must not carry a nonce -- the last because a nonce would

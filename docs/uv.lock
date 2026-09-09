@@ -955,6 +955,7 @@ source = { editable = "../backend" }
 dependencies = [
     { name = "authlib" },
     { name = "defusedxml" },
+    { name = "joserfc" },
     { name = "plone-api" },
     { name = "plone-app-dexterity" },
     { name = "plone-exportimport" },
@@ -971,6 +972,7 @@ requires-dist = [
     { name = "defusedxml" },
     { name = "horse-with-no-namespace", marker = "extra == 'test'" },
     { name = "import-linter", marker = "extra == 'test'" },
+    { name = "joserfc", specifier = ">=1.0" },
     { name = "pas-plugins-authomatic", marker = "extra == 'test'", specifier = ">=2.0.0" },
     { name = "pas-plugins-oidc", marker = "extra == 'test'", specifier = ">=2.0.0" },
     { name = "plone-api" },

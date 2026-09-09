@@ -113,10 +113,11 @@ unverified. All of them go onto the person's profile, and `email` is the head of
 the list.
 
 **Never construct protocol messages by hand.**
-Authorization URLs, token requests, and JWT parsing all go through authlib. CI
-checks this: a grep-level rule fails the build if protocol construction appears
-outside the flow modules. It exists because hand-rolled OAuth is how this goes
-wrong.
+Authorization URLs and token requests go through authlib's `OAuth2Session`;
+every JWT is read by `joserfc`. The suite checks this:
+`tests/test_protocol_libraries.py` fails when either library is imported
+outside the five modules that own a protocol boundary. It exists because
+hand-rolled OAuth is how this goes wrong.
 
 **Put your own data in `raw` and nowhere else.**
 Put the untouched payload in `raw` and read it in your own consumers if you must.

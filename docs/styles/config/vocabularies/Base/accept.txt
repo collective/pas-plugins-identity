@@ -7,6 +7,7 @@
 [Uu]nlink(ed|ing|s)?
 [Uu]serid(s)?
 authlib
+joserfc
 BTree
 cron
 deauthentication

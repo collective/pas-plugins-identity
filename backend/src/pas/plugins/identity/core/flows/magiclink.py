@@ -1,7 +1,7 @@
 """Magic-link tokens.
 
 A magic link is a signed, single-use, short-lived assertion that whoever holds
-it controls a mailbox. The signature is authlib's -- no hand-rolled JWT --
+it controls a mailbox. The signature is joserfc's -- no hand-rolled JWT --
 the key comes from the same derivation as the flow cookie, and the ``jti`` is
 burned server-side on first use so the second click fails.
 
@@ -115,7 +115,8 @@ def issue(
         no cookie of ours exists.
     :returns: The encoded token and its ``jti``.
     """
-    from authlib.jose import JsonWebToken
+    from joserfc import jwt
+    from joserfc.jwk import OctKey
 
     now = datetime.now(UTC)
     lifetime = ttl_for(ttl)
@@ -129,8 +130,10 @@ def issue(
     }
     if link_for is not None:
         payload["link_for"] = link_for
-    token = JsonWebToken([ALGORITHM]).encode({"alg": ALGORITHM}, payload, _key())
-    return token.decode("utf-8"), jti
+    token = jwt.encode(
+        {"alg": ALGORITHM}, payload, OctKey.import_key(_key()), algorithms=[ALGORITHM]
+    )
+    return token, jti
 
 
 def verify(token: str, purposes: tuple[str, ...] = (PURPOSE_LOGIN,)) -> JSONDict:
@@ -148,14 +151,20 @@ def verify(token: str, purposes: tuple[str, ...] = (PURPOSE_LOGIN,)) -> JSONDict
     :raises FlowError: When the token is malformed, unsigned by us, expired,
         or was minted for something the caller does not accept.
     """
-    from authlib.jose import JsonWebToken
-    from authlib.jose.errors import JoseError
+    from joserfc import jwt
+    from joserfc.errors import JoseError
+    from joserfc.jwk import OctKey
 
-    decoder = JsonWebToken([ALGORITHM])
+    registry = jwt.JWTClaimsRegistry(exp={"essential": True})
     for key in _all_keys():
         try:
-            claims = decoder.decode(token, key=key)
-            claims.validate()
+            claims = jwt.decode(
+                token, OctKey.import_key(key), algorithms=[ALGORITHM]
+            ).claims
+            # ``exp`` is required rather than merely honoured when present. A
+            # decoder validates no claim on its own, so a token minted without
+            # one would otherwise be a magic link that never expires.
+            registry.validate(claims)
         except JoseError:
             continue
         if claims.get("purpose") not in purposes:

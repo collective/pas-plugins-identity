@@ -98,7 +98,7 @@ dangerous version.
 | Rule | Enforced by |
 |---|---|
 | Core never imports from `[server]` | `import-linter`. See {doc}`/concepts/layers`. |
-| Protocol messages are never constructed by hand | A grep-level rule failing the build if authorization URLs, token requests, or JWT parsing appear outside the flow modules, which delegate to authlib. |
+| Protocol messages are never constructed by hand | `tests/test_protocol_libraries.py`, which fails when `authlib` or `joserfc` is imported outside the five modules that own a protocol boundary. Those five delegate: authlib carries the requests, `joserfc` reads the tokens. |
 
 ## Things to know before deploying
 

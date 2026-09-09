@@ -41,16 +41,14 @@ SUBJECT = "provider-subject-42"
 @pytest.fixture
 def signing_key():
     """A key pair standing in for the provider's."""
-    from authlib.jose import JsonWebKey
+    from joserfc.jwk import RSAKey
 
-    return JsonWebKey.generate_key("RSA", 2048, is_private=True)
+    return RSAKey.generate_key(2048, private=True, auto_kid=True)
 
 
 @pytest.fixture
 def provider(portal, signing_key, monkeypatch):
     """Configure an upstream provider whose JWKS this test controls."""
-    from authlib.jose import JsonWebKey
-
     set_providers([
         ProviderConfig.deserialize({
             "id": PROVIDER_ID,
@@ -64,9 +62,12 @@ def provider(portal, signing_key, monkeypatch):
             },
         })
     ])
-    public = JsonWebKey.import_key_set({
-        "keys": [signing_key.as_dict(is_private=False)]
-    })
+    # A plain JWKS document, which is what ``metadata_for`` really carries:
+    # it is what came back from the provider's ``jwks_uri``, parsed from JSON
+    # and no more. The fixture used to hold an imported key set, which the old
+    # library also accepted -- so the test agreed with the code about
+    # something production never did.
+    public = {"keys": [signing_key.as_dict(private=False)]}
     monkeypatch.setattr(
         flow_metadata,
         "metadata_for",
@@ -82,7 +83,7 @@ def mint(signing_key):
 
     :returns: Callable taking claim overrides and returning an encoded token.
     """
-    from authlib.jose import JsonWebToken
+    from joserfc import jwt
 
     def factory(**overrides) -> str:
         """Mint a logout token.
@@ -102,10 +103,8 @@ def mint(signing_key):
         }
         claims.update(overrides)
         claims = {k: v for k, v in claims.items() if v is not None}
-        header = {"alg": "RS256", "kid": signing_key.as_dict()["kid"]}
-        return (
-            JsonWebToken(["RS256"]).encode(header, claims, signing_key).decode("ascii")
-        )
+        header = {"alg": "RS256", "kid": signing_key.kid}
+        return jwt.encode(header, claims, signing_key, algorithms=["RS256"])
 
     return factory
 
@@ -188,25 +187,22 @@ class TestTokenValidation:
     def test_a_forged_signature_is_refused(self):
         """The provider's JWKS is the only thing that makes any of this
         trustworthy."""
-        from authlib.jose import JsonWebKey
-        from authlib.jose import JsonWebToken
+        from joserfc import jwt
+        from joserfc.jwk import RSAKey
 
-        other = JsonWebKey.generate_key("RSA", 2048, is_private=True)
-        forged = (
-            JsonWebToken(["RS256"])
-            .encode(
-                {"alg": "RS256", "kid": other.as_dict()["kid"]},
-                {
-                    "iss": ISSUER,
-                    "aud": CLIENT_ID,
-                    "sub": SUBJECT,
-                    "iat": 1,
-                    "jti": "forged",
-                    "events": {LOGOUT_EVENT: {}},
-                },
-                other,
-            )
-            .decode("ascii")
+        other = RSAKey.generate_key(2048, private=True, auto_kid=True)
+        forged = jwt.encode(
+            {"alg": "RS256", "kid": other.kid},
+            {
+                "iss": ISSUER,
+                "aud": CLIENT_ID,
+                "sub": SUBJECT,
+                "iat": 1,
+                "jti": "forged",
+                "events": {LOGOUT_EVENT: {}},
+            },
+            other,
+            algorithms=["RS256"],
         )
 
         with pytest.raises(LogoutError):

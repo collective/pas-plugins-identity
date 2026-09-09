@@ -18,7 +18,7 @@
 
 </div>
 
-The backend package for multi-provider external authentication in Plone, built on [authlib](https://authlib.org/).
+The backend package for multi-provider external authentication in Plone, built on [authlib](https://authlib.org/) and [joserfc](https://jose.authlib.org/).
 See also the frontend package [@plone-collective/volto-identity](https://github.com/collective/pas-plugins-identity/tree/main/frontend).
 
 One canonical Plone user id maps to many external identities — GitHub, Google, another Plone site, any OpenID Connect provider, an emailed magic link — for the same human, without running a separate identity broker.
