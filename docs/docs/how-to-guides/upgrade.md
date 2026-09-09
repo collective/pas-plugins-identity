@@ -12,13 +12,27 @@ myst:
 
 Take a new release into a site that already has this add-on.
 
-```{warning}
-**There are no GenericSetup upgrade steps in this release.**
+<!-- source: backend/src/pas/plugins/identity/profiles/default/metadata.xml -->
+<!-- source: backend/src/pas/plugins/identity/upgrades/ -->
 
-Both installable profiles are at version 1000 and declare no upgrades. Nothing
-in `portal_setup` will offer to upgrade this add-on, and a change to a registry
-record, a content type, or a plugin reaches an existing site **only if you
-reinstall**.
+`pas.plugins.identity:default` is at profile version **1004** and declares
+upgrade steps, so `portal_setup` offers them to a site installed against an
+earlier release.
+
+| To | Does |
+|---|---|
+| 1001 | Lets a group hold a group: rewrites the allowed content types on the `UserGroup` FTI. |
+| 1002 | Moves the profile's fields onto behaviors, in the FTI a site installed before them still has. |
+| 1003 | Adds the `sortable_title` index to the identity catalog and reindexes `SearchableText` in the site catalog. |
+| 1004 | Removes property map rows naming a field no login writes, and logs each one. |
+
+`pas.plugins.identity.server:default` is at 1000 and declares none.
+
+```{warning}
+An upgrade step covers what a profile cannot carry on its own—a persistent
+object written at install, or a value only a walk of the site can compute.
+Everything else reaches a site by **reapplying the profile**, which is step 3
+below and is not optional.
 
 This is what alpha means here. See {doc}`/reference/stability`.
 ```

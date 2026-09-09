@@ -1,10 +1,12 @@
 """``POST @identity-providers`` -- create, or run an action."""
 
 from pas.plugins.identity import logger
+from pas.plugins.identity.core.controlpanel import check_propertymap
 from pas.plugins.identity.core.controlpanel import check_signin_policy
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.controlpanel import InvalidColor
+from pas.plugins.identity.core.controlpanel import InvalidPropertyMap
 from pas.plugins.identity.core.controlpanel import InvalidProviderId
 from pas.plugins.identity.core.controlpanel import InvalidSignInPolicy
 from pas.plugins.identity.core.controlpanel import ProviderConfig
@@ -60,10 +62,9 @@ class ProvidersPost(ProvidersService):
                 409, "Already configured", f"{provider_id!r} already exists."
             )
 
-        try:
-            check_signin_policy(data.get("config", {}) or {})
-        except InvalidSignInPolicy as error:
-            return self._error(400, "Nobody could sign in", str(error))
+        refusal = self._refuse_unworkable(data)
+        if refusal is not None:
+            return refusal
 
         try:
             provider = ProviderConfig(
@@ -84,6 +85,28 @@ class ProvidersPost(ProvidersService):
         set_providers([*get_providers(), provider])
         self.request.response.setStatus(201)
         return self._render(provider)
+
+    def _refuse_unworkable(self, data: JSONDict) -> JSONDict | None:
+        """Refuse a provider whose configuration could not do its job.
+
+        Both checks are about a provider that would store cleanly and then be
+        useless: one that admits nobody, and one whose map writes nowhere. An
+        operator finds out here rather than from a login that goes wrong or a
+        field that stays empty.
+
+        :param data: The request body.
+        :returns: An error body, or ``None`` when the configuration works.
+        """
+        try:
+            check_signin_policy(data.get("config", {}) or {})
+        except InvalidSignInPolicy as error:
+            return self._error(400, "Nobody could sign in", str(error))
+
+        try:
+            check_propertymap(data.get("propertymap", {}) or {})
+        except InvalidPropertyMap as error:
+            return self._error(400, "Invalid property map", str(error))
+        return None
 
     def _test_connection(self, provider_id: str) -> JSONDict:
         """Check that a provider's metadata can actually be resolved.

@@ -51,13 +51,16 @@ class PloneIdentityDriver(GenericOIDCDriver):
     #: registered claim for a biography, and the server layer releases one
     #: under ``profile`` regardless. It resolves off the raw payload, since
     #: normalization has no name of its own for it.
+    #: No row for the address and none for the picture, though this peer
+    #: publishes both. Each has its own path: addresses are appended by
+    #: ``sync_addresses``, and a portrait is synced from the normalized
+    #: ``picture_url`` claim when ``sync_portraits`` is on. Mapping them wrote
+    #: nothing and read as though it did.
     default_propertymap = {  # noqa: RUF012
-        "email": "email",
         "fullname": "fullname",
         "website": "home_page",
         "description": "description",
         "address.formatted": "location",
-        "picture_url": "portrait",
     }
 
     #: A peer releases ``groups`` under the ``profile`` scope this driver

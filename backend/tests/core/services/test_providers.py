@@ -695,14 +695,30 @@ class TestPropertyMapThroughTheAPI(ControlPanelCase):
             payload={
                 "id": "keycloak",
                 "driver": "oidc-generic",
-                "propertymap": {"preferred_username": "username"},
+                "propertymap": {"preferred_username": "fullname"},
             },
         )
 
-        assert rendered["propertymap"] == {"preferred_username": "username"}
+        assert rendered["propertymap"] == {"preferred_username": "fullname"}
         assert get_provider("keycloak").propertymap == {
-            "preferred_username": "username"
+            "preferred_username": "fullname"
         }
+
+    def test_a_row_no_login_would_write_is_refused(self):
+        """``portrait`` is a reasonable guess and this package does sync one
+        -- from the claim, with no row at all. Stored, it did nothing."""
+        rendered = self.call(
+            ProvidersPost,
+            payload={
+                "id": "keycloak",
+                "driver": "oidc-generic",
+                "propertymap": {"picture": "portrait"},
+            },
+        )
+
+        assert rendered["error"]["type"] == "Invalid property map"
+        assert "portrait" in rendered["error"]["message"]
+        assert get_provider("keycloak") is None
 
     def test_listing_carries_the_map(self):
         rendered = self.call(ProvidersGet)
@@ -710,9 +726,20 @@ class TestPropertyMapThroughTheAPI(ControlPanelCase):
         assert "propertymap" in rendered["items"][0]
 
     def test_patched_in_place(self):
-        self.call(ProvidersPatch, "dex", payload={"propertymap": {"login": "username"}})
+        self.call(ProvidersPatch, "dex", payload={"propertymap": {"blog": "home_page"}})
 
-        assert get_provider("dex").propertymap == {"login": "username"}
+        assert get_provider("dex").propertymap == {"blog": "home_page"}
+
+    def test_a_patch_that_would_add_a_dead_row_is_refused(self):
+        """And the provider keeps the map it had, rather than half of one."""
+        before = get_provider("dex").propertymap
+
+        rendered = self.call(
+            ProvidersPatch, "dex", payload={"propertymap": {"email": "email"}}
+        )
+
+        assert rendered["error"]["type"] == "Invalid property map"
+        assert get_provider("dex").propertymap == before
 
     def test_patch_can_clear_the_map(self):
         self.call(ProvidersPatch, "dex", payload={"propertymap": {}})

@@ -82,6 +82,34 @@ def demo_registry(portal):
 
 
 @pytest.fixture
+def store_legacy_propertymap(portal):
+    """Return a writer that plants a property map the schema now refuses.
+
+    The map's values are a ``Choice`` over the fields a login can write, so
+    ``registry[name] = {"picture": "portrait"}`` raises. A site configured
+    before that was true still has such rows in its database, and the code
+    that reads them -- the filter on every login, the upgrade step that
+    removes them -- is only testable against data that actually exists.
+
+    Writing past the field is deliberate and is the only way to produce it:
+    ``Record.value`` validates, so the value goes into the records' own value
+    mapping, which is where ``Record.value`` reads it back from.
+
+    :param portal: The Plone site.
+    :returns: Callable taking a provider id and a map.
+    """
+    from plone.registry.interfaces import IRegistry
+    from zope.component import getUtility
+
+    def store(provider_id: str, propertymap: dict[str, str]) -> None:
+        registry = getUtility(IRegistry)
+        name = f"pas.plugins.identity.providers.{provider_id}.propertymap"
+        registry.records._values[name] = dict(propertymap)
+
+    return store
+
+
+@pytest.fixture
 def acl_users(portal):
     """Return the site's PAS instance.
 

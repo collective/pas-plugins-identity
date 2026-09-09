@@ -68,6 +68,7 @@ from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from pas.plugins.identity.core.txn import note_profile_created
 from pas.plugins.identity.core.utils.emails import normalize
+from pas.plugins.identity.core.utils.propertymap import MAPPABLE_FIELDS
 from pas.plugins.identity.core.utils.propertymap import resolve_claim
 from pas.plugins.identity.core.verification import record_verified_addresses
 from persistent.mapping import PersistentMapping
@@ -83,22 +84,13 @@ from zope.lifecycleevent import modified
 PROVIDER_VALUES_KEY = "pas.plugins.identity.provider_values"
 
 #: UserProfile fields a provider may ever write, whatever its property map says.
-#: ``userid`` is the join to the identity store and is permanent; ``login`` is
-#: half of the case-folded index the enumeration plugin queries; ``group_ids``
-#: is group membership, and a provider that could edit it could grant itself
-#: roles. A map naming any of them is ignored rather than refused: the map is
-#: typed in a control panel and a typo there must not fail a login.
 #:
-#: ``email`` is absent for a different reason: it is derived from ``emails``,
-#: and the addresses have their own path in :func:`sync_addresses`. A map
-#: naming it is ignored here and still honoured against the *Plone user*,
-#: which is what :mod:`pas.plugins.identity.core.utils.propertymap` applies.
-WRITABLE_FIELDS = frozenset({
-    "fullname",
-    "home_page",
-    "description",
-    "location",
-})
+#: :data:`~pas.plugins.identity.core.utils.propertymap.MAPPABLE_FIELDS` is the
+#: definition and carries the reasons; this is the membership test the sync
+#: does. It stays a filter rather than becoming an assertion: the field is a
+#: ``Choice`` now, so nothing new can be written, but a site that stored a row
+#: before it was must still be able to log somebody in.
+WRITABLE_FIELDS = frozenset(MAPPABLE_FIELDS)
 
 #: Applied when a provider has no property map of its own.
 #:

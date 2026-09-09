@@ -80,11 +80,16 @@ claim names rather than any one provider's.
 
 | Driver | Map |
 |---|---|
-| `oidc-generic`, `google`, `github` | `email` → `email`, `fullname` → `fullname` |
-| `plone-identity` | those two, plus `website` → `home_page`, `description` → `description`, `address.formatted` → `location`, `picture_url` → `portrait` |
-| `email` | `email` → `email` |
+| `oidc-generic`, `google`, `github` | `fullname` → `fullname` |
+| `plone-identity` | that, plus `website` → `home_page`, `description` → `description`, `address.formatted` → `location` |
+| `email` | empty |
 
-No driver maps `username`. Providers publish it; Plone has no property for it.
+A map may only write the four fields in {doc}`/reference/settings`, so no driver
+seeds a row for an address or a portrait. Both arrive on a login regardless: an
+address is appended to the profile's own list, and a portrait is fetched from
+the `picture_url` claim when `sync_portraits` is on.
+
+No driver maps `username`. Providers publish it; a Profile has no such field.
 
 ## Driver notes
 

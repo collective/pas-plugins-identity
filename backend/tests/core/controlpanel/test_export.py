@@ -89,7 +89,7 @@ def configured() -> ProviderConfig:
         background_color="#24292f",
         foreground_color="#ffffff",
         config={"client_id": "abc", "client_secret": "s3cr3t"},
-        propertymap={"login": "username"},
+        propertymap={"name": "fullname"},
         groupmap={"admins": "Site Administrators"},
     )
 

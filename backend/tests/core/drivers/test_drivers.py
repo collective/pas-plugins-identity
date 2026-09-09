@@ -10,6 +10,7 @@ from . import DEX_USERINFO
 from . import GITHUB_USER
 from . import GOOGLE_USERINFO
 from . import OAUTH_DRIVERS
+from pas.plugins.identity.core.controlpanel import check_propertymap
 from pas.plugins.identity.core.drivers import all_drivers
 from pas.plugins.identity.core.drivers import get_driver
 from pas.plugins.identity.core.drivers.base import BaseDriver
@@ -20,6 +21,7 @@ from pas.plugins.identity.core.drivers.oidc import GenericOIDCDriver
 from pas.plugins.identity.core.drivers.settings import IDriverSettings
 from pas.plugins.identity.core.interfaces import ClaimsError
 from pas.plugins.identity.core.interfaces import IDriver
+from pas.plugins.identity.core.utils.propertymap import MAPPABLE_FIELDS
 from plone.app.users.browser.schemaeditor import getFromBaseSchema
 from plone.app.users.schema import IUserDataSchema
 from zope.i18nmessageid import Message
@@ -182,23 +184,32 @@ class TestDefaultPropertyMap:
 
     @pytest.mark.parametrize("factory", ALL_DRIVERS)
     def test_targets_a_field_the_site_has(self, factory: type[BaseDriver]):
-        """A seeded mapping writes somewhere a fresh site actually has.
+        """A seeded mapping writes somewhere a login actually writes.
 
-        The vocabulary the control panel offers is built from the site's live
-        member schema, and a site may extend it -- but a *default* may only
-        name what a stock site already carries, because that is all a fresh
-        one has. ``username`` is the trap this catches: providers publish it,
-        Plone has no member field for it, and a default naming it would look
-        right in the form and resolve to nothing on every login.
+        Not "somewhere the member schema has a field", which is what this
+        used to assert and is a wider set than a login honours: ``email`` and
+        ``portrait`` are both member fields, both handled by this package,
+        and neither is written through a map. A default naming one looked
+        right in the form and was dropped on every login.
+
+        ``username`` is the other trap, and this still catches it: providers
+        publish it and nothing here has such a field at all.
         """
-        stock = set(getFromBaseSchema(IUserDataSchema))
-
         for claim, field in factory().default_propertymap.items():
-            assert field in stock, f"{claim} -> {field}"
+            assert field in MAPPABLE_FIELDS, f"{claim} -> {field}"
+
+    def test_a_seeded_map_is_one_the_registry_would_store(self):
+        """The consequence of the test above, and the reason it matters: a
+        default is put in the form of every new provider, so a driver seeding
+        an unwritable row would make the control panel refuse to save one."""
+        for factory in ALL_DRIVERS:
+            check_propertymap(factory().default_propertymap)
 
     def test_username_is_not_a_member_field(self):
-        """The premise of the test above, stated rather than assumed."""
+        """The premise of the older form of the test above, kept because a
+        driver naming ``username`` is the mistake most worth catching."""
         assert "username" not in set(getFromBaseSchema(IUserDataSchema))
+        assert "username" not in MAPPABLE_FIELDS
 
     @pytest.mark.parametrize("factory", ALL_DRIVERS)
     def test_claims_are_paths(self, factory: type[BaseDriver]):

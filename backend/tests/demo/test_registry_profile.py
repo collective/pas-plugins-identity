@@ -17,6 +17,7 @@ against is entirely in the XML.
 from identitydemo import settings
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.controlpanel import get_providers
+from pas.plugins.identity.core.utils.propertymap import MAPPABLE_FIELDS
 from pas.plugins.identity.server.claims import SCOPE_CLAIMS
 from pas.plugins.identity.server.controlpanel.clients import get_client
 from pas.plugins.identity.server.controlpanel.clients import verify_secret
@@ -67,7 +68,18 @@ class TestDemoIdPRegistry:
         login that applies it resolves nothing."""
         provider = get_provider("github")
         assert provider.propertymap["bio"] == "description"
-        assert provider.propertymap["picture_url"] == "portrait"
+        assert provider.propertymap["blog"] == "home_page"
+
+    def test_the_map_writes_only_fields_a_login_writes(self):
+        """The profile used to map ``email`` and ``picture_url`` as well.
+        Neither was ever applied: an address is appended by ``sync_addresses``
+        and a portrait is synced from the claim itself, so both rows were
+        stored, exported, and dropped on every login."""
+        assert set(get_provider("github").propertymap.values()) <= set(MAPPABLE_FIELDS)
+
+    def test_the_magic_link_needs_no_map_at_all(self):
+        """Its one claim is the address, which is not mapped."""
+        assert get_provider("email").propertymap == {}
 
     def test_the_interface_bound_sections_applied(self):
         """They sit above the provider records, so a provider block that
@@ -152,6 +164,12 @@ class TestDemoRPRegistry:
         # directly; everything else has to be a real claim.
         published |= {"fullname", "picture_url"}
         assert set(get_provider("demo-idp").propertymap) <= published
+
+    def test_the_relying_party_writes_only_fields_a_login_writes(self):
+        """The other half of the demo, and the same rule."""
+        assert set(get_provider("demo-idp").propertymap.values()) <= set(
+            MAPPABLE_FIELDS
+        )
 
 
 class TestTheMapNamesGroupsSomebodyIsIn:

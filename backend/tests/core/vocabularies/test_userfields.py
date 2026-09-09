@@ -1,6 +1,11 @@
-"""The vocabulary of user fields a claim can be mapped onto."""
+"""The vocabulary of Profile fields a claim can be mapped onto."""
 
+from pas.plugins.identity.core.behaviors.details import IProfileDetails
+from pas.plugins.identity.core.contents.profile import IUserProfileSchema
+from pas.plugins.identity.core.subscribers import WRITABLE_FIELDS
+from pas.plugins.identity.core.utils.propertymap import MAPPABLE_FIELDS
 from pas.plugins.identity.core.vocabularies.userfields import USER_FIELDS_VOCABULARY
+from pas.plugins.identity.exportimport.schema import USER_FIELDS
 from zope.component import getUtility
 from zope.schema.interfaces import IVocabularyFactory
 
@@ -26,37 +31,63 @@ class TestUserFieldsVocabulary:
         """The frontend asks for it by name through @vocabularies."""
         assert self.vocabulary is not None
 
-    def test_offers_the_standard_member_fields(self):
+    def test_offers_exactly_the_fields_a_login_writes(self):
+        """Not a list kept in step by hand: the same tuple the sync filters
+        on, so the picker cannot offer a row the login would drop."""
+        assert self.tokens() == list(MAPPABLE_FIELDS)
+
+    def test_offers_nothing_handled_somewhere_else(self):
+        """``email`` and ``portrait`` are the two guesses that read as
+        reasonable. An address is appended by ``sync_addresses`` and a
+        portrait is synced from the ``picture_url`` claim, so a row naming
+        either was stored, exported, and dropped on every login."""
         tokens = self.tokens()
 
-        assert "fullname" in tokens
-        assert "email" in tokens
+        assert "email" not in tokens
+        assert "portrait" not in tokens
 
-    def test_offers_the_extended_profile_fields(self):
-        """These come from IUserDataSchema, not from a list kept here."""
+    def test_offers_nothing_a_provider_may_never_write(self):
+        """``login`` is half of the enumeration index, ``group_ids`` is
+        membership, and ``userid`` is the join to the identity store."""
         tokens = self.tokens()
 
-        assert "home_page" in tokens
-        assert "location" in tokens
+        assert "login" not in tokens
+        assert "group_ids" not in tokens
+        assert "userid" not in tokens
 
-    def test_excludes_registration_mechanics(self):
-        """The reason this is not plone.app.users.user_registration_fields:
-        a claim must never be written to a password field."""
-        tokens = self.tokens()
+    def test_terms_carry_the_label_the_profile_form_uses(self):
+        """Read off the schema rather than restated here, so a field renamed
+        on the form is renamed in this picker in the same commit."""
+        assert (
+            self.vocabulary.getTerm("fullname").title
+            == IUserProfileSchema["fullname"].title
+        )
+        assert (
+            self.vocabulary.getTerm("home_page").title
+            == IProfileDetails["home_page"].title
+        )
 
-        assert "password" not in tokens
-        assert "password_ctl" not in tokens
-        assert "mail_me" not in tokens
+    def test_a_field_is_titled_rather_than_named(self):
+        """``description`` is shown as *Biography*, which is what the profile
+        form calls it and what an operator is looking for."""
+        assert self.vocabulary.getTerm("description").title == "Biography"
 
-    def test_terms_carry_a_human_title(self):
-        """The control panel shows the label the user form uses."""
-        term = self.vocabulary.getTerm("fullname")
+    def test_in_the_order_the_fields_are_declared(self):
+        """Four terms, so a sort by title would only hide which of them the
+        form considers the important one."""
+        assert self.tokens()[0] == "fullname"
 
-        assert term.title
-        assert term.title != "fullname"
 
-    def test_sorted_by_title(self):
-        """A long list is only usable in a predictable order."""
-        titles = [term.title.lower() for term in self.vocabulary]
+class TestTheThreeAnswersAgree:
+    """One definition, and the two filters that used to be their own.
 
-        assert titles == sorted(titles)
+    A login filtered on ``WRITABLE_FIELDS``, a principal document on
+    ``USER_FIELDS``, and the control panel on nothing at all. The first two
+    happened to hold the same four names; nothing made them.
+    """
+
+    def test_a_login_filters_on_the_definition(self):
+        assert frozenset(MAPPABLE_FIELDS) == WRITABLE_FIELDS
+
+    def test_a_principal_document_carries_the_definition(self):
+        assert USER_FIELDS is MAPPABLE_FIELDS

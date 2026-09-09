@@ -47,6 +47,7 @@ from pas.plugins.identity.core.drivers import get_driver
 from pas.plugins.identity.core.drivers.base import BaseDriver
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.interfaces import ProviderUnusable
+from pas.plugins.identity.core.utils.propertymap import MAPPABLE_FIELDS
 from pas.plugins.identity.core.utils.svg import decode_upload
 from pas.plugins.identity.core.utils.svg import encode_upload
 from pas.plugins.identity.core.utils.svg import sanitize as sanitize_svg
@@ -119,6 +120,36 @@ def normalize_color(value: str) -> str:
     if not HEX_COLOR_PATTERN.match(text):
         raise InvalidColor(f"{value!r} is not a hex colour such as #24292f")
     return text.lower()
+
+
+class InvalidPropertyMap(ValueError):
+    """Raised when a property map names a field a login would never write."""
+
+
+def check_propertymap(propertymap: dict[str, str]) -> None:
+    """Refuse a property map with a row that would do nothing.
+
+    The registry field refuses one too -- its values are a ``Choice`` over
+    :data:`~pas.plugins.identity.core.vocabularies.userfields.USER_FIELDS_VOCABULARY`
+    -- but it refuses with ``WrongContainedType([ConstraintNotSatisfied(...)])``,
+    which names neither the row nor the fields that would have been accepted.
+    This is checked first so that an operator is told which target is wrong and
+    what the alternatives are.
+
+    :param propertymap: Claim path to Profile field, as supplied.
+    :raises InvalidPropertyMap: When any target is not a mappable field.
+    """
+    unusable = sorted({
+        field for field in (propertymap or {}).values() if field not in MAPPABLE_FIELDS
+    })
+    if not unusable:
+        return
+    raise InvalidPropertyMap(
+        f"{', '.join(repr(name) for name in unusable)} cannot be written by a "
+        f"property map. A login writes {', '.join(MAPPABLE_FIELDS)}; an "
+        "address arrives through the addresses of the profile and a portrait "
+        "through the picture claim, neither of which is mapped."
+    )
 
 
 class InvalidSignInPolicy(ValueError):
@@ -932,9 +963,12 @@ def set_providers(providers: list[ProviderConfig]) -> None:
     :param providers: The providers to store, in the order they should
         appear.
     :raises InvalidProviderId: When any id cannot be part of a record name.
+    :raises InvalidPropertyMap: When any property map names a field a login
+        would never write.
     """
     for provider in providers:
         validate_provider_id(provider.provider_id)
+        check_propertymap(provider.propertymap)
     for provider_id in _provider_ids():
         _forget_provider(provider_id)
     for order, provider in enumerate(providers):

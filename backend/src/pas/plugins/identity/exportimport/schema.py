@@ -65,6 +65,7 @@ exists, because nesting can name a group that comes later in the list.
 
 from dataclasses import dataclass
 from dataclasses import field
+from pas.plugins.identity.core.utils.propertymap import MAPPABLE_FIELDS
 from typing import Any
 
 
@@ -81,12 +82,12 @@ GENERATOR = "pas.plugins.identity"
 #: Profile fields carried for each user. ``userid`` and ``login`` are handled
 #: separately: they are required, and they are the two that must not be
 #: treated as optional text.
-USER_FIELDS = (
-    "fullname",
-    "home_page",
-    "description",
-    "location",
-)
+#:
+#: The same tuple a property map may write to, and deliberately the same
+#: object rather than a copy that agrees today: a document carries what a
+#: login can fill, and the two drifting apart is how an import comes to write
+#: a field no provider could have set.
+USER_FIELDS = MAPPABLE_FIELDS
 
 #: Group fields carried for each group, beside the required ``group_id``.
 GROUP_FIELDS = (

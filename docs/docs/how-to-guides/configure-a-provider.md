@@ -96,6 +96,46 @@ version you pasted. Check the button after saving.
 
 See {doc}`/concepts/threat-model` for what the sanitizer removes and why.
 
+## Map claims onto profile fields
+
+<!-- source: backend/src/pas/plugins/identity/core/utils/propertymap.py -->
+
+The **Mapping** tab's property map carries one value from the provider's answer
+to one field on the person's profile, on every login.
+
+1. Open the provider and go to **Mapping**.
+2. Add a row. Type the **claim path** on the left—`name`, `blog`, or a dotted
+   path such as `address.formatted` to read into an object the provider sent.
+3. Pick the **profile field** on the right. There are four:
+
+| Field | Shown as |
+|---|---|
+| `fullname` | Full name |
+| `home_page` | Home page |
+| `description` | Biography |
+| `location` | Location |
+
+4. Save.
+
+The claim path is text because only the provider knows what it publishes; the
+target is a picker because these four are the only fields a login writes. A row
+naming anything else is refused, with a 400 from the API and an error from
+GenericSetup on import.
+
+```{note}
+Two things a login writes are deliberately **not** in that list, and neither
+needs a row. An address is appended to the profile's own list of addresses,
+which a person arranges and this package never reorders. A portrait is fetched
+from the provider's `picture_url` claim when `sync_portraits` is on.
+
+A site upgraded from an earlier version may still have such rows. They never did
+anything; the upgrade step for profile version 1004 removes them and logs each
+one.
+```
+
+To write a field the map cannot reach—a list, or a value that has to be built
+rather than copied—see {doc}`write-a-profile-enricher`.
+
 ## Replace or keep the client secret
 
 The control panel serializes a stored secret as a mask, never as its value.

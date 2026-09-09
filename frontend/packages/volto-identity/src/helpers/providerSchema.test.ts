@@ -20,6 +20,7 @@ import {
   suggestedProviderId,
   toFormData,
 } from './providerSchema';
+import { USER_FIELDS_VOCABULARY } from '../constants/vocabularies';
 import type { Driver, VoltoSchema } from '../types';
 
 const intl = {
@@ -39,8 +40,32 @@ const SERVED = {
     driver: { title: 'Driver', type: 'string' },
     title: { title: 'Title', type: 'string' },
     enabled: { title: 'Enabled', type: 'boolean' },
-    propertymap: { title: 'Property map', type: 'object' },
-    groupmap: { title: 'Group map', type: 'object' },
+    // A `Dict`, as `plone.restapi` serializes one. The property map's values
+    // are a `Choice` over a named vocabulary, so what arrives for them is the
+    // URL that enumerates it.
+    propertymap: {
+      title: 'Property map',
+      type: 'dict',
+      key_type: { schema: { title: 'Claim', type: 'string' }, additional: {} },
+      value_type: {
+        schema: { title: 'Profile field', type: 'string', factory: 'Choice' },
+        additional: {
+          vocabulary: { '@id': `/@vocabularies/${USER_FIELDS_VOCABULARY}` },
+        },
+      },
+    },
+    groupmap: {
+      title: 'Group map',
+      type: 'dict',
+      key_type: {
+        schema: { title: 'Provider group', type: 'string' },
+        additional: {},
+      },
+      value_type: {
+        schema: { title: 'Local group', type: 'string' },
+        additional: {},
+      },
+    },
     icon: { title: 'Icon', type: 'string', widget: 'provider_icon' },
     background_color: { title: 'Background colour', widget: 'color_picker' },
   },
@@ -210,6 +235,56 @@ describe('providerSchema', () => {
     expect(property.properties.field.title).toBe('Profile field');
     expect(group.properties.group.title).toBe('Provider group');
     expect(group.properties.local.title).toBe('Local group');
+  });
+
+  it('makes the property map target a picker over the served vocabulary', () => {
+    // The whole point of the change: the target was a text box, and
+    // `email`, `portrait` and `username` were all accepted, stored, and
+    // dropped on every login. The URL is the backend's, lifted rather than
+    // assembled here.
+    const schema = providerSchema(SERVED, DRIVERS, 'oidc', false, intl);
+    const property = schema.properties.propertymap?.schema as VoltoSchema;
+
+    expect((property.properties.field as any).vocabulary['@id']).toBe(
+      `/@vocabularies/${USER_FIELDS_VOCABULARY}`,
+    );
+  });
+
+  it('leaves the claim path a text box', () => {
+    // It is whatever the far end publishes, and nothing here enumerates it.
+    const schema = providerSchema(SERVED, DRIVERS, 'oidc', false, intl);
+    const property = schema.properties.propertymap?.schema as VoltoSchema;
+
+    expect(property.properties.claim).not.toHaveProperty('vocabulary');
+  });
+
+  it('leaves both halves of the group map free text', () => {
+    // The local side names a group that may not exist yet: a profile can
+    // ship a map before the group it points at, and the login skips a row it
+    // cannot resolve rather than refusing the map.
+    const schema = providerSchema(SERVED, DRIVERS, 'oidc', false, intl);
+    const group = schema.properties.groupmap?.schema as VoltoSchema;
+
+    expect(group.properties.group).not.toHaveProperty('vocabulary');
+    expect(group.properties.local).not.toHaveProperty('vocabulary');
+  });
+
+  it('falls back to a text box when no vocabulary is served', () => {
+    // A frontend release ahead of the backend it is pointed at. The form is
+    // the one it has always had rather than an empty picker.
+    const older = {
+      ...SERVED,
+      properties: {
+        ...SERVED.properties,
+        propertymap: { title: 'Property map', type: 'object' },
+      },
+    };
+
+    const schema = providerSchema(older, DRIVERS, 'oidc', false, intl);
+    const property = schema.properties.propertymap?.schema as VoltoSchema;
+
+    expect(property.properties.field).not.toHaveProperty('vocabulary');
+    expect(property.properties.field.type).toBe('string');
   });
 
   it('drops the served driver field rather than merging it', () => {

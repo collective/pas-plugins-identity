@@ -82,11 +82,25 @@ None of it changes what the provider does. The icon is sanitized on save—see
 
 | Field | Registry key | Type | Default |
 |---|---|---|---|
-| Property map | `propertymap` | `Dict` | `{}` |
+| Property map | `propertymap` | `Dict` of claim path → `Choice` | `{}` |
 | Group map | `groupmap` | `Dict` | `{}` |
 
 Composed in the frontend rather than served as a fieldset. The group map appears
 only for a driver that has a group claim.
+
+Three of the four columns are text and one is a picker, which is the asymmetry
+worth knowing:
+
+| Column | Widget | Why |
+|---|---|---|
+| Claim path | Text | Whatever the provider publishes; nothing here can enumerate it. |
+| Profile field | Picker | The four fields a login writes, served as `pas.plugins.identity.UserFields`. |
+| Provider group | Text | The far end's own group names. |
+| Local group | Text | A profile may ship a map before the group it names exists. |
+
+A row whose target is anything else is refused—by the API with a 400, and by
+GenericSetup on import. See {doc}`/concepts/profiles-and-groups` for what a
+login does with the four.
 
 ## Settings tab
 

@@ -18,6 +18,8 @@ import type { ReactNode } from 'react';
 import { Provider } from 'react-redux';
 
 import LoginPanel from '../components/Login/LoginPanel';
+import { GROUPS_VOCABULARY } from '../constants/vocabularies';
+import { USER_FIELDS_VOCABULARY } from '../constants/vocabularies';
 
 import type {
   ConfiguredProvider,
@@ -244,8 +246,35 @@ export const PROVIDER_SCHEMA = {
     // described. Kept here because a fixture that quietly leaves them out
     // would stop the stories from showing what the composition does.
     driver: { type: 'string', title: 'Driver' },
-    propertymap: { type: 'object', title: 'Property map' },
-    groupmap: { type: 'object', title: 'Group map' },
+    // As `plone.restapi` serializes a `Dict`: `type: 'dict'`, with each half
+    // described under its own key. The property map's values are a `Choice`
+    // over a named vocabulary, so what is served for them is the URL that
+    // enumerates it -- which is what `providerSchema` builds the picker from.
+    propertymap: {
+      type: 'dict',
+      title: 'Property map',
+      key_type: { schema: { type: 'string', title: 'Claim' }, additional: {} },
+      value_type: {
+        schema: { type: 'string', title: 'Profile field', factory: 'Choice' },
+        additional: {
+          vocabulary: {
+            '@id': `http://localhost:8080/Plone/@vocabularies/${USER_FIELDS_VOCABULARY}`,
+          },
+        },
+      },
+    },
+    groupmap: {
+      type: 'dict',
+      title: 'Group map',
+      key_type: {
+        schema: { type: 'string', title: 'Provider group' },
+        additional: {},
+      },
+      value_type: {
+        schema: { type: 'string', title: 'Local group' },
+        additional: {},
+      },
+    },
     title: { type: 'string', title: 'Title' },
     enabled: { type: 'boolean', title: 'Enabled' },
     show_in_login: { type: 'boolean', title: 'Show on the login screen' },
@@ -300,7 +329,7 @@ export const CONFIGURED: ConfiguredProvider[] = [
       scope: 'openid email profile',
     },
     propertymap: {
-      preferred_username: 'username',
+      name: 'fullname',
       'address.formatted': 'location',
     },
     groupmap: {
@@ -324,22 +353,22 @@ export const CONFIGURED: ConfiguredProvider[] = [
 /**
  * The vocabulary the property-map editor reads, already loaded.
  *
- * Served by the backend from the site's live user schema, so a story shows
- * a representative subset rather than a list this file owns.
+ * Four terms, and that is the whole of it: a login writes four Profile
+ * fields, so those are the four the picker offers. It used to be the site's
+ * live member schema, which also offered `email`, `portrait` and a username
+ * -- rows that were stored and then dropped on every login.
  */
 export const USER_FIELDS_STATE = {
-  'pas.plugins.identity.UserFields': {
+  [USER_FIELDS_VOCABULARY]: {
     loaded: true,
     loading: false,
     items: [
-      { value: 'description', label: 'Biography' },
-      { value: 'email', label: 'Email' },
-      { value: 'fullname', label: 'Full Name' },
+      { value: 'fullname', label: 'Full name' },
       { value: 'home_page', label: 'Home page' },
+      { value: 'description', label: 'Biography' },
       { value: 'location', label: 'Location' },
-      { value: 'username', label: 'Username' },
     ],
-    itemsTotal: 6,
+    itemsTotal: 4,
   },
 };
 
@@ -351,7 +380,7 @@ export const USER_FIELDS_STATE = {
  * that is a typo worth catching in the form rather than in a log line.
  */
 export const GROUPS_STATE = {
-  'pas.plugins.identity.Groups': {
+  [GROUPS_VOCABULARY]: {
     loaded: true,
     loading: false,
     items: [

@@ -117,15 +117,20 @@ class BaseDriver:
     #: ``fullname`` reaches GitHub's ``login`` fallback and an OIDC
     #: ``preferred_username`` alike without either being named here.
     #:
-    #: Only the two claims every provider offers are mapped here. A site's
-    #: member schema carries more than that -- ``home_page``, ``location``,
-    #: ``portrait`` -- but which of them a given provider can actually fill
-    #: is a fact about the provider, so a driver that knows adds them. What
-    #: no driver may add is ``username``: providers publish it, Plone has no
-    #: member field for it, and the mapping would resolve to nothing on every
-    #: login while looking correct in the form.
+    #: One claim, because a map may only write
+    #: :data:`~pas.plugins.identity.core.utils.propertymap.MAPPABLE_FIELDS`
+    #: and only one of those is a claim every provider offers. Two of the
+    #: other three -- ``home_page`` and ``location`` -- are a fact about the
+    #: provider, so a driver that knows adds them.
+    #:
+    #: ``email`` was seeded here and is not any more. It is not that the
+    #: address does not arrive: it arrives on every login, through
+    #: :func:`~pas.plugins.identity.core.subscribers.sync_addresses`, which
+    #: appends rather than overwriting a list its owner has arranged. The row
+    #: was dropped by the login that read it, and shipping it meant every
+    #: provider created through the control panel started with a line in its
+    #: map that did nothing.
     default_propertymap: dict[str, str] = {  # noqa: RUF012
-        "email": "email",
         "fullname": "fullname",
     }
 

@@ -95,11 +95,19 @@ class TestTheMapIsTheProvidersOwn:
             "location": "location",
         }
 
-    def test_a_field_no_provider_may_write_is_dropped(self, provider):
+    def test_a_field_no_provider_may_write_is_dropped(
+        self, provider, store_legacy_propertymap
+    ):
         """``login`` is half of the enumeration index and ``group_ids`` is
-        group membership. Dropped rather than refused: the map is typed in a
-        control panel, and a typo there must not fail a login."""
-        provider({"username": "login", "company": "group_ids", "bio": "description"})
+        group membership. Neither can be stored any more -- the field is a
+        ``Choice`` over the four a login writes -- but a site configured
+        before that could, and a login there must go through rather than
+        fail on a row typed years ago."""
+        provider({"bio": "description"})
+        store_legacy_propertymap(
+            "github",
+            {"username": "login", "company": "group_ids", "bio": "description"},
+        )
 
         assert claim_fields("github") == {"bio": "description"}
 
@@ -161,13 +169,17 @@ class TestClaimsReachTheProfile:
             "location",
         ]
 
-    def test_a_map_naming_the_address_is_ignored_here(self, provider):
+    def test_a_map_naming_the_address_is_ignored_here(
+        self, provider, store_legacy_propertymap
+    ):
         """``email`` is derived from the address list, so a single-value
         write of it would move an address to the front of a list its owner
         arranged. The addresses have their own path --
-        :func:`~pas.plugins.identity.core.subscribers.sync_addresses` -- and
-        the same map is still honoured against the Plone user."""
-        provider({"fullname": "fullname", "email": "email"})
+        :func:`~pas.plugins.identity.core.subscribers.sync_addresses` -- which
+        is why the field refuses such a row now. This is the row a site stored
+        while it did not."""
+        provider({"fullname": "fullname"})
+        store_legacy_propertymap("github", {"fullname": "fullname", "email": "email"})
 
         assert sync_claims(self.profile, CLAIMS, "github") == ["fullname"]
 

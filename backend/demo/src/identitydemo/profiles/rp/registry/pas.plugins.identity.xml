@@ -55,13 +55,16 @@
     <value key="title">id.localhost</value>
     <value key="enabled">True</value>
     <value key="order">0</value>
+    <!-- No row for the address and none for the picture. Both arrive without
+         one: addresses are appended by sync_addresses, which never takes one
+         away, and the portrait is synced from the normalized picture_url
+         claim when sync_portraits is on. A map may only write the four fields
+         a login writes, and the field refuses anything else. -->
     <value key="propertymap">
       <element key="fullname">fullname</element>
-      <element key="email">email</element>
       <element key="website">home_page</element>
       <element key="description">description</element>
       <element key="address.formatted">location</element>
-      <element key="picture_url">portrait</element>
     </value>
 
     <value key="groupmap">
