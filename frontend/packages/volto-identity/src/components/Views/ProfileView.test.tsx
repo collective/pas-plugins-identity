@@ -1,13 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { render, screen } from '../../testing';
 import React from 'react';
 
-import ProfileView, { pictureUrl } from './ProfileView';
+import config from '@plone/volto/registry';
 
-const CONTENT = {
-  '@id': '/identity-profiles/alice',
-  title: 'Alice Liddell',
-  fullname: 'Alice Liddell',
+import ProfileView, { pictureUrl } from './ProfileView';
+import { profileContent } from '../../stories/fixtures';
+
+// No `title`. A Profile has no such field -- only a computed `Title()`, which
+// `plone.restapi` does not serialize -- and a fixture that carried one made
+// the fallback below pass for a reason no real payload supplies.
+const CONTENT = profileContent({
   description: 'Reads a lot.',
   image: {
     download: '/identity-profiles/alice/@@images/image',
@@ -15,7 +18,25 @@ const CONTENT = {
       preview: { download: '/identity-profiles/alice/@@images/image/preview' },
     },
   },
-};
+});
+
+/**
+ * Register a component into `belowTitle`, the way a deployment does.
+ *
+ * @param component What to render.
+ */
+function registerBadge(component: React.ComponentType<any>): void {
+  config.registerSlotComponent({
+    slot: 'belowTitle',
+    name: 'badge',
+    component,
+  });
+}
+
+// A slot registration is global and outlives the test that made it.
+afterEach(() => {
+  delete config.slots.belowTitle;
+});
 
 describe('pictureUrl', () => {
   it('prefers a scale over the original', () => {
@@ -59,12 +80,49 @@ describe('ProfileView', () => {
     expect(document.querySelector('img')).toBeNull();
   });
 
-  it('falls back to the computed title when there is no full name', () => {
-    // The backend computes `title` from the full name and then the login, so
-    // it is never empty -- which makes it the honest fallback.
+  it('falls back to the login when there is no full name', () => {
+    // The same order the backend's own `Title()` uses. It used to fall back
+    // to `content.title`, which is never in the payload, so a person with a
+    // login and no full name was rendered as "Unnamed user".
     render(<ProfileView content={{ ...CONTENT, fullname: '' }} />);
 
-    expect(screen.getByRole('heading').textContent).toBe('Alice Liddell');
+    expect(screen.getByRole('heading').textContent).toBe('alice@example.com');
+  });
+
+  it('falls back to the userid when there is no login either', () => {
+    // The last rung the backend uses before giving up. A Profile always has
+    // an id, so this is the case that has to stop short of the message.
+    render(<ProfileView content={{ ...CONTENT, fullname: '', login: '' }} />);
+
+    expect(screen.getByRole('heading').textContent).toBe('alice');
+  });
+
+  it('says so when the profile carries no name at all', () => {
+    render(
+      <ProfileView content={{ ...CONTENT, fullname: '', login: '', id: '' }} />,
+    );
+
+    expect(screen.getByRole('heading').textContent).toBe('Unnamed user');
+  });
+
+  it('renders the belowTitle slot between the heading and the description', () => {
+    // Under the name, where what belongs to the person reads as part of it.
+    // Nothing outside a view can put anything inside one, which is why this
+    // slot is rendered here and `aboveContent` is not.
+    registerBadge(() => <span>Core team</span>);
+
+    render(<ProfileView content={CONTENT} />);
+
+    const badge = screen.getByText('Core team');
+    const heading = screen.getByRole('heading', { level: 1 });
+    const description = screen.getByText('Reads a lot.');
+    expect(
+      heading.compareDocumentPosition(badge) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      description.compareDocumentPosition(badge) &
+        Node.DOCUMENT_POSITION_PRECEDING,
+    ).toBeTruthy();
   });
 
   it('never publishes an address', () => {

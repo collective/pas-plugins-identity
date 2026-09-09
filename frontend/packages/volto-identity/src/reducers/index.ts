@@ -1,335 +1,79 @@
 /**
  * Reducers for the identity login flows.
  *
- * One factory rather than five near-identical reducers: they all track the
- * same request lifecycle and differ only in what they keep from the answer.
+ * One module per domain, matching `actions/`, with the request-lifecycle
+ * factory they are all built from in `factory.ts`. This file is the
+ * re-export surface and the map Volto installs, so nothing importing from the
+ * package root has to know where a slice lives.
+ *
+ * `requestReducer` is deliberately not re-exported here. It was private to
+ * this module before the split and it stays private to the package: every
+ * export of this file is a reducer, which is what lets `reducers.test.ts`
+ * assert that the map registers all of them.
  * @module reducers
  */
 
+import { userAccount } from './account';
 import {
-  COMPLETE_CALLBACK,
-  CONFIRM_MAGIC_LINK,
-  CREATE_CLIENT,
-  CREATE_PROVIDER,
-  DELETE_CLIENT,
-  DELETE_PROVIDER,
-  GET_CONSENT_REQUEST,
-  GET_MY_PROFILE,
-  SET_PREFERRED_EMAIL,
-  GET_USER_ACCOUNT,
-  LIST_GRANTS,
-  LIST_GROUP_MEMBERS,
-  WITHDRAW_GRANT,
-  LIST_CLIENTS,
-  LIST_DRIVERS,
-  LIST_KEYS,
-  GET_USER_PROFILE,
-  LIST_IDENTITIES,
-  LIST_LOGIN_PROVIDERS,
-  LIST_PROVIDERS,
-  ROTATE_CLIENT_SECRET,
-  ROTATE_KEY,
-  SEND_MAGIC_LINK,
-  START_LINKING,
-  START_PROVIDER_LOGIN,
-  TEST_PROVIDER,
-  UNLINK_IDENTITY,
-  UPDATE_CLIENT,
-  UPDATE_PROVIDER,
-} from '../constants/ActionTypes';
-import type {
-  AuthorizeRedirect,
-  ConfiguredProvider,
-  ConsentRequest,
-  ConnectionCheck,
-  Driver,
-  GroupMembers,
-  Identity,
-  LoginProvider,
-  MyProfile,
-  UserAccount,
-  UserProfile,
-  OAuthClient,
-  OAuthGrants,
-  RequestState,
-  SigningKeyRing,
-  TokenResponse,
-} from '../types';
+  clientCreate,
+  clientDelete,
+  clientFormSchema,
+  clientSecretRotate,
+  clientUpdate,
+  oauthClients,
+} from './clients';
+import { consentRequest, grantWithdraw, oauthGrants } from './consent';
+import { identityDrivers } from './drivers';
+import { groupMembers } from './groups';
+import {
+  identities,
+  identityLinking,
+  identityUnlink,
+  linkableProviders,
+} from './identities';
+import { keyRotate, signingKeys } from './keys';
+import { identityCallback, loginProviders, providerLogin } from './login';
+import { magicLinkConfirm, magicLinkSend } from './magiclink';
+import { myProfile, preferredEmail, userProfile } from './profile';
+import {
+  configuredProviders,
+  providerCreate,
+  providerDelete,
+  providerFormSchema,
+  providerTest,
+  providerUpdate,
+} from './providers';
 
-type Action = { type: string; result?: unknown; error?: unknown };
-
-const initial: RequestState = { loading: false, loaded: false, error: null };
-
-/**
- * Build a reducer tracking one request.
- *
- * @param actionType The base action type.
- * @param extract What to keep out of a successful result.
- * @param empty The value of that key before anything has loaded.
- */
-function requestReducer<T>(
-  actionType: string,
-  extract: (result: any) => T,
-  empty: T,
-  alsoFrom?: { actionType: string; extract: (result: any) => T | undefined },
-) {
-  const initialState = { ...initial, data: empty };
-  return function reducer(state = initialState, action: Action = { type: '' }) {
-    // A second action may carry this same data as an expanded component. It
-    // only ever *fills*: the request it belongs to is somebody else's, so its
-    // pending and failure states say nothing about this one, and a response
-    // that did not carry the component must leave what is here alone.
-    if (alsoFrom && action.type === `${alsoFrom.actionType}_SUCCESS`) {
-      const carried = alsoFrom.extract(action.result);
-      return carried === undefined
-        ? state
-        : {
-            ...state,
-            loading: false,
-            loaded: true,
-            error: null,
-            data: carried,
-          };
-    }
-    switch (action.type) {
-      case `${actionType}_PENDING`:
-        // The previous answer is cleared here as well as on success: leaving
-        // it in place makes a second attempt look like it has already
-        // succeeded, which for a redirect action means navigating away with
-        // last time's URL.
-        return { ...initialState, loading: true };
-      case `${actionType}_SUCCESS`:
-        return {
-          ...state,
-          loading: false,
-          loaded: true,
-          error: null,
-          data: extract(action.result),
-        };
-      case `${actionType}_FAIL`:
-        return { ...initialState, error: action.error ?? true };
-      default:
-        return state;
-    }
-  };
-}
-
-export const loginProviders = requestReducer<LoginProvider[]>(
-  LIST_LOGIN_PROVIDERS,
-  (result) => result?.items ?? [],
-  [],
-  {
-    // The identities listing can carry the same providers as an expanded
-    // component, which is how the identities page loads in one request.
-    actionType: LIST_IDENTITIES,
-    extract: (result) => result?.['@components']?.['login-providers']?.items,
-  },
-);
-
-export const providerLogin = requestReducer<AuthorizeRedirect | null>(
-  START_PROVIDER_LOGIN,
-  (result) => result ?? null,
-  null,
-);
-
-export const identityCallback = requestReducer<TokenResponse | null>(
-  COMPLETE_CALLBACK,
-  (result) => result ?? null,
-  null,
-);
-
-export const magicLinkSend = requestReducer<boolean>(
-  SEND_MAGIC_LINK,
-  (result) => Boolean(result?.sent),
-  false,
-);
-
-export const magicLinkConfirm = requestReducer<TokenResponse | null>(
-  CONFIRM_MAGIC_LINK,
-  (result) => result ?? null,
-  null,
-);
-
-export const userProfile = requestReducer<UserProfile | null>(
-  GET_USER_PROFILE,
-  (result) => result ?? null,
-  null,
-);
-
-export const identities = requestReducer<Identity[]>(
-  LIST_IDENTITIES,
-  (result) => result?.items ?? [],
-  [],
-);
-
-/**
- * What the caller could still attach to their account.
- *
- * The backend's own answer rather than a filter applied here, and a different
- * question from `loginProviders`: that one is what the login screen offers,
- * this one is every *enabled* provider the caller has not linked. A provider
- * an operator has taken off the login page is still one an existing user may
- * attach, which is exactly what the two settings exist to distinguish.
- */
-export const linkableProviders = requestReducer<LoginProvider[]>(
-  LIST_IDENTITIES,
-  (result) => result?.available ?? [],
-  [],
-);
-
-export const groupMembers = requestReducer<GroupMembers | null>(
-  LIST_GROUP_MEMBERS,
-  (result) => result ?? null,
-  null,
-);
-
-export const userAccount = requestReducer<UserAccount | null>(
-  GET_USER_ACCOUNT,
-  (result) => result ?? null,
-  null,
-);
-
-export const identityLinking = requestReducer<AuthorizeRedirect | null>(
-  START_LINKING,
-  (result) => result ?? null,
-  null,
-);
-
-export const identityUnlink = requestReducer<boolean>(
-  UNLINK_IDENTITY,
-  () => true,
-  false,
-);
-
-export const identityDrivers = requestReducer<Driver[]>(
-  LIST_DRIVERS,
-  (result) => result?.items ?? [],
-  [],
-);
-
-export const configuredProviders = requestReducer<ConfiguredProvider[]>(
-  LIST_PROVIDERS,
-  (result) => result?.items ?? [],
-  [],
-);
-
-// The provider form's own schema, served beside the listing. Its own slice
-// rather than a field on `configuredProviders`, because the panel asks for it
-// on mount and Volto's `Form` reads `schema.fieldsets` on the first render --
-// a listing that arrived without one would crash rather than render empty.
-export const providerFormSchema = requestReducer<Record<string, any> | null>(
-  LIST_PROVIDERS,
-  (result) => result?.schema ?? null,
-  null,
-);
-
-export const clientFormSchema = requestReducer<Record<string, any> | null>(
-  LIST_CLIENTS,
-  (result) => result?.schema ?? null,
-  null,
-);
-
-export const providerCreate = requestReducer<ConfiguredProvider | null>(
-  CREATE_PROVIDER,
-  (result) => result ?? null,
-  null,
-);
-
-export const providerUpdate = requestReducer<boolean>(
-  UPDATE_PROVIDER,
-  () => true,
-  false,
-);
-
-export const providerDelete = requestReducer<boolean>(
-  DELETE_PROVIDER,
-  () => true,
-  false,
-);
-
-export const providerTest = requestReducer<ConnectionCheck | null>(
-  TEST_PROVIDER,
-  (result) => result ?? null,
-  null,
-);
-
-export const myProfile = requestReducer<MyProfile | null>(
-  GET_MY_PROFILE,
-  (result) => result ?? null,
-  null,
-);
-
-// A `PATCH` on content answers 204 with no body, so there is nothing to keep:
-// this reducer exists for `loading` and `error`, and the new order is read back
-// through `@my-profile` once the write lands.
-export const preferredEmail = requestReducer<null>(
-  SET_PREFERRED_EMAIL,
-  () => null,
-  null,
-);
-
-export const oauthClients = requestReducer<OAuthClient[]>(
-  LIST_CLIENTS,
-  (result) => result?.items ?? [],
-  [],
-);
-
-// The create and rotate results keep the *whole* client rather than a list
-// entry, because they are the only place the secret ever appears and the
-// panel has to render it from somewhere.
-export const clientCreate = requestReducer<OAuthClient | null>(
-  CREATE_CLIENT,
-  (result) => result ?? null,
-  null,
-);
-
-export const clientSecretRotate = requestReducer<OAuthClient | null>(
-  ROTATE_CLIENT_SECRET,
-  (result) => result ?? null,
-  null,
-);
-
-export const clientUpdate = requestReducer<OAuthClient | null>(
-  UPDATE_CLIENT,
-  (result) => result ?? null,
-  null,
-);
-
-export const clientDelete = requestReducer<boolean>(
-  DELETE_CLIENT,
-  () => true,
-  false,
-);
-
-export const oauthGrants = requestReducer<OAuthGrants | null>(
-  LIST_GRANTS,
-  (result) => result ?? null,
-  null,
-);
-
-export const grantWithdraw = requestReducer<Record<string, unknown> | null>(
-  WITHDRAW_GRANT,
-  (result) => result ?? null,
-  null,
-);
-
-export const consentRequest = requestReducer<ConsentRequest | null>(
-  GET_CONSENT_REQUEST,
-  (result) => result ?? null,
-  null,
-);
-
-export const signingKeys = requestReducer<SigningKeyRing | null>(
-  LIST_KEYS,
-  (result) => result ?? null,
-  null,
-);
-
-export const keyRotate = requestReducer<SigningKeyRing | null>(
-  ROTATE_KEY,
-  (result) => result ?? null,
-  null,
-);
+export { userAccount } from './account';
+export {
+  clientCreate,
+  clientDelete,
+  clientFormSchema,
+  clientSecretRotate,
+  clientUpdate,
+  oauthClients,
+} from './clients';
+export { consentRequest, grantWithdraw, oauthGrants } from './consent';
+export { identityDrivers } from './drivers';
+export { groupMembers } from './groups';
+export {
+  identities,
+  identityLinking,
+  identityUnlink,
+  linkableProviders,
+} from './identities';
+export { keyRotate, signingKeys } from './keys';
+export { identityCallback, loginProviders, providerLogin } from './login';
+export { magicLinkConfirm, magicLinkSend } from './magiclink';
+export { myProfile, preferredEmail, userProfile } from './profile';
+export {
+  configuredProviders,
+  providerCreate,
+  providerDelete,
+  providerFormSchema,
+  providerTest,
+  providerUpdate,
+} from './providers';
 
 const reducers = {
   loginProviders,

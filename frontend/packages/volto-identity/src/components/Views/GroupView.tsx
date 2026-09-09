@@ -17,6 +17,13 @@
  * gets the title and description and nothing more. That is a page rather than
  * an error, which is why the refusal is rendered as a note instead of being
  * left to the error boundary.
+ *
+ * ## Slots
+ *
+ * `aboveContent` and `belowContent` wrap this view already, because Volto's
+ * own `View` renders both around whatever it resolves. `belowTitle` is
+ * rendered here, under the heading, by `BelowTitleSlot` -- nothing outside a
+ * view can place anything inside it.
  * @module components/Views/GroupView
  */
 import React, { useEffect } from 'react';
@@ -29,7 +36,8 @@ import { Helmet } from '@plone/volto/helpers/Helmet/Helmet';
 import { flattenToAppURL } from '@plone/volto/helpers/Url/Url';
 
 import { listGroupMembers } from '../../actions';
-import type { GroupMember, NestedGroup } from '../../types';
+import BelowTitleSlot from './BelowTitleSlot';
+import type { GroupContent, GroupMember, NestedGroup } from '../../types';
 
 import './GroupView.scss';
 
@@ -58,14 +66,6 @@ const messages = defineMessages({
   },
   loading: { id: 'group-view-loading', defaultMessage: 'Loading members…' },
 });
-
-/** The fields this view reads off a serialized group. */
-interface GroupContent {
-  '@id': string;
-  id: string;
-  title?: string;
-  description?: string;
-}
 
 interface GroupViewProps {
   content: GroupContent;
@@ -110,6 +110,7 @@ const GroupView: React.FC<GroupViewProps> = ({ content }) => {
     <Container className="view-wrapper identity-group-view">
       <Helmet title={content.title || content.id} />
       <h1 className="documentFirstHeading">{content.title || content.id}</h1>
+      <BelowTitleSlot content={content} />
       {content.description ? (
         <p className="documentDescription">{content.description}</p>
       ) : null}

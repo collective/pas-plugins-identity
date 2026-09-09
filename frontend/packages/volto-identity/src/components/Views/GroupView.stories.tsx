@@ -1,14 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react';
 
 import GroupView from './GroupView';
+import { groupContent } from '../../stories/fixtures';
 import { LOADED, LOADING, withStore } from '../../stories/fixtures';
 
-const CONTENT = {
-  '@id': '/identity-profiles/staff',
-  id: 'staff',
-  title: 'Staff',
+const CONTENT = groupContent({
   description: 'Everybody who works here.',
-};
+});
 
 const MEMBERS = {
   '@id': '/@group-members/staff',
