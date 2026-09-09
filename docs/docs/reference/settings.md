@@ -16,36 +16,60 @@ All keys are under the `pas.plugins.identity.` prefix. Configuration lives in th
 registry, one record per setting, so a GenericSetup export describes a site field
 by field and one setting can be changed without rewriting the rest.
 
+The **Settings** form in the **Identity providers** control panel edits the
+records in the next two sections, and the headings under each are its tabs, in
+the order they appear there. The server layer's records and the per-provider
+records are edited elsewhere and are described further down.
+
 ## Site-wide
 
-<!-- source: backend/src/pas/plugins/identity/core/controlpanel/interfaces.py -->
+<!-- source: backend/src/pas/plugins/identity/core/controlpanel/interfaces.py, IIdentitySettings -->
 
-Set by the `pas.plugins.identity:default` profile. Edited in the
-**Identity providers** control panel.
+Set by the `pas.plugins.identity:default` profile.
+
+### Login
 
 | Key | Type | Default | What it does |
 |---|---|---|---|
 | `callback_url` | `TextLine` | `/login-identity` | The frontend route providers redirect back to. Matches the route the Volto add-on registers. |
+| `discovery_timeout` | `Int` | `10` | Seconds to wait for a discovery document. |
+
+The timeout is here rather than with the portrait one because it fails the same
+way the callback does: metadata that does not arrive is a login that cannot
+start, while a portrait that does not arrive is a missing picture.
+
+### User and group content
+
+| Key | Type | Default | What it does |
+|---|---|---|---|
 | `user_content_type` | `TextLine` | `''` | Content type used for user profiles. |
 | `user_container_path` | `TextLine` | `''` | Where profiles are filed. |
 | `group_content_type` | `TextLine` | `''` | Content type used for groups. |
 | `group_container_path` | `TextLine` | `''` | Where groups are filed. |
+
+These four are empty by default and filled in by the install profile, which
+points them at this package's own types. See {doc}`user-content`.
+
+`user_container_path` and `group_container_path` are derived from the container
+records under **Where principals are filed** and kept in step with them. Set the
+container records; do not set these two by hand.
+
+### Portraits
+
+| Key | Type | Default | What it does |
+|---|---|---|---|
 | `sync_portraits` | `Bool` | `False` | Fetch a portrait from the provider at sign-in. |
 | `portrait_timeout` | `Int` | `5` | Seconds to wait for one. |
 | `portrait_max_bytes` | `Int` | `2097152` | Refuse a portrait larger than this. |
-| `discovery_timeout` | `Int` | `10` | Seconds to wait for a discovery document. |
+
+### Audit log
+
+| Key | Type | Default | What it does |
+|---|---|---|---|
 | `audit_max_entries` | `Int` | `500` | Entries the built-in log keeps. |
 | `audit_max_days` | `Int` | `180` | Days the built-in log keeps. |
 | `audit_record_pii` | `Bool` | `False` | Record personally identifying detail in audit entries. |
 | `audit_sinks` | `Tuple` | `('plugin',)` | Which audit sinks to write to, in order. See {doc}`audit-log`. |
-
-The four content-type and container records are empty by default and filled in by
-the install profile, which points them at this package's own types. See
-{doc}`user-content`.
-
-`user_container_path` and `group_container_path` are derived from the container
-records in the next section and kept in step with them. Set the container
-records; do not set these two by hand.
 
 ## Profiles and groups
 

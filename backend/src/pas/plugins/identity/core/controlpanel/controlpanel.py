@@ -10,7 +10,7 @@ list it.
 
 from pas.plugins.identity import _
 from pas.plugins.identity.core.controlpanel.interfaces import IIdentityControlpanel
-from pas.plugins.identity.core.controlpanel.interfaces import IIdentitySettings
+from pas.plugins.identity.core.controlpanel.interfaces import IIdentityPanelSchema
 from pas.plugins.identity.interfaces import IBrowserLayer
 from plone.restapi.controlpanels import RegistryConfigletPanel
 from zope.component import adapter
@@ -31,7 +31,7 @@ CONFIGLET_CATEGORY_ID = "plone-users"
 class IdentityConfigletPanel(RegistryConfigletPanel):
     """Expose this package's settings through ``@controlpanels``."""
 
-    schema = IIdentitySettings
+    schema = IIdentityPanelSchema
     schema_prefix = "pas.plugins.identity"
     configlet_id = CONFIGLET_ID
     configlet_category_id = CONFIGLET_CATEGORY_ID

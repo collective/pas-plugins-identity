@@ -205,6 +205,48 @@ class IIdentitySettings(Interface):
         default=("plugin",),
     )
 
+    # The form's tabs, grouped by what an operator is doing rather than by
+    # what a field is. ``discovery_timeout`` sits with the callback and not
+    # with the other timeout because it fails the same way the callback does:
+    # a login that cannot start, rather than a picture that does not arrive.
+    #
+    # The default fieldset is named so that it can be labelled. Left alone it
+    # renders as a tab called "Default", which tells a reader nothing about
+    # the two fields on it.
+    model.fieldset(
+        "default",
+        label=_("Login"),
+        fields=["callback_url", "discovery_timeout"],
+    )
+
+    model.fieldset(
+        "content",
+        label=_("User and group content"),
+        fields=[
+            "user_content_type",
+            "user_container_path",
+            "group_content_type",
+            "group_container_path",
+        ],
+    )
+
+    model.fieldset(
+        "portraits",
+        label=_("Portraits"),
+        fields=["sync_portraits", "portrait_timeout", "portrait_max_bytes"],
+    )
+
+    model.fieldset(
+        "audit",
+        label=_("Audit log"),
+        fields=[
+            "audit_max_entries",
+            "audit_max_days",
+            "audit_record_pii",
+            "audit_sinks",
+        ],
+    )
+
 
 #: Fieldset the look of a login button is edited in.
 STYLE_FIELDSET = "style"
@@ -512,6 +554,72 @@ class IProfileSettings(Interface):
         required=False,
         default=("active",),
     )
+
+    # The same three groups ``docs/docs/reference/settings.md`` already
+    # documents these records in, and deliberately so: an operator reading
+    # the reference and an operator looking at the form should be looking at
+    # the same three questions.
+    #
+    # No default fieldset, because there is no field here that is not one of
+    # the three. Combined into the panel below, the default fieldset is the
+    # one :class:`IIdentitySettings` declares.
+    model.fieldset(
+        "containers",
+        label=_("Where principals are filed"),
+        fields=[
+            "profile_container_parent",
+            "profile_container_id",
+            "profile_container_title",
+            "profile_container_type",
+            "group_container_parent",
+            "group_container_id",
+            "group_container_title",
+            "group_container_type",
+        ],
+    )
+
+    model.fieldset(
+        "states",
+        label=_("Which states count"),
+        fields=["profile_enumeration_states", "group_enumeration_states"],
+    )
+
+    model.fieldset(
+        "gate",
+        label=_("The profile gate"),
+        fields=[
+            "enforce_required_profile_fields",
+            "required_profile_fields",
+            "gate_exempt_paths",
+        ],
+    )
+
+
+class IIdentityPanelSchema(IProfileSettings, IIdentitySettings):
+    """Both settings schemas as one, so the control panel can serve them.
+
+    ``RegistryConfigletPanel`` has a single ``schema``, and until this existed
+    the panel named :class:`IIdentitySettings` alone -- so the thirteen records
+    in :class:`IProfileSettings` were reachable through the generic registry
+    editor and nowhere else, though they decide where principals are filed and
+    which of their states count.
+
+    Deriving works because both interfaces register their records under the
+    same ``pas.plugins.identity`` prefix and share no field name, so
+    ``registry.forInterface`` resolves all twenty-six against records that
+    already exist. Nothing new is written to the registry by this.
+
+    It declares no fields and no fieldsets of its own. The two bases are the
+    descriptions, and a field added to either is on the panel without being
+    named twice.
+
+    **The base order is the tab order, reversed.** ``plone.autoform`` merges
+    tagged values along the reversed resolution order, so the *last* base
+    contributes its fieldsets first -- which is why :class:`IIdentitySettings`
+    is named second and its unnamed "Login" fieldset is nonetheless the tab an
+    operator lands on. Reordering these two silently reorders the form, so the
+    order is asserted rather than left to be rediscovered.
+    """
 
 
 class IIdentityControlpanel(IControlpanel):
