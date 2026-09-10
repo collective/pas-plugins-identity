@@ -15,7 +15,7 @@ from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.pas import EXTRACTOR
 from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
-from pas.plugins.identity.core.subscribers import get_profile
+from pas.plugins.identity.core.profiles import get_profile
 
 import pytest
 import transaction

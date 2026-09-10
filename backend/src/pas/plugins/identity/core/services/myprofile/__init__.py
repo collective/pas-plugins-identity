@@ -25,7 +25,7 @@ There used to be a second list beside it, ``email_choices``: the addresses a
 provider had offered and nobody had picked between. There is nothing to pick
 between any more -- every address a provider reports goes onto the profile,
 and arranging them is the choice. See
-:func:`~pas.plugins.identity.core.subscribers.sync_addresses`.
+:func:`~pas.plugins.identity.core.profiles.sync_addresses`.
 
 Answered from the catalog, so the routing check every login performs costs no
 object load -- the same discipline as the PAS plugin, for the same reason, and

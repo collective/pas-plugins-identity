@@ -10,7 +10,7 @@ test per row.
 """
 
 from Acquisition import aq_parent
-from pas.plugins.identity.core import subscribers
+from pas.plugins.identity.core import profiles
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
 from pas.plugins.identity.core.events import IdentityLinked
@@ -58,7 +58,7 @@ def profile(portal):
     :returns: The Profile.
     """
     login()
-    return subscribers.get_profile("alice-userid")
+    return profiles.get_profile("alice-userid")
 
 
 class TestProfileIsMinted:
@@ -103,14 +103,14 @@ class TestProfileIsMinted:
         """Plenty of providers send no username."""
         login(userid="bob-userid", username="")
 
-        assert subscribers.get_profile("bob-userid").login == "alice@example.com"
+        assert profiles.get_profile("bob-userid").login == "alice@example.com"
 
     def test_login_falls_back_to_the_userid(self):
         """The field is required; a Profile that cannot be created is a login
         that fails."""
         login(userid="carol-userid", username="", email="")
 
-        assert subscribers.get_profile("carol-userid").login == "carol-userid"
+        assert profiles.get_profile("carol-userid").login == "carol-userid"
 
     def test_second_login_does_not_create_a_second(self):
         """Idempotent, which is what makes it safe on every login."""
@@ -208,7 +208,7 @@ class TestClaimsRefresh:
 
     def test_unchanged_claims_report_no_change(self):
         """Nothing to reindex means nothing gets reindexed."""
-        assert subscribers.sync_claims(self.profile, CLAIMS) == []
+        assert profiles.sync_claims(self.profile, CLAIMS) == []
 
 
 class TestHandTypedValues:
@@ -232,7 +232,7 @@ class TestHandTypedValues:
 
         login()
 
-        profile = subscribers.get_profile("alice-userid")
+        profile = profiles.get_profile("alice-userid")
         assert profile.fullname == "Alice, on the third floor"
 
 
@@ -256,7 +256,7 @@ class TestOtherEvents:
             )
         )
 
-        assert subscribers.get_profile("dave-userid").fullname == "Dave Lister"
+        assert profiles.get_profile("dave-userid").fullname == "Dave Lister"
 
     def test_linking_still_respects_a_user_edit(self):
         """A second provider is not a way around the refresh policy."""

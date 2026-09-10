@@ -2,7 +2,7 @@
 
 from pas.plugins.identity.core.behaviors.details import IProfileDetails
 from pas.plugins.identity.core.contents.profile import IUserProfileSchema
-from pas.plugins.identity.core.subscribers import WRITABLE_FIELDS
+from pas.plugins.identity.core.profiles import WRITABLE_FIELDS
 from pas.plugins.identity.core.utils.propertymap import MAPPABLE_FIELDS
 from pas.plugins.identity.core.vocabularies.userfields import USER_FIELDS_VOCABULARY
 from pas.plugins.identity.exportimport.schema import USER_FIELDS

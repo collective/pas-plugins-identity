@@ -62,7 +62,7 @@ class Claims(TypedDict, total=False):
         A person has more than one address, and picking one of them for them
         is a decision about which identity they are here as. So all of them
         go onto the Profile and the person arranges them; see
-        :func:`~pas.plugins.identity.core.subscribers.sync_addresses`.
+        :func:`~pas.plugins.identity.core.profiles.sync_addresses`.
     """
 
     fullname: str
@@ -258,9 +258,9 @@ class IProfileEnricher(Interface):
     a provider document to one of four Profile fields, and that is all it can
     do. It cannot transform a value, and it cannot write a field it does not
     already know about --
-    :data:`~pas.plugins.identity.core.subscribers.WRITABLE_FIELDS` is a closed
+    :data:`~pas.plugins.identity.core.profiles.WRITABLE_FIELDS` is a closed
     set, and
-    :func:`~pas.plugins.identity.core.subscribers._scalar` reads a list or a
+    :func:`~pas.plugins.identity.core.profiles._scalar` reads a list or a
     mapping as an absent claim rather than writing a repr into somebody's
     location. An add-on whose behavior adds a *list* field to the Profile can
     therefore express nothing through the map, however the payload is shaped.
@@ -298,7 +298,7 @@ class IProfileEnricher(Interface):
     **The ownership fence is yours.** The package will not overwrite a value
     a user has edited since the provider wrote it, which it decides by
     remembering what it last wrote (see
-    :func:`~pas.plugins.identity.core.subscribers._provider_may_write`). That
+    :func:`~pas.plugins.identity.core.profiles._provider_may_write`). That
     comparison is a scalar one and says nothing useful about a list, where the
     provider's contribution and the stored value are not the same object. So
     an enricher is given a persistent mapping of its own and decides for

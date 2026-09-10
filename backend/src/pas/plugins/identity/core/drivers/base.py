@@ -148,7 +148,7 @@ class BaseDriver:
     #:
     #: ``email`` was seeded here and is not any more. It is not that the
     #: address does not arrive: it arrives on every login, through
-    #: :func:`~pas.plugins.identity.core.subscribers.sync_addresses`, which
+    #: :func:`~pas.plugins.identity.core.profiles.sync_addresses`, which
     #: appends rather than overwriting a list its owner has arranged. The row
     #: was dropped by the login that read it, and shipping it meant every
     #: provider created through the control panel started with a line in its

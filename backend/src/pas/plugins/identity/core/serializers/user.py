@@ -21,7 +21,7 @@ reported would be whichever record came back first.
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.portraits import picture_url
-from pas.plugins.identity.core.subscribers import profile_url
+from pas.plugins.identity.core.profiles import profile_url
 from pas.plugins.identity.interfaces import IBrowserLayer
 from plone import api
 from plone.restapi.interfaces import ISerializeToJson

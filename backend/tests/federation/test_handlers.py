@@ -26,7 +26,7 @@ from pas.plugins.identity.core.container import TYPE_RECORD as CONTAINER_TYPE_RE
 from pas.plugins.identity.core.controlpanel import CALLBACK_URL_RECORD
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.interfaces import ICredentialStorage
-from pas.plugins.identity.core.subscribers import get_profile
+from pas.plugins.identity.core.profiles import get_profile
 from pas.plugins.identity.server.controlpanel.clients import get_client
 from pas.plugins.identity.server.controlpanel.clients import get_clients
 from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD

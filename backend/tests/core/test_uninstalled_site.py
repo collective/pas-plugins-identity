@@ -16,6 +16,7 @@ gets its site back.
 from pas.plugins.identity import PACKAGE_NAME
 from pas.plugins.identity import setuphandlers
 from pas.plugins.identity.core import indexers
+from pas.plugins.identity.core import profiles
 from pas.plugins.identity.core import subscribers
 from pas.plugins.identity.core.catalog import CATALOG_ID
 from pas.plugins.identity.core.catalog import query_catalog
@@ -183,15 +184,15 @@ class TestProfileHelpersAreInert:
 
     def test_get_profile_answers_none(self):
         """Nothing to find, and no exception on the way to finding nothing."""
-        assert subscribers.get_profile("alice") is None
+        assert profiles.get_profile("alice") is None
 
     def test_profile_url_answers_none(self):
         """Which is what ``@users`` serializes for such a user."""
-        assert subscribers.profile_url("alice") is None
+        assert profiles.profile_url("alice") is None
 
     def test_ensure_profile_creates_nothing(self):
         """A login here must not mint content."""
-        assert subscribers.ensure_profile("alice", "alice", {}) is None
+        assert profiles.ensure_profile("alice", "alice", {}) is None
         assert "identity-profiles" not in self.portal.objectIds()
 
     def test_an_authentication_event_is_survivable(self):

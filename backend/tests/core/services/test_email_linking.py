@@ -40,7 +40,7 @@ class EmailLinkCase:
 
         :param address: The address to claim.
         """
-        from pas.plugins.identity.core.subscribers import get_profile
+        from pas.plugins.identity.core.profiles import get_profile
         from zope.lifecycleevent import modified
 
         profile = get_profile(self.member)
@@ -122,7 +122,7 @@ class TestStartingALink(EmailLinkCase):
         """A site not keeping users as content, or an account that predates
         this add-on: neither has a list to name an address on, so holding
         them to one would take the feature away from them entirely."""
-        from pas.plugins.identity.core.subscribers import get_profile
+        from pas.plugins.identity.core.profiles import get_profile
         from plone import api as plone_api
 
         with plone_api.env.adopt_roles(["Manager"]):

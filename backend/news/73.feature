@@ -1,0 +1,1 @@
+Added `pas.plugins.identity.api`, a public façade carrying the interfaces, events, content classes and functions a downstream package needs, so nothing has to reach into `core` or `server` to find them. @ericof

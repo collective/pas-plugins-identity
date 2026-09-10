@@ -26,7 +26,7 @@ from . import USERID
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.interfaces import IProfileEnricher
-from pas.plugins.identity.core.subscribers import get_profile
+from pas.plugins.identity.core.profiles import get_profile
 from pas.plugins.identity.exportimport import import_site
 from pas.plugins.identity.exportimport.authomatic import convert_authomatic
 from pas.plugins.identity.exportimport.authomatic import SOURCE

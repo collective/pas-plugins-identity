@@ -70,7 +70,7 @@ class IUserProfileSchema(model.Schema, IUserContent):
 
     The fourth clause is about placement rather than fields: the object's id
     within its container is the userid. That is what
-    :func:`~pas.plugins.identity.core.subscribers._profile_id` has always
+    :func:`~pas.plugins.identity.core.profiles._profile_id` has always
     returned, for its own reason -- an opaque userid never changes, so the
     object never has to be renamed and no bookmark is ever stranded.
     """
@@ -212,7 +212,7 @@ class UserProfile(Container):
         The address is moved to the front rather than appended, because the
         thing being written is *the* address -- and the fence that stops a
         login reordering a list its owner arranged is not here but in
-        :func:`~pas.plugins.identity.core.subscribers.sync_claims`, which
+        :func:`~pas.plugins.identity.core.profiles.sync_claims`, which
         only writes while the current value is still exactly what the
         provider last put there. Once somebody edits their own list, or
         verifies an address that outranks the provider's, the derived value

@@ -183,7 +183,7 @@ class TestAListReachesTheProfile:
     def test_the_property_map_cannot_carry_it(self):
         """The premise. ``_scalar`` reads a list as an absent claim, so no
         map and no payload shape gets a list onto a field."""
-        from pas.plugins.identity.core.subscribers import _scalar
+        from pas.plugins.identity.core.profiles import _scalar
 
         assert _scalar(["https://twitter.com/dscully"]) == ""
 

@@ -21,7 +21,7 @@ by a tool that reports "updated" rather than refusing.
 
 from pas.plugins.identity.core.pas import EXTRACTOR
 from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
-from pas.plugins.identity.core.subscribers import get_profile
+from pas.plugins.identity.core.profiles import get_profile
 from plone import api
 
 import pytest

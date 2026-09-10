@@ -9,8 +9,8 @@ chose beats one a provider supplied, whichever wrote last.
 """
 
 from pas.plugins.identity.core import portraits
+from pas.plugins.identity.core.profiles import remembered_picture_url
 from pas.plugins.identity.core.serializers.user import portrait_of
-from pas.plugins.identity.core.subscribers import remembered_picture_url
 from plone import api
 from plone.namedfile.file import NamedBlobImage
 

@@ -37,8 +37,8 @@ installed it keeps stock behaviour.
 """
 
 from io import BytesIO
-from pas.plugins.identity.core.subscribers import get_profile
-from pas.plugins.identity.core.subscribers import remember_picture_url
+from pas.plugins.identity.core.profiles import get_profile
+from pas.plugins.identity.core.profiles import remember_picture_url
 from plone import api
 from plone.namedfile.file import NamedBlobImage
 from plone.namedfile.utils import stream_data
