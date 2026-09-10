@@ -17,8 +17,8 @@ from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.profiles import claim_fields
-from pas.plugins.identity.core.profiles import sync_claims
 from pas.plugins.identity.core.profiles import DEFAULT_CLAIM_FIELDS
+from pas.plugins.identity.core.profiles import sync_claims
 from plone import api
 
 import pytest

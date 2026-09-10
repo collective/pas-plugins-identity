@@ -206,13 +206,23 @@ check-pragmas: ## Every coverage pragma carries a reason on the same line
 .PHONY: check-clean-install
 check-clean-install: requirements-mxdev.txt ## Import the package from a no-extras install
 	@echo "$(GREEN)==> Check that the no-extras install imports$(RESET)"
+	@# The api façade rather than a core module, because api re-exports every
+	@# layer -- so this one import now covers the server and sql modules too,
+	@# where it used to reach only what core.flows happened to pull in.
+	@#
+	@# Note what this does *not* prove: cryptography arrives through Authlib
+	@# and joserfc is a base dependency, so both are installed here whatever
+	@# the extras. The [server] extra sets a version floor, it does not gate
+	@# availability. What fails without extras is anything the optional
+	@# layers' own dependencies provide -- and the widest import is the way to
+	@# find it.
 	@# Joined with && rather than ;: macOS ships GNU Make 3.81, which ignores
 	@# both .ONESHELL and .SHELLFLAGS' -e, so a ;-chain would report the exit
 	@# status of the trailing rm and the check could never fail.
 	@rm -rf $(BACKEND_FOLDER)/.venv-clean && \
 	uv venv $(UV_VENV_ARGS) $(BACKEND_FOLDER)/.venv-clean && \
 	VIRTUAL_ENV=$(BACKEND_FOLDER)/.venv-clean uv pip install -q -c constraints-mxdev.txt . && \
-	$(BACKEND_FOLDER)/.venv-clean/bin/python -c "import pas.plugins.identity.core.flows; print('no-extras import OK')" && \
+	$(BACKEND_FOLDER)/.venv-clean/bin/python -c "import pas.plugins.identity.api; print('no-extras import OK')" && \
 	rm -rf $(BACKEND_FOLDER)/.venv-clean
 
 .PHONY: check-imports
