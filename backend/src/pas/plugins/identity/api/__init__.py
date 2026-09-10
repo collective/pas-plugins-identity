@@ -60,10 +60,25 @@ from pas.plugins.identity.core.container import GROUP
 from pas.plugins.identity.core.container import PROFILE
 from pas.plugins.identity.core.contents.group import UserGroup
 from pas.plugins.identity.core.contents.profile import UserProfile
+from pas.plugins.identity.core.drivers.base import BaseDriver
+from pas.plugins.identity.core.drivers.settings import IDriverSettings
+from pas.plugins.identity.core.drivers.settings import IEmailSettings
+from pas.plugins.identity.core.drivers.settings import IGitHubSettings
+from pas.plugins.identity.core.drivers.settings import IOAuth2Settings
+from pas.plugins.identity.core.drivers.settings import IOIDCSettings
+from pas.plugins.identity.core.drivers.settings import IPloneIdentitySettings
+from pas.plugins.identity.core.drivers.settings import USERID_SOURCES
 from pas.plugins.identity.core.events import EmailVerified
 from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
 from pas.plugins.identity.core.events import IdentityLinked
 from pas.plugins.identity.core.events import IdentityUnlinked
+from pas.plugins.identity.core.events import IEmailVerified
+from pas.plugins.identity.core.events import IExternalIdentityAuthenticated
+from pas.plugins.identity.core.events import IIdentityEvent
+from pas.plugins.identity.core.events import IIdentityLinked
+from pas.plugins.identity.core.events import IIdentityUnlinked
+from pas.plugins.identity.core.events import ISessionsRevoked
+from pas.plugins.identity.core.events import IUserClaimsRefreshed
 from pas.plugins.identity.core.events import SessionsRevoked
 from pas.plugins.identity.core.events import UserClaimsRefreshed
 from pas.plugins.identity.core.interfaces import Claims
@@ -79,6 +94,7 @@ from pas.plugins.identity.core.interfaces import IProfileEnricher
 from pas.plugins.identity.core.interfaces import IUserContent
 from pas.plugins.identity.core.interfaces import IUserGroup
 from pas.plugins.identity.core.interfaces import IUserProfile
+from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.interfaces import ProviderEmail
 from pas.plugins.identity.core.interfaces import ProviderUnusable
 from pas.plugins.identity.core.store import IdentityRecord
@@ -91,6 +107,8 @@ __all__ = [
     "GROUP",
     "MAPPABLE_FIELDS",
     "PROFILE",
+    "USERID_SOURCES",
+    "BaseDriver",
     "Claims",
     "ClaimsError",
     "EmailVerified",
@@ -98,10 +116,23 @@ __all__ = [
     "IAuditSink",
     "IAuditSource",
     "IDriver",
+    "IDriverSettings",
+    "IEmailSettings",
+    "IEmailVerified",
+    "IExternalIdentityAuthenticated",
+    "IGitHubSettings",
     "IGroupContent",
+    "IIdentityEvent",
+    "IIdentityLinked",
     "IIdentityProfileCatalog",
     "IIdentityStore",
+    "IIdentityUnlinked",
+    "IOAuth2Settings",
+    "IOIDCSettings",
+    "IPloneIdentitySettings",
     "IProfileEnricher",
+    "ISessionsRevoked",
+    "IUserClaimsRefreshed",
     "IUserContent",
     "IUserGroup",
     "IUserProfile",
@@ -109,6 +140,7 @@ __all__ = [
     "IdentityLinked",
     "IdentityRecord",
     "IdentityUnlinked",
+    "JSONDict",
     "ProviderEmail",
     "ProviderUnusable",
     "SessionsRevoked",

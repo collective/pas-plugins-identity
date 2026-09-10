@@ -56,7 +56,23 @@ Then, by what you came to do:
 
 - **Run something today**—{doc}`tutorials/federation-demo` starts two Plone sites in Docker and signs in to one against the other.
 - **Set it up for real**—{doc}`how-to-guides/install`, then {doc}`how-to-guides/install-the-frontend`, then a recipe from {doc}`how-to-guides/providers/index`.
+- **Write Python against it**—{doc}`reference/python-api` is the one import path, and the only one to write against.
 - **Something is broken**—{doc}`how-to-guides/troubleshoot` is organized by symptom.
+
+```{important}
+Building an add-on or a policy package on top of this?
+Import from `pas.plugins.identity.api` and nothing else.
+
+    from pas.plugins.identity import api
+
+    api.IProfileEnricher            # register against
+    api.IdentityLinked              # subscribe to
+    api.UserProfile                 # type hint, adapt
+    api.profile.get_current()       # do
+
+The module a name is implemented in under `core` or `server` is not where it is published, and it moves without notice.
+See {doc}`reference/python-api`.
+```
 
 `````{grid} 1 1 2 2
 :gutter: 3

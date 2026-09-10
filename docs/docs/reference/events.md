@@ -92,11 +92,11 @@ decisions.
 ## Subscribing
 
 ```python
-from pas.plugins.identity.core.events import IExternalIdentityAuthenticated
+from pas.plugins.identity import api
 from zope.component import adapter
 
 
-@adapter(IExternalIdentityAuthenticated)
+@adapter(api.IExternalIdentityAuthenticated)
 def welcome(event):
     if not event.is_new_user:
         return

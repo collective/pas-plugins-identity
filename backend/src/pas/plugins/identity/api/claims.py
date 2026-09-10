@@ -15,8 +15,13 @@ from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.server.claims import claims_for
 from pas.plugins.identity.server.claims import released
 from pas.plugins.identity.server.claims import scopes as _scopes
+from pas.plugins.identity.server.interfaces import IScopeSerializer
 from pas.plugins.identity.server.serializers import declared_claims
 from pas.plugins.identity.server.serializers import declared_scopes
+from pas.plugins.identity.server.serializers.address import AddressScope
+from pas.plugins.identity.server.serializers.base import ScopeSerializer
+from pas.plugins.identity.server.serializers.email import EmailScope
+from pas.plugins.identity.server.serializers.profile import ProfileScope
 
 
 def get(userid: str, scope: str = "") -> JSONDict:
@@ -57,6 +62,11 @@ def get_released(scope: str) -> list[str]:
 
 
 __all__ = [
+    "AddressScope",
+    "EmailScope",
+    "IScopeSerializer",
+    "ProfileScope",
+    "ScopeSerializer",
     "declared_claims",
     "declared_scopes",
     "get",

@@ -36,8 +36,9 @@ These are covered by tests that fail loudly if they change.
 
 | Area | What holds | Enforced by |
 |---|---|---|
-| Layer boundaries | Core imports nothing from the `server` or `sql` layers | three import-linter contracts, run in CI |
+| Layer boundaries | Core imports nothing from the `server` or `sql` layers, and nothing imports `api` | four import-linter contracts, run in CI |
 | No-extras install | The package installs and imports with no extras | the `Backend: No-extras install imports` CI job |
+| The Python import path | Names published by {doc}`python-api` are imported from `pas.plugins.identity.api` | a test for each group of calls, asserting the names it documents |
 | Uninstall | Every profile has a matching uninstall profile that leaves nothing behind | uninstall tests per profile |
 | Account data | Uninstalling removes types, catalog and workflows, and no `UserProfile` object | uninstall tests |
 | Security properties | The list in {doc}`security-guarantees` | the test suite |
@@ -56,6 +57,7 @@ Expect these to change without a migration path before 1.0.0.
 | Frontend routes and component names | Named in {doc}`frontend`; shadowed components especially |
 | The `[sql]` audit schema | One table today, and no migration tooling for it |
 | Event interfaces | Named in {doc}`events` |
+| Individual names in the Python API | The import path is settled; what is published at it may still gain and rename members before 1.0.0. {doc}`python-api` is the current surface |
 
 ## Classic UI
 
