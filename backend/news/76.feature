@@ -1,1 +1,0 @@
-Added a `global_roles` behavior to user groups, carrying the site-wide roles a group grants. It reads and writes the groups control panel rather than storing a copy, so the two cannot drift, and it is guarded by a new Manager-only permission. Export and import carry it. @ericof

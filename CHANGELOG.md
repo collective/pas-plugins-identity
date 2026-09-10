@@ -7,6 +7,44 @@
 -->
 
 <!-- towncrier release notes start -->
+## 1.0.0a6 (2026-09-10)
+
+### Backend
+
+
+#### Feature
+
+- Released the server layer's claims through one serializer per scope, registered as a named multi-adapter on the site and the request, so a downstream package can add a claim or a whole scope without editing this one. It was two module-level dicts in `server/claims.py` — a scope-to-claim-names mapping and a claim-name-to-lambda mapping — which a site could only extend by mutating at import time, while the scopes vocabulary's own docstring advertised the extension as though it were supported. A serializer declares its claim names as a class attribute and produces their values in `__call__`, and both halves are needed: `scopes_supported`, `claims_supported` and the consent screen all ask what a scope releases with no user in hand, so a scope that could only serialize somebody would be released without ever being offered or consented to. A new scope reaches the discovery document, the client registration form, the consent screen and issued tokens from that one registration. `sub`, `iss`, `aud`, `exp` and `iat` are reserved and a serializer returning one is ignored on that key. Empty values are dropped for every serializer alike, and the rule is absence rather than falsehood, so `email_verified` still reports `False`. @ericof [#69](https://github.com/collective/pas-plugins-identity/issues/69)
+- Offered `@my-profile` as a `plone.restapi` expandable component, so a signed-in user's profile state rides along with the content request Volto was already making rather than costing a second round trip on every navigation. It is registered on any content rather than on the site root alone, and publishes the site's own `@my-profile` URL whatever page carries it — the endpoint is registered for the site root and resolves nowhere else. For an anonymous caller the component is absent entirely rather than an `@id`: Volto's `apiExpanders` cannot mark an entry authenticated-only, so the expansion is asked for on every page of a public site, and answering with nothing leaves such a response exactly as it was. `test_zero_wake.py` now covers an expanded content request, because a catalog-only read matters more when it runs on every page view than when it ran once. `services/myprofile.py` became a package, with the endpoint, the component and the body they share in separate modules. @ericof [#71](https://github.com/collective/pas-plugins-identity/issues/71)
+- Added `pas.plugins.identity.api`, a public façade carrying the interfaces, events, content classes and functions a downstream package needs, so nothing has to reach into `core` or `server` to find them. @ericof [#73](https://github.com/collective/pas-plugins-identity/issues/73)
+- Added `server_unreleased_groups`, so a site can keep chosen groups out of the `groups` claim without subclassing a serializer. `AuthenticatedUsers` stays out whatever it says. @ericof [#75](https://github.com/collective/pas-plugins-identity/issues/75)
+- Added a `global_roles` behavior to user groups, carrying the site-wide roles a group grants. It reads and writes the groups control panel rather than storing a copy, so the two cannot drift, and it is guarded by a new Manager-only permission. Export and import carry it. @ericof [#76](https://github.com/collective/pas-plugins-identity/issues/76)
+
+
+
+### Frontend
+
+
+#### Feature
+
+- Asked for the caller's profile with the content request instead of separately. `@my-profile` is registered in `apiExpanders` for `GET_CONTENT`, and the profile gate now prefers the answer that arrived with the page, falling back to its own request on a route that fetches no content — `/login`, `/identities`, a control panel — or against a backend too old to offer the component. The expanded answer is used only when the content in the store is the page being rendered: Volto keeps the last content it loaded, so trusting it anywhere else would read a stale answer to a question whose whole point is freshness. `FirstLogin` and `Identities` no longer ask at all while anonymous; both routes are registered like any other, so an anonymous visitor opening them directly fired requests that could only answer 401. @ericof [#71](https://github.com/collective/pas-plugins-identity/issues/71)
+
+
+
+### Project
+
+
+#### Documentation
+
+- Added a how-to for serializing a claim, covering both shapes of the job: adding a claim to a scope the package ships, and registering a scope of your own. Two pages said a site adding a field to its `UserProfile` type had no claim to put it in, and that the extension point for it was deliberately not built; both are corrected, and the claims reference gained the contract a downstream serializer is written against. @ericof [#69](https://github.com/collective/pas-plugins-identity/issues/69)
+- Documented `my-profile` as an expandable component in the endpoints reference — where it is registered, which URL it publishes, and why it is the one component here that answers an anonymous caller with nothing rather than a URL — and added an API expanders table to the frontend reference. @ericof [#71](https://github.com/collective/pas-plugins-identity/issues/71)
+- Documented the public Python API in a new reference page, and pointed the driver, enricher, claim-serializer and events guides at `pas.plugins.identity.api` instead of the modules their names are implemented in. @ericof [#73](https://github.com/collective/pas-plugins-identity/issues/73)
+- Documented `server_unreleased_groups` on the claims and settings reference pages. @ericof [#75](https://github.com/collective/pas-plugins-identity/issues/75)
+- Documented the group `global_roles` behavior and its Manager-only permission. @ericof [#76](https://github.com/collective/pas-plugins-identity/issues/76)
+- Corrected the dispatch example in the profile enricher guide. The walrus bound the result of the `is None` comparison rather than the handler, so the example raised `TypeError: 'bool' object is not callable` on every login it matched a driver on — the only case it existed for — and `enrich_profile` caught it, leaving a logged traceback and an enricher that appeared never to run. @ericof 
+
+
+
 ## 1.0.0a5 (2026-09-09)
 
 ### Backend

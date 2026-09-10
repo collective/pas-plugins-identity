@@ -1,1 +1,0 @@
-Documented the public Python API in a new reference page, and pointed the driver, enricher, claim-serializer and events guides at `pas.plugins.identity.api` instead of the modules their names are implemented in. @ericof
