@@ -155,11 +155,11 @@ class TestTheFirstLoginWritesToTheClaimedStore:
 
     def test_the_reader_finds_the_picture(self):
         """End to end: what ``@users`` reports after a single login."""
-        from pas.plugins.identity.core.serializers.user import portrait_of
+        from pas.plugins.identity.core.portraits import picture_url
 
         profile = get_profile(userid := self.authenticate())
 
-        assert portrait_of(userid) == f"{profile.absolute_url()}/@@images/image"
+        assert picture_url(userid) == f"{profile.absolute_url()}/@@images/image"
 
     def test_a_second_login_changes_nothing(self):
         """The fix must not turn every login into a second write."""

@@ -8,7 +8,7 @@ on *both* stores rather than only on the one that was written.
 """
 
 from base64 import b64encode
-from pas.plugins.identity.core.serializers.user import portrait_of
+from pas.plugins.identity.core.portraits import picture_url
 from pas.plugins.identity.core.services.users import ProfileUsersPatch
 from plone import api
 
@@ -81,7 +81,7 @@ class TestAUserWithAProfile:
         the test goes all the way to the read path."""
         self.service.set_member_portrait(self.user, upload())
 
-        assert portrait_of("alice") == (f"{self.profile.absolute_url()}/@@images/image")
+        assert picture_url("alice") == (f"{self.profile.absolute_url()}/@@images/image")
 
     def test_it_does_not_also_write_the_member(self):
         """One store per user. Writing both would leave two pictures to
@@ -98,7 +98,7 @@ class TestAUserWithAProfile:
         self.service.set_member_portrait(self.user, None)
 
         assert self.profile.image is None
-        assert portrait_of("alice") is None
+        assert picture_url("alice") is None
 
     def test_removing_a_picture_that_is_not_there_is_not_an_error(self):
         """A preferences form that submits an empty portrait field."""

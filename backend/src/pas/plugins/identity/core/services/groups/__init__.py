@@ -22,9 +22,9 @@ as the reason the endpoint can exist at all: a group with a thousand members
 would otherwise be a thousand object loads on a page view.
 
 That was not true until recently, and the way it was untrue is worth keeping in
-mind: the row called ``profile_url(brain.userid)`` to fill one key, which
-searches the catalog again and then wakes the object to ask its URL. A brain
-already knows its own URL. The row is now
+mind: the row called a userid-keyed URL helper -- since removed -- to fill one
+key, which searched the catalog again and then woke the object to ask its URL.
+A brain already knows its own URL. The row is now
 :class:`~pas.plugins.identity.core.serializers.groupmember.GroupMemberSerializer`,
 which is also where a deployment adds a field to it.
 """

@@ -21,7 +21,7 @@ a brain, and a blob has no business in one.
 
 ``image`` is where a user's picture lives, and it wins over the member portrait
 when it is set -- see
-:func:`pas.plugins.identity.core.serializers.user.portrait_of` for the
+:func:`pas.plugins.identity.core.portraits.picture_url` for the
 precedence and why it runs that way round.
 
 **And the fields only reach a form because of the last line of this module.**

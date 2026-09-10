@@ -13,6 +13,7 @@ Integration testing rolls the transaction back afterwards, so the next module
 gets its site back.
 """
 
+from pas.plugins.identity import api as identity_api
 from pas.plugins.identity import PACKAGE_NAME
 from pas.plugins.identity import setuphandlers
 from pas.plugins.identity.core import indexers
@@ -186,9 +187,21 @@ class TestProfileHelpersAreInert:
         """Nothing to find, and no exception on the way to finding nothing."""
         assert profiles.get_profile("alice") is None
 
-    def test_profile_url_answers_none(self):
-        """Which is what ``@users`` serializes for such a user."""
-        assert profiles.profile_url("alice") is None
+    def test_the_facade_answers_none_too(self):
+        """The public spelling has to survive an uninstalled site.
+
+        ``profile_url`` used to be asserted here. It is gone -- a caller now
+        asks for the Profile and reads ``absolute_url()`` off it -- so what
+        matters is that the façade returns ``None`` rather than raising on a
+        site that keeps no Profiles. A downstream package written against
+        the façade runs on sites that never installed this layer.
+
+        Aliased on import, because this module already binds ``api`` to
+        :mod:`plone.api` -- which is exactly the collision the reference
+        page warns about.
+        """
+        assert identity_api.profile.get("alice") is None
+        assert identity_api.profile.get_current() is None
 
     def test_ensure_profile_creates_nothing(self):
         """A login here must not mint content."""

@@ -152,18 +152,6 @@ def get_profile(userid: str) -> UserProfile | None:
     return brains[0]._unrestrictedGetObject()
 
 
-def profile_url(userid: str) -> str | None:
-    """Return the URL of a user's Profile.
-
-    :param userid: Canonical Plone userid.
-    :returns: The absolute URL, or ``None`` when the user has none -- an
-        account created before this add-on was installed and never signed in
-        with since, or one filed somewhere this site does not catalog.
-    """
-    profile = get_profile(userid)
-    return profile.absolute_url() if profile is not None else None
-
-
 def ensure_profile(userid: str, login: str, claims: Claims) -> UserProfile | None:
     """Return the user's Profile, creating it on first login.
 
@@ -388,7 +376,6 @@ __all__ = [
     "claim_fields",
     "ensure_profile",
     "get_profile",
-    "profile_url",
     "remember_picture_url",
     "remembered_picture_url",
     "sync_addresses",
