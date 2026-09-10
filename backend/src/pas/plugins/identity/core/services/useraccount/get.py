@@ -1,6 +1,7 @@
 """``GET @user-account/<userid>`` -- one person's identities and last login."""
 
 from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity.core.profiles import get_profile
 from pas.plugins.identity.core.services.base import IdentityService
 from pas.plugins.identity.core.services.useraccount import audit_entries
 from pas.plugins.identity.core.services.useraccount import DEFAULT_EVENTS
@@ -9,7 +10,6 @@ from pas.plugins.identity.core.services.useraccount import last_authenticated
 from pas.plugins.identity.core.services.useraccount import MANAGE_PERMISSION
 from pas.plugins.identity.core.services.useraccount import MAX_EVENTS
 from pas.plugins.identity.core.services.useraccount import render_identity
-from pas.plugins.identity.core.subscribers import profile_url
 from plone import api
 from Products.CMFPlone.Portal import PloneSite
 from zope.interface import implementer
@@ -62,11 +62,12 @@ class UserAccountGet(IdentityService):
         entries = audit_entries(userid)
         plugin = identity_plugin()
         records = plugin.store.identities_for(userid) if plugin is not None else ()
+        profile = get_profile(userid)
         return {
             "@id": f"{self.context.absolute_url()}/@user-account/{userid}",
             "userid": userid,
             "fullname": user.getProperty("fullname", "") or "",
-            "profile_url": profile_url(userid),
+            "profile_url": (profile.absolute_url() if profile is not None else None),
             "identities": [render_identity(record) for record in records],
             "emails": self._addresses(userid),
             "last_authenticated": last_authenticated(entries),

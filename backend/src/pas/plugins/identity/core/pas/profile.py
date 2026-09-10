@@ -317,7 +317,7 @@ class IdentityProfilePlugin(BasePlugin):
         :param user: The PAS user.
         :param propertysheet: The sheet holding the new values.
         """
-        from pas.plugins.identity.core.subscribers import get_profile
+        from pas.plugins.identity.core.profiles import get_profile
 
         profile = get_profile(user.getId())
         if profile is None:  # pragma: no cover - the sheet came from a Profile

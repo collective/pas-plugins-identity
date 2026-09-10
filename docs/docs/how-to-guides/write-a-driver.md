@@ -47,18 +47,15 @@ Connect provider—so its settings are `IOIDCSettings` unchanged, and there is n
 schema to write at all:
 
 ```python
-from pas.plugins.identity.core.drivers.base import BaseDriver
-from pas.plugins.identity.core.drivers.settings import IOIDCSettings
-from pas.plugins.identity.core.interfaces import Claims
-from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity import api
 
 
-class GitLabDriver(BaseDriver):
+class GitLabDriver(api.BaseDriver):
     """Sign in with a self-hosted GitLab."""
 
     driver_id = "gitlab"
     title = "GitLab"
-    settings_schema = IOIDCSettings
+    settings_schema = api.IOIDCSettings
     default_scope = ("openid", "email", "profile")
     subject_keys = ("sub", "id")
 
@@ -68,7 +65,7 @@ class GitLabDriver(BaseDriver):
     #: still override it per provider.
     default_group_claim = "groups_direct"
 
-    def normalize_claims(self, payload: JSONDict) -> Claims:
+    def normalize_claims(self, payload: api.JSONDict) -> api.Claims:
         """Turn GitLab's answer into the documented schema.
 
         :param payload: The provider's userinfo response.
@@ -85,12 +82,12 @@ and say where it sits:
 
 ```python
 from pas.plugins.identity import _
-from pas.plugins.identity.core.drivers.settings import IOIDCSettings
+from pas.plugins.identity import api
 from plone.autoform import directives
 from zope import schema
 
 
-class IGitLabSettings(IOIDCSettings):
+class IGitLabSettings(api.IOIDCSettings):
     """What a GitLab needs beyond the OpenID Connect fields."""
 
     project_path = schema.TextLine(

@@ -21,7 +21,7 @@ reported would be whichever record came back first.
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.portraits import picture_url
-from pas.plugins.identity.core.subscribers import profile_url
+from pas.plugins.identity.core.profiles import get_profile
 from pas.plugins.identity.interfaces import IBrowserLayer
 from plone import api
 from plone.restapi.interfaces import ISerializeToJson
@@ -72,34 +72,6 @@ def identities_of(userid: str) -> list[JSONDict]:
     ]
 
 
-def portrait_of(userid: str) -> str | None:
-    """Return the picture to represent a user with, if there is one.
-
-    The Profile's own picture wins over the member portrait. A picture on the
-    Profile is one somebody chose and uploaded; the member portrait is where
-    a provider-synced avatar lands, and a claim a provider supplied should
-    not overwrite a decision a person made. Neither existing is a real answer
-    too -- the frontend draws the user's initials rather than a placeholder
-    everybody shares.
-
-    :param userid: Canonical Plone userid.
-    :returns: An absolute URL, or ``None`` when the user has no picture at
-        all. The member portrait is already ``None`` for the default image,
-        which is what makes "no picture" distinguishable here.
-    """
-    return picture_url(userid)
-
-
-def profile_url_of(userid: str) -> str | None:
-    """Return the URL of a user's Profile, when there is one.
-
-    :param userid: Canonical Plone userid.
-    :returns: The absolute URL, or ``None`` when the user has no Profile yet
-        -- an account that predates this add-on and has not signed in since.
-    """
-    return profile_url(userid)
-
-
 @implementer(ISerializeToJson)
 @adapter(IMemberData, IBrowserLayer)
 class SerializeIdentityUserToJson(SerializeUserToJson):
@@ -114,11 +86,17 @@ class SerializeIdentityUserToJson(SerializeUserToJson):
         userid = self.context.getUserId()
         data["source"] = source_of(userid)
         data["identities"] = identities_of(userid)
-        data["profile_url"] = profile_url_of(userid)
-        # Only when the Profile has one: `portrait` already holds the member
+        profile = get_profile(userid)
+        data["profile_url"] = profile.absolute_url() if profile is not None else None
+        # The Profile's own picture wins over the member portrait: a picture on
+        # the Profile is one somebody chose and uploaded, while the member
+        # portrait is where a provider-synced avatar lands, and a claim a
+        # provider supplied should not overwrite a decision a person made.
+        #
+        # Set only when there is one. `portrait` already holds the member
         # portrait, and overwriting it with `None` would take away the
         # provider-synced avatar this is meant to take precedence over.
-        picture = portrait_of(userid)
+        picture = picture_url(userid)
         if picture is not None:
             data["portrait"] = picture
         return data

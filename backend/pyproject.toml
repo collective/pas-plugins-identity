@@ -376,3 +376,22 @@ source_modules = [
     "pas.plugins.identity.migration",
 ]
 forbidden_modules = ["pas.plugins.identity.exportimport"]
+
+# api is a leaf for a stronger reason than exportimport is: it spans every
+# layer, so anything here importing it would reach the optional ones
+# transitively and put cryptography back into a no-extras install -- which is
+# exactly what the first two contracts exist to prevent. The façade depends on
+# the package; the package must never depend on the façade.
+#
+# This is also how plone.api behaves: nothing in Plone core imports it.
+[[tool.importlinter.contracts]]
+name = "Nothing imports the api layer"
+type = "forbidden"
+source_modules = [
+    "pas.plugins.identity.core",
+    "pas.plugins.identity.server",
+    "pas.plugins.identity.sql",
+    "pas.plugins.identity.migration",
+    "pas.plugins.identity.exportimport",
+]
+forbidden_modules = ["pas.plugins.identity.api"]

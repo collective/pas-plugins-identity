@@ -7,7 +7,7 @@ and not signed in with since.
 
 A picture on the Profile **wins** where the user filled it in: a picture
 somebody chose beats one a provider supplied. See
-:func:`pas.plugins.identity.core.serializers.user.portrait_of`, which is where the
+:func:`pas.plugins.identity.core.portraits.picture_url`, which is where the
 precedence lives. What lands in ``portal_memberdata`` is the fallback.
 
 Syncing is **off by default**, which is worth explaining.
@@ -59,9 +59,9 @@ from OFS.Image import Image
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.controlpanel.interfaces import DEFAULT_PORTRAIT_MAX_BYTES
 from pas.plugins.identity.core.controlpanel.interfaces import DEFAULT_PORTRAIT_TIMEOUT
-from pas.plugins.identity.core.subscribers import get_profile
-from pas.plugins.identity.core.subscribers import remember_picture_url
-from pas.plugins.identity.core.subscribers import remembered_picture_url
+from pas.plugins.identity.core.profiles import get_profile
+from pas.plugins.identity.core.profiles import remember_picture_url
+from pas.plugins.identity.core.profiles import remembered_picture_url
 from plone import api
 from plone.namedfile.file import NamedBlobImage
 from Products.PlonePAS.utils import scale_image
@@ -180,7 +180,7 @@ def has_picture(userid: str) -> bool:
 
     The question the ``[server]`` layer needs before it publishes a
     ``picture`` claim, and it has to be asked of both stores for the same
-    reason :func:`pas.plugins.identity.core.serializers.user.portrait_of` reads
+    reason :func:`pas.plugins.identity.core.portraits.picture_url` reads
     both: which one holds a given user's picture depends on whether that
     user has a Profile, and the server layer is not allowed to know.
 

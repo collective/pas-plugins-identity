@@ -404,7 +404,7 @@ class TestTheMigratedPersonIsAUser:
 
     def test_the_profile_exists_after_migrating(self):
         """The whole point."""
-        from pas.plugins.identity.core.subscribers import get_profile
+        from pas.plugins.identity.core.profiles import get_profile
 
         migration.migrate(dry_run=False)
 
@@ -420,14 +420,14 @@ class TestTheMigratedPersonIsAUser:
     def test_the_claims_reach_the_profile(self):
         """The migration built a claims snapshot all along and nothing ever
         applied it, because nothing was listening."""
-        from pas.plugins.identity.core.subscribers import get_profile
+        from pas.plugins.identity.core.profiles import get_profile
 
         migration.migrate(dry_run=False)
 
         assert get_profile(self.USERID).fullname == "Érico Andrei"
 
     def test_the_address_reaches_the_profile(self):
-        from pas.plugins.identity.core.subscribers import get_profile
+        from pas.plugins.identity.core.profiles import get_profile
 
         migration.migrate(dry_run=False)
 
@@ -436,14 +436,14 @@ class TestTheMigratedPersonIsAUser:
     def test_the_address_is_not_verified(self):
         """authomatic never recorded whether the provider asserted it, so
         this site has proved nothing and says so."""
-        from pas.plugins.identity.core.subscribers import get_profile
+        from pas.plugins.identity.core.profiles import get_profile
 
         migration.migrate(dry_run=False)
 
         assert get_profile(self.USERID).verified_emails == ()
 
     def test_a_dry_run_creates_nobody(self):
-        from pas.plugins.identity.core.subscribers import get_profile
+        from pas.plugins.identity.core.profiles import get_profile
 
         migration.migrate(dry_run=True)
 

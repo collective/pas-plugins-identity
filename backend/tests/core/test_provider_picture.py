@@ -9,8 +9,8 @@ chose beats one a provider supplied, whichever wrote last.
 """
 
 from pas.plugins.identity.core import portraits
-from pas.plugins.identity.core.serializers.user import portrait_of
-from pas.plugins.identity.core.subscribers import remembered_picture_url
+from pas.plugins.identity.core.portraits import picture_url
+from pas.plugins.identity.core.profiles import remembered_picture_url
 from plone import api
 from plone.namedfile.file import NamedBlobImage
 
@@ -77,7 +77,7 @@ class TestAUserWithAProfile:
         the test goes all the way to the read path."""
         self.store()
 
-        assert portrait_of("alice") == (f"{self.profile.absolute_url()}/@@images/image")
+        assert picture_url("alice") == (f"{self.profile.absolute_url()}/@@images/image")
 
     def test_the_media_type_is_read_from_the_bytes(self):
         """A blob served back as ``application/octet-stream`` is a download
@@ -165,4 +165,4 @@ class TestAUserWithoutAProfile:
         portraits.store(self.userid, PNG, "https://cdn/a.png")
 
         assert member_portrait(self.userid) is not None
-        assert portrait_of(self.userid) is None
+        assert picture_url(self.userid) is None

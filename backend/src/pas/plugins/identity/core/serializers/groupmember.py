@@ -5,9 +5,9 @@ the endpoint's whole premise -- a group of a thousand members must not become a
 thousand object loads to draw one page of it -- and it is easy to lose, because
 losing it looks like calling a helper that takes a userid.
 
-It had been lost. The row filled ``profile_url`` by calling
-``profile_url(brain.userid)``, which searches the catalog a second time and
-then wakes the object to ask for its URL, once per person on the page. A brain
+It had been lost. The row filled ``profile_url`` through a userid-keyed
+helper -- since removed -- which searched the catalog a second time and then
+woke the object to ask for its URL, once per person on the page. A brain
 already knows its own URL, so :meth:`GroupMemberSerializer.__call__` asks it.
 """
 

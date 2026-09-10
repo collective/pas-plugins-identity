@@ -47,11 +47,11 @@ A utility that handles more than one kind of provider stays readable when that
 method does nothing but dispatch on the driver:
 
 ```python
-from pas.plugins.identity.core.interfaces import IProfileEnricher
+from pas.plugins.identity import api
 from zope.interface import implementer
 
 
-@implementer(IProfileEnricher)
+@implementer(api.IProfileEnricher)
 class SocialLinks:
     """Put the accounts a provider knows about onto the profile."""
 

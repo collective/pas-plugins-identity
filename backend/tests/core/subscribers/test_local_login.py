@@ -15,7 +15,7 @@ says and not what it is for (Érico, 2026-08-28).
 from pas.plugins.identity.core.completeness import COMPLETE
 from pas.plugins.identity.core.completeness import INCOMPLETE
 from pas.plugins.identity.core.completeness import REQUIRED_FIELDS_RECORD
-from pas.plugins.identity.core.subscribers import get_profile
+from pas.plugins.identity.core.profiles import get_profile
 from plone import api
 from Products.PlonePAS.events import UserLoggedInEvent
 from zope.event import notify

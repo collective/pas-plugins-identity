@@ -23,7 +23,7 @@ addresses a provider had offered but nobody had picked between, so the form
 rendered a choice rather than an empty box. Nothing offers them any more --
 every address a provider reports goes straight onto the Profile, so the field
 this would have decorated is never empty when there is anything to put in it.
-See :func:`~pas.plugins.identity.core.subscribers.sync_addresses`.
+See :func:`~pas.plugins.identity.core.profiles.sync_addresses`.
 """
 
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE

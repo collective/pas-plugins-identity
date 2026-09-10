@@ -8,9 +8,9 @@ resolution and hoping to agree with it.
 
 from ..services import USERINFO
 from pas.plugins.identity.core.pas import PLUGIN_ID
+from pas.plugins.identity.core.portraits import picture_url
+from pas.plugins.identity.core.profiles import get_profile
 from pas.plugins.identity.core.serializers.user import identities_of
-from pas.plugins.identity.core.serializers.user import portrait_of
-from pas.plugins.identity.core.serializers.user import profile_url_of
 from pas.plugins.identity.core.serializers.user import source_of
 from plone import api
 from plone.namedfile.file import NamedBlobImage
@@ -142,23 +142,29 @@ class TestProfileUrl(SerializerCase):
     def test_points_at_the_profile(self):
         """Which is the whole reason the field exists: a client showing a
         user should be able to link to their Profile without knowing where
-        this site decided to keep them."""
-        assert profile_url_of("alice") == self.profile.absolute_url()
+        this site decided to keep them.
 
-    def test_the_payload_carries_it(self):
-        """Through the serializer, not only the helper."""
+        Asserted through the serializer rather than through a helper. The
+        two helpers that used to spell this -- ``profile_url_of`` here and
+        ``profile_url`` in the subscribers module -- are gone; the payload is
+        what anybody actually reads.
+        """
         assert self.serialize("alice")["profile_url"] == self.profile.absolute_url()
 
     def test_a_user_without_a_profile_has_none(self):
         """Not every userid has one: a Profile is minted when somebody is
         added or first signs in, and a userid nothing ever created has
-        none."""
-        assert profile_url_of("nobody-at-all") is None
+        none.
+
+        Asked of the lookup the serializer uses, because serializing takes a
+        ``MemberData`` and there is no member here to hand it.
+        """
+        assert get_profile("nobody-at-all") is None
 
     def test_a_profile_without_a_picture_falls_back(self):
         """No picture chosen, so whatever the member portrait holds stands --
         which is where a provider-synced avatar lands."""
-        assert portrait_of("alice") is None
+        assert picture_url("alice") is None
 
     def test_the_profile_picture_wins(self):
         """A picture somebody uploaded beats one a provider supplied."""
@@ -166,7 +172,7 @@ class TestProfileUrl(SerializerCase):
             data=PNG, filename="face.png", contentType="image/png"
         )
 
-        assert portrait_of("alice") == (f"{self.profile.absolute_url()}/@@images/image")
+        assert picture_url("alice") == (f"{self.profile.absolute_url()}/@@images/image")
 
     def test_the_payload_carries_the_profile_picture(self):
         """Through the serializer, which is what the avatar reads."""
@@ -178,7 +184,7 @@ class TestProfileUrl(SerializerCase):
 
     def test_a_user_with_no_profile_has_no_picture(self):
         """A userid nothing created has nothing to hold a picture."""
-        assert portrait_of("nobody-at-all") is None
+        assert picture_url("nobody-at-all") is None
 
     def test_the_source_is_our_own_plugin(self):
         """A profile-backed userid is enumerated by the profile plugin, and

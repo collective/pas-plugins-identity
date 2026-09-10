@@ -16,6 +16,14 @@ Look things up here.
 For directions toward a result, read {doc}`/how-to-guides/index`.
 For the reasoning behind any of it, read {doc}`/concepts/index`.
 
+## Writing Python against this package
+
+```{toctree}
+:maxdepth: 1
+
+python-api
+```
+
 ## Configuration
 
 ```{toctree}

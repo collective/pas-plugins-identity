@@ -345,7 +345,7 @@ class TestTheMigratedPersonIsAUser:
         self.legacy_user("sub-alice")
 
     def test_the_profile_exists_after_migrating(self):
-        from pas.plugins.identity.core.subscribers import get_profile
+        from pas.plugins.identity.core.profiles import get_profile
 
         migration.migrate(dry_run=False)
 
@@ -360,7 +360,7 @@ class TestTheMigratedPersonIsAUser:
         assert "sub-alice" in report.users
 
     def test_a_dry_run_creates_nobody(self):
-        from pas.plugins.identity.core.subscribers import get_profile
+        from pas.plugins.identity.core.profiles import get_profile
 
         migration.migrate(dry_run=True)
 

@@ -15,8 +15,8 @@ operator overrules either way.
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
+from pas.plugins.identity.core.profiles import get_profile
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
-from pas.plugins.identity.core.subscribers import get_profile
 from pas.plugins.identity.core.verification import record_verified_addresses
 from pas.plugins.identity.core.verification import trusts_verification
 from pas.plugins.identity.core.verification import verified_by_provider

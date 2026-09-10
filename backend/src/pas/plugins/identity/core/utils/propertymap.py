@@ -28,7 +28,7 @@ from typing import Any
 #:
 #: **The one definition.** Three things ask this question and used to answer it
 #: separately: a login, through
-#: :data:`~pas.plugins.identity.core.subscribers.WRITABLE_FIELDS`; a principal
+#: :data:`~pas.plugins.identity.core.profiles.WRITABLE_FIELDS`; a principal
 #: document, through
 #: :data:`~pas.plugins.identity.exportimport.schema.USER_FIELDS`; and the
 #: control panel, which asked nothing at all and took free text. Both of the
@@ -41,7 +41,7 @@ from typing import Any
 #: ``group_ids`` is membership, and a provider that could edit it could grant
 #: itself roles. ``email`` and the portrait are excluded for a different
 #: reason: they are handled, just not here --
-#: :func:`~pas.plugins.identity.core.subscribers.sync_addresses` appends
+#: :func:`~pas.plugins.identity.core.profiles.sync_addresses` appends
 #: addresses without taking any away, and a portrait is synced from the
 #: normalized ``picture_url`` claim with no map entry at all.
 #:

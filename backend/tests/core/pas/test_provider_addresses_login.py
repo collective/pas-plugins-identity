@@ -14,7 +14,7 @@ sync silently undoes somebody's editing.
 
 from . import DEX_IDENTITY
 from pas.plugins.identity.core.pas import EXTRACTOR
-from pas.plugins.identity.core.subscribers import get_profile
+from pas.plugins.identity.core.profiles import get_profile
 from plone import api
 
 import pytest

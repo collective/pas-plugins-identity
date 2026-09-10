@@ -95,7 +95,7 @@ def profiles_for(userids) -> list[str]:
     :param userids: The userids to look at.
     :returns: Those with a Profile, sorted.
     """
-    from pas.plugins.identity.core.subscribers import get_profile
+    from pas.plugins.identity.core.profiles import get_profile
 
     return sorted(uid for uid in set(userids) if get_profile(uid) is not None)
 

@@ -111,8 +111,15 @@ def blank(record: str) -> None:
     getUtility(IRegistry)[record] = None
 
 
-def portrait_of(userid: str):
-    """Return the stored portrait for a user, or ``None``.
+def stored_portrait(userid: str):
+    """Return what ``portal_memberdata`` has stored, or ``None``.
+
+    Raw storage. :func:`_member_portrait` below asks
+    ``portal_membership`` instead and filters out the shared default image,
+    which is a different question about the same store.
+
+    Neither is :func:`~pas.plugins.identity.core.portraits.picture_url`,
+    which reads the *Profile* picture.
 
     :param userid: Canonical Plone userid.
     :returns: The portrait image, or ``None``.
@@ -360,7 +367,7 @@ class TestStoring:
         self.answers(FakeResponse(_png()))
 
         assert portraits.sync_portrait("alice", "https://cdn/a.png") is True
-        assert portrait_of("alice") is not None
+        assert stored_portrait("alice") is not None
 
     def test_it_replaces_a_previous_portrait(self):
         """Storing twice must not raise on the duplicate id."""

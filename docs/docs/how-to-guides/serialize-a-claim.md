@@ -50,7 +50,7 @@ Subclass the shipped serializer, call `super().__call__(user)`, and add to the r
 This is the same shape a `plone.restapi` serializer is extended in.
 
 ```python
-from pas.plugins.identity.core.subscribers import get_profile
+from pas.plugins.identity import api
 from pas.plugins.identity.server.serializers.profile import ProfileScope
 from ploneorg.idp.behavior.badge import IUserBadge
 
@@ -67,7 +67,7 @@ class ProfileWithBadges(ProfileScope):
         :returns: The inherited claims plus `badges`.
         """
         claims = super().__call__(user)
-        profile = get_profile(user.getId())
+        profile = api.profile.get(user.getId())
         if profile is not None:
             claims["badges"] = IUserBadge(profile).badges
         return claims
@@ -99,13 +99,13 @@ Two things that are easy to get wrong:
 
 ## Add a scope of your own
 
-Subclass `ScopeSerializer` and register the adapter under a name nothing else uses.
+Subclass `api.claims.ScopeSerializer` and register the adapter under a name nothing else uses.
 
 ```python
-from pas.plugins.identity.server.serializers.base import ScopeSerializer
+from pas.plugins.identity import api
 
 
-class PhoneScope(ScopeSerializer):
+class PhoneScope(api.claims.ScopeSerializer):
     """The `phone` scope."""
 
     claims = ("phone_number", "phone_number_verified")

@@ -16,9 +16,9 @@ what that was, and a Profile has annotations while a property sheet does not.
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
-from pas.plugins.identity.core.subscribers import claim_fields
-from pas.plugins.identity.core.subscribers import DEFAULT_CLAIM_FIELDS
-from pas.plugins.identity.core.subscribers import sync_claims
+from pas.plugins.identity.core.profiles import claim_fields
+from pas.plugins.identity.core.profiles import DEFAULT_CLAIM_FIELDS
+from pas.plugins.identity.core.profiles import sync_claims
 from plone import api
 
 import pytest
@@ -175,7 +175,7 @@ class TestClaimsReachTheProfile:
         """``email`` is derived from the address list, so a single-value
         write of it would move an address to the front of a list its owner
         arranged. The addresses have their own path --
-        :func:`~pas.plugins.identity.core.subscribers.sync_addresses` -- which
+        :func:`~pas.plugins.identity.core.profiles.sync_addresses` -- which
         is why the field refuses such a row now. This is the row a site stored
         while it did not."""
         provider({"fullname": "fullname"})

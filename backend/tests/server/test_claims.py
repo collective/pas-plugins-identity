@@ -251,7 +251,7 @@ class TestPictureOnASiteWithProfiles:
 
     @pytest.fixture(autouse=True)
     def _setup(self, portal, user) -> None:
-        from pas.plugins.identity.core.subscribers import get_profile
+        from pas.plugins.identity.core.profiles import get_profile
         from plone.namedfile.file import NamedBlobImage
 
         self.portal = portal
@@ -376,7 +376,7 @@ class TestEmailVerified:
         writing an empty ``email``: that field is derived from the list, so
         an empty write is an instruction about nothing and is ignored.
         """
-        from pas.plugins.identity.core.subscribers import get_profile
+        from pas.plugins.identity.core.profiles import get_profile
         from zope.lifecycleevent import modified
 
         with api.env.adopt_roles(["Manager"]):
@@ -416,7 +416,7 @@ class TestClaimsOnASiteWithProfiles:
     @pytest.fixture(autouse=True)
     def _setup(self, portal) -> None:
         from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
-        from pas.plugins.identity.core.subscribers import get_container
+        from pas.plugins.identity.core.container import get_container
 
         self.portal = portal
         api.portal.set_registry_record(ISSUER_RECORD, "http://id.example.org")

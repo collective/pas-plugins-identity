@@ -23,11 +23,11 @@ from pas.plugins.identity.core.interfaces import FlowError
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.interfaces import ProviderUnusable
 from pas.plugins.identity.core.interfaces import RateLimited
+from pas.plugins.identity.core.profiles import get_profile
 from pas.plugins.identity.core.services.identities import IdentitiesBase
 from pas.plugins.identity.core.services.magiclink import check_rate_limits
 from pas.plugins.identity.core.services.magiclink import send_link
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
-from pas.plugins.identity.core.subscribers import get_profile
 from plone import api
 from plone.restapi.deserializer import json_body
 

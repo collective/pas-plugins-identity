@@ -40,7 +40,7 @@ from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.pas import EXTRACTOR
 from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
-from pas.plugins.identity.core.subscribers import get_profile
+from pas.plugins.identity.core.profiles import get_profile
 from plone import api
 
 import pytest
@@ -155,11 +155,11 @@ class TestTheFirstLoginWritesToTheClaimedStore:
 
     def test_the_reader_finds_the_picture(self):
         """End to end: what ``@users`` reports after a single login."""
-        from pas.plugins.identity.core.serializers.user import portrait_of
+        from pas.plugins.identity.core.portraits import picture_url
 
         profile = get_profile(userid := self.authenticate())
 
-        assert portrait_of(userid) == f"{profile.absolute_url()}/@@images/image"
+        assert picture_url(userid) == f"{profile.absolute_url()}/@@images/image"
 
     def test_a_second_login_changes_nothing(self):
         """The fix must not turn every login into a second write."""
