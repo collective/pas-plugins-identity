@@ -40,7 +40,7 @@
  * without a store.
  * @module components/ProfileGate/ProfileGate
  */
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory, useLocation } from 'react-router-dom';
 import { defineMessages, useIntl } from 'react-intl';
@@ -48,6 +48,7 @@ import { addMessage } from '@plone/volto/actions';
 
 import { getMyProfile } from '../../actions';
 import {
+  expandedProfile,
   gateTarget,
   handedOverReturn,
   rememberReturn,
@@ -85,7 +86,32 @@ const ProfileGate: React.FC<ProfileGateProps> = ({ apiPath = '' }) => {
   const explained = useRef(false);
 
   const token = useSelector((state: any) => state.userSession?.token);
-  const profile = useSelector((state: any) => state.myProfile);
+  const fetched = useSelector((state: any) => state.myProfile);
+  const content = useSelector((state: any) => state.content);
+  const contentLoading = useSelector(
+    (state: any) => state.content?.get?.loading,
+  );
+
+  // The answer this navigation brought with it, when it brought one. The
+  // backend offers `@my-profile` as an expandable component and the add-on
+  // registers it in `apiExpanders`, so a content route answers the gate's
+  // question in the request it was already making.
+  const rodeAlong = expandedProfile(content, location.pathname);
+
+  // One question, two ways in, and the gate below does not care which
+  // answered. Shaped like the reducer slice so the rest of this component
+  // reads the same either way.
+  //
+  // Memoised because it feeds the redirect effect's dependencies: a fresh
+  // object literal every render would re-run that effect every render, which
+  // on this component means re-deciding a redirect in a loop.
+  const profile = useMemo(
+    () =>
+      rodeAlong
+        ? { loaded: true, loading: false, error: null, data: rodeAlong }
+        : fetched,
+    [rodeAlong, fetched],
+  );
 
   useEffect(() => {
     // Anonymous users have no profile to be held for, and asking would answer
@@ -93,12 +119,23 @@ const ProfileGate: React.FC<ProfileGateProps> = ({ apiPath = '' }) => {
     if (!token) {
       return;
     }
-    // Re-asked on every navigation, not once: saving the form is a navigation,
-    // and a stale answer here is a user held on a profile they have already
-    // completed.
+    // This route's content request is still in flight. On a content route it
+    // arrives carrying the answer, and asking now would make exactly the
+    // second request the component exists to avoid.
+    if (contentLoading) {
+      return;
+    }
+    if (rodeAlong) {
+      asked.current = true;
+      return;
+    }
+    // A route that fetches no content, or a backend too old to offer the
+    // component. Re-asked on every navigation, not once: saving the form is a
+    // navigation, and a stale answer here is a user held on a profile they
+    // have already completed.
     asked.current = true;
     dispatch(getMyProfile());
-  }, [dispatch, token, location.pathname]);
+  }, [dispatch, token, location.pathname, contentLoading, rodeAlong]);
 
   useEffect(() => {
     if (!token || !profile?.loaded || profile?.error) {

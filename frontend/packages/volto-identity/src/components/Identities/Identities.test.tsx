@@ -37,6 +37,10 @@ const EMAIL_PROVIDER = {
 
 function storeWith(loginProviders: unknown[]) {
   const state = {
+    // Signed in: the page fetches nothing without a token, which is what
+    // keeps an anonymous visitor who opens this route from firing two
+    // requests that can only answer 401.
+    userSession: { token: 'a-token' },
     identities: { loading: false, loaded: true, error: null, data: [] },
     linkableProviders: { loading: false, loaded: true, error: null, data: [] },
     loginProviders: {
@@ -63,8 +67,12 @@ function storeWith(loginProviders: unknown[]) {
   return { state, dispatched: [] as any[] };
 }
 
-function renderIdentities(loginProviders: unknown[] = [EMAIL_PROVIDER]) {
+function renderIdentities(
+  loginProviders: unknown[] = [EMAIL_PROVIDER],
+  mutate: (state: any) => void = () => {},
+) {
   const { state, dispatched } = storeWith(loginProviders);
+  mutate(state);
   const store = {
     getState: () => state,
     dispatch: (action: any) => {
@@ -130,5 +138,15 @@ describe('Identities', () => {
 
     expect(document.body.textContent).not.toContain('sign in with a link');
     expect(document.body.textContent).toContain('recognises you');
+  });
+
+  it('asks for nothing while anonymous', () => {
+    // The route is registered like any other, so an anonymous visitor can
+    // open it directly. Both requests it would make can only answer 401.
+    const { dispatched } = renderIdentities([EMAIL_PROVIDER], (state) => {
+      state.userSession = {};
+    });
+
+    expect(dispatched).toHaveLength(0);
   });
 });

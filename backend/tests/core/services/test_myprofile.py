@@ -1,7 +1,7 @@
 """``@my-profile`` -- the first-login routing question."""
 
 from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
-from pas.plugins.identity.core.services.myprofile import MyProfileGet
+from pas.plugins.identity.core.services.myprofile.get import MyProfileGet
 from plone import api
 from plone.app.testing import logout
 from plone.app.testing import TEST_USER_ID

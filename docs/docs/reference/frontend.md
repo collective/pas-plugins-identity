@@ -74,6 +74,19 @@ the browser.
 
 The environment variable above sets this at run time.
 
+## Expansion on content requests
+
+The add-on adds one entry to `config.settings.apiExpanders`.
+
+| Entry | What it does |
+|---|---|
+| `{ match: '', GET_CONTENT: ['my-profile'] }` | Asks for the caller's profile state with every content request, so the profile gate needs no request of its own. |
+
+Registered for every path, and sent for anonymous visitors too—an entry cannot
+be marked authenticated-only.
+The backend answers an anonymous caller with no component at all.
+See {doc}`endpoints`.
+
 ## Views
 
 | Registration | Content type |

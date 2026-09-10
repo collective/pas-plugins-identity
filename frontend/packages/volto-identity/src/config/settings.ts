@@ -51,6 +51,23 @@ export default function install(config: ConfigType) {
   // own configuration, and the environment still wins over it.
   config.settings.identityShowPloneLogin = false;
 
+  // `@my-profile` rides on the content request rather than costing one of its
+  // own. The gate asks on every navigation, and a navigation to a content
+  // route is already a request -- so this turns two round trips into one for
+  // every signed-in page view.
+  //
+  // It is sent for anonymous visitors too, and that is not an oversight:
+  // `addExpandersToPath` receives `isAnonymous` but the filter using it is a
+  // hardcoded list of `types` and `translations`, so an entry here cannot
+  // declare itself authenticated-only. The backend component answers an
+  // anonymous caller with nothing at all, which leaves a public site's payload
+  // exactly as it was. The parameter still rides on anonymous content URLs; it
+  // is constant, so it moves the cache key once rather than splitting it.
+  config.settings.apiExpanders = [
+    ...(config.settings.apiExpanders ?? []),
+    { match: '', GET_CONTENT: ['my-profile'] },
+  ];
+
   // The required-information gate, on every route.
   //
   // The backend has one too, and it lets `plone.restapi` requests through on

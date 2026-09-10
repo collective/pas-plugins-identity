@@ -368,3 +368,106 @@ describe('the remembered destination', () => {
     }
   });
 });
+
+describe('when the content request carries the answer', () => {
+  const API = 'http://localhost:8080/Plone';
+
+  function contentWith(component: any, at = '/a-page', loading = false) {
+    return {
+      get: { loading, loaded: !loading, error: null },
+      data: {
+        '@id': `${API}${at}`,
+        '@components': component ? { 'my-profile': component } : {},
+      },
+    };
+  }
+
+  const complete = {
+    '@id': '/@my-profile',
+    userid: 'alice',
+    profile: PROFILE,
+    review_state: 'complete',
+  };
+
+  it('asks for nothing of its own', () => {
+    // The whole point. A content route already made the request, so the
+    // gate making a second one is the cost this component removes.
+    dispatched.length = 0;
+
+    mountAt('/a-page', {
+      userSession: { token: 'a-token' },
+      myProfile: { loading: false, loaded: false, error: null, data: null },
+      content: contentWith(complete),
+    });
+
+    expect(dispatched).toHaveLength(0);
+  });
+
+  it('still asks on a route that fetches no content', () => {
+    // `/identities` and the control panels issue no GET_CONTENT, so the
+    // store holds the previous page's answer and the gate must not use it.
+    dispatched.length = 0;
+
+    mountAt('/identities', {
+      userSession: { token: 'a-token' },
+      myProfile: { loading: false, loaded: false, error: null, data: null },
+      content: contentWith(complete, '/a-page'),
+    });
+
+    expect(dispatched).toHaveLength(1);
+  });
+
+  it('waits while the content request is in flight', () => {
+    // Asking here would make the second request anyway, just earlier.
+    dispatched.length = 0;
+
+    mountAt('/a-page', {
+      userSession: { token: 'a-token' },
+      myProfile: { loading: false, loaded: false, error: null, data: null },
+      content: contentWith(null, '/a-page', true),
+    });
+
+    expect(dispatched).toHaveLength(0);
+  });
+
+  it('asks when the content came back without the component', () => {
+    // A backend too old to offer it. The gate has to keep working.
+    dispatched.length = 0;
+
+    mountAt('/a-page', {
+      userSession: { token: 'a-token' },
+      myProfile: { loading: false, loaded: false, error: null, data: null },
+      content: contentWith(null),
+    });
+
+    expect(dispatched).toHaveLength(1);
+  });
+
+  it('acts on the answer it rode in on', () => {
+    // Not merely quieter: the gate has to gate. An incomplete profile
+    // arriving by expansion must redirect exactly as a fetched one does.
+    let seen: { path: string } | undefined;
+
+    withStorage(() => {
+      seen = mountAt('/a-page', {
+        userSession: { token: 'a-token' },
+        myProfile: { loading: false, loaded: false, error: null, data: null },
+        content: contentWith({ ...complete, review_state: 'incomplete' }),
+      });
+    });
+
+    expect(seen?.path).toBe('/identity-profiles/alice/edit');
+  });
+
+  it('asks nothing while anonymous, component or not', () => {
+    dispatched.length = 0;
+
+    mountAt('/a-page', {
+      userSession: {},
+      myProfile: { loading: false, loaded: false, error: null, data: null },
+      content: contentWith(complete),
+    });
+
+    expect(dispatched).toHaveLength(0);
+  });
+});

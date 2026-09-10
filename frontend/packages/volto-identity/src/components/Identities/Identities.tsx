@@ -58,15 +58,23 @@ const Identities: React.FC = () => {
   // The addresses live on the profile, not on the identity records, so this
   // page needs the one endpoint that reads them off the catalog brain.
   const myProfile = useSelector((state: any) => state.myProfile);
+  const token = useSelector((state: any) => state.userSession?.token);
 
   useEffect(() => {
+    // Both of these are about the signed-in person, and this route is
+    // registered like any other -- an anonymous visitor who opens it directly
+    // would fire two requests that can only answer 401. The page renders its
+    // signed-out state from the empty store either way.
+    if (!token) {
+      return;
+    }
     // Expanded, so the login page's own listing rides along: this page has to
     // know which of these methods actually signs anybody in, and that is the
     // question `@login-providers` answers. One request rather than two, which
     // is what the expandable component exists for.
     dispatch(listIdentities(true));
     dispatch(getMyProfile());
-  }, [dispatch]);
+  }, [dispatch, token]);
 
   useEffect(() => {
     if (redirecting && linking?.loaded && linking?.data?.authorize_url) {
