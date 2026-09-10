@@ -16,8 +16,12 @@ from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from pas.plugins.identity.server.claims import claims_for
 from pas.plugins.identity.server.claims import released
 from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
+from pas.plugins.identity.server.serializers.profile import UNRELEASED_RECORD
 from plone import api
+from plone.registry.interfaces import IRegistry
+from zope.component import getUtility
 from zope.lifecycleevent import modified
+from zope.schema.interfaces import WrongContainedType
 
 import base64
 import pytest
@@ -338,6 +342,114 @@ class TestGroups:
             api.group.add_user(groupname="editors", username=USERID)
 
         assert "groups" not in claims_for(USERID, "openid email")
+
+
+class TestGroupsASiteKeepsToItself:
+    """The ``server_unreleased_groups`` record.
+
+    A site has groups a relying party has no business seeing -- an operations
+    or on-call group that exists to hold a local permission. Naming one here
+    keeps it out of the claim without changing who is in it.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, user) -> None:
+        self.portal = portal
+        with api.env.adopt_roles(["Manager"]):
+            for name in ("editors", "ops-oncall"):
+                api.group.create(groupname=name)
+                api.group.add_user(groupname=name, username=USERID)
+
+    def withhold(self, *groups: str) -> None:
+        """Configure the groups this site does not release.
+
+        :param groups: Group ids to withhold.
+        """
+        api.portal.set_registry_record(UNRELEASED_RECORD, tuple(groups))
+
+    def test_nothing_is_withheld_by_default(self):
+        """A site that has not configured this releases what it always did."""
+        assert claims_for(USERID, "openid profile")["groups"] == [
+            "editors",
+            "ops-oncall",
+        ]
+
+    def test_a_configured_group_is_left_out(self):
+        """The whole point."""
+        self.withhold("ops-oncall")
+
+        assert claims_for(USERID, "openid profile")["groups"] == ["editors"]
+
+    def test_the_user_is_still_in_it(self):
+        """This hides a claim; it does not change membership.
+
+        A local permission the group carries still applies, which is the
+        difference between withholding a claim and revoking access.
+        """
+        self.withhold("ops-oncall")
+        claims_for(USERID, "openid profile")
+
+        assert "ops-oncall" in api.user.get(userid=USERID).getGroups()
+
+    def test_withholding_every_group_omits_the_claim(self):
+        """Not an empty list: an absent claim and an empty one say different
+        things, and the serializer already drops empty values."""
+        self.withhold("editors", "ops-oncall")
+
+        assert "groups" not in claims_for(USERID, "openid profile")
+
+    def test_the_virtual_group_stays_out_when_nothing_is_configured(self):
+        """The floor applies with an empty record."""
+        assert (
+            "AuthenticatedUsers" not in claims_for(USERID, "openid profile")["groups"]
+        )
+
+    def test_the_virtual_group_stays_out_when_something_else_is_configured(self):
+        """Configuring the field must not be read as replacing the floor.
+
+        This is the failure the two-set design exists to prevent: an operator
+        who enters their own list would otherwise start publishing
+        ``AuthenticatedUsers`` to every relying party, and nothing would say
+        so.
+        """
+        self.withhold("ops-oncall")
+
+        assert (
+            "AuthenticatedUsers" not in claims_for(USERID, "openid profile")["groups"]
+        )
+
+    def test_the_record_will_not_even_hold_the_virtual_group(self):
+        """Defence in depth, and the outer layer refuses first.
+
+        The field is a ``Choice`` over the groups vocabulary, which excludes
+        ``AuthenticatedUsers`` -- and a registry field validates on write. So
+        naming it is refused before the floor is ever consulted: it cannot be
+        offered by the control panel and cannot be stored by anything writing
+        the record directly either.
+        """
+        with pytest.raises(WrongContainedType):
+            self.withhold("AuthenticatedUsers")
+
+    def test_an_unknown_group_is_refused(self):
+        """A typo here would fail *open* -- releasing the group somebody meant
+        to withhold, with nothing to say so. The vocabulary is what makes that
+        unrepresentable rather than merely unlikely."""
+        with pytest.raises(WrongContainedType):
+            self.withhold("no-such-group")
+
+    def test_an_unset_record_does_not_raise(self):
+        """A site installed before the record existed has no such key.
+
+        Read with a default, because a ``KeyError`` from the middle of minting
+        a token is a login failure reported as a server error.
+        """
+        registry = getUtility(IRegistry)
+        del registry.records[UNRELEASED_RECORD]
+
+        assert claims_for(USERID, "openid profile")["groups"] == [
+            "editors",
+            "ops-oncall",
+        ]
 
 
 class TestEmailVerified:

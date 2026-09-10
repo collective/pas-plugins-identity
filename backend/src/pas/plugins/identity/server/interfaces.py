@@ -5,6 +5,7 @@ endpoints can all name them without importing each other.
 """
 
 from pas.plugins.identity import _
+from pas.plugins.identity.core.vocabularies.groups import GROUPS_VOCABULARY
 from zope import schema
 from zope.interface import Attribute
 from zope.interface import Interface
@@ -194,4 +195,18 @@ class IServerSettings(Interface):
         ),
         required=False,
         default=900,
+    )
+
+    server_unreleased_groups = schema.Tuple(
+        title=_("Groups never released in a claim"),
+        description=_(
+            "Groups this site keeps to itself. A group named here is left out "
+            "of the `groups` claim for every relying party, which is how an "
+            "operations or on-call group stays a local matter. It does not "
+            "change who is in the group, only what this server says about it."
+        ),
+        required=False,
+        default=(),
+        missing_value=(),
+        value_type=schema.Choice(vocabulary=GROUPS_VOCABULARY),
     )

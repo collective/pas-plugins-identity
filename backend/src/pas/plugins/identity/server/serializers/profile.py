@@ -10,8 +10,10 @@ configure. A relying party that does not know a claim ignores it.
 ``groups`` riding on ``profile`` is a deliberate trade and worth naming.
 ``profile`` is granted for display, and group membership is authorization
 data, so every relying party asking for a display scope receives it whether it
-maps groups or not. What the server controls is the *content*: see
-:data:`UNRELEASED_GROUPS`.
+maps groups or not. What the server controls is the *content*, in two layers:
+:data:`UNRELEASED_GROUPS` is the floor this server applies everywhere, and
+:func:`site_unreleased_groups` is what a deployment adds to it from the
+control panel -- an operations or on-call group that is nobody else's business.
 """
 
 from pas.plugins.identity.core.interfaces import JSONDict
@@ -28,6 +30,23 @@ from urllib.parse import quote
 #: mapped it would hand its local counterpart to every federated user.
 UNRELEASED_GROUPS = frozenset({"AuthenticatedUsers"})
 
+#: Registry record naming the groups *this site* additionally keeps to itself.
+UNRELEASED_RECORD = "pas.plugins.identity.server_unreleased_groups"
+
+
+def site_unreleased_groups() -> frozenset[str]:
+    """Return the groups this site has chosen not to release.
+
+    Read with a default rather than assumed to exist. A site installed before
+    the record did has no such key until the profile is reapplied, and a
+    ``KeyError`` from the middle of minting a token would be a login failure
+    reported as a server error.
+
+    :returns: The configured group ids, empty when nothing is configured.
+    """
+    stored = api.portal.get_registry_record(UNRELEASED_RECORD, default=())
+    return frozenset(stored or ())
+
 
 def released_groups(user) -> list[str]:
     """Return the group ids to release for a user.
@@ -37,13 +56,28 @@ def released_groups(user) -> list[str]:
     nesting -- which is the answer a relying party wants, rather than the
     memberships one plugin happens to hold.
 
+    Two sets are withheld, and the difference between them is the point.
+    :data:`UNRELEASED_GROUPS` is a floor this server applies whatever a site
+    says, because releasing ``AuthenticatedUsers`` is wrong everywhere. What
+    :func:`site_unreleased_groups` returns is a deployment's own choice, and
+    it *adds* to the floor rather than replacing it -- an operator who clears
+    the field to enter their own list must not thereby start publishing the
+    virtual group. The control panel cannot offer it in any case: the groups
+    vocabulary excludes it.
+
+    Withholding a group changes what this server *says*, never who is in it.
+    A user in a withheld group is still in it, and every local permission it
+    carries still applies.
+
     Sorted, because a claim that reorders between two logins looks like a
     change to anything diffing tokens.
 
     :param user: The Plone user the token acts for.
-    :returns: Group ids, sorted, minus :data:`UNRELEASED_GROUPS`.
+    :returns: Group ids, sorted, minus the floor and minus this site's own
+        withheld groups.
     """
-    return sorted(set(user.getGroups()) - UNRELEASED_GROUPS)
+    withheld = UNRELEASED_GROUPS | site_unreleased_groups()
+    return sorted(set(user.getGroups()) - withheld)
 
 
 def portrait_url(userid: str) -> str:

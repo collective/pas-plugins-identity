@@ -126,6 +126,7 @@ Present only where `pas.plugins.identity.server:default` has been applied.
 | `server_refresh_token_ttl` | `Int` | `1209600` | Refresh token lifetime, in seconds—14 days. |
 | `server_clients` | `Text` | `''` | The client registry. Managed through `@identity-clients`, not by hand. |
 | `server_signing_keys` | `Text` | `''` | The signing key ring. Managed through `@identity-keys`, not by hand. |
+| `server_unreleased_groups` | `Tuple` of `Choice` | `()` | Groups left out of the `groups` claim for every relying party. Adds to a floor this server always applies; it does not replace it. |
 
 Only the two lifetimes are written by the install profile. `server_clients` and
 `server_issuer` are deliberately left out, because an empty `<value>` imports as

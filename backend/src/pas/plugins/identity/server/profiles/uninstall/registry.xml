@@ -18,4 +18,7 @@
   <record name="pas.plugins.identity.server_refresh_token_ttl"
           remove="True"
   />
+  <record name="pas.plugins.identity.server_unreleased_groups"
+          remove="True"
+  />
 </registry>
