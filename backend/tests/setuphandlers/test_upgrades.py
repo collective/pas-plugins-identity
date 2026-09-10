@@ -106,7 +106,7 @@ class TestTheStepDoesTheWork:
 
         self.setup_tool.upgradeProfile(PROFILE)
 
-        assert self.setup_tool.getLastVersionForProfile(PROFILE) == ("1004",)
+        assert self.setup_tool.getLastVersionForProfile(PROFILE) == ("1005",)
 
 
 class TestV1002PutsTheFieldsOnBehaviors:

@@ -109,6 +109,43 @@ class TestRestoringIntoAnEmptySite:
         assert result.users == [USERID]
         assert get_profile(USERID) is None
 
+    def test_a_group_arrives_with_the_roles_the_document_names(self):
+        """The reason ``global_roles`` is carried at all.
+
+        A restored site should grant what the exported one granted, rather
+        than needing somebody to reopen the groups control panel.
+        """
+        doc = document()
+        doc["groups"][0]["global_roles"] = ["Editor"]
+
+        import_site(doc)
+
+        assert "Editor" in api.group.get_roles(groupname="site-editors")
+
+    def test_a_document_without_the_key_leaves_roles_alone(self):
+        """Absent is not "revoke everything".
+
+        A document written before the field existed, or trimmed by hand, must
+        not silently strip every role in the site it is restored into.
+        """
+        import_site(document())
+        api.group.grant_roles(groupname="site-editors", roles=["Reviewer"])
+
+        import_site(document())
+
+        assert "Reviewer" in api.group.get_roles(groupname="site-editors")
+
+    def test_an_empty_list_does_revoke(self):
+        """Present-and-empty is an instruction, unlike absent."""
+        import_site(document())
+        api.group.grant_roles(groupname="site-editors", roles=["Reviewer"])
+
+        doc = document()
+        doc["groups"][0]["global_roles"] = []
+        import_site(doc)
+
+        assert "Reviewer" not in api.group.get_roles(groupname="site-editors")
+
 
 def result_groups(portal) -> list[str]:
     """Return the group ids the site holds.

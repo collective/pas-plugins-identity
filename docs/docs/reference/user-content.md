@@ -66,6 +66,33 @@ own schema first, so an inherited `Attribute` would shadow the behavior's field.
 `IGroupContent` declares no members accessor. Membership is named by each user's
 `group_ids` and is read from there.
 
+### A group's global roles
+
+`global_roles` on a group is supplied by the
+`pas.plugins.identity.global_roles` behavior—the site-wide roles every member
+of the group holds, the same ones the groups control panel sets.
+
+**Nothing is stored on the content object**, and that is the design rather than
+an omission. The behavior has a factory: every read asks `portal_groups` and
+every write goes to it, so the field and the control panel cannot disagree.
+A stored copy would be a second source of truth, and the moment anybody used
+the control panel the two would differ with no way to tell which was right.
+
+Because it stores nothing, read it by adapting rather than as an attribute:
+
+```python
+from pas.plugins.identity.core.behaviors.roles import IGlobalRoles
+
+IGlobalRoles(group).global_roles            # ('Editor',)
+IGlobalRoles(group).global_roles = ('Editor', 'Reviewer')
+```
+
+`getattr(group, 'global_roles')` would answer with a shadow attribute nothing
+else consults. The export and import paths adapt for the same reason.
+
+Writing it grants roles, so it carries `content.editroles`, which is granted to
+**Manager alone**. See {doc}`permissions`.
+
 A layer that stores membership some other way should implement
 `IGroupManagement` itself rather than claim `IUserContent`.
 

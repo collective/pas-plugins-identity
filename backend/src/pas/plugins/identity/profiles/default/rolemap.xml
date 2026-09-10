@@ -66,6 +66,15 @@
       <role name="Manager" />
     </permission>
 
+    <!-- What a group is allowed to do, as opposed to who is in it. Manager
+         alone, and not Site Administrator: anyone who can write it can grant
+         the group ``Manager`` and then join the group. -->
+    <permission acquire="False"
+                name="pas.plugins.identity: Edit Group Global Roles"
+    >
+      <role name="Manager" />
+    </permission>
+
     <permission acquire="False"
                 name="pas.plugins.identity: View Profile"
     >

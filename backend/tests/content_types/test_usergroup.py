@@ -57,6 +57,7 @@ class TestTheFTI:
         "idx,behavior",
         enumerate((
             "pas.plugins.identity.group_membership",
+            "pas.plugins.identity.global_roles",
             "plone.shortname",
             "plone.versioning",
         )),
@@ -66,12 +67,14 @@ class TestTheFTI:
 
         ``group_membership`` is on the group as well as on the Profile, which
         is what nesting is: a group that is a member of another group.
+        ``global_roles`` is on the group alone: it says what the group is
+        allowed to do, which is not a question a Profile answers.
         """
         assert self.fti.behaviors[idx] == behavior
 
     def test_no_other_behaviors(self):
         """The list above is the whole list."""
-        assert len(self.fti.behaviors) == 3
+        assert len(self.fti.behaviors) == 4
 
 
 class TestVersioning:

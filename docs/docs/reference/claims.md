@@ -110,6 +110,7 @@ under `profile` anyway, rather than under a private scope.
 | Fact | Value |
 |---|---|
 | `AuthenticatedUsers` | Never released. |
+| Groups this site withholds | Whatever `server_unreleased_groups` names. |
 | A user in no other group | The `groups` claim is omitted entirely, not sent as an empty list. |
 | Order | Sorted. |
 | Who receives it | Every client granted `profile`, whether it maps groups or not. |
@@ -119,6 +120,23 @@ under `profile` anyway, rather than under a private scope.
 names are themselves sensitive, do not grant `profile` to a client you would not
 grant the group list to.
 ```
+
+### Keeping a group to yourself
+
+A site usually has groups a relying party has no business seeing—an operations
+or on-call group that exists to hold a local permission. Name them in
+`server_unreleased_groups`, in the authorization server control panel, and they
+are left out of the claim for every client.
+
+Two things this does not do. It does not change **who is in the group**: a user
+in a withheld group is still in it, and every local permission it carries still
+applies. And it does not replace the floor—`AuthenticatedUsers` stays out
+whatever the field says, so clearing the field to enter your own list cannot
+start publishing the virtual group. The control panel cannot offer it in any
+case: the groups vocabulary excludes it, and the field refuses a value the
+vocabulary does not contain.
+
+See {doc}`settings`.
 
 ## Adding to this table
 

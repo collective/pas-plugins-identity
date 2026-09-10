@@ -12,6 +12,7 @@
   <permission>Delete objects</permission>
   <permission>Modify portal content</permission>
   <permission>View</permission>
+  <permission>pas.plugins.identity: Edit Group Global Roles</permission>
 
   <state state_id="active"
          title="Active"
@@ -45,6 +46,11 @@
       <permission-role>Manager</permission-role>
       <permission-role>Site Administrator</permission-role>
     </permission-map>
+    <permission-map acquired="False"
+                    name="pas.plugins.identity: Edit Group Global Roles"
+    >
+      <permission-role>Manager</permission-role>
+    </permission-map>
   </state>
 
   <state state_id="deactivated"
@@ -76,6 +82,11 @@
     >
       <permission-role>Manager</permission-role>
       <permission-role>Site Administrator</permission-role>
+    </permission-map>
+    <permission-map acquired="False"
+                    name="pas.plugins.identity: Edit Group Global Roles"
+    >
+      <permission-role>Manager</permission-role>
     </permission-map>
   </state>
 
