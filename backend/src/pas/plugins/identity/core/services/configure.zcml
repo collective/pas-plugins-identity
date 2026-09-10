@@ -10,19 +10,9 @@
   <include package=".identities" />
   <include package=".login" />
   <include package=".magiclink" />
+  <include package=".myprofile" />
   <include package=".providers" />
   <include package=".useraccount" />
-
-  <!-- Volto's first-login routing question. Authenticated-only, checked in
-       the service so the refusal is a JSON body rather than a login form. -->
-  <plone:service
-      method="GET"
-      factory=".myprofile.MyProfileGet"
-      for="Products.CMFCore.interfaces.ISiteRoot"
-      permission="zope2.View"
-      layer="pas.plugins.identity.interfaces.IBrowserLayer"
-      name="@my-profile"
-      />
 
   <!-- @types, with the site's required profile fields in the schema the edit
        form is built from. plone.restapi reads ``required`` off the type and

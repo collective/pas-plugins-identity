@@ -1,0 +1,29 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    i18n_domain="pas.plugins.identity"
+    >
+
+  <!-- The same answer, offered to anything that expands components, so a
+       signed-in user gets it with the content request they were making
+       anyway. Adapts anything: a content request is a request against the
+       page being viewed, not against the site root the endpoint lives on.
+       It publishes nothing at all to an anonymous caller. The reasoning for
+       both is in the module. -->
+  <adapter
+      factory=".expander.MyProfile"
+      name="my-profile"
+      />
+
+  <!-- Volto's first-login routing question. Authenticated-only, checked in
+       the service so the refusal is a JSON body rather than a login form. -->
+  <plone:service
+      method="GET"
+      factory=".get.MyProfileGet"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@my-profile"
+      />
+
+</configure>

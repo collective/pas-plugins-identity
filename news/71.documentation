@@ -1,0 +1,1 @@
+Documented `my-profile` as an expandable component in the endpoints reference — where it is registered, which URL it publishes, and why it is the one component here that answers an anonymous caller with nothing rather than a URL — and added an API expanders table to the frontend reference. @ericof

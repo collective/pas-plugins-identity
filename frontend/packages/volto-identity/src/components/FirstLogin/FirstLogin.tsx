@@ -52,15 +52,20 @@ const FirstLogin: React.FC<FirstLoginProps> = ({ apiPath = '' }) => {
   const dispatched = useRef(false);
   const navigated = useRef(false);
 
+  const token = useSelector((state: any) => state.userSession?.token);
   const profile = useSelector((state: any) => state.myProfile);
 
   useEffect(() => {
-    if (dispatched.current) {
+    // Nothing to route on until there is somebody to route. This route is
+    // reached with a token in hand, but it is registered like any other and
+    // an anonymous visitor who opens it directly would otherwise fire a
+    // request that can only answer 401.
+    if (!token || dispatched.current) {
       return;
     }
     dispatched.current = true;
     dispatch(getMyProfile());
-  }, [dispatch]);
+  }, [dispatch, token]);
 
   useEffect(() => {
     if (navigated.current) {

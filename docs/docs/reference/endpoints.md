@@ -30,7 +30,7 @@ Present in every installation.
 | POST | `@identity-callback` | anonymous | The provider redirects here; completes a sign-in. |
 | POST | `@magic-link` | anonymous | Send a single-use sign-in link. Answers identically whether or not the address is known. |
 | POST | `@magic-link-confirm` | anonymous | Redeem a link. Burns the token. |
-| GET | `@my-profile` | authenticated | The caller's own profile. |
+| GET | `@my-profile` | authenticated | The caller's own profile. Also available as a `plone.restapi` expander, on any content. |
 | GET | `@identities` | authenticated | The caller's own sign-in methods. |
 | POST | `@identities` | authenticated | Link a new sign-in method. |
 | DELETE | `@identities/<provider>/<subject>` | authenticated | Unlink one. Refused for the last remaining method. |
@@ -60,6 +60,30 @@ membership of the group being asked about.
 | `@user-account` | Which providers a person has configured—named, dated, and flagged when the provider has since been disabled or removed—and when they last authenticated. One user at a time: the audit log is bounded per user, so folding this into the `@users` listing would read one bounded log per row. |
 
 `@user-account` allows a caller asking about themselves without `Manage users`.
+
+### `my-profile` as a component
+
+<!-- The component is
+     backend/src/pas/plugins/identity/core/services/myprofile/expander.py. -->
+
+The profile gate asks its question on every navigation, and a navigation to a
+content route is already a request.
+`my-profile` is registered as an expandable component so the answer rides along
+with the page, and `volto-identity` adds it to Volto's `apiExpanders`.
+
+| Fact | Value |
+|---|---|
+| Registered on | Any content, not the site root alone |
+| `@id` | The **site's** `@my-profile`, whatever page carries the component—the endpoint is registered for the site root and resolves nowhere else |
+| Expanded | The same body the endpoint returns |
+| Anonymous | The component is absent entirely, not an `@id` |
+
+The anonymous rule is the one that differs from every other component here,
+which publish a URL when unexpanded.
+Volto's `apiExpanders` has no way to mark an entry authenticated-only, so
+`?expand=my-profile` arrives on anonymous content requests as well; answering
+with nothing keeps a public site's payload exactly as it was.
+
 
 ### A membership row
 

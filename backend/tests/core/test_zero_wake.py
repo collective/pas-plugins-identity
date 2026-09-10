@@ -22,7 +22,9 @@ from pas.plugins.identity.core.contents.group import UserGroup
 from pas.plugins.identity.core.contents.profile import UserProfile
 from pas.plugins.identity.core.services.groups.get import GroupMembersGet
 from plone import api
+from plone.restapi.interfaces import ISerializeToJson
 from Products.CMFCore.indexing import processQueue
+from zope.component import getMultiAdapter
 
 import pytest
 import transaction
@@ -332,5 +334,63 @@ class TestTheGroupMembersEndpointWakesNothing:
     def test_everything_is_still_a_ghost(self):
         """The other half of the claim, as everywhere else in this module."""
         self.listing("editors")
+
+        assert [profile._p_changed for profile in self.profiles] == [None] * 12
+
+
+class TestTheExpandedContentRequestWakesNothing:
+    """``my-profile`` rides on every content request, so it pays every time.
+
+    The endpoint was always answered from brains, and its own tests say so.
+    What changed is the frequency: as a component it runs on each page a
+    signed-in user opens, so an activation here is not one load, it is one per
+    page view for the life of the deployment. That is the reason this is
+    counted next to the plugins rather than left to the service's own tests.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_, profiles, loads) -> None:
+        self.portal = portal
+        self.request = request_
+        self.profiles = profiles
+        self.loads = loads
+        with api.env.adopt_roles(["Manager"]):
+            self.page = api.content.create(
+                container=portal, type="Document", id="zero-wake-page"
+            )
+        # Created in this test, so it is awake and its own load is not the
+        # question. The counter is filtered to Profiles and Groups anyway.
+        self.loads.clear()
+
+    def serialize(self) -> dict:
+        """Serialize the page the way a content request does.
+
+        :returns: The serialized content.
+        """
+        return getMultiAdapter((self.page, self.request), ISerializeToJson)()
+
+    def test_the_component_wakes_nothing(self):
+        """Expanded, which is how Volto asks."""
+        self.request.form["expand"] = "my-profile"
+
+        self.serialize()
+
+        assert profile_loads(self.loads) == []
+
+    def test_it_still_answered(self):
+        """The half that keeps the zero honest: a component that returned
+        nothing would wake nothing either."""
+        self.request.form["expand"] = "my-profile"
+
+        component = self.serialize()["@components"]["my-profile"]
+
+        assert "review_state" in component
+        assert profile_loads(self.loads) == []
+
+    def test_everything_is_still_a_ghost(self):
+        """The other half of the claim, as everywhere else in this module."""
+        self.request.form["expand"] = "my-profile"
+
+        self.serialize()
 
         assert [profile._p_changed for profile in self.profiles] == [None] * 12
