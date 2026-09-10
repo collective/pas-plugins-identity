@@ -49,6 +49,19 @@
       provides=".email.IEmailAddresses"
       />
 
+  <!-- A group's global roles. A *factory* behavior, unlike its three
+       neighbours: the adapter reads and writes portal_groups, and nothing is
+       stored on the content object. A stored copy would disagree with the
+       groups control panel the first time anybody used it. See .roles. -->
+  <plone:behavior
+      name="pas.plugins.identity.global_roles"
+      title="Global roles"
+      description="The site-wide roles this group grants its members."
+      factory=".roles.GlobalRoles"
+      provides=".roles.IGlobalRoles"
+      for="..interfaces.IGroupContent"
+      />
+
   <!-- What a person says about themselves, and their picture. Schema only,
        and with no fieldset of its own: these belong beside the login and the
        full name on the default tab. -->

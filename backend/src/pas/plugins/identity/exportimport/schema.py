@@ -90,10 +90,28 @@ GENERATOR = "pas.plugins.identity"
 USER_FIELDS = MAPPABLE_FIELDS
 
 #: Group fields carried for each group, beside the required ``group_id``.
+#:
+#: Plain attributes only. ``global_roles`` is carried too and is deliberately
+#: *not* here: it is a factory behavior storing nothing on the object, so
+#: ``getattr`` and ``setattr`` would read and write a shadow attribute that
+#: nothing else ever consults. It is exported and imported through the
+#: adapter, in :data:`GROUP_ROLES_FIELD`.
 GROUP_FIELDS = (
     "title",
     "description",
 )
+
+#: The group field that is read and written through a behavior adapter.
+#:
+#: Carried so that a restored site grants what the exported one granted,
+#: rather than needing somebody to reopen the groups control panel. It also
+#: means an import document can grant ``Manager`` -- the document was already
+#: a way to create principals, and this makes it a way to give them power.
+#:
+#: **Absent means "leave the roles alone", never "revoke them all."** A
+#: document written before this field existed, or one trimmed by hand, must
+#: not silently strip every role in the site it is restored into.
+GROUP_ROLES_FIELD = "global_roles"
 
 
 class ExportImportError(Exception):
@@ -248,6 +266,7 @@ __all__ = [
     "DOCUMENT_VERSION",
     "GENERATOR",
     "GROUP_FIELDS",
+    "GROUP_ROLES_FIELD",
     "USER_FIELDS",
     "ExportImportError",
     "Result",

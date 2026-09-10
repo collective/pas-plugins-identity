@@ -1,0 +1,21 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    >
+
+  <!-- A group's global roles became a field, behind a permission of its own.
+       The permission map on every group that already exists was written
+       before that permission existed. See the module docstring. -->
+  <genericsetup:upgradeSteps
+      profile="pas.plugins.identity:default"
+      source="1004"
+      destination="1005"
+      >
+    <genericsetup:upgradeStep
+        title="Hold a group's global roles to Manager"
+        description="Adds the global roles behavior to the group type and applies its Manager-only permission to every group already in the site."
+        handler=".restrict_group_roles"
+        />
+  </genericsetup:upgradeSteps>
+
+</configure>

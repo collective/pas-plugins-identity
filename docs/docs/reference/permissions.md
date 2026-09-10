@@ -23,6 +23,7 @@ install.
 | `pas.plugins.identity.content.edit` | Edit Profile | Manager, Site Administrator |
 | `pas.plugins.identity.content.editgroups` | Edit Profile Group Membership | Manager, Site Administrator |
 | `pas.plugins.identity.content.editlogin` | Edit Profile Login | **Manager** |
+| `pas.plugins.identity.content.editroles` | Edit Group Global Roles | **Manager** |
 | `pas.plugins.identity.content.view` | View Profile | Manager, Site Administrator |
 | `pas.plugins.identity.content.viewpii` | View Personal Identifiable Information | Manager, Site Administrator |
 
@@ -61,6 +62,21 @@ the profile's owner, in any state**.
 
 `group_ids` decides which groups a user is in, so writing it is granting yourself
 roles.
+
+### A group's roles are stricter still
+
+`content.editroles` guards `global_roles` on a group, and is granted to
+**Manager alone**—not to Site Administrator, unlike the membership permission
+above it.
+
+`group_ids` decides who is *in* a group; `global_roles` decides what the group
+is allowed to *do*, which is one step further along the same path. Anyone able
+to write it could grant the group `Manager` and then add themselves to the
+group, so under the ordinary edit permission "tidy up a group" and "become an
+administrator" would be the same action.
+
+Delegating group membership to a Site Administrator is a normal arrangement.
+Delegating the power to mint administrators is not.
 
 ### A login is its own permission, and it depends where you ask
 

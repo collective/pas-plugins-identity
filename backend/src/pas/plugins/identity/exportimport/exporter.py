@@ -19,6 +19,7 @@ from Acquisition import aq_parent
 from datetime import datetime
 from datetime import UTC
 from pas.plugins.identity import logger
+from pas.plugins.identity.core.behaviors.roles import IGlobalRoles
 from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
@@ -28,6 +29,7 @@ from pas.plugins.identity.exportimport.schema import DOCUMENT_VERSION
 from pas.plugins.identity.exportimport.schema import ExportImportError
 from pas.plugins.identity.exportimport.schema import GENERATOR
 from pas.plugins.identity.exportimport.schema import GROUP_FIELDS
+from pas.plugins.identity.exportimport.schema import GROUP_ROLES_FIELD
 from pas.plugins.identity.exportimport.schema import USER_FIELDS
 from plone import api
 from typing import Any
@@ -95,6 +97,11 @@ def export_group(group) -> dict[str, Any]:
     exported = {"group_id": _text(getattr(group, "group_id", "") or group.getId())}
     for name in GROUP_FIELDS:
         exported[name] = _text(getattr(group, name, ""))
+    # Through the adapter, because the behavior stores nothing on the object:
+    # ``getattr(group, "global_roles")`` would answer with a shadow attribute
+    # or an AttributeError, never with what the site actually granted.
+    roles = IGlobalRoles(group, None)
+    exported[GROUP_ROLES_FIELD] = list(roles.global_roles) if roles is not None else []
     # The groups this group is nested inside. Applied last on the way in,
     # because it can name a group that comes later in the list.
     exported["group_ids"] = list(getattr(group, "group_ids", None) or ())

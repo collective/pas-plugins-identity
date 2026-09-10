@@ -37,6 +37,7 @@ from Acquisition import aq_base
 from Acquisition import aq_inner
 from Acquisition import aq_parent
 from pas.plugins.identity import logger
+from pas.plugins.identity.core.behaviors.roles import IGlobalRoles
 from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
@@ -49,6 +50,7 @@ from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from pas.plugins.identity.core.verification import record_verified_addresses
 from pas.plugins.identity.exportimport.schema import ExportImportError
 from pas.plugins.identity.exportimport.schema import GROUP_FIELDS
+from pas.plugins.identity.exportimport.schema import GROUP_ROLES_FIELD
 from pas.plugins.identity.exportimport.schema import Result
 from pas.plugins.identity.exportimport.schema import USER_FIELDS
 from pas.plugins.identity.exportimport.schema import validate
@@ -90,6 +92,25 @@ def _existing(portal_type: str, index: str, value: str):
     return brains[0]._unrestrictedGetObject() if brains else None
 
 
+def _apply_roles(obj, group: dict[str, Any]) -> None:
+    """Grant the group the global roles the document names.
+
+    Absent means "leave them alone". A document written before the field
+    existed, or one trimmed by hand, must not silently revoke every role in
+    the site it is restored into -- so this only writes when the key is
+    actually there.
+
+    :param obj: The group content object.
+    :param group: The group record from the document.
+    """
+    if GROUP_ROLES_FIELD not in group:
+        return
+    roles = IGlobalRoles(obj, None)
+    if roles is None:  # pragma: no cover - the behavior is on the shipped type
+        return
+    roles.global_roles = tuple(group.get(GROUP_ROLES_FIELD) or ())
+
+
 def _import_group(group: dict[str, Any], result: Result, dry_run: bool) -> None:
     """Create or update one group, without its nesting.
 
@@ -105,6 +126,7 @@ def _import_group(group: dict[str, Any], result: Result, dry_run: bool) -> None:
         if not dry_run:
             for name, value in fields.items():
                 setattr(existing, name, value)
+            _apply_roles(existing, group)
             # An event, not a reindex: see ``_apply_membership``.
             modified(existing)
         result.groups.append(group_id)
@@ -118,13 +140,16 @@ def _import_group(group: dict[str, Any], result: Result, dry_run: bool) -> None:
     if container is None:  # pragma: no cover - refused upstream
         result.skipped.append(f"group {group_id}: no container to file it in")
         return
-    api.content.create(
+    created = api.content.create(
         container=container,
         type=GROUP_PORTAL_TYPE,
         id=group_id,
         group_id=group_id,
         **fields,
     )
+    # After creation rather than as a keyword: the roles are granted through
+    # PAS, which cannot resolve the group until the object exists.
+    _apply_roles(created, group)
     result.groups.append(group_id)
 
 

@@ -61,6 +61,23 @@
       title="pas.plugins.identity: Edit Profile Login"
       />
 
+  <!-- A group's global roles are not a field an ordinary editor may write,
+       and not one a Site Administrator may write either.
+
+       ``group_ids`` decides who is in a group; this decides what the group
+       is allowed to do, which is one step further along the same path. Anyone
+       able to write it could grant the group ``Manager`` and then add
+       themselves to the group, so the ordinary edit permission would make
+       "tidy up a group" and "become an administrator" the same action.
+
+       Manager alone, which is stricter than the membership permission beside
+       it. Delegating group *membership* to a Site Administrator is a normal
+       arrangement; delegating the power to mint administrators is not. -->
+  <permission
+      id="pas.plugins.identity.content.editroles"
+      title="pas.plugins.identity: Edit Group Global Roles"
+      />
+
   <permission
       id="pas.plugins.identity.content.view"
       title="pas.plugins.identity: View Profile"
