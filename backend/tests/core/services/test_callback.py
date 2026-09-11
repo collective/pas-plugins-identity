@@ -18,6 +18,7 @@ from pas.plugins.identity.core.audit import UNATTRIBUTED
 from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
+from pas.plugins.identity.core.drivers.github import GitHubDriver
 from pas.plugins.identity.core.flows.session import COOKIE_NAME
 from pas.plugins.identity.core.services import jwt
 from pas.plugins.identity.core.services.callback.post import IdentityCallback
@@ -521,6 +522,75 @@ class TestAProviderThatSendsStringBooleans(CallbackCase):
         claims = self.sign_in(accept_strings=True, verified="1")
 
         assert claims["email_verified"] is False
+
+
+class TestTheAddressPreference(CallbackCase):
+    """A GitHub account's addresses, in the order the site asked for.
+
+    ``_claims_from`` is where a login's claims are built and the one place
+    that knows which provider they came from, so the preference is applied
+    there -- and everything downstream, the Profile's addresses included,
+    reads the claims it returns.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_) -> None:
+        self.portal = portal
+        self.request = request_
+        self.addresses = [
+            {
+                "email": "ghost@users.noreply.github.com",
+                "primary": True,
+                "verified": True,
+            },
+            {"email": "ghost@gmail.com", "verified": True},
+            {"email": "ghost@plone.org", "verified": True},
+        ]
+
+    def claims(self, preference: tuple[str, ...] = ()) -> dict:
+        """Build a GitHub login's claims through the callback service.
+
+        :param preference: The provider's address preference.
+        :returns: The claims.
+        """
+        provider = ProviderConfig(
+            provider_id="gh",
+            driver_id="github",
+            title="GitHub",
+            config={"address_preference": preference},
+        )
+        payload = GitHubDriver().merge_enrichment(
+            {"id": 1, "login": "ghost"}, self.addresses
+        )
+        return IdentityCallback(self.portal, self.request)._claims_from(
+            provider, payload
+        )
+
+    def test_without_a_preference_githubs_order_stands(self):
+        """The primary address, as before this setting existed."""
+        assert self.claims()["email"] == "ghost@users.noreply.github.com"
+
+    def test_the_preferred_domain_is_the_email(self):
+        claims = self.claims(("@plone.org", "*", "@users.noreply.github.com"))
+
+        assert claims["email"] == "ghost@plone.org"
+
+    def test_the_addresses_follow_the_preference(self):
+        """Which is the order a new Profile's addresses start in."""
+        claims = self.claims(("@plone.org", "*", "@users.noreply.github.com"))
+
+        assert [entry["address"] for entry in claims["emails"]] == [
+            "ghost@plone.org",
+            "ghost@gmail.com",
+            "ghost@users.noreply.github.com",
+        ]
+
+    def test_the_flag_moves_with_the_address(self):
+        self.addresses[2]["verified"] = False
+
+        claims = self.claims(("@plone.org",))
+
+        assert (claims["email"], claims["email_verified"]) == ("ghost@plone.org", False)
 
 
 class TestASignInThisSiteDoesNotAdmit(CallbackCase):

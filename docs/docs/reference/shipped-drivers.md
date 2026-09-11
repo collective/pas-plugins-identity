@@ -56,7 +56,7 @@ This is what decides which fields a provider's form shows. A driver on
 | `IDriverSettings` | `Interface` | nothing |
 | `IOAuth2Settings` | `IDriverSettings` | `client_id`, `client_secret`, `scope`, `userid_source`, `trust_email_verification`, `create_user`, `accept_string_booleans`, `auto_link_by_email` |
 | `IOIDCSettings` | `IOAuth2Settings` | `issuer`, `group_claim`, `allowed_groups`, `sync_groups`, `picture_over_http` |
-| `IGitHubSettings` | `IOAuth2Settings` | nothing |
+| `IGitHubSettings` | `IOAuth2Settings` | `address_preference` |
 | `IPloneIdentitySettings` | `IOIDCSettings` | nothing but a different `issuer` description |
 | `IEmailSettings` | `IDriverSettings` | `token_ttl`, `rate_limit_per_hour` |
 

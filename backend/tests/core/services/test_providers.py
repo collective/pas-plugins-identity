@@ -195,7 +195,22 @@ class TestDriverMetadata(ControlPanelCase):
             "auto_link_by_email",
             "trust_email_verification",
             "accept_string_booleans",
+            "address_preference",
         }
+
+    def test_the_address_preference_joins_the_inherited_tab(self):
+        """``IGitHubSettings`` declares the ``accounts`` fieldset again, and it
+        merges into the inherited one rather than adding a second tab."""
+        driver = next(
+            item for item in self.call(DriversGet)["items"] if item["id"] == "github"
+        )
+        ids = [fieldset["id"] for fieldset in driver["schema"]["fieldsets"]]
+
+        assert ids.count("accounts") == 1
+
+    def test_only_github_has_an_address_preference(self):
+        """The only driver that reports more than one address."""
+        assert "address_preference" not in self._fieldsets("oidc-generic")["accounts"]
 
     def test_group_settings_are_their_own_fieldset(self):
         """Which claim carries them, which this site accepts, and whether a
@@ -562,6 +577,73 @@ class TestUpdating(ControlPanelCase):
         self.call(ProvidersPatch, payload={"title": "x"})
 
         assert self.status() == 400
+
+
+class TestTheAddressPreferenceIsChecked(ControlPanelCase):
+    """Refused when the provider is saved, not skipped at login.
+
+    The field's constraint is not enough: a registry record does not keep it,
+    and the API does not validate a provider against its schema.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_, manager, configured) -> None:
+        self.portal = portal
+        self.request = request_
+
+    def create(self, preference) -> dict:
+        """Create a GitHub provider with an address preference.
+
+        :param preference: What to send as ``address_preference``.
+        :returns: The service's reply.
+        """
+        return self.call(
+            ProvidersPost,
+            payload={
+                "id": "gh",
+                "driver": "github",
+                "config": {
+                    "client_id": "x",
+                    "client_secret": "y",
+                    "address_preference": preference,
+                },
+            },
+        )
+
+    def test_a_preference_is_stored(self):
+        self.create(["@plone.org", "*"])
+
+        assert self.status() == 201
+        assert get_provider("gh").config["address_preference"] == ("@plone.org", "*")
+
+    def test_an_entry_that_places_nothing_is_refused(self):
+        result = self.create(["plone.org"])
+
+        assert self.status() == 400
+        assert result["error"]["type"] == "Invalid address preference"
+        assert get_provider("gh") is None
+
+    def test_the_refusal_names_the_entry(self):
+        """Among several, the operator is told which one is wrong."""
+        result = self.create(["@plone.org", "plone.org"])
+
+        assert "'plone.org'" in str(result)
+
+    def test_a_single_string_is_refused(self):
+        """Stored as a string it would be read one character at a time."""
+        self.create("@plone.org")
+
+        assert self.status() == 400
+
+    def test_an_update_is_held_to_it_too(self):
+        self.call(
+            ProvidersPatch,
+            "dex",
+            payload={"config": {"address_preference": ["plone.org"]}},
+        )
+
+        assert self.status() == 400
+        assert "address_preference" not in get_provider("dex").config
 
 
 class TestDeleting(ControlPanelCase):

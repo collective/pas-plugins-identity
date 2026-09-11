@@ -1,0 +1,1 @@
+Added an address preference to GitHub providers: an ordered list of `@domain` entries and `*` that decides which of an account's addresses becomes the `email` claim and the order a new profile lists them in. @ericof

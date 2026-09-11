@@ -208,6 +208,15 @@ Under `pas.plugins.identity.providers.<id>.config.<field>`.
 An empty `scope` means the driver's own default is used. See
 {doc}`shipped-drivers`.
 
+#### GitHub adds—`IGitHubSettings`
+
+| Field | Type | Required | Default | Tab |
+|---|---|---|---|---|
+| `address_preference` | `Tuple` | no | `()` | Accounts |
+
+Each entry is `*` or `@` followed by a domain. Anything else is refused when the
+provider is saved. See {doc}`/how-to-guides/providers/github`.
+
 #### OpenID Connect drivers add—`IOIDCSettings`
 
 | Field | Type | Required | Default | Tab |

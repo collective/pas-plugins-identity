@@ -67,11 +67,34 @@ package asks for.
 | Attach to an existing account with the same verified email | off | Turn on to merge with existing accounts |
 | Let this provider create accounts | on | Turn off if membership is decided here |
 
-## 4. Groups
+## 4. Which address comes first
+
+A GitHub account can hold several addresses, and all of them go onto the
+person's profile. The first one becomes the `email` claim, and a new profile
+lists the addresses in that order.
+
+Without a preference the driver keeps GitHub's order: the primary address
+first, then the verified ones. To put your own domain first, fill in **Address
+preference** on the **Accounts** tab, one entry at a time:
+
+| Entry | Places |
+|---|---|
+| `@plone.org` | An address on exactly `plone.org`, not `community.plone.org` and not `notplone.org` |
+| `*` | Every address no other entry matches |
+| `@users.noreply.github.com` | GitHub's no-reply address, after everything above |
+
+- `*` is a catch-all, so the entries after it still apply.
+- An address no entry matches, in a list without `*`, goes last. No address is
+  dropped.
+- Addresses in the same place keep GitHub's order.
+- An entry that is neither `*` nor `@` followed by a domain is refused when the
+  provider is saved.
+
+## 5. Groups
 
 **There is no Groups tab for a GitHub provider.** `IGitHubSettings` extends
-`IOAuth2Settings` and adds nothing, so there is no group claim to name and no
-allowed-groups list to fill in. GitHub sends none.
+`IOAuth2Settings` and adds only the address preference, so there is no group
+claim to name and no allowed-groups list to fill in. GitHub sends none.
 
 To restrict sign-in with GitHub, do it another way: turn off account creation and
 add the accounts yourself. See {doc}`../control-account-creation`.

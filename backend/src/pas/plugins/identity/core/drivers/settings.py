@@ -35,6 +35,7 @@ labels and widgets; the driver says what a new provider starts with.
 """
 
 from pas.plugins.identity import _
+from pas.plugins.identity.core.utils.address_preference import is_address_pattern
 from plone.autoform import directives
 from plone.supermodel.directives import fieldset
 from zope import schema
@@ -304,12 +305,38 @@ class IOIDCSettings(IOAuth2Settings):
 
 
 class IGitHubSettings(IOAuth2Settings):
-    """GitHub needs nothing an OAuth2 provider does not.
+    """GitHub, which may report several addresses for one account.
 
-    Its own particulars -- the address endpoint, the numeric subject, the
+    Its other particulars -- the address endpoint, the numeric subject, the
     login as a userid -- are facts about the driver rather than settings an
-    operator types, so none of them appears here.
+    operator types, so none of them appears here. Which address comes first
+    is not such a fact. It is a site's decision, and GitHub is the only driver
+    that reports more than one address to decide between.
     """
+
+    # On the tab that already asks who the provider's answer makes the person
+    # here. A fieldset declared again under the same name merges into the
+    # inherited one rather than adding a second tab.
+    fieldset("accounts", label=_("Accounts"), fields=["address_preference"])
+
+    address_preference = schema.Tuple(
+        title=_("Address preference"),
+        description=_(
+            "Which of the account's addresses comes first. The first one "
+            "becomes the email address, and a new profile lists the addresses "
+            "in this order. Each entry is @ followed by a domain, such as "
+            "@example.org, for an address on exactly that domain, or * for "
+            "every address no other entry matches. An address no entry "
+            "matches goes last, and none is ever dropped. Leave it empty to "
+            "keep GitHub's order: the primary address first, then the "
+            "verified ones."
+        ),
+        value_type=schema.TextLine(constraint=is_address_pattern),
+        required=False,
+        missing_value=(),
+        default=(),
+    )
+    directives.widget("address_preference", frontendOptions={"widget": "token"})
 
 
 class IPloneIdentitySettings(IOIDCSettings):
