@@ -2,7 +2,8 @@
 
 A provider may report several addresses for one account, and the order they
 arrive in decides what this site does with them: the head of the list is the
-``email`` claim, and the list is the order a new Profile's addresses start in.
+``email`` claim, the list is the order a new Profile's addresses start in, and
+it is the order linking by email tries them in.
 The driver's order is the provider's opinion -- for GitHub, the primary address
 first, then the verified ones. A site may hold a better one: an organisation
 wants its own domain to stand for its people, and nobody wants a ``noreply``

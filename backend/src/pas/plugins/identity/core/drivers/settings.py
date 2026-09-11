@@ -324,7 +324,9 @@ class IGitHubSettings(IOAuth2Settings):
         description=_(
             "Which of the account's addresses comes first. The first one "
             "becomes the email address, and a new profile lists the addresses "
-            "in this order. Each entry is @ followed by a domain, such as "
+            "in this order. Linking to an existing account by email tries "
+            "them in this order too, and the first one that belongs to an "
+            "account decides. Each entry is @ followed by a domain, such as "
             "@example.org, for an address on exactly that domain, or * for "
             "every address no other entry matches. An address no entry "
             "matches goes last, and none is ever dropped. Leave it empty to "

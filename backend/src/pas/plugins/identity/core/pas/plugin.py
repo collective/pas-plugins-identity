@@ -1146,6 +1146,22 @@ class IdentityPlugin(BasePlugin):
         Even with both on, the address has to already be verified here: by a
         magic link this site sent, or by a provider this site trusts.
 
+        **Every verified address, in order.** A provider may report several,
+        and ``emails`` carries them in the order this site prefers: the
+        provider's ``address_preference`` has already been applied to it. Each
+        address the provider verified is looked up, and the first one that
+        belongs to an account decides. Matching the headline address alone
+        gave a person a second account whenever the address they had verified
+        here was not the one their provider happened to put first.
+
+        **Two addresses, two accounts.** Nothing here can tell which account
+        the person meant, and nothing tries: the owner of the higher-ranked
+        address wins, and every other account is logged at ``ERROR`` with both
+        userids and both addresses, because one person holding two accounts
+        is a merge for an operator to make. Nothing moves between the accounts
+        -- :func:`~pas.plugins.identity.core.verification.record_verified_addresses`
+        refuses to record an address held for somebody else.
+
         :param provider: Provider id the login came from.
         :param claims: Normalized claims from the provider.
         :returns: The userid to adopt, or ``None`` to mint a fresh one.
@@ -1158,34 +1174,83 @@ class IdentityPlugin(BasePlugin):
             return None
         if not trusts_verification(provider):
             return None
-        # Only a literal True counts, exactly as in the driver layer: a
-        # missing key or a string "false" must not read as verified.
-        if claims.get("email_verified") is not True:
+        owners = self._live_owners(provider, self._matchable_addresses(claims))
+        if not owners:
             return None
-        address = (claims.get("email") or "").strip().lower()
-        if not address:
-            return None
-        owner = self._store.userid_for(EMAIL_PROVIDER, address)
-        if owner is None:
-            return None
-        if self._getPAS().getUserById(owner) is None:
-            # The identity outlived the account. Adopting it would sign this
-            # person into a userid nothing resolves: no properties, no roles,
-            # invisible to every search, and a traceback from the first line
-            # that touches the user. A fresh account is not what the operator
-            # configured, but it is a working login and it is recoverable --
-            # the stale identity is a `remove` away from letting the next one
-            # link properly.
-            logger.warning(
-                "Not attaching %s identity to %s: the verified address %r is "
-                "held for a userid this site has no account for",
+        (address, owner), *others = owners
+        reported = {owner}
+        for other_address, other_owner in others:
+            if other_owner in reported:
+                continue
+            reported.add(other_owner)
+            logger.error(
+                "Attached %s identity to %s by the verified address %r, which "
+                "ranks higher; the verified address %r it also sent belongs to "
+                "%s, a different account",
                 provider,
                 owner,
                 address,
+                other_address,
+                other_owner,
             )
-            return None
         logger.info("Attaching %s identity to %s by verified email", provider, owner)
         return owner
+
+    @staticmethod
+    def _matchable_addresses(claims: Claims) -> tuple[str, ...]:
+        """Return the addresses a new identity may be matched on, in order.
+
+        :param claims: Normalized claims from the provider.
+        :returns: The addresses the provider verified, read off ``emails`` in
+            its order. Claims carrying no ``emails`` -- assembled by a caller
+            rather than by a driver -- fall back to ``email``.
+        """
+        from pas.plugins.identity.core.utils.emails import normalize
+        from pas.plugins.identity.core.verification import verified_by_provider
+
+        if claims.get("emails"):
+            return verified_by_provider(claims)
+        # Only a literal True counts, exactly as in the driver layer: a
+        # missing key or a string "false" must not read as verified.
+        if claims.get("email_verified") is not True:
+            return ()
+        address = normalize(claims.get("email"))
+        return (address,) if address else ()
+
+    def _live_owners(
+        self, provider: str, addresses: tuple[str, ...]
+    ) -> list[tuple[str, str]]:
+        """Return the accounts these addresses are verified for, in order.
+
+        :param provider: Provider id the login came from, for the log.
+        :param addresses: Verified addresses, in the order to try them.
+        :returns: ``(address, userid)`` for each address held for an account
+            that still exists.
+        """
+        found: list[tuple[str, str]] = []
+        for address in addresses:
+            owner = self._store.userid_for(EMAIL_PROVIDER, address)
+            if owner is None:
+                continue
+            if self._getPAS().getUserById(owner) is None:
+                # The identity outlived the account. Adopting it would sign
+                # this person into a userid nothing resolves: no properties,
+                # no roles, invisible to every search, and a traceback from the
+                # first line that touches the user. So it is skipped, and the
+                # next address may still find a live account; when none does,
+                # a fresh account is not what the operator configured, but it
+                # is a working login and it is recoverable -- the stale identity
+                # is a `remove` away from letting the next one link properly.
+                logger.warning(
+                    "Not attaching %s identity to %s: the verified address %r "
+                    "is held for a userid this site has no account for",
+                    provider,
+                    owner,
+                    address,
+                )
+                continue
+            found.append((address, owner))
+        return found
 
     # ------------------------------------------------------------------
     # ICredentialsResetPlugin

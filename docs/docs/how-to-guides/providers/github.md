@@ -71,7 +71,9 @@ package asks for.
 
 A GitHub account can hold several addresses, and all of them go onto the
 person's profile. The first one becomes the `email` claim, and a new profile
-lists the addresses in that order.
+lists the addresses in that order. With linking by email switched on, the
+verified addresses are tried in that order too; see
+{doc}`../link-accounts-by-email`.
 
 Without a preference the driver keeps GitHub's order: the primary address
 first, then the verified ones. To put your own domain first, fill in **Address

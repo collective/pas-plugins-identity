@@ -107,6 +107,8 @@ Check in this order:
    address is private, unless the `user:email` scope was requested.
 3. The provider sent `email_verified` as a boolean, not a string.
 4. Both trust switches are on.
+5. No higher-ranked address the provider verified belongs to a **different**
+   account. That account wins, and the log has an `ERROR` naming both.
 
 ## Verification is configured and never takes effect
 
