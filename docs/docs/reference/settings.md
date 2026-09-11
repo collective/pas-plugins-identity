@@ -18,8 +18,9 @@ by field and one setting can be changed without rewriting the rest.
 
 The **Settings** form in the **Identity providers** control panel edits the
 records in the next two sections, and the headings under each are its tabs, in
-the order they appear there. The server layer's records and the per-provider
-records are edited elsewhere and are described further down.
+the order they appear there. The derived records, the server layer's records
+and the per-provider records are not on that form and are described further
+down.
 
 ## Site-wide
 
@@ -38,21 +39,8 @@ The timeout is here rather than with the portrait one because it fails the same
 way the callback does: metadata that does not arrive is a login that cannot
 start, while a portrait that does not arrive is a missing picture.
 
-### User and group content
-
-| Key | Type | Default | What it does |
-|---|---|---|---|
-| `user_content_type` | `TextLine` | `''` | Content type used for user profiles. |
-| `user_container_path` | `TextLine` | `''` | Where profiles are filed. |
-| `group_content_type` | `TextLine` | `''` | Content type used for groups. |
-| `group_container_path` | `TextLine` | `''` | Where groups are filed. |
-
-These four are empty by default and filled in by the install profile, which
-points them at this package's own types. See {doc}`user-content`.
-
-`user_container_path` and `group_container_path` are derived from the container
-records under **Where principals are filed** and kept in step with them. Set the
-container records; do not set these two by hand.
+Both are required. The form refuses an empty callback URL, and a timeout below
+one second.
 
 ### Portraits
 
@@ -101,6 +89,8 @@ principals together sets none of them.
 | `profile_enumeration_states` | `Tuple` | `('incomplete', 'complete')` | Profile workflow states visible to user enumeration and to the properties plugin. |
 | `group_enumeration_states` | `Tuple` | `('active',)` | Group workflow states visible to group enumeration and granting membership. |
 
+Both are required, and the form refuses a list that names no state.
+
 ### The profile gate
 
 | Key | Type | Default | What it does |
@@ -111,6 +101,27 @@ principals together sets none of them.
 
 See {doc}`profiles-and-groups` for what each state means and which routes are
 exempt already.
+
+## Derived records
+
+<!-- source: backend/src/pas/plugins/identity/core/controlpanel/interfaces.py, IIdentitySettings -->
+<!-- source: backend/src/pas/plugins/identity/core/subscribers/principals.py -->
+
+The four records core reads to create users and groups. They are declared
+read-only, so the **Settings** form does not show them and a save through the
+control panel never writes them.
+
+| Key | Type | Default | What it does |
+|---|---|---|---|
+| `user_content_type` | `TextLine` | `''` | Content type used for user profiles. |
+| `user_container_path` | `TextLine` | `''` | Where profiles are filed. |
+| `group_content_type` | `TextLine` | `''` | Content type used for groups. |
+| `group_container_path` | `TextLine` | `''` | Where groups are filed. |
+
+All four are empty by default. The install profile sets them, and a subscriber
+sets them again whenever a record under **Where principals are filed** changes:
+the paths from the container records, the types to this package's own. Set the
+container records, not these. See {doc}`user-content`.
 
 ## Server layer
 

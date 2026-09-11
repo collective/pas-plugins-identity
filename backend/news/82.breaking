@@ -1,0 +1,1 @@
+Made the login callback URL, the provider discovery timeout, and both enumeration-state lists required in the identity settings. The control panel refuses an empty callback URL, a timeout below one second, and a list that names no state. @ericof

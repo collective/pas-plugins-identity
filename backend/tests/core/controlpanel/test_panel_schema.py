@@ -20,10 +20,12 @@ from pas.plugins.identity.core.controlpanel.interfaces import IIdentitySettings
 from pas.plugins.identity.core.controlpanel.interfaces import IProfileSettings
 from plone import api
 from plone.registry.interfaces import IRegistry
+from plone.restapi.deserializer.controlpanels import ControlpanelDeserializeFromJson
 from plone.restapi.serializer.controlpanels import ControlpanelSerializeToJson
 from zope.component import getUtility
 from zope.schema import getFieldNames
 
+import json
 import pytest
 
 
@@ -33,16 +35,6 @@ import pytest
 #: and only a statement of what the tabs *are* catches that.
 TABS = [
     ("default", "Login", ["callback_url", "discovery_timeout"]),
-    (
-        "content",
-        "User and group content",
-        [
-            "user_content_type",
-            "user_container_path",
-            "group_content_type",
-            "group_container_path",
-        ],
-    ),
     (
         "portraits",
         "Portraits",
@@ -83,6 +75,15 @@ TABS = [
     ),
 ]
 
+#: Declared read-only, so on no tab and in no panel save. See
+#: :class:`TestTheDerivedRecordsAreNotEditedHere`.
+DERIVED = frozenset({
+    "user_content_type",
+    "user_container_path",
+    "group_content_type",
+    "group_container_path",
+})
+
 
 class TestTheFormIsGrouped:
     @pytest.fixture(autouse=True)
@@ -115,21 +116,28 @@ class TestTheFormIsGrouped:
     def test_every_field_is_on_a_tab(self):
         """Stated against the schemas rather than against ``TABS``, so the
         two cannot drift together: a field added to either interface is on a
-        tab or this fails."""
-        declared = set(getFieldNames(IIdentitySettings)) | set(
-            getFieldNames(IProfileSettings)
-        )
+        tab or this fails. The derived records are the exception, and
+        they are named."""
+        declared = (
+            set(getFieldNames(IIdentitySettings)) | set(getFieldNames(IProfileSettings))
+        ) - DERIVED
         on_a_tab = {field for _id, _label, fields in TABS for field in fields}
 
         assert on_a_tab == declared
 
     def test_the_panel_serves_both_schemas(self):
-        """The point of serving a derived schema at all. Twenty-six
-        properties, not thirteen."""
+        """The point of serving a derived schema at all: twenty-two
+        properties, which is all twenty-six fields but the four derived
+        records."""
         properties = self.payload()["schema"]["properties"]
 
-        assert set(properties) == set(getFieldNames(IIdentitySettings)) | set(
-            getFieldNames(IProfileSettings)
+        assert (
+            set(properties)
+            == (
+                set(getFieldNames(IIdentitySettings))
+                | set(getFieldNames(IProfileSettings))
+            )
+            - DERIVED
         )
 
     def test_the_profile_settings_arrive_with_their_values(self):
@@ -181,4 +189,66 @@ class TestTheCombinedSchemaAddressesRealRecords:
         field shadow the other on the panel, with no error anywhere."""
         assert not set(getFieldNames(IIdentitySettings)) & set(
             getFieldNames(IProfileSettings)
+        )
+
+
+class TestTheDerivedRecordsAreNotEditedHere:
+    """The four records core reads, derived from the container settings.
+
+    Taking them off the form was not enough. The panel serves every schema
+    field in ``data``, the frontend's form submits that object back whole,
+    and the derived fields were written after the container settings they
+    come from -- so moving the container wrote the old paths back over the
+    ones just derived, and users went on being created in the folder the
+    operator had moved away from. Read-only fields are skipped by a panel
+    save, which is what these hold the schema to.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, http_request) -> None:
+        self.portal = portal
+        self.request = http_request
+
+    def panel(self) -> IdentityConfigletPanel:
+        """Return the panel, named as the publisher would name it.
+
+        :returns: The configlet panel.
+        """
+        panel = IdentityConfigletPanel(self.portal, self.request)
+        panel.__name__ = CONFIGLET_ID
+        return panel
+
+    def save(self, data: dict) -> None:
+        """Save through the panel, as ``PATCH @controlpanels`` does.
+
+        :param data: The request body.
+        """
+        self.request["BODY"] = json.dumps(data)
+        ControlpanelDeserializeFromJson(self.panel())()
+
+    def test_they_are_not_on_the_form(self):
+        properties = ControlpanelSerializeToJson(self.panel())()["schema"]["properties"]
+
+        assert not set(DERIVED) & set(properties)
+
+    def test_saving_the_whole_form_keeps_them_in_step(self):
+        """What the frontend sends: everything it was served, with one field
+        changed."""
+        data = ControlpanelSerializeToJson(self.panel())()["data"]
+        data["profile_container_id"] = "people"
+
+        self.save(data)
+
+        assert (
+            api.portal.get_registry_record("pas.plugins.identity.user_container_path")
+            == "people"
+        )
+
+    def test_a_save_naming_one_writes_nothing(self):
+        """Not only our frontend: any client may send the field."""
+        self.save({"user_content_type": "Document"})
+
+        assert (
+            api.portal.get_registry_record("pas.plugins.identity.user_content_type")
+            == "UserProfile"
         )
