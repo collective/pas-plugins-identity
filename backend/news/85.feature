@@ -1,0 +1,1 @@
+Added the `PrincipalsContainer` content type, titled Principals folder, which is what the package now creates to file profiles and groups in. It keeps no order among its items, carries blocks and starts with a title block, and has an add permission of its own, `pas.plugins.identity: Add Principals Container`, granted to Manager and Site Administrator. @ericof

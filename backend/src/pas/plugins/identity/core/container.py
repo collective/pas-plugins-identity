@@ -26,6 +26,12 @@ gets exactly what it had; a site that wants ``/groups`` beside ``/profiles``
 sets ``group_container_id`` and core follows. The defaulting is what keeps
 this from being a migration: an existing site has no group records set, and
 the group container it resolves to is the one its groups are already in.
+
+The type is ``PrincipalsContainer`` unless a record names another, and a
+parent that will not take the type named is an error that says so. This
+module used to fall back to ``Document`` and then ``Folder`` instead, which
+filed principals in whatever the parent happened to allow and reported the
+choice in a log line.
 """
 
 from pas.plugins.identity import logger
@@ -34,8 +40,10 @@ from plone.app.dexterity.behaviors.exclfromnav import IExcludeFromNavigation
 from plone.base.interfaces import IPloneSiteRoot
 from plone.dexterity.content import Container
 from plone.dexterity.utils import resolveDottedName
+from plone.restapi.behaviors import IBlocks
 from Products.CMFCore.interfaces import IFolderish
 from Products.CMFPlone.Portal import PloneSite
+from uuid import uuid4
 
 
 #: Registry record prefix for the four container settings.
@@ -86,11 +94,9 @@ RECORDS = {
     ),
 }
 
-#: Types tried, in order, when the configured one may not be added where the
-#: container goes. ``Document`` is first because it is the folderish type a
-#: Volto site has, and Volto is the distribution that makes the default
-#: unusable.
-CONTAINER_TYPE_FALLBACKS = ("Document", "Folder")
+#: The type this package ships for a container, and what both type records
+#: name by default. See :mod:`pas.plugins.identity.core.contents.principals`.
+CONTAINER_PORTAL_TYPE = "PrincipalsContainer"
 
 #: Add permission per kind, by **title** rather than by ZCML id: that is what
 #: ``manage_permission`` and ``rolemap.xml`` both name a permission by.
@@ -128,7 +134,11 @@ LOGIN_ROLES = ADD_ROLES
 
 
 class ContainerNotFound(LookupError):
-    """The configured parent path does not resolve to a folder in this site."""
+    """A configured container cannot be found, or cannot be created.
+
+    Either the parent path does not resolve to a folder in this site, or the
+    folder it resolves to will not take the configured container type.
+    """
 
 
 def settings(kind: str = PROFILE) -> dict[str, str]:
@@ -178,59 +188,38 @@ def get_parent(kind: str = PROFILE) -> PloneSite | Container:
     return parent
 
 
-def _creatable_type(parent, configured: str, type_record: str) -> str:
-    """Return a container type that may actually be added to ``parent``.
+def _check_addable(parent, type_name: str, type_record: str) -> None:
+    """Refuse a container type that ``parent`` will not take.
 
-    The configured type is used whenever the parent allows it, which is the
-    ordinary case and the only one on a site whose structure someone has
-    thought about.
+    There is no fallback, and there used to be. When the configured type was
+    refused, this tried ``Document`` and then ``Folder``, because the
+    ``volto`` distribution does not allow ``Folder`` at the portal root and
+    ``Folder`` was the shipped default. ``PrincipalsContainer`` is globally
+    allowed, so the site root takes it on every distribution, and a parent
+    that still refuses it is a folder somebody restricted on purpose.
+    Guessing past that decision filed principals in a type nobody chose.
 
-    It is not the case on a site built from the ``volto`` distribution, which
-    does not allow ``Folder`` at the portal root at all -- and ``Folder`` is
-    what this package ships as the default. Installing the layer there failed
-    with a bare "Disallowed subobject type", naming neither the record to
-    change nor the fact that a record exists. Since Volto is the frontend this
-    package ships, that is not an edge case to document.
-
-    Folderish types only, and that filter is not paranoia. ``Document`` is
-    the first fallback because ``plone.volto`` makes it folderish, and it is
-    the type a Volto site has where ``Folder`` is refused -- but the same id
-    names an ordinary *item* on a site without that add-on. Creating one as a
-    principal container produced a Document at the configured path that could
-    hold nothing and could not even be granted the add permission, which
-    surfaced as ``The permission ... is invalid`` from a line about
-    permissions rather than about types.
+    Folderish types only. A ``Document`` is an ordinary item on a site
+    without ``plone.volto``, and a container that can hold nothing cannot be
+    granted the add permission either -- which surfaced as ``The permission
+    ... is invalid``, from a line about permissions rather than about types.
 
     :param parent: The object the container will be created in.
-    :param configured: The type named by the container's type record.
+    :param type_name: The type named by the container's type record.
     :param type_record: That record's name, so the message names the record
         an operator would actually change.
-    :returns: The configured type, or the first allowed fallback.
-    :raises ContainerNotFound: When nothing addable here can hold Profiles.
+    :raises ContainerNotFound: When ``parent`` will not take ``type_name`` as
+        a folder. The message names the record, the type and the parent.
     """
-    allowed = [
+    allowed = sorted(
         fti.getId() for fti in parent.allowedContentTypes() if _holds_content(fti)
-    ]
-    if configured in allowed:
-        return configured
-
-    for fallback in CONTAINER_TYPE_FALLBACKS:
-        if fallback in allowed:
-            logger.info(
-                "%s is %r, which %s does not allow; creating the "
-                "container as %r instead. Set the record to silence this.",
-                type_record,
-                configured,
-                "/".join(parent.getPhysicalPath()),
-                fallback,
-            )
-            return fallback
-
+    )
+    if type_name in allowed:
+        return
     raise ContainerNotFound(
-        f"{type_record} is {configured!r}, which cannot be added to "
-        f"{'/'.join(parent.getPhysicalPath())} as a folder, and none of "
-        f"{CONTAINER_TYPE_FALLBACKS} can either. Folderish types allowed "
-        f"here: {allowed}."
+        f"{type_record} is {type_name!r}, which cannot be added to "
+        f"{'/'.join(parent.getPhysicalPath())} as a folder. Folderish types "
+        f"addable there: {allowed}."
     )
 
 
@@ -350,7 +339,9 @@ def get_container(create: bool = False, kind: str = PROFILE) -> Container | None
         second argument, so every existing caller keeps working unchanged.
     :returns: The container, or ``None`` when it does not exist and ``create``
         is false.
-    :raises ContainerNotFound: If the configured parent path does not resolve.
+    :raises ContainerNotFound: If the configured parent path does not resolve,
+        or ``create`` is true and that parent will not take the configured
+        type.
     """
     parent = get_parent(kind)
     config = settings(kind)
@@ -358,9 +349,10 @@ def get_container(create: bool = False, kind: str = PROFILE) -> Container | None
     if container is not None or not create:
         return container
 
+    _check_addable(parent, config["type"], RECORDS[kind][3])
     container = api.content.create(
         container=parent,
-        type=_creatable_type(parent, config["type"], RECORDS[kind][3]),
+        type=config["type"],
         id=config["id"],
         title=config["title"],
     )
@@ -373,6 +365,14 @@ def get_container(create: bool = False, kind: str = PROFILE) -> Container | None
     if IExcludeFromNavigation.providedBy(container):
         container.exclude_from_nav = True
         container.reindexObject(idxs=["exclude_from_nav"])
+    # Volto draws a page that has a ``blocks`` field from its blocks and
+    # nothing else, so a container created here with none would be a blank
+    # page, without even its title. Same condition as above: only when the
+    # type carries the behavior.
+    if IBlocks.providedBy(container):
+        block_id = str(uuid4())
+        container.blocks = {block_id: {"@type": "title"}}
+        container.blocks_layout = {"items": [block_id]}
     # Nothing may be added here until this runs, including by the machinery
     # that is about to file the first Profile: the add permissions are granted
     # to no role site-wide, so the container is the whole lock.

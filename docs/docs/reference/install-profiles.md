@@ -33,7 +33,7 @@ One profile installs everything the core layer needs:
 - the **Identity providers** control panel
 - the `identity` PAS plugin, for extraction, authentication and credentials reset
 - the `identity_profile` PAS plugin, at the top of `IPropertiesPlugin`
-- the `UserProfile` and `UserGroup` content types
+- the `UserProfile`, `UserGroup` and `PrincipalsContainer` content types
 - `user_profile_workflow` and the group workflow
 - the user catalog the two types are filed in
 - the registry records in {doc}`settings`, pointed at this package's own types

@@ -85,11 +85,11 @@ profile must carry before its owner is let past the gate.
 | `profile_container_parent` | `TextLine` | `''` | Path of the folder the profile container lives in, relative to the site root. Empty means the site root. |
 | `profile_container_id` | `TextLine` | `identity-profiles` | Id of the folder holding user profiles. |
 | `profile_container_title` | `TextLine` | `Identity Profiles` | Title used when this package creates the folder. Changing it later does not rename an existing one. |
-| `profile_container_type` | `TextLine` | `Folder` | Portal type used when this package creates the folder. |
+| `profile_container_type` | `TextLine` | `PrincipalsContainer` | Portal type used when this package creates the folder. The parent must allow it. When it does not, creating the folder fails with an error naming the record, the type and the parent. |
 | `group_container_parent` | `TextLine` | `''` | Same, for groups. Read only when `group_container_id` is set. |
 | `group_container_id` | `TextLine` | `''` | Id of the folder holding groups. **Empty means groups are filed with the profiles.** |
 | `group_container_title` | `TextLine` | `Groups` | Title used when this package creates the group folder. |
-| `group_container_type` | `TextLine` | `Folder` | Portal type used when this package creates the group folder. |
+| `group_container_type` | `TextLine` | `PrincipalsContainer` | Portal type used when this package creates the group folder. The parent must allow it, as for profiles. |
 
 The group records default to the profile container's, so a site that files
 principals together sets none of them.

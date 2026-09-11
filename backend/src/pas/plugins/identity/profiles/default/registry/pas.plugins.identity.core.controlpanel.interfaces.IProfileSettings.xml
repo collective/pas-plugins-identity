@@ -15,7 +15,7 @@
          takes the empty string the schema declares. -->
     <value key="profile_container_id">identity-profiles</value>
     <value key="profile_container_title">Identity Profiles</value>
-    <value key="profile_container_type">Folder</value>
+    <value key="profile_container_type">PrincipalsContainer</value>
 
     <!-- Where Groups are stored. Only the two records with a non-empty
          default are listed, for the reason given above: an empty <value>
@@ -23,7 +23,7 @@
          groups share the Profile container, which is every site that has
          not deliberately asked otherwise. -->
     <value key="group_container_title">Groups</value>
-    <value key="group_container_type">Folder</value>
+    <value key="group_container_type">PrincipalsContainer</value>
 
     <!-- Workflow states in which a Profile is served to PAS enumeration.
          Both working states are active; deactivated is not. -->

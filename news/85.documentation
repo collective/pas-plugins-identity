@@ -1,0 +1,1 @@
+Documented the Principals folder content type, its add permission, and the error raised when a container's parent refuses its type. @ericof

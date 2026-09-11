@@ -31,11 +31,11 @@
     </value>
     <value key="group_container_id">groups</value>
     <value key="group_container_title">Groups</value>
-    <value key="group_container_type">Document</value>
+    <value key="group_container_type">PrincipalsContainer</value>
     <value key="profile_container_id">profiles</value>
     <value key="profile_container_parent" />
     <value key="profile_container_title">Profiles</value>
-    <value key="profile_container_type">Document</value>
+    <value key="profile_container_type">PrincipalsContainer</value>
     <value key="profile_enumeration_states">
       <element>incomplete</element>
       <element>complete</element>

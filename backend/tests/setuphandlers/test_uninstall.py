@@ -10,6 +10,7 @@ from pas.plugins.identity import PACKAGE_NAME
 from pas.plugins.identity.core.catalog import CATALOG_ID
 from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
+from pas.plugins.identity.core.container import CONTAINER_PORTAL_TYPE
 from pas.plugins.identity.core.controlpanel.controlpanel import CONFIGLET_ID
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.pas.profile import PLUGIN_ID as PROFILE_PLUGIN_ID
@@ -111,9 +112,11 @@ class TestRegistrationsRemoved:
         """The derived index goes; reinstalling rebuilds it."""
         assert CATALOG_ID not in self.portal.objectIds()
 
-    @pytest.mark.parametrize("portal_type", [PROFILE_PORTAL_TYPE, GROUP_PORTAL_TYPE])
+    @pytest.mark.parametrize(
+        "portal_type", [PROFILE_PORTAL_TYPE, GROUP_PORTAL_TYPE, CONTAINER_PORTAL_TYPE]
+    )
     def test_type_removed(self, portal_type: str):
-        """Both FTIs are unregistered, not just the one anybody remembers."""
+        """Every FTI is unregistered, not just the ones anybody remembers."""
         types = api.portal.get_tool("portal_types")
 
         assert portal_type not in types.objectIds()

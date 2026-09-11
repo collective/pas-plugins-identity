@@ -25,6 +25,16 @@
       title="pas.plugins.identity: Add User Group"
       />
 
+  <!-- Deciding where principals are filed is an administrator's
+       decision, like adding the principals themselves, and not an
+       authoring action. The generic Folder add permission is held by
+       every Contributor, which is why the Principals folder has one of
+       its own. -->
+  <permission
+      id="pas.plugins.identity.principalscontainer.add"
+      title="pas.plugins.identity: Add Principals Container"
+      />
+
   <permission
       id="pas.plugins.identity.content.edit"
       title="pas.plugins.identity: Edit Profile"

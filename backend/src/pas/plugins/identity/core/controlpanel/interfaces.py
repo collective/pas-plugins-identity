@@ -465,10 +465,12 @@ class IProfileSettings(Interface):
     profile_container_type = schema.TextLine(
         title=_("Profile container type"),
         description=_(
-            "Portal type used when this add-on creates the profile container."
+            "Portal type used when this add-on creates the profile container. "
+            "The parent folder must allow it; when it does not, creating the "
+            "container fails rather than choosing another type."
         ),
         required=False,
-        default="Folder",
+        default="PrincipalsContainer",
     )
 
     group_container_parent = schema.TextLine(
@@ -504,9 +506,13 @@ class IProfileSettings(Interface):
 
     group_container_type = schema.TextLine(
         title=_("Group container type"),
-        description=_("Portal type used when this add-on creates the group container."),
+        description=_(
+            "Portal type used when this add-on creates the group container. "
+            "The parent folder must allow it; when it does not, creating the "
+            "container fails rather than choosing another type."
+        ),
         required=False,
-        default="Folder",
+        default="PrincipalsContainer",
     )
 
     profile_enumeration_states = schema.Tuple(
