@@ -58,6 +58,27 @@ A provider configured before this setting existed reads back as shown. Upgrading
 a site does not take its login buttons away.
 ```
 
+## Order the login buttons
+
+<!-- The list is
+     frontend/packages/volto-identity/src/components/ControlPanel/ProvidersTable.tsx,
+     and the save is PATCH @identity-providers in
+     backend/src/pas/plugins/identity/core/services/providers/patch.py. -->
+
+The login page offers its buttons in the order of the provider list.
+
+1. Open the **Identity providers** control panel.
+2. Drag a provider's row by its handle to where it belongs.
+
+The new order is saved as soon as the row is dropped. If the save fails, the row
+goes back where it was and the panel says why.
+
+To move a row from the keyboard, focus its handle, press {kbd}`Space` to pick the
+row up, move it with the arrow keys, and press {kbd}`Space` again to drop it.
+
+The {guilabel}`Login screen` column shows which providers the login page offers
+at all.
+
 ## Test the connection
 
 Use the **Test connection** action.

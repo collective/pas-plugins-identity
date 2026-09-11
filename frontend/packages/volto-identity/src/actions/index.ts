@@ -36,6 +36,7 @@ export {
   createProvider,
   deleteProvider,
   listProviders,
+  reorderProviders,
   testProvider,
   updateProvider,
 } from './providers';

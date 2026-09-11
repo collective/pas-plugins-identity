@@ -1,10 +1,21 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
 import { act, fireEvent, render, screen } from '../../testing';
 import { MemoryRouter, Route, Switch } from 'react-router-dom';
 import { Provider } from 'react-redux';
+import { toast } from 'react-toastify';
 import React from 'react';
 
 import ProvidersControlPanel from './ProvidersControlPanel';
+import { DND_LIBRARIES } from './ProvidersTable';
+import { REORDER_PROVIDERS } from '../../constants/ActionTypes';
 import install, {
   CONTROLPANEL_PATH,
   PROVIDER_ADD_PATH,
@@ -16,8 +27,16 @@ import {
   DRIVERS,
   LOADED,
   LOADING,
+  loadLazyLibraries,
   PROVIDER_SCHEMA,
 } from '../../stories/fixtures';
+
+// Kept so a test can ask whether a failure was reported. The rest of the
+// module stays real.
+vi.mock('react-toastify', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('react-toastify')>()),
+  toast: { success: vi.fn(), error: vi.fn() },
+}));
 
 // The toolbar reads store slices this page does not own, so it is replaced by
 // one that renders what the panel puts in it: the actions under test live
@@ -75,9 +94,14 @@ function panelRoutes(): any[] {
  *
  * @param path Where the browser is.
  * @param overrides Store slices to replace.
+ * @param dispatch What dispatching an action answers.
  * @returns Accessors for where the router is now.
  */
-function renderAt(path: string, overrides: Record<string, unknown> = {}) {
+function renderAt(
+  path: string,
+  overrides: Record<string, unknown> = {},
+  dispatch: (action: any) => unknown = (action) => action,
+) {
   const state = {
     configuredProviders: { ...LOADED, data: CONFIGURED },
     providerFormSchema: { ...LOADED, data: PROVIDER_SCHEMA },
@@ -88,7 +112,7 @@ function renderAt(path: string, overrides: Record<string, unknown> = {}) {
   };
   const store = {
     getState: () => state,
-    dispatch: (action: any) => action,
+    dispatch,
     subscribe: () => () => {},
   };
   const router: { location?: any; history?: any } = {};
@@ -244,6 +268,83 @@ describe('ProvidersControlPanel', () => {
 
       expect(router.location.pathname).toBe(CONTROLPANEL_PATH);
       expect(screen.getByText('Sign in with Keycloak')).toBeTruthy();
+    });
+  });
+
+  describe('reordering the providers', () => {
+    let libraries: Record<string, any>;
+
+    beforeAll(async () => {
+      libraries = await loadLazyLibraries(DND_LIBRARIES);
+    });
+
+    beforeEach(() => {
+      vi.mocked(toast.error).mockClear();
+    });
+
+    /**
+     * The drag library, keeping the drop handler the list gives it.
+     *
+     * @returns The `lazyLibraries` slice, and where the handler is kept.
+     */
+    function keepingTheDrop() {
+      const drop: { end?: (event: unknown) => void } = {};
+      const Real = libraries.dndKitCore.DndContext;
+      const DndContext = (props: any) => {
+        drop.end = props.onDragEnd;
+        return <Real {...props} />;
+      };
+      return {
+        drop,
+        lazyLibraries: {
+          ...libraries,
+          dndKitCore: { ...libraries.dndKitCore, DndContext },
+        },
+      };
+    }
+
+    /** The provider ids, in the order the rows are on the page. */
+    function shown(): string[] {
+      return [
+        ...document.querySelectorAll<HTMLElement>('tr[data-provider]'),
+      ].map((row) => row.dataset.provider as string);
+    }
+
+    it('moves the row when it is dropped and saves every position', () => {
+      const { drop, lazyLibraries } = keepingTheDrop();
+      const sent: any[] = [];
+      renderAt(CONTROLPANEL_PATH, { lazyLibraries }, (action) => {
+        sent.push(action);
+        // Never answered: the row has moved before the backend says a word.
+        return action.type === REORDER_PROVIDERS
+          ? new Promise(() => {})
+          : action;
+      });
+
+      act(() =>
+        drop.end!({ active: { id: 'github' }, over: { id: 'keycloak' } }),
+      );
+
+      expect(shown()).toEqual(['github', 'keycloak']);
+      expect(
+        sent.find((action) => action.type === REORDER_PROVIDERS)?.request.data,
+      ).toEqual({ order: ['github', 'keycloak'] });
+    });
+
+    it('puts the row back and says so when the order cannot be saved', async () => {
+      const { drop, lazyLibraries } = keepingTheDrop();
+      renderAt(CONTROLPANEL_PATH, { lazyLibraries }, (action) =>
+        action.type === REORDER_PROVIDERS
+          ? Promise.reject(new Error('refused'))
+          : action,
+      );
+
+      await act(async () =>
+        drop.end!({ active: { id: 'github' }, over: { id: 'keycloak' } }),
+      );
+
+      expect(shown()).toEqual(['keycloak', 'github']);
+      expect(toast.error).toHaveBeenCalledTimes(1);
     });
   });
 });

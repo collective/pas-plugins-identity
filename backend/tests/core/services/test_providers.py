@@ -11,6 +11,7 @@ from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import PROVIDERS_PREFIX
 from pas.plugins.identity.core.controlpanel import SECRET_SENTINEL
 from pas.plugins.identity.core.controlpanel import set_providers
+from pas.plugins.identity.core.controlpanel.interfaces import IProviderRecords
 from pas.plugins.identity.core.interfaces import FlowError
 from pas.plugins.identity.core.services.providers.delete import ProvidersDelete
 from pas.plugins.identity.core.services.providers.drivers import DriversGet
@@ -411,6 +412,16 @@ class TestReading(ControlPanelCase):
         for item in result["items"]:
             assert SECRET_SENTINEL in item["config"].values()
 
+    def test_the_form_does_not_offer_the_order(self):
+        """The provider list sets it by dragging, for every provider at once.
+        The field stays on the interface, which is what profiles import and
+        export."""
+        schema = self.call(ProvidersGet)["schema"]
+
+        assert "order" not in schema["properties"]
+        assert not [fs for fs in schema["fieldsets"] if "order" in fs["fields"]]
+        assert "order" in IProviderRecords.names()
+
 
 class TestCreating(ControlPanelCase):
     @pytest.fixture(autouse=True)
@@ -572,11 +583,90 @@ class TestUpdating(ControlPanelCase):
 
         assert self.status() == 404
 
-    def test_path_must_name_one_provider(self):
-        """PATCH on the collection is not an update."""
-        self.call(ProvidersPatch, payload={"title": "x"})
+    def test_a_path_below_a_provider_is_refused(self):
+        """Nothing under a provider is something a PATCH could change."""
+        self.call(ProvidersPatch, "dex", "title", payload={"title": "x"})
 
         assert self.status() == 400
+        assert get_provider("dex").title != "x"
+
+
+class TestReordering(ControlPanelCase):
+    """``PATCH @identity-providers`` stores every provider in the order given.
+
+    One request for the whole list, so a reorder cannot be left half applied.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_, manager, configured) -> None:
+        self.portal = portal
+        self.request = request_
+
+    def _ids(self) -> list[str]:
+        """Return the configured provider ids, in their stored order.
+
+        :returns: The ids.
+        """
+        return [provider.provider_id for provider in get_providers()]
+
+    def test_reorders(self):
+        self.call(ProvidersPatch, payload={"order": ["github", "dex"]})
+
+        assert self.status() == 204
+        assert self._ids() == ["github", "dex"]
+
+    def test_the_order_is_what_is_stored(self):
+        """The record a profile exports, not a sort applied on the way out."""
+        self.call(ProvidersPatch, payload={"order": ["github", "dex"]})
+
+        assert get_provider_record("github", "order") == 0
+        assert get_provider_record("dex", "order") == 1
+
+    def test_nothing_else_changes(self):
+        """A reorder rewrites every provider's records, and has to write each
+        one back as it was -- secrets included."""
+        before = {
+            p.provider_id: p.serialize(mask_secrets=False) for p in get_providers()
+        }
+
+        self.call(ProvidersPatch, payload={"order": ["github", "dex"]})
+
+        after = {
+            p.provider_id: p.serialize(mask_secrets=False) for p in get_providers()
+        }
+        assert after == before
+
+    @pytest.mark.parametrize(
+        ("order", "named"),
+        [
+            (["dex"], "Missing: 'github'"),
+            (["dex", "github", "nope"], "Not configured: 'nope'"),
+            (["github", "dex", "github"], "Named more than once: 'github'"),
+        ],
+    )
+    def test_every_provider_is_named_exactly_once(self, order, named):
+        """A provider left out has no position to take, and one named twice
+        has two. The refusal names the ids, and nothing is stored."""
+        result = self.call(ProvidersPatch, payload={"order": order})
+
+        assert self.status() == 400
+        assert named in result["error"]["message"]
+        assert self._ids() == ["dex", "github"]
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"title": "x"},
+            {"order": "github,dex"},
+            {"order": ["github", 1]},
+        ],
+    )
+    def test_a_body_that_is_not_an_order_is_refused(self, payload):
+        """The collection takes an order and nothing else."""
+        self.call(ProvidersPatch, payload=payload)
+
+        assert self.status() == 400
+        assert self._ids() == ["dex", "github"]
 
 
 class TestTheAddressPreferenceIsChecked(ControlPanelCase):

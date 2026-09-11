@@ -62,10 +62,9 @@ carries the driver and the provider id.
 | Title | `title` | `TextLine` | `''` |
 | Enabled | `enabled` | `Bool` | `True` |
 | Show on the login screen | `show_in_login` | `Bool` | `True` |
-| Order | `order` | `Int` | `0` |
 
-`order` is stored rather than derived: records live in a BTree and read back
-alphabetically, and this is the order the login buttons appear in.
+The order the login buttons appear in is not on this form. Dragging a row of
+the provider list sets it, and stores `order` for every provider in one request.
 
 ## Style tab
 

@@ -175,7 +175,7 @@ unless it names an interface that declares them.
 | `icon` | `Bytes` | `None` | An SVG document, sanitized on save. |
 | `background_color` | `TextLine` | `''` | Button background, such as `#24292f`. |
 | `foreground_color` | `TextLine` | `''` | Button text colour. |
-| `order` | `Int` | `0` | Position among the buttons. |
+| `order` | `Int` | `0` | Position among the buttons. Set by dragging the provider list rather than on the provider's form. |
 | `propertymap` | `Dict` | `{}` | Claim path → Profile field. The target is a `Choice` over `fullname`, `home_page`, `description` and `location`; any other value is refused. |
 | `groupmap` | `Dict` | `{}` | Provider group name → local group id. |
 

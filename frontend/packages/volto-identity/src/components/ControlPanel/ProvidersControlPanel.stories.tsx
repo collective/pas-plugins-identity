@@ -4,6 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { MemoryRouter, Route } from 'react-router-dom';
 
 import ProvidersControlPanel from './ProvidersControlPanel';
+import { DND_LIBRARIES } from './ProvidersTable';
 import {
   CONTROLPANEL_PATH,
   PROVIDER_ADD_PATH,
@@ -17,6 +18,7 @@ import {
   LOADED,
   LOADING,
   GROUPS_STATE,
+  loadLazyLibraries,
   PROVIDER_SCHEMA,
   USER_FIELDS_STATE,
   withStore,
@@ -79,8 +81,21 @@ const at =
     </MemoryRouter>
   );
 
+/**
+ * The list, with the drag library loaded so every row has its handle.
+ *
+ * The stories' stores ignore the dispatch that would deliver the library, so
+ * the story loads it first and puts it in the store itself.
+ */
 export const Default: Story = {
-  decorators: [withStore(base), at(CONTROLPANEL_PATH)],
+  loaders: [
+    async () => ({ lazyLibraries: await loadLazyLibraries(DND_LIBRARIES) }),
+  ],
+  decorators: [
+    (Story: () => ReactNode, { loaded }: { loaded: Record<string, any> }) =>
+      withStore({ ...base, lazyLibraries: loaded.lazyLibraries })(Story),
+    at(CONTROLPANEL_PATH),
+  ],
 };
 
 export const Loading: Story = {

@@ -23,7 +23,7 @@ import {
   useParams,
 } from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { Button, Container, Segment, Table } from 'semantic-ui-react';
+import { Button, Container, Segment } from 'semantic-ui-react';
 import { defineMessages, useIntl } from 'react-intl';
 import { toast } from 'react-toastify';
 
@@ -41,9 +41,6 @@ import {
 import addSVG from '@plone/volto/icons/add.svg';
 import backSVG from '@plone/volto/icons/back.svg';
 import clearSVG from '@plone/volto/icons/clear.svg';
-import deleteSVG from '@plone/volto/icons/delete.svg';
-import pencilSVG from '@plone/volto/icons/pencil.svg';
-import worldSVG from '@plone/volto/icons/world.svg';
 import saveSVG from '@plone/volto/icons/save.svg';
 import configurationSVG from '@plone/volto/icons/configuration.svg';
 
@@ -52,6 +49,7 @@ import {
   deleteProvider,
   listDrivers,
   listProviders,
+  reorderProviders,
   testProvider,
   updateProvider,
 } from '../../actions';
@@ -60,8 +58,8 @@ import {
   CONTROLPANEL_PATH,
   PROVIDER_ADD_PATH,
   PROVIDERS_SETTINGS_PATH,
-  providerEditUrl,
 } from '../../config/routes';
+import { inOrder } from '../../helpers/providerOrder';
 import {
   CONFIG_PREFIX,
   fromFormData,
@@ -73,6 +71,7 @@ import type { ConfiguredProvider, Driver } from '../../types';
 
 import './ProvidersControlPanel.scss';
 import ConfirmModal from './ConfirmModal';
+import ProvidersTable from './ProvidersTable';
 
 /**
  * The configlet id, which is also the name the site-wide settings are served
@@ -86,9 +85,7 @@ const messages = defineMessages({
   back: { id: 'Back', defaultMessage: 'Back' },
   save: { id: 'Save', defaultMessage: 'Save' },
   cancel: { id: 'Cancel', defaultMessage: 'Cancel' },
-  edit: { id: 'Edit', defaultMessage: 'Edit' },
   test: { id: 'Test connection', defaultMessage: 'Test connection' },
-  delete: { id: 'Delete', defaultMessage: 'Delete' },
   saved: { id: 'Changes saved', defaultMessage: 'Changes saved' },
   deleted: { id: 'Provider deleted', defaultMessage: 'Provider deleted' },
   settings: { id: 'Settings', defaultMessage: 'Settings' },
@@ -131,13 +128,10 @@ const messages = defineMessages({
       'No drivers are installed, so there is nothing to configure. Install ' +
       'an add-on that registers one.',
   },
-  columnTitle: { id: 'Title', defaultMessage: 'Title' },
-  columnId: { id: 'Id', defaultMessage: 'Id' },
-  columnDriver: { id: 'Driver', defaultMessage: 'Driver' },
-  columnEnabled: { id: 'Enabled', defaultMessage: 'Enabled' },
-  columnActions: { id: 'Actions', defaultMessage: 'Actions' },
-  yes: { id: 'Yes', defaultMessage: 'Yes' },
-  no: { id: 'No', defaultMessage: 'No' },
+  reorderFailed: {
+    id: 'The new order could not be saved',
+    defaultMessage: 'The new order could not be saved',
+  },
   reached: {
     id: 'Reached {endpoint}',
     defaultMessage: 'Reached {endpoint}',
@@ -196,6 +190,11 @@ const ProvidersControlPanel: React.FC = () => {
   // across the remount the new schema needs.
   const draft = useRef<Record<string, unknown>>({});
   const [error, setError] = useState<unknown>(null);
+  // The order the list shows while a reorder is being saved. A dropped row
+  // moves when it is dropped rather than when the backend answers, and goes
+  // back if the backend refuses. A listing, whenever one arrives, is the
+  // stored order and replaces it.
+  const [pendingOrder, setPendingOrder] = useState<string[] | null>(null);
 
   const providers = useSelector((state: any) => state.configuredProviders) as {
     data?: ConfiguredProvider[];
@@ -250,6 +249,10 @@ const ProvidersControlPanel: React.FC = () => {
     setError(null);
     draft.current = {};
   }, [pathname]);
+
+  useEffect(() => {
+    setPendingOrder(null);
+  }, [providers?.data]);
 
   useEffect(() => {
     if (check?.loaded && check?.data) {
@@ -428,6 +431,27 @@ const ProvidersControlPanel: React.FC = () => {
       .catch(fail);
   };
 
+  // Saved on drop, every provider's position in one request.
+  const onReorder = (providerIds: string[]) => {
+    setPendingOrder(providerIds);
+    (dispatch(reorderProviders(providerIds)) as any)
+      .then(refresh)
+      .catch((err: any) => {
+        setPendingOrder(null);
+        toast.error(
+          <Toast
+            error
+            title={intl.formatMessage(messages.reorderFailed)}
+            content={err?.response?.body?.error?.message ?? String(err)}
+          />,
+        );
+        // The likeliest refusal is a list that changed underneath -- a
+        // provider added or removed elsewhere, which the backend names -- so
+        // the next drag starts from the list as it now is.
+        refresh();
+      });
+  };
+
   const formTitle = editingSettings
     ? intl.formatMessage(messages.settings)
     : adding
@@ -537,79 +561,14 @@ const ProvidersControlPanel: React.FC = () => {
             ) : null}
             <Segment>
               {items.length ? (
-                <Table selectable compact>
-                  <Table.Header>
-                    <Table.Row>
-                      <Table.HeaderCell>
-                        {intl.formatMessage(messages.columnTitle)}
-                      </Table.HeaderCell>
-                      <Table.HeaderCell>
-                        {intl.formatMessage(messages.columnId)}
-                      </Table.HeaderCell>
-                      <Table.HeaderCell>
-                        {intl.formatMessage(messages.columnDriver)}
-                      </Table.HeaderCell>
-                      <Table.HeaderCell>
-                        {intl.formatMessage(messages.columnEnabled)}
-                      </Table.HeaderCell>
-                      <Table.HeaderCell textAlign="right">
-                        {intl.formatMessage(messages.columnActions)}
-                      </Table.HeaderCell>
-                    </Table.Row>
-                  </Table.Header>
-                  <Table.Body>
-                    {items.map((provider) => (
-                      <Table.Row
-                        key={provider['@id']}
-                        data-provider={provider.id}
-                      >
-                        <Table.Cell>{provider.title || provider.id}</Table.Cell>
-                        <Table.Cell>
-                          <code>{provider.id}</code>
-                        </Table.Cell>
-                        <Table.Cell>{provider.driver}</Table.Cell>
-                        <Table.Cell>
-                          {intl.formatMessage(
-                            provider.enabled ? messages.yes : messages.no,
-                          )}
-                        </Table.Cell>
-                        <Table.Cell textAlign="right">
-                          {/* A link rather than a button: the edit form is a
-                              route, so it can be opened in a new tab. */}
-                          <Button
-                            as={Link}
-                            to={providerEditUrl(provider.id)}
-                            basic
-                            icon
-                            aria-label={intl.formatMessage(messages.edit)}
-                            title={intl.formatMessage(messages.edit)}
-                          >
-                            <Icon name={pencilSVG} size="20px" />
-                          </Button>
-                          <Button
-                            basic
-                            icon
-                            aria-label={intl.formatMessage(messages.test)}
-                            title={intl.formatMessage(messages.test)}
-                            onClick={() => dispatch(testProvider(provider.id))}
-                          >
-                            <Icon name={worldSVG} size="20px" />
-                          </Button>
-                          <Button
-                            basic
-                            icon
-                            data-action="delete"
-                            aria-label={intl.formatMessage(messages.delete)}
-                            title={intl.formatMessage(messages.delete)}
-                            onClick={() => onDelete(provider)}
-                          >
-                            <Icon name={deleteSVG} size="20px" />
-                          </Button>
-                        </Table.Cell>
-                      </Table.Row>
-                    ))}
-                  </Table.Body>
-                </Table>
+                <ProvidersTable
+                  providers={
+                    pendingOrder ? inOrder(items, pendingOrder) : items
+                  }
+                  onReorder={onReorder}
+                  onTest={(provider) => dispatch(testProvider(provider.id))}
+                  onDelete={onDelete}
+                />
               ) : (
                 <p className="identity-controlpanel__empty identity-note">
                   {intl.formatMessage(

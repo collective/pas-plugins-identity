@@ -40,6 +40,7 @@ import {
   providerCreate,
   providerDelete,
   providerFormSchema,
+  providerReorder,
   providerTest,
   providerUpdate,
 } from './providers';
@@ -71,6 +72,7 @@ export {
   providerCreate,
   providerDelete,
   providerFormSchema,
+  providerReorder,
   providerTest,
   providerUpdate,
 } from './providers';
@@ -93,6 +95,7 @@ const reducers = {
   clientFormSchema,
   providerCreate,
   providerUpdate,
+  providerReorder,
   providerDelete,
   providerTest,
   myProfile,

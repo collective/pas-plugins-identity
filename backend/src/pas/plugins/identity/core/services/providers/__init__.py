@@ -10,7 +10,7 @@ what a driver needs, and one that manages the provider records themselves.
 
 ``GET @identity-providers`` / ``GET @identity-providers/<id>``
 ``POST @identity-providers``
-``PATCH @identity-providers/<id>``
+``PATCH @identity-providers`` / ``PATCH @identity-providers/<id>``
 ``DELETE @identity-providers/<id>``
 ``POST @identity-providers/<id>/test-connection``
 ``GET @identity-providers/<id>/export``

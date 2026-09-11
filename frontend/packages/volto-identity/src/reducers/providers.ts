@@ -7,6 +7,7 @@ import {
   CREATE_PROVIDER,
   DELETE_PROVIDER,
   LIST_PROVIDERS,
+  REORDER_PROVIDERS,
   TEST_PROVIDER,
   UPDATE_PROVIDER,
 } from '../constants/ActionTypes';
@@ -41,6 +42,12 @@ export const providerCreate = requestReducer<ConfiguredProvider | null>(
 
 export const providerUpdate = requestReducer<boolean>(
   UPDATE_PROVIDER,
+  () => true,
+  false,
+);
+
+export const providerReorder = requestReducer<boolean>(
+  REORDER_PROVIDERS,
   () => true,
   false,
 );

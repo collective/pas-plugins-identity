@@ -372,6 +372,11 @@ class IProviderRecords(Interface):
         required=False,
         default=0,
     )
+    # Not a form field. The provider list sets it by dragging, for every
+    # provider in one request: a number typed into each provider's form meant
+    # editing several forms to move one button, with ties broken silently by
+    # id. Omitted rather than removed, so profiles still import and export it.
+    directives.omitted("order")
 
     propertymap = schema.Dict(
         title=_("Property map"),
