@@ -177,7 +177,8 @@ registry and any export hold only the safe version. Only listed shapes and
 attributes survive, an unlisted element is dropped with its contents rather than
 unwrapped, no attribute may reference an address elsewhere, and the result is
 serialized from the parsed tree rather than sliced out of the input. A document
-that is not an SVG is refused.
+that is not an SVG is refused. A GenericSetup import is held to the same rule
+as the control panel: the record is sanitized as the import writes it.
 
 **What reopens it.** Nothing in configuration.
 
