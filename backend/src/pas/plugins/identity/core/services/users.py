@@ -36,6 +36,7 @@ Registered for this package's own browser layer, so a site that has not
 installed it keeps stock behaviour.
 """
 
+from Acquisition import aq_inner
 from io import BytesIO
 from pas.plugins.identity.core.profiles import get_profile
 from pas.plugins.identity.core.profiles import remember_picture_url
@@ -44,8 +45,10 @@ from plone.namedfile.file import NamedBlobImage
 from plone.namedfile.utils import stream_data
 from plone.restapi.services.users.get import PortraitGet
 from plone.restapi.services.users.update import UsersPatch
+from Products.PlonePAS.tools.membership import default_portrait
 from Products.PlonePAS.utils import decleanId
 from Products.PlonePAS.utils import scale_image
+from urllib.parse import quote
 from zope.lifecycleevent import modified
 
 import codecs
@@ -183,36 +186,99 @@ class ProfilePortraitGet(PortraitGet):
         that had just set the field passed. Length is the one thing this has
         to say for itself.
 
-        :returns: The streamed image, or whatever the base class returns
-            when no Profile holds a picture for this user.
+        :returns: The streamed image, or ``None`` with a 404 when this user
+            has no picture of their own in either store.
         """
-        image = self._profile_image()
-        if image is None:
+        userid = self._requested_userid()
+        if userid is None:
+            # More than one path segment. The message is the base class's to
+            # write, and it raises before it reads anything.
             return super().render()
+
+        image = self._profile_image(userid)
+        if image is None:
+            return self._member_portrait(userid)
 
         self.request.response.setStatus(200)
         self.request.response.setHeader("Content-Type", image.contentType)
         self.request.response.setHeader("Content-Length", image.getSize())
         return stream_data(image)
 
-    def _profile_image(self):
-        """Return the picture held on this request's user's Profile.
+    def _requested_userid(self) -> str | None:
+        """Return the user this request asks for.
 
-        Reads the same ``params`` the base class does, including the empty
-        case that means "my own portrait", so the two implementations cannot
-        disagree about which user is being asked for.
+        The same reading of ``params`` the base class makes, including the
+        empty case that means "my own portrait", so both stores are always
+        asked about the same person.
 
+        :returns: The userid, or ``None`` when the path carries more than one
+            segment.
+        """
+        if len(self.params) == 1:
+            return decleanId(self.params[0])
+        if not self.params:
+            return self.portal_membership.getAuthenticatedMember().getId()
+        return None
+
+    def _profile_image(self, userid: str):
+        """Return the picture held on a user's Profile.
+
+        :param userid: The user asked for.
         :returns: The image, or ``None`` when there is no Profile or it has
             no picture.
         """
-        if len(self.params) == 1:
-            userid = decleanId(self.params[0])
-        elif not self.params:
-            userid = self.portal_membership.getAuthenticatedMember().getId()
-        else:
-            # Let the base class raise: the message is its to write, and
-            # duplicating it here is a second thing to keep in step.
-            return None
-
         profile = get_profile(userid)
         return None if profile is None else getattr(profile, "image", None)
+
+    def _is_placeholder(self, portrait) -> bool:
+        """Report whether a portrait is Plone's shared default image.
+
+        Compared through an unrestricted traversal, which is how
+        ``getPersonalPortrait`` fetched the placeholder in the first place.
+        ``plone.restapi`` traverses to it *restricted*, and on a site whose
+        anonymous visitors cannot view it that answers ``None`` and the
+        comparison raises.
+
+        :param portrait: What ``getPersonalPortrait`` returned.
+        :returns: Whether it is the placeholder.
+        """
+        placeholder = self.portal.unrestrictedTraverse(default_portrait, None)
+        return (
+            placeholder is not None
+            and aq_inner(portrait).getPhysicalPath()
+            == aq_inner(placeholder).getPhysicalPath()
+        )
+
+    def _member_portrait(self, userid: str):
+        """Serve the portrait ``portal_memberdata`` holds, as the base class would.
+
+        Written out rather than left to ``super().render()``, which cannot
+        answer on a site that takes ``View`` away from ``Anonymous``: its
+        placeholder check fails there, so every user whose picture is not on a
+        Profile got a 500 -- one with a member portrait included. The stock
+        ``@portrait`` never reaches that code on such a site, because it is
+        declared ``zope2.View`` and refused first; this one is public by
+        design. See :meth:`_is_placeholder`.
+
+        The rest is what the base class does, including the download it
+        forces for a content type a browser must not render inline.
+
+        :param userid: The user asked for.
+        :returns: The streamed portrait, or ``None`` with a 404 when the
+            member has none of their own.
+        """
+        portrait = self.portal_membership.getPersonalPortrait(userid)
+        if portrait is None or self._is_placeholder(portrait):
+            self.request.response.setStatus(404)
+            return None
+
+        if self._should_force_download(portrait):
+            extension = portrait.content_type.split("/")[-1].split("+")[0]
+            filename = quote(f"{portrait.getId()}.{extension}".encode())
+            self.request.response.setHeader(
+                "Content-Disposition", f"attachment; filename*=UTF-8''{filename}"
+            )
+
+        self.request.response.setStatus(200)
+        self.request.response.setHeader("Content-Type", portrait.content_type)
+        return stream_data(portrait)

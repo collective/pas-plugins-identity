@@ -1,0 +1,1 @@
+Documented `@portrait/<userid>` as an anonymous endpoint in the endpoints reference, and corrected its note on registrations: only the authenticated services are registered with `zope2.View`, while the anonymous ones are `zope.Public`. @ericof

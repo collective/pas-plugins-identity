@@ -20,6 +20,7 @@ question, and a service constructed in a test answers it whatever the ZCML
 says.
 """
 
+from .. import close_the_site
 from plone.app.testing import SITE_OWNER_NAME
 from plone.app.testing import SITE_OWNER_PASSWORD
 
@@ -38,19 +39,6 @@ def url(functional) -> str:
     portal = functional["portal"]
     transaction.commit()
     return portal.absolute_url()
-
-
-def close_the_site(portal) -> None:
-    """Take ``View`` away from ``Anonymous`` at the portal root.
-
-    What a closed intranet looks like, and the only configuration in which
-    these endpoints' permission is observable at all: while ``Anonymous``
-    holds ``View``, ``zope2.View`` and ``zope.Public`` behave identically.
-
-    :param portal: The Plone site.
-    """
-    portal.manage_permission("View", roles=["Manager"], acquire=0)
-    transaction.commit()
 
 
 class TestTheProviderListing:

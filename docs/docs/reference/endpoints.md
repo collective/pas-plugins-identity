@@ -13,9 +13,12 @@ myst:
 Every endpoint the package publishes, by layer.
 
 ```{important}
-**Every REST service is registered with `zope2.View`, and authorization happens
-inside the service class.** Reading the registration alone understates what a
-caller needs. The "Requires" column below is what the code actually enforces.
+**Every authenticated REST service is registered with `zope2.View`, and
+authorization happens inside the service class.** Reading the registration
+alone understates what a caller needs. The "Requires" column below is what the
+code actually enforces. The anonymous services are registered `zope.Public`
+instead: `zope2.View` is inherited from the site root, so a site that takes
+`View` away from `Anonymous` would refuse them.
 ```
 
 <!-- source: backend/src/pas/plugins/identity/core/services/**/configure.zcml -->
@@ -36,7 +39,7 @@ Present in every installation.
 | DELETE | `@identities/<provider>/<subject>` | authenticated | Unlink one. Refused for the last remaining method. |
 | GET | `@types` | authenticated | The profile content types. |
 | PATCH | `@users` | see source | Update profile fields. |
-| GET | `@portrait` | see source | A profile portrait. |
+| GET | `@portrait/<userid>` | anonymous | A user's picture: the Profile's when it has one, the member portrait otherwise. The `[server]` layer publishes this URL as the OIDC `picture` claim. |
 | GET | `@group-members/<group id>` | `Manage users`, or membership of the group | Members of a group. |
 | GET | `@user-account/<userid>` | `Manage users` | One user's sign-in methods, for administrators. |
 | GET | `@identity-drivers` | `Manage portal` | Drivers available to configure. |
