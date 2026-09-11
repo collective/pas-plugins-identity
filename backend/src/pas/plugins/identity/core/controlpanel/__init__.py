@@ -191,6 +191,41 @@ def check_signin_policy(config: dict) -> None:
         )
 
 
+class InvalidAddressPreference(ValueError):
+    """Raised when an address preference holds an entry that is not one."""
+
+
+def check_address_preference(config: dict) -> None:
+    """Refuse an address preference with an entry nothing could match.
+
+    The field carries the same rule, but a registry record does not keep a
+    field's constraint and a provider saved through the API is not validated
+    against its schema -- so without this, the rule held on a form and nowhere
+    else. Refused on save rather than skipped at login: ``plone.org`` without
+    its ``@`` matches no address, and the address it was meant to put first
+    would be ranked as though nobody had mentioned it.
+
+    :param config: The driver settings as they would be stored.
+    :raises InvalidAddressPreference: When the preference is a single string
+        rather than a list, or any entry is neither ``*`` nor ``@`` followed
+        by a domain.
+    """
+    from pas.plugins.identity.core.utils.address_preference import is_address_pattern
+
+    entries = config.get("address_preference") or ()
+    if isinstance(entries, str):
+        raise InvalidAddressPreference(
+            "An address preference is a list of entries, not one string."
+        )
+    unusable = [entry for entry in entries if not is_address_pattern(entry)]
+    if unusable:
+        raise InvalidAddressPreference(
+            f"{', '.join(repr(entry) for entry in unusable)} cannot place an "
+            "address. Use @ followed by a domain, such as @example.org, or * "
+            "for every address no other entry matches."
+        )
+
+
 def _settings_fields(driver_id: str) -> dict[str, object]:
     """Return a driver's settings fields, keyed by name.
 

@@ -1,0 +1,1 @@
+Documented `api.portrait.store` and `api.portrait.sync_portrait` in the Python API reference, including that `sync_portrait` reports a refusal only in the log. @ericof

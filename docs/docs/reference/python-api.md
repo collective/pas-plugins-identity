@@ -109,8 +109,22 @@ Keyed by userid rather than by Profile, because a user with no Profile can still
 |---|---|
 | `has_picture(userid)` | Whether a picture exists in *either* store |
 | `get_url(userid)` | The URL of the Profile's picture, or `None` |
+| `store(userid, data, url="")` | Nothing. Stores image bytes the caller already holds, where a login would put them |
+| `sync_portrait(userid, url, allow_http=False)` | Whether a picture was stored. Fetches the URL with a login's checks first |
 
-The two are not the same question: `has_picture` also looks in `portal_memberdata`.
+The first two are not the same question: `has_picture` also looks in `portal_memberdata`.
+
+The two writes are for two kinds of caller.
+`store` is for one that downloaded its pictures beforehand, such as an import that caches them on disk.
+It puts the picture on the Profile, unless the user has no Profile or chose a picture of their own there; then it goes to `portal_memberdata`.
+Passing `url` lets the Profile remember where the picture came from, so a later login can replace it.
+
+`sync_portrait` is for a caller that holds only a URL.
+It fetches nothing unless the site-wide portrait switch is on, refuses plain HTTP unless `allow_http` is set, and applies the site's timeout and size limit.
+
+`sync_portrait` is the one exception to the rule that an operation which cannot proceed raises.
+It answers `False` instead, because it is the same call a login makes, and a login must not fail over an avatar.
+A batch import learns *why* a picture was refused only from the log.
 
 ## `api.provider`
 

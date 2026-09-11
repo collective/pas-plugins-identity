@@ -129,8 +129,10 @@ Who the provider's answer makes the person standing here.
 | Attach to an existing account with the same verified email | `config.auto_link_by_email` | `Bool` | off |
 | This provider's email verification counts | `config.trust_email_verification` | `Bool` | off, except `github` and `google` |
 | This provider sends verification flags as text | `config.accept_string_booleans` | `Bool` | off |
+| Address preference | `config.address_preference` | `Tuple` | empty |
 
-Shown for every driver except `email`.
+Shown for every driver except `email`. **Address preference** is on the
+`github` form only.
 
 See {doc}`/how-to-guides/link-accounts-by-email` and
 {doc}`/how-to-guides/control-account-creation`.

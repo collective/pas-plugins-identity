@@ -43,7 +43,12 @@ unlink rather than a configuration change.
 Set {guilabel}`Attach to an existing account with the same verified email`.
 
 A person signing in with this provider for the first time is then attached to an
-account that already exists, when the address matches a verified one.
+account that already exists, when an address the provider verified matches a
+verified one here.
+
+Every address the provider verified is tried, not only the first. They are tried
+in order—for GitHub, the order its **Address preference** sets, see
+{doc}`providers/github`—and the first one that belongs to an account decides.
 
 This needs step 1 as well. The address being matched on is the one this provider
 just sent, so a provider whose word the site does not take cannot reach an
@@ -80,6 +85,19 @@ account here.
 
 If a second account was created instead, one of the three switches is off, or the
 address was not verified at the provider.
+
+## When two addresses belong to two accounts
+
+A provider can verify two addresses that this site holds for two different
+accounts. The account holding the higher-ranked address is the one signed in to,
+and the other account keeps its address.
+
+The conflict is logged at `ERROR`, naming both accounts and both addresses. It
+usually means one person has two accounts here, and merging them is a decision
+for an operator.
+
+An address held for an account that no longer exists is skipped with a warning,
+and the next address is tried.
 
 ## When it refuses
 

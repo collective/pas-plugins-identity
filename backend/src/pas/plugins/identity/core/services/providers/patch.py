@@ -1,8 +1,10 @@
 """``PATCH @identity-providers/<id>`` -- update in place."""
 
+from pas.plugins.identity.core.controlpanel import check_address_preference
 from pas.plugins.identity.core.controlpanel import check_propertymap
 from pas.plugins.identity.core.controlpanel import check_signin_policy
 from pas.plugins.identity.core.controlpanel import get_providers
+from pas.plugins.identity.core.controlpanel import InvalidAddressPreference
 from pas.plugins.identity.core.controlpanel import InvalidColor
 from pas.plugins.identity.core.controlpanel import InvalidPropertyMap
 from pas.plugins.identity.core.controlpanel import InvalidSignInPolicy
@@ -72,14 +74,27 @@ class ProvidersPatch(ProvidersService):
         if "groupmap" in data:
             target.groupmap = dict(data["groupmap"] or {})
         if "config" in data:
-            # A round trip echoes the mask back, and that must not overwrite
-            # the stored secret with a row of bullets.
-            merged = unmask(target.driver_id, data["config"], target.config)
-            try:
-                check_signin_policy(merged)
-            except InvalidSignInPolicy as error:
-                return self._error(400, "Nobody could sign in", str(error))
-            target.config = merged
+            return self._apply_config(target, data["config"])
+        return None
+
+    def _apply_config(self, target, config: JSONDict) -> JSONDict | None:
+        """Apply the driver settings, refusing a configuration that cannot work.
+
+        :param target: The provider being updated.
+        :param config: The driver settings as supplied.
+        :returns: An error body, or ``None`` when the settings applied.
+        """
+        # A round trip echoes the mask back, and that must not overwrite the
+        # stored secret with a row of bullets.
+        merged = unmask(target.driver_id, config, target.config)
+        try:
+            check_signin_policy(merged)
+            check_address_preference(merged)
+        except InvalidSignInPolicy as error:
+            return self._error(400, "Nobody could sign in", str(error))
+        except InvalidAddressPreference as error:
+            return self._error(400, "Invalid address preference", str(error))
+        target.config = merged
         return None
 
     def _apply_style(self, target, data: JSONDict) -> JSONDict | None:

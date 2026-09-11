@@ -43,29 +43,37 @@ class IdentityCallback(IdentityService):
     def _claims_from(self, provider: ProviderConfig, payload: JSONDict) -> Claims:
         """Normalize a provider's payload into claims.
 
-        A thin wrapper around the driver's own :meth:`normalize_claims`, which
-        exists for one provider setting: ``accept_string_booleans``, for a
-        provider that sends ``email_verified`` as the string ``"true"``. The
-        repair happens here rather than in the driver because
-        ``normalize_claims`` is a documented override point -- the driver
-        how-to shows its signature -- and threading a keyword through it would
-        break every driver written against that page.
+        A wrapper around the driver's own :meth:`normalize_claims`, for the
+        provider settings that change what the claims say. Applied here rather
+        than in the driver because ``normalize_claims`` is a documented
+        override point -- the driver how-to shows its signature -- and
+        threading a keyword through it would break every driver written
+        against that page. This is also the one place that knows which
+        provider a payload came from.
 
-        ``raw`` is put back afterwards. It is documented as the provider's own
-        words, and the string this repaired is exactly the evidence an
-        operator diagnosing the provider needs to see.
+        ``accept_string_booleans`` is for a provider that sends
+        ``email_verified`` as the string ``"true"``. ``raw`` is put back after
+        the repair: it is documented as the provider's own words, and the
+        string this repaired is exactly the evidence an operator diagnosing the
+        provider needs to see.
+
+        ``address_preference`` reorders the addresses the provider reported,
+        which moves ``email`` with them. It runs after the repair, so the flag
+        that travels with the new head is the repaired one.
 
         :param provider: The provider configuration this login came from.
         :param payload: The provider's payload.
         :returns: Normalized claims.
         """
+        from pas.plugins.identity.core.utils.address_preference import prefer_addresses
         from pas.plugins.identity.core.utils.flags import repaired_flags
 
-        if not provider.config.get("accept_string_booleans"):
-            return provider.driver.normalize_claims(payload)
-        claims = provider.driver.normalize_claims(repaired_flags(payload))
-        claims["raw"] = dict(payload)
-        return claims
+        if provider.config.get("accept_string_booleans"):
+            claims = provider.driver.normalize_claims(repaired_flags(payload))
+            claims["raw"] = dict(payload)
+        else:
+            claims = provider.driver.normalize_claims(payload)
+        return prefer_addresses(claims, provider.config.get("address_preference"))
 
     def reply(self) -> JSONDict:
         """Finish the flow and answer with a token.

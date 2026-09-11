@@ -1,10 +1,12 @@
 """``POST @identity-providers`` -- create, or run an action."""
 
 from pas.plugins.identity import logger
+from pas.plugins.identity.core.controlpanel import check_address_preference
 from pas.plugins.identity.core.controlpanel import check_propertymap
 from pas.plugins.identity.core.controlpanel import check_signin_policy
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.controlpanel import get_providers
+from pas.plugins.identity.core.controlpanel import InvalidAddressPreference
 from pas.plugins.identity.core.controlpanel import InvalidColor
 from pas.plugins.identity.core.controlpanel import InvalidPropertyMap
 from pas.plugins.identity.core.controlpanel import InvalidProviderId
@@ -101,6 +103,11 @@ class ProvidersPost(ProvidersService):
             check_signin_policy(data.get("config", {}) or {})
         except InvalidSignInPolicy as error:
             return self._error(400, "Nobody could sign in", str(error))
+
+        try:
+            check_address_preference(data.get("config", {}) or {})
+        except InvalidAddressPreference as error:
+            return self._error(400, "Invalid address preference", str(error))
 
         try:
             check_propertymap(data.get("propertymap", {}) or {})
