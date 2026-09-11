@@ -74,13 +74,22 @@ interface GroupViewProps {
 /**
  * Render one entry in a list of groups.
  *
+ * Linked to the group's page when it has one, the way a member is linked to
+ * their Profile. Both lists on the page use this, so a parent group and a
+ * nested one are followed alike.
+ *
  * @param group The group to link to.
  * @returns The list item.
  */
 function groupItem(group: NestedGroup) {
+  const label = group.title || group.id;
   return (
     <li key={group.id} data-group={group.id}>
-      {group.title || group.id}
+      {group.group_url ? (
+        <Link to={flattenToAppURL(group.group_url)}>{label}</Link>
+      ) : (
+        <span>{label}</span>
+      )}
     </li>
   );
 }

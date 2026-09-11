@@ -148,6 +148,33 @@ class TestListing(GroupMembersCase):
 
         assert entry["title"] == "Developers"
 
+    def test_a_nested_group_entry_links_to_its_page(self):
+        """``@id`` is this listing for that group, an API resource rather than
+        a page, so the group page had nowhere to send a reader."""
+        developers = self.portal["identity-profiles"]["developers"]
+
+        entry = self.listing("staff")["nested_groups"][0]
+
+        assert entry["group_url"] == developers.absolute_url()
+
+    def test_a_parent_group_entry_links_to_its_page(self):
+        """The other list on the same page, built the same way."""
+        staff = self.portal["identity-profiles"]["staff"]
+
+        entry = self.listing("developers")["parent_groups"][0]
+
+        assert entry["group_url"] == staff.absolute_url()
+
+    def test_a_group_with_no_page_has_no_url(self):
+        """A stored membership of a group this site holds no entry for.
+        ``None`` rather than a guessed URL, as ``profile_url`` is for a member
+        with no Profile."""
+        self.nest("developers", "staff", "ghost")
+
+        entries = {g["id"]: g for g in self.listing("developers")["parent_groups"]}
+
+        assert entries["ghost"]["group_url"] is None
+
     def test_a_group_the_graph_does_not_know_feeds_nobody(self):
         """An empty listing rather than a query with no criteria, which in
         ZCatalog returns nothing anyway and reads as "the group is empty"."""
