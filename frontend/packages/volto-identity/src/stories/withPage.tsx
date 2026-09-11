@@ -23,7 +23,7 @@
  * A story that is genuinely full-bleed -- or that supplies its own container,
  * as everything inside `LoginPanel` does -- opts out with
  * `parameters: { fullBleed: true }`.
- * @module storybook/withPage
+ * @module stories/withPage
  */
 import React from 'react';
 import type { Decorator } from '@storybook/react';

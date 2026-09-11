@@ -3,7 +3,7 @@ import React from 'react';
 
 import { PluggablesProvider } from '@plone/volto/components/manage/Pluggable';
 import PersonalTools from './PersonalTools';
-import { withToolbar } from '../../storybook/withUserMenu';
+import { withToolbar } from '../../stories/withUserMenu';
 import IdentitiesMenuItem from '../UserMenu/IdentitiesMenuItem';
 import ProfileMenuItem from '../UserMenu/ProfileMenuItem';
 import {

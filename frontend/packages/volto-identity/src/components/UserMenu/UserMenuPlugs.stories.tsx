@@ -13,7 +13,7 @@ import {
   SiteSetupMenuItem,
 } from './UserMenuPlugs';
 import { LOADED, USER, withStore } from '../../stories/fixtures';
-import { withPersonalTools } from '../../storybook/withUserMenu';
+import { withPersonalTools } from '../../stories/withUserMenu';
 
 /**
  * Volto's own menu entries, re-registered as plugs.

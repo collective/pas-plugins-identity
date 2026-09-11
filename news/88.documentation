@@ -1,0 +1,1 @@
+Pointed the frontend README's Storybook section at `src/stories/`, where the `withPage` and `withUserMenu` decorators now live. @ericof

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import MenuItem from './MenuItem';
-import { withMenuList, withPersonalTools } from '../../storybook/withUserMenu';
+import { withMenuList, withPersonalTools } from '../../stories/withUserMenu';
 
 /**
  * One entry of the personal-tools menu.

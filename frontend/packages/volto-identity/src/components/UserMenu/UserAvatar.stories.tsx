@@ -4,7 +4,7 @@ import React from 'react';
 
 import UserAvatar from './UserAvatar';
 import { LOADED, PORTRAIT, USER, withUser } from '../../stories/fixtures';
-import { withToolbarButton } from '../../storybook/withUserMenu';
+import { withToolbarButton } from '../../stories/withUserMenu';
 
 const meta: Meta<typeof UserAvatar> = {
   title: 'Identity/UserMenu/UserAvatar',
