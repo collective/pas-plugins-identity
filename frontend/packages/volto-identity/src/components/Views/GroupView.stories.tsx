@@ -31,9 +31,21 @@ const MEMBERS = {
     },
   ],
   nested_groups: [
-    { '@id': '/g/developers', id: 'developers', title: 'Developers' },
+    {
+      '@id': '/@group-members/developers',
+      id: 'developers',
+      title: 'Developers',
+      group_url: '/identity-groups/developers',
+    },
   ],
-  parent_groups: [{ '@id': '/g/everyone', id: 'everyone', title: 'Everyone' }],
+  parent_groups: [
+    {
+      '@id': '/@group-members/everyone',
+      id: 'everyone',
+      title: 'Everyone',
+      group_url: '/identity-groups/everyone',
+    },
+  ],
 };
 
 const meta: Meta<typeof GroupView> = {

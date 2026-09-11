@@ -44,12 +44,18 @@
   <!-- The read side of the same decision. plone.restapi's @portrait reads
        portal_memberdata only, so it answered 404 for a user whose picture is
        on their Profile - including when the [server] layer publishes this
-       URL as the OIDC picture claim and a relying party fetches it. -->
+       URL as the OIDC picture claim and a relying party fetches it.
+
+       zope.Public, not zope2.View. That relying party has no Plone session,
+       and zope2.View is looked up as a permission inherited from the root, so
+       a site that takes View away from Anonymous answered it with 401. Only
+       the literal zope.Public makes protectClass declare the class public,
+       which is how the sign-in endpoints are declared too. -->
   <plone:service
       method="GET"
       factory=".users.ProfilePortraitGet"
       for="Products.CMFCore.interfaces.ISiteRoot"
-      permission="zope2.View"
+      permission="zope.Public"
       layer="pas.plugins.identity.interfaces.IBrowserLayer"
       name="@portrait"
       />

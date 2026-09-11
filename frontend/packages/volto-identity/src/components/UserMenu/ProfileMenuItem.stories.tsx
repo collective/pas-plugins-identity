@@ -6,7 +6,7 @@ import {
   PluggablesProvider,
 } from '@plone/volto/components/manage/Pluggable';
 import ProfileMenuItem from './ProfileMenuItem';
-import { withPersonalTools } from '../../storybook/withUserMenu';
+import { withPersonalTools } from '../../stories/withUserMenu';
 import { withUser } from '../../stories/fixtures';
 
 const meta: Meta<typeof ProfileMenuItem> = {

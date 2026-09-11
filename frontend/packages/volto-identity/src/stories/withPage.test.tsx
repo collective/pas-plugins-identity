@@ -6,7 +6,7 @@ import { Provider } from 'react-redux';
 import React from 'react';
 
 import { ensureToolbarHost, PAGE_WIDTH } from './withPage';
-import { VOLTO_CHROME } from '../stories/fixtures';
+import { VOLTO_CHROME } from './fixtures';
 import Identities from '../components/Identities/Identities';
 
 /**

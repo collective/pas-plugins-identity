@@ -38,7 +38,7 @@
  *   <div class="toolbar">                         <- withToolbarButton
  *     …<button class="user" id="toolbar-personal">…avatar…
  * ```
- * @module storybook/withUserMenu
+ * @module stories/withUserMenu
  */
 import React from 'react';
 import { createPortal } from 'react-dom';

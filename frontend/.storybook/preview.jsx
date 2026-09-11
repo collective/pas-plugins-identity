@@ -6,7 +6,7 @@ import enMessages from '@root/../locales/en.json';
 
 import '@root/theme';
 
-import { withPage } from '@plone-collective/volto-identity/storybook/withPage';
+import { withPage } from '@plone-collective/volto-identity/stories/withPage';
 
 export const parameters = {
   controls: {

@@ -6,7 +6,7 @@ import {
   PluggablesProvider,
 } from '@plone/volto/components/manage/Pluggable';
 import ApplicationsMenuItem from './ApplicationsMenuItem';
-import { withPersonalTools } from '../../storybook/withUserMenu';
+import { withPersonalTools } from '../../stories/withUserMenu';
 import { LOADED, USER, withStore } from '../../stories/fixtures';
 
 const meta: Meta<typeof ApplicationsMenuItem> = {

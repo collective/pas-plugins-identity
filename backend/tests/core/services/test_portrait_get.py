@@ -129,3 +129,100 @@ class TestAUserWithNoProfileAtAll:
         self.service.render()
 
         assert self.service.request.response.getStatus() == 404
+
+
+#: An SVG document: markup, and able to carry script.
+SVG = b'<svg xmlns="http://www.w3.org/2000/svg"/>'
+
+
+def store_member_portrait(userid: str, data: bytes, content_type: str) -> None:
+    """Store a portrait on ``portal_memberdata``, the way PlonePAS keeps one.
+
+    Raw storage, so the content type recorded is exactly the one under test.
+
+    :param userid: Whose portrait.
+    :param data: The image bytes.
+    :param content_type: The type to record.
+    """
+    from OFS.Image import Image
+    from plone import api
+
+    portrait = Image(id=userid, title="", file=data, content_type=content_type)
+    api.portal.get_tool("portal_memberdata")._setPortrait(portrait, userid)
+
+
+class TestAUserWithAMemberPortrait:
+    """No Profile, and a portrait on ``portal_memberdata``.
+
+    The stock case, served by this class rather than by ``plone.restapi``'s:
+    the base implementation's placeholder check raises on a site closed to
+    anonymous visitors, which a public endpoint has to answer on.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+        store_member_portrait("carol", PNG, "image/png")
+        self.service = ProfilePortraitGet(portal, portal.REQUEST)
+        self.service.params = ["carol"]
+
+    def test_it_serves_the_member_portrait(self):
+        """The bytes that were stored, not the shared placeholder."""
+        assert read(self.service.render()) == PNG
+
+    def test_it_answers_200_with_the_stored_type(self):
+        """What a relying party checks before it uses the picture."""
+        self.service.render()
+
+        response = self.service.request.response
+        assert response.getStatus() == 200
+        assert response.getHeader("Content-Type") == "image/png"
+
+    def test_an_image_is_shown_inline(self):
+        """Only a type a browser must not render is sent as a download."""
+        self.service.render()
+
+        assert self.service.request.response.getHeader("Content-Disposition") is None
+
+
+class TestAMemberPortraitABrowserMustNotRender:
+    """A stored portrait whose type could run script if shown inline."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+        store_member_portrait("carol", SVG, "image/svg+xml")
+        self.service = ProfilePortraitGet(portal, portal.REQUEST)
+        self.service.params = ["carol"]
+
+    def test_it_is_sent_as_a_download(self):
+        """The base class forces a download for it, and so does this."""
+        self.service.render()
+
+        disposition = self.service.request.response.getHeader("Content-Disposition")
+        assert disposition.startswith("attachment;")
+        assert "carol.svg" in disposition
+
+
+class TestWhoIsAskedFor:
+    """The path segments, read the way the base class reads them."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+        self.service = ProfilePortraitGet(portal, portal.REQUEST)
+
+    def test_no_segment_asks_for_your_own(self):
+        """The test user has no picture anywhere, so their own is a 404."""
+        self.service.params = []
+
+        self.service.render()
+
+        assert self.service.request.response.getStatus() == 404
+
+    def test_more_than_one_segment_is_the_base_class_error(self):
+        """Its message is its own to write."""
+        self.service.params = ["alice", "bob"]
+
+        with pytest.raises(Exception, match="exactly zero"):
+            self.service.render()

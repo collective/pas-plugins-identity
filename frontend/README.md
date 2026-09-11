@@ -199,7 +199,7 @@ Every component this add-on ships has stories, and a `.stories.tsx` beside a com
 Stories use Component Story Format 3, and payloads come from `src/stories/fixtures.tsx`, which holds provider lists, identities and audit entries shaped exactly like the backend serves them.
 Reuse those rather than inventing a payload, so a story that renders is evidence the component handles the real contract.
 
-Two decorators in `src/storybook/` cover what these components need from their surroundings.
+Two decorators in `src/stories/`, beside the fixtures, cover what these components need from their surroundings.
 
 - `withPage` supplies the router and store a page-level component reads.
 - `withUserMenu` puts a component in the chrome it actually appears in, which is the only way to see a menu entry rendered where a user meets it.

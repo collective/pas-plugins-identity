@@ -287,6 +287,13 @@ export interface NestedGroup {
   '@id': string;
   id: string;
   title: string;
+  /**
+   * The group's own page, or null when the site has none for it.
+   *
+   * `@id` is `@group-members` for that group, which is an API resource rather
+   * than somewhere to send a reader.
+   */
+  group_url: string | null;
 }
 
 /** What `@group-members/<id>` answers with. */

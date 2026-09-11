@@ -7,6 +7,7 @@ layer, a permission that refuses anonymous, and a method mismatch -- none of
 which a direct call would notice.
 """
 
+from ... import close_the_site
 from . import CALLBACK_URL
 from . import DEX_PROVIDER
 from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
@@ -303,7 +304,8 @@ class TestThePrincipalServicesArePublished:
     """
 
     @pytest.fixture(autouse=True)
-    def _setup(self, url: str, principals: str) -> None:
+    def _setup(self, portal, url: str, principals: str) -> None:
+        self.portal = portal
         self.url = url
         self.userid = principals
         self.headers = {"Accept": "application/json"}
@@ -337,6 +339,30 @@ class TestThePrincipalServicesArePublished:
         )
 
         assert response.status_code == 404
+
+    def test_portrait_is_served_on_a_closed_site(self):
+        """The site takes ``View`` away from ``Anonymous``, and the picture
+        claim it publishes still resolves. Under ``zope2.View`` this was a 401
+        that only the relying party ever saw -- nobody signed in could."""
+        close_the_site(self.portal)
+
+        response = requests.get(
+            f"{self.url}/@portrait/{self.userid}", headers=self.headers, timeout=30
+        )
+
+        assert response.status_code == 200, response.text
+        assert response.content == PNG
+
+    def test_a_closed_site_answers_an_unknown_userid_itself(self):
+        """A 404 is the service answering on its own terms. A 401 would be the
+        publisher refusing before the service was ever asked."""
+        close_the_site(self.portal)
+
+        response = requests.get(
+            f"{self.url}/@portrait/nobody-at-all", headers=self.headers, timeout=30
+        )
+
+        assert response.status_code == 404, response.text
 
     def test_user_account_is_published(self):
         """Reached as a manager, which is what the service asks for."""

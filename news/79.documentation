@@ -1,0 +1,1 @@
+Stated in the security guarantees and the threat model that a GenericSetup import is held to the same provider icon rule as the control panel: a document that is not an SVG is refused, and an SVG is stored sanitized. @ericof

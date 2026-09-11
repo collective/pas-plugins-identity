@@ -1,0 +1,1 @@
+Moved the Storybook decorators `withPage` and `withUserMenu` from `src/storybook` to `src/stories`, beside the fixtures, so Storybook's support code lives in one directory. @ericof

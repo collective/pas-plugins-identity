@@ -112,19 +112,29 @@ class GroupMembersGet(IdentityService):
         )
 
     def _render_groups(self, group_ids: tuple[str, ...], plugin) -> list[JSONDict]:
-        """Render a list of group ids with their titles.
+        """Render a list of group ids with their titles and pages.
+
+        The page comes from the brain, as a member row's ``profile_url`` does:
+        a brain already knows its own URL, so naming a group costs no object
+        load.
 
         :param group_ids: The groups to render.
         :param plugin: The profile PAS plugin.
-        :returns: One entry per group, in the order given.
+        :returns: One entry per group, in the order given. ``group_url`` is
+            ``None`` for a group the catalog holds no active entry for, which
+            is also the group whose title falls back to its id.
         """
         base = f"{self.context.absolute_url()}/@group-members"
-        titles = {brain.group_id: brain.Title for brain in plugin.active_group_brains()}
-        return [
-            {
+        brains = {brain.group_id: brain for brain in plugin.active_group_brains()}
+        entries = []
+        for group_id in group_ids:
+            brain = brains.get(group_id)
+            entries.append({
                 "@id": f"{base}/{group_id}",
                 "id": group_id,
-                "title": titles.get(group_id, group_id),
-            }
-            for group_id in group_ids
-        ]
+                "title": brain.Title if brain is not None else group_id,
+                # The group's own page, for a reader to follow. ``@id`` is this
+                # listing for that group: an API resource, not a page.
+                "group_url": brain.getURL() if brain is not None else None,
+            })
+        return entries

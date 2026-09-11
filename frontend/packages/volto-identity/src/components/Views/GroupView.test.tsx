@@ -34,8 +34,28 @@ const MEMBERS = {
       through: ['staff'],
     },
   ],
-  nested_groups: [{ '@id': '/x', id: 'developers', title: 'Developers' }],
-  parent_groups: [{ '@id': '/y', id: 'everyone', title: 'Everyone' }],
+  nested_groups: [
+    {
+      '@id': '/@group-members/developers',
+      id: 'developers',
+      title: 'Developers',
+      group_url: '/identity-groups/developers',
+    },
+    {
+      '@id': '/@group-members/contractors',
+      id: 'contractors',
+      title: 'Contractors',
+      group_url: null,
+    },
+  ],
+  parent_groups: [
+    {
+      '@id': '/@group-members/everyone',
+      id: 'everyone',
+      title: 'Everyone',
+      group_url: '/identity-groups/everyone',
+    },
+  ],
 };
 
 function renderView(state: any = {}) {
@@ -125,6 +145,33 @@ describe('GroupView', () => {
     renderView({ loaded: true, data: MEMBERS });
 
     expect((screen.getByText('Bob Cratchit') as HTMLElement).tagName).toBe(
+      'SPAN',
+    );
+  });
+
+  it('links a nested group to its page', () => {
+    // Every group named here is a group with a page of its own, and the
+    // members beside it were already followable.
+    renderView({ loaded: true, data: MEMBERS });
+
+    const link = screen.getByText('Developers') as HTMLAnchorElement;
+    expect(link.tagName).toBe('A');
+    expect(link.getAttribute('href')).toBe('/identity-groups/developers');
+  });
+
+  it('links a parent group to its page', () => {
+    renderView({ loaded: true, data: MEMBERS });
+
+    const link = screen.getByText('Everyone') as HTMLAnchorElement;
+    expect(link.tagName).toBe('A');
+    expect(link.getAttribute('href')).toBe('/identity-groups/everyone');
+  });
+
+  it('does not link a group with no page', () => {
+    // A stored membership of a group the site holds no entry for.
+    renderView({ loaded: true, data: MEMBERS });
+
+    expect((screen.getByText('Contractors') as HTMLElement).tagName).toBe(
       'SPAN',
     );
   });

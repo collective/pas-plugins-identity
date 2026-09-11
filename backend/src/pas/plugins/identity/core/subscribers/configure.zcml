@@ -113,4 +113,22 @@
       handler=".refuse_duplicate_group"
       />
 
+  <!-- A provider icon is an SVG document inlined into the login page. The
+       field constraint that says so is enforced on the control panel form
+       and nowhere else: plone.registry stores a field without its
+       constraint, so a profile import accepted any bytes. A document that
+       was not an SVG failed the next read for every provider, and an SVG
+       carrying a script was stored as it came. Refused or sanitized as the
+       record is written instead, on both events, because a record element
+       arrives added and a records element arrives modified. See .providers. -->
+  <subscriber
+      for="plone.registry.interfaces.IRecordAddedEvent"
+      handler=".providers.sanitize_icon_record"
+      />
+
+  <subscriber
+      for="plone.registry.interfaces.IRecordModifiedEvent"
+      handler=".providers.sanitize_icon_record"
+      />
+
 </configure>

@@ -1,0 +1,1 @@
+Added `group_url` to the entries in `@group-members`' `nested_groups` and `parent_groups`: the group's own page, or `null` for a group the site holds no entry for. Each entry's `@id` is that group's `@group-members` listing, which is not a page, so a group page had nothing to link another group to. @ericof
