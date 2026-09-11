@@ -166,7 +166,7 @@ class TestImportingItNeedsNothing:
     "namespace,names",
     [
         ("profile", ("get", "get_current", "get_or_create")),
-        ("portrait", ("has_picture", "get_url")),
+        ("portrait", ("has_picture", "get_url", "store", "sync_portrait")),
         ("provider", ("get", "get_all", "plugin")),
         ("claims", ("get", "get_scopes", "get_released")),
         ("clients", ("get", "get_all", "add", "remove")),
