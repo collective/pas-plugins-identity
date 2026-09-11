@@ -21,6 +21,7 @@ says the result imports.
 
 from lxml import etree
 from pas.plugins.identity.core.controlpanel import CONFIG_SEGMENT
+from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.controlpanel import provider_record_names
 from pas.plugins.identity.core.controlpanel import PROVIDERS_PREFIX
 from plone.app.registry.exportimport.handler import RegistryExporter
@@ -58,6 +59,14 @@ def fragment_filename(provider_id: str) -> str:
     return f"{PROVIDERS_PREFIX}{provider_id}.xml"
 
 
+def document_filename() -> str:
+    """Return the filename a document of every provider belongs under.
+
+    :returns: A filename for ``profiles/default/registry/``.
+    """
+    return f"{PROVIDERS_PREFIX.rstrip('.')}.xml"
+
+
 def provider_fragment(provider_id: str) -> str:
     """Return one provider's records as an importable registry document.
 
@@ -73,10 +82,41 @@ def provider_fragment(provider_id: str) -> str:
     :returns: The XML document.
     """
     registry = getUtility(IRegistry)
+    root = etree.Element("registry")
+    _append_provider(root, RegistryExporter(registry, _Environ()), provider_id)
+    return prettyXML(root)
+
+
+def providers_document() -> str:
+    """Return every provider's records as one importable registry document.
+
+    Each provider is the grouped node and the config records
+    :func:`provider_fragment` writes, one provider after another in the order
+    the login page offers them. That order is itself a record on each
+    provider, so importing the document restores it.
+
+    :returns: The XML document.
+    """
+    registry = getUtility(IRegistry)
     exporter = RegistryExporter(registry, _Environ())
+    root = etree.Element("registry")
+    for provider in get_providers():
+        _append_provider(root, exporter, provider.provider_id)
+    return prettyXML(root)
+
+
+def _append_provider(
+    root: etree._Element, exporter: RegistryExporter, provider_id: str
+) -> None:
+    """Append one provider's records to a registry document.
+
+    :param root: The document's ``<registry>`` element.
+    :param exporter: The exporter that writes each record.
+    :param provider_id: The provider to describe.
+    """
+    registry = exporter.context
     prefix = f"{PROVIDERS_PREFIX}{provider_id}."
 
-    root = etree.Element("registry")
     grouped = etree.SubElement(root, "records")
     grouped.attrib["interface"] = RECORDS_INTERFACE
     grouped.attrib["prefix"] = prefix.rstrip(".")
@@ -102,5 +142,3 @@ def provider_fragment(provider_id: str) -> str:
         moved.text = value.text
         for child in value:
             moved.append(child)
-
-    return prettyXML(root)

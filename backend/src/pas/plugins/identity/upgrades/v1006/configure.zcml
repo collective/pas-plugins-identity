@@ -1,0 +1,21 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    >
+
+  <!-- Exporting providers became a permission of its own. A site installed
+       before it has the permission, but not the floor the rolemap states.
+       See the module docstring. -->
+  <genericsetup:upgradeSteps
+      profile="pas.plugins.identity:default"
+      source="1005"
+      destination="1006"
+      >
+    <genericsetup:upgradeStep
+        title="Hold provider export to Manager"
+        description="Applies the rolemap entry that grants the Export Identity Providers permission to Manager alone, without acquisition."
+        handler=".restrict_provider_export"
+        />
+  </genericsetup:upgradeSteps>
+
+</configure>

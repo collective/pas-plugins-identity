@@ -41,12 +41,14 @@ import {
 import addSVG from '@plone/volto/icons/add.svg';
 import backSVG from '@plone/volto/icons/back.svg';
 import clearSVG from '@plone/volto/icons/clear.svg';
+import downloadSVG from '@plone/volto/icons/download.svg';
 import saveSVG from '@plone/volto/icons/save.svg';
 import configurationSVG from '@plone/volto/icons/configuration.svg';
 
 import {
   createProvider,
   deleteProvider,
+  exportProviders,
   listDrivers,
   listProviders,
   reorderProviders,
@@ -59,6 +61,7 @@ import {
   PROVIDER_ADD_PATH,
   PROVIDERS_SETTINGS_PATH,
 } from '../../config/routes';
+import { downloadText } from '../../helpers/download';
 import { inOrder } from '../../helpers/providerOrder';
 import {
   CONFIG_PREFIX,
@@ -67,7 +70,7 @@ import {
   suggestedProviderId,
   toFormData,
 } from '../../helpers/providerSchema';
-import type { ConfiguredProvider, Driver } from '../../types';
+import type { ConfiguredProvider, Driver, ProviderExport } from '../../types';
 
 import './ProvidersControlPanel.scss';
 import ConfirmModal from './ConfirmModal';
@@ -131,6 +134,16 @@ const messages = defineMessages({
   reorderFailed: {
     id: 'The new order could not be saved',
     defaultMessage: 'The new order could not be saved',
+  },
+  exportAll: {
+    id: 'Export every provider',
+    defaultMessage: 'Export every provider',
+  },
+  exportWarning: {
+    id: 'An export carries every client secret in the clear.',
+    defaultMessage:
+      'An export carries every client secret in the clear. Handle the file ' +
+      'the way you would handle the secrets inside it.',
   },
   reached: {
     id: 'Reached {endpoint}',
@@ -208,6 +221,11 @@ const ProvidersControlPanel: React.FC = () => {
     error?: any;
   };
   const check = useSelector((state: any) => state.providerTest);
+  // Whether the caller may export. Its own permission, so a caller who may
+  // manage the providers is not necessarily offered the export actions.
+  const exportable = useSelector(
+    (state: any) => state.providersExportable?.data,
+  ) as boolean | undefined;
   // The provider's own fields, serialized by the backend from the interface
   // its registry records are bound to. The driver's half rides on each entry
   // of `identityDrivers`.
@@ -452,6 +470,18 @@ const ProvidersControlPanel: React.FC = () => {
       });
   };
 
+  // One provider, or every provider when none is given. The answer goes
+  // straight to a file: it carries every client secret in the clear, so
+  // nothing here keeps it.
+  const onExport = (provider?: ConfiguredProvider) => {
+    (dispatch(exportProviders(provider?.id)) as any)
+      .then((result: ProviderExport) =>
+        downloadText(result.filename, result.xml),
+      )
+      .catch(fail);
+  };
+  const offerExport = Boolean(exportable) && items.length > 0;
+
   const formTitle = editingSettings
     ? intl.formatMessage(messages.settings)
     : adding
@@ -559,6 +589,13 @@ const ProvidersControlPanel: React.FC = () => {
                 <strong>{intl.formatMessage(messages.noCallback)}</strong>
               </Segment>
             ) : null}
+            {offerExport ? (
+              // Said beside the export actions rather than in the docs alone:
+              // each of them downloads a file that is a credential.
+              <Segment secondary role="note">
+                {intl.formatMessage(messages.exportWarning)}
+              </Segment>
+            ) : null}
             <Segment>
               {items.length ? (
                 <ProvidersTable
@@ -568,6 +605,7 @@ const ProvidersControlPanel: React.FC = () => {
                   onReorder={onReorder}
                   onTest={(provider) => dispatch(testProvider(provider.id))}
                   onDelete={onDelete}
+                  onExport={offerExport ? onExport : undefined}
                 />
               ) : (
                 <p className="identity-controlpanel__empty identity-note">
@@ -647,6 +685,21 @@ const ProvidersControlPanel: React.FC = () => {
                         title={intl.formatMessage(messages.add)}
                       />
                     </Link>
+                  ) : null}
+                  {offerExport ? (
+                    <Button
+                      id="toolbar-export"
+                      className="item"
+                      aria-label={intl.formatMessage(messages.exportAll)}
+                      onClick={() => onExport()}
+                    >
+                      <Icon
+                        name={downloadSVG}
+                        className="circled"
+                        size="30px"
+                        title={intl.formatMessage(messages.exportAll)}
+                      />
+                    </Button>
                   ) : null}
                   {/* A router link, not an anchor: an `href` here left the
                       toolbar's back button reloading the whole application

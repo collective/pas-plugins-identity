@@ -24,11 +24,13 @@ afterEach(() => {
  * @param lazyLibraries The `lazyLibraries` slice; empty is the state before
  *   the drag library has loaded.
  * @param providers The providers to list.
+ * @param extra Further props for the list.
  * @returns The handlers the list was given.
  */
 function renderTable(
   lazyLibraries: Record<string, unknown> = libraries,
   providers: ConfiguredProvider[] = CONFIGURED,
+  extra: Record<string, unknown> = {},
 ) {
   const handlers = { onReorder: vi.fn(), onTest: vi.fn(), onDelete: vi.fn() };
   const state = { lazyLibraries };
@@ -39,7 +41,7 @@ function renderTable(
   };
   render(
     <Provider store={store as any}>
-      <ProvidersTable providers={providers} {...handlers} />
+      <ProvidersTable providers={providers} {...handlers} {...extra} />
     </Provider>,
   );
   return handlers;
@@ -128,6 +130,26 @@ describe('ProvidersTable', () => {
     ).toBe(providerEditUrl('github'));
     expect(onTest).toHaveBeenCalledWith(CONFIGURED[1]);
     expect(onDelete).toHaveBeenCalledWith(CONFIGURED[1]);
+  });
+
+  it('offers each row an export when it is given somewhere to send it', () => {
+    const onExport = vi.fn();
+    renderTable(libraries, CONFIGURED, { onExport });
+    const row = document.querySelector(
+      'tr[data-provider="github"]',
+    ) as HTMLElement;
+
+    fireEvent.click(within(row).getByRole('button', { name: 'Export' }));
+
+    expect(onExport).toHaveBeenCalledWith(CONFIGURED[1]);
+  });
+
+  it('offers no export without one', () => {
+    // Exporting needs a permission of its own, and the panel passes nothing
+    // to a caller who lacks it.
+    renderTable();
+
+    expect(screen.queryByRole('button', { name: 'Export' })).toBeNull();
   });
 
   describe('before the drag library has loaded', () => {

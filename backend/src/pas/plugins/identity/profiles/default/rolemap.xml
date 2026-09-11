@@ -91,5 +91,15 @@
       <role name="Manager" />
       <role name="Site Administrator" />
     </permission>
+
+    <!-- An export carries every client secret in the clear. Manager alone,
+         and apart from ``Manage portal``: a site that lets another role
+         manage the providers has not let it read every secret, which
+         managing a provider never needs. -->
+    <permission acquire="False"
+                name="pas.plugins.identity: Export Identity Providers"
+    >
+      <role name="Manager" />
+    </permission>
   </permissions>
 </rolemap>

@@ -21,6 +21,7 @@ import Icon from '@plone/volto/components/theme/Icon/Icon';
 import { useLazyLibs } from '@plone/volto/helpers/Loadable/Loadable';
 
 import deleteSVG from '@plone/volto/icons/delete.svg';
+import downloadSVG from '@plone/volto/icons/download.svg';
 import dragSVG from '@plone/volto/icons/drag.svg';
 import pencilSVG from '@plone/volto/icons/pencil.svg';
 import worldSVG from '@plone/volto/icons/world.svg';
@@ -49,6 +50,7 @@ const messages = defineMessages({
   move: { id: 'Move {title}', defaultMessage: 'Move {title}' },
   edit: { id: 'Edit', defaultMessage: 'Edit' },
   test: { id: 'Test connection', defaultMessage: 'Test connection' },
+  export: { id: 'Export', defaultMessage: 'Export' },
   delete: { id: 'Delete', defaultMessage: 'Delete' },
 });
 
@@ -59,12 +61,17 @@ type Props = {
   onReorder: (providerIds: string[]) => void;
   onTest: (provider: ConfiguredProvider) => void;
   onDelete: (provider: ConfiguredProvider) => void;
+  /**
+   * Given the provider whose Export action was used. Without it no row
+   * offers one: exporting needs a permission of its own.
+   */
+  onExport?: (provider: ConfiguredProvider) => void;
 };
 
 /** The loaded libraries, keyed as `config.settings.loadables` names them. */
 type Libraries = Record<string, any>;
 
-type RowProps = Pick<Props, 'onTest' | 'onDelete'> & {
+type RowProps = Pick<Props, 'onTest' | 'onDelete' | 'onExport'> & {
   provider: ConfiguredProvider;
 };
 
@@ -114,6 +121,7 @@ const ProviderRow = ({
   provider,
   onTest,
   onDelete,
+  onExport,
   handle = null,
   rowRef,
   style,
@@ -164,6 +172,17 @@ const ProviderRow = ({
         >
           <Icon name={worldSVG} size="20px" />
         </Button>
+        {onExport ? (
+          <Button
+            basic
+            icon
+            aria-label={intl.formatMessage(messages.export)}
+            title={intl.formatMessage(messages.export)}
+            onClick={() => onExport(provider)}
+          >
+            <Icon name={downloadSVG} size="20px" />
+          </Button>
+        ) : null}
         <Button
           basic
           icon
@@ -284,7 +303,7 @@ const SortableTable = ({
   );
 };
 
-const ProvidersTable = ({ providers, onReorder, onTest, onDelete }: Props) => {
+const ProvidersTable = ({ providers, onReorder, ...rowProps }: Props) => {
   const libraries: Libraries = useLazyLibs(DND_LIBRARIES);
   const ready = DND_LIBRARIES.every((name) => libraries[name]);
 
@@ -294,20 +313,14 @@ const ProvidersTable = ({ providers, onReorder, onTest, onDelete }: Props) => {
         libraries={libraries}
         providers={providers}
         onReorder={onReorder}
-        onTest={onTest}
-        onDelete={onDelete}
+        {...rowProps}
       />
     );
   }
   return (
     <Frame>
       {providers.map((provider) => (
-        <ProviderRow
-          key={provider['@id']}
-          provider={provider}
-          onTest={onTest}
-          onDelete={onDelete}
-        />
+        <ProviderRow key={provider['@id']} provider={provider} {...rowProps} />
       ))}
     </Frame>
   );

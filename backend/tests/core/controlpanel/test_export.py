@@ -37,7 +37,9 @@ from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import PROVIDERS_PREFIX
 from pas.plugins.identity.core.controlpanel import set_providers
+from pas.plugins.identity.core.controlpanel.export import document_filename
 from pas.plugins.identity.core.controlpanel.export import provider_fragment
+from pas.plugins.identity.core.controlpanel.export import providers_document
 from plone import api
 from plone.app.registry.exportimport.handler import RegistryImporter
 from plone.registry.interfaces import IRegistry
@@ -472,3 +474,67 @@ class TestTheProviderFragment:
             full = tar.extractfile(name).read().decode()
 
         assert len(self.xml) < len(provider_records(full))
+
+
+class TestTheProvidersDocument:
+    """What ``@identity-providers/@export`` emits: every provider, one document.
+
+    The records are the ones :func:`provider_fragment` writes, so what is
+    asserted here is what putting several providers into one document could
+    break -- which provider a record belongs to, and the order they come in.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+        set_providers([
+            ProviderConfig(
+                provider_id="google",
+                driver_id="google",
+                title="Google",
+                config={"client_id": "g", "client_secret": "g00gle"},
+            ),
+            configured(),
+        ])
+        self.before = [snapshot(provider) for provider in get_providers()]
+        self.xml = providers_document()
+
+    def test_it_is_well_formed(self):
+        assert parsed(self.xml).tag == "registry"
+
+    def test_each_provider_has_its_grouped_node_in_order(self):
+        prefixes = [node.get("prefix") for node in parsed(self.xml).findall("records")]
+
+        assert prefixes == [f"{PROVIDERS_PREFIX}google", PREFIX]
+
+    def test_every_config_record_belongs_to_one_of_them(self):
+        names = [record.get("name") for record in parsed(self.xml).findall("record")]
+
+        assert f"{PROVIDERS_PREFIX}google.config.client_secret" in names
+        assert f"{PREFIX}.config.client_secret" in names
+        assert all(
+            name.startswith((f"{PROVIDERS_PREFIX}google.config.", f"{PREFIX}.config."))
+            for name in names
+        )
+
+    def test_every_secret_is_in_the_clear(self):
+        """A backup that left them out would restore providers unable to
+        authenticate."""
+        assert "g00gle" in self.xml
+        assert "s3cr3t" in self.xml
+
+    def test_it_restores_every_provider_in_order(self):
+        """What a backup is for."""
+        set_providers([])
+
+        import_document(self.xml.encode())
+
+        assert [snapshot(provider) for provider in get_providers()] == self.before
+
+    def test_a_site_without_providers_exports_an_empty_document(self):
+        set_providers([])
+
+        assert list(parsed(providers_document())) == []
+
+    def test_it_names_the_file_it_belongs_in(self):
+        assert document_filename() == "pas.plugins.identity.providers.xml"

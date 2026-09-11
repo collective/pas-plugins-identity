@@ -59,6 +59,7 @@ const base = {
   providerUpdate: {},
   providerDelete: {},
   providerTest: {},
+  providersExportable: { ...LOADED, data: true },
   vocabularies: { ...USER_FIELDS_STATE, ...GROUPS_STATE },
   controlpanels: { controlpanel: SETTINGS, get: LOADED },
 };
@@ -94,6 +95,17 @@ export const Default: Story = {
   decorators: [
     (Story: () => ReactNode, { loaded }: { loaded: Record<string, any> }) =>
       withStore({ ...base, lazyLibraries: loaded.lazyLibraries })(Story),
+    at(CONTROLPANEL_PATH),
+  ],
+};
+
+/**
+ * For somebody a site lets manage the providers and not export them: no
+ * export actions, and no warning about them.
+ */
+export const WithoutExport: Story = {
+  decorators: [
+    withStore({ ...base, providersExportable: { ...LOADED, data: false } }),
     at(CONTROLPANEL_PATH),
   ],
 };

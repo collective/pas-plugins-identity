@@ -6,6 +6,7 @@
 import {
   CREATE_PROVIDER,
   DELETE_PROVIDER,
+  EXPORT_PROVIDERS,
   LIST_PROVIDERS,
   REORDER_PROVIDERS,
   TEST_PROVIDER,
@@ -71,6 +72,28 @@ export function reorderProviders(providerIds: string[]) {
       op: 'patch',
       path: '/@identity-providers',
       data: { order: providerIds },
+    },
+  };
+}
+
+/**
+ * Export providers as a registry document a profile can ship.
+ *
+ * The answer carries every client secret in the clear, so no reducer keeps
+ * it: the caller takes it from the promise the dispatch returns and hands it
+ * straight to the browser as a file.
+ *
+ * @param providerId The one provider to export; every provider when absent.
+ */
+export function exportProviders(providerId?: string) {
+  return {
+    type: EXPORT_PROVIDERS,
+    request: {
+      op: 'get',
+      path:
+        providerId === undefined
+          ? '/@identity-providers/@export'
+          : `/@identity-providers/${encodeURIComponent(providerId)}/export`,
     },
   };
 }

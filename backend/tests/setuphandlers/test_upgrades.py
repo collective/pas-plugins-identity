@@ -55,7 +55,14 @@ class TestTheStepIsRegistered:
         }
         # Every version, not merely the first: a package left out of
         # ``upgrades/configure.zcml`` drops out of exactly this list.
-        assert {("1001",), ("1002",), ("1003",), ("1004",)} <= dests, dests
+        assert {
+            ("1001",),
+            ("1002",),
+            ("1003",),
+            ("1004",),
+            ("1005",),
+            ("1006",),
+        } <= dests, dests
 
     def test_a_site_at_the_latest_version_is_offered_nothing(self, setup_tool):
         """The other half: an upgrade that keeps being offered after it has
@@ -106,7 +113,7 @@ class TestTheStepDoesTheWork:
 
         self.setup_tool.upgradeProfile(PROFILE)
 
-        assert self.setup_tool.getLastVersionForProfile(PROFILE) == ("1005",)
+        assert self.setup_tool.getLastVersionForProfile(PROFILE) == ("1006",)
 
 
 class TestV1002PutsTheFieldsOnBehaviors:

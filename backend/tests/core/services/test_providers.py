@@ -13,6 +13,8 @@ from pas.plugins.identity.core.controlpanel import SECRET_SENTINEL
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.controlpanel.interfaces import IProviderRecords
 from pas.plugins.identity.core.interfaces import FlowError
+from pas.plugins.identity.core.services.providers import EXPORT_PERMISSION
+from pas.plugins.identity.core.services.providers import MANAGE_PERMISSION
 from pas.plugins.identity.core.services.providers.delete import ProvidersDelete
 from pas.plugins.identity.core.services.providers.drivers import DriversGet
 from pas.plugins.identity.core.services.providers.get import ProvidersGet
@@ -21,10 +23,13 @@ from pas.plugins.identity.core.services.providers.post import ProvidersPost
 from plone import api
 from plone.app.testing import login
 from plone.app.testing import logout
+from plone.app.testing import setRoles
+from plone.app.testing import TEST_USER_ID
 from plone.app.testing import TEST_USER_NAME
 
 import json
 import pytest
+import re
 
 
 @pytest.fixture
@@ -1233,3 +1238,107 @@ class TestExportingOneProvider(ControlPanelCase):
         self.call(ProvidersGet, "github", "export")
 
         assert self.status() == 401
+
+
+class TestExportingEveryProvider(ControlPanelCase):
+    """``GET @identity-providers/@export``.
+
+    What the document contains, and that it imports, are asserted in
+    ``tests/core/controlpanel/test_export.py``. This is the routing around it.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_, manager, configured) -> None:
+        self.portal = portal
+        self.request = request_
+
+    def test_it_answers_one_document_with_every_provider(self):
+        reply = self.call(ProvidersGet, "@export")
+
+        assert self.status() == 200
+        assert re.findall(r'prefix="([^"]+)"', reply["xml"]) == [
+            f"{PROVIDERS_PREFIX}dex",
+            f"{PROVIDERS_PREFIX}github",
+        ]
+
+    def test_it_names_the_file_the_document_belongs_in(self):
+        reply = self.call(ProvidersGet, "@export")
+
+        assert reply["filename"] == "pas.plugins.identity.providers.xml"
+
+    def test_it_is_addressable(self):
+        reply = self.call(ProvidersGet, "@export")
+
+        assert reply["@id"].endswith("/@identity-providers/@export")
+
+    def test_it_is_not_public(self):
+        logout()
+
+        self.call(ProvidersGet, "@export")
+
+        assert self.status() == 401
+
+
+class TestExportingIsItsOwnPermission(ControlPanelCase):
+    """An export carries every client secret in the clear, so managing the
+    providers is not enough to take one.
+
+    A default site grants ``Manage portal`` to no Site Administrator, who would
+    then be refused the whole control panel before the export permission is
+    ever asked about. So the site here delegates the control panel to them, as
+    a site may, and a refusal can only come from the export permission.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_, configured) -> None:
+        self.portal = portal
+        self.request = request_
+        portal.manage_permission(
+            MANAGE_PERMISSION, roles=["Manager", "Site Administrator"], acquire=False
+        )
+
+    def _as(self, role: str) -> None:
+        """Make the test user hold exactly one role, and act as them.
+
+        :param role: The role.
+        """
+        setRoles(self.portal, TEST_USER_ID, [role])
+        login(self.portal, TEST_USER_NAME)
+
+    @pytest.mark.parametrize("segments", [("@export",), ("dex", "export")])
+    def test_a_manager_may_export(self, segments):
+        self._as("Manager")
+
+        self.call(ProvidersGet, *segments)
+
+        assert self.status() == 200
+
+    @pytest.mark.parametrize("segments", [("@export",), ("dex", "export")])
+    def test_managing_the_providers_is_not_enough(self, segments):
+        """Managing a provider never needs its secret back."""
+        self._as("Site Administrator")
+        # The premise: the rest of the control panel is open to them.
+        assert api.user.has_permission(MANAGE_PERMISSION)
+
+        result = self.call(ProvidersGet, *segments)
+
+        assert self.status() == 403
+        assert EXPORT_PERMISSION in result["error"]["message"]
+
+    def test_the_listing_tells_a_manager_they_may_export(self):
+        self._as("Manager")
+
+        assert self.call(ProvidersGet)["can_export"] is True
+
+    def test_the_listing_tells_anybody_else_they_may_not(self):
+        self._as("Site Administrator")
+
+        result = self.call(ProvidersGet)
+
+        assert self.status() == 200
+        assert result["can_export"] is False
+
+    def test_the_floor_does_not_acquire(self):
+        """Held to Manager wherever it is asked, not to whatever a container
+        above the site allows."""
+        assert not self.portal.acquiredRolesAreUsedBy(EXPORT_PERMISSION)

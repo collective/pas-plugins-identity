@@ -15,7 +15,11 @@ import React from 'react';
 
 import ProvidersControlPanel from './ProvidersControlPanel';
 import { DND_LIBRARIES } from './ProvidersTable';
-import { REORDER_PROVIDERS } from '../../constants/ActionTypes';
+import {
+  EXPORT_PROVIDERS,
+  REORDER_PROVIDERS,
+} from '../../constants/ActionTypes';
+import { downloadText } from '../../helpers/download';
 import install, {
   CONTROLPANEL_PATH,
   PROVIDER_ADD_PATH,
@@ -37,6 +41,9 @@ vi.mock('react-toastify', async (importOriginal) => ({
   ...(await importOriginal<typeof import('react-toastify')>()),
   toast: { success: vi.fn(), error: vi.fn() },
 }));
+
+// jsdom saves no files. What the tests ask is what would have been saved.
+vi.mock('../../helpers/download', () => ({ downloadText: vi.fn() }));
 
 // The toolbar reads store slices this page does not own, so it is replaced by
 // one that renders what the panel puts in it: the actions under test live
@@ -344,6 +351,118 @@ describe('ProvidersControlPanel', () => {
       );
 
       expect(shown()).toEqual(['keycloak', 'github']);
+      expect(toast.error).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('exporting the providers', () => {
+    const MAY_EXPORT = { providersExportable: { ...LOADED, data: true } };
+
+    beforeEach(() => {
+      vi.mocked(downloadText).mockClear();
+      vi.mocked(toast.error).mockClear();
+    });
+
+    /**
+     * A dispatch that answers exports, and records what was sent.
+     *
+     * @param answer What an export resolves to, or an error it rejects with.
+     * @returns The dispatch, and the actions it was given.
+     */
+    function answering(answer: unknown) {
+      const sent: any[] = [];
+      const dispatch = (action: any) => {
+        sent.push(action);
+        if (action.type !== EXPORT_PROVIDERS) {
+          return action;
+        }
+        return answer instanceof Error
+          ? Promise.reject(answer)
+          : Promise.resolve(answer);
+      };
+      return { sent, dispatch };
+    }
+
+    const exported = (action: any) => action.type === EXPORT_PROVIDERS;
+
+    it('downloads every provider from the toolbar', async () => {
+      const { sent, dispatch } = answering({
+        filename: 'pas.plugins.identity.providers.xml',
+        xml: '<registry/>',
+      });
+      renderAt(CONTROLPANEL_PATH, MAY_EXPORT, dispatch);
+
+      await act(async () => {
+        fireEvent.click(
+          screen.getByRole('button', { name: 'Export every provider' }),
+        );
+      });
+
+      expect(sent.find(exported)?.request.path).toBe(
+        '/@identity-providers/@export',
+      );
+      expect(downloadText).toHaveBeenCalledWith(
+        'pas.plugins.identity.providers.xml',
+        '<registry/>',
+      );
+    });
+
+    it('downloads one provider from its row', async () => {
+      const { sent, dispatch } = answering({
+        provider: 'github',
+        filename: 'pas.plugins.identity.providers.github.xml',
+        xml: '<registry/>',
+      });
+      renderAt(CONTROLPANEL_PATH, MAY_EXPORT, dispatch);
+      const row = document.querySelector(
+        'tr[data-provider="github"]',
+      ) as HTMLElement;
+
+      await act(async () => {
+        fireEvent.click(row.querySelector('button[aria-label="Export"]')!);
+      });
+
+      expect(sent.find(exported)?.request.path).toBe(
+        '/@identity-providers/github/export',
+      );
+      expect(downloadText).toHaveBeenCalledWith(
+        'pas.plugins.identity.providers.github.xml',
+        '<registry/>',
+      );
+    });
+
+    it('says beside the actions that the file carries secrets', () => {
+      renderAt(CONTROLPANEL_PATH, MAY_EXPORT);
+
+      expect(screen.getByRole('note').textContent).toContain(
+        'every client secret in the clear',
+      );
+    });
+
+    it('offers nothing to somebody who may not export', () => {
+      // Managing the providers is not enough: an export is its own permission.
+      renderAt(CONTROLPANEL_PATH, {
+        providersExportable: { ...LOADED, data: false },
+      });
+
+      expect(
+        screen.queryByRole('button', { name: 'Export every provider' }),
+      ).toBeNull();
+      expect(document.querySelector('button[aria-label="Export"]')).toBeNull();
+      expect(screen.queryByRole('note')).toBeNull();
+    });
+
+    it('saves nothing and says so when the export is refused', async () => {
+      const { dispatch } = answering(new Error('refused'));
+      renderAt(CONTROLPANEL_PATH, MAY_EXPORT, dispatch);
+
+      await act(async () => {
+        fireEvent.click(
+          screen.getByRole('button', { name: 'Export every provider' }),
+        );
+      });
+
+      expect(downloadText).not.toHaveBeenCalled();
       expect(toast.error).toHaveBeenCalledTimes(1);
     });
   });

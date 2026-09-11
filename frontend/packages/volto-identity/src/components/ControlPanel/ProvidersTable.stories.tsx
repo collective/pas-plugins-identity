@@ -18,6 +18,7 @@ const meta: Meta<typeof ProvidersTable> = {
     onReorder: () => {},
     onTest: () => {},
     onDelete: () => {},
+    onExport: () => {},
   },
 };
 export default meta;
@@ -57,6 +58,12 @@ export const Default: Story = {
       />
     );
   },
+};
+
+/** For somebody who may manage the providers and may not export them. */
+export const WithoutExport: Story = {
+  args: { onExport: undefined },
+  decorators: [withStore({})],
 };
 
 /** Before the drag library has loaded: on the server, and for a moment after. */

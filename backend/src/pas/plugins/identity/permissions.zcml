@@ -88,4 +88,22 @@
       title="pas.plugins.identity: View Personal Identifiable Information"
       />
 
+  <!-- Exporting the providers is not managing them.
+
+       An export is a backup of the provider records, and a backup that left
+       the client secrets out would restore providers unable to authenticate,
+       so every export carries them in the clear. Managing a provider never
+       needs its secret: the control panel and the rest of the API only send
+       the mask. Under the permission that guards the rest of the control
+       panel, "configure a provider" and "read every client secret" would be
+       the same action.
+
+       Manager alone. ``Manage portal`` is Manager's alone on a default site
+       as well; this is separate so that a site giving another role the
+       control panel does not give it every client secret along with it. -->
+  <permission
+      id="pas.plugins.identity.providers.export"
+      title="pas.plugins.identity: Export Identity Providers"
+      />
+
 </configure>

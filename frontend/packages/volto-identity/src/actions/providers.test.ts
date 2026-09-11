@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { REORDER_PROVIDERS } from '../constants/ActionTypes';
-import { reorderProviders } from './providers';
+import { EXPORT_PROVIDERS, REORDER_PROVIDERS } from '../constants/ActionTypes';
+import { exportProviders, reorderProviders } from './providers';
 
 describe('the provider actions', () => {
   it('reorders every provider in one request', () => {
@@ -13,6 +13,23 @@ describe('the provider actions', () => {
       op: 'patch',
       path: '/@identity-providers',
       data: { order: ['github', 'dex'] },
+    });
+  });
+
+  it('exports every provider when none is named', () => {
+    const action = exportProviders();
+
+    expect(action.type).toBe(EXPORT_PROVIDERS);
+    expect(action.request).toEqual({
+      op: 'get',
+      path: '/@identity-providers/@export',
+    });
+  });
+
+  it('exports the one provider named', () => {
+    expect(exportProviders('github').request).toEqual({
+      op: 'get',
+      path: '/@identity-providers/github/export',
     });
   });
 });
