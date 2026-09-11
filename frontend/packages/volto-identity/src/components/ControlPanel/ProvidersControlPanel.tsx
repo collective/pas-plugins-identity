@@ -6,13 +6,24 @@
  * the form itself rendered by Volto's own `Form` from a schema. Nothing here
  * lays out an input; the driver describes its fields and Volto renders them,
  * which is what keeps this panel looking like every other one.
+ *
+ * Which view is shown comes off the route: the list, the site-wide settings,
+ * the add form, or one provider's edit form. They used to be component state
+ * on a single route, so none of the forms could be linked to, a reload landed
+ * back on the list, and the browser's Back button left the control panel.
  * @module components/ControlPanel/ProvidersControlPanel
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link, useLocation } from 'react-router-dom';
+import {
+  Link,
+  matchPath,
+  useHistory,
+  useLocation,
+  useParams,
+} from 'react-router-dom';
 import { createPortal } from 'react-dom';
-import { Button, Container, Segment, Table } from 'semantic-ui-react';
+import { Button, Container, Segment } from 'semantic-ui-react';
 import { defineMessages, useIntl } from 'react-intl';
 import { toast } from 'react-toastify';
 
@@ -30,21 +41,28 @@ import {
 import addSVG from '@plone/volto/icons/add.svg';
 import backSVG from '@plone/volto/icons/back.svg';
 import clearSVG from '@plone/volto/icons/clear.svg';
-import deleteSVG from '@plone/volto/icons/delete.svg';
-import pencilSVG from '@plone/volto/icons/pencil.svg';
-import worldSVG from '@plone/volto/icons/world.svg';
+import downloadSVG from '@plone/volto/icons/download.svg';
 import saveSVG from '@plone/volto/icons/save.svg';
 import configurationSVG from '@plone/volto/icons/configuration.svg';
 
 import {
   createProvider,
   deleteProvider,
+  exportProviders,
   listDrivers,
   listProviders,
+  reorderProviders,
   testProvider,
   updateProvider,
 } from '../../actions';
 
+import {
+  CONTROLPANEL_PATH,
+  PROVIDER_ADD_PATH,
+  PROVIDERS_SETTINGS_PATH,
+} from '../../config/routes';
+import { downloadText } from '../../helpers/download';
+import { inOrder } from '../../helpers/providerOrder';
 import {
   CONFIG_PREFIX,
   fromFormData,
@@ -52,10 +70,11 @@ import {
   suggestedProviderId,
   toFormData,
 } from '../../helpers/providerSchema';
-import type { ConfiguredProvider, Driver } from '../../types';
+import type { ConfiguredProvider, Driver, ProviderExport } from '../../types';
 
 import './ProvidersControlPanel.scss';
 import ConfirmModal from './ConfirmModal';
+import ProvidersTable from './ProvidersTable';
 
 /**
  * The configlet id, which is also the name the site-wide settings are served
@@ -69,9 +88,7 @@ const messages = defineMessages({
   back: { id: 'Back', defaultMessage: 'Back' },
   save: { id: 'Save', defaultMessage: 'Save' },
   cancel: { id: 'Cancel', defaultMessage: 'Cancel' },
-  edit: { id: 'Edit', defaultMessage: 'Edit' },
   test: { id: 'Test connection', defaultMessage: 'Test connection' },
-  delete: { id: 'Delete', defaultMessage: 'Delete' },
   saved: { id: 'Changes saved', defaultMessage: 'Changes saved' },
   deleted: { id: 'Provider deleted', defaultMessage: 'Provider deleted' },
   settings: { id: 'Settings', defaultMessage: 'Settings' },
@@ -82,6 +99,20 @@ const messages = defineMessages({
       'The most likely cause is a settings field with no registry record, ' +
       'which happens when the add-on gained one and its profile has not ' +
       'been reapplied since.',
+  },
+  providersUnavailable: {
+    id: 'The providers could not be read',
+    defaultMessage:
+      'The providers could not be read, so this form cannot open.',
+  },
+  loading: { id: 'Loading', defaultMessage: 'Loading' },
+  unknownProvider: {
+    id: 'No provider has the id {id}.',
+    defaultMessage: 'No provider has the id {id}.',
+  },
+  backToList: {
+    id: 'Back to the providers',
+    defaultMessage: 'Back to the providers',
   },
   noCallback: {
     id: 'No login callback URL is configured',
@@ -100,13 +131,20 @@ const messages = defineMessages({
       'No drivers are installed, so there is nothing to configure. Install ' +
       'an add-on that registers one.',
   },
-  columnTitle: { id: 'Title', defaultMessage: 'Title' },
-  columnId: { id: 'Id', defaultMessage: 'Id' },
-  columnDriver: { id: 'Driver', defaultMessage: 'Driver' },
-  columnEnabled: { id: 'Enabled', defaultMessage: 'Enabled' },
-  columnActions: { id: 'Actions', defaultMessage: 'Actions' },
-  yes: { id: 'Yes', defaultMessage: 'Yes' },
-  no: { id: 'No', defaultMessage: 'No' },
+  reorderFailed: {
+    id: 'The new order could not be saved',
+    defaultMessage: 'The new order could not be saved',
+  },
+  exportAll: {
+    id: 'Export every provider',
+    defaultMessage: 'Export every provider',
+  },
+  exportWarning: {
+    id: 'An export carries every client secret in the clear.',
+    defaultMessage:
+      'An export carries every client secret in the clear. Handle the file ' +
+      'the way you would handle the secrets inside it.',
+  },
   reached: {
     id: 'Reached {endpoint}',
     defaultMessage: 'Reached {endpoint}',
@@ -123,16 +161,35 @@ const messages = defineMessages({
   },
 });
 
+/**
+ * What the page body is showing.
+ *
+ * `form` is the only state in which Volto's `Form` is mounted; the others
+ * stand in for it while it cannot be.
+ */
+type View = 'list' | 'form' | 'loading' | 'failed' | 'unknown';
+
 const ProvidersControlPanel: React.FC = () => {
   const intl = useIntl();
   const dispatch = useDispatch();
   const isClient = useClient();
+  const history = useHistory();
   const { pathname } = useLocation();
+  const params = useParams<{ providerId?: string }>();
   const formRef = useRef<any>(null);
 
-  const [editing, setEditing] = useState<string | null>(null);
-  const [adding, setAdding] = useState(false);
-  const [editingSettings, setEditingSettings] = useState(false);
+  // `matchPath` rather than comparing strings, so a trailing slash still
+  // opens the view its route matched.
+  const editingSettings = Boolean(
+    matchPath(pathname, { path: PROVIDERS_SETTINGS_PATH, exact: true }),
+  );
+  const adding = Boolean(
+    matchPath(pathname, { path: PROVIDER_ADD_PATH, exact: true }),
+  );
+  // A provider id is letters, digits, `_` and `-` -- the backend refuses any
+  // other -- so the segment needs no decoding.
+  const editing = params.providerId ?? null;
+
   // Which driver the add form is currently on. The schema depends on it, so
   // it is tracked as the form changes rather than read at submit time.
   const [draftDriver, setDraftDriver] = useState<string | undefined>(undefined);
@@ -146,15 +203,29 @@ const ProvidersControlPanel: React.FC = () => {
   // across the remount the new schema needs.
   const draft = useRef<Record<string, unknown>>({});
   const [error, setError] = useState<unknown>(null);
+  // The order the list shows while a reorder is being saved. A dropped row
+  // moves when it is dropped rather than when the backend answers, and goes
+  // back if the backend refuses. A listing, whenever one arrives, is the
+  // stored order and replaces it.
+  const [pendingOrder, setPendingOrder] = useState<string[] | null>(null);
 
   const providers = useSelector((state: any) => state.configuredProviders) as {
     data?: ConfiguredProvider[];
     loading?: boolean;
+    loaded?: boolean;
+    error?: any;
   };
   const drivers = useSelector((state: any) => state.identityDrivers) as {
     data?: Driver[];
+    loaded?: boolean;
+    error?: any;
   };
   const check = useSelector((state: any) => state.providerTest);
+  // Whether the caller may export. Its own permission, so a caller who may
+  // manage the providers is not necessarily offered the export actions.
+  const exportable = useSelector(
+    (state: any) => state.providersExportable?.data,
+  ) as boolean | undefined;
   // The provider's own fields, serialized by the backend from the interface
   // its registry records are bound to. The driver's half rides on each entry
   // of `identityDrivers`.
@@ -186,6 +257,20 @@ const ProvidersControlPanel: React.FC = () => {
     dispatch(listDrivers());
     dispatch(getControlpanel(CONFIGLET_ID));
   }, [dispatch]);
+
+  // Whether the router remounts this component between its routes is not
+  // this component's decision, so what one form was in the middle of is
+  // dropped whenever the route changes rather than carried into the next.
+  useEffect(() => {
+    setDraftDriver(undefined);
+    setIdTouched(false);
+    setError(null);
+    draft.current = {};
+  }, [pathname]);
+
+  useEffect(() => {
+    setPendingOrder(null);
+  }, [providers?.data]);
 
   useEffect(() => {
     if (check?.loaded && check?.data) {
@@ -224,20 +309,19 @@ const ProvidersControlPanel: React.FC = () => {
     );
   };
 
-  const succeed = (message: string) => {
+  const done = (message: string) => {
     toast.success(<Toast success title={message} />);
-    closeForm();
     refresh();
   };
 
   function closeForm() {
-    setAdding(false);
-    setEditing(null);
-    setEditingSettings(false);
-    setDraftDriver(undefined);
-    setIdTouched(false);
-    setError(null);
+    history.push(CONTROLPANEL_PATH);
   }
+
+  const succeed = (message: string) => {
+    done(message);
+    closeForm();
+  };
 
   const current = editing
     ? items.find((provider) => provider.id === editing)
@@ -247,6 +331,29 @@ const ProvidersControlPanel: React.FC = () => {
   // Volto's Form reads schema.fieldsets on the first render, so opening the
   // settings without one is a crash rather than an empty form.
   const settingsReady = Boolean(settings?.schema);
+
+  // Volto's `Form` reads its schema and its data once, when it mounts. A
+  // route opens a form straight away -- on a reload, before the providers
+  // and drivers have arrived -- and a form mounted then would stay empty after
+  // they did. So a form waits for what it is built from.
+  let view: View;
+  if (!isForm) {
+    view = 'list';
+  } else if (editingSettings) {
+    view = settingsReady
+      ? 'form'
+      : settingsRequest?.error
+        ? 'failed'
+        : 'loading';
+  } else if (providers?.error || drivers?.error) {
+    view = 'failed';
+  } else if (!providers?.loaded || !drivers?.loaded) {
+    view = 'loading';
+  } else if (editing !== null && !current) {
+    view = 'unknown';
+  } else {
+    view = 'form';
+  }
 
   const schema = useMemo(
     () =>
@@ -336,10 +443,50 @@ const ProvidersControlPanel: React.FC = () => {
     if (!provider) {
       return;
     }
+    // Deleted from the list, so there is no form to leave.
     (dispatch(deleteProvider(provider.id)) as any)
-      .then(() => succeed(intl.formatMessage(messages.deleted)))
+      .then(() => done(intl.formatMessage(messages.deleted)))
       .catch(fail);
   };
+
+  // Saved on drop, every provider's position in one request.
+  const onReorder = (providerIds: string[]) => {
+    setPendingOrder(providerIds);
+    (dispatch(reorderProviders(providerIds)) as any)
+      .then(refresh)
+      .catch((err: any) => {
+        setPendingOrder(null);
+        toast.error(
+          <Toast
+            error
+            title={intl.formatMessage(messages.reorderFailed)}
+            content={err?.response?.body?.error?.message ?? String(err)}
+          />,
+        );
+        // The likeliest refusal is a list that changed underneath -- a
+        // provider added or removed elsewhere, which the backend names -- so
+        // the next drag starts from the list as it now is.
+        refresh();
+      });
+  };
+
+  // One provider, or every provider when none is given. The answer goes
+  // straight to a file: it carries every client secret in the clear, so
+  // nothing here keeps it.
+  const onExport = (provider?: ConfiguredProvider) => {
+    (dispatch(exportProviders(provider?.id)) as any)
+      .then((result: ProviderExport) =>
+        downloadText(result.filename, result.xml),
+      )
+      .catch(fail);
+  };
+  const offerExport = Boolean(exportable) && items.length > 0;
+
+  const formTitle = editingSettings
+    ? intl.formatMessage(messages.settings)
+    : adding
+      ? intl.formatMessage(messages.add)
+      : current?.title || editing;
 
   return (
     <div id="page-controlpanel" className="identity-controlpanel">
@@ -352,16 +499,25 @@ const ProvidersControlPanel: React.FC = () => {
       />
       <Helmet title={intl.formatMessage(messages.title)} />
       <Container>
-        {editingSettings && !settingsReady ? (
+        {view === 'loading' ? (
           <Segment.Group raised>
-            <Segment className="primary">
-              {intl.formatMessage(messages.settings)}
+            <Segment className="primary">{formTitle}</Segment>
+            <Segment role="status">
+              {intl.formatMessage(messages.loading)}
             </Segment>
+          </Segment.Group>
+        ) : view === 'failed' ? (
+          <Segment.Group raised>
+            <Segment className="primary">{formTitle}</Segment>
             <Segment>
               <p role="alert" className="identity-error">
-                {intl.formatMessage(messages.settingsUnavailable)}
+                {intl.formatMessage(
+                  editingSettings
+                    ? messages.settingsUnavailable
+                    : messages.providersUnavailable,
+                )}
               </p>
-              {settingsRequest?.error ? (
+              {editingSettings && settingsRequest?.error ? (
                 <pre className="identity-controlpanel__detail">
                   {settingsRequest.error?.response?.body?.message ??
                     String(settingsRequest.error)}
@@ -369,7 +525,19 @@ const ProvidersControlPanel: React.FC = () => {
               ) : null}
             </Segment>
           </Segment.Group>
-        ) : isForm ? (
+        ) : view === 'unknown' ? (
+          <Segment.Group raised>
+            <Segment className="primary">{formTitle}</Segment>
+            <Segment>
+              <p role="alert" className="identity-error">
+                {intl.formatMessage(messages.unknownProvider, { id: editing })}
+              </p>
+              <Link to={CONTROLPANEL_PATH}>
+                {intl.formatMessage(messages.backToList)}
+              </Link>
+            </Segment>
+          </Segment.Group>
+        ) : view === 'form' ? (
           <Form
             ref={formRef}
             // A new driver is a new set of fields, and `Form` seeds an add
@@ -380,13 +548,7 @@ const ProvidersControlPanel: React.FC = () => {
             key={
               adding ? `add-${draftDriver ?? 'none'}` : editing ?? 'settings'
             }
-            title={
-              editingSettings
-                ? intl.formatMessage(messages.settings)
-                : adding
-                  ? intl.formatMessage(messages.add)
-                  : current?.title || current?.id
-            }
+            title={formTitle}
             // The settings schema comes from the backend, which already
             // serves it for the Classic form; nothing is described twice.
             schema={editingSettings ? settings?.schema : schema}
@@ -427,78 +589,24 @@ const ProvidersControlPanel: React.FC = () => {
                 <strong>{intl.formatMessage(messages.noCallback)}</strong>
               </Segment>
             ) : null}
+            {offerExport ? (
+              // Said beside the export actions rather than in the docs alone:
+              // each of them downloads a file that is a credential.
+              <Segment secondary role="note">
+                {intl.formatMessage(messages.exportWarning)}
+              </Segment>
+            ) : null}
             <Segment>
               {items.length ? (
-                <Table selectable compact>
-                  <Table.Header>
-                    <Table.Row>
-                      <Table.HeaderCell>
-                        {intl.formatMessage(messages.columnTitle)}
-                      </Table.HeaderCell>
-                      <Table.HeaderCell>
-                        {intl.formatMessage(messages.columnId)}
-                      </Table.HeaderCell>
-                      <Table.HeaderCell>
-                        {intl.formatMessage(messages.columnDriver)}
-                      </Table.HeaderCell>
-                      <Table.HeaderCell>
-                        {intl.formatMessage(messages.columnEnabled)}
-                      </Table.HeaderCell>
-                      <Table.HeaderCell textAlign="right">
-                        {intl.formatMessage(messages.columnActions)}
-                      </Table.HeaderCell>
-                    </Table.Row>
-                  </Table.Header>
-                  <Table.Body>
-                    {items.map((provider) => (
-                      <Table.Row
-                        key={provider['@id']}
-                        data-provider={provider.id}
-                      >
-                        <Table.Cell>{provider.title || provider.id}</Table.Cell>
-                        <Table.Cell>
-                          <code>{provider.id}</code>
-                        </Table.Cell>
-                        <Table.Cell>{provider.driver}</Table.Cell>
-                        <Table.Cell>
-                          {intl.formatMessage(
-                            provider.enabled ? messages.yes : messages.no,
-                          )}
-                        </Table.Cell>
-                        <Table.Cell textAlign="right">
-                          <Button
-                            basic
-                            icon
-                            aria-label={intl.formatMessage(messages.edit)}
-                            title={intl.formatMessage(messages.edit)}
-                            onClick={() => setEditing(provider.id)}
-                          >
-                            <Icon name={pencilSVG} size="20px" />
-                          </Button>
-                          <Button
-                            basic
-                            icon
-                            aria-label={intl.formatMessage(messages.test)}
-                            title={intl.formatMessage(messages.test)}
-                            onClick={() => dispatch(testProvider(provider.id))}
-                          >
-                            <Icon name={worldSVG} size="20px" />
-                          </Button>
-                          <Button
-                            basic
-                            icon
-                            data-action="delete"
-                            aria-label={intl.formatMessage(messages.delete)}
-                            title={intl.formatMessage(messages.delete)}
-                            onClick={() => onDelete(provider)}
-                          >
-                            <Icon name={deleteSVG} size="20px" />
-                          </Button>
-                        </Table.Cell>
-                      </Table.Row>
-                    ))}
-                  </Table.Body>
-                </Table>
+                <ProvidersTable
+                  providers={
+                    pendingOrder ? inOrder(items, pendingOrder) : items
+                  }
+                  onReorder={onReorder}
+                  onTest={(provider) => dispatch(testProvider(provider.id))}
+                  onDelete={onDelete}
+                  onExport={offerExport ? onExport : undefined}
+                />
               ) : (
                 <p className="identity-controlpanel__empty identity-note">
                   {intl.formatMessage(
@@ -519,8 +627,8 @@ const ProvidersControlPanel: React.FC = () => {
               isForm ? (
                 <>
                   {/* No Save for a form that is not there; Cancel still is,
-                      so the error view is not a dead end. */}
-                  {editingSettings && !settingsReady ? null : (
+                      so a loading or error view is not a dead end. */}
+                  {view === 'form' ? (
                     <Button
                       id="toolbar-save"
                       className="save"
@@ -534,7 +642,7 @@ const ProvidersControlPanel: React.FC = () => {
                         title={intl.formatMessage(messages.save)}
                       />
                     </Button>
-                  )}
+                  ) : null}
                   <Button
                     className="cancel"
                     aria-label={intl.formatMessage(messages.cancel)}
@@ -550,10 +658,11 @@ const ProvidersControlPanel: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <Button
+                  <Link
                     id="toolbar-settings"
+                    className="item"
                     aria-label={intl.formatMessage(messages.settings)}
-                    onClick={() => setEditingSettings(true)}
+                    to={PROVIDERS_SETTINGS_PATH}
                   >
                     <Icon
                       name={configurationSVG}
@@ -561,18 +670,34 @@ const ProvidersControlPanel: React.FC = () => {
                       size="30px"
                       title={intl.formatMessage(messages.settings)}
                     />
-                  </Button>
+                  </Link>
                   {driverList.length ? (
-                    <Button
+                    <Link
                       id="toolbar-add"
+                      className="item"
                       aria-label={intl.formatMessage(messages.add)}
-                      onClick={() => setAdding(true)}
+                      to={PROVIDER_ADD_PATH}
                     >
                       <Icon
                         name={addSVG}
                         className="circled"
                         size="30px"
                         title={intl.formatMessage(messages.add)}
+                      />
+                    </Link>
+                  ) : null}
+                  {offerExport ? (
+                    <Button
+                      id="toolbar-export"
+                      className="item"
+                      aria-label={intl.formatMessage(messages.exportAll)}
+                      onClick={() => onExport()}
+                    >
+                      <Icon
+                        name={downloadSVG}
+                        className="circled"
+                        size="30px"
+                        title={intl.formatMessage(messages.exportAll)}
                       />
                     </Button>
                   ) : null}

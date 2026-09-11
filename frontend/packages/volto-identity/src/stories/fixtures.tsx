@@ -278,7 +278,6 @@ export const PROVIDER_SCHEMA = {
     title: { type: 'string', title: 'Title' },
     enabled: { type: 'boolean', title: 'Enabled' },
     show_in_login: { type: 'boolean', title: 'Show on the login screen' },
-    order: { type: 'integer', title: 'Order' },
     icon: { type: 'string', title: 'Icon', widget: 'provider_icon' },
     background_color: {
       type: 'string',
@@ -301,7 +300,6 @@ export const PROVIDER_SCHEMA = {
         'title',
         'enabled',
         'show_in_login',
-        'order',
         'propertymap',
         'groupmap',
       ],
@@ -609,6 +607,28 @@ export const VOLTO_CHROME = {
  * The story's own state wins, so a story about being signed in can say so by
  * passing its own `userSession`.
  */
+/**
+ * Volto's lazy libraries, loaded for a store that cannot load them itself.
+ *
+ * A component asks for them with `useLazyLibs`, which dispatches each one into
+ * the `lazyLibraries` slice once it arrives. The stores here are static and
+ * ignore that dispatch, so a story or a test that wants the loaded state
+ * loads the libraries up front and puts them in the slice itself.
+ *
+ * @param names Names registered in `config.settings.loadables`.
+ * @returns The `lazyLibraries` slice, with every one of them loaded.
+ */
+export async function loadLazyLibraries(
+  names: string[],
+): Promise<Record<string, any>> {
+  const { loadables } = await import('@plone/volto/config/Loadables');
+  return Object.fromEntries(
+    await Promise.all(
+      names.map(async (name) => [name, await (loadables as any)[name].load()]),
+    ),
+  );
+}
+
 export function withStore(state: Record<string, unknown>) {
   const merged = { ...VOLTO_CHROME, ...state };
   const store = {

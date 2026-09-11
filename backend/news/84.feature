@@ -1,0 +1,1 @@
+Added `PATCH @identity-providers`, which stores every provider in the order given, in one request, and took the Order field off the provider form. The field stays in the registry, so profiles still import and export it. @ericof

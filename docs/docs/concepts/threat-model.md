@@ -158,11 +158,15 @@ secret.
 stored secret as a mask, and the audit log never records credentials or tokens.
 
 **What does not prevent it.** A GenericSetup export carries a client secret as
-its stored value, and so does the fragment
-`@identity-providers/<id>/export` returns. The record is a
-`plone.registry.field.Password`, which marks it as a secret wherever a record is
-inspected; marking is not encryption. Both need `Manage portal`, so what limits
-this is who may take an export rather than what an export contains.
+its stored value, and so do the documents `@identity-providers/@export` and
+`@identity-providers/<id>/export` return, which are what the control panel's
+export actions download. The record is a `plone.registry.field.Password`, which
+marks it as a secret wherever a record is inspected; marking is not encryption.
+A GenericSetup export needs `Manage portal`. The API exports need
+`pas.plugins.identity: Export Identity Providers`, which a default install grants
+to Manager alone, and which a site that delegates `Manage portal` to another role
+does not delegate with it.
+What limits this is who may take an export rather than what an export contains.
 
 **What reopens it.** Handling an export as a document rather than as a
 credential: committing one to a repository, attaching it to an issue, or copying

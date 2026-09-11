@@ -11,7 +11,10 @@ from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import PROVIDERS_PREFIX
 from pas.plugins.identity.core.controlpanel import SECRET_SENTINEL
 from pas.plugins.identity.core.controlpanel import set_providers
+from pas.plugins.identity.core.controlpanel.interfaces import IProviderRecords
 from pas.plugins.identity.core.interfaces import FlowError
+from pas.plugins.identity.core.services.providers import EXPORT_PERMISSION
+from pas.plugins.identity.core.services.providers import MANAGE_PERMISSION
 from pas.plugins.identity.core.services.providers.delete import ProvidersDelete
 from pas.plugins.identity.core.services.providers.drivers import DriversGet
 from pas.plugins.identity.core.services.providers.get import ProvidersGet
@@ -20,10 +23,13 @@ from pas.plugins.identity.core.services.providers.post import ProvidersPost
 from plone import api
 from plone.app.testing import login
 from plone.app.testing import logout
+from plone.app.testing import setRoles
+from plone.app.testing import TEST_USER_ID
 from plone.app.testing import TEST_USER_NAME
 
 import json
 import pytest
+import re
 
 
 @pytest.fixture
@@ -411,6 +417,16 @@ class TestReading(ControlPanelCase):
         for item in result["items"]:
             assert SECRET_SENTINEL in item["config"].values()
 
+    def test_the_form_does_not_offer_the_order(self):
+        """The provider list sets it by dragging, for every provider at once.
+        The field stays on the interface, which is what profiles import and
+        export."""
+        schema = self.call(ProvidersGet)["schema"]
+
+        assert "order" not in schema["properties"]
+        assert not [fs for fs in schema["fieldsets"] if "order" in fs["fields"]]
+        assert "order" in IProviderRecords.names()
+
 
 class TestCreating(ControlPanelCase):
     @pytest.fixture(autouse=True)
@@ -572,11 +588,90 @@ class TestUpdating(ControlPanelCase):
 
         assert self.status() == 404
 
-    def test_path_must_name_one_provider(self):
-        """PATCH on the collection is not an update."""
-        self.call(ProvidersPatch, payload={"title": "x"})
+    def test_a_path_below_a_provider_is_refused(self):
+        """Nothing under a provider is something a PATCH could change."""
+        self.call(ProvidersPatch, "dex", "title", payload={"title": "x"})
 
         assert self.status() == 400
+        assert get_provider("dex").title != "x"
+
+
+class TestReordering(ControlPanelCase):
+    """``PATCH @identity-providers`` stores every provider in the order given.
+
+    One request for the whole list, so a reorder cannot be left half applied.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_, manager, configured) -> None:
+        self.portal = portal
+        self.request = request_
+
+    def _ids(self) -> list[str]:
+        """Return the configured provider ids, in their stored order.
+
+        :returns: The ids.
+        """
+        return [provider.provider_id for provider in get_providers()]
+
+    def test_reorders(self):
+        self.call(ProvidersPatch, payload={"order": ["github", "dex"]})
+
+        assert self.status() == 204
+        assert self._ids() == ["github", "dex"]
+
+    def test_the_order_is_what_is_stored(self):
+        """The record a profile exports, not a sort applied on the way out."""
+        self.call(ProvidersPatch, payload={"order": ["github", "dex"]})
+
+        assert get_provider_record("github", "order") == 0
+        assert get_provider_record("dex", "order") == 1
+
+    def test_nothing_else_changes(self):
+        """A reorder rewrites every provider's records, and has to write each
+        one back as it was -- secrets included."""
+        before = {
+            p.provider_id: p.serialize(mask_secrets=False) for p in get_providers()
+        }
+
+        self.call(ProvidersPatch, payload={"order": ["github", "dex"]})
+
+        after = {
+            p.provider_id: p.serialize(mask_secrets=False) for p in get_providers()
+        }
+        assert after == before
+
+    @pytest.mark.parametrize(
+        ("order", "named"),
+        [
+            (["dex"], "Missing: 'github'"),
+            (["dex", "github", "nope"], "Not configured: 'nope'"),
+            (["github", "dex", "github"], "Named more than once: 'github'"),
+        ],
+    )
+    def test_every_provider_is_named_exactly_once(self, order, named):
+        """A provider left out has no position to take, and one named twice
+        has two. The refusal names the ids, and nothing is stored."""
+        result = self.call(ProvidersPatch, payload={"order": order})
+
+        assert self.status() == 400
+        assert named in result["error"]["message"]
+        assert self._ids() == ["dex", "github"]
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"title": "x"},
+            {"order": "github,dex"},
+            {"order": ["github", 1]},
+        ],
+    )
+    def test_a_body_that_is_not_an_order_is_refused(self, payload):
+        """The collection takes an order and nothing else."""
+        self.call(ProvidersPatch, payload=payload)
+
+        assert self.status() == 400
+        assert self._ids() == ["dex", "github"]
 
 
 class TestTheAddressPreferenceIsChecked(ControlPanelCase):
@@ -1143,3 +1238,107 @@ class TestExportingOneProvider(ControlPanelCase):
         self.call(ProvidersGet, "github", "export")
 
         assert self.status() == 401
+
+
+class TestExportingEveryProvider(ControlPanelCase):
+    """``GET @identity-providers/@export``.
+
+    What the document contains, and that it imports, are asserted in
+    ``tests/core/controlpanel/test_export.py``. This is the routing around it.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_, manager, configured) -> None:
+        self.portal = portal
+        self.request = request_
+
+    def test_it_answers_one_document_with_every_provider(self):
+        reply = self.call(ProvidersGet, "@export")
+
+        assert self.status() == 200
+        assert re.findall(r'prefix="([^"]+)"', reply["xml"]) == [
+            f"{PROVIDERS_PREFIX}dex",
+            f"{PROVIDERS_PREFIX}github",
+        ]
+
+    def test_it_names_the_file_the_document_belongs_in(self):
+        reply = self.call(ProvidersGet, "@export")
+
+        assert reply["filename"] == "pas.plugins.identity.providers.xml"
+
+    def test_it_is_addressable(self):
+        reply = self.call(ProvidersGet, "@export")
+
+        assert reply["@id"].endswith("/@identity-providers/@export")
+
+    def test_it_is_not_public(self):
+        logout()
+
+        self.call(ProvidersGet, "@export")
+
+        assert self.status() == 401
+
+
+class TestExportingIsItsOwnPermission(ControlPanelCase):
+    """An export carries every client secret in the clear, so managing the
+    providers is not enough to take one.
+
+    A default site grants ``Manage portal`` to no Site Administrator, who would
+    then be refused the whole control panel before the export permission is
+    ever asked about. So the site here delegates the control panel to them, as
+    a site may, and a refusal can only come from the export permission.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_, configured) -> None:
+        self.portal = portal
+        self.request = request_
+        portal.manage_permission(
+            MANAGE_PERMISSION, roles=["Manager", "Site Administrator"], acquire=False
+        )
+
+    def _as(self, role: str) -> None:
+        """Make the test user hold exactly one role, and act as them.
+
+        :param role: The role.
+        """
+        setRoles(self.portal, TEST_USER_ID, [role])
+        login(self.portal, TEST_USER_NAME)
+
+    @pytest.mark.parametrize("segments", [("@export",), ("dex", "export")])
+    def test_a_manager_may_export(self, segments):
+        self._as("Manager")
+
+        self.call(ProvidersGet, *segments)
+
+        assert self.status() == 200
+
+    @pytest.mark.parametrize("segments", [("@export",), ("dex", "export")])
+    def test_managing_the_providers_is_not_enough(self, segments):
+        """Managing a provider never needs its secret back."""
+        self._as("Site Administrator")
+        # The premise: the rest of the control panel is open to them.
+        assert api.user.has_permission(MANAGE_PERMISSION)
+
+        result = self.call(ProvidersGet, *segments)
+
+        assert self.status() == 403
+        assert EXPORT_PERMISSION in result["error"]["message"]
+
+    def test_the_listing_tells_a_manager_they_may_export(self):
+        self._as("Manager")
+
+        assert self.call(ProvidersGet)["can_export"] is True
+
+    def test_the_listing_tells_anybody_else_they_may_not(self):
+        self._as("Site Administrator")
+
+        result = self.call(ProvidersGet)
+
+        assert self.status() == 200
+        assert result["can_export"] is False
+
+    def test_the_floor_does_not_acquire(self):
+        """Held to Manager wherever it is asked, not to whatever a container
+        above the site allows."""
+        assert not self.portal.acquiredRolesAreUsedBy(EXPORT_PERMISSION)

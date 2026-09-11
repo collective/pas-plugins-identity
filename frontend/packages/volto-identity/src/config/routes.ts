@@ -87,6 +87,36 @@ export function userAccountUrl(userid: string): string {
 /** Where a Manager configures providers. */
 export const CONTROLPANEL_PATH = '/controlpanel/identity-providers';
 
+/**
+ * The providers control panel's site-wide settings form.
+ *
+ * Each of the panel's views is a route of its own. They used to be component
+ * state on `CONTROLPANEL_PATH`, so no form could be linked to, a reload landed
+ * back on the list, and the browser's Back button left the control panel.
+ */
+export const PROVIDERS_SETTINGS_PATH = `${CONTROLPANEL_PATH}/settings`;
+
+/** The form that adds a provider. */
+export const PROVIDER_ADD_PATH = `${CONTROLPANEL_PATH}/add`;
+
+/**
+ * The form that edits one provider.
+ *
+ * `/edit` follows the id, so a provider whose id is `settings` or `add` is
+ * never mistaken for the two routes above.
+ */
+export const PROVIDER_EDIT_PATH = `${CONTROLPANEL_PATH}/:providerId/edit`;
+
+/**
+ * That route for one provider.
+ *
+ * @param providerId The provider to edit.
+ * @returns The path, with the id escaped.
+ */
+export function providerEditUrl(providerId: string): string {
+  return `${CONTROLPANEL_PATH}/${encodeURIComponent(providerId)}/edit`;
+}
+
 /** Where a Manager configures the OAuth clients this site issues tokens to. */
 export const CLIENTS_CONTROLPANEL_PATH = '/controlpanel/identity-clients';
 
@@ -115,6 +145,13 @@ export default function install(config: ConfigType) {
     { path: APPLICATIONS_PATH, exact: true, component: Applications },
     { path: USER_ACCOUNT_PATH, exact: true, component: UserAccount },
     { path: CONTROLPANEL_PATH, exact: true, component: ProvidersControlPanel },
+    {
+      path: PROVIDERS_SETTINGS_PATH,
+      exact: true,
+      component: ProvidersControlPanel,
+    },
+    { path: PROVIDER_ADD_PATH, exact: true, component: ProvidersControlPanel },
+    { path: PROVIDER_EDIT_PATH, exact: true, component: ProvidersControlPanel },
     {
       path: CLIENTS_CONTROLPANEL_PATH,
       exact: true,

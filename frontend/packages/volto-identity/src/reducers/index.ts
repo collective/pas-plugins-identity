@@ -40,7 +40,9 @@ import {
   providerCreate,
   providerDelete,
   providerFormSchema,
+  providerReorder,
   providerTest,
+  providersExportable,
   providerUpdate,
 } from './providers';
 
@@ -71,7 +73,9 @@ export {
   providerCreate,
   providerDelete,
   providerFormSchema,
+  providerReorder,
   providerTest,
+  providersExportable,
   providerUpdate,
 } from './providers';
 
@@ -90,9 +94,11 @@ const reducers = {
   identityDrivers,
   configuredProviders,
   providerFormSchema,
+  providersExportable,
   clientFormSchema,
   providerCreate,
   providerUpdate,
+  providerReorder,
   providerDelete,
   providerTest,
   myProfile,

@@ -201,6 +201,17 @@ export interface ConnectionCheck {
   has_jwks?: boolean;
 }
 
+/** What `@identity-providers/@export` and `/<id>/export` answer with. */
+export interface ProviderExport {
+  '@id': string;
+  /** The provider exported, when only one was. */
+  provider?: string;
+  /** Where the document belongs in a profile's `registry/` directory. */
+  filename: string;
+  /** The registry document. It carries every client secret in the clear. */
+  xml: string;
+}
+
 /** Answer from `@my-profile`: where the caller's Profile is, and how far along. */
 export interface MyProfile {
   '@id': string;

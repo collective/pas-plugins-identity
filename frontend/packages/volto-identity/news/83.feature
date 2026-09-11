@@ -1,0 +1,1 @@
+Added export actions to the providers control panel, one per provider and one for every provider, each downloading the registry document under the filename it belongs under in a profile. The panel says beside them that the file carries client secrets in the clear, and offers them only to someone allowed to export. @ericof

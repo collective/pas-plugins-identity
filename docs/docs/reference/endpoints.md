@@ -43,10 +43,12 @@ Present in every installation.
 | GET | `@group-members/<group id>` | `Manage users`, or membership of the group | Members of a group. |
 | GET | `@user-account/<userid>` | `Manage users` | One user's sign-in methods, for administrators. |
 | GET | `@identity-drivers` | `Manage portal` | Drivers available to configure. |
-| GET | `@identity-providers` | `Manage portal` | Configured providers, or one with `/<id>`. Secrets are masked. A bare `GET` also carries the form schema. |
+| GET | `@identity-providers` | `Manage portal` | Configured providers, or one with `/<id>`. Secrets are masked. A bare `GET` also carries the form schema, and `can_export`: whether the caller may take an export. |
 | POST | `@identity-providers` | `Manage portal` | Add a provider. |
 | POST | `@identity-providers/<id>/test-connection` | `Manage portal` | Fetch the provider's discovery document, cache cleared first, and report what came back. |
-| GET | `@identity-providers/<id>/export` | `Manage portal` | One provider as a registry fragment a profile can ship. **Carries the client secret in the clear.** |
+| GET | `@identity-providers/<id>/export` | `pas.plugins.identity: Export Identity Providers` | One provider as a registry fragment a profile can ship. **Carries the client secret in the clear.** |
+| GET | `@identity-providers/@export` | `pas.plugins.identity: Export Identity Providers` | Every provider as one registry document, in their order. **Carries every client secret in the clear.** |
+| PATCH | `@identity-providers` | `Manage portal` | Reorder every provider, with `{"order": [<id>, …]}` naming each configured provider exactly once. The login page offers its buttons in this order. |
 | PATCH | `@identity-providers/<id>` | `Manage portal` | Change one. |
 | DELETE | `@identity-providers/<id>` | `Manage portal` | Remove one. Linked identities are kept. |
 | GET | `@audit-log` | `Manage portal` | Authentication events. |

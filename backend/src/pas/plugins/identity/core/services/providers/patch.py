@@ -1,4 +1,4 @@
-"""``PATCH @identity-providers/<id>`` -- update in place."""
+"""``PATCH @identity-providers`` -- reorder them all, or update one in place."""
 
 from pas.plugins.identity.core.controlpanel import check_address_preference
 from pas.plugins.identity.core.controlpanel import check_propertymap
@@ -16,11 +16,28 @@ from pas.plugins.identity.core.utils.svg import InvalidSVG
 from plone.restapi.deserializer import json_body
 
 
+def _order_problems(order: list[str], configured: list[str]) -> list[str]:
+    """Say what stops a list of ids being an order for the configured providers.
+
+    :param order: The provider ids, in the order asked for.
+    :param configured: The id of every configured provider.
+    :returns: One sentence per kind of problem, naming the ids involved; empty
+        when the list names each configured provider exactly once.
+    """
+    named = set(order)
+    found = (
+        ("Missing", [pid for pid in configured if pid not in named]),
+        ("Not configured", sorted(named - set(configured))),
+        ("Named more than once", sorted(p for p in named if order.count(p) > 1)),
+    )
+    return [f"{label}: {', '.join(map(repr, ids))}" for label, ids in found if ids]
+
+
 class ProvidersPatch(ProvidersService):
-    """Apply a partial update to one provider."""
+    """Reorder the providers, or apply a partial update to one of them."""
 
     def reply(self) -> JSONDict:
-        """Apply a partial update.
+        """Reorder the providers, or apply a partial update to one.
 
         :returns: No content on success, or an error body.
         """
@@ -29,8 +46,14 @@ class ProvidersPatch(ProvidersService):
             return refusal
         self._disable_csrf()
 
+        if not self.segments:
+            return self._reorder(json_body(self.request))
         if len(self.segments) != 1:
-            return self._error(400, "Bad request", "Expected @identity-providers/<id>")
+            return self._error(
+                400,
+                "Bad request",
+                "Expected @identity-providers or @identity-providers/<id>",
+            )
         providers = get_providers()
         target = next((p for p in providers if p.provider_id == self.segments[0]), None)
         if target is None:
@@ -42,6 +65,30 @@ class ProvidersPatch(ProvidersService):
             return refusal
 
         set_providers(providers)
+        return self.reply_no_content()
+
+    def _reorder(self, data: JSONDict) -> JSONDict:
+        """Store every provider in the order given.
+
+        One request for the whole list, rather than an ``order`` written to
+        each provider in turn, so a reorder cannot be left half applied. The
+        list must name each configured provider exactly once: a provider it
+        leaves out has no position to take, and one it names twice has two.
+
+        :param data: The request body, ``{"order": [<provider id>, ...]}``.
+        :returns: No content on success, or an error body.
+        """
+        # ``json_body`` has already refused a body that is not an object.
+        order = data.get("order")
+        if not isinstance(order, list) or not all(isinstance(p, str) for p in order):
+            return self._error(
+                400, "Bad request", 'Expected {"order": [<provider id>, ...]}'
+            )
+        providers = {provider.provider_id: provider for provider in get_providers()}
+        problems = _order_problems(order, list(providers))
+        if problems:
+            return self._error(400, "Invalid order", "; ".join(problems))
+        set_providers([providers[provider_id] for provider_id in order])
         return self.reply_no_content()
 
     def _apply(self, target, data: JSONDict) -> JSONDict | None:

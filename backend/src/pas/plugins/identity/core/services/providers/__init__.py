@@ -10,14 +10,16 @@ what a driver needs, and one that manages the provider records themselves.
 
 ``GET @identity-providers`` / ``GET @identity-providers/<id>``
 ``POST @identity-providers``
-``PATCH @identity-providers/<id>``
+``PATCH @identity-providers`` / ``PATCH @identity-providers/<id>``
 ``DELETE @identity-providers/<id>``
 ``POST @identity-providers/<id>/test-connection``
-``GET @identity-providers/<id>/export``
+``GET @identity-providers/<id>/export`` / ``GET @identity-providers/@export``
 
-Everything here needs ``Manage portal``. Secrets are write-only through all of
-it: what leaves is masked, and a PATCH echoing the mask back leaves the stored
-value alone.
+Everything here needs ``Manage portal``, except the two exports. They need
+``pas.plugins.identity: Export Identity Providers`` instead, because an export
+is a backup and carries every client secret in the clear. Everywhere else
+secrets are write-only: what leaves is masked, and a PATCH echoing the mask
+back leaves the stored value alone.
 """
 
 from pas.plugins.identity.core.controlpanel import ProviderConfig
@@ -33,8 +35,13 @@ from ZPublisher.HTTPRequest import HTTPRequest
 import plone.protect.interfaces
 
 
-#: Permission every one of these endpoints requires.
+#: Permission every one of these endpoints requires, the exports aside.
 MANAGE_PERMISSION = "Manage portal"
+
+#: Permission the exports require instead. Their own, because an export
+#: carries every client secret in the clear; the rolemap grants it to Manager
+#: alone.
+EXPORT_PERMISSION = "pas.plugins.identity: Export Identity Providers"
 
 #: Path segment that runs the per-provider connection check.
 TEST_ACTION = "test-connection"
@@ -42,9 +49,13 @@ TEST_ACTION = "test-connection"
 #: Path segment that returns one provider as a registry fragment.
 EXPORT_ACTION = "export"
 
+#: Path segment that returns every provider as one registry document. The
+#: ``@`` keeps it apart from a provider id, which may not contain one.
+EXPORT_ALL = "@export"
+
 
 class ControlPanelService(IdentityService):
-    """Shared guard: none of this is readable without Manage portal."""
+    """Shared guard: none of this is readable without a permission."""
 
     def _refuse_unless_manager(self) -> JSONDict | None:
         """Return an error body unless the caller may manage the site.
@@ -54,11 +65,19 @@ class ControlPanelService(IdentityService):
 
         :returns: The error body, or ``None`` when the caller is allowed.
         """
+        return self._refuse_unless(MANAGE_PERMISSION)
+
+    def _refuse_unless(self, permission: str) -> JSONDict | None:
+        """Return an error body unless the caller holds a permission.
+
+        :param permission: The permission's title.
+        :returns: The error body, or ``None`` when the caller is allowed.
+        """
         if api.user.is_anonymous():
             return self._error(401, "Not authenticated", "Log in first.")
-        if not api.user.has_permission(MANAGE_PERMISSION):
+        if not api.user.has_permission(permission):
             return self._error(
-                403, "Not allowed", f"Needs the {MANAGE_PERMISSION!r} permission."
+                403, "Not allowed", f"Needs the {permission!r} permission."
             )
         return None
 

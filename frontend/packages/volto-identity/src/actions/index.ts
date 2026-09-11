@@ -35,7 +35,9 @@ export { getMyProfile, getUserProfile, setPreferredEmail } from './profile';
 export {
   createProvider,
   deleteProvider,
+  exportProviders,
   listProviders,
+  reorderProviders,
   testProvider,
   updateProvider,
 } from './providers';

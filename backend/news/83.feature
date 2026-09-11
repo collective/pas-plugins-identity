@@ -1,0 +1,1 @@
+Added `GET @identity-providers/@export`, which returns every provider as one registry document, and put both provider exports behind a permission of their own, `pas.plugins.identity: Export Identity Providers`, granted to Manager alone. The provider listing says whether the caller holds it, and an upgrade step applies the permission's floor on existing sites. @ericof

@@ -58,6 +58,27 @@ A provider configured before this setting existed reads back as shown. Upgrading
 a site does not take its login buttons away.
 ```
 
+## Order the login buttons
+
+<!-- The list is
+     frontend/packages/volto-identity/src/components/ControlPanel/ProvidersTable.tsx,
+     and the save is PATCH @identity-providers in
+     backend/src/pas/plugins/identity/core/services/providers/patch.py. -->
+
+The login page offers its buttons in the order of the provider list.
+
+1. Open the **Identity providers** control panel.
+2. Drag a provider's row by its handle to where it belongs.
+
+The new order is saved as soon as the row is dropped. If the save fails, the row
+goes back where it was and the panel says why.
+
+To move a row from the keyboard, focus its handle, press {kbd}`Space` to pick the
+row up, move it with the arrow keys, and press {kbd}`Space` again to drop it.
+
+The {guilabel}`Login screen` column shows which providers the login page offers
+at all.
+
 ## Test the connection
 
 Use the **Test connection** action.
@@ -155,11 +176,34 @@ itself a credential. Read one before committing it anywhere.
 Read {doc}`/concepts/secrets` for why secrets behave differently here than when
 the site acts as an authorization server.
 
-## Ship a provider in a profile
+## Export providers
 
-`GET @identity-providers/<id>/export` returns the provider as a registry
-fragment, ready to paste into your own package's
-`profiles/default/registry/`. The response names the file it belongs in.
+<!-- The actions are
+     frontend/packages/volto-identity/src/components/ControlPanel/ProvidersControlPanel.tsx;
+     the endpoints and their permission are
+     backend/src/pas/plugins/identity/core/services/providers/get.py. -->
+
+The **Identity providers** control panel downloads provider configuration as a
+registry document a profile can ship.
+
+- A row's **Export** action downloads that provider, as
+  `pas.plugins.identity.providers.<id>.xml`.
+- The toolbar's **Export every provider** action downloads all of them in one
+  document, in their order, as `pas.plugins.identity.providers.xml`.
+
+Both filenames are the ones a profile's `profiles/default/registry/` directory
+files them under.
+
+Exporting needs the `pas.plugins.identity: Export Identity Providers`
+permission, which a default install grants to Manager alone. The panel offers
+the actions to nobody else, including a role your site has given
+`Manage portal` so that it can manage the providers.
+
+### From the API
+
+`GET @identity-providers/<id>/export` returns one provider as a registry
+fragment, and `GET @identity-providers/@export` returns every provider as one
+document. Each response names the file it belongs in.
 
 ```shell
 curl -H 'Accept: application/json' -u admin:admin \

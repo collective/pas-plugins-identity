@@ -3,7 +3,7 @@
  *
  * Almost nothing: the table, the form and the toolbar are Volto's own, and
  * styling them here is how a control panel stops looking like the others.
- * What is left is the two things this panel says on its own.
+ * What is left is what this panel says, and does, on its own.
  */
 .identity-controlpanel {
   display: flex;
@@ -23,4 +23,23 @@
   font-size: 0.85em;
   overflow-x: auto;
   white-space: pre-wrap;
+}
+
+/** A row's drag handle: the grip, without a button's chrome. */
+.identity-controlpanel__handle {
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: grab;
+  /* Without it a touch screen scrolls the page instead of dragging. */
+  touch-action: none;
+}
+
+/** The row being dragged, lifted over the rows it passes. */
+.identity-controlpanel__dragging {
+  position: relative;
+  z-index: 1;
+  background: var(--identity-surface-header-bg);
 }

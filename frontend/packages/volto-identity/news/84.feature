@@ -1,0 +1,1 @@
+Gave the providers control panel's list a Login screen column, and let its rows be dragged into the order the login page offers them. A dropped row moves at once, and goes back if the new order cannot be saved. @ericof

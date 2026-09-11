@@ -45,6 +45,9 @@ Storybook is built from this repository and published beside these pages.
 | `/fallback_login` | `FALLBACK_LOGIN_PATH` | Volto's own `Login` | core |
 | `/identities` | `IDENTITIES_PATH` | `Identities` | core |
 | `/controlpanel/identity-providers` | `CONTROLPANEL_PATH` | `ProvidersControlPanel` | core |
+| `/controlpanel/identity-providers/settings` | `PROVIDERS_SETTINGS_PATH` | `ProvidersControlPanel` | core |
+| `/controlpanel/identity-providers/add` | `PROVIDER_ADD_PATH` | `ProvidersControlPanel` | core |
+| `/controlpanel/identity-providers/:providerId/edit` | `PROVIDER_EDIT_PATH` | `ProvidersControlPanel` | core |
 | `/controlpanel/users/:userid/account` | `USER_ACCOUNT_PATH` | `UserAccount` | core |
 | `/oauth-consent` | `CONSENT_PATH` | `Consent` | server |
 | `/applications` | `APPLICATIONS_PATH` | `Applications` | server |

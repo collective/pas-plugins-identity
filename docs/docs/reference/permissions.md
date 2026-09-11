@@ -10,7 +10,7 @@ myst:
 
 # Permissions
 
-The six permissions the package declares, and who holds them after a default
+The nine permissions the package declares, and who holds them after a default
 install.
 
 <!-- source: backend/src/pas/plugins/identity/permissions.zcml -->
@@ -26,6 +26,7 @@ install.
 | `pas.plugins.identity.content.editroles` | Edit Group Global Roles | **Manager** |
 | `pas.plugins.identity.content.view` | View Profile | Manager, Site Administrator |
 | `pas.plugins.identity.content.viewpii` | View Personal Identifiable Information | Manager, Site Administrator |
+| `pas.plugins.identity.providers.export` | Export Identity Providers | **Manager** |
 
 Every one is declared with `acquire="False"`.
 
@@ -109,11 +110,29 @@ each other without publishing everybody's email address.
 
 The workflow never grants it to `Member`, in any state.
 
+## Exporting providers is its own permission
+
+<!-- source: backend/src/pas/plugins/identity/core/services/providers/get.py -->
+
+`providers.export` guards `@identity-providers/@export`,
+`@identity-providers/<id>/export`, and the control panel's export actions that
+download what they return. It is granted to **Manager alone**.
+
+An export is a backup of the provider records, and a backup that left the client
+secrets out would restore providers unable to authenticate, so every export
+carries them in the clear. Managing a provider never needs its secret back: the
+control panel and the rest of the API send only the mask.
+
+`Manage portal`, which guards the rest of the provider control panel, is also
+Manager's alone on a default site. The export permission is separate so that a
+site giving another role `Manage portal`, to let it manage the providers, does
+not give that role every client secret along with it.
+
 ## Permissions this package uses but does not declare
 
 | Permission | Used by |
 |---|---|
-| `Manage portal` | the provider and client control panels, the audit log, driver listing, key rotation |
+| `Manage portal` | the provider and client control panels, except the provider exports; the audit log, driver listing, key rotation |
 | `Manage users` | `@user-account`, and `@group-members` unless the caller is in the group |
 
 See {doc}`endpoints` for which endpoint enforces which.
