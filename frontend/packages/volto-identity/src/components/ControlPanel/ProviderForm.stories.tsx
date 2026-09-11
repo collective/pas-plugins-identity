@@ -14,13 +14,11 @@ import {
 import { providerSchema, toFormData } from '../../helpers/providerSchema';
 
 /**
- * The provider form on its own, which the panel's stories cannot show.
+ * The provider form on its own, without the panel around it.
  *
- * `ProvidersControlPanel` opens this form from `useState`, so there is no
- * prop or store value a story could set to reach it -- and the listing next
- * to it renders a provider's title, id, driver and enabled flag, none of
- * which say anything about its mappings. Rendering the schema straight into
- * Volto's `Form` is what makes the two mapping editors visible.
+ * The panel's own stories open this form at its route, but they show it
+ * inside the page. Rendering the schema straight into Volto's `Form` isolates
+ * the two mapping editors, which is what these stories are about.
  *
  * Both mappings are `object_list` widgets, and one sub-field of one of them
  * reads a vocabulary over the API: the property map's target, which is a

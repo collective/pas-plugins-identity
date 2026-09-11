@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { matchPath } from 'react-router-dom';
 
 import install, {
   CALLBACK_PATH,
@@ -6,6 +7,10 @@ import install, {
   CONSENT_PATH,
   CONTROLPANEL_PATH,
   FALLBACK_LOGIN_PATH,
+  PROVIDER_ADD_PATH,
+  PROVIDER_EDIT_PATH,
+  PROVIDERS_SETTINGS_PATH,
+  providerEditUrl,
   USER_ACCOUNT_PATH,
   userAccountUrl,
 } from './routes';
@@ -67,6 +72,56 @@ describe('the routes install step', () => {
         `^${USER_ACCOUNT_PATH.replace(':userid', '[^/]+')}$`,
       );
       expect(pattern.test(userAccountUrl('erico'))).toBe(true);
+    });
+  });
+
+  describe('the providers control panel routes', () => {
+    it('gives every view of the panel a route of its own', () => {
+      // They used to be component state on one route, so no form could be
+      // linked to and the Back button left the control panel.
+      const config = emptyConfig();
+
+      install(config);
+
+      const panel = config.addonRoutes.find(
+        (each: any) => each.path === CONTROLPANEL_PATH,
+      ).component;
+      for (const path of [
+        PROVIDERS_SETTINGS_PATH,
+        PROVIDER_ADD_PATH,
+        PROVIDER_EDIT_PATH,
+      ]) {
+        const route = config.addonRoutes.find(
+          (each: any) => each.path === path,
+        );
+        expect(route?.component).toBe(panel);
+        expect(route?.exact).toBe(true);
+      }
+    });
+
+    it('builds an edit URL the edit route matches', () => {
+      expect(
+        matchPath(providerEditUrl('github'), {
+          path: PROVIDER_EDIT_PATH,
+          exact: true,
+        })?.params,
+      ).toEqual({ providerId: 'github' });
+    });
+
+    it('never mistakes a provider called settings or add for those forms', () => {
+      // Why the id is followed by `/edit` rather than standing alone.
+      for (const id of ['settings', 'add']) {
+        const url = providerEditUrl(id);
+        expect(
+          matchPath(url, { path: PROVIDERS_SETTINGS_PATH, exact: true }),
+        ).toBeNull();
+        expect(
+          matchPath(url, { path: PROVIDER_ADD_PATH, exact: true }),
+        ).toBeNull();
+        expect(
+          matchPath(url, { path: PROVIDER_EDIT_PATH, exact: true }),
+        ).toBeTruthy();
+      }
     });
   });
 

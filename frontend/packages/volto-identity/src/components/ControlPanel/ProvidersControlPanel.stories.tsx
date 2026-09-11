@@ -1,12 +1,23 @@
+import React from 'react';
+import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
+import { MemoryRouter, Route } from 'react-router-dom';
 
 import ProvidersControlPanel from './ProvidersControlPanel';
+import {
+  CONTROLPANEL_PATH,
+  PROVIDER_ADD_PATH,
+  PROVIDER_EDIT_PATH,
+  PROVIDERS_SETTINGS_PATH,
+  providerEditUrl,
+} from '../../config/routes';
 import {
   CONFIGURED,
   DRIVERS,
   LOADED,
   LOADING,
   GROUPS_STATE,
+  PROVIDER_SCHEMA,
   USER_FIELDS_STATE,
   withStore,
 } from '../../stories/fixtures';
@@ -40,20 +51,42 @@ const SETTINGS = {
 
 const base = {
   configuredProviders: { ...LOADED, data: CONFIGURED },
+  providerFormSchema: { ...LOADED, data: PROVIDER_SCHEMA },
   identityDrivers: { ...LOADED, data: DRIVERS },
   providerCreate: {},
   providerUpdate: {},
   providerDelete: {},
   providerTest: {},
   vocabularies: { ...USER_FIELDS_STATE, ...GROUPS_STATE },
-  controlpanels: { controlpanel: SETTINGS },
+  controlpanels: { controlpanel: SETTINGS, get: LOADED },
 };
 
-export const Default: Story = { decorators: [withStore(base)] };
+/**
+ * Open the panel at one of its routes.
+ *
+ * Which view the panel shows comes off the route, so a story reaches a form
+ * the way a browser does: by being at its address.
+ *
+ * @param path Where the browser is.
+ * @param route The route pattern that address matches.
+ * @returns A decorator.
+ */
+const at =
+  (path: string, route: string = path) =>
+  (Story: () => ReactNode) => (
+    <MemoryRouter initialEntries={[path]}>
+      <Route path={route} exact render={() => Story()} />
+    </MemoryRouter>
+  );
+
+export const Default: Story = {
+  decorators: [withStore(base), at(CONTROLPANEL_PATH)],
+};
 
 export const Loading: Story = {
   decorators: [
     withStore({ ...base, configuredProviders: { ...LOADING, data: [] } }),
+    at(CONTROLPANEL_PATH),
   ],
 };
 
@@ -61,6 +94,7 @@ export const Loading: Story = {
 export const Empty: Story = {
   decorators: [
     withStore({ ...base, configuredProviders: { ...LOADED, data: [] } }),
+    at(CONTROLPANEL_PATH),
   ],
 };
 
@@ -72,6 +106,7 @@ export const NoDrivers: Story = {
       configuredProviders: { ...LOADED, data: [] },
       identityDrivers: { ...LOADED, data: [] },
     }),
+    at(CONTROLPANEL_PATH),
   ],
 };
 
@@ -82,7 +117,47 @@ export const NoCallbackUrl: Story = {
       ...base,
       controlpanels: {
         controlpanel: { ...SETTINGS, data: { callback_url: '' } },
+        get: LOADED,
       },
     }),
+    at(CONTROLPANEL_PATH),
+  ],
+};
+
+/** The site-wide settings, at `/controlpanel/identity-providers/settings`. */
+export const Settings: Story = {
+  decorators: [withStore(base), at(PROVIDERS_SETTINGS_PATH)],
+};
+
+/** The add form, at `/controlpanel/identity-providers/add`. */
+export const Adding: Story = {
+  decorators: [withStore(base), at(PROVIDER_ADD_PATH)],
+};
+
+/** One provider's edit form, at its own route. */
+export const Editing: Story = {
+  decorators: [
+    withStore(base),
+    at(providerEditUrl('keycloak'), PROVIDER_EDIT_PATH),
+  ],
+};
+
+/**
+ * An edit route opened before the providers have arrived, as on a reload.
+ *
+ * The form waits: Volto's form reads its data once, when it mounts.
+ */
+export const EditingWhileLoading: Story = {
+  decorators: [
+    withStore({ ...base, configuredProviders: { ...LOADING, data: [] } }),
+    at(providerEditUrl('keycloak'), PROVIDER_EDIT_PATH),
+  ],
+};
+
+/** An edit route naming a provider that does not exist. */
+export const UnknownProvider: Story = {
+  decorators: [
+    withStore(base),
+    at(providerEditUrl('nobody'), PROVIDER_EDIT_PATH),
   ],
 };

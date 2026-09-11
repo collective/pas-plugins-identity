@@ -6,11 +6,22 @@
  * the form itself rendered by Volto's own `Form` from a schema. Nothing here
  * lays out an input; the driver describes its fields and Volto renders them,
  * which is what keeps this panel looking like every other one.
+ *
+ * Which view is shown comes off the route: the list, the site-wide settings,
+ * the add form, or one provider's edit form. They used to be component state
+ * on a single route, so none of the forms could be linked to, a reload landed
+ * back on the list, and the browser's Back button left the control panel.
  * @module components/ControlPanel/ProvidersControlPanel
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link, useLocation } from 'react-router-dom';
+import {
+  Link,
+  matchPath,
+  useHistory,
+  useLocation,
+  useParams,
+} from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { Button, Container, Segment, Table } from 'semantic-ui-react';
 import { defineMessages, useIntl } from 'react-intl';
@@ -45,6 +56,12 @@ import {
   updateProvider,
 } from '../../actions';
 
+import {
+  CONTROLPANEL_PATH,
+  PROVIDER_ADD_PATH,
+  PROVIDERS_SETTINGS_PATH,
+  providerEditUrl,
+} from '../../config/routes';
 import {
   CONFIG_PREFIX,
   fromFormData,
@@ -82,6 +99,20 @@ const messages = defineMessages({
       'The most likely cause is a settings field with no registry record, ' +
       'which happens when the add-on gained one and its profile has not ' +
       'been reapplied since.',
+  },
+  providersUnavailable: {
+    id: 'The providers could not be read',
+    defaultMessage:
+      'The providers could not be read, so this form cannot open.',
+  },
+  loading: { id: 'Loading', defaultMessage: 'Loading' },
+  unknownProvider: {
+    id: 'No provider has the id {id}.',
+    defaultMessage: 'No provider has the id {id}.',
+  },
+  backToList: {
+    id: 'Back to the providers',
+    defaultMessage: 'Back to the providers',
   },
   noCallback: {
     id: 'No login callback URL is configured',
@@ -123,16 +154,35 @@ const messages = defineMessages({
   },
 });
 
+/**
+ * What the page body is showing.
+ *
+ * `form` is the only state in which Volto's `Form` is mounted; the others
+ * stand in for it while it cannot be.
+ */
+type View = 'list' | 'form' | 'loading' | 'failed' | 'unknown';
+
 const ProvidersControlPanel: React.FC = () => {
   const intl = useIntl();
   const dispatch = useDispatch();
   const isClient = useClient();
+  const history = useHistory();
   const { pathname } = useLocation();
+  const params = useParams<{ providerId?: string }>();
   const formRef = useRef<any>(null);
 
-  const [editing, setEditing] = useState<string | null>(null);
-  const [adding, setAdding] = useState(false);
-  const [editingSettings, setEditingSettings] = useState(false);
+  // `matchPath` rather than comparing strings, so a trailing slash still
+  // opens the view its route matched.
+  const editingSettings = Boolean(
+    matchPath(pathname, { path: PROVIDERS_SETTINGS_PATH, exact: true }),
+  );
+  const adding = Boolean(
+    matchPath(pathname, { path: PROVIDER_ADD_PATH, exact: true }),
+  );
+  // A provider id is letters, digits, `_` and `-` -- the backend refuses any
+  // other -- so the segment needs no decoding.
+  const editing = params.providerId ?? null;
+
   // Which driver the add form is currently on. The schema depends on it, so
   // it is tracked as the form changes rather than read at submit time.
   const [draftDriver, setDraftDriver] = useState<string | undefined>(undefined);
@@ -150,9 +200,13 @@ const ProvidersControlPanel: React.FC = () => {
   const providers = useSelector((state: any) => state.configuredProviders) as {
     data?: ConfiguredProvider[];
     loading?: boolean;
+    loaded?: boolean;
+    error?: any;
   };
   const drivers = useSelector((state: any) => state.identityDrivers) as {
     data?: Driver[];
+    loaded?: boolean;
+    error?: any;
   };
   const check = useSelector((state: any) => state.providerTest);
   // The provider's own fields, serialized by the backend from the interface
@@ -186,6 +240,16 @@ const ProvidersControlPanel: React.FC = () => {
     dispatch(listDrivers());
     dispatch(getControlpanel(CONFIGLET_ID));
   }, [dispatch]);
+
+  // Whether the router remounts this component between its routes is not
+  // this component's decision, so what one form was in the middle of is
+  // dropped whenever the route changes rather than carried into the next.
+  useEffect(() => {
+    setDraftDriver(undefined);
+    setIdTouched(false);
+    setError(null);
+    draft.current = {};
+  }, [pathname]);
 
   useEffect(() => {
     if (check?.loaded && check?.data) {
@@ -224,20 +288,19 @@ const ProvidersControlPanel: React.FC = () => {
     );
   };
 
-  const succeed = (message: string) => {
+  const done = (message: string) => {
     toast.success(<Toast success title={message} />);
-    closeForm();
     refresh();
   };
 
   function closeForm() {
-    setAdding(false);
-    setEditing(null);
-    setEditingSettings(false);
-    setDraftDriver(undefined);
-    setIdTouched(false);
-    setError(null);
+    history.push(CONTROLPANEL_PATH);
   }
+
+  const succeed = (message: string) => {
+    done(message);
+    closeForm();
+  };
 
   const current = editing
     ? items.find((provider) => provider.id === editing)
@@ -247,6 +310,29 @@ const ProvidersControlPanel: React.FC = () => {
   // Volto's Form reads schema.fieldsets on the first render, so opening the
   // settings without one is a crash rather than an empty form.
   const settingsReady = Boolean(settings?.schema);
+
+  // Volto's `Form` reads its schema and its data once, when it mounts. A
+  // route opens a form straight away -- on a reload, before the providers
+  // and drivers have arrived -- and a form mounted then would stay empty after
+  // they did. So a form waits for what it is built from.
+  let view: View;
+  if (!isForm) {
+    view = 'list';
+  } else if (editingSettings) {
+    view = settingsReady
+      ? 'form'
+      : settingsRequest?.error
+        ? 'failed'
+        : 'loading';
+  } else if (providers?.error || drivers?.error) {
+    view = 'failed';
+  } else if (!providers?.loaded || !drivers?.loaded) {
+    view = 'loading';
+  } else if (editing !== null && !current) {
+    view = 'unknown';
+  } else {
+    view = 'form';
+  }
 
   const schema = useMemo(
     () =>
@@ -336,10 +422,17 @@ const ProvidersControlPanel: React.FC = () => {
     if (!provider) {
       return;
     }
+    // Deleted from the list, so there is no form to leave.
     (dispatch(deleteProvider(provider.id)) as any)
-      .then(() => succeed(intl.formatMessage(messages.deleted)))
+      .then(() => done(intl.formatMessage(messages.deleted)))
       .catch(fail);
   };
+
+  const formTitle = editingSettings
+    ? intl.formatMessage(messages.settings)
+    : adding
+      ? intl.formatMessage(messages.add)
+      : current?.title || editing;
 
   return (
     <div id="page-controlpanel" className="identity-controlpanel">
@@ -352,16 +445,25 @@ const ProvidersControlPanel: React.FC = () => {
       />
       <Helmet title={intl.formatMessage(messages.title)} />
       <Container>
-        {editingSettings && !settingsReady ? (
+        {view === 'loading' ? (
           <Segment.Group raised>
-            <Segment className="primary">
-              {intl.formatMessage(messages.settings)}
+            <Segment className="primary">{formTitle}</Segment>
+            <Segment role="status">
+              {intl.formatMessage(messages.loading)}
             </Segment>
+          </Segment.Group>
+        ) : view === 'failed' ? (
+          <Segment.Group raised>
+            <Segment className="primary">{formTitle}</Segment>
             <Segment>
               <p role="alert" className="identity-error">
-                {intl.formatMessage(messages.settingsUnavailable)}
+                {intl.formatMessage(
+                  editingSettings
+                    ? messages.settingsUnavailable
+                    : messages.providersUnavailable,
+                )}
               </p>
-              {settingsRequest?.error ? (
+              {editingSettings && settingsRequest?.error ? (
                 <pre className="identity-controlpanel__detail">
                   {settingsRequest.error?.response?.body?.message ??
                     String(settingsRequest.error)}
@@ -369,7 +471,19 @@ const ProvidersControlPanel: React.FC = () => {
               ) : null}
             </Segment>
           </Segment.Group>
-        ) : isForm ? (
+        ) : view === 'unknown' ? (
+          <Segment.Group raised>
+            <Segment className="primary">{formTitle}</Segment>
+            <Segment>
+              <p role="alert" className="identity-error">
+                {intl.formatMessage(messages.unknownProvider, { id: editing })}
+              </p>
+              <Link to={CONTROLPANEL_PATH}>
+                {intl.formatMessage(messages.backToList)}
+              </Link>
+            </Segment>
+          </Segment.Group>
+        ) : view === 'form' ? (
           <Form
             ref={formRef}
             // A new driver is a new set of fields, and `Form` seeds an add
@@ -380,13 +494,7 @@ const ProvidersControlPanel: React.FC = () => {
             key={
               adding ? `add-${draftDriver ?? 'none'}` : editing ?? 'settings'
             }
-            title={
-              editingSettings
-                ? intl.formatMessage(messages.settings)
-                : adding
-                  ? intl.formatMessage(messages.add)
-                  : current?.title || current?.id
-            }
+            title={formTitle}
             // The settings schema comes from the backend, which already
             // serves it for the Classic form; nothing is described twice.
             schema={editingSettings ? settings?.schema : schema}
@@ -466,12 +574,15 @@ const ProvidersControlPanel: React.FC = () => {
                           )}
                         </Table.Cell>
                         <Table.Cell textAlign="right">
+                          {/* A link rather than a button: the edit form is a
+                              route, so it can be opened in a new tab. */}
                           <Button
+                            as={Link}
+                            to={providerEditUrl(provider.id)}
                             basic
                             icon
                             aria-label={intl.formatMessage(messages.edit)}
                             title={intl.formatMessage(messages.edit)}
-                            onClick={() => setEditing(provider.id)}
                           >
                             <Icon name={pencilSVG} size="20px" />
                           </Button>
@@ -519,8 +630,8 @@ const ProvidersControlPanel: React.FC = () => {
               isForm ? (
                 <>
                   {/* No Save for a form that is not there; Cancel still is,
-                      so the error view is not a dead end. */}
-                  {editingSettings && !settingsReady ? null : (
+                      so a loading or error view is not a dead end. */}
+                  {view === 'form' ? (
                     <Button
                       id="toolbar-save"
                       className="save"
@@ -534,7 +645,7 @@ const ProvidersControlPanel: React.FC = () => {
                         title={intl.formatMessage(messages.save)}
                       />
                     </Button>
-                  )}
+                  ) : null}
                   <Button
                     className="cancel"
                     aria-label={intl.formatMessage(messages.cancel)}
@@ -550,10 +661,11 @@ const ProvidersControlPanel: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <Button
+                  <Link
                     id="toolbar-settings"
+                    className="item"
                     aria-label={intl.formatMessage(messages.settings)}
-                    onClick={() => setEditingSettings(true)}
+                    to={PROVIDERS_SETTINGS_PATH}
                   >
                     <Icon
                       name={configurationSVG}
@@ -561,12 +673,13 @@ const ProvidersControlPanel: React.FC = () => {
                       size="30px"
                       title={intl.formatMessage(messages.settings)}
                     />
-                  </Button>
+                  </Link>
                   {driverList.length ? (
-                    <Button
+                    <Link
                       id="toolbar-add"
+                      className="item"
                       aria-label={intl.formatMessage(messages.add)}
-                      onClick={() => setAdding(true)}
+                      to={PROVIDER_ADD_PATH}
                     >
                       <Icon
                         name={addSVG}
@@ -574,7 +687,7 @@ const ProvidersControlPanel: React.FC = () => {
                         size="30px"
                         title={intl.formatMessage(messages.add)}
                       />
-                    </Button>
+                    </Link>
                   ) : null}
                   {/* A router link, not an anchor: an `href` here left the
                       toolbar's back button reloading the whole application
