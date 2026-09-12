@@ -152,6 +152,51 @@ be marked authenticated-only.
 The backend answers an anonymous caller with no component at all.
 See {doc}`endpoints`.
 
+## Blocks
+
+<!-- source: frontend/packages/volto-identity/src/config/blocks.ts -->
+<!-- source: frontend/packages/volto-identity/src/components/Blocks/SignIn/schema.ts -->
+<!-- source: frontend/packages/volto-identity/src/components/Welcome/Welcome.tsx -->
+<!-- source: @plone/volto src/components/manage/BlockChooser/BlockChooser.jsx -->
+
+| Block | `@type` | Page block chooser | Grid block chooser |
+|---|---|---|---|
+| Sign-in | `identitySignIn` | No, `restricted: true` | Yes |
+
+A grid's block chooser offers the blocks named in the grid's `allowedBlocks`
+and does not read `restricted`. The add-on adds the block to that list, and to
+the grid's own `blocksConfig` when the grid has one. A project offers it on the
+page as well by lifting the restriction in its own configuration:
+
+```js
+config.blocks.blocksConfig.identitySignIn.restricted = false;
+```
+
+To a visitor who is not signed in, the block shows the login card `/login`
+shows: the same heading, description strip and sign-in options. It sets no
+page title, and it never goes straight to a sole provider. After signing in,
+the visitor comes back to the page the block is on.
+
+To somebody signed in, it shows a welcome message and a summary. The sidebar
+switches each line off:
+
+| Field | Default | Shows |
+|---|---|---|
+| `greeting` | `Hello {fullname}!`, translated | The welcome message, as plain text. `{username}` is the name the user signs in with, `{fullname}` their full name. |
+| `showProfile` | on | A link to the user's Profile, when they have one |
+| `showEmail` | on | Their preferred address, and whether it is verified |
+| `showProvider` | on | The provider of the newest successful `authenticated` audit event |
+| `showLastLogin` | on | When the `authenticated` event before that one happened |
+| `previewAnonymous` | off | While editing only: the sign-in options instead of the welcome |
+
+The summary reads `@user-account` about the signed-in user, which they may read
+about themselves. The audit log records `authenticated` for a sign-in through a
+provider or a magic link, and not for a password sign-in. After a password
+sign-in, `showProvider` and `showLastLogin` describe the sign-ins before it.
+
+The block renders in the browser only. The server renders it empty, so a cached
+page never carries somebody's welcome.
+
 ## Views
 
 | Registration | Content type |

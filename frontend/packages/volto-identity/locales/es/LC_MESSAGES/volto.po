@@ -77,6 +77,11 @@ msgstr ""
 msgid "Applications"
 msgstr ""
 
+#. Default: "Authenticated with"
+#: components/Welcome/WelcomeCard
+msgid "Authenticated with"
+msgstr ""
+
 #. Default: "Authorize"
 #: components/Consent/Consent
 msgid "Authorize"
@@ -133,7 +138,7 @@ msgid "Choose a file"
 msgstr ""
 
 #. Default: "Choose how you would like to sign in."
-#: components/Login/Login
+#: components/Login/useLogin
 msgid "Choose how you would like to sign in."
 msgstr ""
 
@@ -214,6 +219,11 @@ msgstr ""
 msgid "Copy"
 msgstr ""
 
+#. Default: "Default"
+#: components/Blocks/SignIn/schema
+msgid "Default"
+msgstr ""
+
 #. Default: "Delete"
 #: components/ControlPanel/ConfirmModal
 #: components/ControlPanel/ProvidersTable
@@ -263,6 +273,11 @@ msgstr ""
 #. Default: "Edit your profile"
 #: components/Identities/ProfileEmails
 msgid "Edit your profile"
+msgstr ""
+
+#. Default: "Editing"
+#: components/Blocks/SignIn/schema
+msgid "Editing"
 msgstr ""
 
 #. Default: "Email address"
@@ -339,6 +354,11 @@ msgstr ""
 msgid "Groups in this group"
 msgstr ""
 
+#. Default: "Hello {fullname}!"
+#: components/Blocks/SignIn/schema
+msgid "Hello {fullname}!"
+msgstr ""
+
 #. Default: "I have saved it"
 #: components/ControlPanel/SecretReveal
 msgid "I have saved it"
@@ -374,6 +394,11 @@ msgstr ""
 msgid "It will be able to read:"
 msgstr ""
 
+#. Default: "Last login"
+#: components/Welcome/WelcomeCard
+msgid "Last login"
+msgstr ""
+
 #. Default: "Last signed in"
 #: components/ControlPanel/UserAccountPanel
 msgid "Last signed in"
@@ -382,6 +407,11 @@ msgstr ""
 #. Default: "Link"
 #: components/Toolbar/Toolbar
 msgid "Link"
+msgstr ""
+
+#. Default: "Link to their profile"
+#: components/Blocks/SignIn/schema
+msgid "Link to their profile"
 msgstr ""
 
 #. Default: "Loading"
@@ -427,7 +457,7 @@ msgstr ""
 #. Default: "Log in"
 #: components/Callback/Callback
 #: components/FirstLogin/FirstLogin
-#: components/Login/Login
+#: components/Login/useLogin
 msgid "Log in"
 msgstr ""
 
@@ -577,6 +607,11 @@ msgstr ""
 msgid "Personal tools"
 msgstr ""
 
+#. Default: "Plain text. {username} is the name the user signs in with, and {fullname} their full name."
+#: components/Blocks/SignIn/schema
+msgid "Plain text. {username} is the name the user signs in with, and {fullname} their full name."
+msgstr ""
+
 #. Default: "Please fill in {fields} before you can continue."
 #: components/ProfileGate/ProfileGate
 msgid "Please fill in {fields} before you can continue."
@@ -590,6 +625,16 @@ msgstr ""
 #. Default: "Preferred"
 #: components/Identities/ProfileEmails
 msgid "Preferred"
+msgstr ""
+
+#. Default: "Preferred email"
+#: components/Welcome/WelcomeCard
+msgid "Preferred email"
+msgstr ""
+
+#. Default: "Preview the sign-in options"
+#: components/Blocks/SignIn/schema
+msgid "Preview the sign-in options"
 msgstr ""
 
 #. Default: "Profile"
@@ -738,8 +783,13 @@ msgid "Sign in with a password"
 msgstr ""
 
 #. Default: "Sign in with your account on this site."
-#: components/Login/Login
+#: components/Login/useLogin
 msgid "Sign in with your account on this site."
+msgstr ""
+
+#. Default: "Sign-in"
+#: components/Blocks/SignIn/schema
+msgid "Sign-in"
 msgstr ""
 
 #. Default: "Sign-in methods"
@@ -838,6 +888,11 @@ msgstr ""
 msgid "The site settings could not be read"
 msgstr ""
 
+#. Default: "Their preferred email"
+#: components/Blocks/SignIn/schema
+msgid "Their preferred email"
+msgstr ""
+
 #. Default: "This application is disabled and is being refused already."
 #: components/Applications/ApplicationsPanel
 msgid "This application is disabled and is being refused already."
@@ -905,6 +960,31 @@ msgstr ""
 msgid "Verify"
 msgstr ""
 
+#. Default: "Welcome"
+#: components/Welcome/WelcomeCard
+msgid "Welcome"
+msgstr ""
+
+#. Default: "Welcome message"
+#: components/Blocks/SignIn/schema
+msgid "Welcome message"
+msgstr ""
+
+#. Default: "What they signed in with"
+#: components/Blocks/SignIn/schema
+msgid "What they signed in with"
+msgstr ""
+
+#. Default: "When they last signed in"
+#: components/Blocks/SignIn/schema
+msgid "When they last signed in"
+msgstr ""
+
+#. Default: "While editing only: show what a visitor who is not signed in sees."
+#: components/Blocks/SignIn/schema
+msgid "While editing only: show what a visitor who is not signed in sees."
+msgstr ""
+
 #. Default: "Withdraw access"
 #: components/Applications/Applications
 #: components/Applications/ApplicationsPanel
@@ -950,6 +1030,11 @@ msgstr ""
 #. Default: "Your email addresses"
 #: components/Identities/ProfileEmails
 msgid "Your email addresses"
+msgstr ""
+
+#. Default: "Your profile"
+#: components/Welcome/WelcomeCard
+msgid "Your profile"
 msgstr ""
 
 #. Default: "Your profile needs a few more details before you can continue."
@@ -1040,6 +1125,11 @@ msgstr ""
 #. Default: "How you sign in"
 #: components/Identities/IdentitiesList
 msgid "identities-sections"
+msgstr ""
+
+#. Default: "not verified"
+#: components/Welcome/WelcomeCard
+msgid "not verified"
 msgstr ""
 
 #. Default: "nothing beyond the fact that you signed in"
@@ -1180,6 +1270,11 @@ msgstr ""
 #. Default: "What this account is made of"
 #: components/ControlPanel/UserAccountPanel
 msgid "user-account-sections"
+msgstr ""
+
+#. Default: "verified"
+#: components/Welcome/WelcomeCard
+msgid "verified"
 msgstr ""
 
 #. Default: "verifying only"

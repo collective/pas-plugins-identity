@@ -1,0 +1,28 @@
+/**
+ * The welcome's summary: each line a term and its value side by side.
+ *
+ * The card around it is `LoginCard`, styled where it is. The card's body has
+ * no padding of its own, so the summary brings a gap on every side.
+ */
+.identity-welcome__summary {
+  display: grid;
+  padding: var(--identity-gap);
+  margin: 0;
+  gap: calc(var(--identity-gap) / 2) var(--identity-gap);
+  grid-template-columns: max-content 1fr;
+  /* An address is one unbroken word, and the card is 350px wide. Without this
+     a long one widens its column past the card's edge instead of wrapping. */
+  overflow-wrap: anywhere;
+
+  dt {
+    font-weight: 600;
+  }
+
+  dd {
+    margin: 0;
+  }
+}
+
+.identity-welcome__verified {
+  color: var(--identity-muted);
+}

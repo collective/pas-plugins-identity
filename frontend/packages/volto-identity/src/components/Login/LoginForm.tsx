@@ -42,7 +42,7 @@ const messages = defineMessages({
   },
 });
 
-interface LoginFormProps {
+export interface LoginFormProps {
   providers: LoginProvider[];
   /**
    * Whether the sign-in options are still unknown.
