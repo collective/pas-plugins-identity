@@ -40,7 +40,9 @@ Everything here renders from what the backend serves. The add-on describes no sc
 The check is deliberately not `Boolean(value)`, which reads the string `"false"` as true and would leave the password form up for an operator who had just switched it off.
 
 The form is **off** by default: a site installing this add-on has external providers, and offering a password form beside them invites people to make a second way into the same account.
-A site that is itself an identity provider is the case that wants it on, and sets `config.settings.identityShowPloneLogin` in its own configuration. The environment variable still wins over that.
+A site that is itself an identity provider is the case that wants it on, and sets `config.settings.identity.showPloneLogin` in its own configuration. The environment variable still wins over that.
+
+Every setting the add-on reads is under `config.settings.identity`: `showPloneLogin`, and `avatarColors`, the palette a user's initials are drawn on when they have no portrait. The shipped palette was chosen for contrast against the white initials; a palette you configure is not checked.
 
 **This variable is read at run time, not baked into the bundle.** That is why the Login component reads it through `runtimeConfig` rather than writing `process.env.RAZZLE_IDENTITY_SHOW_PLONE_LOGIN` literally: webpack substitutes the literal form while `pnpm build` runs, which would make the answer a property of the image and force two images on two sites wanting two answers.
 

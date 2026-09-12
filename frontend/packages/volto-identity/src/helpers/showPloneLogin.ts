@@ -40,8 +40,9 @@ export const SHOW_PLONE_LOGIN_ENV = 'RAZZLE_IDENTITY_SHOW_PLONE_LOGIN';
  * the server and the real answer in the browser -- a mismatch, and a flash of
  * the wrong form.
  *
- * The setting is the fallback rather than the source, so a project that ships
- * its own default keeps it and a deployment can still override it.
+ * `config.settings.identity.showPloneLogin` is the fallback rather than the
+ * source, so a project that ships its own default keeps it and a deployment
+ * can still override it.
  *
  * @returns Whether to offer the password form.
  */
@@ -50,6 +51,6 @@ export function showPloneLogin(): boolean {
     (runtimeConfig as Record<string, string | undefined>)?.[
       SHOW_PLONE_LOGIN_ENV
     ],
-    Boolean(config.settings.identityShowPloneLogin),
+    Boolean(config.settings.identity?.showPloneLogin),
   );
 }

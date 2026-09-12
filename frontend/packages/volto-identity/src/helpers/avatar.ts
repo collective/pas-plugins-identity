@@ -8,17 +8,21 @@
  * every device, without anything being stored.
  * @module helpers/avatar
  */
+import config from '@plone/volto/registry';
 
 /**
- * The palette initials are drawn on.
+ * The palette initials are drawn on, unless a project configures its own as
+ * `config.settings.identity.avatarColors`.
  *
  * Chosen for contrast against white text rather than for variety: every one
  * of these clears WCAG AA at the size the avatar renders. Ten is enough that
  * two people in a room rarely collide and few enough that each stays
  * distinct -- a larger palette mostly adds colours that look alike.
  */
-export const AVATAR_COLORS = [
-  '#0083be',
+export const DEFAULT_AVATAR_COLORS = [
+  // Not Plone's own #0083be, which is 4.21:1 against white: this is the
+  // lightest colour of its hue that clears 4.5:1.
+  '#007db6',
   '#005d7a',
   '#8b2f8b',
   '#a13d63',
@@ -29,6 +33,23 @@ export const AVATAR_COLORS = [
   '#5f3dc4',
   '#8a3324',
 ] as const;
+
+/**
+ * Return the palette initials are drawn on.
+ *
+ * The one a project configured, or the shipped one when it configured none.
+ * An empty list counts as none: a palette with no colour in it cannot pick
+ * one, and every avatar would be drawn with no background at all.
+ *
+ * Not checked for contrast. The shipped palette was chosen for it; a
+ * project's own is the project's to choose.
+ *
+ * @returns The palette.
+ */
+export function avatarColors(): readonly string[] {
+  const configured = config.settings.identity?.avatarColors;
+  return configured?.length ? configured : DEFAULT_AVATAR_COLORS;
+}
 
 /**
  * Return the initials to draw for a user.
@@ -68,12 +89,15 @@ function firstLetter(word: string): string {
  * Return the colour a user's initials are drawn on.
  *
  * Derived from the userid rather than the name, so somebody correcting the
- * spelling of their own name does not change colour.
+ * spelling of their own name does not change colour. A palette of a
+ * different length moves most people to another colour, since the pick is
+ * the hash modulo its length.
  *
  * @param userid The canonical Plone userid.
- * @returns One of :data:`AVATAR_COLORS`.
+ * @returns One of the colours of :func:`avatarColors`.
  */
 export function colorFor(userid: string | undefined | null): string {
+  const palette = avatarColors();
   const seed = userid ?? '';
   let hash = 0;
   for (const char of seed) {
@@ -81,5 +105,5 @@ export function colorFor(userid: string | undefined | null): string {
     // this picks a colour, and knowing how it picks reveals nothing.
     hash = (hash * 31 + char.codePointAt(0)!) % 0xffffffff;
   }
-  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+  return palette[hash % palette.length];
 }
