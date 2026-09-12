@@ -15,3 +15,11 @@
 .identity-callback--error {
   color: var(--identity-error);
 }
+
+/**
+ * The way back to the options, under a refusal: close to the message it
+ * answers rather than a full gap away from it.
+ */
+.identity-callback--retry {
+  padding-top: 0;
+}

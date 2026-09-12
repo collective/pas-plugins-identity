@@ -2,7 +2,7 @@
  * Login container: store, routing, and the redirect out to the provider.
  * @module components/Login/Login
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory, useLocation } from 'react-router-dom';
 import { defineMessages, useIntl } from 'react-intl';
@@ -14,6 +14,10 @@ import {
 } from '../../actions';
 import { login } from '@plone/volto/actions/userSession/userSession';
 
+import {
+  asksToChoose,
+  redirectToSoleProvider,
+} from '../../helpers/redirectToSoleProvider';
 import { returnUrl } from '../../helpers/returnUrl';
 import { showPloneLogin } from '../../helpers/showPloneLogin';
 import type { LoginProvider } from '../../types';
@@ -39,14 +43,20 @@ const Login: React.FC = () => {
   const location = useLocation();
   const { push } = useHistory();
   const [redirecting, setRedirecting] = useState(false);
-  // The session as it was when this page loaded. Only a token that appears
-  // *after* that is somebody signing in here.
-  const sessionOnArrival = useRef<string | undefined>(undefined);
 
   const providers = useSelector((state: any) => state.loginProviders);
   const started = useSelector((state: any) => state.providerLogin);
   const magic = useSelector((state: any) => state.magicLinkSend);
   const userSession = useSelector((state: any) => state.userSession);
+
+  // The session as it was when this page loaded. Only a token that appears
+  // *after* that is somebody signing in here.
+  //
+  // Taken by the initialiser, while rendering, rather than by an effect. The
+  // form decides whether to redirect in an effect of its own, and a child's
+  // effects run before its parent's: filled in by an effect here, this would
+  // still be empty when that decision is made.
+  const [sessionOnArrival] = useState<string>(() => userSession?.token ?? '');
 
   useEffect(() => {
     dispatch(listLoginProviders());
@@ -80,12 +90,6 @@ const Login: React.FC = () => {
     [dispatch],
   );
 
-  useEffect(() => {
-    if (sessionOnArrival.current === undefined) {
-      sessionOnArrival.current = userSession?.token ?? '';
-    }
-  }, [userSession?.token]);
-
   // Volto stores the token and its own AppExtras redirects; all this has to
   // do is get the user back to where the flow started, which for an
   // authorization request is the whole request.
@@ -98,11 +102,16 @@ const Login: React.FC = () => {
   // instead lets the visitor sign in as somebody the flow will accept.
   useEffect(() => {
     const token = userSession?.token;
-    const arrived = sessionOnArrival.current;
-    if (token && arrived !== undefined && token !== arrived) {
+    if (token && token !== sessionOnArrival) {
       goTo(returnUrl(location.search, location.pathname), push);
     }
-  }, [userSession?.token, location.search, location.pathname, push]);
+  }, [
+    userSession?.token,
+    sessionOnArrival,
+    location.search,
+    location.pathname,
+    push,
+  ]);
 
   const onSendMagicLink = useCallback(
     (email: string) => {
@@ -136,6 +145,19 @@ const Login: React.FC = () => {
       )
     : undefined;
 
+  // Whether a sole provider may be started without showing its button. The
+  // site answers first, and this visit can still say no:
+  //
+  // - Arriving signed in means something refused that session, as above. A
+  //   provider that still has a session of its own signs the visitor straight
+  //   back in as the same account, and straight back here: a loop.
+  // - `?choose` is somebody asking for the options -- among them the callback
+  //   page, after a sign-in failed.
+  const redirect =
+    redirectToSoleProvider() &&
+    !sessionOnArrival &&
+    !asksToChoose(location.search);
+
   return (
     <LoginPanel
       title={intl.formatMessage(messages.title)}
@@ -154,6 +176,7 @@ const Login: React.FC = () => {
         passwordLoading={Boolean(userSession?.login?.loading)}
         passwordError={userSession?.login?.error}
         showPloneLogin={showPloneLogin()}
+        redirectToSoleProvider={redirect}
         onPasswordLogin={onPasswordLogin}
       />
     </LoginPanel>

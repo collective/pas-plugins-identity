@@ -50,6 +50,18 @@ user's own sign-in methods page—it simply has no button.
 If no provider at all appears and you configured one, check the frontend add-on
 is registered: see {doc}`install-the-frontend`.
 
+## `/login` goes straight to the provider
+
+The site offers one way in: a single provider shown, and neither the magic link
+nor the password form. With nothing to choose between, the sign-in starts on
+its own.
+
+- To see the page anyway, open `/login?choose=1`.
+- To show the button every time, set
+  `RAZZLE_IDENTITY_REDIRECT_TO_SOLE_PROVIDER=false`—see
+  {doc}`install-the-frontend`.
+- Volto's own password form is at `/fallback_login` either way.
+
 ## The login page shows Volto's username and password form instead
 
 The frontend add-on is not loaded. Check `volto.config.js` names

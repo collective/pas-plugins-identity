@@ -23,7 +23,11 @@ const { showPloneLogin, SHOW_PLONE_LOGIN_ENV } = await import(
  * @param showPloneLogin The configured default.
  */
 function configure(showPloneLogin: boolean) {
-  config.settings.identity = { showPloneLogin, avatarColors: [] };
+  config.settings.identity = {
+    showPloneLogin,
+    redirectToSoleProvider: true,
+    avatarColors: [],
+  };
 }
 
 describe('showPloneLogin', () => {

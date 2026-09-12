@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render } from '../../testing';
+import { fireEvent, render, screen } from '../../testing';
 import { MemoryRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import React from 'react';
 
 import Login from './Login';
+import { START_PROVIDER_LOGIN } from '../../constants/ActionTypes';
+import * as redirectModule from '../../helpers/redirectToSoleProvider';
 import * as showPloneLoginModule from '../../helpers/showPloneLogin';
 
 /**
@@ -51,6 +53,7 @@ const LOADED_PROVIDERS = {
 };
 
 function storeWith(token?: string, loginProviders: any = LOADED_PROVIDERS) {
+  const dispatched: any[] = [];
   const state = {
     loginProviders,
     providerLogin: {},
@@ -58,9 +61,15 @@ function storeWith(token?: string, loginProviders: any = LOADED_PROVIDERS) {
     userSession: { token, login: {} },
   };
   return {
-    getState: () => state,
-    dispatch: (action: any) => action,
-    subscribe: () => () => {},
+    dispatched,
+    store: {
+      getState: () => state,
+      dispatch: (action: any) => {
+        dispatched.push(action);
+        return action;
+      },
+      subscribe: () => () => {},
+    },
   };
 }
 
@@ -69,13 +78,40 @@ function renderLogin(
   search = '?came_from=%2F%40%40oauth-authorize',
   loginProviders?: any,
 ) {
+  const { store, dispatched } = storeWith(token, loginProviders);
   render(
-    <Provider store={storeWith(token, loginProviders) as any}>
+    <Provider store={store as any}>
       <MemoryRouter initialEntries={[`/login${search}`]}>
         <Login />
       </MemoryRouter>
     </Provider>,
   );
+  return { dispatched };
+}
+
+/**
+ * The provider sign-ins the page started, by the path each one asked for.
+ *
+ * @param dispatched Every action the page dispatched.
+ * @returns The request paths.
+ */
+function starts(dispatched: any[]): string[] {
+  return dispatched
+    .filter((action) => action.type === START_PROVIDER_LOGIN)
+    .map((action) => action.request.path);
+}
+
+/**
+ * Make the listing's one provider the only way in, and answer for the site.
+ *
+ * @param redirect What the site says about redirecting to it.
+ * @returns The spy standing in for the site's answer.
+ */
+function oneWayIn(redirect: boolean) {
+  vi.spyOn(showPloneLoginModule, 'showPloneLogin').mockReturnValue(false);
+  return vi
+    .spyOn(redirectModule, 'redirectToSoleProvider')
+    .mockReturnValue(redirect);
 }
 
 describe('Login', () => {
@@ -185,5 +221,77 @@ describe('Login', () => {
 
     expect(document.body.textContent).not.toContain('Loading');
     expect(document.querySelector('#login-form-submit')).toBeTruthy();
+  });
+});
+
+describe('Login, when one provider is the only way in', () => {
+  let capture: ReturnType<typeof captureNavigation>;
+
+  beforeEach(() => {
+    capture = captureNavigation();
+  });
+
+  afterEach(() => {
+    capture.restore();
+    vi.restoreAllMocks();
+  });
+
+  it('starts it for a visitor who is not signed in', () => {
+    oneWayIn(true);
+
+    const { dispatched } = renderLogin(undefined, '?came_from=%2Fnews');
+
+    expect(starts(dispatched)).toEqual([
+      '/@login-providers/github?came_from=%2Fnews',
+    ]);
+  });
+
+  it('asks at render time whether the site wants that', () => {
+    // The answer arrives in the container's environment. Severing this
+    // wiring is invisible to the form's own tests, which take it as a prop.
+    const decide = oneWayIn(false);
+
+    const { dispatched } = renderLogin(undefined);
+
+    expect(decide).toHaveBeenCalled();
+    expect(starts(dispatched)).toEqual([]);
+    expect(screen.getByRole('button', { name: /GitHub/ })).toBeTruthy();
+  });
+
+  it('shows its button to a visitor who arrived signed in', () => {
+    // Something refused that session to send them here. A provider that
+    // still has a session of its own would sign them straight back in as the
+    // same account, and straight back to this page.
+    oneWayIn(true);
+
+    const { dispatched } = renderLogin('an-existing-token');
+
+    expect(starts(dispatched)).toEqual([]);
+    expect(screen.getByRole('button', { name: /GitHub/ })).toBeTruthy();
+  });
+
+  it('shows its button to a visitor who asked to choose', () => {
+    // Where the callback page sends somebody whose sign-in failed.
+    oneWayIn(true);
+
+    const { dispatched } = renderLogin(undefined, '?choose=1');
+
+    expect(starts(dispatched)).toEqual([]);
+    expect(screen.getByRole('button', { name: /GitHub/ })).toBeTruthy();
+  });
+
+  it('keeps where the visitor was going when they choose', () => {
+    // `choose` is about this page, not part of the destination.
+    oneWayIn(true);
+    const { dispatched } = renderLogin(
+      undefined,
+      '?came_from=%2Fnews&choose=1',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /GitHub/ }));
+
+    expect(starts(dispatched)).toEqual([
+      '/@login-providers/github?came_from=%2Fnews',
+    ]);
   });
 });

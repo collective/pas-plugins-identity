@@ -92,6 +92,7 @@ msgid "Back"
 msgstr ""
 
 #. Default: "Back to sign-in options"
+#: components/Callback/Callback
 #: components/Login/LoginForm
 msgid "Back to sign-in options"
 msgstr ""

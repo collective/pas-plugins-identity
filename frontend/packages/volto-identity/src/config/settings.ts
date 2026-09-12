@@ -48,12 +48,19 @@ export default function install(config: ConfigType) {
   // `config.settings.identity.showPloneLogin` in its own configuration, and
   // the environment still wins over it.
   //
+  // The sole-provider redirect is on by default, which is what the login page
+  // did before it was a setting: one provider and nothing else is a page with
+  // one button on it. A site turns it off with
+  // `RAZZLE_IDENTITY_REDIRECT_TO_SOLE_PROVIDER`, read at run time the same way
+  // -- see `redirectToSoleProvider`.
+  //
   // Merged under whatever is already there rather than assigned: an add-on
   // configured before this one may have set a palette, and these are defaults.
   // The palette is a copy, so a project pushing onto it does not change the
   // shipped one for everybody else in the process.
   config.settings.identity = {
     showPloneLogin: false,
+    redirectToSoleProvider: true,
     avatarColors: [...DEFAULT_AVATAR_COLORS],
     ...config.settings.identity,
   };

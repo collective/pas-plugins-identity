@@ -109,6 +109,20 @@ The equivalent setting, if you would rather set it in code, is `config.settings.
 
 Volto's own login form stays reachable at `/fallback_login` whether or not you set this.
 
+## Show a sole provider's button
+
+When one provider is shown and neither the magic link nor the password form is offered, `/login` starts that provider's sign-in straight away. There is nothing to choose, so the page does not ask.
+
+To show the provider's button instead, set the environment variable on the frontend process:
+
+```shell
+RAZZLE_IDENTITY_REDIRECT_TO_SOLE_PROVIDER=false
+```
+
+It is read at **run** time, like the variable above. The equivalent setting is `config.settings.identity.redirectToSoleProvider`, and the environment variable wins over it.
+
+With the redirect on, `/login?choose=1` still shows the button, and so does `/login` for a visitor who arrived already signed in. See {ref}`reference-frontend-sole-provider`.
+
 ## What the add-on registers
 
 Ten routes:

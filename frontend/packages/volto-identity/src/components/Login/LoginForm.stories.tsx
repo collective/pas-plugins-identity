@@ -20,6 +20,7 @@ const meta: Meta<typeof LoginForm> = {
     magicLinkLoading: false,
     passwordLoading: false,
     showPloneLogin: true,
+    redirectToSoleProvider: true,
     onSelectProvider: () => {},
     onSendMagicLink: () => {},
     onPasswordLogin: () => {},
@@ -62,6 +63,18 @@ export const ProvidersOnly: Story = {
  */
 export const TheOnlyWayIn: Story = {
   args: { showPloneLogin: false, providers: [PROVIDERS[0]] },
+};
+
+/**
+ * One provider and nothing else, without the redirect: a site that turned it
+ * off, a visitor who arrived signed in, or one who asked to choose.
+ */
+export const TheOnlyWayInAsAButton: Story = {
+  args: {
+    showPloneLogin: false,
+    providers: [PROVIDERS[0]],
+    redirectToSoleProvider: false,
+  },
 };
 
 /** The same site, after that provider turned out to be unreachable. */

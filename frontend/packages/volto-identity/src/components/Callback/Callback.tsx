@@ -15,7 +15,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { MessageDescriptor } from 'react-intl';
 import { useDispatch, useSelector } from 'react-redux';
-import { useHistory, useLocation } from 'react-router-dom';
+import { Link, useHistory, useLocation } from 'react-router-dom';
 import { defineMessages, useIntl } from 'react-intl';
 import { LOGIN } from '@plone/volto/constants/ActionTypes';
 
@@ -25,6 +25,7 @@ import {
   listIdentities,
 } from '../../actions';
 import { readCallback } from '../../helpers/callback';
+import { CHOOSE_LOGIN_PATH } from '../../helpers/redirectToSoleProvider';
 import { IDENTITIES_PATH } from '../../config/routes';
 import LoginPanel from '../Login/LoginPanel';
 
@@ -51,6 +52,11 @@ const messages = defineMessages({
   invalid: {
     id: 'That sign-in link is no longer valid. Please start again.',
     defaultMessage: 'That sign-in link is no longer valid. Please start again.',
+  },
+  // The same id as the login form's own way back, and one translation.
+  backToOptions: {
+    id: 'Back to sign-in options',
+    defaultMessage: 'Back to sign-in options',
   },
 });
 
@@ -155,9 +161,22 @@ const Callback: React.FC<CallbackProps> = ({ onToken }) => {
   return (
     <LoginPanel title={intl.formatMessage(messages.title)}>
       {failure ? (
-        <p className="identity-callback identity-callback--error" role="alert">
-          {intl.formatMessage(failure)}
-        </p>
+        <>
+          <p
+            className="identity-callback identity-callback--error"
+            role="alert"
+          >
+            {intl.formatMessage(failure)}
+          </p>
+          {/* To the options rather than to `/login`: on a site with one
+              provider, `/login` starts that provider again, and a provider
+              that refused somebody refuses them every time. */}
+          <p className="identity-callback identity-callback--retry">
+            <Link to={CHOOSE_LOGIN_PATH}>
+              {intl.formatMessage(messages.backToOptions)}
+            </Link>
+          </p>
+        </>
       ) : (
         <p className="identity-callback" role="status">
           {intl.formatMessage(linked ? messages.linking : messages.working)}

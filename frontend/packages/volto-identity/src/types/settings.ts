@@ -18,6 +18,15 @@ export interface IdentitySettings {
    */
   showPloneLogin: boolean;
   /**
+   * Whether `/login` starts the sign-in straight away when the only way in is
+   * one provider.
+   *
+   * Only the default: `RAZZLE_IDENTITY_REDIRECT_TO_SOLE_PROVIDER` overrides it
+   * at run time. Even when on, the page shows the button to a visitor who
+   * arrived signed in, or who asked to choose with `?choose`.
+   */
+  redirectToSoleProvider: boolean;
+  /**
    * The palette a user's initials are drawn on when they have no portrait.
    *
    * The shipped one is chosen for contrast against the white initials. One a

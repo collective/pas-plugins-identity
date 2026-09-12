@@ -71,6 +71,14 @@ interface LoginFormProps {
    * one place.
    */
   showPloneLogin: boolean;
+  /**
+   * Whether one provider, when it is the only way in, is started without
+   * showing its button.
+   *
+   * The container's answer rather than the site's setting: it also says no
+   * for a visitor who arrived signed in, or who asked to choose.
+   */
+  redirectToSoleProvider: boolean;
   onSelectProvider: (provider: LoginProvider) => void;
   onSendMagicLink: (email: string) => void;
   onPasswordLogin: (username: string, password: string) => void;
@@ -103,6 +111,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
   passwordLoading,
   passwordError,
   showPloneLogin,
+  redirectToSoleProvider,
   onSelectProvider,
   onSendMagicLink,
   onPasswordLogin,
@@ -135,6 +144,10 @@ const LoginForm: React.FC<LoginFormProps> = ({
   // decides whether there is a choice to present at all.
   const ways = buttons.length + (hasMagicLink ? 1 : 0) + (hasPassword ? 1 : 0);
   const onlyProvider = ways === 1 && buttons.length === 1 ? buttons[0] : null;
+  // The provider to start without showing its button. Without the container's
+  // leave a sole provider is a button like any other, and the picker below
+  // draws it.
+  const goStraightTo = redirectToSoleProvider ? onlyProvider : null;
 
   // A single provider and nothing else: the picker would be one button asking
   // the user to confirm the only thing that can happen. Sent once per mount
@@ -143,13 +156,13 @@ const LoginForm: React.FC<LoginFormProps> = ({
   // button under it.
   const startedRef = useRef(false);
   useEffect(() => {
-    if (!onlyProvider || error || starting || startedRef.current) {
+    if (!goStraightTo || error || starting || startedRef.current) {
       return;
     }
     startedRef.current = true;
-    setGoing(onlyProvider);
-    onSelectProvider(onlyProvider);
-  }, [onlyProvider, error, starting, onSelectProvider]);
+    setGoing(goStraightTo);
+    onSelectProvider(goStraightTo);
+  }, [goStraightTo, error, starting, onSelectProvider]);
 
   if (loading) {
     return (
@@ -192,14 +205,14 @@ const LoginForm: React.FC<LoginFormProps> = ({
     );
   }
 
-  if (onlyProvider && !error) {
+  if (goStraightTo && !error) {
     // The redirect is already on its way from the effect above. Saying so
     // beats a flash of a button nobody is meant to press.
     return (
       <div className="identity-login">
         <LoginOverlay
           message={intl.formatMessage(messages.redirecting, {
-            provider: onlyProvider.title || onlyProvider.id,
+            provider: goStraightTo.title || goStraightTo.id,
           })}
         />
       </div>

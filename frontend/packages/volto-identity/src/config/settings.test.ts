@@ -72,6 +72,7 @@ describe('install', () => {
   it('offers every setting under config.settings.identity', () => {
     expect(configured().settings.identity).toEqual({
       showPloneLogin: false,
+      redirectToSoleProvider: true,
       avatarColors: [...DEFAULT_AVATAR_COLORS],
     });
   });
@@ -102,6 +103,7 @@ describe('install', () => {
 
     expect(config.settings.identity).toEqual({
       showPloneLogin: false,
+      redirectToSoleProvider: true,
       avatarColors: ['#111111'],
     });
   });

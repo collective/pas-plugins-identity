@@ -67,13 +67,17 @@ A profile that is also missing fields goes to the edit form first. See
 
 ## Environment variables
 
-| Variable | Default | Read at |
-|---|---|---|
-| `RAZZLE_IDENTITY_SHOW_PLONE_LOGIN` | off | **run** time |
+<!-- source: frontend/packages/volto-identity/src/helpers/showPloneLogin.ts -->
+<!-- source: frontend/packages/volto-identity/src/helpers/redirectToSoleProvider.ts -->
 
-Read through Volto's `runtimeConfig`, not baked in at build time, so it can be
-changed without rebuilding. `RAZZLE_` is the only prefix Volto carries through to
-the browser.
+| Variable | Overrides | Default | Read at |
+|---|---|---|---|
+| `RAZZLE_IDENTITY_SHOW_PLONE_LOGIN` | `showPloneLogin` | off | **run** time |
+| `RAZZLE_IDENTITY_REDIRECT_TO_SOLE_PROVIDER` | `redirectToSoleProvider` | on | **run** time |
+
+Both are read through Volto's `runtimeConfig`, not baked in at build time, so
+they can be changed without rebuilding. `RAZZLE_` is the only prefix Volto
+carries through to the browser.
 
 ## Settings
 
@@ -87,9 +91,10 @@ Every setting the add-on reads is under `config.settings.identity`, typed as
 | Key | Default | What it does |
 |---|---|---|
 | `showPloneLogin` | `false` | Show Volto's username-and-password form on `/login` as well as the providers. |
+| `redirectToSoleProvider` | `true` | Start the sign-in straight away when the only way in on `/login` is one provider. See {ref}`reference-frontend-sole-provider`. |
 | `avatarColors` | the shipped palette of ten colours | The colours a user's initials are drawn on when they have no portrait. |
 
-The environment variable above overrides `showPloneLogin` at run time.
+Each environment variable above overrides its setting at run time.
 
 A user's colour is picked from their userid, modulo the number of colours, so
 a palette of a different length moves most users to another colour. An empty
@@ -110,6 +115,29 @@ config.settings.identity = {
 
 `showPloneLogin` was `config.settings.identityShowPloneLogin` up to `1.0.0a6`.
 That key is no longer read.
+
+(reference-frontend-sole-provider)=
+
+## The sole-provider redirect
+
+<!-- source: frontend/packages/volto-identity/src/components/Login/Login.tsx -->
+<!-- source: frontend/packages/volto-identity/src/components/Login/LoginForm.tsx -->
+<!-- source: frontend/packages/volto-identity/src/components/Callback/Callback.tsx -->
+
+When the only way in on `/login` is one provider—no magic link and no password
+form—the page starts that provider's sign-in without showing its button. It
+shows the button instead in these cases:
+
+| Case | What it prevents |
+|---|---|
+| `redirectToSoleProvider` is off | Nothing: the site chose the button |
+| The visitor arrived already signed in | A provider with a session of its own signing them straight back in as the same account, and back to `/login` |
+| The query string carries `choose`, as in `/login?choose=1` | Nothing: the visitor asked for the options |
+
+A start that fails shows its error over the button rather than starting again.
+
+`/login-identity` links to `/login?choose=1` when it reports a failure, so a
+sign-in the provider refused does not go straight back to that provider.
 
 ## Expansion on content requests
 
