@@ -1,0 +1,1 @@
+Added an `initial` profile for developers. A site created with `make backend-create-site` now has an example front page, and GitHub and Google sign-in that work on `localhost` without registering an application first. @ericof

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<registry>
+  <records interface="pas.plugins.identity.core.controlpanel.interfaces.IProviderRecords"
+           prefix="pas.plugins.identity.providers.plone-org"
+  >
+    <value key="background_color">#ffffff</value>
+    <value key="driver">google</value>
+    <value key="enabled">True</value>
+    <value key="foreground_color">#000000</value>
+    <value key="groupmap" />
+    <value key="icon" />
+    <value key="order">1</value>
+    <value key="propertymap">
+      <element key="fullname">fullname</element>
+    </value>
+    <value key="show_in_login">True</value>
+    <value key="title">@plone.org email</value>
+  </records>
+  <record name="pas.plugins.identity.providers.plone-org.config.accept_string_booleans">
+    <field type="plone.registry.field.Bool">
+      <required>False</required>
+    </field>
+    <value>False</value>
+  </record>
+  <record name="pas.plugins.identity.providers.plone-org.config.auto_link_by_email">
+    <field type="plone.registry.field.Bool">
+      <required>False</required>
+    </field>
+    <value>True</value>
+  </record>
+  <record name="pas.plugins.identity.providers.plone-org.config.client_id">
+    <field type="plone.registry.field.TextLine">
+      <required>False</required>
+    </field>
+    <value>662566638361-pgdg4s92ndr9i7hfgspd5r0ghcsurn85.apps.googleusercontent.com</value>
+  </record>
+  <record name="pas.plugins.identity.providers.plone-org.config.client_secret">
+    <field type="plone.registry.field.Password">
+      <required>False</required>
+    </field>
+    <value>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</value>
+  </record>
+  <record name="pas.plugins.identity.providers.plone-org.config.create_user">
+    <field type="plone.registry.field.Bool">
+      <required>False</required>
+    </field>
+    <value>True</value>
+  </record>
+  <record name="pas.plugins.identity.providers.plone-org.config.scope">
+    <field type="plone.registry.field.Tuple">
+      <required>False</required>
+      <value_type type="plone.registry.field.TextLine" />
+    </field>
+    <value>
+      <element>openid</element>
+      <element>email</element>
+      <element>profile</element>
+    </value>
+  </record>
+  <record name="pas.plugins.identity.providers.plone-org.config.trust_email_verification">
+    <field type="plone.registry.field.Bool">
+      <required>False</required>
+    </field>
+    <value>True</value>
+  </record>
+  <record name="pas.plugins.identity.providers.plone-org.config.userid_source">
+    <field type="plone.registry.field.TextLine">
+      <required>False</required>
+    </field>
+    <value>subject</value>
+  </record>
+</registry>

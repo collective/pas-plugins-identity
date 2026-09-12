@@ -154,3 +154,10 @@ Do not open an issue for a vulnerability. Follow [SECURITY.md](SECURITY.md).
 Provider client secrets and signing keys never go into committed files —
 not into `profiles/default/registry/`, not into fixtures, not into
 documentation examples.
+
+The one exception is `profiles/initial/registry/`. The `initial` profile is a
+developer's quick start, and its GitHub and Google providers carry real client
+secrets on purpose, so a fresh checkout can sign in without registering an
+application first. Those applications accept only a `localhost` callback. Do
+not flag them, move them into the environment, or copy them anywhere else, and
+never add a secret for any other callback to that profile.

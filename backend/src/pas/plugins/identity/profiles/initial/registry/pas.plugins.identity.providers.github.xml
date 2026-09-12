@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<registry>
+  <records interface="pas.plugins.identity.core.controlpanel.interfaces.IProviderRecords"
+           prefix="pas.plugins.identity.providers.github"
+  >
+    <value key="background_color">#000000</value>
+    <value key="driver">github</value>
+    <value key="enabled">True</value>
+    <value key="foreground_color">#ffffff</value>
+    <value key="groupmap" />
+    <value key="icon" />
+    <value key="order">0</value>
+    <value key="propertymap">
+      <element key="bio">description</element>
+      <element key="blog">home_page</element>
+      <element key="fullname">fullname</element>
+      <element key="location">location</element>
+    </value>
+    <value key="show_in_login">True</value>
+    <value key="title">GitHub</value>
+  </records>
+  <record name="pas.plugins.identity.providers.github.config.accept_string_booleans">
+    <field type="plone.registry.field.Bool">
+      <required>False</required>
+    </field>
+    <value>False</value>
+  </record>
+  <record name="pas.plugins.identity.providers.github.config.address_preference">
+    <field type="plone.registry.field.Tuple">
+      <required>False</required>
+      <value_type type="plone.registry.field.TextLine" />
+    </field>
+    <value>
+      <element>*</element>
+      <element>@users.noreply.github.com</element>
+    </value>
+  </record>
+  <record name="pas.plugins.identity.providers.github.config.auto_link_by_email">
+    <field type="plone.registry.field.Bool">
+      <required>False</required>
+    </field>
+    <value>True</value>
+  </record>
+  <record name="pas.plugins.identity.providers.github.config.client_id">
+    <field type="plone.registry.field.TextLine">
+      <required>False</required>
+    </field>
+    <value>Ov23likPYPDU7XNSfzXd</value>
+  </record>
+  <record name="pas.plugins.identity.providers.github.config.client_secret">
+    <field type="plone.registry.field.Password">
+      <required>False</required>
+    </field>
+    <value>4630b2eeb13c88d98ec18480edc4ac332480edbb</value>
+  </record>
+  <record name="pas.plugins.identity.providers.github.config.create_user">
+    <field type="plone.registry.field.Bool">
+      <required>False</required>
+    </field>
+    <value>True</value>
+  </record>
+  <record name="pas.plugins.identity.providers.github.config.scope">
+    <field type="plone.registry.field.Tuple">
+      <required>False</required>
+      <value_type type="plone.registry.field.TextLine" />
+    </field>
+    <value>
+      <element>read:user</element>
+      <element>user:email</element>
+    </value>
+  </record>
+  <record name="pas.plugins.identity.providers.github.config.trust_email_verification">
+    <field type="plone.registry.field.Bool">
+      <required>False</required>
+    </field>
+    <value>True</value>
+  </record>
+  <record name="pas.plugins.identity.providers.github.config.userid_source">
+    <field type="plone.registry.field.TextLine">
+      <required>False</required>
+    </field>
+    <value>username</value>
+  </record>
+</registry>

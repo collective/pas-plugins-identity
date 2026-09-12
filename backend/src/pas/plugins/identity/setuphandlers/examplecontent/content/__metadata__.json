@@ -1,0 +1,134 @@
+{
+  "__version__": "1.0.0",
+  "_blob_files_": [],
+  "_data_files_": [
+    "plone_site_root/data.json"
+  ],
+  "default_page": {},
+  "local_permissions": {
+    "plone_site_root": {
+      "Add portal member": {
+        "acquire": false,
+        "roles": [
+          "Manager",
+          "Site Administrator",
+          "Owner"
+        ]
+      },
+      "Content rules: Manage rules": {
+        "acquire": false,
+        "roles": [
+          "Manager",
+          "Site Administrator"
+        ]
+      },
+      "Set own password": {
+        "acquire": false,
+        "roles": [
+          "Authenticated",
+          "Manager",
+          "Site Administrator"
+        ]
+      },
+      "Set own properties": {
+        "acquire": false,
+        "roles": [
+          "Authenticated",
+          "Manager",
+          "Site Administrator"
+        ]
+      },
+      "Show Toolbar": {
+        "acquire": false,
+        "roles": [
+          "Authenticated"
+        ]
+      },
+      "pas.plugins.identity: Add Principals Container": {
+        "acquire": false,
+        "roles": [
+          "Manager",
+          "Site Administrator"
+        ]
+      },
+      "pas.plugins.identity: Add User Group": {
+        "acquire": false,
+        "roles": []
+      },
+      "pas.plugins.identity: Add User Profile": {
+        "acquire": false,
+        "roles": []
+      },
+      "pas.plugins.identity: Edit Group Global Roles": {
+        "acquire": false,
+        "roles": [
+          "Manager"
+        ]
+      },
+      "pas.plugins.identity: Edit Profile": {
+        "acquire": false,
+        "roles": [
+          "Manager",
+          "Site Administrator"
+        ]
+      },
+      "pas.plugins.identity: Edit Profile Group Membership": {
+        "acquire": false,
+        "roles": [
+          "Manager",
+          "Site Administrator"
+        ]
+      },
+      "pas.plugins.identity: Edit Profile Login": {
+        "acquire": false,
+        "roles": [
+          "Manager"
+        ]
+      },
+      "pas.plugins.identity: Export Identity Providers": {
+        "acquire": false,
+        "roles": [
+          "Manager"
+        ]
+      },
+      "pas.plugins.identity: View Personal Identifiable Information": {
+        "acquire": false,
+        "roles": [
+          "Manager",
+          "Site Administrator"
+        ]
+      },
+      "pas.plugins.identity: View Profile": {
+        "acquire": false,
+        "roles": [
+          "Manager",
+          "Site Administrator"
+        ]
+      },
+      "plone.resource: Export ZIP file": {
+        "acquire": false,
+        "roles": [
+          "Manager"
+        ]
+      },
+      "plone.resourceeditor: Manage Sources": {
+        "acquire": false,
+        "roles": [
+          "Manager",
+          "Site Administrator"
+        ]
+      }
+    }
+  },
+  "local_roles": {
+    "plone_site_root": {
+      "local_roles": {
+        "admin": [
+          "Owner"
+        ]
+      }
+    }
+  },
+  "ordering": {},
+  "relations": []
+}
