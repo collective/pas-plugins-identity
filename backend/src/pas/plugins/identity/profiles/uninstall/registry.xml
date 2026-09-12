@@ -79,6 +79,9 @@
   <record name="pas.plugins.identity.enforce_required_profile_fields"
           remove="true"
   />
+  <record name="pas.plugins.identity.confirm_email_at_first_login"
+          remove="true"
+  />
   <record name="pas.plugins.identity.required_profile_fields"
           remove="true"
   />

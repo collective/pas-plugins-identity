@@ -3,7 +3,8 @@
 ``GET @my-profile``
     ``{"profile": <url or null>, "review_state": <state or null>,
     "userid": …, "missing": [<field names>],
-    "emails": [{"address": …, "verified": …, "preferred": …}]}``
+    "emails": [{"address": …, "verified": …, "preferred": …}],
+    "confirm_email": <bool>}``
 
 Exists for one job: Volto's first-login routing. A user whose Profile is still
 ``incomplete`` should land on it and be asked to fill it in; a user whose
@@ -20,6 +21,12 @@ reason given cannot tell a requirement from a broken site.
 has verified it and which one ``email`` therefore resolves to. It is what the
 account page renders the verify buttons from, and what a page offering the
 person a preferred address chooses between.
+
+``confirm_email`` is whether the owner is being asked which of their verified
+addresses stands for them, the other reason ``review_state`` can be
+``incomplete`` -- see :mod:`~pas.plugins.identity.core.confirmation`. It is
+not in ``missing``, which names fields, and the frontend asks it on a page of
+its own.
 
 There used to be a second list beside it, ``email_choices``: the addresses a
 provider had offered and nobody had picked between. There is nothing to pick
@@ -42,6 +49,7 @@ the one nobody was testing.
 
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.completeness import missing_from_brain
+from pas.plugins.identity.core.confirmation import confirmation_pending_on_brain
 from pas.plugins.identity.core.interfaces import JSONDict
 from plone import api
 
@@ -65,6 +73,7 @@ def profile_state(userid: str, base_url: str) -> JSONDict:
         "review_state": None,
         "missing": [],
         "emails": [],
+        "confirm_email": False,
     }
 
     catalog = query_catalog()
@@ -87,6 +96,7 @@ def profile_state(userid: str, base_url: str) -> JSONDict:
     # whether the site is broken.
     body["missing"] = list(missing_from_brain(brain))
     body["emails"] = addresses(brain)
+    body["confirm_email"] = confirmation_pending_on_brain(brain)
     return body
 
 

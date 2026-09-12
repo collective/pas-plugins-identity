@@ -37,6 +37,15 @@ export const EXEMPT_PATHS = [
 ];
 
 /**
+ * Where a user is asked which of their verified addresses stands for them.
+ *
+ * Here rather than in `config/routes` with the other paths because the gate
+ * has to name it, and `config/routes` imports every component this add-on
+ * routes to -- including the ones that import this module.
+ */
+export const CONFIRM_EMAIL_PATH = '/confirm-email';
+
+/**
  * Where the pending destination is kept while the user fills the form in.
  *
  * `sessionStorage` rather than the URL, because the URL does not survive the
@@ -152,6 +161,57 @@ export function editPath(profileUrl: string, apiPath = ''): string {
 }
 
 /**
+ * Whether the only thing holding a profile is an address confirmation.
+ *
+ * The edit form cannot give one, so such a profile is sent to
+ * `CONFIRM_EMAIL_PATH` instead. A profile that is missing fields as well goes
+ * to the edit form first: those are what the form is for, and the
+ * confirmation is still waiting once it has been saved.
+ *
+ * @param profile The `@my-profile` answer.
+ * @returns Whether to ask for the confirmation rather than the fields.
+ */
+export function awaitingConfirmation(
+  profile: MyProfile | null | undefined,
+): boolean {
+  return !!profile?.confirm_email && !profile.missing?.length;
+}
+
+/**
+ * Where an incomplete profile's owner is sent to finish it.
+ *
+ * @param profile The `@my-profile` answer, for a profile that is incomplete.
+ * @param apiPath The backend's base URL, when it differs from the frontend's.
+ * @returns A site-relative path.
+ */
+export function holdTarget(profile: MyProfile, apiPath = ''): string {
+  return awaitingConfirmation(profile)
+    ? CONFIRM_EMAIL_PATH
+    : editPath(profile.profile ?? '', apiPath);
+}
+
+/**
+ * Whether a path is the user's own profile, or anything beneath it.
+ *
+ * @param profile The `@my-profile` answer.
+ * @param pathname The path the app is on.
+ * @param apiPath The backend's base URL, when it differs from the frontend's.
+ * @returns Whether the path belongs to the profile.
+ */
+export function onProfile(
+  profile: MyProfile | null | undefined,
+  pathname: string,
+  apiPath = '',
+): boolean {
+  if (!profile?.profile) {
+    return false;
+  }
+  const profilePath = toAppPath(profile.profile, apiPath);
+  const current = pathname || '/';
+  return current === profilePath || current.startsWith(`${profilePath}/`);
+}
+
+/**
  * Work out where a user must be sent, if anywhere.
  *
  * Returns `null` for every reason not to gate, which is most of them: no
@@ -163,6 +223,10 @@ export function editPath(profileUrl: string, apiPath = ''): string {
  * The form loads widgets and vocabularies against paths beneath it, and a
  * user who saves is bounced to the profile's view; gating either would be a
  * loop that no amount of correct configuration escapes.
+ *
+ * A profile held only for an address confirmation is the exception to that
+ * exception. It goes to `CONFIRM_EMAIL_PATH` from anywhere but there,
+ * including its own profile, whose form cannot answer the question.
  *
  * @param profile The `@my-profile` answer, or null before it has loaded.
  * @param pathname The path the app is on.
@@ -185,8 +249,13 @@ export function gateTarget(
   ) {
     return null;
   }
-  const profilePath = toAppPath(profile.profile, apiPath);
-  if (current === profilePath || current.startsWith(`${profilePath}/`)) {
+  if (awaitingConfirmation(profile)) {
+    // Ahead of the profile exemption on purpose: the profile and its form are
+    // exactly where this user cannot finish, and a save that lands them on the
+    // profile's view is the moment to send them on.
+    return current === CONFIRM_EMAIL_PATH ? null : CONFIRM_EMAIL_PATH;
+  }
+  if (onProfile(profile, current, apiPath)) {
     return null;
   }
   return editPath(profile.profile, apiPath);

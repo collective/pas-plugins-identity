@@ -1,0 +1,1 @@
+Added the `/confirm-email` route, where a person whose profile is waiting on an address confirmation chooses which of their verified addresses this site uses for them. `ProfileGate` and the first-login route send them there instead of to the edit form, which cannot answer the question; a profile missing fields as well still goes to the form first. @ericof

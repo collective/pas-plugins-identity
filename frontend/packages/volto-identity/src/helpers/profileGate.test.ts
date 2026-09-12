@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  CONFIRM_EMAIL_PATH,
   editPath,
   expandedProfile,
   gateTarget,
@@ -116,6 +117,43 @@ describe('gateTarget', () => {
     expect(gateTarget(profile(), '', api)).toBe(
       '/identity-profiles/alice/edit',
     );
+  });
+
+  describe('a profile held only for an address confirmation', () => {
+    // The edit form cannot give one, so holding somebody there is a loop.
+    const waiting = () => profile({ confirm_email: true, missing: [] });
+
+    it('is sent to be asked', () => {
+      expect(gateTarget(waiting(), '/news', api)).toBe(CONFIRM_EMAIL_PATH);
+    });
+
+    it('is left alone on the page that asks', () => {
+      expect(gateTarget(waiting(), CONFIRM_EMAIL_PATH, api)).toBe(null);
+    });
+
+    it.each(['/identity-profiles/alice', '/identity-profiles/alice/edit'])(
+      'is sent on from %s, which cannot answer',
+      (path) => {
+        expect(gateTarget(waiting(), path, api)).toBe(CONFIRM_EMAIL_PATH);
+      },
+    );
+
+    it('still passes the exempt routes', () => {
+      expect(gateTarget(waiting(), '/logout', api)).toBe(null);
+    });
+
+    it('fills its missing fields in first', () => {
+      // From the confirmation page too: those are what the form is for, and
+      // the question is still waiting once the form is saved.
+      const both = profile({ confirm_email: true, missing: ['fullname'] });
+
+      expect(gateTarget(both, '/news', api)).toBe(
+        '/identity-profiles/alice/edit',
+      );
+      expect(gateTarget(both, CONFIRM_EMAIL_PATH, api)).toBe(
+        '/identity-profiles/alice/edit',
+      );
+    });
   });
 });
 

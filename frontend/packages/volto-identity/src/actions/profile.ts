@@ -4,6 +4,7 @@
  */
 
 import {
+  CONFIRM_EMAIL,
   GET_MY_PROFILE,
   GET_USER_PROFILE,
   SET_PREFERRED_EMAIL,
@@ -64,6 +65,28 @@ export function setPreferredEmail(profilePath: string, addresses: string[]) {
       op: 'patch',
       path: profilePath,
       data: { emails: addresses },
+    },
+  };
+}
+
+/**
+ * Answer the question `@my-profile` reports as `confirm_email`.
+ *
+ * Not a reorder by another name, which is why it is not `setPreferredEmail`:
+ * the backend refuses it for a Profile nobody is asking, and for an address
+ * that is not one of that Profile's verified ones. It answers with
+ * `@my-profile` as it is afterwards, and the `myProfile` slice takes that in,
+ * so the gate sees the Profile released without asking again.
+ *
+ * @param address The verified address that stands for the caller.
+ */
+export function confirmEmail(address: string) {
+  return {
+    type: CONFIRM_EMAIL,
+    request: {
+      op: 'post',
+      path: '/@confirm-email',
+      data: { email: address },
     },
   };
 }

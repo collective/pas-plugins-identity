@@ -12,7 +12,11 @@ would undo it on the far side of the gate.
 
 from pas.plugins.identity import PACKAGE_NAME
 from pas.plugins.identity.core.completeness import REQUIRED_FIELDS_RECORD
+from pas.plugins.identity.core.confirmation import CONFIRM_RECORD
+from pas.plugins.identity.core.confirmation import PENDING_ATTRIBUTE
 from pas.plugins.identity.core.container import get_container
+from pas.plugins.identity.core.pas import PLUGIN_ID
+from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from pas.plugins.identity.core.subscribers.gate import ENFORCE_RECORD
 from pas.plugins.identity.core.subscribers.gate import EXEMPT_RECORD
 from plone import api
@@ -342,3 +346,49 @@ class TestRequestsThatNeverReachedASite:
         response = get(self.url, auth=(USERID, PASSWORD))
 
         assert response.status_code == 302
+
+
+class TestAConfirmationIsNotHeldAtTheEditForm:
+    """A profile incomplete only for want of an address confirmation.
+
+    The edit form cannot give one, so holding its owner there is a loop with
+    no way out. The Volto add-on asks the question instead.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, site) -> None:
+        self.portal, self.url = site
+        self.user = (USERID, PASSWORD)
+        self.profile = self.portal["identity-profiles"][USERID]
+        api.portal.set_registry_record(CONFIRM_RECORD, True)
+        store = api.portal.get_tool("acl_users")[PLUGIN_ID].store
+        with api.env.adopt_roles(["Manager"]):
+            # Two verified addresses: with one there is nothing to choose
+            # between, and the profile is not waiting on anything.
+            self.profile.emails = ("alice@example.com", "alice@example.org")
+            for address in self.profile.emails:
+                store.add(EMAIL_PROVIDER, address, USERID, {})
+            self.profile.location = "Oxford"
+            setattr(self.profile, PENDING_ATTRIBUTE, True)
+            modified(self.profile)
+        transaction.commit()
+
+    def test_the_profile_is_incomplete(self):
+        """The premise. Without it the next test passes vacuously."""
+        assert api.content.get_state(obj=self.profile) == "incomplete"
+
+    def test_a_page_is_not_redirected(self):
+        response = get(self.url, auth=self.user)
+
+        assert response.status_code == 200
+
+    def test_a_missing_field_is_still_held(self):
+        """The edit form can supply that, so the exemption is this narrow."""
+        with api.env.adopt_roles(["Manager"]):
+            self.profile.location = ""
+            modified(self.profile)
+        transaction.commit()
+
+        response = get(self.url, auth=self.user)
+
+        assert response.headers["Location"].endswith(f"/{USERID}/edit")

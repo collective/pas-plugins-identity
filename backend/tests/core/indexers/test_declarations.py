@@ -32,6 +32,7 @@ from plone import api
 from plone.indexer.interfaces import IIndexer
 from Products.ZCatalog.interfaces import IZCatalog
 from zope.component import getGlobalSiteManager
+from zope.lifecycleevent import modified
 
 import pytest
 
@@ -101,6 +102,11 @@ class TestEveryDeclaredIndexAndColumnIsAnswered:
         api.portal.get_tool("acl_users")[PLUGIN_ID].link(
             "alice", "email", "alice@example.com", {}
         )
+        # ``email_confirmation_pending`` is false for every Profile nobody is
+        # asking, which is nearly all of them; only a marked one gives the
+        # column a value to be checked.
+        self.profile.email_confirmation_pending = True
+        modified(self.profile)
 
     def test_every_index_holds_something(self):
         """The declaration this test exists for. An index nothing fills is an

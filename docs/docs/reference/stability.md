@@ -24,7 +24,7 @@ They are versioned and released together. See {doc}`/how-to-guides/install` and 
 ## What alpha means here
 
 A change to a registry record, a content type or a plugin reaches an existing site when the profile is reapplied, and only then.
-`pas.plugins.identity:default` is at version 1006 and declares an upgrade step for each thing a reapplied profile cannot carry: a persistent object written at install, and a value only a walk of the site can compute.
+`pas.plugins.identity:default` is at version 1007 and declares an upgrade step for each thing a reapplied profile cannot carry: a persistent object written at install, and a value only a walk of the site can compute.
 `pas.plugins.identity.server:default` is at 1000 and declares none.
 {doc}`/how-to-guides/upgrade` lists what each step does.
 

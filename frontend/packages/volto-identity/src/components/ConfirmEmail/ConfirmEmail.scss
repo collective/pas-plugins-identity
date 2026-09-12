@@ -1,0 +1,50 @@
+/**
+ * The address confirmation page.
+ *
+ * Inside `LoginPanel`, like the first-login wait: the card and its centring
+ * are the panel's, and this only lays out the question within it.
+ */
+.identity-confirm-email {
+  display: flex;
+  flex-direction: column;
+  padding: var(--identity-gap) 0;
+  gap: var(--identity-gap);
+}
+
+.identity-confirm-email__choices {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border: 0;
+  margin: 0;
+  gap: calc(var(--identity-gap) / 2);
+
+  legend {
+    margin-bottom: calc(var(--identity-gap) / 2);
+    color: var(--identity-muted);
+  }
+}
+
+.identity-confirm-email__choice {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  gap: calc(var(--identity-gap) / 2);
+  overflow-wrap: anywhere;
+}
+
+.identity-confirm-email__status,
+.identity-confirm-email__actions {
+  padding: var(--identity-gap) 0 0;
+  margin: 0;
+  text-align: center;
+}
+
+.identity-confirm-email__status {
+  color: var(--identity-muted);
+}
+
+.identity-confirm-email__error {
+  margin: 0;
+  color: var(--identity-error);
+}

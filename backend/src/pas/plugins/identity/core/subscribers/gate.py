@@ -36,6 +36,13 @@ The profile itself
 Signing out
     A user who would rather leave than fill the form in must be able to.
 
+A profile waiting only on an address confirmation
+    ``confirm_email_at_first_login`` holds such a profile ``incomplete``, and
+    the question is asked by the Volto add-on. No page this site renders
+    answers it, so sending the owner to the edit form would hold them on a
+    form that cannot release them. ``@@oauth-authorize`` does not pause for
+    one either, for the same reason: it pauses *at the edit form*.
+
 ``@@oauth-authorize`` and its siblings
     Found by running the demo, not by testing. The authorization endpoint is
     a *browser* view answering ``text/html``, so every test above says "page"
@@ -48,6 +55,8 @@ Signing out
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.completeness import INCOMPLETE
+from pas.plugins.identity.core.completeness import missing_from_brain
+from pas.plugins.identity.core.confirmation import confirmation_pending_on_brain
 from pas.plugins.identity.core.container import PREFIX
 from plone import api
 from plone.api.exc import CannotGetPortalError
@@ -170,10 +179,13 @@ def _traversed_paths(request) -> set[str]:
 
 
 def _incomplete_profile(userid: str):
-    """Return the brain of this user's profile when it is incomplete.
+    """Return the brain of this user's profile when the edit form can finish it.
 
     From the catalog, so the check every page load performs wakes nothing --
     the same discipline the enumeration plugin and ``@my-profile`` follow.
+
+    A profile ``incomplete`` only for want of an address confirmation is not
+    returned: the edit form cannot give one. See the module docstring.
 
     :param userid: The current user's id.
     :returns: The brain, or ``None`` when there is nothing to hold them for.
@@ -185,7 +197,11 @@ def _incomplete_profile(userid: str):
     if not brains:
         return None
     brain = brains[0]
-    return brain if brain.review_state == INCOMPLETE else None
+    if brain.review_state != INCOMPLETE:
+        return None
+    if not missing_from_brain(brain) and confirmation_pending_on_brain(brain):
+        return None
+    return brain
 
 
 def incomplete_profile_url(userid: str) -> str | None:

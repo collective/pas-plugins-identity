@@ -87,7 +87,7 @@ every `UserProfile` object and its data exactly where it is.
 
 <!-- source: backend/src/pas/plugins/identity/upgrades/configure.zcml -->
 
-`pas.plugins.identity:default` is at version 1006. `upgrades/` holds one package
+`pas.plugins.identity:default` is at version 1007. `upgrades/` holds one package
 per version, each registering the steps that take a site to it, and
 `portal_setup` offers them to a site installed against an earlier release.
 `pas.plugins.identity.server:default` is at 1000 and declares none.

@@ -553,6 +553,21 @@ class IProfileSettings(Interface):
         default=True,
     )
 
+    confirm_email_at_first_login = schema.Bool(
+        title=_("Ask a person with several verified addresses which one is theirs"),
+        description=_(
+            "When a first sign-in leaves a profile with more than one "
+            "verified address, the profile stays incomplete until its owner "
+            "confirms which of them stands for them. Only first sign-ins made "
+            "while this is on are asked. It is asked after sign-in, so it has "
+            "no say in which existing account a provider's addresses link to: "
+            "the provider's address preference decides that. The Volto "
+            "add-on asks the question; no page this site renders does."
+        ),
+        required=False,
+        default=False,
+    )
+
     required_profile_fields = schema.Tuple(
         title=_("Required profile fields"),
         description=_(
@@ -616,6 +631,7 @@ class IProfileSettings(Interface):
         label=_("The profile gate"),
         fields=[
             "enforce_required_profile_fields",
+            "confirm_email_at_first_login",
             "required_profile_fields",
             "gate_exempt_paths",
         ],

@@ -146,6 +146,7 @@
   <column value="email" />
   <column value="emails" />
   <column value="verified_emails" />
+  <column value="email_confirmation_pending" />
   <column value="home_page" />
   <column value="description" />
   <column value="location" />

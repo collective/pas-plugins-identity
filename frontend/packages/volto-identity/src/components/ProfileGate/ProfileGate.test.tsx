@@ -311,6 +311,84 @@ describe('ProfileGate', () => {
   });
 });
 
+describe('a profile held only for an address confirmation', () => {
+  function waiting(extra: any = {}) {
+    return profileState({
+      data: {
+        '@id': '/@my-profile',
+        userid: 'alice',
+        profile: PROFILE,
+        review_state: 'incomplete',
+        missing: [],
+        confirm_email: true,
+        ...extra,
+      },
+    });
+  }
+
+  it('sends the user to be asked', () => {
+    let seen: { path: string } | undefined;
+
+    withStorage(() => {
+      seen = mountAt('/news', {
+        userSession: { token: 'a-token' },
+        myProfile: waiting(),
+      });
+    });
+
+    expect(seen?.path).toBe('/confirm-email');
+  });
+
+  it('says what it wants rather than which fields', () => {
+    dispatched.length = 0;
+
+    withStorage(() => {
+      mountAt('/news', {
+        userSession: { token: 'a-token' },
+        myProfile: waiting(),
+      });
+    });
+
+    const message = dispatched.find(
+      (action: any) => typeof action?.body === 'string',
+    );
+    expect(message?.title).toBe('Confirm your email address');
+  });
+
+  it('keeps where they were going when sent on from their own profile', () => {
+    // Saving the form lands on the profile's view, and that is where the gate
+    // sends them on from. Remembering *that* would return them to their own
+    // profile once they had answered.
+    let back: string | null = null;
+
+    withStorage(() => {
+      rememberReturn('/news');
+
+      mountAt('/identity-profiles/alice', {
+        userSession: { token: 'a-token' },
+        myProfile: waiting(),
+      });
+
+      back = takeReturn();
+    });
+
+    expect(back).toBe('/news');
+  });
+
+  it('sends somebody with fields missing to the form first', () => {
+    let seen: { path: string } | undefined;
+
+    withStorage(() => {
+      seen = mountAt('/news', {
+        userSession: { token: 'a-token' },
+        myProfile: waiting({ missing: ['fullname'] }),
+      });
+    });
+
+    expect(seen?.path).toBe('/identity-profiles/alice/edit');
+  });
+});
+
 describe('the remembered destination', () => {
   // Volto's test environment provides a `sessionStorage` that accepts writes
   // and returns nothing, so a round trip needs a real one. Installed here

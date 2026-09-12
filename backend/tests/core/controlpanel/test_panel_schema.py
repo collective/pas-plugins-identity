@@ -69,6 +69,7 @@ TABS = [
         "The profile gate",
         [
             "enforce_required_profile_fields",
+            "confirm_email_at_first_login",
             "required_profile_fields",
             "gate_exempt_paths",
         ],

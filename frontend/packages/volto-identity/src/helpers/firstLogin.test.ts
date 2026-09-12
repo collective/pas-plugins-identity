@@ -87,4 +87,25 @@ describe('afterLogin', () => {
   it('carries on before the answer has loaded', () => {
     expect(afterLogin(undefined, '/news')).toBe('/news');
   });
+
+  it('sends a user held only for an address confirmation to be asked', () => {
+    // The edit form has no way to give that answer.
+    expect(
+      afterLogin(
+        profile({ confirm_email: true }),
+        '/news',
+        'http://backend:8080/Plone',
+      ),
+    ).toBe('/confirm-email');
+  });
+
+  it('sends a user with fields missing as well to the form first', () => {
+    expect(
+      afterLogin(
+        profile({ confirm_email: true, missing: ['fullname'] }),
+        '/news',
+        'http://backend:8080/Plone',
+      ),
+    ).toBe('/identity-profiles/alice-userid/edit');
+  });
 });

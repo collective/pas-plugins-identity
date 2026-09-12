@@ -24,6 +24,12 @@ has just filled the form in is still told it is incomplete until they log in
 again, and only-on-write means a profile whose provider stopped sending a
 claim is never re-examined.
 
+**Not only fields.** A site that asks a person with several verified
+addresses which one stands for them holds an unconfirmed profile ``incomplete``
+as well -- see :mod:`~pas.plugins.identity.core.confirmation`. A confirmation
+is not a field, so :func:`missing_fields` does not name it, and
+:func:`is_complete` asks both questions.
+
 ``deactivated`` is never touched by any of this. That state is an
 administrator's decision about an account, and a machine that reads "not
 missing anything" has no business reversing it.
@@ -31,6 +37,7 @@ missing anything" has no business reversing it.
 
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
+from pas.plugins.identity.core.confirmation import confirmation_pending
 from pas.plugins.identity.core.container import PREFIX
 from pas.plugins.identity.core.contents.profile import UserProfile
 from plone import api
@@ -190,10 +197,12 @@ def _brain_declared() -> tuple[str, ...]:
 def is_complete(profile: UserProfile) -> bool:
     """Return whether a profile carries everything the site requires.
 
+    Every required field filled in, and no address waiting to be confirmed.
+
     :param profile: The profile to inspect.
     :returns: Whether nothing is missing.
     """
-    return not missing_fields(profile)
+    return not missing_fields(profile) and not confirmation_pending(profile)
 
 
 def reconcile(profile: UserProfile) -> str | None:
@@ -222,11 +231,14 @@ def reconcile(profile: UserProfile) -> str | None:
     transition = TRANSITIONS[state]
     with api.env.adopt_roles(["Manager"]):
         api.content.transition(obj=profile, transition=transition)
+    missing = list(missing_fields(profile))
+    if confirmation_pending(profile):
+        missing.append("an address confirmation")
     logger.info(
         "Profile %s: %s (missing %s)",
         getattr(profile, "userid", "?"),
         transition,
-        ", ".join(missing_fields(profile)) or "nothing",
+        ", ".join(missing) or "nothing",
     )
     return transition
 

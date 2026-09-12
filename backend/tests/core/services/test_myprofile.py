@@ -1,5 +1,7 @@
 """``@my-profile`` -- the first-login routing question."""
 
+from pas.plugins.identity.core.confirmation import CONFIRM_RECORD
+from pas.plugins.identity.core.confirmation import PENDING_ATTRIBUTE
 from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
 from pas.plugins.identity.core.services.myprofile.get import MyProfileGet
 from plone import api
@@ -162,6 +164,54 @@ class TestTheProfilesOwnAddresses:
         modified(self.profile)
 
         assert self.addresses() == []
+
+
+class TestTheConfirmationQuestion:
+    """What the add-on sends somebody to its confirmation page on.
+
+    Separate from ``review_state``: an incomplete profile is sent to the edit
+    form, and the edit form cannot answer this.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, service, make_profile) -> None:
+        self.portal = portal
+        self.service = service
+        self.profile = make_profile(TEST_USER_ID, email="alice@example.com")
+
+    def mark(self) -> None:
+        """Mark the Profile, holding two verified addresses to choose from.
+
+        Both verified: a Profile with one has nothing to choose between, and
+        is not waiting on anything whatever its marker says.
+        """
+        plugin = api.portal.get_tool("acl_users")[CORE_PLUGIN_ID]
+        self.profile.emails = ("alice@example.com", "alice@example.org")
+        for address in self.profile.emails:
+            plugin.link(TEST_USER_ID, "email", address, {})
+        setattr(self.profile, PENDING_ATTRIBUTE, True)
+        modified(self.profile)
+
+    def test_nobody_is_asked_by_default(self):
+        assert self.service.reply()["confirm_email"] is False
+
+    def test_a_profile_waiting_on_one_says_so(self):
+        api.portal.set_registry_record(CONFIRM_RECORD, True)
+        self.mark()
+
+        assert self.service.reply()["confirm_email"] is True
+
+    def test_a_site_that_stopped_asking_does_not(self):
+        """The switch governs the marker."""
+        self.mark()
+
+        assert self.service.reply()["confirm_email"] is False
+
+    def test_a_user_without_a_profile_is_not_asked(self, make_profile):
+        """Never ``None``: the frontend branches on it."""
+        api.content.delete(obj=self.profile)
+
+        assert self.service.reply()["confirm_email"] is False
 
 
 class TestNotInstalled:
