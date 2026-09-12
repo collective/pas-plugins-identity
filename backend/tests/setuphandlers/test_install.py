@@ -47,6 +47,11 @@ class TestHiddenProfiles:
         """Uninstall profiles are reached through the add-on, not listed."""
         assert profile in self.non_installable.profiles
 
+    def test_example_content_profile_hidden(self):
+        """Applied when a developer's site is created, never by hand: its
+        providers sign in on ``localhost`` only."""
+        assert f"{PACKAGE_NAME}:initial" in self.non_installable.profiles
+
     @pytest.mark.parametrize(
         "profile",
         [

@@ -42,6 +42,7 @@ class HiddenProfiles:
         :returns: Profile ids to hide.
         """
         return [
+            f"{PACKAGE_NAME}:initial",
             f"{PACKAGE_NAME}:uninstall",
             f"{PACKAGE_NAME}.server:uninstall",
         ]

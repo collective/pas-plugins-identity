@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<registry>
+  <records interface="pas.plugins.identity.core.controlpanel.interfaces.IProfileSettings"
+           prefix="pas.plugins.identity"
+  >
+    <value key="confirm_email_at_first_login">True</value>
+    <value key="enforce_required_profile_fields">True</value>
+    <value key="gate_exempt_paths" />
+    <value key="group_container_id">groups</value>
+    <value key="group_container_title">Groups</value>
+    <value key="group_container_type">PrincipalsContainer</value>
+    <value key="group_enumeration_states">
+      <element>active</element>
+    </value>
+    <value key="profile_container_id">profiles</value>
+    <value key="profile_container_title">Profiles</value>
+    <value key="profile_container_type">PrincipalsContainer</value>
+    <value key="profile_enumeration_states">
+      <element>incomplete</element>
+      <element>complete</element>
+    </value>
+    <value key="required_profile_fields" />
+  </records>
+</registry>

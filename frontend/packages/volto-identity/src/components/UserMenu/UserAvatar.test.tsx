@@ -58,6 +58,7 @@ describe('UserAvatar', () => {
     // style can be asserted exactly.
     config.settings.identity = {
       showPloneLogin: false,
+      redirectToSoleProvider: true,
       avatarColors: ['#123456'],
     };
     const { container } = renderAvatar({

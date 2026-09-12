@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<registry>
+  <records interface="pas.plugins.identity.core.controlpanel.interfaces.IIdentitySettings"
+           prefix="pas.plugins.identity"
+  >
+    <value key="audit_max_days">180</value>
+    <value key="audit_max_entries">500</value>
+    <value key="audit_record_pii">False</value>
+    <value key="audit_sinks">
+      <element>plugin</element>
+    </value>
+    <value key="callback_url">/login-identity</value>
+    <value key="discovery_timeout">10</value>
+    <value key="group_container_path">groups</value>
+    <value key="group_content_type">UserGroup</value>
+    <value key="portrait_max_bytes">2097152</value>
+    <value key="portrait_timeout">5</value>
+    <value key="sync_portraits">True</value>
+    <value key="user_container_path">profiles</value>
+    <value key="user_content_type">UserProfile</value>
+  </records>
+</registry>

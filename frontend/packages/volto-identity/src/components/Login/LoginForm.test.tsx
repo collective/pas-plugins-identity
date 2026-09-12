@@ -40,6 +40,8 @@ function renderForm(
         // The default here, not the product's: most of these are about the
         // picker, and a picker needs something to pick between.
         showPloneLogin
+        // The product's default. The container is what turns it off.
+        redirectToSoleProvider
         onSelectProvider={onSelectProvider}
         onSendMagicLink={onSendMagicLink}
         onPasswordLogin={onPasswordLogin}
@@ -323,6 +325,23 @@ describe('LoginForm', () => {
 
     expect(onSelectProvider).not.toHaveBeenCalled();
     expect(screen.getByRole('alert')).toBeTruthy();
+  });
+
+  it('shows the only provider as a button when told not to redirect', () => {
+    // A site that turned the redirect off, or a visit the container knows
+    // would loop: the one provider is a button like any other.
+    const { onSelectProvider } = renderForm({
+      showPloneLogin: false,
+      providers: [DEX],
+      redirectToSoleProvider: false,
+    });
+
+    expect(onSelectProvider).not.toHaveBeenCalled();
+    expect(screen.queryByRole('status')).toBeNull();
+
+    fireEvent.click(screen.getByText('Dex'));
+
+    expect(onSelectProvider).toHaveBeenCalledWith(DEX);
   });
 
   it('is just the magic-link form when that is the only way in', () => {

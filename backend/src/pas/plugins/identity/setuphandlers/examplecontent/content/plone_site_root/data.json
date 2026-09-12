@@ -1,0 +1,89 @@
+{
+  "@id": "/Plone",
+  "@type": "Plone Site",
+  "UID": "plone_site_root",
+  "allow_discussion": null,
+  "blocks": {
+    "4868634b-cd1a-48da-a6b8-cfd0ee9c7060": {
+      "@type": "gridBlock",
+      "blocks": {
+        "1fb00e0a-7fdd-4889-8038-f7df65cc0a19": {
+          "@type": "empty"
+        },
+        "43947550-96bd-44e7-9366-4f51f8bbc388": {
+          "@type": "empty"
+        },
+        "ba4b039d-20b1-4394-82ce-a996b87a2119": {
+          "@type": "identitySignIn",
+          "greeting": "Hello {fullname}!",
+          "showEmail": true,
+          "showLastLogin": true,
+          "showProfile": true,
+          "showProvider": true
+        }
+      },
+      "blocks_layout": {
+        "items": [
+          "43947550-96bd-44e7-9366-4f51f8bbc388",
+          "ba4b039d-20b1-4394-82ce-a996b87a2119",
+          "1fb00e0a-7fdd-4889-8038-f7df65cc0a19"
+        ]
+      },
+      "headline": "Hello there"
+    },
+    "52771499-6b88-4400-8290-9048a0b2cdef": {
+      "@type": "slate"
+    },
+    "9cffd64e-05dc-4f36-b5b0-235ee670d1d8": {
+      "@type": "slate",
+      "plaintext": "Welcome to the demo instance of pas.plugins.identity",
+      "value": [
+        {
+          "children": [
+            {
+              "text": "Welcome to the demo instance of pas.plugins.identity"
+            }
+          ],
+          "type": "p"
+        }
+      ]
+    },
+    "da635913-a2f6-46d2-a531-8cfa9355aa18": {
+      "@type": "title"
+    }
+  },
+  "blocks_layout": {
+    "items": [
+      "da635913-a2f6-46d2-a531-8cfa9355aa18",
+      "9cffd64e-05dc-4f36-b5b0-235ee670d1d8",
+      "4868634b-cd1a-48da-a6b8-cfd0ee9c7060",
+      "52771499-6b88-4400-8290-9048a0b2cdef"
+    ]
+  },
+  "contributors": [],
+  "creators": [
+    "admin"
+  ],
+  "description": "",
+  "effective": null,
+  "expires": null,
+  "exportimport.constrains": {},
+  "exportimport.conversation": [],
+  "id": "Plone",
+  "is_folderish": true,
+  "items_total": 0,
+  "language": "##DEFAULT##",
+  "layout": "document_view",
+  "lock": {
+    "locked": false,
+    "stealable": true
+  },
+  "review_state": null,
+  "rights": "",
+  "subjects": [],
+  "title": "pas.plugins.identity",
+  "type_title": "Plone Site",
+  "workflow_history": {},
+  "working_copy": null,
+  "working_copy_of": null
+}

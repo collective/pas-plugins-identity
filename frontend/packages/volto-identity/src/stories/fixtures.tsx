@@ -128,6 +128,81 @@ export const ONLY_IDENTITY: Identity[] = [
 ];
 
 /**
+ * A session token for a userid, the way Volto keeps one in the store.
+ *
+ * Unsigned. The frontend only ever reads the userid out of a token -- the
+ * signature is the backend's business -- so a payload is all a story or a
+ * test needs.
+ *
+ * @param userid The `sub` claim.
+ * @returns The token.
+ */
+export function tokenFor(userid: string): string {
+  const segment = (value: object) =>
+    btoa(JSON.stringify(value))
+      .replace(/=+$/, '')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_');
+  return `${segment({ alg: 'none' })}.${segment({ sub: userid })}.`;
+}
+
+/**
+ * What `@user-account` answers a user asking about themselves.
+ *
+ * The events are newest first and of more than one kind, as the audit log
+ * holds them: the sign-in block has to find its two sign-ins among the rest.
+ * Midday timestamps, so the date a test formats is the same in every
+ * timezone it runs in.
+ */
+export const ALICE_ACCOUNT: UserAccount = {
+  '@id': '/@user-account/alice',
+  userid: 'alice',
+  fullname: 'Alice Liddell',
+  profile_url: '/identity-profiles/alice',
+  identities: [
+    {
+      provider: 'github',
+      title: 'GitHub',
+      subject: '99',
+      created: '2026-03-02T12:00:00+00:00',
+      last_login: '2026-09-12T12:00:00+00:00',
+      provider_configured: true,
+      provider_enabled: true,
+      groups: [],
+    },
+  ],
+  emails: [
+    { address: 'alice@example.org', verified: false, preferred: false },
+    { address: 'alice@example.com', verified: true, preferred: true },
+  ],
+  last_authenticated: '2026-09-12T12:00:00+00:00',
+  events_total: 3,
+  events: [
+    {
+      event: 'authenticated',
+      provider: 'github',
+      success: true,
+      timestamp: '2026-09-12T12:00:00+00:00',
+      detail: {},
+    },
+    {
+      event: 'identity-linked',
+      provider: 'github',
+      success: true,
+      timestamp: '2026-09-11T12:00:00+00:00',
+      detail: {},
+    },
+    {
+      event: 'authenticated',
+      provider: 'email',
+      success: true,
+      timestamp: '2026-09-10T12:00:00+00:00',
+      detail: {},
+    },
+  ],
+};
+
+/**
  * What one entry of `@identity-drivers` sends: `IOIDCSettings`, serialized.
  *
  * An ordinary JSON schema, because that is what the backend produces now --

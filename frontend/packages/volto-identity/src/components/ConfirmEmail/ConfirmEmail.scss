@@ -2,19 +2,21 @@
  * The address confirmation page.
  *
  * Inside `LoginPanel`, like the first-login wait: the card and its centring
- * are the panel's, and this only lays out the question within it.
+ * are the panel's, and this only lays out the question within it -- with a
+ * gap on every side, since the card's body has no padding of its own and the
+ * choices and the button otherwise sit against its edges.
  */
 .identity-confirm-email {
   display: flex;
   flex-direction: column;
-  padding: var(--identity-gap) 0;
+  padding: var(--identity-gap);
   gap: var(--identity-gap);
 }
 
 .identity-confirm-email__choices {
   display: flex;
   flex-direction: column;
-  padding: 0;
+  padding: 0 var(--identity-gap);
   border: 0;
   margin: 0;
   gap: calc(var(--identity-gap) / 2);
@@ -35,7 +37,7 @@
 
 .identity-confirm-email__status,
 .identity-confirm-email__actions {
-  padding: var(--identity-gap) 0 0;
+  padding: var(--identity-gap) var(--identity-gap) 0;
   margin: 0;
   text-align: center;
 }

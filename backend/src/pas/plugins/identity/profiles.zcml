@@ -76,6 +76,16 @@
       handler=".setuphandlers.catalogxml.export_identity_catalog"
       />
 
+  <!-- Initial profile for creating example content -->
+  <genericsetup:registerProfile
+      name="initial"
+      title="pas.plugins.identity: Example content"
+      description="Create example content to showcase the new website"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      directory="profiles/initial"
+      pre_handler=".setuphandlers.initial.create_example_content"
+      />
+
   <include package=".upgrades" />
 
 </configure>

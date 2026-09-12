@@ -67,17 +67,22 @@ A profile that is also missing fields goes to the edit form first. See
 
 ## Environment variables
 
-| Variable | Default | Read at |
-|---|---|---|
-| `RAZZLE_IDENTITY_SHOW_PLONE_LOGIN` | off | **run** time |
+<!-- source: frontend/packages/volto-identity/src/helpers/showPloneLogin.ts -->
+<!-- source: frontend/packages/volto-identity/src/helpers/redirectToSoleProvider.ts -->
 
-Read through Volto's `runtimeConfig`, not baked in at build time, so it can be
-changed without rebuilding. `RAZZLE_` is the only prefix Volto carries through to
-the browser.
+| Variable | Overrides | Default | Read at |
+|---|---|---|---|
+| `RAZZLE_IDENTITY_SHOW_PLONE_LOGIN` | `showPloneLogin` | off | **run** time |
+| `RAZZLE_IDENTITY_REDIRECT_TO_SOLE_PROVIDER` | `redirectToSoleProvider` | on | **run** time |
+
+Both are read through Volto's `runtimeConfig`, not baked in at build time, so
+they can be changed without rebuilding. `RAZZLE_` is the only prefix Volto
+carries through to the browser.
 
 ## Settings
 
 <!-- source: frontend/packages/volto-identity/src/config/settings.ts -->
+<!-- source: frontend/packages/volto-identity/src/types/settings.ts -->
 <!-- source: frontend/packages/volto-identity/src/helpers/avatar.ts -->
 
 Every setting the add-on reads is under `config.settings.identity`, typed as
@@ -86,9 +91,10 @@ Every setting the add-on reads is under `config.settings.identity`, typed as
 | Key | Default | What it does |
 |---|---|---|
 | `showPloneLogin` | `false` | Show Volto's username-and-password form on `/login` as well as the providers. |
+| `redirectToSoleProvider` | `true` | Start the sign-in straight away when the only way in on `/login` is one provider. See {ref}`reference-frontend-sole-provider`. |
 | `avatarColors` | the shipped palette of ten colours | The colours a user's initials are drawn on when they have no portrait. |
 
-The environment variable above overrides `showPloneLogin` at run time.
+Each environment variable above overrides its setting at run time.
 
 A user's colour is picked from their userid, modulo the number of colours, so
 a palette of a different length moves most users to another colour. An empty
@@ -110,6 +116,29 @@ config.settings.identity = {
 `showPloneLogin` was `config.settings.identityShowPloneLogin` up to `1.0.0a6`.
 That key is no longer read.
 
+(reference-frontend-sole-provider)=
+
+## The sole-provider redirect
+
+<!-- source: frontend/packages/volto-identity/src/components/Login/Login.tsx -->
+<!-- source: frontend/packages/volto-identity/src/components/Login/LoginForm.tsx -->
+<!-- source: frontend/packages/volto-identity/src/components/Callback/Callback.tsx -->
+
+When the only way in on `/login` is one provider—no magic link and no password
+form—the page starts that provider's sign-in without showing its button. It
+shows the button instead in these cases:
+
+| Case | What it prevents |
+|---|---|
+| `redirectToSoleProvider` is off | Nothing: the site chose the button |
+| The visitor arrived already signed in | A provider with a session of its own signing them straight back in as the same account, and back to `/login` |
+| The query string carries `choose`, as in `/login?choose=1` | Nothing: the visitor asked for the options |
+
+A start that fails shows its error over the button rather than starting again.
+
+`/login-identity` links to `/login?choose=1` when it reports a failure, so a
+sign-in the provider refused does not go straight back to that provider.
+
 ## Expansion on content requests
 
 The add-on adds one entry to `config.settings.apiExpanders`.
@@ -122,6 +151,51 @@ Registered for every path, and sent for anonymous visitors too—an entry cannot
 be marked authenticated-only.
 The backend answers an anonymous caller with no component at all.
 See {doc}`endpoints`.
+
+## Blocks
+
+<!-- source: frontend/packages/volto-identity/src/config/blocks.ts -->
+<!-- source: frontend/packages/volto-identity/src/components/Blocks/SignIn/schema.ts -->
+<!-- source: frontend/packages/volto-identity/src/components/Welcome/Welcome.tsx -->
+<!-- source: @plone/volto src/components/manage/BlockChooser/BlockChooser.jsx -->
+
+| Block | `@type` | Page block chooser | Grid block chooser |
+|---|---|---|---|
+| Sign-in | `identitySignIn` | No, `restricted: true` | Yes |
+
+A grid's block chooser offers the blocks named in the grid's `allowedBlocks`
+and does not read `restricted`. The add-on adds the block to that list, and to
+the grid's own `blocksConfig` when the grid has one. A project offers it on the
+page as well by lifting the restriction in its own configuration:
+
+```js
+config.blocks.blocksConfig.identitySignIn.restricted = false;
+```
+
+To a visitor who is not signed in, the block shows the login card `/login`
+shows: the same heading, description strip and sign-in options. It sets no
+page title, and it never goes straight to a sole provider. After signing in,
+the visitor comes back to the page the block is on.
+
+To somebody signed in, it shows a welcome message and a summary. The sidebar
+switches each line off:
+
+| Field | Default | Shows |
+|---|---|---|
+| `greeting` | `Hello {fullname}!`, translated | The welcome message, as plain text. `{username}` is the name the user signs in with, `{fullname}` their full name. |
+| `showProfile` | on | A link to the user's Profile, when they have one |
+| `showEmail` | on | Their preferred address, and whether it is verified |
+| `showProvider` | on | The provider of the newest successful `authenticated` audit event |
+| `showLastLogin` | on | When the `authenticated` event before that one happened |
+| `previewAnonymous` | off | While editing only: the sign-in options instead of the welcome |
+
+The summary reads `@user-account` about the signed-in user, which they may read
+about themselves. The audit log records `authenticated` for a sign-in through a
+provider or a magic link, and not for a password sign-in. After a password
+sign-in, `showProvider` and `showLastLogin` describe the sign-ins before it.
+
+The block renders in the browser only. The server renders it empty, so a cached
+page never carries somebody's welcome.
 
 ## Views
 

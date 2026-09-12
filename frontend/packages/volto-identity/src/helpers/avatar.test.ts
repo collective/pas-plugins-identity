@@ -16,7 +16,11 @@ const USERIDS = ['alice', 'bob', '', 'a'.repeat(200), 'ürico'];
  * @param colors The palette.
  */
 function configure(colors: string[]) {
-  config.settings.identity = { showPloneLogin: false, avatarColors: colors };
+  config.settings.identity = {
+    showPloneLogin: false,
+    redirectToSoleProvider: true,
+    avatarColors: colors,
+  };
 }
 
 /**

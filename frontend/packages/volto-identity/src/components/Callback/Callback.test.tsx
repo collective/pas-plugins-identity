@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '../../testing';
+import { fireEvent, render, screen } from '../../testing';
 import { Provider } from 'react-redux';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import React from 'react';
@@ -196,6 +196,37 @@ describe('Callback', () => {
     renderCallback(PENDING, '?error=access_denied');
 
     expect(screen.getByRole('alert').textContent).toContain('refused');
+  });
+
+  it('offers the sign-in options again after a failure', () => {
+    // The options, not plain `/login`: on a site with one provider that
+    // starts the same provider again, and a provider that refused somebody
+    // refuses them every time.
+    renderCallback({
+      identityCallback: { error: { status: 401 } },
+      magicLinkConfirm: {},
+    });
+
+    const link = screen.getByRole('link', { name: 'Back to sign-in options' });
+    expect(link.getAttribute('href')).toBe('/login?choose=1');
+
+    // Through the router, like every other way this page leaves.
+    fireEvent.click(link);
+    expect(screen.getByTestId('where').textContent).toBe('/login');
+  });
+
+  it('offers them after a refusal read off the query string too', () => {
+    renderCallback(PENDING, '?error=access_denied');
+
+    expect(
+      screen.getByRole('link', { name: 'Back to sign-in options' }),
+    ).toBeTruthy();
+  });
+
+  it('offers no way back while it is still working', () => {
+    renderCallback(PENDING);
+
+    expect(screen.queryByRole('link')).toBeNull();
   });
 });
 

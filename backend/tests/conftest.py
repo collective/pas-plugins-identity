@@ -81,6 +81,34 @@ def demo_registry(portal):
     return apply
 
 
+#: Where this package keeps its GenericSetup profiles.
+PROFILES = Path(__file__).parent.parent / "src/pas/plugins/identity/profiles"
+
+
+@pytest.fixture
+def initial_registry(portal):
+    """Return a callable that applies the ``initial`` profile's registry XML.
+
+    Read file by file rather than by applying the profile, whose pre-handler
+    imports the example content as well -- and removes a file from the folder
+    it imports from.
+
+    :param portal: The Plone site.
+    :returns: A callable taking no arguments.
+    """
+    from plone.app.registry.exportimport.handler import RegistryImporter
+    from plone.registry.interfaces import IRegistry
+    from zope.component import getUtility
+
+    def apply() -> None:
+        registry = getUtility(IRegistry)
+        for path in sorted((PROFILES / "initial/registry").glob("*.xml")):
+            importer = RegistryImporter(registry, _ImportEnviron())
+            importer.importDocument(path.read_bytes())
+
+    return apply
+
+
 @pytest.fixture
 def store_legacy_propertymap(portal):
     """Return a writer that plants a property map the schema now refuses.

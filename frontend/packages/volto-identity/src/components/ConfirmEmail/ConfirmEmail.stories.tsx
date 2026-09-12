@@ -25,7 +25,16 @@ const ASKING = {
   emails: [
     { address: 'alice@example.com', verified: true, preferred: true },
     { address: 'alice@example.org', verified: true, preferred: false },
-    { address: 'alice@example.net', verified: false, preferred: false },
+    {
+      address: 'alice@example.net',
+      verified: false,
+      preferred: false,
+    },
+    {
+      address: '123456790+alice@noreply.users.github.com',
+      verified: true,
+      preferred: false,
+    },
   ],
 };
 
