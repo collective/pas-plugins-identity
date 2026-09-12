@@ -53,3 +53,52 @@ describe('ProviderIconWidget', () => {
     expect(screen.queryByTestId('provider-icon-preview')).toBeNull();
   });
 });
+
+describe('ProviderIconWidget on a driver with a default icon', () => {
+  const DEFAULT =
+    '<svg xmlns="http://www.w3.org/2000/svg"><circle r="4"/></svg>';
+
+  it("shows the driver's icon while nothing is uploaded", () => {
+    render(
+      <ProviderIconWidget
+        id="icon"
+        value=""
+        default_icon={DEFAULT}
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByTestId('provider-icon-default').querySelector('circle'),
+    ).toBeTruthy();
+    expect(screen.queryByTestId('provider-icon-preview')).toBeNull();
+  });
+
+  it('offers an upload and nothing to remove, since nothing is stored', () => {
+    render(
+      <ProviderIconWidget
+        id="icon"
+        value=""
+        default_icon={DEFAULT}
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: /choose/i })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /remove/i })).toBeNull();
+  });
+
+  it('shows the upload instead once there is one', () => {
+    render(
+      <ProviderIconWidget
+        id="icon"
+        value={ENVELOPE}
+        default_icon={DEFAULT}
+        onChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId('provider-icon-preview')).toBeTruthy();
+    expect(screen.queryByTestId('provider-icon-default')).toBeNull();
+  });
+});

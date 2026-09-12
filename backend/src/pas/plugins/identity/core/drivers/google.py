@@ -8,6 +8,7 @@ class GoogleDriver(BaseDriver):
 
     driver_id = "google"
     title = "Google"
+    icon_resource = "pas.plugins.identity.core.drivers:icons/google.svg"
     default_scope = ("openid", "email", "profile")
     subject_keys = ("sub",)
 

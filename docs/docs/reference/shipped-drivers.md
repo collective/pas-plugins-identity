@@ -91,6 +91,31 @@ the `picture_url` claim when `sync_portraits` is on.
 
 No driver maps `username`. Providers publish it; a Profile has no such field.
 
+## Default icons
+
+<!-- source: backend/src/pas/plugins/identity/core/drivers/icons/ -->
+<!-- source: backend/src/pas/plugins/identity/core/drivers/base.py -->
+
+Every shipped driver has a login-button icon. A provider with no icon of its own
+is drawn with its driver's, and an icon uploaded on the provider replaces it.
+
+| Driver | File | Copied from | Licence |
+|---|---|---|---|
+| `github` | `github.svg` | `volto-authomatic`, `github.svg` | MIT |
+| `google` | `google.svg` | `volto-authomatic`, `google.svg` | MIT |
+| `oidc-generic` | `oidc-generic.svg` | `volto-authomatic`, `openid.svg` | MIT |
+| `plone-identity` | `plone-identity.svg` | Volto, `plone.svg` | MIT |
+| `email` | `email.svg` | Volto, `email.svg` | MIT |
+
+The default is resolved when a provider is drawn, in `@login-providers` and
+`@identities`, and never stored. The provider's record, the control panel form
+and an export carry only an uploaded icon. `@identity-drivers` serves each
+driver's default, and the form's **Icon** field shows it until one is uploaded.
+
+A default passes through the same sanitizer as an upload. A third-party driver
+names its own with `icon_resource`, as `package:path`. One that does not resolve,
+or is not an SVG document, is logged and drawn as no icon.
+
 ## Driver notes
 
 `github`

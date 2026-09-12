@@ -77,6 +77,9 @@ the provider list sets it, and stores `order` for every provider in one request.
 None of it changes what the provider does. The icon is sanitized on save—see
 {doc}`/concepts/threat-model`.
 
+With no icon uploaded, the login button uses the driver's default icon, and
+the **Icon** field shows it. See {doc}`shipped-drivers`.
+
 ## Mapping tab
 
 | Field | Registry key | Type | Default |

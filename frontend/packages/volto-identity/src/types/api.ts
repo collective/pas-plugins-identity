@@ -161,6 +161,13 @@ export interface Driver {
    * deployment's directory, not about a driver.
    */
   default_groupmap?: Record<string, string>;
+  /**
+   * The icon a provider of this driver is drawn with until it has one of
+   * its own. Sanitized by the backend, like an upload, and resolved there
+   * too: the login listing already answers with it, so this is only for
+   * the provider form to show.
+   */
+  default_icon?: string;
 }
 
 /** A configured provider as the control panel sees it. */

@@ -46,7 +46,10 @@
     }
   }
 
-  &.identity-provider--plone {
+  /* `plone` is the local password form; `plone-identity` is the driver for
+     another Plone site, whose button wears the same colours. */
+  &.identity-provider--plone,
+  &.identity-provider--plone-identity {
     background: var(--identity-provider-plone-bg);
     color: var(--identity-provider-plone-color);
 

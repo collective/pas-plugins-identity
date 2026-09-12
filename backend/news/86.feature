@@ -1,0 +1,1 @@
+Gave every shipped driver a default login-button icon, copied from volto-authomatic and Volto. A provider with no icon of its own is drawn with its driver's in `@login-providers` and `@identities`, an uploaded icon still wins, and `@identity-drivers` serves each driver's default. The default is never stored, so an export carries only uploaded icons. @ericof

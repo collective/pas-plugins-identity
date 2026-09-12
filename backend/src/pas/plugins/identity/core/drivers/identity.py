@@ -17,6 +17,7 @@ class PloneIdentityDriver(GenericOIDCDriver):
     driver_id = "plone-identity"
     settings_schema = IPloneIdentitySettings
     title = "Plone site"
+    icon_resource = "pas.plugins.identity.core.drivers:icons/plone-identity.svg"
 
     #: ``address`` on top of the generic three.
     #:

@@ -103,7 +103,7 @@ Each is a title and a body, because neither type has rich text.
 
 | Name | Used for |
 |---|---|
-| `provider_icon` | The SVG icon field on the provider form. |
+| `provider_icon` | The SVG icon field on the provider form. Shows the driver's default icon until one is uploaded. |
 
 The backend decides which widget a field uses, through
 `directives.widget(..., frontendOptions={"widget": ...})`, and Volto looks the

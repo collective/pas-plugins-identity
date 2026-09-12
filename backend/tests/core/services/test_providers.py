@@ -12,6 +12,7 @@ from pas.plugins.identity.core.controlpanel import PROVIDERS_PREFIX
 from pas.plugins.identity.core.controlpanel import SECRET_SENTINEL
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.controlpanel.interfaces import IProviderRecords
+from pas.plugins.identity.core.drivers import all_drivers
 from pas.plugins.identity.core.interfaces import FlowError
 from pas.plugins.identity.core.services.providers import EXPORT_PERMISSION
 from pas.plugins.identity.core.services.providers import MANAGE_PERMISSION
@@ -118,6 +119,16 @@ class TestDriverMetadata(ControlPanelCase):
             "plone-identity",
             "email",
         }
+
+    def test_every_driver_carries_its_default_icon(self):
+        """So the provider form can show what a provider is drawn with
+        until one is uploaded."""
+        result = self.call(DriversGet)
+        drivers = all_drivers()
+
+        for item in result["items"]:
+            assert item["default_icon"].startswith("<svg")
+            assert item["default_icon"] == drivers[item["id"]].default_icon
 
     def test_carries_an_ordinary_json_schema(self):
         """The shape `plone.restapi` emits everywhere else, so a client needs

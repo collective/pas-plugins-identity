@@ -5,6 +5,9 @@ and never touches the ZODB, which is what makes the whole layer unit-testable
 against recorded payload fixtures with no provider in the loop.
 """
 
+from functools import cached_property
+from importlib.resources import files
+from pas.plugins.identity import logger
 from pas.plugins.identity.core.drivers.settings import IDriverSettings
 from pas.plugins.identity.core.drivers.settings import IOAuth2Settings
 from pas.plugins.identity.core.interfaces import Claims
@@ -12,6 +15,8 @@ from pas.plugins.identity.core.interfaces import ClaimsError
 from pas.plugins.identity.core.interfaces import IDriver
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.interfaces import ProviderEmail
+from pas.plugins.identity.core.utils.svg import InvalidSVG
+from pas.plugins.identity.core.utils.svg import sanitize
 from zope.interface import implementer
 
 
@@ -65,6 +70,42 @@ class BaseDriver:
     #: how a trailing space or a comma becomes a scope of its own that the
     #: provider then rejects as unknown.
     default_scope: tuple[str, ...] = ()
+
+    #: The login-button icon this driver falls back to, as ``package:path``.
+    #:
+    #: Read with :mod:`importlib.resources`, so a third-party driver ships its
+    #: icon in its own package and names it the same way. Empty means no
+    #: default, and the button shows its label alone.
+    icon_resource: str = ""
+
+    @cached_property
+    def default_icon(self) -> str:
+        """Return this driver's default icon, sanitized.
+
+        Through :func:`~pas.plugins.identity.core.utils.svg.sanitize`, like an
+        upload, although the file ships with a package: it is inlined into the
+        login page, and where it came from does not change what inlining it
+        does. Read once per driver, which is a registered utility.
+
+        A resource that does not resolve, or is not an SVG document, is logged
+        and answered with no icon. A third-party driver shipping a broken icon
+        must not take the login page down with it.
+
+        :returns: The SVG document, or the empty string.
+        """
+        if not self.icon_resource:
+            return ""
+        package, _, path = self.icon_resource.partition(":")
+        try:
+            return sanitize(files(package).joinpath(path).read_text(encoding="utf-8"))
+        except (ImportError, OSError, InvalidSVG) as error:
+            logger.warning(
+                "Driver %r has no usable default icon at %r: %s",
+                self.driver_id,
+                self.icon_resource,
+                error,
+            )
+            return ""
 
     #: Keys tried, in order, to find the provider-side subject.
     subject_keys: tuple[str, ...] = ("sub",)

@@ -197,6 +197,13 @@ export function providerSchema(
   });
 
   const driver = drivers.find((d) => d.id === driverId);
+  // The driver's default icon, for the icon widget to show until one is
+  // uploaded. On the field rather than looked up by the widget: Volto hands
+  // every key of a field's schema to its widget as a prop, so the widget
+  // stays presentational. A copy, so the served schema is not written to.
+  if (properties.icon && driver?.default_icon) {
+    properties.icon = { ...properties.icon, default_icon: driver.default_icon };
+  }
   const settings: JsonSchema = driver?.schema ?? {};
   const settingFields: string[] = [];
   for (const [name, property] of Object.entries(settings.properties ?? {})) {

@@ -19,3 +19,9 @@
     height: 100%;
   }
 }
+
+/* The driver's icon rather than an upload: nothing is stored yet, and a
+   dashed frame says so before the caption does. */
+.provider-icon-widget__preview--default {
+  border-style: dashed;
+}

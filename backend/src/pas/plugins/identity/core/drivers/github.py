@@ -38,6 +38,7 @@ class GitHubDriver(BaseDriver):
 
     driver_id = "github"
     title = "GitHub"
+    icon_resource = "pas.plugins.identity.core.drivers:icons/github.svg"
     settings_schema = IGitHubSettings
     default_scope = ("read:user", "user:email")
     subject_keys = ("id", "node_id")

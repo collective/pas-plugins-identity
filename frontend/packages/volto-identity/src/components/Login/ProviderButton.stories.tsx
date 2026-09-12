@@ -72,3 +72,8 @@ export const IconOnly: Story = {
     icon: STYLED.icon,
   },
 };
+
+/** The Plone site driver, in the Plone colours the password button wears. */
+export const PloneIdentity: Story = {
+  args: { id: 'intranet', driver: 'plone-identity', label: 'Plone site' },
+};

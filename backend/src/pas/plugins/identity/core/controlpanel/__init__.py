@@ -586,10 +586,17 @@ class ProviderConfig:
         every login page -- so it carries the three presentation values and
         nothing else.
 
+        The icon is the one uploaded on this provider, or its driver's
+        default when there is none. The default is resolved here, on the way
+        out, and never stored: the record and every export carry only what
+        somebody uploaded, and a driver that ships a new icon changes every
+        provider that never chose its own.
+
         :returns: JSON-ready mapping of icon and colours.
         """
+        driver = self.driver
         return {
-            "icon": self.icon,
+            "icon": self.icon or (driver.default_icon if driver else ""),
             "background_color": self.background_color,
             "foreground_color": self.foreground_color,
         }
