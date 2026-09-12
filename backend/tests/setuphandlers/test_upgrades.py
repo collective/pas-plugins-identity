@@ -62,6 +62,7 @@ class TestTheStepIsRegistered:
             ("1004",),
             ("1005",),
             ("1006",),
+            ("1007",),
         } <= dests, dests
 
     def test_a_site_at_the_latest_version_is_offered_nothing(self, setup_tool):
@@ -113,7 +114,7 @@ class TestTheStepDoesTheWork:
 
         self.setup_tool.upgradeProfile(PROFILE)
 
-        assert self.setup_tool.getLastVersionForProfile(PROFILE) == ("1006",)
+        assert self.setup_tool.getLastVersionForProfile(PROFILE) == ("1007",)
 
 
 class TestV1002PutsTheFieldsOnBehaviors:

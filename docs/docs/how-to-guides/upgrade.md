@@ -15,7 +15,7 @@ Take a new release into a site that already has this add-on.
 <!-- source: backend/src/pas/plugins/identity/profiles/default/metadata.xml -->
 <!-- source: backend/src/pas/plugins/identity/upgrades/ -->
 
-`pas.plugins.identity:default` is at profile version **1004** and declares
+`pas.plugins.identity:default` is at profile version **1007** and declares
 upgrade steps, so `portal_setup` offers them to a site installed against an
 earlier release.
 
@@ -25,6 +25,9 @@ earlier release.
 | 1002 | Moves the profile's fields onto behaviors, in the FTI a site installed before them still has. |
 | 1003 | Adds the `sortable_title` index to the identity catalog and reindexes `SearchableText` in the site catalog. |
 | 1004 | Removes property map rows naming a field no login writes, and logs each one. |
+| 1005 | Adds the global roles behavior to the group type, and applies its Manager-only permission to every group already in the site. |
+| 1006 | Holds the Export Identity Providers permission to Manager alone, without acquisition. |
+| 1007 | Creates the `confirm_email_at_first_login` setting, keeping every existing setting's value, and adds the `email_confirmation_pending` column to the identity catalog. |
 
 `pas.plugins.identity.server:default` is at 1000 and declares none.
 

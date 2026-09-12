@@ -118,6 +118,19 @@ class UserProfile(Container):
     content type. Nothing in this layer puts anything inside one.
     """
 
+    #: Whether the owner is being asked which of their verified addresses
+    #: stands for them. Set by a first sign-in and cleared by the answer; see
+    #: :mod:`pas.plugins.identity.core.confirmation`. Not a schema field, so
+    #: no form offers it and no ``PATCH`` can clear it.
+    #:
+    #: Deliberately without a type annotation. Any annotation in this class
+    #: body gives the class an ``__annotations__`` dict, and
+    #: ``zope.annotation`` stores every Profile's annotations in whatever
+    #: ``__annotations__`` it finds -- so they would all share that one
+    #: non-persistent dict, and what a provider wrote for one person would be
+    #: read back for the next.
+    email_confirmation_pending = False
+
     @property
     def userid(self) -> str:
         """Return the canonical userid, which is the object's own id.

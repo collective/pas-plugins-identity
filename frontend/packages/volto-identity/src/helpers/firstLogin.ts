@@ -7,7 +7,7 @@
  * @module helpers/firstLogin
  */
 
-import { rememberReturn } from './profileGate';
+import { holdTarget, rememberReturn } from './profileGate';
 
 import type { MyProfile } from '../types';
 
@@ -53,6 +53,9 @@ export function toAppPath(url: string, apiPath = ''): string {
  * missing something the site requires, and a read-only page showing them that
  * asks for an extra click to reach the only thing they can do about it.
  *
+ * A profile held only for an address confirmation lands them on the page
+ * that asks for it instead, because the edit form has no way to give one.
+ *
  * @param profile The `@my-profile` answer, or null before it has loaded.
  * @param fallback Where the user was heading.
  * @param apiPath The backend's base URL, when it differs from the frontend's.
@@ -72,5 +75,5 @@ export function afterLogin(
   // In the demo that dead end was a user stranded on the identity provider,
   // mid-way through signing in to a different site.
   rememberReturn(fallback);
-  return `${toAppPath(profile.profile, apiPath)}/edit`;
+  return holdTarget(profile, apiPath);
 }

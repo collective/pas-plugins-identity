@@ -88,6 +88,7 @@ PROFILE_METADATA = (
     "email",
     "emails",
     "verified_emails",
+    "email_confirmation_pending",
     "home_page",
     "description",
     "location",

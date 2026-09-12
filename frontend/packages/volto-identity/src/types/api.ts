@@ -242,6 +242,16 @@ export interface MyProfile {
    * list and a missing key mean the same thing here.
    */
   emails?: ProfileEmail[];
+  /**
+   * Whether the Profile is waiting for its owner to say which of their
+   * verified addresses stands for them.
+   *
+   * Only a site that asks ever sets it, and only at a first sign-in that
+   * brought more than one verified address. It holds the Profile
+   * `incomplete`, and the edit form cannot release it: answering is
+   * `confirmEmail`. Optional for the reason `emails` is.
+   */
+  confirm_email?: boolean;
 }
 
 /**

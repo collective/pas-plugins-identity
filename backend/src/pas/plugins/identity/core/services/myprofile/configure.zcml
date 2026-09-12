@@ -26,4 +26,16 @@
       name="@my-profile"
       />
 
+  <!-- The answer to the question @my-profile reports as confirm_email: which
+       verified address stands for the caller. Authenticated-only, checked in
+       the service like the endpoint above. -->
+  <plone:service
+      method="POST"
+      factory=".confirm.ConfirmEmailPost"
+      for="Products.CMFCore.interfaces.ISiteRoot"
+      permission="zope2.View"
+      layer="pas.plugins.identity.interfaces.IBrowserLayer"
+      name="@confirm-email"
+      />
+
 </configure>

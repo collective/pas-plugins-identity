@@ -42,6 +42,7 @@ Storybook is built from this repository and published beside these pages.
 | `/login`, `/**/login` |—| `Login` | core |
 | `/login-identity` | `CALLBACK_PATH` | `Callback` | core |
 | `/first-login` | `FIRST_LOGIN_PATH` | `FirstLogin` | core |
+| `/confirm-email` | `CONFIRM_EMAIL_PATH` | `ConfirmEmail` | core |
 | `/fallback_login` | `FALLBACK_LOGIN_PATH` | Volto's own `Login` | core |
 | `/identities` | `IDENTITIES_PATH` | `Identities` | core |
 | `/controlpanel/identity-providers` | `CONTROLPANEL_PATH` | `ProvidersControlPanel` | core |
@@ -58,6 +59,11 @@ makes the callback work with no configuration. See {doc}`settings`.
 
 `/fallback_login` keeps Volto's own username-and-password form reachable whether
 or not it is shown on `/login`.
+
+`/confirm-email` is where `ProfileGate` and `/first-login` send a user whose
+profile is waiting only on an address confirmation, rather than to the edit form.
+A profile that is also missing fields goes to the edit form first. See
+{doc}`profiles-and-groups`.
 
 ## Environment variables
 

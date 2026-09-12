@@ -16,6 +16,7 @@ Profile minted for a login that then fails should not outlive it.
 from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.completeness import reconcile
+from pas.plugins.identity.core.confirmation import ask_if_needed
 from pas.plugins.identity.core.contents.profile import UserProfile
 from pas.plugins.identity.core.enrichment import enrich_profile
 from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
@@ -46,13 +47,20 @@ def _login_for(userid: str, claims: Claims) -> str:
     return safe_text(claims.get("username") or claims.get("email") or userid)
 
 
-def _handle(userid: str, claims: Claims, provider_id: str) -> None:
+def _handle(
+    userid: str, claims: Claims, provider_id: str, sign_in: bool = False
+) -> None:
     """Ensure the Profile exists and sync the claims onto it.
 
     :param userid: Canonical Plone userid.
     :param claims: Normalized claims.
     :param provider_id: Provider the claims came from.
+    :param sign_in: Whether this is a sign-in, rather than a link or a refresh.
+        Only a Profile minted by a sign-in is asked to confirm an address:
+        linking another provider, or a refresh fired outside the login path,
+        is nobody's first sign-in.
     """
+    minted = sign_in and get_profile(userid) is None
     profile = ensure_profile(userid, _login_for(userid, claims), claims)
     if profile is not None:
         # Unrestricted for the same reason the creation above is: the person
@@ -95,6 +103,10 @@ def _handle(userid: str, claims: Claims, provider_id: str) -> None:
         from pas.plugins.identity.core.controlpanel import get_provider
 
         enrich_profile(profile, claims, get_provider(provider_id))
+        # After verification, whose result it counts, and before `reconcile`,
+        # which is what holds the Profile for the answer.
+        if minted:
+            ask_if_needed(profile)
     # Last: a provider that has just supplied the missing address completes
     # the profile in the same login rather than in the next one.
     reconcile(profile)
@@ -123,7 +135,7 @@ def on_authenticated(event: ExternalIdentityAuthenticated) -> None:
 
     :param event: An ``ExternalIdentityAuthenticated`` event.
     """
-    _handle(event.userid, event.claims, event.provider)
+    _handle(event.userid, event.claims, event.provider, sign_in=True)
 
 
 #: Profile fields seeded from a member's existing property sheets.
@@ -240,6 +252,11 @@ def on_email_identity_changed(event) -> None:
     catalog = query_catalog()
     if catalog is not None:
         catalog.reindexObject(profile)
+    # The state as well as the metadata. Removing an address can leave a
+    # Profile held for an address confirmation with nothing left to choose
+    # between (see ``core.confirmation``), and nothing else writes to the
+    # Profile to reconcile it.
+    reconcile(profile)
 
 
 class DuplicateGroupId(ValueError):

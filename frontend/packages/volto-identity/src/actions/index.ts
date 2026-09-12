@@ -31,7 +31,12 @@ export {
   startProviderLogin,
 } from './login';
 export { confirmMagicLink, sendMagicLink } from './magiclink';
-export { getMyProfile, getUserProfile, setPreferredEmail } from './profile';
+export {
+  confirmEmail,
+  getMyProfile,
+  getUserProfile,
+  setPreferredEmail,
+} from './profile';
 export {
   createProvider,
   deleteProvider,

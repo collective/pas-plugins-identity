@@ -4,6 +4,7 @@ import { matchPath } from 'react-router-dom';
 import install, {
   CALLBACK_PATH,
   CLIENTS_CONTROLPANEL_PATH,
+  CONFIRM_EMAIL_PATH,
   CONSENT_PATH,
   CONTROLPANEL_PATH,
   FALLBACK_LOGIN_PATH,
@@ -35,6 +36,21 @@ describe('the routes install step', () => {
     expect(paths).toContain(CONSENT_PATH);
     expect(paths).toContain(CONTROLPANEL_PATH);
     expect(paths).toContain(USER_ACCOUNT_PATH);
+    expect(paths).toContain(CONFIRM_EMAIL_PATH);
+  });
+
+  it('keeps the address confirmation page out of the content routes', () => {
+    // Otherwise Volto asks the backend for content at `/confirm-email`, and
+    // the page renders as a 404 around the question.
+    const config = emptyConfig();
+
+    install(config);
+
+    expect(
+      config.settings.nonContentRoutes.some((route: RegExp) =>
+        route.test(CONFIRM_EMAIL_PATH),
+      ),
+    ).toBe(true);
   });
 
   describe('the user account route', () => {

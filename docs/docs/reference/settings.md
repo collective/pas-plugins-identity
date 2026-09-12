@@ -96,6 +96,7 @@ Both are required, and the form refuses a list that names no state.
 | Key | Type | Default | What it does |
 |---|---|---|---|
 | `enforce_required_profile_fields` | `Bool` | `True` | Redirect a user to their own edit form while their profile is incomplete. |
+| `confirm_email_at_first_login` | `Bool` | `False` | Hold a profile incomplete until its owner confirms which verified address stands for them, when a first sign-in left it with more than one. The Volto add-on asks. |
 | `required_profile_fields` | `Tuple` | `()` | Fields a profile must carry to count as complete. Empty means the fields the type itself marks required. |
 | `gate_exempt_paths` | `Tuple` | `()` | Extra view names the gate never redirects, matched on the last path segment. |
 

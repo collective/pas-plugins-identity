@@ -306,6 +306,29 @@ A field named here need not be required on the type: `@types/UserProfile` report
 the site's required fields alongside the type's, so the edit form asks for
 everything the flow insists on.
 
+### Confirming an address
+
+<!-- source: backend/src/pas/plugins/identity/core/confirmation.py -->
+
+With `confirm_email_at_first_login` on, a profile can be incomplete with every
+field filled: its owner has not yet said which of their verified addresses
+stands for them.
+
+| A profile waits on a confirmation while | Otherwise |
+|---|---|
+| `confirm_email_at_first_login` is on | Turning it off releases a held profile at its owner's next sign-in, or the next write to it. |
+| the sign-in that created it marked it | Only a first sign-in made while the setting was on marks a profile. Linking another provider never does. |
+| it holds more than one verified address | Removing an address releases it straight away. |
+
+Only addresses this site holds verified count. An address from a provider whose
+`trust_email_verification` is off is not one to choose between.
+
+Only `POST @confirm-email` answers. A later sign-in does not, and neither does a
+save of the edit form, even one that reorders `emails`.
+
+The question comes after sign-in, so it has no say in which existing account a
+provider's addresses link to. The provider's address preference decides that.
+
 ### What is never gated
 
 The checks run in this order, cheapest first, and the first match lets the
@@ -321,7 +344,8 @@ request through.
 | 6 | The user holds `Manager` or `Site Administrator` | A required field nobody can supply must not lock the site. |
 | 7 | The gate is switched off | `enforce_required_profile_fields`. |
 | 8 | The user has no incomplete profile | Nothing to hold them for. |
-| 9 | The profile is already in the traversed path | Its edit form, its widgets, its save. Redirecting the target is a loop. |
+| 9 | The profile is waiting only on an address confirmation | The edit form cannot give one. The Volto add-on asks at `/confirm-email`. |
+| 10 | The profile is already in the traversed path | Its edit form, its widgets, its save. Redirecting the target is a loop. |
 
 Exempt path segments:
 
@@ -350,7 +374,9 @@ The client is told nothing meanwhile; the request is paused, exactly as it is
 while the user signs in. With `prompt=none`, where the specification forbids
 interacting with the user, the client is told `interaction_required` instead.
 
-Turning `enforce_required_profile_fields` off turns this off with it.
+Turning `enforce_required_profile_fields` off turns this off with it. A profile
+waiting only on an address confirmation is not paused either, for the reason in
+row 9 above.
 
 ## Claims refresh
 

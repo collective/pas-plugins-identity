@@ -34,6 +34,7 @@ Present in every installation.
 | POST | `@magic-link` | anonymous | Send a single-use sign-in link. Answers identically whether or not the address is known. |
 | POST | `@magic-link-confirm` | anonymous | Redeem a link. Burns the token. |
 | GET | `@my-profile` | authenticated | The caller's own profile. Also available as a `plone.restapi` expander, on any content. |
+| POST | `@confirm-email` | authenticated | Answer `confirm_email` with `{"email": "<address>"}`: which verified address stands for the caller. Answers with `@my-profile` as it is afterwards. |
 | GET | `@identities` | authenticated | The caller's own sign-in methods. |
 | POST | `@identities` | authenticated | Link a new sign-in method. |
 | DELETE | `@identities/<provider>/<subject>` | authenticated | Unlink one. Refused for the last remaining method. |
@@ -60,11 +61,25 @@ membership of the group being asked about.
 
 | Endpoint | Answers |
 |---|---|
-| `@my-profile` | Where the caller's `UserProfile` is, what workflow state it is in, and the addresses it carries. Each `emails` entry has `verified` and `preferred`, the second marking the one `email` resolves to—so a page can show it without repeating the rule that picks it. The frontend uses this to send a new user to their profile once and never ask again. |
+| `@my-profile` | Where the caller's `UserProfile` is, what workflow state it is in, and the addresses it carries. Each `emails` entry has `verified` and `preferred`, the second marking the one `email` resolves to—so a page can show it without repeating the rule that picks it. The frontend uses this to send a new user to their profile once and never ask again. `confirm_email` is `true` while the profile waits on an address confirmation, which the edit form cannot give. |
 | `@group-members` | The people in one group, named rather than only listed as userids, plus the nesting around it and a search within it. `@groups/<id>` already carries member userids through PlonePAS; what it cannot do is name each person or search inside the group. |
 | `@user-account` | Which providers a person has configured—named, dated, and flagged when the provider has since been disabled or removed—and when they last authenticated. One user at a time: the audit log is bounded per user, so folding this into the `@users` listing would read one bounded log per row. |
 
 `@user-account` allows a caller asking about themselves without `Manage users`.
+
+### `@confirm-email` refusals
+
+<!-- source: backend/src/pas/plugins/identity/core/services/myprofile/confirm.py -->
+
+Checked in this order.
+
+| Status | `error.type` | When |
+|---|---|---|
+| 401 | `Not authenticated` | The caller is anonymous. |
+| 404 | `No profile` | The caller has no profile. |
+| 400 | `Missing parameters` | The body names no `email`. |
+| 409 | `Nothing to confirm` | The profile is not waiting on a confirmation. Reordering addresses is a `PATCH` on the profile. |
+| 400 | `Not a verified address` | The address is not one of the profile's verified addresses. |
 
 ### `my-profile` as a component
 

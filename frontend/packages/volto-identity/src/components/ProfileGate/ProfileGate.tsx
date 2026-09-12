@@ -48,9 +48,11 @@ import { addMessage } from '@plone/volto/actions';
 
 import { getMyProfile } from '../../actions';
 import {
+  CONFIRM_EMAIL_PATH,
   expandedProfile,
   gateTarget,
   handedOverReturn,
+  onProfile,
   rememberReturn,
   takeReturn,
 } from '../../helpers/profileGate';
@@ -70,6 +72,16 @@ const messages = defineMessages({
     id: 'Please fill in {fields} before you can continue.',
     defaultMessage: 'Please fill in {fields} before you can continue.',
   },
+  confirmTitle: {
+    id: 'Confirm your email address',
+    defaultMessage: 'Confirm your email address',
+  },
+  confirmBody: {
+    id: 'profile-gate-confirm-email',
+    defaultMessage:
+      'You have more than one verified email address. Choose the one this ' +
+      'site should use for you before you continue.',
+  },
 });
 
 interface ProfileGateProps {
@@ -83,7 +95,7 @@ const ProfileGate: React.FC<ProfileGateProps> = ({ apiPath = '' }) => {
   const location = useLocation();
   const intl = useIntl();
   const asked = useRef(false);
-  const explained = useRef(false);
+  const explained = useRef<string | null>(null);
 
   const token = useSelector((state: any) => state.userSession?.token);
   const fetched = useSelector((state: any) => state.myProfile);
@@ -174,18 +186,35 @@ const ProfileGate: React.FC<ProfileGateProps> = ({ apiPath = '' }) => {
     const target = gateTarget(profile.data, location.pathname, apiPath);
 
     if (target && target !== location.pathname) {
-      rememberReturn(`${location.pathname}${location.search}`);
-      if (!explained.current) {
-        explained.current = true;
+      // Not from anywhere the hold itself sends people. Saving the form lands
+      // on the profile's view, and when a confirmation is still waiting that
+      // is where the user is sent on from -- remembering it would replace
+      // where they were going with their own profile.
+      if (
+        !onProfile(profile.data, location.pathname, apiPath) &&
+        location.pathname !== CONFIRM_EMAIL_PATH
+      ) {
+        rememberReturn(`${location.pathname}${location.search}`);
+      }
+      // Once per destination rather than once. The form and the confirmation
+      // page want different things, and somebody sent on from one to the
+      // other needs telling what the second one wants.
+      if (explained.current !== target) {
+        explained.current = target;
         const missing = profile.data?.missing ?? [];
+        const confirming = target === CONFIRM_EMAIL_PATH;
         dispatch(
           addMessage(
-            intl.formatMessage(messages.title),
-            missing.length
-              ? intl.formatMessage(messages.bodyWithFields, {
-                  fields: missing.join(', '),
-                })
-              : intl.formatMessage(messages.body),
+            intl.formatMessage(
+              confirming ? messages.confirmTitle : messages.title,
+            ),
+            confirming
+              ? intl.formatMessage(messages.confirmBody)
+              : missing.length
+                ? intl.formatMessage(messages.bodyWithFields, {
+                    fields: missing.join(', '),
+                  })
+                : intl.formatMessage(messages.body),
             'warning',
           ),
         );

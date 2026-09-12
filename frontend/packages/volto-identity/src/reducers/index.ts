@@ -34,7 +34,12 @@ import {
 import { keyRotate, signingKeys } from './keys';
 import { identityCallback, loginProviders, providerLogin } from './login';
 import { magicLinkConfirm, magicLinkSend } from './magiclink';
-import { myProfile, preferredEmail, userProfile } from './profile';
+import {
+  emailConfirmation,
+  myProfile,
+  preferredEmail,
+  userProfile,
+} from './profile';
 import {
   configuredProviders,
   providerCreate,
@@ -67,7 +72,12 @@ export {
 export { keyRotate, signingKeys } from './keys';
 export { identityCallback, loginProviders, providerLogin } from './login';
 export { magicLinkConfirm, magicLinkSend } from './magiclink';
-export { myProfile, preferredEmail, userProfile } from './profile';
+export {
+  emailConfirmation,
+  myProfile,
+  preferredEmail,
+  userProfile,
+} from './profile';
 export {
   configuredProviders,
   providerCreate,
@@ -103,6 +113,7 @@ const reducers = {
   providerTest,
   myProfile,
   preferredEmail,
+  emailConfirmation,
   userProfile,
   oauthClients,
   clientCreate,

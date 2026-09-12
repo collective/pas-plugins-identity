@@ -1,6 +1,23 @@
 import { describe, expect, it } from 'vitest';
 
-import { getMyProfile, getUserProfile, setPreferredEmail } from './profile';
+import {
+  confirmEmail,
+  getMyProfile,
+  getUserProfile,
+  setPreferredEmail,
+} from './profile';
+
+describe('confirmEmail', () => {
+  it('posts the one address to the confirmation endpoint', () => {
+    // One address, not the list: the backend does the reordering, and
+    // refuses an address that is not one of the caller's verified ones.
+    expect(confirmEmail('alice@example.org').request).toEqual({
+      op: 'post',
+      path: '/@confirm-email',
+      data: { email: 'alice@example.org' },
+    });
+  });
+});
 
 describe('getUserProfile', () => {
   it("reads Plone's own user endpoint", () => {

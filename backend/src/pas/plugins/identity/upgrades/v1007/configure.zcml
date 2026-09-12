@@ -1,0 +1,20 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    >
+
+  <!-- A setting and a catalog column for asking a person with several
+       verified addresses which one is theirs. See the module docstring. -->
+  <genericsetup:upgradeSteps
+      profile="pas.plugins.identity:default"
+      source="1006"
+      destination="1007"
+      >
+    <genericsetup:upgradeStep
+        title="Add the address confirmation setting"
+        description="Creates the confirm_email_at_first_login registry record, keeping every existing setting's value, and adds the email_confirmation_pending column to the identity catalog."
+        handler=".add_email_confirmation"
+        />
+  </genericsetup:upgradeSteps>
+
+</configure>

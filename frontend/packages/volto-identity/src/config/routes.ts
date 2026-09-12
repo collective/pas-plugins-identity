@@ -3,6 +3,7 @@ import appsSVG from '@plone/volto/icons/apps.svg';
 import worldSVG from '@plone/volto/icons/world.svg';
 import Applications from '../components/Applications/Applications';
 import Callback from '../components/Callback/Callback';
+import ConfirmEmail from '../components/ConfirmEmail/ConfirmEmail';
 import Consent from '../components/Consent/Consent';
 import FirstLogin from '../components/FirstLogin/FirstLogin';
 import ClientsControlPanel from '../components/ControlPanel/ClientsControlPanel';
@@ -11,6 +12,16 @@ import UserAccount from '../components/ControlPanel/UserAccount';
 import Identities from '../components/Identities/Identities';
 import Login from '../components/Login/Login';
 import VoltoLogin from '@plone/volto/components/theme/Login/Login';
+import { CONFIRM_EMAIL_PATH } from '../helpers/profileGate';
+
+/**
+ * Where a signed-in user is asked which verified address stands for them.
+ *
+ * Defined beside the gate that sends people there, and re-exported here with
+ * the other paths: `helpers/profileGate` cannot import this module, which
+ * imports the components that import it.
+ */
+export { CONFIRM_EMAIL_PATH };
 
 /** The frontend route the provider redirects back to. */
 export const CALLBACK_PATH = '/login-identity';
@@ -125,6 +136,7 @@ export default function install(config: ConfigType) {
     ...(config.settings.nonContentRoutes ?? []),
     new RegExp(`^${CALLBACK_PATH}$`),
     new RegExp(`^${FIRST_LOGIN_PATH}$`),
+    new RegExp(`^${CONFIRM_EMAIL_PATH}$`),
     new RegExp(`^${IDENTITIES_PATH}$`),
     new RegExp(`^${CONSENT_PATH}$`),
     new RegExp(`^${APPLICATIONS_PATH}$`),
@@ -137,6 +149,7 @@ export default function install(config: ConfigType) {
     ...(config.addonRoutes ?? []),
     { path: CALLBACK_PATH, exact: true, component: Callback },
     { path: FIRST_LOGIN_PATH, exact: true, component: FirstLogin },
+    { path: CONFIRM_EMAIL_PATH, exact: true, component: ConfirmEmail },
     { path: FALLBACK_LOGIN_PATH, exact: true, component: VoltoLogin },
     { path: '/login', exact: true, component: Login },
     { path: '/**/login', exact: true, component: Login },
