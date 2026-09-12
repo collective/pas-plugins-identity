@@ -1,0 +1,1 @@
+Gave the Plone site driver's login button the Plone colours. Its class is `identity-provider--plone-identity`, and the stylesheet knew only `identity-provider--plone`, which the password button keeps. @ericof

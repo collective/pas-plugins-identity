@@ -46,7 +46,10 @@
     }
   }
 
-  &.identity-provider--plone {
+  /* `plone` is the local password form; `plone-identity` is the driver for
+     another Plone site, whose button wears the same colours. */
+  &.identity-provider--plone,
+  &.identity-provider--plone-identity {
     background: var(--identity-provider-plone-bg);
     color: var(--identity-provider-plone-color);
 
@@ -55,7 +58,10 @@
     }
   }
 
-  &.identity-provider--oidc-generic {
+  /* `keycloak` is built on `oidc-generic`, and a Keycloak provider wore these
+     colours before it had a driver of its own. */
+  &.identity-provider--oidc-generic,
+  &.identity-provider--keycloak {
     background: var(--identity-provider-oidc-bg);
     color: var(--identity-provider-oidc-color);
 

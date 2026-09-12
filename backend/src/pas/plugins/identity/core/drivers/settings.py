@@ -218,6 +218,8 @@ class IOIDCSettings(IOAuth2Settings):
     )
     # Ahead of the credentials: everything else about this provider is read
     # from what the issuer discovers, so it is the first thing to fill in.
+    # plone.autoform applies the directive to a subclass that redeclares the
+    # field as well, so a schema changing only the wording does not restate it.
     directives.order_before(issuer="client_id")
 
     group_claim = schema.TextLine(
@@ -358,9 +360,24 @@ class IPloneIdentitySettings(IOIDCSettings):
         ),
         required=True,
     )
-    # Redeclaring a field gives it a fresh creation order, so the position has
-    # to be restated as well as the wording.
-    directives.order_before(issuer="client_id")
+
+
+class IKeycloakSettings(IOIDCSettings):
+    """A Keycloak realm.
+
+    Identical to any other OIDC provider except for what an operator has to be
+    told about the issuer: a Keycloak server hosts many realms, each its own
+    issuer, and the server root serves no discovery document at all.
+    """
+
+    issuer = schema.TextLine(
+        title=_("Issuer URL"),
+        description=_(
+            "The realm's URL, https://<server>/realms/<realm> -- not the "
+            "server root, which serves no discovery document."
+        ),
+        required=True,
+    )
 
 
 class IEmailSettings(IDriverSettings):

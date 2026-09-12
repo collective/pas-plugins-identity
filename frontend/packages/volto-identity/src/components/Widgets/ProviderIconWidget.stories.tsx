@@ -28,3 +28,9 @@ export const Empty: Story = { args: { value: '' } };
 
 /** While something else is in flight. */
 export const Disabled: Story = { args: { isDisabled: true } };
+
+/** Nothing uploaded, on a driver that ships an icon: the button draws the
+ * driver's until one is. */
+export const DriverDefault: Story = {
+  args: { value: '', default_icon: SVG },
+};

@@ -12,6 +12,7 @@ from pas.plugins.identity.core.controlpanel import PROVIDERS_PREFIX
 from pas.plugins.identity.core.controlpanel import SECRET_SENTINEL
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.controlpanel.interfaces import IProviderRecords
+from pas.plugins.identity.core.drivers import all_drivers
 from pas.plugins.identity.core.interfaces import FlowError
 from pas.plugins.identity.core.services.providers import EXPORT_PERMISSION
 from pas.plugins.identity.core.services.providers import MANAGE_PERMISSION
@@ -116,8 +117,19 @@ class TestDriverMetadata(ControlPanelCase):
             "google",
             "oidc-generic",
             "plone-identity",
+            "keycloak",
             "email",
         }
+
+    def test_every_driver_carries_its_default_icon(self):
+        """So the provider form can show what a provider is drawn with
+        until one is uploaded."""
+        result = self.call(DriversGet)
+        drivers = all_drivers()
+
+        for item in result["items"]:
+            assert item["default_icon"].startswith("<svg")
+            assert item["default_icon"] == drivers[item["id"]].default_icon
 
     def test_carries_an_ordinary_json_schema(self):
         """The shape `plone.restapi` emits everywhere else, so a client needs
@@ -160,13 +172,18 @@ class TestDriverMetadata(ControlPanelCase):
             "subject",
         ]
 
-    def test_the_issuer_comes_first_for_a_discovered_provider(self):
+    @pytest.mark.parametrize(
+        "driver_id", ["oidc-generic", "plone-identity", "keycloak"]
+    )
+    def test_the_issuer_comes_first_for_a_discovered_provider(self, driver_id):
         """`order_before`, honoured by `plone.autoform` -- which is what
-        replaced spacing an `order` key by tens."""
+        replaced spacing an `order` key by tens. Declared once, on
+        `IOIDCSettings`, and still honoured for the two schemas that redeclare
+        the field to change its wording."""
         result = self.call(DriversGet)
-        oidc = next(i for i in result["items"] if i["id"] == "oidc-generic")
+        driver = next(i for i in result["items"] if i["id"] == driver_id)
 
-        assert oidc["schema"]["fieldsets"][0]["fields"][0] == "issuer"
+        assert driver["schema"]["fieldsets"][0]["fields"][0] == "issuer"
 
     def _fieldsets(self, driver_id: str) -> dict:
         """Return one driver's served fieldsets, keyed by id.
@@ -355,7 +372,7 @@ class TestTheSchemaShowsWhatWillBeStored(ControlPanelCase):
         """
         from pas.plugins.identity.core.controlpanel import _with_driver_defaults
 
-        for driver_id in ("google", "github", "oidc-generic", "email"):
+        for driver_id in ("google", "github", "oidc-generic", "keycloak", "email"):
             stored = _with_driver_defaults(driver_id, {})
             properties = self._properties(driver_id)
             for name, value in stored.items():

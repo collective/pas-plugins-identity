@@ -10,6 +10,7 @@ class GenericOIDCDriver(BaseDriver):
 
     driver_id = "oidc-generic"
     title = "OpenID Connect"
+    icon_resource = "pas.plugins.identity.core.drivers:icons/oidc-generic.svg"
     settings_schema = IOIDCSettings
     default_scope = ("openid", "email", "profile")
     subject_keys = ("sub",)

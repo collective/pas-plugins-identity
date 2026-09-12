@@ -130,6 +130,28 @@ describe('providerSchema', () => {
     );
   });
 
+  it("puts the chosen driver's default icon on the icon field", () => {
+    // Volto hands every key of a field's schema to its widget as a prop, which
+    // is how the widget learns what the button draws while nothing is
+    // uploaded.
+    const drivers = [{ ...GITHUB, default_icon: '<svg/>' }, OIDC];
+    const schema = providerSchema(SERVED, drivers, 'github', false, intl);
+
+    expect(schema.properties.icon).toEqual({
+      ...SERVED.properties.icon,
+      default_icon: '<svg/>',
+    });
+  });
+
+  it('writes the default icon to a copy rather than the served schema', () => {
+    // The served schema is shared by every render of the form, and the next
+    // driver chosen may have no icon at all.
+    const drivers = [{ ...GITHUB, default_icon: '<svg/>' }, OIDC];
+    providerSchema(SERVED, drivers, 'github', false, intl);
+
+    expect(SERVED.properties.icon).not.toHaveProperty('default_icon');
+  });
+
   it('keeps the backend fieldsets and their order', () => {
     const schema = providerSchema(SERVED, DRIVERS, 'github', false, intl);
 

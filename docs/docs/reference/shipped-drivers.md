@@ -1,8 +1,8 @@
 ---
 myst:
   html_meta:
-    "description": "The five drivers that ship with pas.plugins.identity, their defaults, and the settings each one offers."
-    "property=og:description": "The five drivers that ship with pas.plugins.identity, their defaults, and the settings each one offers."
+    "description": "The six drivers that ship with pas.plugins.identity, their defaults, and the settings each one offers."
+    "property=og:description": "The six drivers that ship with pas.plugins.identity, their defaults, and the settings each one offers."
     "property=og:title": "Shipped drivers"
 ---
 
@@ -13,12 +13,13 @@ myst:
 <!-- source: backend/src/pas/plugins/identity/core/drivers/ -->
 
 A driver is registered as a named ZCA utility providing `IDriver`, and the
-utility name is the driver id. Five ship with the package.
+utility name is the driver id. Six ship with the package.
 
 | Driver id | Title | Provider |
 |---|---|---|
 | `oidc-generic` | OpenID Connect | Any conforming OpenID Connect provider. |
 | `plone-identity` | Plone site | Another Plone site running the `[server]` layer. Built on `oidc-generic`. |
+| `keycloak` | Keycloak | A Keycloak realm. Built on `oidc-generic`. |
 | `google` | Google | Google, through discovery at an issuer the driver fixes. |
 | `github` | GitHub | GitHub OAuth2. Not an OpenID Connect provider. |
 | `email` | Email | No external provider: this site emails a single-use signed token. |
@@ -29,16 +30,16 @@ Every column is a class attribute on the driver, and every one of them is only a
 **default**. What a given deployment trusts a given provider with is a fact about
 the deployment, so the operator can override each one per provider.
 
-| | `oidc-generic` | `plone-identity` | `google` | `github` | `email` |
-|---|---|---|---|---|---|
-| Settings schema | `IOIDCSettings` | `IPloneIdentitySettings` | `IOAuth2Settings` | `IGitHubSettings` | `IEmailSettings` |
-| Endpoints from | discovery, at an issuer you type | discovery, at an issuer you type | discovery, at the issuer the driver declares | the four the driver declares | none |
-| Default scope | `openid email profile` | `openid email profile address` | `openid email profile` | `read:user user:email` | — |
-| Subject read from | `sub` | `sub` | `sub` | `id`, then `node_id` | `email` |
-| Default userid source | `uuid` | `username` | `uuid` | `username` | `uuid` |
-| Trusts `email_verified` by default | no | no | **yes** | **yes** | — |
-| Default group claim | `groups` | `groups` | none | none | none |
-| Can be linked from a form | yes | yes | yes | yes | **no** |
+| | `oidc-generic` | `plone-identity` | `keycloak` | `google` | `github` | `email` |
+|---|---|---|---|---|---|---|
+| Settings schema | `IOIDCSettings` | `IPloneIdentitySettings` | `IKeycloakSettings` | `IOAuth2Settings` | `IGitHubSettings` | `IEmailSettings` |
+| Endpoints from | discovery, at an issuer you type | discovery, at an issuer you type | discovery, at an issuer you type | discovery, at the issuer the driver declares | the four the driver declares | none |
+| Default scope | `openid email profile` | `openid email profile address` | `openid email profile` | `openid email profile` | `read:user user:email` | — |
+| Subject read from | `sub` | `sub` | `sub` | `sub` | `id`, then `node_id` | `email` |
+| Default userid source | `uuid` | `username` | `username` | `uuid` | `username` | `uuid` |
+| Trusts `email_verified` by default | no | no | **yes** | **yes** | **yes** | — |
+| Default group claim | `groups` | `groups` | `groups` | none | none | none |
+| Can be linked from a form | yes | yes | yes | yes | yes | **no** |
 
 `email` is the only driver a user cannot start a link against from a form: its
 subject is an address the user would type, and a free-text box there is a box for
@@ -58,6 +59,7 @@ This is what decides which fields a provider's form shows. A driver on
 | `IOIDCSettings` | `IOAuth2Settings` | `issuer`, `group_claim`, `allowed_groups`, `sync_groups`, `picture_over_http` |
 | `IGitHubSettings` | `IOAuth2Settings` | `address_preference` |
 | `IPloneIdentitySettings` | `IOIDCSettings` | nothing but a different `issuer` description |
+| `IKeycloakSettings` | `IOIDCSettings` | nothing but a different `issuer` description |
 | `IEmailSettings` | `IDriverSettings` | `token_ttl`, `rate_limit_per_hour` |
 
 Two consequences worth reading off that table:
@@ -79,7 +81,7 @@ claim names rather than any one provider's.
 
 | Driver | Map |
 |---|---|
-| `oidc-generic`, `google` | `fullname` → `fullname` |
+| `oidc-generic`, `keycloak`, `google` | `fullname` → `fullname` |
 | `github` | that, plus `bio` → `description`, `blog` → `home_page`, `location` → `location` |
 | `plone-identity` | that first row, plus `website` → `home_page`, `description` → `description`, `address.formatted` → `location` |
 | `email` | empty |
@@ -90,6 +92,32 @@ address is appended to the profile's own list, and a portrait is fetched from
 the `picture_url` claim when `sync_portraits` is on.
 
 No driver maps `username`. Providers publish it; a Profile has no such field.
+
+## Default icons
+
+<!-- source: backend/src/pas/plugins/identity/core/drivers/icons/ -->
+<!-- source: backend/src/pas/plugins/identity/core/drivers/base.py -->
+
+Every shipped driver has a login-button icon. A provider with no icon of its own
+is drawn with its driver's, and an icon uploaded on the provider replaces it.
+
+| Driver | File | Copied from | Licence |
+|---|---|---|---|
+| `github` | `github.svg` | `volto-authomatic`, `github.svg` | MIT |
+| `google` | `google.svg` | `volto-authomatic`, `google.svg` | MIT |
+| `oidc-generic` | `oidc-generic.svg` | `volto-authomatic`, `openid.svg` | MIT |
+| `plone-identity` | `plone-identity.svg` | Volto, `plone.svg` | MIT |
+| `keycloak` | `keycloak.svg` | Volto, `finger-print.svg` | MIT |
+| `email` | `email.svg` | Volto, `email.svg` | MIT |
+
+The default is resolved when a provider is drawn, in `@login-providers` and
+`@identities`, and never stored. The provider's record, the control panel form
+and an export carry only an uploaded icon. `@identity-drivers` serves each
+driver's default, and the form's **Icon** field shows it until one is uploaded.
+
+A default passes through the same sanitizer as an upload. A third-party driver
+names its own with `icon_resource`, as `package:path`. One that does not resolve,
+or is not an SVG document, is logged and drawn as no icon.
 
 ## Driver notes
 
@@ -122,6 +150,16 @@ No driver maps `username`. Providers publish it; a Profile has no such field.
     advance to want: the `address` scope, a map for every claim the peer actually
     releases, and the peer's `preferred_username` as the local userid, so one
     person is recognisable by the same name across the federation.
+
+`keycloak`
+:   Like a peer, a realm is a conforming OIDC provider and gets no special path
+    through the flow. The driver carries the realm's `preferred_username` as
+    the local userid, and trusts its `email_verified`, since a realm is usually
+    run by the organization running the site. Its scope and map are the
+    generic ones: under `openid email profile` a default realm releases a name,
+    a username and an address, and nothing a Profile's other three fields could
+    hold. Its issuer is the realm URL, `https://<server>/realms/<realm>`; the
+    server root serves no discovery document.
 
 `email`
 :   See below.

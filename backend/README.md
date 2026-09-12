@@ -27,7 +27,7 @@ One canonical Plone user id maps to many external identities — GitHub, Google,
 
 - **Identity linking.** One account, many providers. The identity key is `(provider, subject)`, and an identity already linked to somebody is never silently re-attached: a collision is a hard error, not a merge.
 - **Providers configured through the web.** A control panel with a form generated from each driver's published schema, so a driver describes its own settings and the frontend composes rather than describes them. Client secrets are write-only through every API surface, GenericSetup export included.
-- **Five shipped drivers.** `github`, `google`, `oidc-generic`, `plone-identity` (another Plone site running this package's server layer), and `email` for magic-link sign-in. Writing another means subclassing `BaseDriver` and registering a utility.
+- **Six shipped drivers.** `github`, `google`, `oidc-generic`, `plone-identity` (another Plone site running this package's server layer), `keycloak`, and `email` for magic-link sign-in. Writing another means subclassing `BaseDriver` and registering a utility.
 - **Magic-link sign-in.** Single-use signed tokens, at most fifteen minutes, rate limited per address *and* per IP, answering identically for known and unknown addresses.
 - **An audit log.** Successes and refusals, per user or site-wide, bounded and purged on write. IP address and user agent are off by default, and the sink is a utility a deployment can replace.
 - **A documented event contract**, which is what the audit log, the profile machinery and your own integrations all consume. Nothing reaches into anything else.

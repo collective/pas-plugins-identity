@@ -11,8 +11,9 @@ myst:
 # Any OpenID Connect provider
 
 The `oidc-generic` driver works with any provider that publishes a discovery
-document. Okta, Auth0, Authentik, Zitadel, Keycloak, ORCID, your organization's
-own server.
+document. Okta, Auth0, Authentik, Zitadel, ORCID, your organization's own
+server. Keycloak works with it too, and has a driver of its own: see
+{doc}`keycloak`.
 
 ```{note}
 The Plone side of this recipe was verified against the demo stack on 2026-09-05.
@@ -116,6 +117,7 @@ If any step fails, {doc}`../troubleshoot` is organized by exactly these symptoms
 
 ## Related
 
-- {doc}`keycloak`, {doc}`microsoft-entra`—the same driver, with provider-specific notes
+- {doc}`microsoft-entra`—the same driver, with provider-specific notes
+- {doc}`keycloak`—a driver built on this one
 - {doc}`/reference/claims`—what this package does with what arrives
 - {doc}`/concepts/email-verification`—the whole trust rule

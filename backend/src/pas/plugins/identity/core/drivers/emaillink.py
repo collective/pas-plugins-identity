@@ -21,6 +21,7 @@ class EmailDriver(BaseDriver):
 
     driver_id = "email"
     title = "Email"
+    icon_resource = "pas.plugins.identity.core.drivers:icons/email.svg"
     settings_schema = IEmailSettings
     subject_keys = ("email",)
 

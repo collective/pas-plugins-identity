@@ -42,7 +42,7 @@ Present in every installation.
 | GET | `@portrait/<userid>` | anonymous | A user's picture: the Profile's when it has one, the member portrait otherwise. The `[server]` layer publishes this URL as the OIDC `picture` claim. |
 | GET | `@group-members/<group id>` | `Manage users`, or membership of the group | Members of a group. |
 | GET | `@user-account/<userid>` | `Manage users` | One user's sign-in methods, for administrators. |
-| GET | `@identity-drivers` | `Manage portal` | Drivers available to configure. |
+| GET | `@identity-drivers` | `Manage portal` | Drivers available to configure, each with its settings schema and default icon. |
 | GET | `@identity-providers` | `Manage portal` | Configured providers, or one with `/<id>`. Secrets are masked. A bare `GET` also carries the form schema, and `can_export`: whether the caller may take an export. |
 | POST | `@identity-providers` | `Manage portal` | Add a provider. |
 | POST | `@identity-providers/<id>/test-connection` | `Manage portal` | Fetch the provider's discovery document, cache cleared first, and report what came back. |

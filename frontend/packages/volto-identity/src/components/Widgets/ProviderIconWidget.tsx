@@ -33,6 +33,10 @@ const messages = defineMessages({
     defaultMessage: 'Replace existing file',
   },
   remove: { id: 'Remove', defaultMessage: 'Remove' },
+  byDefault: {
+    id: 'provider-icon-default',
+    defaultMessage: "The driver's icon, used until one is uploaded.",
+  },
   hint: {
     id: 'provider-icon-hint',
     defaultMessage:
@@ -73,11 +77,16 @@ interface ProviderIconWidgetProps {
   value?: string;
   onChange: (id: string, value: string) => void;
   isDisabled?: boolean;
+  /**
+   * The chosen driver's icon, which the login button draws while nothing
+   * is uploaded. `providerSchema` puts it on the field.
+   */
+  default_icon?: string;
   [key: string]: unknown;
 }
 
 const ProviderIconWidget: React.FC<ProviderIconWidgetProps> = (props) => {
-  const { id, value, onChange, isDisabled } = props;
+  const { id, value, onChange, isDisabled, default_icon: defaultIcon } = props;
   const intl = useIntl();
   const input = React.useRef<HTMLInputElement>(null);
   const source = iconSource(value);
@@ -109,6 +118,18 @@ const ProviderIconWidget: React.FC<ProviderIconWidgetProps> = (props) => {
           // render, so what is stored is already what is safe to draw.
           dangerouslySetInnerHTML={{ __html: source }}
         />
+      ) : null}
+      {!source && defaultIcon ? (
+        <>
+          <div
+            className="provider-icon-widget__preview provider-icon-widget__preview--default"
+            data-testid="provider-icon-default"
+            // Served by `@identity-drivers`, sanitized on the backend the way
+            // an upload is, and what the login button draws right now.
+            dangerouslySetInnerHTML={{ __html: defaultIcon }}
+          />
+          <p className="help">{intl.formatMessage(messages.byDefault)}</p>
+        </>
       ) : null}
 
       <input

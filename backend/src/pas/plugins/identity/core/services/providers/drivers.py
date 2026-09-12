@@ -90,6 +90,9 @@ class DriversGet(ControlPanelService):
                 {
                     "id": driver.driver_id,
                     "title": driver.title,
+                    # What a provider of this driver is drawn with until
+                    # it has an icon of its own, so the form can show it.
+                    "default_icon": driver.default_icon,
                     "schema": _schema_with_defaults(driver, self.context, self.request),
                     "supports_manual_link": driver.supports_manual_link,
                     "default_propertymap": dict(driver.default_propertymap),

@@ -312,7 +312,7 @@ def keycloak(keycloak_service: str) -> dict:
     """
     return {
         "id": "keycloak",
-        "driver": "oidc-generic",
+        "driver": "keycloak",
         "title": "Keycloak",
         "enabled": True,
         "config": {

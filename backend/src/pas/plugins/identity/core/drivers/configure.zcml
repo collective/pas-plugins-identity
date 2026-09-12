@@ -29,6 +29,12 @@
       />
 
   <utility
+      factory=".keycloak.KeycloakDriver"
+      provides="pas.plugins.identity.core.interfaces.IDriver"
+      name="keycloak"
+      />
+
+  <utility
       factory=".emaillink.EmailDriver"
       provides="pas.plugins.identity.core.interfaces.IDriver"
       name="email"

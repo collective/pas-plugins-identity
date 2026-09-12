@@ -1,0 +1,1 @@
+Rewrote the Keycloak recipe around the new `keycloak` driver, with its claims re-read from a Keycloak 26.0 token, and added the driver to the shipped drivers and provider form references. @ericof
