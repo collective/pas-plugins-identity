@@ -226,6 +226,27 @@ Eight registry records: parent path, id, title and content type, for profiles
 and again for groups. The group records default to the profile container's, so a
 site filing principals together sets none of them. See {doc}`settings`.
 
+### The container type
+
+<!-- source: backend/src/pas/plugins/identity/core/contents/principals.py -->
+<!-- source: backend/src/pas/plugins/identity/profiles/default/types/PrincipalsContainer.xml -->
+
+Unless a type record names another, the package creates a `PrincipalsContainer`.
+
+| | `PrincipalsContainer` |
+|---|---|
+| Title | Principals folder |
+| Allowed types | `UserProfile`, `UserGroup` |
+| Who may add one | Manager and Site Administrator, through `pas.plugins.identity.principalscontainer.add` |
+| Order of its items | none: the `unordered` ordering policy |
+| Behaviors | `plone.basic`, `plone.excludefromnavigation`, `volto.blocks` |
+| When the package creates it | excluded from navigation, with a title block as its only block |
+
+When the parent does not allow the type a record names, or that type can't
+hold content, creating the container fails with `ContainerNotFound`. The
+message names the record, the type and the parent. The package does not
+choose another type.
+
 The catalog is **not** scoped to the container. It indexes a `UserProfile`
 wherever the object actually is, so reorganizing content is not a
 deauthentication.

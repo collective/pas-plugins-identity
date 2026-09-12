@@ -12,6 +12,7 @@ from pas.plugins.identity import PACKAGE_NAME
 from pas.plugins.identity.core.catalog import CATALOG_ID
 from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
+from pas.plugins.identity.core.container import CONTAINER_PORTAL_TYPE
 from pas.plugins.identity.core.controlpanel.interfaces import IProfileSettings
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.pas.profile import PLUGIN_ID as PROFILE_PLUGIN_ID
@@ -218,9 +219,11 @@ class TestContentInstalled:
         """Brains carry the whole property sheet."""
         assert set(self.catalog.schema()) >= declared_catalog()[1]
 
-    @pytest.mark.parametrize("portal_type", [PROFILE_PORTAL_TYPE, GROUP_PORTAL_TYPE])
+    @pytest.mark.parametrize(
+        "portal_type", [PROFILE_PORTAL_TYPE, GROUP_PORTAL_TYPE, CONTAINER_PORTAL_TYPE]
+    )
     def test_type_registered(self, portal_type: str):
-        """Both FTIs are installed."""
+        """Every FTI is installed."""
         types = api.portal.get_tool("portal_types")
         assert portal_type in types.objectIds()
 
@@ -277,7 +280,8 @@ class TestProfileSettings:
             ("profile_container_parent", ""),
             ("profile_container_id", "identity-profiles"),
             ("profile_container_title", "Identity Profiles"),
-            ("profile_container_type", "Folder"),
+            ("profile_container_type", "PrincipalsContainer"),
+            ("group_container_type", "PrincipalsContainer"),
             ("profile_enumeration_states", ("incomplete", "complete")),
             ("group_enumeration_states", ("active",)),
         ],

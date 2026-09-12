@@ -1,0 +1,1 @@
+Changed the default of `profile_container_type` and `group_container_type` from `Folder` to `PrincipalsContainer`, and removed the fallback to `Document` or `Folder` when a parent refuses the configured type. Creating the container now fails with an error naming the record, the type and the parent. @ericof

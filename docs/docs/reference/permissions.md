@@ -10,7 +10,7 @@ myst:
 
 # Permissions
 
-The nine permissions the package declares, and who holds them after a default
+The ten permissions the package declares, and who holds them after a default
 install.
 
 <!-- source: backend/src/pas/plugins/identity/permissions.zcml -->
@@ -20,6 +20,7 @@ install.
 |---|---|---|
 | `pas.plugins.identity.userprofile.add` | Add User Profile | **nobody** |
 | `pas.plugins.identity.usergroup.add` | Add User Group | **nobody** |
+| `pas.plugins.identity.principalscontainer.add` | Add Principals Container | Manager, Site Administrator |
 | `pas.plugins.identity.content.edit` | Edit Profile | Manager, Site Administrator |
 | `pas.plugins.identity.content.editgroups` | Edit Profile Group Membership | Manager, Site Administrator |
 | `pas.plugins.identity.content.editlogin` | Edit Profile Login | **Manager** |
@@ -39,6 +40,10 @@ names for them, where the package grants the permission to Manager and Site
 Administrator **locally**. Granting it site-wide as well would make every folder
 in the site a place a `UserProfile` can be created, which is the thing being
 prevented.
+
+`principalscontainer.add` is granted site-wide, and that leaves the lock
+intact. A Principals folder created anywhere but the configured path
+receives neither of the two add permissions.
 
 ## Why `acquire="False"` matters even with no roles listed
 

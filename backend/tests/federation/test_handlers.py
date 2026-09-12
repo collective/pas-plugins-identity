@@ -22,7 +22,6 @@ from identitydemo.setuphandlers import guard
 from identitydemo.setuphandlers.idp import install_idp
 from identitydemo.setuphandlers.rp import install_rp
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
-from pas.plugins.identity.core.container import TYPE_RECORD as CONTAINER_TYPE_RECORD
 from pas.plugins.identity.core.controlpanel import CALLBACK_URL_RECORD
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.interfaces import ICredentialStorage
@@ -171,11 +170,6 @@ class TestTheDemoUserIsContent:
         self.setup_tool = portal.portal_setup
         setRoles(portal, TEST_USER_ID, ["Manager"])
         demo_registry("idp")
-        # The demo keeps its Profiles in a Document, which is a container
-        # only because the demo runs plone.volto. This site does not, so the
-        # container type is the one detail of that registry this test has to
-        # disagree with -- what is under test is where the *user* lands.
-        api.portal.set_registry_record(CONTAINER_TYPE_RECORD, "Folder")
         fti = portal.portal_types[PROFILE_PORTAL_TYPE]
         fti.behaviors = (*fti.behaviors, self.BEHAVIOR)
         install_idp(self.setup_tool)

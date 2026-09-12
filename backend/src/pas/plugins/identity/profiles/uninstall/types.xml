@@ -8,4 +8,7 @@
   <object name="UserGroup"
           remove="True"
   />
+  <object name="PrincipalsContainer"
+          remove="True"
+  />
 </object>

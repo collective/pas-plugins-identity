@@ -33,14 +33,15 @@ Both records of a pair must be set. A type with nowhere to go would fail at the
 moment somebody adds a user, which is the worst time to discover a configuration
 gap.
 
-Edit them in {menuselection}`Site Setup --> Identity`.
+None of the four is on the settings form, and a save through the control panel
+never writes them. Installing the package sets all four, and a subscriber sets
+them again whenever a container record changes: the paths from the container
+records, the types to this package's own. So moving the container in the
+control panel needs no reinstall.
 
-```{note}
-Installing the package sets all four and keeps them pointed at its own types and
-container. It derives them from the container settings through a subscriber, so
-moving the container in the control panel does not require a reinstall. See
-{doc}`settings`.
-```
+A site substituting its own types sets these records in its own GenericSetup
+profile. A later change to the container records points the types back at this
+package's own. See {doc}`settings`.
 
 ## The marker contracts
 

@@ -20,6 +20,7 @@ from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.container import ADD_PERMISSIONS
 from pas.plugins.identity.core.container import ADD_ROLES
+from pas.plugins.identity.core.container import CONTAINER_PORTAL_TYPE
 from pas.plugins.identity.core.container import get_container
 from pas.plugins.identity.core.container import GROUP
 from pas.plugins.identity.core.container import GROUP_ID_RECORD
@@ -263,3 +264,46 @@ class TestAContainerThisPackageDidNotCreate:
         )
 
         assert may_add(other, GROUP) is False
+
+
+class TestAddingAPrincipalsContainer:
+    """The folder principals are filed in has an add permission of its own.
+
+    Granted site-wide, unlike the two above: where such a folder goes is an
+    administrator's choice, and the principals inside it are still locked by
+    their own add permissions, which a folder receives only at the configured
+    path.
+    """
+
+    PERMISSION = "pas.plugins.identity: Add Principals Container"
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+
+    def offered(self, role: str) -> set[str]:
+        """Return the types a user holding only ``role`` may add at the root.
+
+        :param role: The role to adopt.
+        :returns: Portal type ids.
+        """
+        with api.env.adopt_roles([role]):
+            return {fti.getId() for fti in self.portal.allowedContentTypes()}
+
+    @pytest.mark.parametrize("role", ["Manager", "Site Administrator"])
+    def test_an_administrator_may_add_one(self, role: str):
+        assert CONTAINER_PORTAL_TYPE in self.offered(role)
+
+    def test_an_author_may_not(self):
+        """A Contributor may add a ``Folder`` right here, which is what makes
+        the refusal about this type rather than about the role."""
+        offered = self.offered("Contributor")
+
+        assert "Folder" in offered
+        assert CONTAINER_PORTAL_TYPE not in offered
+
+    def test_the_root_grants_it_and_acquires_nothing(self):
+        roles = Permission(self.PERMISSION, (), self.portal).getRoles(default=None)
+
+        assert isinstance(roles, tuple)
+        assert set(roles) == {"Manager", "Site Administrator"}

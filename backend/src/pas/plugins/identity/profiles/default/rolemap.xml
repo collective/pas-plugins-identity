@@ -23,6 +23,18 @@
                 name="pas.plugins.identity: Add User Group"
     />
 
+    <!-- Unlike the two above, granted site-wide. A folder of principals
+         may be created wherever an administrator chooses, and the
+         principals inside it are still locked by their own add
+         permissions, which a folder receives only at the configured
+         path. -->
+    <permission acquire="False"
+                name="pas.plugins.identity: Add Principals Container"
+    >
+      <role name="Manager" />
+      <role name="Site Administrator" />
+    </permission>
+
     <!-- The rest are the field permissions declared on the schema in
          ``pas.plugins.identity.core.contents.profile``. Every one of them is also managed by
          ``user_profile_workflow``, which is what decides who may read

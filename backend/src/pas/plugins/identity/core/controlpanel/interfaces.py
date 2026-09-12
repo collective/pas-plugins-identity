@@ -8,6 +8,7 @@ GenericSetup profile imports it -- see
 a record the site knows about everywhere.
 """
 
+from copy import copy
 from pas.plugins.identity import _
 from pas.plugins.identity.core.utils.svg import is_svg_upload
 from pas.plugins.identity.core.vocabularies.userfields import USER_FIELDS_VOCABULARY
@@ -56,10 +57,15 @@ class IIdentitySettings(Interface):
             "posts them to @identity-callback. Either way it must match "
             "the redirect URI registered with every provider exactly."
         ),
-        required=False,
+        required=True,
         default="/login-identity",
     )
 
+    # The four records below are what core reads, and none of them is a
+    # setting: a subscriber derives them from the container settings. They
+    # are not read-only *here*, because ``registerInterface`` creates no record
+    # for a read-only field. :class:`IIdentityPanelSchema` is where the panel
+    # is told to leave them alone.
     user_content_type = schema.TextLine(
         title=_("User content type"),
         description=_(
@@ -159,7 +165,9 @@ class IIdentitySettings(Interface):
             "that does not arrive is a missing picture, while metadata that "
             "does not arrive is a login that cannot start."
         ),
-        required=False,
+        required=True,
+        # ``required`` alone lets zero through: it only refuses ``None``.
+        min=1,
         default=DEFAULT_DISCOVERY_TIMEOUT,
     )
 
@@ -218,17 +226,6 @@ class IIdentitySettings(Interface):
         "default",
         label=_("Login"),
         fields=["callback_url", "discovery_timeout"],
-    )
-
-    model.fieldset(
-        "content",
-        label=_("User and group content"),
-        fields=[
-            "user_content_type",
-            "user_container_path",
-            "group_content_type",
-            "group_container_path",
-        ],
     )
 
     model.fieldset(
@@ -465,10 +462,12 @@ class IProfileSettings(Interface):
     profile_container_type = schema.TextLine(
         title=_("Profile container type"),
         description=_(
-            "Portal type used when this add-on creates the profile container."
+            "Portal type used when this add-on creates the profile container. "
+            "The parent folder must allow it; when it does not, creating the "
+            "container fails rather than choosing another type."
         ),
         required=False,
-        default="Folder",
+        default="PrincipalsContainer",
     )
 
     group_container_parent = schema.TextLine(
@@ -504,9 +503,13 @@ class IProfileSettings(Interface):
 
     group_container_type = schema.TextLine(
         title=_("Group container type"),
-        description=_("Portal type used when this add-on creates the group container."),
+        description=_(
+            "Portal type used when this add-on creates the group container. "
+            "The parent folder must allow it; when it does not, creating the "
+            "container fails rather than choosing another type."
+        ),
         required=False,
-        default="Folder",
+        default="PrincipalsContainer",
     )
 
     profile_enumeration_states = schema.Tuple(
@@ -516,7 +519,10 @@ class IProfileSettings(Interface):
             "enumeration and to the properties plugin."
         ),
         value_type=schema.TextLine(),
-        required=False,
+        required=True,
+        # ``required`` alone lets an empty tuple through: it only refuses
+        # ``None``. No state counting would hide every user.
+        min_length=1,
         default=("incomplete", "complete"),
     )
 
@@ -569,7 +575,10 @@ class IProfileSettings(Interface):
             "enumeration and grant membership."
         ),
         value_type=schema.TextLine(),
-        required=False,
+        required=True,
+        # Same as ``profile_enumeration_states``: no state would hide
+        # every group and every membership it grants.
+        min_length=1,
         default=("active",),
     )
 
@@ -613,6 +622,20 @@ class IProfileSettings(Interface):
     )
 
 
+def _read_only(field: schema.TextLine) -> schema.TextLine:
+    """Return a read-only copy of a settings field, for the panel schema.
+
+    A copy, so the field the registry records are created from stays
+    writable.
+
+    :param field: A field of :class:`IIdentitySettings`.
+    :returns: The same field, declared read-only.
+    """
+    read_only = copy(field)
+    read_only.readonly = True
+    return read_only
+
+
 class IIdentityPanelSchema(IProfileSettings, IIdentitySettings):
     """Both settings schemas as one, so the control panel can serve them.
 
@@ -627,9 +650,10 @@ class IIdentityPanelSchema(IProfileSettings, IIdentitySettings):
     ``registry.forInterface`` resolves all twenty-six against records that
     already exist. Nothing new is written to the registry by this.
 
-    It declares no fields and no fieldsets of its own. The two bases are the
-    descriptions, and a field added to either is on the panel without being
-    named twice.
+    It declares no fieldsets of its own, and no fields but read-only copies of
+    the four derived records -- see the comment above them. The two bases are
+    the descriptions, and a field added to either is on the panel without
+    being named twice.
 
     **The base order is the tab order, reversed.** ``plone.autoform`` merges
     tagged values along the reversed resolution order, so the *last* base
@@ -638,6 +662,21 @@ class IIdentityPanelSchema(IProfileSettings, IIdentitySettings):
     operator lands on. Reordering these two silently reorders the form, so the
     order is asserted rather than left to be rediscovered.
     """
+
+    # The four records core reads, again, and read-only. The control panel
+    # serves every schema field in its data, and the frontend's form submits
+    # that data back whole, so a field that was merely off the form was still
+    # written by every save -- after the container settings it is derived
+    # from, and moving the container left these naming the folder it had moved
+    # away from. A read-only field is on no form and skipped by a panel save,
+    # for every client. It is read-only on this schema and not on
+    # :class:`IIdentitySettings`, because the registry creates no record for a
+    # read-only field; the subscriber and a GenericSetup profile still write
+    # the records.
+    user_content_type = _read_only(IIdentitySettings["user_content_type"])
+    user_container_path = _read_only(IIdentitySettings["user_container_path"])
+    group_content_type = _read_only(IIdentitySettings["group_content_type"])
+    group_container_path = _read_only(IIdentitySettings["group_container_path"])
 
 
 class IIdentityControlpanel(IControlpanel):

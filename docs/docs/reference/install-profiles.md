@@ -33,7 +33,7 @@ One profile installs everything the core layer needs:
 - the **Identity providers** control panel
 - the `identity` PAS plugin, for extraction, authentication and credentials reset
 - the `identity_profile` PAS plugin, at the top of `IPropertiesPlugin`
-- the `UserProfile` and `UserGroup` content types
+- the `UserProfile`, `UserGroup` and `PrincipalsContainer` content types
 - `user_profile_workflow` and the group workflow
 - the user catalog the two types are filed in
 - the registry records in {doc}`settings`, pointed at this package's own types
@@ -87,7 +87,7 @@ every `UserProfile` object and its data exactly where it is.
 
 <!-- source: backend/src/pas/plugins/identity/upgrades/configure.zcml -->
 
-`pas.plugins.identity:default` is at version 1004. `upgrades/` holds one package
+`pas.plugins.identity:default` is at version 1006. `upgrades/` holds one package
 per version, each registering the steps that take a site to it, and
 `portal_setup` offers them to a site installed against an earlier release.
 `pas.plugins.identity.server:default` is at 1000 and declares none.

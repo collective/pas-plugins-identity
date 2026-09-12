@@ -7,7 +7,11 @@ later refactor from quietly hard-coding ``/identity-profiles`` again.
 
 from pas.plugins.identity.core import container
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
+from pas.plugins.identity.core.controlpanel.interfaces import IProfileSettings
 from plone import api
+from plone.base.interfaces.constrains import ENABLED
+from plone.base.interfaces.constrains import ISelectableConstrainTypes
+from plone.folder.unordered import UnorderedOrdering
 
 import pytest
 
@@ -53,7 +57,7 @@ class TestDefaults:
             "parent": "",
             "id": "identity-profiles",
             "title": "Identity Profiles",
-            "type": "Folder",
+            "type": "PrincipalsContainer",
         }
 
     def test_parent_defaults_to_the_site_root(self):
@@ -87,6 +91,7 @@ class TestConfigured:
         """Both are used at creation time."""
         api.portal.set_registry_record(container.ID_RECORD, "people")
         api.portal.set_registry_record(container.TITLE_RECORD, "Our People")
+        api.portal.set_registry_record(container.TYPE_RECORD, "Folder")
 
         created = container.get_container(create=True)
 
@@ -160,37 +165,120 @@ class TestCatalogIsNotScopedToTheContainer:
         assert self.catalog.unrestrictedSearchResults(userid="alice")
 
 
-class TestContainerTypeFallback:
-    """The container type is a registry record, and its shipped default is
-    ``Folder`` -- which a site built from the ``volto`` distribution does not
-    allow at the portal root at all. Installing the layer there failed with a
-    bare "Disallowed subobject type", naming neither the record to change nor
-    the fact that a record exists. Volto is the frontend this package ships,
-    so that is not an edge case to leave documented."""
+class TestThePrincipalsContainer:
+    """What this package creates when no record names another type."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+
+    @property
+    def folder(self):
+        """The container the harness created, as a first login would.
+
+        :returns: The Profile container.
+        """
+        return self.portal["identity-profiles"]
+
+    def test_it_is_the_shipped_type(self):
+        assert self.folder.portal_type == container.CONTAINER_PORTAL_TYPE
+
+    @pytest.mark.parametrize("name", ["profile_container_type", "group_container_type"])
+    def test_both_type_fields_default_to_it(self, name: str):
+        """The field default, not only the value the profile imports: it is
+        what ``registerInterface`` resets a record to when the stored value no
+        longer validates."""
+        assert IProfileSettings[name].default == container.CONTAINER_PORTAL_TYPE
+
+    def test_it_keeps_no_order(self):
+        """A position per item, rewritten on every add, is a cost that grows
+        with the user base and means nothing for a list of people."""
+        assert isinstance(self.folder.getOrdering(), UnorderedOrdering)
+
+    def test_its_page_starts_with_a_title_block(self):
+        """Volto draws a page with blocks from its blocks alone, so a
+        container created with none would be a blank page."""
+        items = self.folder.blocks_layout["items"]
+
+        assert len(items) == 1
+        assert self.folder.blocks[items[0]] == {"@type": "title"}
+
+
+class TestAParentThatRefusesTheType:
+    """There is no fallback. A parent that will not take the configured type
+    is a folder somebody restricted on purpose, and creating whatever it
+    happens to allow instead filed principals in a type nobody chose."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+        self.intranet = api.content.create(
+            container=portal, type="Folder", id="intranet", title="Intranet"
+        )
+        constraints = ISelectableConstrainTypes(self.intranet)
+        constraints.setConstrainTypesMode(ENABLED)
+        constraints.setLocallyAllowedTypes(["Folder", "Document"])
+        api.portal.set_registry_record(container.PARENT_RECORD, "intranet")
+        api.portal.set_registry_record(container.ID_RECORD, "people")
+
+    def test_creating_the_container_is_refused(self):
+        with pytest.raises(container.ContainerNotFound):
+            container.get_container(create=True)
+
+    @pytest.mark.parametrize(
+        "fragment",
+        [
+            pytest.param("profile_container_type", id="the-record"),
+            pytest.param("'PrincipalsContainer'", id="the-type"),
+            pytest.param("/plone/intranet", id="the-parent"),
+        ],
+    )
+    def test_the_refusal_names(self, fragment: str):
+        """The three things an operator needs in order to fix it."""
+        with pytest.raises(container.ContainerNotFound) as refused:
+            container.get_container(create=True)
+
+        assert fragment in str(refused.value)
+
+    def test_nothing_else_is_created_instead(self):
+        """Which is what the fallback did, and ``Folder`` is allowed here."""
+        with pytest.raises(container.ContainerNotFound):
+            container.get_container(create=True)
+
+        assert "people" not in self.intranet.objectIds()
+
+    def test_a_type_the_parent_allows_is_used(self):
+        """The refusal is about the type, not about the parent."""
+        api.portal.set_registry_record(container.TYPE_RECORD, "Folder")
+
+        created = container.get_container(create=True)
+
+        assert created.portal_type == "Folder"
+        assert same(created.__parent__, self.intranet)
+
+
+class TestTheFolderishFilter:
+    """A type that cannot hold content is refused even where it is allowed."""
 
     @pytest.fixture(autouse=True)
     def _setup(self, portal):
         self.portal = portal
 
-    def test_the_configured_type_is_used_when_it_is_allowed(self):
-        """The ordinary case, and the only one on a site whose structure
-        somebody has thought about."""
-        assert (
-            container._creatable_type(self.portal, "Folder", container.TYPE_RECORD)
-            == "Folder"
-        )
+    def test_a_type_that_cannot_contain_anything_is_refused(self):
+        """Which is what a plain ``Document`` is on a site without
+        ``plone.volto``. Creating one produced a container at the configured
+        path that could hold no Profile and could not be granted the add
+        permission -- reported as an invalid *permission*, for a mistake
+        about types."""
+        allowed = [fti.getId() for fti in self.portal.allowedContentTypes()]
+        assert "Document" in allowed
+        api.portal.set_registry_record(container.ID_RECORD, "people")
+        api.portal.set_registry_record(container.TYPE_RECORD, "Document")
 
-    def test_a_disallowed_type_falls_back_to_one_the_parent_takes(self):
-        """``Document`` is first in the fallback order because it is the
-        folderish type a Volto site has -- and it is folderish only where
-        ``plone.volto`` says so. This suite runs without it, so the fallback
-        that survives the folderish filter here is ``Folder``, which is the
-        filter doing its job rather than the order being wrong."""
-        chosen = container._creatable_type(
-            self.portal, "NoSuchType", container.TYPE_RECORD
-        )
+        with pytest.raises(container.ContainerNotFound, match="'Document'"):
+            container.get_container(create=True)
 
-        assert chosen == "Folder"
+        assert "people" not in self.portal.objectIds()
 
     @pytest.mark.parametrize(
         "klass",
@@ -213,30 +301,3 @@ class TestContainerTypeFallback:
             fti.klass = klass
 
         assert container._holds_content(fti) is False
-
-    def test_a_type_that_cannot_contain_anything_is_not_a_fallback(self):
-        """Which is what a plain ``Document`` is on a site without
-        ``plone.volto``. Creating one produced a container at the configured
-        path that could hold no Profile and could not be granted the add
-        permission -- reported as an invalid *permission*, for a mistake
-        about types."""
-        allowed = [fti.getId() for fti in self.portal.allowedContentTypes()]
-
-        assert "Document" in allowed
-        assert not container._holds_content(self.portal.portal_types["Document"])
-
-    def test_nothing_addable_is_an_error_that_names_the_record(self):
-        """A site where neither fallback is allowed is misconfigured, and the
-        message has to say which knob to turn."""
-
-        class NoTypesAllowed:
-            @staticmethod
-            def allowedContentTypes():
-                return []
-
-            @staticmethod
-            def getPhysicalPath():
-                return ("", "Plone")
-
-        with pytest.raises(container.ContainerNotFound, match="container_type"):
-            container._creatable_type(NoTypesAllowed(), "Folder", container.TYPE_RECORD)
