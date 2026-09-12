@@ -1,1 +1,0 @@
-Moved the `IdentitySettings` type, and the augmentation that adds `identity` to Volto's settings, from `config/settings` to `types/settings`, beside the package's other types. It is exported from `types` like them. @ericof

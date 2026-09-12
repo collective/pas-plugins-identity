@@ -8,6 +8,38 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0-alpha.7 (2026-09-12)
+
+
+### Breaking
+
+- Moved the add-on's frontend settings under `config.settings.identity`. `config.settings.identityShowPloneLogin` is now `config.settings.identity.showPloneLogin`, and the old key is no longer read; `RAZZLE_IDENTITY_SHOW_PLONE_LOGIN` still overrides it. The avatar palette is configurable as `config.settings.identity.avatarColors`, and defaults to the shipped palette. A palette a project supplies is not checked for contrast. @ericof [#89](https://github.com/collective/pas-plugins-identity/issues/89)
+
+
+### Feature
+
+- Added the `/confirm-email` route, where a person whose profile is waiting on an address confirmation chooses which of their verified addresses this site uses for them. `ProfileGate` and the first-login route send them there instead of to the edit form, which cannot answer the question; a profile missing fields as well still goes to the form first. @ericof [#80](https://github.com/collective/pas-plugins-identity/issues/80)
+- Gave the providers control panel's settings, add and edit forms their own routes, so each can be linked to and reloaded, and the browser's Back button returns to the provider list. @ericof [#81](https://github.com/collective/pas-plugins-identity/issues/81)
+- Added export actions to the providers control panel, one per provider and one for every provider, each downloading the registry document under the filename it belongs under in a profile. The panel says beside them that the file carries client secrets in the clear, and offers them only to someone allowed to export. @ericof [#83](https://github.com/collective/pas-plugins-identity/issues/83)
+- Gave the providers control panel's list a Login screen column, and let its rows be dragged into the order the login page offers them. A dropped row moves at once, and goes back if the new order cannot be saved. @ericof [#84](https://github.com/collective/pas-plugins-identity/issues/84)
+- The provider form's Icon field shows the driver's default icon until one is uploaded. @ericof [#86](https://github.com/collective/pas-plugins-identity/issues/86)
+- Drew the login button of a provider on the new `keycloak` driver in the OpenID Connect colours. @ericof [#87](https://github.com/collective/pas-plugins-identity/issues/87)
+- Added a Sign-in block, offered inside a grid, and kept out of a page's block chooser until a project lifts its restriction. It shows a visitor the login card `/login` shows, and greets somebody signed in with a welcome message and a summary: a link to their Profile, their preferred address, what they signed in with and when they last did, each line switchable in the sidebar. The login page's store and routing moved into a `useLogin` hook the two share, and its card into `LoginCard`, which `LoginPanel` puts on a page of its own. @ericof [#99](https://github.com/collective/pas-plugins-identity/issues/99)
+- Made the login page's redirect to a site's only provider something a site can turn off, with `config.settings.identity.redirectToSoleProvider` or, at run time, `RAZZLE_IDENTITY_REDIRECT_TO_SOLE_PROVIDER`. It stays on by default. Even when on, it no longer fires for a visitor who arrived already signed in, which looped against a provider that still had a session, or for `/login?choose=1`, which the callback page now links to when a sign-in fails. @ericof [#100](https://github.com/collective/pas-plugins-identity/issues/100)
+
+
+### Bugfix
+
+- Gave the Plone site driver's login button the Plone colours. Its class is `identity-provider--plone-identity`, and the stylesheet knew only `identity-provider--plone`, which the password button keeps. @ericof [#86](https://github.com/collective/pas-plugins-identity/issues/86)
+- Darkened the first colour of the avatar palette from `#0083be` to `#007db6`. At 4.21:1 against the white initials it was the one shipped colour below WCAG AA; `#007db6` is the lightest colour of its hue that clears 4.5:1. @ericof [#89](https://github.com/collective/pas-plugins-identity/issues/89)
+- Linked the groups listed under "Groups in this group" and "Part of" on a group's page to their own pages, the way members are linked to their Profiles. A group the site has no page for is shown as text. @ericof [#90](https://github.com/collective/pas-plugins-identity/issues/90)
+
+
+### Internal
+
+- Moved the Storybook decorators `withPage` and `withUserMenu` from `src/storybook` to `src/stories`, beside the fixtures, so Storybook's support code lives in one directory. @ericof [#88](https://github.com/collective/pas-plugins-identity/issues/88)
+- Moved the `IdentitySettings` type, and the augmentation that adds `identity` to Volto's settings, from `config/settings` to `types/settings`, beside the package's other types. It is exported from `types` like them. @ericof [#98](https://github.com/collective/pas-plugins-identity/issues/98)
+
 ## 1.0.0-alpha.6 (2026-09-10)
 
 

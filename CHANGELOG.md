@@ -7,6 +7,101 @@
 -->
 
 <!-- towncrier release notes start -->
+## 1.0.0a7 (2026-09-12)
+
+### Backend
+
+
+#### Breaking
+
+- Made the login callback URL, the provider discovery timeout, and both enumeration-state lists required in the identity settings. The control panel refuses an empty callback URL, a timeout below one second, and a list that names no state. @ericof [#82](https://github.com/collective/pas-plugins-identity/issues/82)
+- Changed the default of `profile_container_type` and `group_container_type` from `Folder` to `PrincipalsContainer`, and removed the fallback to `Document` or `Folder` when a parent refuses the configured type. Creating the container now fails with an error naming the record, the type and the parent. @ericof [#85](https://github.com/collective/pas-plugins-identity/issues/85)
+
+
+#### Feature
+
+- Published `store` and `sync_portrait` in `pas.plugins.identity.api.portrait`, so a package that seeds its users' pictures no longer imports them from `core.portraits`. @ericof [#78](https://github.com/collective/pas-plugins-identity/issues/78)
+- Added an address preference to GitHub providers: an ordered list of `@domain` entries and `*` that decides which of an account's addresses becomes the `email` claim and the order a new profile lists them in. Linking by email now tries every address a provider verified, in that order, instead of the first one only; when two of them belong to different accounts, the higher-ranked one wins and the conflict is logged. A site can also ask a person whose first sign-in brought more than one verified address which of them stands for them: with the new `confirm_email_at_first_login` setting on, their profile stays incomplete until they answer through the new `POST @confirm-email` endpoint, and `@my-profile` reports the question as `confirm_email`. @ericof [#80](https://github.com/collective/pas-plugins-identity/issues/80)
+- Added `GET @identity-providers/@export`, which returns every provider as one registry document, and put both provider exports behind a permission of their own, `pas.plugins.identity: Export Identity Providers`, granted to Manager alone. The provider listing says whether the caller holds it, and an upgrade step applies the permission's floor on existing sites. @ericof [#83](https://github.com/collective/pas-plugins-identity/issues/83)
+- Added `PATCH @identity-providers`, which stores every provider in the order given, in one request, and took the Order field off the provider form. The field stays in the registry, so profiles still import and export it. @ericof [#84](https://github.com/collective/pas-plugins-identity/issues/84)
+- Added the `PrincipalsContainer` content type, titled Principals folder, which is what the package now creates to file profiles and groups in. It keeps no order among its items, carries blocks and starts with a title block, and has an add permission of its own, `pas.plugins.identity: Add Principals Container`, granted to Manager and Site Administrator. @ericof [#85](https://github.com/collective/pas-plugins-identity/issues/85)
+- Gave every shipped driver a default login-button icon, copied from volto-authomatic and Volto. A provider with no icon of its own is drawn with its driver's in `@login-providers` and `@identities`, an uploaded icon still wins, and `@identity-drivers` serves each driver's default. The default is never stored, so an export carries only uploaded icons. @ericof [#86](https://github.com/collective/pas-plugins-identity/issues/86)
+- Added a `keycloak` driver for Keycloak realms, built on the generic OpenID Connect driver. It takes the realm URL as its issuer, and a new provider on it starts with the realm's `preferred_username` as the userid source and its email verification trusted. Like every shipped driver, it has a default login-button icon. @ericof [#87](https://github.com/collective/pas-plugins-identity/issues/87)
+- Added an `initial` profile for developers. A site created with `make backend-create-site` now has an example front page, and GitHub and Google sign-in that work on `localhost` without registering an application first. @ericof 
+
+
+#### Bugfix
+
+- Declared `@portrait` `zope.Public`, so a site that takes `View` away from `Anonymous` still serves the pictures it publishes as the OIDC `picture` claim. A relying party fetching one got `401`. Reaching the endpoint on such a site exposed a second failure: `plone.restapi` decides whether a portrait is Plone's placeholder by traversing to the placeholder with a permission check, which answers nothing there, so every user without a Profile picture got `500`. The fall-through to a member portrait is now served by this package, and answers `404` for a user with no picture of their own. @ericof [#68](https://github.com/collective/pas-plugins-identity/issues/68)
+- Held provider icons written by a GenericSetup import to the same rule as the control panel. `plone.registry` stores fields without their constraints, so the SVG check declared on `IProviderRecords.icon` only ever ran on the control panel form. An import accepted any bytes — `b''` among them — and the next read of the providers failed `@login-providers` for every provider on the site; an SVG carrying a script was stored as it came, sanitized only when read, so the registry and every later export held the unsafe version. The record is now checked as it is written: a document that is not an SVG fails the import and names the provider, and an SVG is stored sanitized, exactly as the control panel stores it. @ericof [#79](https://github.com/collective/pas-plugins-identity/issues/79)
+- Fixed moving a principal container through the identity settings form. Saving the form wrote the old user and group container paths back over the ones just derived from the new location, so users and groups went on being created in the old folder. The four derived records are now read-only in the settings schema: the form no longer shows them, and a control panel save never writes them. @ericof [#82](https://github.com/collective/pas-plugins-identity/issues/82)
+- Added `group_url` to the entries in `@group-members`' `nested_groups` and `parent_groups`: the group's own page, or `null` for a group the site holds no entry for. Each entry's `@id` is that group's `@group-members` listing, which is not a page, so a group page had nothing to link another group to. @ericof [#90](https://github.com/collective/pas-plugins-identity/issues/90)
+
+
+
+### Frontend
+
+
+#### Breaking
+
+- Moved the add-on's frontend settings under `config.settings.identity`. `config.settings.identityShowPloneLogin` is now `config.settings.identity.showPloneLogin`, and the old key is no longer read; `RAZZLE_IDENTITY_SHOW_PLONE_LOGIN` still overrides it. The avatar palette is configurable as `config.settings.identity.avatarColors`, and defaults to the shipped palette. A palette a project supplies is not checked for contrast. @ericof [#89](https://github.com/collective/pas-plugins-identity/issues/89)
+
+
+#### Feature
+
+- Added the `/confirm-email` route, where a person whose profile is waiting on an address confirmation chooses which of their verified addresses this site uses for them. `ProfileGate` and the first-login route send them there instead of to the edit form, which cannot answer the question; a profile missing fields as well still goes to the form first. @ericof [#80](https://github.com/collective/pas-plugins-identity/issues/80)
+- Gave the providers control panel's settings, add and edit forms their own routes, so each can be linked to and reloaded, and the browser's Back button returns to the provider list. @ericof [#81](https://github.com/collective/pas-plugins-identity/issues/81)
+- Added export actions to the providers control panel, one per provider and one for every provider, each downloading the registry document under the filename it belongs under in a profile. The panel says beside them that the file carries client secrets in the clear, and offers them only to someone allowed to export. @ericof [#83](https://github.com/collective/pas-plugins-identity/issues/83)
+- Gave the providers control panel's list a Login screen column, and let its rows be dragged into the order the login page offers them. A dropped row moves at once, and goes back if the new order cannot be saved. @ericof [#84](https://github.com/collective/pas-plugins-identity/issues/84)
+- The provider form's Icon field shows the driver's default icon until one is uploaded. @ericof [#86](https://github.com/collective/pas-plugins-identity/issues/86)
+- Drew the login button of a provider on the new `keycloak` driver in the OpenID Connect colours. @ericof [#87](https://github.com/collective/pas-plugins-identity/issues/87)
+- Added a Sign-in block, offered inside a grid, and kept out of a page's block chooser until a project lifts its restriction. It shows a visitor the login card `/login` shows, and greets somebody signed in with a welcome message and a summary: a link to their Profile, their preferred address, what they signed in with and when they last did, each line switchable in the sidebar. The login page's store and routing moved into a `useLogin` hook the two share, and its card into `LoginCard`, which `LoginPanel` puts on a page of its own. @ericof [#99](https://github.com/collective/pas-plugins-identity/issues/99)
+- Made the login page's redirect to a site's only provider something a site can turn off, with `config.settings.identity.redirectToSoleProvider` or, at run time, `RAZZLE_IDENTITY_REDIRECT_TO_SOLE_PROVIDER`. It stays on by default. Even when on, it no longer fires for a visitor who arrived already signed in, which looped against a provider that still had a session, or for `/login?choose=1`, which the callback page now links to when a sign-in fails. @ericof [#100](https://github.com/collective/pas-plugins-identity/issues/100)
+
+
+#### Bugfix
+
+- Gave the Plone site driver's login button the Plone colours. Its class is `identity-provider--plone-identity`, and the stylesheet knew only `identity-provider--plone`, which the password button keeps. @ericof [#86](https://github.com/collective/pas-plugins-identity/issues/86)
+- Darkened the first colour of the avatar palette from `#0083be` to `#007db6`. At 4.21:1 against the white initials it was the one shipped colour below WCAG AA; `#007db6` is the lightest colour of its hue that clears 4.5:1. @ericof [#89](https://github.com/collective/pas-plugins-identity/issues/89)
+- Linked the groups listed under "Groups in this group" and "Part of" on a group's page to their own pages, the way members are linked to their Profiles. A group the site has no page for is shown as text. @ericof [#90](https://github.com/collective/pas-plugins-identity/issues/90)
+
+
+#### Internal
+
+- Moved the Storybook decorators `withPage` and `withUserMenu` from `src/storybook` to `src/stories`, beside the fixtures, so Storybook's support code lives in one directory. @ericof [#88](https://github.com/collective/pas-plugins-identity/issues/88)
+- Moved the `IdentitySettings` type, and the augmentation that adds `identity` to Volto's settings, from `config/settings` to `types/settings`, beside the package's other types. It is exported from `types` like them. @ericof [#98](https://github.com/collective/pas-plugins-identity/issues/98)
+
+
+
+### Project
+
+
+#### Internal
+
+- Pointed the frontend settings reference at `types/settings`, where `IdentitySettings` is now declared. @ericof [#98](https://github.com/collective/pas-plugins-identity/issues/98)
+- Documented in `AGENTS.md` that the client secrets in the backend's `initial` profile are committed on purpose, as a developer's quick start. @ericof 
+
+
+#### Documentation
+
+- Documented `@portrait/<userid>` as an anonymous endpoint in the endpoints reference, and corrected its note on registrations: only the authenticated services are registered with `zope2.View`, while the anonymous ones are `zope.Public`. @ericof [#68](https://github.com/collective/pas-plugins-identity/issues/68)
+- Documented `api.portrait.store` and `api.portrait.sync_portrait` in the Python API reference, including that `sync_portrait` reports a refusal only in the log. @ericof [#78](https://github.com/collective/pas-plugins-identity/issues/78)
+- Stated in the security guarantees and the threat model that a GenericSetup import is held to the same provider icon rule as the control panel: a document that is not an SVG is refused, and an SVG is stored sanitized. @ericof [#79](https://github.com/collective/pas-plugins-identity/issues/79)
+- Documented the GitHub provider's address preference, and how linking by email handles several verified addresses, in the GitHub, linking and troubleshooting guides and in the provider form, settings and shipped drivers references. Documented confirming an address at first sign-in in the settings, profiles and groups, endpoints and frontend references, and brought the upgrade guide's list of steps up to date with 1005, 1006 and 1007. @ericof [#80](https://github.com/collective/pas-plugins-identity/issues/80)
+- Listed the providers control panel's settings, add and edit routes in the frontend reference. @ericof [#81](https://github.com/collective/pas-plugins-identity/issues/81)
+- Documented which identity settings are required, moved the four derived user and group records out of the settings form's tabs, and corrected the default profile's version to 1006. @ericof [#82](https://github.com/collective/pas-plugins-identity/issues/82)
+- Documented exporting providers from the control panel, the `@identity-providers/@export` endpoint, and the permission both provider exports need. @ericof [#83](https://github.com/collective/pas-plugins-identity/issues/83)
+- Documented ordering the login buttons by dragging the provider list, the `PATCH @identity-providers` endpoint behind it, and the Order field leaving the provider form. @ericof [#84](https://github.com/collective/pas-plugins-identity/issues/84)
+- Documented the Principals folder content type, its add permission, and the error raised when a container's parent refuses its type. @ericof [#85](https://github.com/collective/pas-plugins-identity/issues/85)
+- Documented the default icon each shipped driver draws its login button with, where each icon comes from, and how a provider's own upload replaces it. @ericof [#86](https://github.com/collective/pas-plugins-identity/issues/86)
+- Rewrote the Keycloak recipe around the new `keycloak` driver, with its claims re-read from a Keycloak 26.0 token, and added the driver to the shipped drivers and provider form references. @ericof [#87](https://github.com/collective/pas-plugins-identity/issues/87)
+- Pointed the frontend README's Storybook section at `src/stories/`, where the `withPage` and `withUserMenu` decorators now live. @ericof [#88](https://github.com/collective/pas-plugins-identity/issues/88)
+- Documented `config.settings.identity`, the one place the frontend add-on's settings live, including that a configured avatar palette is not checked for contrast. @ericof [#89](https://github.com/collective/pas-plugins-identity/issues/89)
+- Documented the Sign-in block: how a project offers it, what it shows, and where each line comes from. @ericof [#99](https://github.com/collective/pas-plugins-identity/issues/99)
+- Documented how to turn off the login page's redirect to a site's only provider, and when it does not redirect. @ericof [#100](https://github.com/collective/pas-plugins-identity/issues/100)
+
+
+
 ## 1.0.0a6 (2026-09-10)
 
 ### Backend
