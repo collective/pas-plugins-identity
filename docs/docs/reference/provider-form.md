@@ -38,6 +38,7 @@ the driver's own fieldsets:
 | `email` | Identity, Style, Settings, Mapping |
 | `github` | Identity, Style, Settings, Accounts, Mapping |
 | `google` | Identity, Style, Settings, Accounts, Mapping |
+| `keycloak` | Identity, Style, Settings, Accounts, Groups, Profile, Mapping |
 | `oidc-generic` | Identity, Style, Settings, Accounts, Groups, Profile, Mapping |
 | `plone-identity` | Identity, Style, Settings, Accounts, Groups, Profile, Mapping |
 
@@ -113,7 +114,7 @@ The fieldset a driver does not name. How to reach the provider.
 | Client ID | `config.client_id` | `TextLine`, required | all but `email` |
 | Client secret | `config.client_secret` | `Password`, required | all but `email` |
 | Scope | `config.scope` | `Tuple` | all but `email` |
-| Issuer | `config.issuer` | `TextLine`, required | `oidc-generic`, `plone-identity` |
+| Issuer | `config.issuer` | `TextLine`, required | `keycloak`, `oidc-generic`, `plone-identity` |
 | Token lifetime | `config.token_ttl` | `Int`, default `900` | `email` |
 | Rate limit per hour | `config.rate_limit_per_hour` | `Int`, default `5` | `email` |
 
@@ -126,10 +127,10 @@ Who the provider's answer makes the person standing here.
 
 | Field | Registry key | Type | Default |
 |---|---|---|---|
-| User id source | `config.userid_source` | `Choice` | `uuid` |
+| User id source | `config.userid_source` | `Choice` | `uuid`, except `github`, `keycloak` and `plone-identity` |
 | Let this provider create accounts | `config.create_user` | `Bool` | on |
 | Attach to an existing account with the same verified email | `config.auto_link_by_email` | `Bool` | off |
-| This provider's email verification counts | `config.trust_email_verification` | `Bool` | off, except `github` and `google` |
+| This provider's email verification counts | `config.trust_email_verification` | `Bool` | off, except `github`, `google` and `keycloak` |
 | This provider sends verification flags as text | `config.accept_string_booleans` | `Bool` | off |
 | Address preference | `config.address_preference` | `Tuple` | empty |
 
@@ -147,8 +148,8 @@ See {doc}`/how-to-guides/link-accounts-by-email` and
 | Only these groups may sign in | `config.allowed_groups` | `Tuple` | empty |
 | Let this provider set group membership | `config.sync_groups` | `Bool` | on |
 
-Shown only for `oidc-generic` and `plone-identity`, the two drivers whose
-settings schema is `IOIDCSettings`. `github`, `google` and `email` carry no
+Shown only for `keycloak`, `oidc-generic` and `plone-identity`, the three
+drivers whose settings schema is `IOIDCSettings` or extends it. `github`, `google` and `email` carry no
 groups this package can read, so none of them gets this tab.
 
 See {doc}`/how-to-guides/map-provider-groups`.

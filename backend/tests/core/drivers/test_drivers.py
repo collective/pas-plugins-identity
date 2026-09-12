@@ -9,6 +9,7 @@ from . import CLAIM_KEYS
 from . import DEX_USERINFO
 from . import GITHUB_USER
 from . import GOOGLE_USERINFO
+from . import KEYCLOAK_USERINFO
 from . import OAUTH_DRIVERS
 from pas.plugins.identity.core.controlpanel import check_propertymap
 from pas.plugins.identity.core.drivers import all_drivers
@@ -17,6 +18,7 @@ from pas.plugins.identity.core.drivers.base import BaseDriver
 from pas.plugins.identity.core.drivers.emaillink import EmailDriver
 from pas.plugins.identity.core.drivers.github import GitHubDriver
 from pas.plugins.identity.core.drivers.google import GoogleDriver
+from pas.plugins.identity.core.drivers.keycloak import KeycloakDriver
 from pas.plugins.identity.core.drivers.oidc import GenericOIDCDriver
 from pas.plugins.identity.core.drivers.settings import IDriverSettings
 from pas.plugins.identity.core.interfaces import ClaimsError
@@ -90,6 +92,7 @@ class TestDriverContract:
             (GitHubDriver, GITHUB_USER),
             (GoogleDriver, GOOGLE_USERINFO),
             (GenericOIDCDriver, DEX_USERINFO),
+            (KeycloakDriver, KEYCLOAK_USERINFO),
             (EmailDriver, {"email": "erico@plone.org"}),
         ],
     )
@@ -105,6 +108,7 @@ class TestDriverContract:
             (GitHubDriver, GITHUB_USER),
             (GoogleDriver, GOOGLE_USERINFO),
             (GenericOIDCDriver, DEX_USERINFO),
+            (KeycloakDriver, KEYCLOAK_USERINFO),
         ],
     )
     def test_raw_is_preserved(self, factory: type[BaseDriver], payload: dict):

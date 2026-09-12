@@ -23,7 +23,7 @@ ICON = (
 )
 
 #: Every driver this package ships, each with an icon file named after it.
-SHIPPED = ["github", "google", "oidc-generic", "plone-identity", "email"]
+SHIPPED = ["github", "google", "oidc-generic", "plone-identity", "keycloak", "email"]
 
 
 def shipped_source(driver_id: str) -> str:

@@ -134,7 +134,7 @@ from `settings_schema`, so a third-party driver needs no frontend change.
 ## Related
 
 - {doc}`/how-to-guides/write-a-driver`—the procedure
-- {doc}`shipped-drivers`—the five that ship, and their values
+- {doc}`shipped-drivers`—the six that ship, and their values
 - {doc}`claims`—the claim names `normalize_claims` produces
 - {doc}`events`—what a sign-in fires
 - {doc}`stability`—the contract may change before 1.0.0

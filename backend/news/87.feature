@@ -1,0 +1,1 @@
+Added a `keycloak` driver for Keycloak realms, built on the generic OpenID Connect driver. It takes the realm URL as its issuer, and a new provider on it starts with the realm's `preferred_username` as the userid source and its email verification trusted. Like every shipped driver, it has a default login-button icon. @ericof

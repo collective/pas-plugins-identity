@@ -22,7 +22,7 @@ Do {doc}`../install` and {doc}`../install-the-frontend` first.
 | Another Plone site | `plone-identity` | {doc}`another-plone-site` |
 | Any OpenID Connect provider | `oidc-generic` | {doc}`generic-oidc` |
 | Emailed magic link | `email` | {doc}`magic-link` |
-| Keycloak | `oidc-generic` | {doc}`keycloak` |
+| Keycloak | `keycloak` | {doc}`keycloak` |
 | GitHub | `github` | {doc}`github` |
 | Google | `google` | {doc}`google` |
 | Microsoft Entra ID | `oidc-generic` | {doc}`microsoft-entra` |

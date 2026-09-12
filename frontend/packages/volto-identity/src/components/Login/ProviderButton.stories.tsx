@@ -77,3 +77,8 @@ export const IconOnly: Story = {
 export const PloneIdentity: Story = {
   args: { id: 'intranet', driver: 'plone-identity', label: 'Plone site' },
 };
+
+/** The Keycloak driver, in the OpenID Connect colours it is built on. */
+export const Keycloak: Story = {
+  args: { id: 'keycloak', driver: 'keycloak', label: 'Keycloak' },
+};

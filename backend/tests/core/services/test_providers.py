@@ -117,6 +117,7 @@ class TestDriverMetadata(ControlPanelCase):
             "google",
             "oidc-generic",
             "plone-identity",
+            "keycloak",
             "email",
         }
 
@@ -171,13 +172,18 @@ class TestDriverMetadata(ControlPanelCase):
             "subject",
         ]
 
-    def test_the_issuer_comes_first_for_a_discovered_provider(self):
+    @pytest.mark.parametrize(
+        "driver_id", ["oidc-generic", "plone-identity", "keycloak"]
+    )
+    def test_the_issuer_comes_first_for_a_discovered_provider(self, driver_id):
         """`order_before`, honoured by `plone.autoform` -- which is what
-        replaced spacing an `order` key by tens."""
+        replaced spacing an `order` key by tens. Declared once, on
+        `IOIDCSettings`, and still honoured for the two schemas that redeclare
+        the field to change its wording."""
         result = self.call(DriversGet)
-        oidc = next(i for i in result["items"] if i["id"] == "oidc-generic")
+        driver = next(i for i in result["items"] if i["id"] == driver_id)
 
-        assert oidc["schema"]["fieldsets"][0]["fields"][0] == "issuer"
+        assert driver["schema"]["fieldsets"][0]["fields"][0] == "issuer"
 
     def _fieldsets(self, driver_id: str) -> dict:
         """Return one driver's served fieldsets, keyed by id.
@@ -366,7 +372,7 @@ class TestTheSchemaShowsWhatWillBeStored(ControlPanelCase):
         """
         from pas.plugins.identity.core.controlpanel import _with_driver_defaults
 
-        for driver_id in ("google", "github", "oidc-generic", "email"):
+        for driver_id in ("google", "github", "oidc-generic", "keycloak", "email"):
             stored = _with_driver_defaults(driver_id, {})
             properties = self._properties(driver_id)
             for name, value in stored.items():

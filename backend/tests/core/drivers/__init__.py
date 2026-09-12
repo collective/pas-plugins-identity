@@ -9,6 +9,7 @@ from pas.plugins.identity.core.drivers.emaillink import EmailDriver
 from pas.plugins.identity.core.drivers.github import GitHubDriver
 from pas.plugins.identity.core.drivers.google import GoogleDriver
 from pas.plugins.identity.core.drivers.identity import PloneIdentityDriver
+from pas.plugins.identity.core.drivers.keycloak import KeycloakDriver
 from pas.plugins.identity.core.drivers.oidc import GenericOIDCDriver
 
 
@@ -18,6 +19,7 @@ ALL_DRIVERS: tuple[type[BaseDriver], ...] = (
     GoogleDriver,
     GenericOIDCDriver,
     PloneIdentityDriver,
+    KeycloakDriver,
     EmailDriver,
 )
 
@@ -27,6 +29,7 @@ OAUTH_DRIVERS: tuple[type[BaseDriver], ...] = (
     GoogleDriver,
     GenericOIDCDriver,
     PloneIdentityDriver,
+    KeycloakDriver,
 )
 
 #: Keys the normalized schema always carries.
@@ -118,4 +121,19 @@ PLONE_IDENTITY_USERINFO = {
     "email": "erico@plone.org",
     "email_verified": True,
     "address": {"formatted": "São Paulo, Brazil"},
+}
+
+#: Userinfo from Keycloak 26.0, read from the realm the Docker tests import
+#: (``tests/_resources/keycloak/realm.json``) with the scope
+#: ``openid email profile``. Everything a default realm sends is here: it has
+#: no ``website``, ``picture`` or ``address`` to send, and no ``groups``
+#: until a Group Membership mapper exists.
+KEYCLOAK_USERINFO = {
+    "sub": "d5b148c6-e6a9-4479-8ea0-e3b28ca71ab9",
+    "email_verified": True,
+    "name": "Elena Example",
+    "preferred_username": "elena",
+    "given_name": "Elena",
+    "family_name": "Example",
+    "email": "elena@example.org",
 }

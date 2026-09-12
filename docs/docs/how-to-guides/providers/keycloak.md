@@ -10,14 +10,18 @@ myst:
 
 # Keycloak
 
+<!-- source: backend/src/pas/plugins/identity/core/drivers/keycloak.py -->
+
 Sign in with accounts from a Keycloak realm, and honour its groups.
 
-Keycloak is a standard OpenID Connect provider, so this uses the
-`oidc-generic` driver.
+This uses the `keycloak` driver. A realm is a standard OpenID Connect provider,
+and the driver is the generic one with a realm's defaults on top: the realm's
+username as the Plone userid, and its email verification trusted.
 
 ```{note}
-Verified on 2026-09-05 against Keycloak **26.0** running in Docker. The claim
-shapes in step 5 were read out of a real `id_token`, not from documentation.
+The provider-side steps were verified on 2026-09-05 against Keycloak **26.0**
+running in Docker. The claims in step 5 were read out of a real `id_token` and
+userinfo response, not from documentation, and read again on 2026-09-12.
 ```
 
 ## 1. What you need from Keycloak
@@ -29,7 +33,8 @@ shapes in step 5 were read out of a real `id_token`, not from documentation.
 | Client secret | from the client's **Credentials** tab |
 
 The issuer is the **realm** URL, not the server root. A Keycloak server hosts
-many realms and each is its own issuer. Confirm it:
+many realms and each is its own issuer; the server root serves no discovery
+document at all. Confirm it:
 
 ```shell
 curl -s https://kc.example.com/realms/myrealm/.well-known/openid-configuration | jq .issuer
@@ -82,7 +87,7 @@ specifically want roles.
 ## 4. Add the provider in Plone
 
 1. Open the **Identity providers** control panel.
-2. Add a provider and choose **OpenID Connect** (`oidc-generic`).
+2. Add a provider and choose **Keycloak** (`keycloak`).
 3. On the **Settings** tab:
 
    | Field | Value |
@@ -106,23 +111,42 @@ from step 3:
 | `email` | `dana@example.com` | |
 | `email_verified` | `true` | a **real boolean** |
 | `groups` | `["site-editors"]` | only with the mapper |
-| `preferred_username` | `dana` | |
+| `preferred_username` | `dana` | the Plone userid, by default |
 | `name` | `Dana Example` | normalized to `fullname` by this package |
+| `given_name`, `family_name` | `Dana`, `Example` | mapped to nothing by default |
+
+A default realm sends nothing else under this scope: no `website`, no `picture`
+and no `address`, because its user profile has no attribute to fill them from.
+That is why the driver's property map has one row, `fullname`. A realm that adds
+attributes, and mappers releasing them, can map more on the **Mapping** tab.
 
 **`email_verified` is a proper boolean in a default Keycloak.** You do not need
 **This provider sends verification flags as text** unless your realm has been
 customized to send a string. Turn it on only if you have established that yours
 does—see {doc}`../link-accounts-by-email`.
 
-## 6. Set the trust switches
+## 6. Check the account defaults
 
-On the **Accounts** tab:
+On the **Accounts** tab. The driver starts a new provider with the first two
+fields set for a realm:
 
-| Field | Guidance |
-|---|---|
-| Trust this provider's email verification | On if the realm requires address verification at sign-up. Keycloak's `email_verified` means what this package means by it. |
-| Attach to an existing account with the same verified email | Needs the switch above |
-| Let this provider create accounts | Off if membership is decided in Plone |
+| Field | Starts as | Guidance |
+|---|---|---|
+| Userid taken from | The provider's username | The realm's `preferred_username`. Choose **A random id** for a userid that reveals nothing. |
+| This provider's email verification counts | on | Switch it off for a realm that lets people sign up without verifying their address, or whose administrators mark addresses verified by hand. |
+| Attach to an existing account with the same verified email | off | Needs the switch above |
+| Let this provider create accounts | on | Off if membership is decided in Plone |
+
+The identity is recorded against `sub`, so a username the realm renames later
+does not break the sign-in. The Plone userid keeps the name it was created with,
+and a username already taken in Plone gets a numeric suffix.
+
+```{warning}
+A trusted verification is what an existing account is attached to. A realm
+whose administrators mark addresses verified without proof hands those
+administrators every account with a matching address. See
+{doc}`/concepts/email-verification`.
+```
 
 ## 7. Map the groups
 
@@ -138,8 +162,9 @@ An unmapped Keycloak group grants nothing here and is never created. See
 
 1. `/login` shows the button, and signing in returns you signed in.
 2. `/identities` lists the identity with a UUID subject.
-3. A mapped group appears in the user's Plone group membership.
-4. The audit log has an `authenticated` entry.
+3. The new account's userid is the realm username.
+4. A mapped group appears in the user's Plone group membership.
+5. The audit log has an `authenticated` entry.
 
 If groups never arrive, go back to step 3—that is the cause almost every time.
 
@@ -149,9 +174,11 @@ If groups never arrive, go back to step 3—that is the cause almost every time.
 - **Groups need a mapper.** Verified absent by default.
 - **Full group path changes the name.** `/site-editors` rather than `site-editors`.
 - **Roles are not groups.** `realm_access.roles` is absent from the `id_token` by default.
+- **A renamed username keeps its old userid.** The sign-in still works; the Plone userid does not follow.
 
 ## Related
 
-- {doc}`generic-oidc`—the same driver, generally
+- {doc}`generic-oidc`—the driver this one is built on
+- {doc}`/reference/shipped-drivers`—the `keycloak` driver's defaults
 - {doc}`../map-provider-groups`—the group map and revocation
 - {doc}`../troubleshoot`—"Groups not granted after login"

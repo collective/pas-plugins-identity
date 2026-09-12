@@ -10,6 +10,7 @@ first time it is read, exactly as it sanitizes an uploaded icon.
 | `google.svg` | volto-authomatic, `packages/volto-authomatic/src/icons/google.svg` |
 | `oidc-generic.svg` | volto-authomatic, `packages/volto-authomatic/src/icons/openid.svg` |
 | `plone-identity.svg` | Volto, `packages/volto/src/icons/plone.svg` |
+| `keycloak.svg` | Volto, `packages/volto/src/icons/finger-print.svg` |
 | `email.svg` | Volto, `packages/volto/src/icons/email.svg` |
 
 ## volto-authomatic

@@ -229,7 +229,12 @@ class TestIssuerResolution:
 
     @pytest.mark.parametrize(
         ("driver_id", "asks"),
-        [("oidc-generic", True), ("plone-identity", True), ("email", False)],
+        [
+            ("oidc-generic", True),
+            ("plone-identity", True),
+            ("keycloak", True),
+            ("email", False),
+        ],
     )
     def test_the_driver_is_asked_rather_than_a_list_consulted(self, driver_id, asks):
         """The mechanism, not one driver of it. A driver declares an
