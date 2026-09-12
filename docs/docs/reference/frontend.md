@@ -78,6 +78,7 @@ the browser.
 ## Settings
 
 <!-- source: frontend/packages/volto-identity/src/config/settings.ts -->
+<!-- source: frontend/packages/volto-identity/src/types/settings.ts -->
 <!-- source: frontend/packages/volto-identity/src/helpers/avatar.ts -->
 
 Every setting the add-on reads is under `config.settings.identity`, typed as

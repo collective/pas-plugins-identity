@@ -1,5 +1,5 @@
 /**
- * The package's types, in two halves.
+ * The package's types, in three parts.
  *
  * `api.ts`
  *     What each endpoint answers with. One interface per payload, named for
@@ -10,10 +10,15 @@
  *     where they agree with an ordinary Plone object and documenting each
  *     place they do not.
  *
- * This file re-exports both, so `from '../types'` keeps resolving for
+ * `settings.ts`
+ *     The add-on's own frontend settings, `config.settings.identity`, and the
+ *     `@plone/types` augmentation that puts them there.
+ *
+ * This file re-exports all three, so `from '../types'` keeps resolving for
  * everything that already imports it.
  * @module types
  */
 
 export * from './api';
 export * from './content';
+export * from './settings';

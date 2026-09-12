@@ -1,0 +1,1 @@
+Pointed the frontend settings reference at `types/settings`, where `IdentitySettings` is now declared. @ericof
