@@ -1,10 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { fireEvent, render, screen } from '../../testing';
 import { Provider } from 'react-redux';
+import config from '@plone/volto/registry';
 import React from 'react';
 
 import UserAvatar from './UserAvatar';
-import { AVATAR_COLORS } from '../../helpers/avatar';
 
 function renderAvatar(data: unknown, props = {}) {
   const store = {
@@ -22,6 +22,10 @@ function renderAvatar(data: unknown, props = {}) {
 }
 
 describe('UserAvatar', () => {
+  afterEach(() => {
+    delete (config.settings as Record<string, unknown>).identity;
+  });
+
   it('renders the portrait when the user has one', () => {
     renderAvatar({
       id: 'alice',
@@ -49,7 +53,13 @@ describe('UserAvatar', () => {
     expect(avatar).toBeTruthy();
   });
 
-  it('colours the initials from the palette', () => {
+  it("colours the initials from the project's palette", () => {
+    // A palette of one colour, so every user lands on it and the rendered
+    // style can be asserted exactly.
+    config.settings.identity = {
+      showPloneLogin: false,
+      avatarColors: ['#123456'],
+    };
     const { container } = renderAvatar({
       id: 'alice',
       fullname: 'Alice Liddell',
@@ -59,10 +69,8 @@ describe('UserAvatar', () => {
       .querySelector('.identity-avatar--initials')
       ?.getAttribute('style');
 
-    // jsdom renders the hex as rgb(), so assert on the palette having been
-    // consulted rather than on one exact string.
-    expect(style).toContain('background-color');
-    expect(AVATAR_COLORS.length).toBeGreaterThan(0);
+    // jsdom writes the hex back as rgb().
+    expect(style).toContain('background-color: rgb(18, 52, 86)');
   });
 
   it('falls back to the userid when there is no name yet', () => {

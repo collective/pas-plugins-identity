@@ -1,0 +1,1 @@
+Documented `config.settings.identity`, the one place the frontend add-on's settings live, including that a configured avatar palette is not checked for contrast. @ericof

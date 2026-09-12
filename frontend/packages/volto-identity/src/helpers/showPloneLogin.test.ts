@@ -17,10 +17,20 @@ const { showPloneLogin, SHOW_PLONE_LOGIN_ENV } = await import(
   './showPloneLogin'
 );
 
+/**
+ * Configure the default the way a project does.
+ *
+ * @param showPloneLogin The configured default.
+ */
+function configure(showPloneLogin: boolean) {
+  config.settings.identity = { showPloneLogin, avatarColors: [] };
+}
+
 describe('showPloneLogin', () => {
   beforeEach(() => {
     delete runtime[SHOW_PLONE_LOGIN_ENV];
-    config.settings.identityShowPloneLogin = false;
+    delete (config.settings as Record<string, unknown>).identityShowPloneLogin;
+    configure(false);
   });
 
   it('is off when nothing says otherwise', () => {
@@ -38,7 +48,7 @@ describe('showPloneLogin', () => {
   it('reads the word "false" as off', () => {
     // Not `Boolean(value)`, which reads the string "false" as true and turns
     // an operator switching the form *off* into a site that still shows it.
-    config.settings.identityShowPloneLogin = true;
+    configure(true);
     runtime[SHOW_PLONE_LOGIN_ENV] = 'false';
 
     expect(showPloneLogin()).toBe(false);
@@ -46,7 +56,7 @@ describe('showPloneLogin', () => {
 
   it('falls back to the setting when the environment is silent', () => {
     // So a project shipping its own default keeps it.
-    config.settings.identityShowPloneLogin = true;
+    configure(true);
 
     expect(showPloneLogin()).toBe(true);
   });
@@ -54,19 +64,36 @@ describe('showPloneLogin', () => {
   it('treats an empty variable as silence rather than as off', () => {
     // An unset variable and one set to nothing reach the container the same
     // way, and neither is an operator asking for the form to go away.
-    config.settings.identityShowPloneLogin = true;
+    configure(true);
     runtime[SHOW_PLONE_LOGIN_ENV] = '';
 
     expect(showPloneLogin()).toBe(true);
   });
 
   it('lets the environment override the setting in both directions', () => {
-    config.settings.identityShowPloneLogin = true;
+    configure(true);
     runtime[SHOW_PLONE_LOGIN_ENV] = 'off';
     expect(showPloneLogin()).toBe(false);
 
-    config.settings.identityShowPloneLogin = false;
+    configure(false);
     runtime[SHOW_PLONE_LOGIN_ENV] = 'on';
+    expect(showPloneLogin()).toBe(true);
+  });
+
+  it('no longer reads the old top-level setting', () => {
+    // `config.settings.identityShowPloneLogin` moved under `identity`. A
+    // project still setting the old key gets the default, not its old answer.
+    (config.settings as Record<string, unknown>).identityShowPloneLogin = true;
+
+    expect(showPloneLogin()).toBe(false);
+  });
+
+  it('is off when the add-on settings are missing entirely', () => {
+    // Before `install` has run, or in a test that never ran it.
+    delete (config.settings as Record<string, unknown>).identity;
+
+    expect(showPloneLogin()).toBe(false);
+    runtime[SHOW_PLONE_LOGIN_ENV] = 'true';
     expect(showPloneLogin()).toBe(true);
   });
 

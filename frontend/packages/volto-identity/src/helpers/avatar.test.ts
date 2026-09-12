@@ -1,6 +1,40 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import config from '@plone/volto/registry';
 
-import { AVATAR_COLORS, colorFor, initialsFor } from './avatar';
+import {
+  DEFAULT_AVATAR_COLORS,
+  avatarColors,
+  colorFor,
+  initialsFor,
+} from './avatar';
+
+const USERIDS = ['alice', 'bob', '', 'a'.repeat(200), 'ürico'];
+
+/**
+ * Configure a palette the way a project does.
+ *
+ * @param colors The palette.
+ */
+function configure(colors: string[]) {
+  config.settings.identity = { showPloneLogin: false, avatarColors: colors };
+}
+
+/**
+ * Return a colour's relative luminance, as WCAG 2 defines it.
+ *
+ * @param hex A `#rrggbb` colour.
+ * @returns The luminance, from 0 for black to 1 for white.
+ */
+function luminance(hex: string): number {
+  const [r, g, b] = [1, 3, 5]
+    .map((start) => parseInt(hex.slice(start, start + 2), 16) / 255)
+    .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+beforeEach(() => {
+  delete (config.settings as Record<string, unknown>).identity;
+});
 
 describe('initialsFor', () => {
   it('takes the first letter of the first and last words', () => {
@@ -51,8 +85,8 @@ describe('initialsFor', () => {
 
 describe('colorFor', () => {
   it('always picks from the palette', () => {
-    for (const userid of ['alice', 'bob', '', 'a'.repeat(200), 'ürico']) {
-      expect(AVATAR_COLORS).toContain(colorFor(userid) as never);
+    for (const userid of USERIDS) {
+      expect(DEFAULT_AVATAR_COLORS).toContain(colorFor(userid) as never);
     }
   });
 
@@ -73,7 +107,48 @@ describe('colorFor', () => {
   });
 
   it('answers for a user with no id', () => {
-    expect(AVATAR_COLORS).toContain(colorFor(undefined) as never);
-    expect(AVATAR_COLORS).toContain(colorFor(null) as never);
+    expect(DEFAULT_AVATAR_COLORS).toContain(colorFor(undefined) as never);
+    expect(DEFAULT_AVATAR_COLORS).toContain(colorFor(null) as never);
   });
+
+  it("picks from a project's own palette", () => {
+    const palette = ['#111111', '#222222', '#333333'];
+    configure(palette);
+
+    for (const userid of USERIDS) {
+      expect(palette).toContain(colorFor(userid));
+    }
+  });
+});
+
+describe('avatarColors', () => {
+  it('is the shipped palette when nothing is configured', () => {
+    expect(avatarColors()).toEqual(DEFAULT_AVATAR_COLORS);
+  });
+
+  it('is the configured palette when a project sets one', () => {
+    configure(['#111111']);
+
+    expect(avatarColors()).toEqual(['#111111']);
+  });
+
+  it('treats an empty palette as none', () => {
+    // A palette with no colour cannot pick one: every avatar would be drawn
+    // with no background at all.
+    configure([]);
+
+    expect(avatarColors()).toEqual(DEFAULT_AVATAR_COLORS);
+    expect(DEFAULT_AVATAR_COLORS).toContain(colorFor('alice') as never);
+  });
+
+  it.each([...DEFAULT_AVATAR_COLORS])(
+    'ships %s, which clears WCAG AA against the white initials',
+    (hex) => {
+      // 4.5:1, the ratio for normal text: the initials are well under the
+      // size WCAG counts as large at the 30px the toolbar draws them.
+      const ratio = (luminance('#ffffff') + 0.05) / (luminance(hex) + 0.05);
+
+      expect(ratio).toBeGreaterThanOrEqual(4.5);
+    },
+  );
 });

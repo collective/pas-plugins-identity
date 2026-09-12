@@ -1,10 +1,28 @@
 import type { ConfigType } from '@plone/registry';
 import ProfileGate from '../components/ProfileGate/ProfileGate';
+import { DEFAULT_AVATAR_COLORS } from '../helpers/avatar';
+
+/** Every frontend setting this add-on reads, as `config.settings.identity`. */
+export interface IdentitySettings {
+  /**
+   * Whether Plone's own username/password form is offered as well.
+   *
+   * Only the default: `RAZZLE_IDENTITY_SHOW_PLONE_LOGIN` overrides it at run
+   * time.
+   */
+  showPloneLogin: boolean;
+  /**
+   * The palette a user's initials are drawn on when they have no portrait.
+   *
+   * The shipped one is chosen for contrast against the white initials. One a
+   * project supplies is not checked, and an empty list means the shipped one.
+   */
+  avatarColors: string[];
+}
 
 declare module '@plone/types' {
   export interface SettingsConfig {
-    /** Whether Plone's own username/password form is offered as well. */
-    identityShowPloneLogin: boolean;
+    identity: IdentitySettings;
   }
 }
 
@@ -47,9 +65,19 @@ export default function install(config: ConfigType) {
   // `pnpm build` runs, which makes the value a property of the image. Two
   // sites wanting two answers then need two images.
   //
-  // A project that wants a different default overrides this setting in its
-  // own configuration, and the environment still wins over it.
-  config.settings.identityShowPloneLogin = false;
+  // A project that wants a different default overrides
+  // `config.settings.identity.showPloneLogin` in its own configuration, and
+  // the environment still wins over it.
+  //
+  // Merged under whatever is already there rather than assigned: an add-on
+  // configured before this one may have set a palette, and these are defaults.
+  // The palette is a copy, so a project pushing onto it does not change the
+  // shipped one for everybody else in the process.
+  config.settings.identity = {
+    showPloneLogin: false,
+    avatarColors: [...DEFAULT_AVATAR_COLORS],
+    ...config.settings.identity,
+  };
 
   // `@my-profile` rides on the content request rather than costing one of its
   // own. The gate asks on every navigation, and a navigation to a content

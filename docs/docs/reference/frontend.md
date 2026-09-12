@@ -71,11 +71,38 @@ the browser.
 
 ## Settings
 
+<!-- source: frontend/packages/volto-identity/src/config/settings.ts -->
+<!-- source: frontend/packages/volto-identity/src/helpers/avatar.ts -->
+
+Every setting the add-on reads is under `config.settings.identity`, typed as
+`IdentitySettings`.
+
 | Key | Default | What it does |
 |---|---|---|
-| `config.settings.identityShowPloneLogin` | `false` | Show Volto's username-and-password form on `/login` as well as the providers. |
+| `showPloneLogin` | `false` | Show Volto's username-and-password form on `/login` as well as the providers. |
+| `avatarColors` | the shipped palette of ten colours | The colours a user's initials are drawn on when they have no portrait. |
 
-The environment variable above sets this at run time.
+The environment variable above overrides `showPloneLogin` at run time.
+
+A user's colour is picked from their userid, modulo the number of colours, so
+a palette of a different length moves most users to another colour. An empty
+list means the shipped palette.
+
+The shipped palette was chosen for contrast against the white initials. A
+palette you configure is **not checked**, so its contrast is yours to verify.
+
+The add-on sets these defaults under anything already there. Change them in
+your project's own configuration, which runs after the add-on's:
+
+```js
+config.settings.identity = {
+  ...config.settings.identity,
+  avatarColors: ['#0b3d91', '#7a1f5c', '#1e5631'],
+};
+```
+
+`showPloneLogin` was `config.settings.identityShowPloneLogin` up to `1.0.0a6`.
+That key is no longer read.
 
 ## Expansion on content requests
 

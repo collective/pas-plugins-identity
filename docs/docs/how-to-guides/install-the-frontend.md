@@ -105,7 +105,7 @@ Two things to know about it:
 - It is read at **run** time, not baked in at build time, so you can change it without rebuilding.
 - `RAZZLE_` is the only prefix Volto carries through to the browser, which is why the name has it.
 
-The equivalent setting, if you would rather set it in code, is `config.settings.identityShowPloneLogin`.
+The equivalent setting, if you would rather set it in code, is `config.settings.identity.showPloneLogin`. The environment variable wins over it.
 
 Volto's own login form stays reachable at `/fallback_login` whether or not you set this.
 

@@ -1,0 +1,1 @@
+Darkened the first colour of the avatar palette from `#0083be` to `#007db6`. At 4.21:1 against the white initials it was the one shipped colour below WCAG AA; `#007db6` is the lightest colour of its hue that clears 4.5:1. @ericof
