@@ -208,13 +208,54 @@ Each is a title and a body, because neither type has rich text.
 
 ## Widgets
 
+<!-- source: frontend/packages/volto-identity/src/config/widgets.ts -->
+
 | Name | Used for |
 |---|---|
 | `provider_icon` | The SVG icon field on the provider form. Shows the driver's default icon until one is uploaded. |
+| `identity_string_list` | An ordered list of strings, edited as a table. A Profile's email addresses use it. The dialog renders the widget of the list's value type. |
+| `identity_object_list` | An ordered list of objects an item schema describes, edited as a table. The `columns` prop picks the fields shown; without it every field is a column. |
+| `social_media_object_list` | `identity_object_list`, showing a link's network and title. Replaces `@plonegovbr/volto-social-media`'s widget on `social_links` when this add-on is listed after that one. |
 
 The backend decides which widget a field uses, through
 `directives.widget(..., frontendOptions={"widget": ...})`, and Volto looks the
 name up here. The frontend composes what it is served rather than describing it.
+Asking for a list widget is {doc}`/how-to-guides/edit-a-list-as-a-table`.
+
+### The list widgets
+
+<!-- source: frontend/packages/volto-identity/src/components/Widgets/OrderedListTable/OrderedListTable.tsx -->
+<!-- source: frontend/packages/volto-identity/src/components/Widgets/OrderedStringListWidget/OrderedStringListWidget.tsx -->
+<!-- source: frontend/packages/volto-identity/src/components/Widgets/OrderedObjectListWidget/OrderedObjectListWidget.tsx -->
+<!-- source: frontend/packages/volto-identity/src/helpers/orderedList.ts -->
+
+| Action | What it does |
+|---|---|
+| Drag a row by its handle | Moves the entry. Handles appear once Volto's drag library has loaded |
+| {guilabel}`Edit` | Opens the entry in a dialog built from the item schema |
+| {guilabel}`Delete` | Asks, then removes the entry |
+| The button beside the label | Opens an empty dialog, seeded with the item schema's defaults |
+
+Every action changes the field's value only. Nothing is stored until the form is
+saved.
+
+| Prop | Widget | Set by | What it does |
+|---|---|---|---|
+| `items` | `identity_string_list` | `plone.restapi`, from the field's `value_type` | The one field in the dialog, and the column header |
+| `uniqueItems` | `identity_string_list` | `plone.restapi`, `true` for a `Tuple`, a `Set`, and a `List` of `Choice` | Refuses an entry already on the list |
+| `schemaName` | `identity_object_list` | `widgetProps` | Names a registered `schema` utility that builds the item schema. Wins over `schema` |
+| `schema` | `identity_object_list` | A form schema built in the frontend | The item schema, or a function returning it. Ignored when it has no `fieldsets` |
+| `columns` | `identity_object_list` | `widgetProps` | The item schema's fields shown as columns, in order. Every field when absent; `id` and `title` for `social_media_object_list` |
+| `isDisabled` | Both | Volto's form | Removes the handles and disables every action |
+
+| Widget | Value |
+|---|---|
+| `identity_string_list` | A list of strings, in order |
+| `identity_object_list` | A list of objects, in order. Any change gives an `@id` to each entry without one, as Volto's `object_list` does |
+
+A cell shows a choice by its label, a list as its entries joined by commas, and
+an object—such as a link picked in the object browser—by its `title`, or its
+`@id` without one.
 
 ## Shadowed components
 
@@ -259,3 +300,4 @@ Reducers, a menu entry, and `appExtras`.
 - {doc}`endpoints`—the REST services these routes call
 - {doc}`stability`—what may change between alpha releases
 - {doc}`/how-to-guides/install-the-frontend`—installing it
+- {doc}`/how-to-guides/edit-a-list-as-a-table`—asking for a list widget from a field

@@ -89,6 +89,7 @@ migrate-from-oidc
 :maxdepth: 1
 
 add-a-catalog-index
+edit-a-list-as-a-table
 extend-a-profile-page
 write-a-driver
 write-a-profile-enricher
