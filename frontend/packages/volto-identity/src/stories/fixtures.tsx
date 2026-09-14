@@ -20,6 +20,7 @@ import { Provider } from 'react-redux';
 import LoginPanel from '../components/Login/LoginPanel';
 import { GROUPS_VOCABULARY } from '../constants/vocabularies';
 import { USER_FIELDS_VOCABULARY } from '../constants/vocabularies';
+import type { ItemSchema } from '../helpers/orderedList';
 
 import type {
   ConfiguredProvider,
@@ -99,6 +100,75 @@ export const STYLED: LoginProvider = {
 export const PROFILE_EMAILS: ProfileEmail[] = [
   { address: 'erico@plone.org', verified: true, preferred: true },
   { address: 'erico@example.com', verified: false, preferred: false },
+];
+
+/**
+ * The value type of a Profile's `emails`, as `plone.restapi` serializes an
+ * `Email` inside a `Tuple`. The ordered string list builds its dialog from it.
+ */
+export const EMAIL_ITEMS = {
+  type: 'string',
+  title: 'Email',
+  widget: 'email',
+  factory: 'Email',
+};
+
+/**
+ * One social link, as `volto-social-media`'s `socialMedia` schema utility
+ * describes it for `plonegovbr.socialmedia`'s `social_links` field.
+ *
+ * Copied rather than imported, because that add-on is not a dependency of
+ * this one. The networks are three of the ones it registers.
+ */
+export const SOCIAL_LINK_SCHEMA: ItemSchema = {
+  title: 'Link',
+  fieldsets: [
+    { id: 'default', title: 'Default', fields: ['id', 'title', 'href'] },
+  ],
+  properties: {
+    id: {
+      title: 'Network',
+      choices: [
+        ['github', 'GitHub'],
+        ['mastodon', 'Mastodon'],
+        ['website', 'Website'],
+      ],
+      noValueOption: false,
+    },
+    title: { title: 'Title' },
+    href: {
+      title: 'Target',
+      widget: 'object_browser',
+      mode: 'link',
+      selectedItemAttrs: ['Title', 'Description', '@type'],
+      allowExternals: true,
+    },
+  },
+  required: ['id', 'title', 'href'],
+};
+
+/**
+ * A `social_links` value. `href` is what the object browser stores for an
+ * external link: a list of one object, its URL and that URL without the scheme.
+ */
+export const SOCIAL_LINKS = [
+  {
+    '@id': '0b9f6a3e-2c1d-4e8f-9a7b-5c6d7e8f9a0b',
+    id: 'github',
+    title: 'GitHub',
+    href: [{ '@id': 'https://github.com/ericof', title: 'github.com/ericof' }],
+  },
+  {
+    '@id': '6f1e2d3c-4b5a-4968-8776-655443322110',
+    id: 'mastodon',
+    title: 'Mastodon',
+    href: [
+      {
+        '@id': 'https://plone.social/@ericof',
+        title: 'plone.social/@ericof',
+      },
+    ],
+  },
 ];
 
 export const IDENTITIES: Identity[] = [

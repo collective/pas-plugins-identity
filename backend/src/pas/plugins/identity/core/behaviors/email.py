@@ -44,6 +44,7 @@ and skip the rest, silently.
 
 from pas.plugins.identity import _
 from plone.autoform.directives import read_permission
+from plone.autoform.directives import widget
 from plone.autoform.directives import write_permission
 from plone.autoform.interfaces import IFormFieldProvider
 from plone.schema import Email
@@ -102,6 +103,12 @@ class IEmailAddresses(model.Schema):
         required=False,
         readonly=True,
     )
+
+    # A table rather than Volto's creatable select for a tuple of text: the
+    # order of this list is what ``email`` is derived from, so it has to be
+    # something a person can see and change on purpose. The name is
+    # volto-identity's; Classic UI keeps its own widget.
+    widget("emails", frontendOptions={"widget": "identity_string_list"})
 
     write_permission(emails="pas.plugins.identity.content.edit")
     read_permission(
