@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Plone\n"
-"POT-Creation-Date: 2026-09-12T20:17:01.982Z\n"
+"POT-Creation-Date: 2026-09-14T22:22:14.379Z\n"
 "Last-Translator: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Language-Team: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -28,6 +28,7 @@ msgstr ""
 #: components/Applications/ApplicationsPanel
 #: components/ControlPanel/ClientsPanel
 #: components/ControlPanel/ProvidersTable
+#: components/Widgets/OrderedListTable/OrderedListTable
 msgid "Actions"
 msgstr ""
 
@@ -44,6 +45,11 @@ msgstr ""
 #. Default: "Add provider"
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Add provider"
+msgstr ""
+
+#. Default: "Add {item}"
+#: components/Widgets/OrderedListTable/OrderedListTable
+msgid "Add {item}"
 msgstr ""
 
 #. Default: "Allow"
@@ -223,6 +229,7 @@ msgstr ""
 #: components/ControlPanel/ConfirmModal
 #: components/ControlPanel/ProvidersTable
 #: components/ControlPanel/RenderUsers
+#: components/Widgets/OrderedListTable/OrderedListTable
 msgid "Delete"
 msgstr ""
 
@@ -262,12 +269,18 @@ msgstr ""
 #: components/ControlPanel/ProvidersTable
 #: components/ControlPanel/RenderUsers
 #: components/Toolbar/Toolbar
+#: components/Widgets/OrderedListTable/OrderedListTable
 msgid "Edit"
 msgstr ""
 
 #. Default: "Edit your profile"
 #: components/Identities/ProfileEmails
 msgid "Edit your profile"
+msgstr ""
+
+#. Default: "Edit {item}"
+#: components/Widgets/OrderedListTable/OrderedListTable
+msgid "Edit {item}"
 msgstr ""
 
 #. Default: "Editing"
@@ -503,6 +516,7 @@ msgstr ""
 
 #. Default: "Move {title}"
 #: components/ControlPanel/ProvidersTable
+#: components/Widgets/OrderedListTable/OrderedListTable
 msgid "Move {title}"
 msgstr ""
 
@@ -569,6 +583,7 @@ msgstr ""
 
 #. Default: "Order"
 #: components/ControlPanel/ProvidersTable
+#: components/Widgets/OrderedListTable/OrderedListTable
 msgid "Order"
 msgstr ""
 
@@ -1130,6 +1145,21 @@ msgstr ""
 #. Default: "nothing beyond the fact that you signed in"
 #: components/Consent/ConsentPanel
 msgid "nothing beyond the fact that you signed in"
+msgstr ""
+
+#. Default: "Remove this entry from the list? It is gone once the form is saved."
+#: components/Widgets/OrderedListTable/OrderedListTable
+msgid "ordered-list-confirm-delete"
+msgstr ""
+
+#. Default: "{value} is already on the list."
+#: components/Widgets/OrderedStringListWidget/OrderedStringListWidget
+msgid "ordered-list-duplicate"
+msgstr ""
+
+#. Default: "Nothing has been added yet."
+#: components/Widgets/OrderedListTable/OrderedListTable
+msgid "ordered-list-empty"
 msgstr ""
 
 #. Default: "Move an address to the top to make it the one this site uses for you."

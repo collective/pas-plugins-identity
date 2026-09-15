@@ -114,3 +114,26 @@ class TestTheGroupsFieldsetReachesTheForm:
         """On a Group the same field is the groups that group is inside, and
         nesting is unreachable from the UI without it."""
         assert "group_ids" in self.fieldsets("UserGroup").get("groups", [])
+
+
+class TestTheAddressesAreEditedAsAnOrderedList:
+    """``emails`` asks for volto-identity's ordered list widget.
+
+    The order of the list is what ``email`` is derived from, and Volto's
+    default for a tuple of text is a creatable select, where the order is not
+    something anybody edits on purpose.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, schema_for) -> None:
+        self.emails = schema_for()["properties"]["emails"]
+
+    def test_the_field_names_the_widget(self):
+        assert self.emails["widgetOptions"]["frontendOptions"] == {
+            "widget": "identity_string_list"
+        }
+
+    def test_each_entry_is_still_an_address(self):
+        """The widget builds its dialog from the value type, so the entry
+        keeps Volto's email widget and its validation."""
+        assert self.emails["items"]["widget"] == "email"
