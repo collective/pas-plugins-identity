@@ -7,20 +7,20 @@ msgstr ""
 "Last-Translator: \n"
 "Language: de\n"
 "Language-Team: \n"
-"Content-Type: \n"
-"Content-Transfer-Encoding: \n"
-"Plural-Forms: \n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #. Default: "Access withdrawn"
 #: components/Applications/Applications
 msgid "Access withdrawn"
-msgstr ""
+msgstr "Zugriff entzogen"
 
 #. Default: "Account"
 #: components/ControlPanel/RenderUsers
 #: components/ControlPanel/UserAccount
 msgid "Account"
-msgstr ""
+msgstr "Konto"
 
 #. Default: "Actions"
 #: components/Applications/ApplicationsPanel
@@ -28,68 +28,68 @@ msgstr ""
 #: components/ControlPanel/ProvidersTable
 #: components/Widgets/OrderedListTable/OrderedListTable
 msgid "Actions"
-msgstr ""
+msgstr "Aktionen"
 
 #. Default: "Add"
 #: components/Toolbar/Toolbar
 msgid "Add"
-msgstr ""
+msgstr "Hinzufügen"
 
 #. Default: "Add another"
 #: components/Identities/IdentitiesList
 msgid "Add another"
-msgstr ""
+msgstr "Weiteres hinzufügen"
 
 #. Default: "Add provider"
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Add provider"
-msgstr ""
+msgstr "Anbieter hinzufügen"
 
 #. Default: "Add {item}"
 #: components/Widgets/OrderedListTable/OrderedListTable
 msgid "Add {item}"
-msgstr ""
+msgstr "Hinzufügen {item}"
 
 #. Default: "Allow"
 #: components/Consent/ConsentPanel
 msgid "Allow"
-msgstr ""
+msgstr "Erlauben"
 
 #. Default: "Allow {client} to use your account?"
 #: components/Consent/ConsentPanel
 msgid "Allow {client} to use your account?"
-msgstr ""
+msgstr "Erlauben Sie {client}, Ihr Konto zu verwenden?"
 
 #. Default: "An export carries every client secret in the clear. Handle the file the way you would handle the secrets inside it."
 #: components/ControlPanel/ProvidersControlPanel
 msgid "An export carries every client secret in the clear."
-msgstr ""
+msgstr "Ein Export trägt alle Client-Geheimnisse im Klartext. Behandeln Sie die Datei, wie Sie die Geheimnisse darin behandeln würden."
 
 #. Default: "Application"
 #: components/Applications/ApplicationsPanel
 msgid "Application"
-msgstr ""
+msgstr "Anwendung"
 
 #. Default: "Applications"
 #: components/Applications/Applications
 #: components/UserMenu/ApplicationsMenuItem
 msgid "Applications"
-msgstr ""
+msgstr "Anwendungen"
 
 #. Default: "Authenticated with"
 #: components/Welcome/WelcomeCard
 msgid "Authenticated with"
-msgstr ""
+msgstr "Authentifiziert mit"
 
 #. Default: "Authorize"
 #: components/Consent/Consent
 msgid "Authorize"
-msgstr ""
+msgstr "Autorisieren"
 
 #. Default: "Authorized"
 #: components/Applications/ApplicationsPanel
 msgid "Authorized"
-msgstr ""
+msgstr "Autorisiert"
 
 #. Default: "Back"
 #: components/Applications/Applications
@@ -100,128 +100,128 @@ msgstr ""
 #: components/Toolbar/PersonalTools
 #: components/Toolbar/Toolbar
 msgid "Back"
-msgstr ""
+msgstr "Zurück"
 
 #. Default: "Back to sign-in options"
 #: components/Callback/Callback
 #: components/Login/LoginForm
 msgid "Back to sign-in options"
-msgstr ""
+msgstr "Zurück zu Anmeldeoptionen"
 
 #. Default: "Back to the list"
 #: components/Applications/ApplicationsPanel
 msgid "Back to the list"
-msgstr ""
+msgstr "Zurück zur Liste"
 
 #. Default: "Back to the providers"
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Back to the providers"
-msgstr ""
+msgstr "Zurück zu den Anbietern"
 
 #. Default: "Cancel"
 #: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ConfirmModal
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Cancel"
-msgstr ""
+msgstr "Abbrechen"
 
 #. Default: "Changes saved"
 #: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Changes saved"
-msgstr ""
+msgstr "Änderungen gespeichert"
 
 #. Default: "Choose a file"
 #: components/Widgets/ProviderIconWidget
 msgid "Choose a file"
-msgstr ""
+msgstr "Wählen Sie eine Datei"
 
 #. Default: "Choose how you would like to sign in."
 #: components/Login/useLogin
 msgid "Choose how you would like to sign in."
-msgstr ""
+msgstr "Wählen Sie, wie Sie sich anmelden möchten."
 
 #. Default: "Claim"
 #: helpers/providerSchema
 msgid "Claim"
-msgstr ""
+msgstr "Anspruch"
 
 #. Default: "Claim path"
 #: helpers/providerSchema
 msgid "Claim path"
-msgstr ""
+msgstr "Anspruchspfad"
 
 #. Default: "Clear"
 #: components/Login/PasswordForm
 msgid "Clear"
-msgstr ""
+msgstr "Löschen"
 
 #. Default: "Client ID"
 #: components/ControlPanel/ClientsPanel
 #: helpers/clientSchema
 msgid "Client ID"
-msgstr ""
+msgstr "Client-ID"
 
 #. Default: "Client secret for {clientId}"
 #: components/ControlPanel/SecretReveal
 msgid "Client secret for {clientId}"
-msgstr ""
+msgstr "Client-Geheimnis für {clientId}"
 
 #. Default: "Client unregistered"
 #: components/ControlPanel/ClientsControlPanel
 msgid "Client unregistered"
-msgstr ""
+msgstr "Client nicht registriert"
 
 #. Default: "Close"
 #: components/Login/LoginOverlay
 msgid "Close"
-msgstr ""
+msgstr "Schließen"
 
 #. Default: "Collection"
 #: components/Toolbar/Toolbar
 msgid "Collection"
-msgstr ""
+msgstr "Sammlung"
 
 #. Default: "Complete your profile"
 #: components/ProfileGate/ProfileGate
 msgid "Complete your profile"
-msgstr ""
+msgstr "Vollständigen Sie Ihr Profil"
 
 #. Default: "Confidential"
 #: components/ControlPanel/ClientsPanel
 msgid "Confidential"
-msgstr ""
+msgstr "Vertraulich"
 
 #. Default: "Confirm your email address"
 #: components/ConfirmEmail/ConfirmEmail
 #: components/ProfileGate/ProfileGate
 msgid "Confirm your email address"
-msgstr ""
+msgstr "Bestätigen Sie Ihre E-Mail-Adresse"
 
 #. Default: "Confirming your address…"
 #: components/Callback/Callback
 msgid "Confirming your address"
-msgstr ""
+msgstr "Adresse wird bestätigt…"
 
 #. Default: "Contents"
 #: components/Toolbar/Toolbar
 msgid "Contents"
-msgstr ""
+msgstr "Inhalte"
 
 #. Default: "Copied"
 #: components/ControlPanel/SecretReveal
 msgid "Copied"
-msgstr ""
+msgstr "Kopiert"
 
 #. Default: "Copy"
 #: components/ControlPanel/SecretReveal
 msgid "Copy"
-msgstr ""
+msgstr "Kopieren"
 
 #. Default: "Default"
 #: components/Blocks/SignIn/schema
 msgid "Default"
-msgstr ""
+msgstr "Standard"
 
 #. Default: "Delete"
 #: components/ControlPanel/ConfirmModal
@@ -229,38 +229,38 @@ msgstr ""
 #: components/ControlPanel/RenderUsers
 #: components/Widgets/OrderedListTable/OrderedListTable
 msgid "Delete"
-msgstr ""
+msgstr "Löschen"
 
 #. Default: "Delete this provider? Identities already linked through it keep the stored id and stop resolving."
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Delete this provider?"
-msgstr ""
+msgstr "Diesen Anbieter löschen? Identitäten, die bereits damit verknüpft sind, behalten die gespeicherte ID bei und werden nicht mehr aufgelöst."
 
 #. Default: "Deny"
 #: components/Consent/ConsentPanel
 msgid "Deny"
-msgstr ""
+msgstr "Ablehnen"
 
 #. Default: "Details"
 #: components/Applications/ApplicationsPanel
 msgid "Details"
-msgstr ""
+msgstr "Details"
 
 #. Default: "Disabled"
 #: components/ControlPanel/UserAccountPanel
 msgid "Disabled"
-msgstr ""
+msgstr "Deaktiviert"
 
 #. Default: "Disabled. Its existing access tokens are refused as well: the audience is checked against this registry on every request."
 #: components/ControlPanel/ClientsPanel
 msgid "Disabled. Its existing access tokens are refused as well."
-msgstr ""
+msgstr "Deaktiviert. Seine vorhandenen Zugriffstokens werden ebenfalls abgelehnt: Die Zielgruppe wird bei jeder Anfrage gegen diese Registrierung überprüft."
 
 #. Default: "Driver"
 #: components/ControlPanel/ProvidersTable
 #: helpers/providerSchema
 msgid "Driver"
-msgstr ""
+msgstr "Treiber"
 
 #. Default: "Edit"
 #: components/ControlPanel/ClientsPanel
@@ -269,536 +269,536 @@ msgstr ""
 #: components/Toolbar/Toolbar
 #: components/Widgets/OrderedListTable/OrderedListTable
 msgid "Edit"
-msgstr ""
+msgstr "Bearbeiten"
 
 #. Default: "Edit your profile"
 #: components/Identities/ProfileEmails
 msgid "Edit your profile"
-msgstr ""
+msgstr "Bearbeiten Sie Ihr Profil"
 
 #. Default: "Edit {item}"
 #: components/Widgets/OrderedListTable/OrderedListTable
 msgid "Edit {item}"
-msgstr ""
+msgstr "Bearbeiten {item}"
 
 #. Default: "Editing"
 #: components/Blocks/SignIn/schema
 msgid "Editing"
-msgstr ""
+msgstr "Bearbeitung"
 
 #. Default: "Email address"
 #: components/Login/MagicLinkForm
 msgid "Email address"
-msgstr ""
+msgstr "E-Mail-Adresse"
 
 #. Default: "Email addresses"
 #: components/ControlPanel/UserAccountPanel
 #: components/Identities/IdentitiesList
 msgid "Email addresses"
-msgstr ""
+msgstr "E-Mail-Adressen"
 
 #. Default: "Email me a link"
 #: components/Login/MagicLinkForm
 msgid "Email me a link"
-msgstr ""
+msgstr "Senden Sie mir einen Link per E-Mail"
 
 #. Default: "Enabled"
 #: components/ControlPanel/ClientsPanel
 #: components/ControlPanel/ProvidersTable
 msgid "Enabled"
-msgstr ""
+msgstr "Aktiviert"
 
 #. Default: "Error"
 #: components/Applications/Applications
 #: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Error"
-msgstr ""
+msgstr "Fehler"
 
 #. Default: "Expand toolbar"
 #: components/Toolbar/Toolbar
 msgid "Expand toolbar"
-msgstr ""
+msgstr "Symbolleiste erweitern"
 
 #. Default: "Export"
 #: components/ControlPanel/ProvidersTable
 msgid "Export"
-msgstr ""
+msgstr "Exportieren"
 
 #. Default: "Export every provider"
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Export every provider"
-msgstr ""
+msgstr "Alle Anbieter exportieren"
 
 #. Default: "File"
 #: components/Toolbar/Toolbar
 msgid "File"
-msgstr ""
+msgstr "Datei"
 
 #. Default: "Focus on"
 #: components/Toolbar/Toolbar
 msgid "Focus on"
-msgstr ""
+msgstr "Konzentrieren auf"
 
 #. Default: "Grants"
 #: components/ControlPanel/ClientsPanel
 msgid "Grants"
-msgstr ""
+msgstr "Gewährungen"
 
 #. Default: "Group"
 #: helpers/providerSchema
 msgid "Group"
-msgstr ""
+msgstr "Gruppe"
 
 #. Default: "Group map"
 #: helpers/providerSchema
 msgid "Group map"
-msgstr ""
+msgstr "Gruppenzuordnung"
 
 #. Default: "Groups in this group"
 #: components/Views/GroupView
 msgid "Groups in this group"
-msgstr ""
+msgstr "Gruppen in dieser Gruppe"
 
 #. Default: "Hello {fullname}!"
 #: components/Blocks/SignIn/schema
 msgid "Hello {fullname}!"
-msgstr ""
+msgstr "Hallo {fullname}!"
 
 #. Default: "I have saved it"
 #: components/ControlPanel/SecretReveal
 msgid "I have saved it"
-msgstr ""
+msgstr "Ich habe es gespeichert"
 
 #. Default: "Id"
 #: components/ControlPanel/ProvidersTable
 msgid "Id"
-msgstr ""
+msgstr "ID"
 
 #. Default: "Identity"
 #: helpers/providerSchema
 msgid "Identity"
-msgstr ""
+msgstr "Identität"
 
 #. Default: "Identity providers"
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Identity providers"
-msgstr ""
+msgstr "Identitätsanbieter"
 
 #. Default: "If that address can sign in here, a link is on its way. It works once, and only for a few minutes."
 #: components/Login/MagicLinkForm
 msgid "If that address can sign in here"
-msgstr ""
+msgstr "Wenn sich diese Adresse hier anmelden kann, ist ein Link unterwegs. Es funktioniert einmal, und nur für ein paar Minuten."
 
 #. Default: "It can read:"
 #: components/Applications/ApplicationsPanel
 msgid "It can read:"
-msgstr ""
+msgstr "Es kann lesen:"
 
 #. Default: "It will be able to read:"
 #: components/Consent/ConsentPanel
 msgid "It will be able to read:"
-msgstr ""
+msgstr "Es wird lesen können:"
 
 #. Default: "Last login"
 #: components/Welcome/WelcomeCard
 msgid "Last login"
-msgstr ""
+msgstr "Letzte Anmeldung"
 
 #. Default: "Last signed in"
 #: components/ControlPanel/UserAccountPanel
 msgid "Last signed in"
-msgstr ""
+msgstr "Zuletzt angemeldet"
 
 #. Default: "Link"
 #: components/Toolbar/Toolbar
 msgid "Link"
-msgstr ""
+msgstr "Verknüpfung"
 
 #. Default: "Link to their profile"
 #: components/Blocks/SignIn/schema
 msgid "Link to their profile"
-msgstr ""
+msgstr "Verknüpfung zu ihrem Profil"
 
 #. Default: "Loading"
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Loading"
-msgstr ""
+msgstr "Wird geladen"
 
 #. Default: "Loading clients…"
 #: components/ControlPanel/ClientsPanel
 msgid "Loading clients"
-msgstr ""
+msgstr "Clients werden geladen…"
 
 #. Default: "Loading keys…"
 #: components/ControlPanel/ClientsPanel
 msgid "Loading keys"
-msgstr ""
+msgstr "Schlüssel werden geladen…"
 
 #. Default: "Loading sign-in options…"
 #: components/Login/LoginForm
 msgid "Loading sign-in options"
-msgstr ""
+msgstr "Anmeldeoptionen werden geladen…"
 
 #. Default: "Loading the applications you have authorized…"
 #: components/Applications/ApplicationsPanel
 msgid "Loading the applications you have authorized"
-msgstr ""
+msgstr "Die von Ihnen autorisierten Anwendungen werden geladen…"
 
 #. Default: "Loading the request…"
 #: components/Consent/ConsentPanel
 msgid "Loading the request"
-msgstr ""
+msgstr "Die Anfrage wird geladen…"
 
 #. Default: "Loading your sign-in methods…"
 #: components/Identities/IdentitiesList
 msgid "Loading your sign-in methods"
-msgstr ""
+msgstr "Ihre Anmeldemethoden werden geladen…"
 
 #. Default: "Local group"
 #: helpers/providerSchema
 msgid "Local group"
-msgstr ""
+msgstr "Lokale Gruppe"
 
 #. Default: "Log in"
 #: components/Callback/Callback
 #: components/FirstLogin/FirstLogin
 #: components/Login/useLogin
 msgid "Log in"
-msgstr ""
+msgstr "Anmelden"
 
 #. Default: "Login name"
 #: components/Login/PasswordForm
 msgid "Login name"
-msgstr ""
+msgstr "Anmeldungsname"
 
 #. Default: "Login screen"
 #: components/ControlPanel/ProvidersTable
 msgid "Login screen"
-msgstr ""
+msgstr "Anmeldungsbildschirm"
 
 #. Default: "Logout"
 #: components/Toolbar/PersonalTools
 msgid "Logout"
-msgstr ""
+msgstr "Abmelden"
 
 #. Default: "Make preferred"
 #: components/Identities/ProfileEmails
 msgid "Make preferred"
-msgstr ""
+msgstr "Als bevorzugt einstellen"
 
 #. Default: "Mapping"
 #: helpers/providerSchema
 msgid "Mapping"
-msgstr ""
+msgstr "Zuordnung"
 
 #. Default: "Members"
 #: components/Views/GroupView
 msgid "Members"
-msgstr ""
+msgstr "Mitglieder"
 
 #. Default: "Menu closed"
 #: components/Toolbar/Toolbar
 msgid "Menu closed"
-msgstr ""
+msgstr "Menü geschlossen"
 
 #. Default: "Menu opened"
 #: components/Toolbar/Toolbar
 msgid "Menu opened"
-msgstr ""
+msgstr "Menü geöffnet"
 
 #. Default: "More"
 #: components/Toolbar/Toolbar
 msgid "More"
-msgstr ""
+msgstr "Mehr"
 
 #. Default: "Move {title}"
 #: components/ControlPanel/ProvidersTable
 #: components/Widgets/OrderedListTable/OrderedListTable
 msgid "Move {title}"
-msgstr ""
+msgstr "Verschieben {title}"
 
 #. Default: "News Item"
 #: components/Toolbar/Toolbar
 msgid "News Item"
-msgstr ""
+msgstr "Nachrichtenelement"
 
 #. Default: "No"
 #: components/ControlPanel/ClientsPanel
 #: components/ControlPanel/ProvidersTable
 msgid "No"
-msgstr ""
+msgstr "Nein"
 
 #. Default: "No clients are registered yet."
 #: components/ControlPanel/ClientsPanel
 msgid "No clients are registered yet."
-msgstr ""
+msgstr "Noch keine Clients registriert."
 
 #. Default: "No drivers are installed, so there is nothing to configure. Install an add-on that registers one."
 #: components/ControlPanel/ProvidersControlPanel
 msgid "No drivers are installed."
-msgstr ""
+msgstr "Es sind keine Treiber installiert, daher gibt es nichts zu konfigurieren. Installieren Sie ein Add-on, das einen registriert."
 
 #. Default: "No login callback URL is configured, so no provider can complete a sign-in. Set it under Settings."
 #: components/ControlPanel/ProvidersControlPanel
 msgid "No login callback URL is configured"
-msgstr ""
+msgstr "Es ist keine Anmeldungs-Rückruf-URL konfiguriert, daher kann kein Anbieter eine Anmeldung abschließen. Legen Sie es unter Einstellungen fest."
 
 #. Default: "No provider has the id {id}."
 #: components/ControlPanel/ProvidersControlPanel
 msgid "No provider has the id {id}."
-msgstr ""
+msgstr "Kein Anbieter hat die ID {id}."
 
 #. Default: "No providers are configured yet."
 #: components/ControlPanel/ProvidersControlPanel
 msgid "No providers are configured yet."
-msgstr ""
+msgstr "Noch keine Anbieter konfiguriert."
 
 #. Default: "Not configured"
 #: components/ControlPanel/UserAccountPanel
 msgid "Not configured"
-msgstr ""
+msgstr "Nicht konfiguriert"
 
 #. Default: "Nothing"
 #: components/Applications/ApplicationsPanel
 msgid "Nothing"
-msgstr ""
+msgstr "Nichts"
 
 #. Default: "Nothing beyond the fact that you signed in."
 #: components/Applications/ApplicationsPanel
 msgid "Nothing beyond the fact that you signed in."
-msgstr ""
+msgstr "Nichts außer der Tatsache, dass Sie sich angemeldet haben."
 
 #. Default: "OAuth clients"
 #: components/ControlPanel/ClientsControlPanel
 msgid "OAuth clients"
-msgstr ""
+msgstr "OAuth-Clients"
 
 #. Default: "Older keys stay in the ring so tokens already issued keep verifying. The ring holds {size}; rotating more than that within one access-token lifetime will invalidate tokens still in flight."
 #: components/ControlPanel/ClientsPanel
 msgid "Older keys stay in the ring so tokens already issued keep verifying."
-msgstr ""
+msgstr "Ältere Schlüssel bleiben im Ring, damit bereits ausgegebene Tokens die Verifizierung weiterhin durchführen. Der Ring hält {size}; Das Drehen von mehr als diesem innerhalb einer Zugriffstoken-Lebensdauer invalidiert noch immer Tokens."
 
 #. Default: "Order"
 #: components/ControlPanel/ProvidersTable
 #: components/Widgets/OrderedListTable/OrderedListTable
 msgid "Order"
-msgstr ""
+msgstr "Reihenfolge"
 
 #. Default: "Page"
 #: components/Toolbar/Toolbar
 msgid "Page"
-msgstr ""
+msgstr "Seite"
 
 #. Default: "Part of"
 #: components/Views/GroupView
 msgid "Part of"
-msgstr ""
+msgstr "Teil von"
 
 #. Default: "Password"
 #: components/Login/PasswordForm
 msgid "Password"
-msgstr ""
+msgstr "Passwort"
 
 #. Default: "Personal Information"
 #: components/Toolbar/Toolbar
 msgid "Personal Information"
-msgstr ""
+msgstr "Persönliche Informationen"
 
 #. Default: "Personal Preferences"
 #: components/Toolbar/Toolbar
 msgid "Personal Preferences"
-msgstr ""
+msgstr "Persönliche Voreinstellungen"
 
 #. Default: "Personal tools"
 #: components/Toolbar/Toolbar
 msgid "Personal tools"
-msgstr ""
+msgstr "Persönliche Werkzeuge"
 
 #. Default: "Plain text. {username} is the name the user signs in with, and {fullname} their full name."
 #: components/Blocks/SignIn/schema
 msgid "Plain text. {username} is the name the user signs in with, and {fullname} their full name."
-msgstr ""
+msgstr "Nur Text. {username} ist der Name, mit dem sich der Benutzer anmeldet, und {fullname} sein vollständiger Name."
 
 #. Default: "Please fill in {fields} before you can continue."
 #: components/ProfileGate/ProfileGate
 msgid "Please fill in {fields} before you can continue."
-msgstr ""
+msgstr "Bitte füllen Sie {fields} aus, bevor Sie fortfahren können."
 
 #. Default: "Preferences"
 #: components/UserMenu/UserMenuPlugs
 msgid "Preferences"
-msgstr ""
+msgstr "Voreinstellungen"
 
 #. Default: "Preferred"
 #: components/Identities/ProfileEmails
 msgid "Preferred"
-msgstr ""
+msgstr "Bevorzugt"
 
 #. Default: "Preferred email"
 #: components/Welcome/WelcomeCard
 msgid "Preferred email"
-msgstr ""
+msgstr "Bevorzugte E-Mail"
 
 #. Default: "Preview the sign-in options"
 #: components/Blocks/SignIn/schema
 msgid "Preview the sign-in options"
-msgstr ""
+msgstr "Vorschau der Anmeldeoptionen"
 
 #. Default: "Profile"
 #: components/UserMenu/ProfileMenuItem
 #: components/UserMenu/UserMenuPlugs
 msgid "Profile"
-msgstr ""
+msgstr "Profil"
 
 #. Default: "Profile field"
 #: helpers/providerSchema
 msgid "Profile field"
-msgstr ""
+msgstr "Profilfeld"
 
 #. Default: "Property map"
 #: helpers/providerSchema
 msgid "Property map"
-msgstr ""
+msgstr "Eigenschaftszuordnung"
 
 #. Default: "Provider deleted"
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Provider deleted"
-msgstr ""
+msgstr "Anbieter gelöscht"
 
 #. Default: "Provider group"
 #: helpers/providerSchema
 msgid "Provider group"
-msgstr ""
+msgstr "Anbieter-Gruppe"
 
 #. Default: "Provider id"
 #: helpers/providerSchema
 msgid "Provider id"
-msgstr ""
+msgstr "Anbieter-ID"
 
 #. Default: "Public (PKCE required)"
 #: components/ControlPanel/ClientsPanel
 msgid "Public (PKCE required)"
-msgstr ""
+msgstr "Öffentlich (PKCE erforderlich)"
 
 #. Default: "Public client"
 #: helpers/clientSchema
 msgid "Public client"
-msgstr ""
+msgstr "Öffentlicher Client"
 
 #. Default: "Reached {endpoint}"
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Reached {endpoint}"
-msgstr ""
+msgstr "Erreicht {endpoint}"
 
 #. Default: "Reached {endpoint} (no key set published)"
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Reached {endpoint} (no key set published)"
-msgstr ""
+msgstr "Erreicht {endpoint} (kein Schlüsselsatz veröffentlicht)"
 
 #. Default: "Reads"
 #: components/Applications/ApplicationsPanel
 msgid "Reads"
-msgstr ""
+msgstr "Liest"
 
 #. Default: "Recent activity"
 #: components/ControlPanel/UserAccountPanel
 msgid "Recent activity"
-msgstr ""
+msgstr "Aktuelle Aktivität"
 
 #. Default: "Register a client"
 #: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ClientsPanel
 msgid "Register a client"
-msgstr ""
+msgstr "Registrieren Sie einen Client"
 
 #. Default: "Registered clients"
 #: components/ControlPanel/ClientsPanel
 msgid "Registered clients"
-msgstr ""
+msgstr "Registrierte Clients"
 
 #. Default: "Registration"
 #: helpers/clientSchema
 msgid "Registration"
-msgstr ""
+msgstr "Registrierung"
 
 #. Default: "Remove"
 #: components/Identities/IdentitiesList
 #: components/Widgets/ProviderIconWidget
 msgid "Remove"
-msgstr ""
+msgstr "Entfernen"
 
 #. Default: "Replace existing file"
 #: components/Widgets/ProviderIconWidget
 msgid "Replace existing file"
-msgstr ""
+msgstr "Ersetzen Sie die vorhandene Datei"
 
 #. Default: "Rotate secret"
 #: components/ControlPanel/ClientsPanel
 msgid "Rotate secret"
-msgstr ""
+msgstr "Geheimnis drehen"
 
 #. Default: "Rotate signing key"
 #: components/ControlPanel/ClientsPanel
 msgid "Rotate signing key"
-msgstr ""
+msgstr "Signaturschlüssel drehen"
 
 #. Default: "Save"
 #: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Save"
-msgstr ""
+msgstr "Speichern"
 
 #. Default: "Scope"
 #: components/ControlPanel/ClientsPanel
 msgid "Scope"
-msgstr ""
+msgstr "Bereich"
 
 #. Default: "Scopes agreed to"
 #: components/Applications/ApplicationsPanel
 msgid "Scopes agreed to"
-msgstr ""
+msgstr "Bereiche vereinbart"
 
 #. Default: "Secret for {clientId}"
 #: components/ControlPanel/SecretReveal
 msgid "Secret for {clientId}"
-msgstr ""
+msgstr "Geheimnis für {clientId}"
 
 #. Default: "Sending"
 #: components/Login/MagicLinkForm
 msgid "Sending"
-msgstr ""
+msgstr "Wird gesendet"
 
 #. Default: "Settings"
 #: components/ControlPanel/ProvidersControlPanel
 #: helpers/providerSchema
 msgid "Settings"
-msgstr ""
+msgstr "Einstellungen"
 
 #. Default: "Shrink toolbar"
 #: components/Toolbar/Toolbar
 msgid "Shrink toolbar"
-msgstr ""
+msgstr "Symbolleiste verkleinern"
 
 #. Default: "Sign in"
 #: components/Login/PasswordForm
 msgid "Sign in"
-msgstr ""
+msgstr "Anmelden"
 
 #. Default: "Sign in with a password"
 #: components/Login/LoginForm
 msgid "Sign in with a password"
-msgstr ""
+msgstr "Mit einem Passwort anmelden"
 
 #. Default: "Sign in with your account on this site."
 #: components/Login/useLogin
 msgid "Sign in with your account on this site."
-msgstr ""
+msgstr "Melden Sie sich mit Ihrem Konto auf dieser Website an."
 
 #. Default: "Sign-in"
 #: components/Blocks/SignIn/schema
 msgid "Sign-in"
-msgstr ""
+msgstr "Anmeldung"
 
 #. Default: "Sign-in methods"
 #: components/ControlPanel/UserAccountPanel
@@ -806,511 +806,511 @@ msgstr ""
 #: components/Identities/IdentitiesList
 #: components/UserMenu/IdentitiesMenuItem
 msgid "Sign-in methods"
-msgstr ""
+msgstr "Anmeldemethoden"
 
 #. Default: "Signing in"
 #: components/Login/PasswordForm
 msgid "Signing in"
-msgstr ""
+msgstr "Wird angemeldet"
 
 #. Default: "Signing key rotated"
 #: components/ControlPanel/ClientsControlPanel
 msgid "Signing key rotated"
-msgstr ""
+msgstr "Signaturschlüssel gedreht"
 
 #. Default: "Signing keys"
 #: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ClientsPanel
 msgid "Signing keys"
-msgstr ""
+msgstr "Signaturschlüssel"
 
 #. Default: "Signing you in…"
 #: components/Callback/Callback
 #: components/FirstLogin/FirstLogin
 msgid "Signing you in"
-msgstr ""
+msgstr "Sie werden angemeldet…"
 
 #. Default: "Site Setup"
 #: components/UserMenu/UserMenuPlugs
 msgid "Site Setup"
-msgstr ""
+msgstr "Website-Einrichtung"
 
 #. Default: "Taking you to {provider}…"
 #: components/Login/LoginForm
 msgid "Taking you to {provider}…"
-msgstr ""
+msgstr "Sie werden zu {provider} geleitet…"
 
 #. Default: "Test connection"
 #: components/ControlPanel/ProvidersControlPanel
 #: components/ControlPanel/ProvidersTable
 msgid "Test connection"
-msgstr ""
+msgstr "Testverbindung"
 
 #. Default: "That did not work. Please try again in a little while."
 #: components/Login/MagicLinkForm
 msgid "That did not work. Please try again in a little while."
-msgstr ""
+msgstr "Das funktionierte nicht. Bitte versuchen Sie es in einer Weile erneut."
 
 #. Default: "That did not work. Please try again."
 #: components/Identities/IdentitiesList
 msgid "That did not work. Please try again."
-msgstr ""
+msgstr "Das funktionierte nicht. Bitte versuchen Sie es erneut."
 
 #. Default: "That list could not be loaded."
 #: components/Applications/ApplicationsPanel
 msgid "That list could not be loaded."
-msgstr ""
+msgstr "Diese Liste konnte nicht geladen werden."
 
 #. Default: "That login name and password did not match."
 #: components/Login/PasswordForm
 msgid "That login name and password did not match."
-msgstr ""
+msgstr "Dieser Anmeldungsname und das Passwort stimmten nicht überein."
 
 #. Default: "That sign-in link is no longer valid. Please start again."
 #: components/Callback/Callback
 msgid "That sign-in link is no longer valid. Please start again."
-msgstr ""
+msgstr "Dieser Anmeldelink ist nicht mehr gültig. Bitte beginnen Sie erneut."
 
 #. Default: "That sign-in option is not available right now."
 #: components/Login/LoginForm
 msgid "That sign-in option is not available right now."
-msgstr ""
+msgstr "Diese Anmeldeoption ist gerade nicht verfügbar."
 
 #. Default: "The new order could not be saved"
 #: components/ControlPanel/ProvidersControlPanel
 msgid "The new order could not be saved"
-msgstr ""
+msgstr "Die neue Reihenfolge konnte nicht gespeichert werden"
 
 #. Default: "The provider refused the sign-in."
 #: components/Callback/Callback
 msgid "The provider refused the sign-in."
-msgstr ""
+msgstr "Der Anbieter lehnte die Anmeldung ab."
 
 #. Default: "The providers could not be read, so this form cannot open."
 #: components/ControlPanel/ProvidersControlPanel
 msgid "The providers could not be read"
-msgstr ""
+msgstr "Die Anbieter konnten nicht gelesen werden, daher kann sich dieses Formular nicht öffnen."
 
 #. Default: "The site settings could not be read, so they cannot be edited here. The most likely cause is a settings field with no registry record, which happens when the add-on gained one and its profile has not been reapplied since."
 #: components/ControlPanel/ProvidersControlPanel
 msgid "The site settings could not be read"
-msgstr ""
+msgstr "Die Website-Einstellungen konnten nicht gelesen werden, daher können sie hier nicht bearbeitet werden. Die wahrscheinlichste Ursache ist ein Einstellungsfeld ohne Registrierungsdatensatz, was passiert, wenn das Add-on einen erhielt und sein Profil seitdem nicht erneut angewendet wurde."
 
 #. Default: "Their preferred email"
 #: components/Blocks/SignIn/schema
 msgid "Their preferred email"
-msgstr ""
+msgstr "Ihre bevorzugte E-Mail"
 
 #. Default: "This application is disabled and is being refused already."
 #: components/Applications/ApplicationsPanel
 msgid "This application is disabled and is being refused already."
-msgstr ""
+msgstr "Diese Anwendung ist deaktiviert und wird bereits abgelehnt."
 
 #. Default: "This application is no longer registered on this site. It cannot ask for anything, and you can remove the record."
 #: components/Applications/ApplicationsPanel
 msgid "This application is no longer registered on this site."
-msgstr ""
+msgstr "Diese Anwendung ist auf dieser Website nicht mehr registriert. Sie kann nichts fragen, und Sie können den Datensatz löschen."
 
 #. Default: "This authorization request cannot be shown. It may have been sent by an application this site does not know, or it may have expired — start again from the application you were signing in to."
 #: components/Consent/ConsentPanel
 msgid "This authorization request cannot be shown."
-msgstr ""
+msgstr "Diese Autorisierungsanfrage kann nicht angezeigt werden. Sie könnte von einer Anwendung gesendet worden sein, die diese Website nicht kennt, oder sie könnte abgelaufen sein -- Beginnen Sie erneut von der Anwendung, von der Sie angemeldet wurden."
 
 #. Default: "This is the only time this secret is shown. It is stored hashed and cannot be read back; if it is lost, rotate it."
 #: components/ControlPanel/SecretReveal
 msgid "This is the only time this secret is shown."
-msgstr ""
+msgstr "Dies ist das einzige Mal, dass dieses Geheimnis angezeigt wird. Es wird gehashed gespeichert und kann nicht zurückgelesen werden; wenn es verloren geht, drehen Sie es."
 
 #. Default: "This is your only way to sign in. Add another first."
 #: components/Identities/IdentitiesList
 msgid "This is your only way to sign in. Add another first."
-msgstr ""
+msgstr "Dies ist Ihre einzige Möglichkeit, sich anzumelden. Fügen Sie zuerst einen anderen hinzu."
 
 #. Default: "This sign-in link is incomplete."
 #: components/Callback/Callback
 msgid "This sign-in link is incomplete."
-msgstr ""
+msgstr "Dieser Anmeldelink ist unvollständig."
 
 #. Default: "Title"
 #: components/ControlPanel/ClientsPanel
 #: components/ControlPanel/ProvidersTable
 msgid "Title"
-msgstr ""
+msgstr "Titel"
 
 #. Default: "Type"
 #: components/ControlPanel/ClientsPanel
 msgid "Type"
-msgstr ""
+msgstr "Typ"
 
 #. Default: "Unlock"
 #: components/Toolbar/Toolbar
 msgid "Unlock"
-msgstr ""
+msgstr "Entsperren"
 
 #. Default: "Unregister"
 #: components/ControlPanel/ClientsPanel
 msgid "Unregister"
-msgstr ""
+msgstr "Registrierung aufheben"
 
 #. Default: "Unregister this client? Every token already minted for it stops being accepted at once."
 #: components/ControlPanel/ClientsPanel
 msgid "Unregister this client?"
-msgstr ""
+msgstr "Diesen Client nicht registrieren? Jedes bereits geprägte Token wird sofort nicht mehr akzeptiert."
 
 #. Default: "Verified"
 #: components/ControlPanel/UserAccountPanel
 #: components/Identities/ProfileEmails
 msgid "Verified"
-msgstr ""
+msgstr "Verifiziert"
 
 #. Default: "Verify"
 #: components/Identities/ProfileEmails
 msgid "Verify"
-msgstr ""
+msgstr "Verifizieren"
 
 #. Default: "Welcome"
 #: components/Welcome/WelcomeCard
 msgid "Welcome"
-msgstr ""
+msgstr "Willkommen"
 
 #. Default: "Welcome message"
 #: components/Blocks/SignIn/schema
 msgid "Welcome message"
-msgstr ""
+msgstr "Willkommensnachricht"
 
 #. Default: "What they signed in with"
 #: components/Blocks/SignIn/schema
 msgid "What they signed in with"
-msgstr ""
+msgstr "Womit sie sich anmeldeten"
 
 #. Default: "When they last signed in"
 #: components/Blocks/SignIn/schema
 msgid "When they last signed in"
-msgstr ""
+msgstr "Wann sie sich zuletzt anmeldeten"
 
 #. Default: "While editing only: show what a visitor who is not signed in sees."
 #: components/Blocks/SignIn/schema
 msgid "While editing only: show what a visitor who is not signed in sees."
-msgstr ""
+msgstr "Nur beim Bearbeiten: Zeigen Sie, was ein nicht angemeldeter Besucher sieht."
 
 #. Default: "Withdraw access"
 #: components/Applications/Applications
 #: components/Applications/ApplicationsPanel
 msgid "Withdraw access"
-msgstr ""
+msgstr "Zugriff zurückziehen"
 
 #. Default: "Withdraw access for {client}? It will be signed out everywhere and will have to ask you again next time."
 #: components/Applications/Applications
 msgid "Withdraw access for {client}?"
-msgstr ""
+msgstr "Zugriff für {client} zurückziehen? Es wird überall abgemeldet und muss Sie beim nächsten Mal erneut fragen."
 
 #. Default: "Withdrawing signs an application out everywhere and makes it ask you again next time. An access token it already holds keeps working for up to {minutes, plural, one {# minute} other {# minutes}} — this site cannot recall one that was already issued."
 #: components/Applications/ApplicationsPanel
 msgid "Withdrawing signs it out and makes it ask again."
-msgstr ""
+msgstr "Das Zurückziehen meldet eine Anwendung überall ab und lässt sie Sie beim nächsten Mal erneut fragen. Ein Zugriffstoken, das es bereits hält, funktioniert weiterhin bis zu {minutes, plural, one {# Minute} other {# Minuten}} — Diese Website kann eines, das bereits ausgestellt wurde, nicht zurückrufen."
 
 #. Default: "Yes"
 #: components/ControlPanel/ClientsPanel
 #: components/ControlPanel/ProvidersTable
 msgid "Yes"
-msgstr ""
+msgstr "Ja"
 
 #. Default: "You are signed in as {user}."
 #: components/Consent/ConsentPanel
 msgid "You are signed in as {user}."
-msgstr ""
+msgstr "Sie sind angemeldet als {user}."
 
 #. Default: "You authorized this application on {date}."
 #: components/Applications/ApplicationsPanel
 msgid "You authorized this application on {date}."
-msgstr ""
+msgstr "Sie haben diese Anwendung am {date} autorisiert."
 
 #. Default: "You have no external sign-in methods linked yet."
 #: components/Identities/IdentitiesList
 msgid "You have no external sign-in methods linked yet."
-msgstr ""
+msgstr "Sie haben noch keine externen Anmeldemethoden verknüpft."
 
 #. Default: "You have not authorized any application. Anything you sign in to with this account will ask you first, and appear here afterwards."
 #: components/Applications/ApplicationsPanel
 msgid "You have not authorized any application."
-msgstr ""
+msgstr "Sie haben keine Anwendung autorisiert. Alles, bei dem Sie sich mit diesem Konto anmelden, wird Sie zuerst fragen und dann hier erscheinen."
 
 #. Default: "Your email addresses"
 #: components/Identities/ProfileEmails
 msgid "Your email addresses"
-msgstr ""
+msgstr "Ihre E-Mail-Adressen"
 
 #. Default: "Your profile"
 #: components/Welcome/WelcomeCard
 msgid "Your profile"
-msgstr ""
+msgstr "Ihr Profil"
 
 #. Default: "Your profile needs a few more details before you can continue."
 #: components/ProfileGate/ProfileGate
 msgid "Your profile needs a few more details before you can continue."
-msgstr ""
+msgstr "Ihr Profil benötigt ein paar weitere Details, bevor Sie fortfahren können."
 
 #. Default: "Your verified addresses"
 #: components/ConfirmEmail/ConfirmEmail
 msgid "Your verified addresses"
-msgstr ""
+msgstr "Ihre verifizierten Adressen"
 
 #. Default: "Forgot your password?"
 #: components/Login/PasswordForm
 msgid "box_forgot_password_option"
-msgstr ""
+msgstr "Passwort vergessen?"
 
 #. Default: "Permanent. It is what every token already issued is bound to, so it cannot be changed afterwards."
 #: helpers/clientSchema
 msgid "client-id-help"
-msgstr ""
+msgstr "Dauerhaft. Es ist das, an das bereits jedes ausgegebene Token gebunden ist, daher kann es danach nicht geändert werden."
 
 #. Default: "A native or browser app, which cannot keep a secret. No secret is minted and PKCE becomes mandatory instead."
 #: helpers/clientSchema
 msgid "client-public-help"
-msgstr ""
+msgstr "Eine native oder Browser-App, die kein Geheimnis bewahren kann. Kein Geheimnis wird geprägt und PKCE wird stattdessen erforderlich."
 
 #. Default: "Continue"
 #: components/ConfirmEmail/ConfirmEmail
 msgid "confirm-email-continue"
-msgstr ""
+msgstr "Fortfahren"
 
 #. Default: "You have more than one verified email address. Choose the one this site should use for you."
 #: components/ConfirmEmail/ConfirmEmail
 msgid "confirm-email-description"
-msgstr ""
+msgstr "Sie haben mehr als eine verifizierte E-Mail-Adresse. Wählen Sie diejenige aus, die diese Website für Sie verwenden soll."
 
 #. Default: "This site will use {address} for you."
 #: components/ConfirmEmail/ConfirmEmail
 msgid "confirm-email-done"
-msgstr ""
+msgstr "Diese Website verwendet {address} für Sie."
 
 #. Default: "That address could not be confirmed. Reload the page and try again."
 #: components/ConfirmEmail/ConfirmEmail
 msgid "confirm-email-failed"
-msgstr ""
+msgstr "Diese Adresse konnte nicht bestätigt werden. Laden Sie die Seite neu und versuchen Sie es erneut."
 
 #. Default: "Loading…"
 #: components/ConfirmEmail/ConfirmEmail
 msgid "confirm-email-loading"
-msgstr ""
+msgstr "Wird geladen…"
 
 #. Default: "There is no email address waiting to be confirmed."
 #: components/ConfirmEmail/ConfirmEmail
 msgid "confirm-email-nothing"
-msgstr ""
+msgstr "Es gibt keine E-Mail-Adresse, die auf Bestätigung wartet."
 
 #. Default: "Confirm"
 #: components/ConfirmEmail/ConfirmEmail
 msgid "confirm-email-submit"
-msgstr ""
+msgstr "Bestätigen"
 
 #. Default: "Loading members…"
 #: components/Views/GroupView
 msgid "group-view-loading"
-msgstr ""
+msgstr "Mitglieder werden geladen…"
 
 #. Default: "Everybody in these groups is in this one as well, at any depth."
 #: components/Views/GroupView
 msgid "group-view-nested-help"
-msgstr ""
+msgstr "Jeder in diesen Gruppen ist auch in dieser, in beliebiger Tiefe."
 
 #. Default: "Nobody is in this group yet."
 #: components/Views/GroupView
 msgid "group-view-no-members"
-msgstr ""
+msgstr "Bisher niemand in dieser Gruppe."
 
 #. Default: "You can see this group but not who is in it. A membership list is visible to its own members and to somebody who manages users."
 #: components/Views/GroupView
 msgid "group-view-refused"
-msgstr ""
+msgstr "Sie können diese Gruppe sehen, aber nicht wer darin ist. Eine Mitgliederliste ist sichtbar für ihre eigenen Mitglieder und für jemanden, der Benutzer verwaltet."
 
 #. Default: "through {groups}"
 #: components/Views/GroupView
 msgid "group-view-through"
-msgstr ""
+msgstr "durch {groups}"
 
 #. Default: "How you sign in"
 #: components/Identities/IdentitiesList
 msgid "identities-sections"
-msgstr ""
+msgstr "Wie Sie sich anmelden"
 
 #. Default: "not verified"
 #: components/Welcome/WelcomeCard
 msgid "not verified"
-msgstr ""
+msgstr "nicht verifiziert"
 
 #. Default: "nothing beyond the fact that you signed in"
 #: components/Consent/ConsentPanel
 msgid "nothing beyond the fact that you signed in"
-msgstr ""
+msgstr "nichts außer der Tatsache, dass Sie sich anmeldeten"
 
 #. Default: "Remove this entry from the list? It is gone once the form is saved."
 #: components/Widgets/OrderedListTable/OrderedListTable
 msgid "ordered-list-confirm-delete"
-msgstr ""
+msgstr "Diesen Eintrag aus der Liste entfernen? Es ist weg, sobald das Formular gespeichert wird."
 
 #. Default: "{value} is already on the list."
 #: components/Widgets/OrderedStringListWidget/OrderedStringListWidget
 msgid "ordered-list-duplicate"
-msgstr ""
+msgstr "{value} ist bereits in der Liste."
 
 #. Default: "Nothing has been added yet."
 #: components/Widgets/OrderedListTable/OrderedListTable
 msgid "ordered-list-empty"
-msgstr ""
+msgstr "Es wurde noch nichts hinzugefügt."
 
 #. Default: "Move an address to the top to make it the one this site uses for you."
 #: components/Identities/ProfileEmails
 msgid "profile-emails-choose"
-msgstr ""
+msgstr "Verschieben Sie eine Adresse nach oben, um sie zu der Adresse zu machen, die diese Website für Sie verwendet."
 
 #. Default: "Your profile carries no email address yet."
 #: components/Identities/ProfileEmails
 msgid "profile-emails-empty"
-msgstr ""
+msgstr "Ihr Profil trägt noch keine E-Mail-Adresse."
 
 #. Default: "A verified address can be used to sign in with a link, and to recognise you when you add another provider. Add an address on your profile first, then verify it here."
 #: components/Identities/ProfileEmails
 msgid "profile-emails-intro"
-msgstr ""
+msgstr "Eine verifizierte Adresse kann zum Anmelden mit einem Link und zum Erkennen verwendet werden, wenn Sie einen anderen Anbieter hinzufügen. Fügen Sie zunächst eine Adresse zu Ihrem Profil hinzu, und überprüfen Sie sie dann hier."
 
 #. Default: "A verified address is how this site recognises you when you add another provider. Add an address on your profile first, then verify it here."
 #: components/Identities/ProfileEmails
 msgid "profile-emails-intro-no-sign-in"
-msgstr ""
+msgstr "Eine verifizierte Adresse ist, wie diese Website Sie erkennt, wenn Sie einen anderen Anbieter hinzufügen. Fügen Sie zunächst eine Adresse zu Ihrem Profil hinzu, und überprüfen Sie sie dann hier."
 
 #. Default: "The address this site uses for you: the first verified one, or the first on your profile when none is verified."
 #: components/Identities/ProfileEmails
 msgid "profile-emails-preferred-help"
-msgstr ""
+msgstr "Die Adresse, die diese Website für Sie verwendet: die erste verifizierte, oder die erste in Ihrem Profil, wenn keine verifiziert ist."
 
 #. Default: "Check that mailbox. The link confirms the address; it does not sign anybody in."
 #: components/Identities/ProfileEmails
 msgid "profile-emails-sent"
-msgstr ""
+msgstr "Überprüfen Sie dieses Postfach. Der Link bestätigt die Adresse; es meldet niemanden an."
 
 #. Default: "You have more than one verified email address. Choose the one this site should use for you before you continue."
 #: components/ProfileGate/ProfileGate
 msgid "profile-gate-confirm-email"
-msgstr ""
+msgstr "Sie haben mehr als eine verifizierte E-Mail-Adresse. Wählen Sie diejenige aus, die diese Website für Sie verwenden soll, bevor Sie fortfahren."
 
 #. Default: "Unnamed user"
 #: components/Views/ProfileView
 msgid "profile-view-unnamed"
-msgstr ""
+msgstr "Unbenannter Benutzer"
 
 #. Default: "Which service this provider talks to. It decides the rest of the form, and it cannot be changed afterwards."
 #: helpers/providerSchema
 msgid "provider-driver-help"
-msgstr ""
+msgstr "Mit welchem Service dieser Anbieter spricht. Es entscheidet über den Rest des Formulars und kann danach nicht geändert werden."
 
 #. Default: "The driver's icon, used until one is uploaded."
 #: components/Widgets/ProviderIconWidget
 msgid "provider-icon-default"
-msgstr ""
+msgstr "Das Symbol des Treibers, das bis zur Hochladung eines verwendet wird."
 
 #. Default: "An SVG file. It is drawn in the button, so it takes the button colours; anything else is refused."
 #: components/Widgets/ProviderIconWidget
 msgid "provider-icon-hint"
-msgstr ""
+msgstr "Eine SVG-Datei. Sie wird in der Schaltfläche gezeichnet, daher werden die Schaltflächenfarben verwendet; alles andere wird abgelehnt."
 
 #. Default: "Used in URLs and stored with every identity linked through this provider, so it is permanent."
 #: helpers/providerSchema
 msgid "provider-id-help"
-msgstr ""
+msgstr "In URLs verwendet und mit jeder Identität gespeichert, die über diesen Anbieter verknüpft ist, daher ist es dauerhaft."
 
 #. Default: "signing"
 #: components/ControlPanel/ClientsPanel
 msgid "signing"
-msgstr ""
+msgstr "signiert"
 
 #. Default: "user avatar"
 #: components/UserMenu/UserAvatar
 msgid "user avatar"
-msgstr ""
+msgstr "Benutzer-Avatar"
 
 #. Default: "The provider is switched off, so this identity cannot sign anybody in."
 #: components/ControlPanel/UserAccountPanel
 msgid "user-account-disabled-help"
-msgstr ""
+msgstr "Der Anbieter ist ausgeschaltet, daher kann sich über diese Identität niemand anmelden."
 
 #. Default: "That could not be read."
 #: components/ControlPanel/UserAccountPanel
 msgid "user-account-failed"
-msgstr ""
+msgstr "Das konnte nicht gelesen werden."
 
 #. Default: "The provider was removed while this identity was still stored against it. Nobody can sign in through it, and nothing was deleted."
 #: components/ControlPanel/UserAccountPanel
 msgid "user-account-gone-help"
-msgstr ""
+msgstr "Der Anbieter wurde entfernt, während diese Identität noch dagegen gespeichert war. Niemand kann sich über ihn anmelden, und nichts wurde gelöscht."
 
 #. Default: "last used {date}"
 #: components/ControlPanel/UserAccountPanel
 msgid "user-account-last-used"
-msgstr ""
+msgstr "zuletzt verwendet {date}"
 
 #. Default: "linked {date}"
 #: components/ControlPanel/UserAccountPanel
 msgid "user-account-linked"
-msgstr ""
+msgstr "verknüpft {date}"
 
 #. Default: "Loading…"
 #: components/ControlPanel/UserAccountPanel
 msgid "user-account-loading"
-msgstr ""
+msgstr "Wird geladen…"
 
 #. Default: "Not in the retained log"
 #: components/ControlPanel/UserAccountPanel
 msgid "user-account-never"
-msgstr ""
+msgstr "Nicht im Audit-Protokoll"
 
 #. Default: "Not the same as never: the authentication log is bounded, so an account dormant longer than the retention period has had its entries dropped."
 #: components/ControlPanel/UserAccountPanel
 msgid "user-account-never-help"
-msgstr ""
+msgstr "Nicht dasselbe wie nie: Das Authentifizierungs-Protokoll ist begrenzt, daher hatte ein Konto, das länger als die Aufbewahrungsdauer ruhte, seine Einträge gelöscht."
 
 #. Default: "never used"
 #: components/ControlPanel/UserAccountPanel
 msgid "user-account-never-used"
-msgstr ""
+msgstr "nie verwendet"
 
 #. Default: "This account has no profile, so it carries no addresses."
 #: components/ControlPanel/UserAccountPanel
 msgid "user-account-no-addresses"
-msgstr ""
+msgstr "Dieses Konto hat kein Profil, daher hat es keine Adressen."
 
 #. Default: "Nothing recorded."
 #: components/ControlPanel/UserAccountPanel
 msgid "user-account-no-events"
-msgstr ""
+msgstr "Nichts aufgezeichnet."
 
 #. Default: "This account signs in with a password only."
 #: components/ControlPanel/UserAccountPanel
 msgid "user-account-no-providers"
-msgstr ""
+msgstr "Dieses Konto meldet sich nur mit einem Passwort an."
 
 #. Default: "What this account is made of"
 #: components/ControlPanel/UserAccountPanel
 msgid "user-account-sections"
-msgstr ""
+msgstr "Woraus dieses Konto besteht"
 
 #. Default: "verified"
 #: components/Welcome/WelcomeCard
 msgid "verified"
-msgstr ""
+msgstr "verifiziert"
 
 #. Default: "verifying only"
 #: components/ControlPanel/ClientsPanel
 msgid "verifying only"
-msgstr ""
+msgstr "nur Verifizierung"
 
 #. Default: "{count, plural, one {# field} other {# fields}}"
 #: components/Applications/ApplicationsPanel
 msgid "{count, plural, one {# field} other {# fields}}"
-msgstr ""
+msgstr "{count, plural, one {# Feld} other {# Felder}}"
 
 #. Default: "{total} of {size} in the ring, signing with {algorithm}. Public keys are published at {jwks}."
 #: components/ControlPanel/ClientsPanel
 msgid "{total} of {size} in the ring, signing with {algorithm}."
-msgstr ""
+msgstr "{total} von {size} im Ring, Signierung mit {algorithm}. Öffentliche Schlüssel werden veröffentlicht unter {jwks}."

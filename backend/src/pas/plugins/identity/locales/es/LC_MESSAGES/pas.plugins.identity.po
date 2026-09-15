@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-08-20 21:38+0000\n"
+"POT-Creation-Date: 2026-09-15 00:14+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI +ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -14,26 +14,996 @@ msgstr ""
 "Preferred-Encodings: utf-8 latin1\n"
 "Domain: DOMAIN\n"
 
-#: pas/plugins/identity/profiles.zcml:13
-msgid "A Plone add-on implementing a complete OAuth solution"
-msgstr ""
+#: pas/plugins/identity/profiles/default/types/PrincipalsContainer.xml
+msgid "A folder of user profiles and groups."
+msgstr "Una carpeta de perfiles de usuario y grupos."
 
-#: pas/plugins/identity/profiles.zcml:22
-msgid "Create example content to showcase this addon."
-msgstr ""
+#: pas/plugins/identity/profiles/default/types/UserGroup.xml
+msgid "A group, backed by content. Membership is a field on each Profile, not a list here."
+msgstr "Un grupo, respaldado por contenido. La pertenencia es un campo en cada Perfil, no una lista aquí."
 
-#: pas/plugins/identity/profiles.zcml:30
+#: pas/plugins/identity/core/drivers/settings.py:57
+msgid "A random id"
+msgstr "Un ID aleatorio"
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:282
+msgid "A redirect URI cannot be empty."
+msgstr "Una URI de redirección no puede estar vacía."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:287
+msgid "A redirect URI may not carry a fragment."
+msgstr "Una URI de redirección no puede llevar un fragmento."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:131
+msgid "A redirect URI may not use a wildcard in its port."
+msgstr "Una URI de redirección no puede usar un comodín en su puerto."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:197
+msgid "A redirect URI may not use a wildcard in its query string."
+msgstr "Una URI de redirección no puede usar un comodín en su cadena de consulta."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:128
+msgid "A redirect URI may not use a wildcard with a user name."
+msgstr "Una URI de redirección no puede usar un comodín con un nombre de usuario."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:142
+msgid "A redirect URI may use only one host wildcard."
+msgstr "Una URI de redirección puede usar solo un comodín de host."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:171
+msgid "A redirect URI may use only one path wildcard."
+msgstr "Una URI de redirección puede usar solo un comodín de ruta."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:285
+msgid "A redirect URI must be absolute, with a scheme."
+msgstr "Una URI de redirección debe ser absoluta, con un esquema."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:293
+msgid "A redirect URI must name a host."
+msgstr "Una URI de redirección debe nombrar un host."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:306
+msgid "A redirect URI must use https, a loopback address, or a private-use scheme such as com.example.app:/callback."
+msgstr "Una URI de redirección debe usar https, una dirección de loopback o un esquema de uso privado como com.example.app:/callback."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:135
+msgid "A wildcard host must be the whole leftmost label, as in https://*.example.com/callback."
+msgstr "Un host con comodín debe ser la etiqueta más a la izquierda completa, como en https://*.example.com/callback."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:146
+msgid "A wildcard host needs a registered domain under it, as in https://*.example.com/callback."
+msgstr "Un host con comodín necesita un dominio registrado bajo él, como en https://*.example.com/callback."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:165
+msgid "A wildcard path must be the whole last segment, as in https://example.com/app/*."
+msgstr "Una ruta con comodín debe ser el último segmento completo, como en https://example.com/app/*."
+
+#: pas/plugins/identity/server/interfaces.py:190
+msgid "Access token lifetime (seconds)"
+msgstr "Duración del token de acceso (segundos)"
+
+#: pas/plugins/identity/server/interfaces.py:191
+msgid "Access tokens are self-encoded and there is no denylist, so this is also the worst-case window between a revocation and the last token honouring it."
+msgstr "Los tokens de acceso se codifican a sí mismos y no hay lista de denegación, por lo que esta es también la ventana del peor caso entre una revocación y el último token que la honra."
+
+#: pas/plugins/identity/core/drivers/settings.py:120
+msgid "Accounts"
+msgstr "Cuentas"
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+msgid "Active"
+msgstr "Activo"
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:401
+msgid "Acts as"
+msgstr "Actúa como"
+
+#: pas/plugins/identity/core/drivers/settings.py:325
+msgid "Address preference"
+msgstr "Preferencia de dirección"
+
+#: pas/plugins/identity/core/drivers/settings.py:296
+msgid "Allow the avatar to be fetched over plain HTTP"
+msgstr "Permitir que el avatar se obtenga a través de HTTP simple"
+
+#: pas/plugins/identity/core/drivers/settings.py:403
+msgid "Also applied per requesting address. The endpoint answers identically whether or not the address belongs to an account, so this is what stops it being used to enumerate them."
+msgstr "También se aplica por dirección solicitante. El punto final responde de manera idéntica independientemente de si la dirección pertenece o no a una cuenta, por lo que esto es lo que impide que se use para enumerarlas."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:325
+msgid "An SVG file. Empty means no icon, and the frontend then draws the title alone rather than a placeholder every provider shares."
+msgstr "Un archivo SVG. Vacío significa sin icono, y el frontend dibuja solo el título en lugar de un marcador de posición que cada proveedor comparte."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:557
+msgid "Ask a person with several verified addresses which one is theirs"
+msgstr "Pregunte a una persona con varias direcciones verificadas cuál es la suya"
+
+#: pas/plugins/identity/core/drivers/settings.py:197
+msgid "Attach to an existing account with the same verified email"
+msgstr "Adjuntar a una cuenta existente con el mismo correo verificado"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:199
+msgid "Audit destinations"
+msgstr "Destinos de auditoría"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:175
+msgid "Audit entries kept per user"
+msgstr "Entradas de auditoría guardadas por usuario"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:239
+msgid "Audit log"
+msgstr "Registro de auditoría"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:182
+msgid "Audit retention in days"
+msgstr "Retención de auditoría en días"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:135
+msgid "Avatar fetch timeout in seconds"
+msgstr "Tiempo de espera para obtener avatar en segundos"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:335
+msgid "Background colour"
+msgstr "Color de fondo"
+
+#: pas/plugins/identity/core/contents/profile.py:94
+msgid "Biography"
+msgstr "Biografía"
+
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Bring a deactivated account back. It returns as incomplete rather than complete: whatever made it worth deactivating is worth reviewing."
+msgstr "Traer de vuelta una cuenta desactivada. Regresa como incompleta en lugar de completa: cualquier cosa que valió la pena desactivar vale la pena revisar."
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+msgid "Bring the group back, with the membership it always had."
+msgstr "Traiga el grupo de vuelta, con la membresía que siempre tuvo."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:386
+msgid "Claim"
+msgstr "Notificación"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:380
+msgid "Claim path to Profile field, applied on every login. One record rather than one per row: the keys are claim paths an operator types, so a record each would mean creating and deleting records as the map is edited."
+msgstr "Ruta de notificación al campo de perfil, aplicada en cada inicio de sesión. Un registro en lugar de uno por fila: las claves son rutas de notificación que escribe un operador, por lo que un registro cada uno significaría crear y eliminar registros a medida que se edita el mapa."
+
+#: pas/plugins/identity/profiles.zcml:29
+msgid "Clear the dedicated user catalog and index every user profile in the site again. Re-runnable, and safe to run at any time."
+msgstr "Borre el catálogo de usuarios dedicado e indexe nuevamente cada perfil de usuario en el sitio. Re-ejecutable y seguro de ejecutar en cualquier momento."
+
+#: pas/plugins/identity/core/drivers/settings.py:82
+msgid "Client ID"
+msgstr "ID de cliente"
+
+#: pas/plugins/identity/core/drivers/settings.py:88
+msgid "Client secret"
+msgstr "Secreto del cliente"
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Comments about the last transition"
+msgstr "Comentarios sobre la última transición"
+
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Complete"
+msgstr "Completo"
+
+#: pas/plugins/identity/server/interfaces.py:165
+msgid "Consent screen URL"
+msgstr "URL de pantalla de consentimiento"
+
+#: pas/plugins/identity/profiles/default/types/UserProfile.xml
+msgid "Content-backed profile for one Plone user."
+msgstr "Perfil respaldado por contenido para un usuario de Plone."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:121
+msgid "Copy provider avatars into portrait storage"
+msgstr "Copiar avatares de proveedor en almacenamiento de retrato"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:149
+msgid "Counted off the stream rather than taken from a header, so a provider cannot understate it. This is a limit on what a user-supplied URL may make this site read into memory: raise it knowing that, and see the documentation on why avatar syncing is off by default."
+msgstr "Contado del flujo en lugar de tomado de un encabezado, por lo que un proveedor no puede subestimarlo. Este es un límite de lo que una URL proporcionada por el usuario puede hacer que este sitio lea en la memoria: aumente sabiendo eso, y vea la documentación sobre por qué la sincronización de avatar está desactivada de forma predeterminada."
+
+#: pas/plugins/identity/profiles.zcml:87
+msgid "Create example content to showcase the new website"
+msgstr "Crear contenido de ejemplo para mostrar el nuevo sitio web"
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Deactivate"
+msgstr "Desactivar"
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Deactivated"
+msgstr "Desactivado"
+
+#: pas/plugins/identity/core/contents/group.py:70
+msgid "Description"
+msgstr "Descripción"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:209
+msgid "Destination"
+msgstr "Destino"
+
+#: pas/plugins/identity/core/drivers/settings.py:214
+msgid "Discovery is fetched from <issuer>/.well-known/openid-configuration."
+msgstr "El descubrimiento se obtiene de <issuer>/.well-known/openid-configuration."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:284
+msgid "Driver"
+msgstr "Controlador"
+
+#: pas/plugins/identity/profiles/default/types/PrincipalsContainer.xml
+#: pas/plugins/identity/profiles/default/types/UserGroup.xml
+#: pas/plugins/identity/profiles/default/types/UserProfile.xml
+msgid "Edit"
+msgstr "Editar"
+
+#: pas/plugins/identity/core/behaviors/email.py:70
+msgid "Email"
+msgstr "Correo electrónico"
+
+#: pas/plugins/identity/core/behaviors/configure.zcml:50
+#: pas/plugins/identity/core/behaviors/email.py:75
+msgid "Email addresses"
+msgstr "Direcciones de correo electrónico"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:298
+#: pas/plugins/identity/server/controlpanel/interfaces.py:349
+msgid "Enabled"
+msgstr "Habilitado"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:183
+msgid "Entries older than this are dropped."
+msgstr "Las entradas más antiguas que esto se descartan."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:587
+msgid "Enumeration-active group states"
+msgstr "Estados de grupo activos en enumeración"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:516
+msgid "Enumeration-active states"
+msgstr "Estados activos en enumeración"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:531
+msgid "Extra view names never redirected while a profile is incomplete, matched against the last segment of the path. The sign-in, sign-out and OAuth authorization endpoints are already exempt; this is for a browser-based flow another add-on publishes, which would otherwise be interrupted halfway."
+msgstr "Nombres de vista adicionales nunca redirigidos mientras un perfil está incompleto, coincididos contra el último segmento de la ruta. Los puntos finales de inicio de sesión, cierre de sesión y autorización de OAuth ya están exentos; esto es para un flujo basado en navegador que otro complemento publica, que de lo contrario se interrumpiría a la mitad."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:573
+msgid "Fields a user must fill in before their profile counts as complete. Empty means the fields the profile type itself marks required, which is the right answer for a site that has not thought about it and for a site with its own user type. Naming a field here that the type does not require will keep asking for something the edit form does not insist on."
+msgstr "Campos que un usuario debe completar antes de que su perfil cuente como completo. Vacío significa los campos que el tipo de perfil mismo marca como requerido, que es la respuesta correcta para un sitio que no ha pensado en ello y para un sitio con su propio tipo de usuario. Nombrar un campo aquí que el tipo no requiere seguirá pidiendo algo que el formulario de edición no insiste."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:435
+msgid "Flow"
+msgstr "Flujo"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:346
+msgid "Foreground colour"
+msgstr "Color de primer plano"
+
+#: pas/plugins/identity/core/contents/profile.py:85
+msgid "Full name"
+msgstr "Nombre completo"
+
+#: pas/plugins/identity/core/behaviors/configure.zcml:63
+#: pas/plugins/identity/core/behaviors/roles.py:73
+msgid "Global roles"
+msgstr "Roles globales"
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:374
+msgid "Grants"
+msgstr "Concesiones"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:484
+msgid "Group container id"
+msgstr "ID del contenedor de grupo"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:474
+msgid "Group container parent"
+msgstr "Padre del contenedor de grupo"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:110
+msgid "Group container path"
+msgstr "Ruta del contenedor de grupo"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:495
+msgid "Group container title"
+msgstr "Título del contenedor de grupo"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:505
+msgid "Group container type"
+msgstr "Tipo de contenedor de grupo"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:98
+msgid "Group content type"
+msgstr "Tipo de contenido de grupo"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:405
+msgid "Group map"
+msgstr "Mapa de grupo"
+
+#: pas/plugins/identity/core/behaviors/configure.zcml:38
+msgid "Group membership"
+msgstr "Pertenencia al grupo"
+
+#: pas/plugins/identity/core/behaviors/membership.py:76
+#: pas/plugins/identity/core/drivers/settings.py:262
+msgid "Groups"
+msgstr "Grupos"
+
+#: pas/plugins/identity/core/drivers/settings.py:226
+msgid "Groups arrive in the claim"
+msgstr "Los grupos llegan en la notificación"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:588
+msgid "Groups in these workflow states are visible to group enumeration and grant membership."
+msgstr "Los grupos en estos estados de flujo de trabajo son visibles para la enumeración de grupos y otorgan membresía."
+
+#: pas/plugins/identity/server/interfaces.py:201
+msgid "Groups never released in a claim"
+msgstr "Grupos nunca liberados en una notificación"
+
+#: pas/plugins/identity/server/interfaces.py:202
+msgid "Groups this site keeps to itself. A group named here is left out of the `groups` claim for every relying party, which is how an operations or on-call group stays a local matter. It does not change who is in the group, only what this server says about it."
+msgstr "Grupos que este sitio mantiene para sí mismo. Un grupo nombrado aquí se deja fuera de la notificación de `groups` para cada parte que confía, que es cómo un grupo de operaciones o en espera permanece como un asunto local. No cambia quién está en el grupo, solo lo que este servidor dice sobre ello."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:544
+msgid "Hold users on their profile until it is complete"
+msgstr "Mantener a los usuarios en su perfil hasta que esté completo"
+
+#: pas/plugins/identity/core/behaviors/details.py:52
+msgid "Home page"
+msgstr "Página de inicio"
+
+#: pas/plugins/identity/core/behaviors/configure.zcml:73
+msgid "Home page, location and picture."
+msgstr "Página de inicio, ubicación e imagen."
+
+#: pas/plugins/identity/core/drivers/settings.py:393
+msgid "How long a link stays redeemable. Capped at fifteen minutes whatever is configured, and a token is burned after one use."
+msgstr "Cuánto tiempo permanece un enlace canjeable. Limitado a quince minutos independientemente de la configuración, y un token se quema después de un uso."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:136
+msgid "How long to wait for a provider's avatar. This runs while somebody is waiting to log in, so the right number depends on where the provider is: a container on this host answers in milliseconds, a distant CDN may not. A fetch that times out is a missing picture, never a failed login."
+msgstr "Cuánto tiempo esperar por el avatar de un proveedor. Esto se ejecuta mientras alguien espera para iniciar sesión, por lo que el número correcto depende de dónde esté el proveedor: un contenedor en este host responde en milisegundos, una CDN distante puede que no. Una búsqueda que agota el tiempo es una imagen faltante, nunca un inicio de sesión fallido."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:162
+msgid "How long to wait for a provider's metadata document. Separate from the avatar timeout because it fails differently: an avatar that does not arrive is a missing picture, while metadata that does not arrive is a login that cannot start."
+msgstr "Cuánto tiempo esperar por el documento de metadatos de un proveedor. Separado del tiempo de espera del avatar porque falla de manera diferente: un avatar que no llega es una imagen faltante, mientras que los metadatos que no llegan son un inicio de sesión que no puede comenzar."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:424
+msgid "How this client authenticates at the token endpoint. Decided by whether it was registered with a secret."
+msgstr "Cómo este cliente se autentica en el punto final del token. Decidido por si fue registrado con un secreto."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:324
+msgid "Icon"
+msgstr "Icono"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:285
+msgid "Id of the driver that talks to this provider."
+msgstr "ID del controlador que se comunica con este proveedor."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:485
+msgid "Id of the folder holding groups. Empty means groups are filed with the profiles, which is what a site that has not thought about it wants."
+msgstr "ID de la carpeta que contiene grupos. Vacío significa que los grupos se registran con los perfiles, que es lo que quiere un sitio que no ha pensado en ello."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:447
+msgid "Id of the folder holding user profiles."
+msgstr "ID de la carpeta que contiene perfiles de usuario."
+
+#: pas/plugins/identity/core/controlpanel/controlpanel.py:38
+#: pas/plugins/identity/core/controlpanel/view.py:26
+#: pas/plugins/identity/profiles/default/controlpanel.xml
+msgid "Identity providers"
+msgstr "Proveedores de identidad"
+
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Incomplete"
+msgstr "Incompleto"
+
+#: pas/plugins/identity/core/drivers/settings.py:213
+#: pas/plugins/identity/server/interfaces.py:152
+msgid "Issuer URL"
+msgstr "URL del emisor"
+
+#: pas/plugins/identity/server/interfaces.py:130
+msgid "JSON list of client registrations. Written through the control panel rather than by hand; client secrets are stored hashed and cannot be read back."
+msgstr "Lista JSON de registros de clientes. Escrito a través del panel de control en lugar de a mano; los secretos del cliente se almacenan codificados y no se pueden leer de nuevo."
+
+#: pas/plugins/identity/server/interfaces.py:141
+msgid "JSON list of private JWKs, newest first. Generated when the server profile is applied and rotated from the control panel; never edited by hand. Only the public halves are published, as the JWKS relying parties fetch."
+msgstr "Lista JSON de JWKs privadas, más recientes primero. Generado cuando se aplica el perfil del servidor y se rota desde el panel de control; nunca editado a mano. Solo se publican las mitades públicas, como se obtienen los JWKS de las partes que confían."
+
+#: pas/plugins/identity/core/behaviors/configure.zcml:18
+msgid "Keep this user's password on the object rather than in source_users."
+msgstr "Mantenga la contraseña de este usuario en el objeto en lugar de en source_users."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:148
+msgid "Largest avatar accepted, in bytes"
+msgstr "Avatar más grande aceptado, en bytes"
+
+#: pas/plugins/identity/core/drivers/settings.py:241
+msgid "Leave it empty and anybody this provider authenticates may sign in. Name groups here and a sign-in is refused unless the provider says the person is in one of them. An entry matches either a name the provider sends or a local group id the map turns one into, so it can be written in whichever vocabulary the policy is easier to state in. This needs a group claim: with none configured no groups arrive, and nobody matches."
+msgstr "Déjelo vacío y cualquier persona que este proveedor autentique puede iniciar sesión. Nombre grupos aquí y se rechaza un inicio de sesión a menos que el proveedor diga que la persona está en uno de ellos. Una entrada coincide con el nombre que envía el proveedor o un ID de grupo local que el mapa convierte, por lo que se puede escribir en cualquier vocabulario donde la política sea más fácil de expresar. Esto necesita una notificación de grupo: sin ninguna configurada, no llegan grupos y nadie coincide."
+
+#: pas/plugins/identity/core/drivers/settings.py:161
+msgid "Let this provider create accounts"
+msgstr "Permitir que este proveedor cree cuentas"
+
+#: pas/plugins/identity/core/drivers/settings.py:276
+msgid "Let this provider set group membership"
+msgstr "Permitir que este proveedor establezca la pertenencia al grupo"
+
+#: pas/plugins/identity/core/drivers/settings.py:392
+msgid "Link lifetime (seconds)"
+msgstr "Duración del enlace (segundos)"
+
+#: pas/plugins/identity/core/drivers/settings.py:402
+msgid "Links per address per hour"
+msgstr "Enlaces por dirección por hora"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:415
+msgid "Local group"
+msgstr "Grupo local"
+
+#: pas/plugins/identity/core/behaviors/details.py:57
+msgid "Location"
+msgstr "Ubicación"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:227
+msgid "Login"
+msgstr "Inicio de sesión"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:48
+msgid "Login callback URL"
+msgstr "URL de devolución de llamada de inicio de sesión"
+
+#: pas/plugins/identity/core/contents/profile.py:79
+msgid "Login name"
+msgstr "Nombre de usuario"
+
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Mark complete"
+msgstr "Marcar como completo"
+
+#: pas/plugins/identity/core/drivers/settings.py:198
+msgid "Matches a verified address: one this site confirmed with a magic link, or one a provider it trusts confirmed. Needs this provider's own verification to be trusted too, since the address being matched on is the one it just sent."
+msgstr "Coincide con una dirección verificada: una que este sitio confirmó con un enlace mágico, o una que un proveedor que confía confirmó. Necesita que la verificación propia de este proveedor sea confiable también, ya que la dirección que se empareja es la que acaba de enviar."
+
+#: pas/plugins/identity/profiles.zcml:14
+msgid "Multi-provider external authentication for Plone, with users and groups as content."
+msgstr "Autenticación externa multi-proveedor para Plone, con usuarios y grupos como contenido."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:413
+msgid "Never edited and never shown. The secret itself exists once, in the response that registered or rotated it."
+msgstr "Nunca editado y nunca mostrado. El secreto en sí existe una vez, en la respuesta que lo registró o rotó."
+
+#: pas/plugins/identity/server/controlpanel/panel.py:46
+#: pas/plugins/identity/server/profiles/default/controlpanel.xml
+msgid "OAuth clients"
+msgstr "Clientes OAuth"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:190
+msgid "Off by default. Enabling this stores personal data; see the privacy notes in the documentation."
+msgstr "Desactivado de forma predeterminada. Habilitarlo almacena datos personales; consulte las notas de privacidad en la documentación."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:122
+msgid "Off by default. When on, a changed picture_url claim is fetched over HTTPS on login and stored as the user's portrait. The URL is a claim, so at many providers it is whatever the user typed: enabling this makes the login path fetch an address the user chose. See the documentation before turning it on."
+msgstr "Desactivado de forma predeterminada. Cuando está habilitado, se obtiene una notificación picture_url cambiada a través de HTTPS en el inicio de sesión y se almacena como el retrato del usuario. La URL es una notificación, por lo que en muchos proveedores es lo que escribió el usuario: habilitarlo hace que la ruta de inicio de sesión obtenga una dirección que el usuario eligió. Consulte la documentación antes de activarlo."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:176
+msgid "Older entries are dropped once a user passes this many."
+msgstr "Las entradas más antiguas se descartan una vez que un usuario pasa esta cantidad."
+
+#: pas/plugins/identity/core/drivers/settings.py:98
+msgid "One permission per entry. They are joined with spaces when the authorize URL is built, which is the encoding OAuth 2 defines -- a scope containing a space is not one scope."
+msgstr "Un permiso por entrada. Se unen con espacios cuando se construye la URL de autorización, que es la codificación que define OAuth 2: un alcance que contiene un espacio no es un alcance."
+
+#: pas/plugins/identity/core/drivers/settings.py:297
+msgid "Only for a provider on a network you control -- a demo or development stack with no certificate. Portrait syncing fetches a URL the provider supplies, and over plain HTTP that fetch can be aimed at an internal service and read back through the portrait. Leave this off for any provider on the public internet."
+msgstr "Solo para un proveedor en una red que controla: una demostración o pila de desarrollo sin certificado. La sincronización de retrato obtiene una URL que proporciona el proveedor, y a través de HTTP simple esa búsqueda puede dirigirse a un servicio interno y leer a través del retrato. Deje esto desactivado para cualquier proveedor en internet público."
+
+#: pas/plugins/identity/core/drivers/settings.py:240
+msgid "Only these groups may sign in"
+msgstr "Solo estos grupos pueden iniciar sesión"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:363
+msgid "Order"
+msgstr "Orden"
+
+#: pas/plugins/identity/core/behaviors/configure.zcml:18
+msgid "Password storage"
+msgstr "Almacenamiento de contraseña"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:475
+msgid "Path of the folder the group container lives in, relative to the site root. Only read when a group container id is set."
+msgstr "Ruta de la carpeta donde vive el contenedor de grupo, relativa a la raíz del sitio. Solo se lee cuando se establece un ID de contenedor de grupo."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:437
+msgid "Path of the folder the profile container lives in, relative to the site root. Empty means the site root itself."
+msgstr "Ruta de la carpeta donde vive el contenedor de perfil, relativa a la raíz del sitio. Vacío significa la raíz del sitio en sí."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:530
+msgid "Paths the profile gate leaves alone"
+msgstr "Rutas que la puerta del perfil deja solas"
+
+#: pas/plugins/identity/core/behaviors/details.py:62
+msgid "Picture"
+msgstr "Imagen"
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:299
+msgid "Plain HTTP is only allowed for a loopback address, such as 127.0.0.1."
+msgstr "HTTP simple solo se permite para una dirección de loopback, como 127.0.0.1."
+
+#: pas/plugins/identity/server/profiles.zcml:20
+msgid "Plone as an OAuth 2.1 / OIDC provider."
+msgstr "Plone como proveedor de OAuth 2.1 / OIDC."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:99
+msgid "Portal type created when somebody adds a group. Installing this add-on points it at UserGroup. The type must provide IGroupContent, and one that does not hands group creation back to Plone's own source_groups."
+msgstr "Tipo de portal creado cuando alguien agrega un grupo. Instalar este complemento lo apunta a UserGroup. El tipo debe proporcionar IGroupContent, y uno que no devuelve la creación de grupos a source_groups de Plone."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:71
+msgid "Portal type created when somebody adds a user. Installing this add-on points it at UserProfile; change it only to substitute a user type of your own. The type must provide IUserContent, and one that does not is refused rather than created -- adding a user then falls back to Plone's own source_users, which is stock behaviour rather than a failure. Empty does the same."
+msgstr "Tipo de portal creado cuando alguien agrega un usuario. Instalar este complemento lo apunta a UserProfile; cámbielo solo para sustituir su propio tipo de usuario. El tipo debe proporcionar IUserContent, y uno que no sea rechazado en lugar de creado; agregar un usuario luego vuelve a source_users de Plone, que es un comportamiento estándar en lugar de un fallo. Vacío hace lo mismo."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:506
+msgid "Portal type used when this add-on creates the group container. The parent folder must allow it; when it does not, creating the container fails rather than choosing another type."
+msgstr "Tipo de portal utilizado cuando este complemento crea el contenedor de grupo. La carpeta padre debe permitirlo; cuando no lo hace, la creación del contenedor falla en lugar de elegir otro tipo."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:464
+msgid "Portal type used when this add-on creates the profile container. The parent folder must allow it; when it does not, creating the container fails rather than choosing another type."
+msgstr "Tipo de portal utilizado cuando este complemento crea el contenedor de perfil. La carpeta padre debe permitirlo; cuando no lo hace, la creación del contenedor falla en lugar de elegir otro tipo."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:233
+msgid "Portraits"
+msgstr "Retratos"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:364
+msgid "Position among the providers. Stored rather than derived: records live in a BTree and read back alphabetically, and this is the order the login buttons appear in."
+msgstr "Posición entre los proveedores. Almacenado en lugar de derivado: los registros viven en un BTree y se leen alfabéticamente, y este es el orden en que aparecen los botones de inicio de sesión."
+
+#: pas/plugins/identity/profiles/default/types/PrincipalsContainer.xml
+msgid "Principals folder"
+msgstr "Carpeta de usuarios y grupos"
+
+#: pas/plugins/identity/core/drivers/settings.py:271
+msgid "Profile"
+msgstr "Perfil"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:446
+msgid "Profile container id"
+msgstr "ID del contenedor de perfil"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:436
+msgid "Profile container parent"
+msgstr "Padre del contenedor de perfil"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:453
+msgid "Profile container title"
+msgstr "Título del contenedor de perfil"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:463
+msgid "Profile container type"
+msgstr "Tipo de contenedor de perfil"
+
+#: pas/plugins/identity/core/behaviors/configure.zcml:73
+msgid "Profile details"
+msgstr "Detalles del perfil"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:397
+msgid "Profile field"
+msgstr "Campo de perfil"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:517
+msgid "Profiles in these workflow states are visible to user enumeration and to the properties plugin."
+msgstr "Los perfiles en estos estados de flujo de trabajo son visibles para la enumeración de usuarios y el complemento de propiedades."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:379
+msgid "Property map"
+msgstr "Mapa de propiedades"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:161
+msgid "Provider discovery timeout in seconds"
+msgstr "Tiempo de espera de descubrimiento de proveedor en segundos"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:414
+msgid "Provider group"
+msgstr "Grupo de proveedor"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:406
+msgid "Provider-side group name to local group id, applied on every login. Empty by default: a provider grants no group until somebody says which of its groups mean something here, and a name with no entry grants nothing rather than creating a group. A login only ever takes back a group the same provider granted, so a group given to somebody by hand survives."
+msgstr "Nombre de grupo del lado del proveedor al ID de grupo local, aplicado en cada inicio de sesión. Vacío de forma predeterminada: un proveedor no otorga ningún grupo hasta que alguien diga cuál de sus grupos significa algo aquí, y un nombre sin entrada no otorga nada en lugar de crear un grupo. Un inicio de sesión solo retira un grupo que el mismo proveedor otorgó, por lo que un grupo dado a alguien a mano sobrevive."
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Provides access to workflow history"
+msgstr "Proporciona acceso al historial de flujo de trabajo"
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Reactivate"
+msgstr "Reactivar"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:189
+msgid "Record IP address and user agent"
+msgstr "Grabar dirección IP y agente de usuario"
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:359
+msgid "Redirect URIs"
+msgstr "URIs de redirección"
+
+#: pas/plugins/identity/server/interfaces.py:180
+msgid "Refresh token lifetime (seconds)"
+msgstr "Duración del token de actualización (segundos)"
+
+#: pas/plugins/identity/server/interfaces.py:181
+msgid "Refresh tokens are rotated on every use, so this is how long a client may stay away before a human has to sign in again."
+msgstr "Los tokens de actualización se rotan en cada uso, por lo que esto es cuánto tiempo un cliente puede estar ausente antes de que un humano tenga que iniciar sesión de nuevo."
+
+#: pas/plugins/identity/server/interfaces.py:129
+msgid "Registered OAuth clients"
+msgstr "Clientes OAuth registrados"
+
+#: pas/plugins/identity/server/profiles.zcml:29
+msgid "Remove the authorization server's settings and browser layer."
+msgstr "Elimine la configuración del servidor de autorización y la capa del navegador."
+
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Reopen"
+msgstr "Reabrir"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:572
+msgid "Required profile fields"
+msgstr "Campos de perfil requeridos"
+
+#: pas/plugins/identity/core/contents/profile.py:86
+msgid "Required: it is how this user is named everywhere the site shows them, and a provider is not obliged to send one."
+msgstr "Requerido: es cómo se nombra este usuario en todas partes donde el sitio los muestra, y un proveedor no está obligado a enviar uno."
+
+#: pas/plugins/identity/core/behaviors/roles.py:68
+msgid "Roles"
+msgstr "Roles"
+
+#: pas/plugins/identity/core/drivers/settings.py:97
+msgid "Scope"
+msgstr "Alcance"
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:387
+msgid "Scopes"
+msgstr "Alcances"
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:412
+msgid "Secret hash"
+msgstr "Hash secreto"
+
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Send the profile back for completion."
+msgstr "Envíe el perfil nuevamente para su finalización."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:310
+msgid "Show on the login screen"
+msgstr "Mostrar en la pantalla de inicio de sesión"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:292
+msgid "Shown on the login button."
+msgstr "Se muestra en el botón de inicio de sesión."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:340
+msgid "Shown to the user on the consent screen, which is the one place a person decides whether to trust this client. A client id is not a name."
+msgstr "Se muestra al usuario en la pantalla de consentimiento, que es el único lugar donde una persona decide si confía en este cliente. Un ID de cliente no es un nombre."
+
+#: pas/plugins/identity/core/contents/group.py:65
+msgid "Shown wherever the group is listed."
+msgstr "Se muestra dondequiera que aparezca el grupo."
+
+#: pas/plugins/identity/core/behaviors/details.py:63
+msgid "Shown wherever this user is represented. When it is empty the portrait stored on the member is used instead, and failing that the user's initials."
+msgstr "Se muestra dondequiera que esté representado este usuario. Cuando está vacío, se usa el retrato almacenado en el miembro, y si falla, las iniciales del usuario."
+
+#: pas/plugins/identity/server/interfaces.py:140
+msgid "Signing key ring"
+msgstr "Anillo de claves de firma"
+
+#: pas/plugins/identity/core/behaviors/roles.py:74
+msgid "Site-wide roles every member of this group holds. The same roles the groups control panel sets, readable and writable here so that an export carries them and an import restores them."
+msgstr "Roles en todo el sitio que cada miembro de este grupo posee. Los mismos roles que el panel de control de grupos establece, legibles y escribibles aquí para que una exportación los lleve e una importación los restaure."
+
+#: pas/plugins/identity/core/controlpanel/view.py:27
+msgid "Site-wide settings for external identity providers. The provider list is stored as JSON; the frontend control panel edits it one provider at a time, with a form generated from each driver."
+msgstr "Configuración en todo el sitio para proveedores de identidad externos. La lista de proveedores se almacena como JSON; el panel de control de frontend la edita un proveedor a la vez, con un formulario generado por cada controlador."
+
+#: pas/plugins/identity/core/drivers/settings.py:182
+msgid "Some providers send email_verified as the string \"true\" rather than as a boolean -- Oracle Access Manager does, and so do some Keycloak configurations. Only a real boolean counts here, so against such a provider every address arrives unverified and nothing explains why. Switch this on for that provider only, having established that this is what it does: it repairs the value before anything reads it, and changes nothing about what a verified address then means."
+msgstr "Algunos proveedores envían email_verified como la cadena \"true\" en lugar de como un booleano: Oracle Access Manager lo hace, al igual que algunas configuraciones de Keycloak. Solo un booleano real cuenta aquí, por lo que contra tal proveedor cada dirección llega sin verificar y nada explica por qué. Actívelo solo para ese proveedor, habiendo establecido que esto es lo que hace: repara el valor antes de que algo lo lea, y no cambia nada sobre lo que significa entonces una dirección verificada."
+
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Stop enumerating this account."
+msgstr "Deje de enumerar esta cuenta."
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+msgid "Stop this group granting anything."
+msgstr "Deje de otorgar este grupo algo."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:358
+msgid "Style"
+msgstr "Estilo"
+
+#: pas/plugins/identity/core/drivers/settings.py:162
+msgid "Switch it off to authenticate against this provider while admitting only people who already have an account here. A site federating with a large directory usually does not want everybody who *can* authenticate to *get* an account: membership is decided elsewhere, and the provider only proves who somebody is. An account is found by matching the verified address, so the two switches below have to be on as well -- without them there is nothing to match on and nobody would ever be admitted."
+msgstr "Apáguelo para autenticarse contra este proveedor mientras solo admite a personas que ya tienen una cuenta aquí. Un sitio que se federa con un directorio grande generalmente no quiere que todos los que *pueden* autenticarse *obtengan* una cuenta: la membresía se decide en otro lugar, y el proveedor solo prueba quién es alguien. Se encuentra una cuenta por coincidir con la dirección verificada, por lo que los dos interruptores siguientes también tienen que estar activados; sin ellos no hay nada que coincida y nadie sería admitido jamás."
+
+#: pas/plugins/identity/core/drivers/settings.py:277
+msgid "Switch it off to keep the provider for signing in while deciding group membership here. A site may trust a provider to say who somebody is without trusting it to say what they may do, and group membership is usually what grants permissions. Switching it off leaves the groups this provider already granted in place: taking those away is a separate decision, and one to make deliberately rather than at the next login."
+msgstr "Apáguelo para mantener el proveedor para iniciar sesión mientras decide la pertenencia al grupo aquí. Un sitio puede confiar en un proveedor para decir quién es alguien sin confiar en él para decir qué pueden hacer, y la pertenencia al grupo es generalmente lo que otorga permisos. Apagarlo deja los grupos que este proveedor ya otorgó en su lugar: quitarlos es una decisión separada, y una para tomar deliberadamente en lugar del próximo inicio de sesión."
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "The ID of the user who performed the last transition"
+msgstr "El ID del usuario que realizó la última transición"
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:402
+msgid "The Plone user a client-credentials token acts as. Only meaningful for a client registered for that grant, which has no person behind it and would otherwise act as nobody."
+msgstr "El usuario de Plone con el que actúa un token de credenciales del cliente. Solo significativo para un cliente registrado para esa concesión, que no tiene a una persona detrás y de lo contrario actuaría como nadie."
+
+#: pas/plugins/identity/server/interfaces.py:153
+msgid "The `iss` value this server puts in tokens, and the base for its discovery document. Configured rather than derived from the portal URL, because it must stay byte-identical across every deployment detail that can rewrite a URL -- a proxy, a virtual host, a trailing slash -- or clients will reject the tokens."
+msgstr "El valor `iss` que este servidor pone en los tokens, y la base para su documento de descubrimiento. Configurado en lugar de derivado de la URL del portal, porque debe mantenerse idéntico en bytes en todos los detalles de implementación que pueden reescribir una URL, un proxy, un host virtual, una barra diagonal final, o los clientes rechazarán los tokens."
+
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "The account should no longer appear anywhere. Excluded from enumeration by the default registry setting; the Profile and its data are kept."
+msgstr "La cuenta ya no debe aparecer en ningún lugar. Excluido de la enumeración por la configuración de registro predeterminada; el Perfil y sus datos se mantienen."
+
+#: pas/plugins/identity/core/behaviors/email.py:97
+msgid "The address that stands for this person: the first verified one in the list above, or the first one at all when none is verified. Derived rather than typed, so there is no second value to disagree with the list."
+msgstr "La dirección que representa a esta persona: la primera verificada en la lista anterior, o la primera en absoluto cuando ninguna está verificada. Derivado en lugar de escrito, por lo que no hay un segundo valor que no esté de acuerdo con la lista."
+
+#: pas/plugins/identity/core/behaviors/configure.zcml:50
+msgid "The addresses this person is reached and recognised by."
+msgstr "Las direcciones a través de las cuales se comunica y se reconoce a esta persona."
+
+#: pas/plugins/identity/core/behaviors/email.py:76
+msgid "The addresses this person uses, most preferred first. At least one is required: a Profile exists to be the thing somebody is reached and recognised by. Adding an address here does not prove it -- verifying one sends a link to it, and only an address this site has verified can be used to sign in or to attach a new provider account to this one."
+msgstr "Las direcciones que usa esta persona, la más preferida primero. Se requiere al menos una: un Perfil existe para ser la cosa por la cual se comunica y se reconoce a alguien. Agregar una dirección aquí no lo prueba; verificar uno envía un enlace a él, y solo una dirección que este sitio ha verificado se puede usar para iniciar sesión o adjuntar una nueva cuenta de proveedor a esta."
+
+#: pas/plugins/identity/core/drivers/settings.py:59
+msgid "The email address"
+msgstr "La dirección de correo electrónico"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:49
+msgid "The frontend route the provider redirects to after login. A path such as /login-identity is resolved against this site's URL and is what most deployments want. Give an absolute URL instead when the frontend is served from another origin, since no portal URL can describe one Plone is never reached on. It is a route in the frontend rather than a backend view: the frontend reads code and state off the query string and posts them to @identity-callback. Either way it must match the redirect URI registered with every provider exactly."
+msgstr "La ruta de frontend a la que el proveedor redirige después de iniciar sesión. Una ruta como /login-identity se resuelve contra la URL de este sitio y es lo que desean la mayoría de las implementaciones. Proporcione una URL absoluta en su lugar cuando el frontend se sirve desde otro origen, ya que ninguna URL del portal puede describir una que Plone nunca se alcanza. Es una ruta en el frontend en lugar de una vista de backend: el frontend lee el código y estado de la cadena de consulta y los publica a @identity-callback. De cualquier forma, debe coincidir exactamente con la URI de redirección registrada con cada proveedor."
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+msgid "The group is enumerated and grants membership to the Profiles that list it."
+msgstr "El grupo se enumera y otorga membresía a los Perfiles que lo citan."
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+msgid "The group stops being enumerated and stops granting membership, without being deleted and without editing a single Profile."
+msgstr "El grupo deja de enumerarse y deja de otorgar membresía, sin ser eliminado y sin editar un solo Perfil."
+
+#: pas/plugins/identity/core/behaviors/configure.zcml:38
+msgid "The groups this principal belongs to."
+msgstr "Los grupos a los que pertenece este usuario o grupo."
+
+#: pas/plugins/identity/core/behaviors/membership.py:82
+msgid "The groups this principal belongs to. Membership is kept on the member rather than on the group, so editing this field and calling api.group.add_user are two ways to the same place. On a group, this nests it: everybody in this group is also in every group named here."
+msgstr "Los grupos a los que pertenece este usuario o grupo. La membresía se mantiene en el miembro en lugar de en el grupo, por lo que editar este campo y llamar a api.group.add_user son dos formas de llegar al mismo lugar. En un grupo, esto lo anida: todos en este grupo también están en cada grupo nombrado aquí."
+
+#: pas/plugins/identity/core/drivers/settings.py:83
+msgid "The identifier this provider issued for this site."
+msgstr "El identificador que este proveedor emitió para este sitio."
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "The last transition"
+msgstr "La última transición"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:336
+msgid "The login button's background. Empty leaves the frontend's own styling alone."
+msgstr "El fondo del botón de inicio de sesión. Vacío deja el estilo propio del frontend solo."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:347
+msgid "The login button's text and icon colour. Empty leaves the frontend's own styling alone."
+msgstr "El color del texto y del icono del botón de inicio de sesión. Vacío deja el estilo propio del frontend solo."
+
+#: pas/plugins/identity/core/contents/profile.py:80
+msgid "The name this user logs in with."
+msgstr "El nombre con el que este usuario inicia sesión."
+
+#: pas/plugins/identity/core/drivers/settings.py:356
+msgid "The other site's URL, as it serves /.well-known/openid-configuration -- for a Plone site that is the site root, with no path segment after it."
+msgstr "La URL del otro sitio, tal como sirve /.well-known/openid-configuration; para un sitio de Plone que es la raíz del sitio, sin segmento de ruta después de ella."
+
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "The profile exists but the user has not completed it. Still enumerable: the account works, it is just sparse."
+msgstr "El perfil existe pero el usuario no lo ha completado. Aún enumerable: la cuenta funciona, es solo escasa."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:631
+msgid "The profile gate"
+msgstr "La puerta de perfil"
+
+#: pas/plugins/identity/core/drivers/settings.py:60
+msgid "The provider's subject identifier"
+msgstr "El identificador de asunto del proveedor"
+
+#: pas/plugins/identity/core/drivers/settings.py:58
+msgid "The provider's username"
+msgstr "El nombre de usuario del proveedor"
+
+#: pas/plugins/identity/core/drivers/settings.py:375
+msgid "The realm's URL, https://<server>/realms/<realm> -- not the server root, which serves no discovery document."
+msgstr "La URL del reino, https://<server>/realms/<realm>; no la raíz del servidor, que no sirve ningún documento de descubrimiento."
+
+#: pas/plugins/identity/core/behaviors/configure.zcml:63
+msgid "The site-wide roles this group grants its members."
+msgstr "Los roles en todo el sitio que este grupo otorga a sus miembros."
+
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "The user has filled in their profile."
+msgstr "El usuario ha completado su perfil."
+
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "The user has filled the profile in. Visible to authenticated members, which is what makes a Sharing-tab search useful."
+msgstr "El usuario ha completado el perfil. Visible para miembros autenticados, que es lo que hace útil una búsqueda en la pestaña Compartir."
+
+#: pas/plugins/identity/core/drivers/settings.py:181
+msgid "This provider sends verification flags as text"
+msgstr "Este proveedor envía indicadores de verificación como texto"
+
+#: pas/plugins/identity/core/drivers/settings.py:147
+msgid "This provider's email verification counts"
+msgstr "La verificación de correo de este proveedor cuenta"
+
+#: pas/plugins/identity/core/contents/group.py:64
+#: pas/plugins/identity/core/controlpanel/interfaces.py:291
+#: pas/plugins/identity/server/controlpanel/interfaces.py:339
+msgid "Title"
+msgstr "Título"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:496
+msgid "Title given to the group container when this add-on creates it. Changing it later does not rename an existing folder."
+msgstr "Título dado al contenedor de grupo cuando este complemento lo crea. Cambiarlo más tarde no renombra una carpeta existente."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:454
+msgid "Title given to the profile container when this add-on creates it. Changing it later does not rename an existing folder."
+msgstr "Título dado al contenedor de perfil cuando este complemento lo crea. Cambiarlo más tarde no renombra una carpeta existente."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:423
+msgid "Token endpoint authentication"
+msgstr "Autenticación de punto final de token"
+
+#: pas/plugins/identity/profiles.zcml:38
 msgid "Uninstall pas.plugins.identity setup."
-msgstr ""
+msgstr "Desinstalar configuración de pas.plugins.identity."
 
-#: pas/plugins/identity/profiles.zcml:22
+#: pas/plugins/identity/profiles/default/types/UserGroup.xml
+msgid "User Group"
+msgstr "Grupo de usuario"
+
+#: pas/plugins/identity/profiles/default/types/UserProfile.xml
+msgid "User Profile"
+msgstr "Perfil de usuario"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:84
+msgid "User container path"
+msgstr "Ruta del contenedor de usuario"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:70
+msgid "User content type"
+msgstr "Tipo de contenido de usuario"
+
+#: pas/plugins/identity/core/drivers/settings.py:131
+msgid "Userid taken from"
+msgstr "ID de usuario tomado de"
+
+#: pas/plugins/identity/profiles/default/types/PrincipalsContainer.xml
+#: pas/plugins/identity/profiles/default/types/UserGroup.xml
+#: pas/plugins/identity/profiles/default/types/UserProfile.xml
+msgid "View"
+msgstr "Ver"
+
+#: pas/plugins/identity/core/drivers/settings.py:132
+msgid "What the Plone userid is minted from the first time somebody signs in with this provider. A random id is the safe default: it leaks nothing and never has to change. The others are readable, which matters when a person has to be recognised in Plone -- and they are claims, so two providers can offer the same one. A userid already in use is never handed out: the new one gets a numeric suffix."
+msgstr "Qué ID de usuario de Plone se acuña la primera vez que alguien inicia sesión con este proveedor. Un ID aleatorio es el predeterminado seguro: no filtra nada y nunca tiene que cambiar. Los otros son legibles, lo que importa cuando una persona tiene que ser reconocida en Plone; y son notificaciones, por lo que dos proveedores pueden ofrecer la misma. Un ID de usuario ya en uso nunca se entrega: el nuevo obtiene un sufijo numérico."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:388
+msgid "What this client may ask for. Only what this server issues is offered, so a registration cannot name a scope that would be narrowed away later. A request for anything outside this is narrowed rather than refused."
+msgstr "Lo que este cliente puede pedir. Solo se ofrece lo que emite este servidor, por lo que un registro no puede nombrar un alcance que se estrechara más tarde. Una solicitud de cualquier cosa fuera de esto se estrecha en lugar de ser rechazada."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:558
+msgid "When a first sign-in leaves a profile with more than one verified address, the profile stays incomplete until its owner confirms which of them stands for them. Only first sign-ins made while this is on are asked. It is asked after sign-in, so it has no say in which existing account a provider's addresses link to: the provider's address preference decides that. The Volto add-on asks the question; no page this site renders does."
+msgstr "Cuando un primer inicio de sesión deja un perfil con más de una dirección verificada, el perfil permanece incompleto hasta que su propietario confirme cuál de ellas lo representa. Solo se hacen las primeras sesiones de inicio realizadas mientras esto está activado. Se pregunta después del inicio de sesión, por lo que no tiene voz en qué cuenta existente se vinculan las direcciones de un proveedor: la preferencia de dirección del proveedor decide eso. El complemento de Volto hace la pregunta; ninguna página que este sitio representa."
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "When the previous transition was performed"
+msgstr "Cuando se realizó la transición anterior"
+
+#: pas/plugins/identity/core/drivers/settings.py:148
+msgid "When this provider says it verified an address, record the address as verified here too -- exactly as a magic link from this site would. Switch it on only for a provider that really does check, since a verified address is what an account can be attached to. Anything left off still shows what the provider claimed; it just proves nothing."
+msgstr "Cuando este proveedor dice que verificó una dirección, grabe la dirección como verificada aquí también, exactamente como lo haría un enlace mágico de este sitio. Actívelo solo para un proveedor que realmente verifica, ya que una dirección verificada es lo que se puede adjuntar a una cuenta. Cualquier cosa que quede fuera aún muestra lo que el proveedor afirmó; simplemente no prueba nada."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:200
+msgid "Where authentication events are written, in order. Every destination listed gets every event, and one that is unreachable is logged and stepped over rather than allowed to fail the sign-in. Reads answer from the first destination that can be read back, so list that one first if you record to several. Leave empty to record only to this site's own log."
+msgstr "Dónde se escriben los eventos de autenticación, en orden. Cada destino enumerado obtiene cada evento, y uno que es inalcanzable se registra y se omite en lugar de permitirse que falle el inicio de sesión. Las lecturas responden desde el primer destino que se puede leer de nuevo, por lo que enumera ese primero si registra a varios. Déjelo vacío para registrar solo en el registro propio de este sitio."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:610
+msgid "Where principals are filed"
+msgstr "Dónde se almacenan los usuarios y grupos"
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:360
+msgid "Where this client may be sent back to, matched exactly. One per entry: https, a loopback address for a native app, or a private-use scheme. A fragment is refused, and so is a wildcard -- neither can ever match."
+msgstr "Dónde se puede enviar este cliente de vuelta, coincidido exactamente. Uno por entrada: https, una dirección de loopback para una aplicación nativa o un esquema de uso privado. Un fragmento se rechaza, y también un comodín: ninguno puede coincidir jamás."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:111
+msgid "Where those objects are created, as a path relative to the site root. Derived and required alongside the type, for the reason the user container path is."
+msgstr "Dónde se crean esos objetos, como una ruta relativa a la raíz del sitio. Derivado y requerido junto con el tipo, por la razón que es la ruta del contenedor de usuario."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:85
+msgid "Where those objects are created, as a path relative to the site root. Derived from the profile container settings and kept in step with them, so moving the container moves this. Required alongside the type: a type with nowhere to go would fail at the moment somebody adds a user, which is the worst time to discover a configuration gap."
+msgstr "Dónde se crean esos objetos, como una ruta relativa a la raíz del sitio. Derivado de la configuración del contenedor de perfil y mantenido al paso con ellos, por lo que mover el contenedor mueve esto. Requerido junto con el tipo: un tipo sin lugar para ir fallaría en el momento en que alguien agrega un usuario, que es el peor momento para descubrir una brecha de configuración."
+
+#: pas/plugins/identity/server/interfaces.py:166
+msgid "Where to send the browser to ask a user whether they agree to an authorization request. Set it to the frontend route that renders the consent screen, and the question is asked in the site's own look; leave it empty and the server renders a standalone page of its own. The authorization request is appended as the query string, and the screen sends the browser back to the authorization endpoint with the answer."
+msgstr "Dónde enviar el navegador para preguntarle a un usuario si están de acuerdo con una solicitud de autorización. Configúrelo en la ruta del frontend que representa la pantalla de consentimiento, y la pregunta se hace en el aspecto propio del sitio; déjelo vacío y el servidor representa una página independiente. La solicitud de autorización se agrega como la cadena de consulta, y la pantalla envía el navegador de vuelta al punto final de autorización con la respuesta."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:311
+msgid "Whether the login screen offers a button for this provider. An enabled provider that is not shown still works: it stays linkable from a user's own identities page, and an account already linked to it still signs in through it. That is what a staff-only provider looks like -- usable, but not advertised to everybody who reaches the login form."
+msgstr "Si la pantalla de inicio de sesión ofrece un botón para este proveedor. Un proveedor habilitado que no se muestra aún funciona: permanece vinculable desde la página de identidades propia del usuario, y una cuenta ya vinculada a él aún inicia sesión a través de él. Así es como se ve un proveedor solo para personal: utilizable, pero no anunciado a todos los que llegan al formulario de inicio de sesión."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:350
+msgid "Whether this client may obtain tokens at all. Disabling keeps the registration and its secret, and refuses every grant."
+msgstr "Si este cliente puede obtener tokens en absoluto. Desabilitar mantiene el registro y su secreto, y rechaza cada concesión."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:299
+msgid "Whether this provider can be used at all. A disabled provider keeps its settings and its stored identities, and nothing may sign in or link through it. Whether it is *offered* on the login screen is a separate setting."
+msgstr "Si este proveedor se puede usar en absoluto. Un proveedor deshabilitado mantiene su configuración y sus identidades almacenadas, y nada puede iniciar sesión o vincularse a través de él. Si se *ofrece* en la pantalla de inicio de sesión es una configuración separada."
+
+#: pas/plugins/identity/core/drivers/settings.py:227
+msgid "Which claim carries the group names this provider asserts. A dotted path reaches into a nested claim, so a provider putting them under realm_access.roles is reachable without a driver of its own. What the names then grant is the group map, which is empty until an operator fills it in -- an unmapped group grants nothing and is never created here."
+msgstr "Qué notificación lleva los nombres de los grupos que este proveedor afirma. Una ruta punteada llega a una notificación anidada, por lo que un proveedor que las coloca bajo realm_access.roles es alcanzable sin su propio controlador. Lo que los nombres luego otorgan es el mapa de grupo, que está vacío hasta que un operador lo completa; un grupo no asignado no otorga nada y nunca se crea aquí."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:375
+msgid "Which flows this client may use. Only what the token endpoint implements is offered, so a registration cannot name a grant that would be refused later."
+msgstr "Qué flujos puede usar este cliente. Solo se ofrece lo que implementa el punto final del token, por lo que un registro no puede nombrar una concesión que se rechazaría más tarde."
+
+#: pas/plugins/identity/core/drivers/settings.py:326
+msgid "Which of the account's addresses comes first. The first one becomes the email address, and a new profile lists the addresses in this order. Linking to an existing account by email tries them in this order too, and the first one that belongs to an account decides. Each entry is @ followed by a domain, such as @example.org, for an address on exactly that domain, or * for every address no other entry matches. An address no entry matches goes last, and none is ever dropped. Leave it empty to keep GitHub's order: the primary address first, then the verified ones."
+msgstr "Cuál de las direcciones de la cuenta viene primero. La primera se convierte en la dirección de correo, y un nuevo perfil enumera las direcciones en este orden. Vincular a una cuenta existente por correo también las intenta en este orden, y la primera que pertenece a una cuenta decide. Cada entrada es @ seguida de un dominio, como @example.org, para una dirección en exactamente ese dominio, o * para cada dirección que ninguna otra entrada coincida. Una dirección que ninguna entrada coincida va al final, y ninguna se descarta jamás. Déjelo vacío para mantener el orden de GitHub: la dirección principal primero, luego las verificadas."
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:625
+msgid "Which states count"
+msgstr "Qué estados cuentan"
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:545
+msgid "While a profile is missing required information, every page its owner asks for is answered with a redirect to its edit form. Managers and site administrators are never held, so that a required field nobody can supply cannot lock the site. Turn this off to make the profile a suggestion rather than a gate."
+msgstr "Mientras un perfil no tiene información requerida, cada página que solicita su propietario se responde con una redirección a su formulario de edición. Los gerentes y administradores del sitio nunca se retienen, por lo que un campo requerido que nadie puede proporcionar no puede bloquear el sitio. Apague esto para hacer que el perfil sea una sugerencia en lugar de una puerta."
+
+#: pas/plugins/identity/core/drivers/settings.py:89
+msgid "Write-only. It is never sent back by any endpoint here, and a GenericSetup export carries a placeholder rather than the value."
+msgstr "Solo escritura. Nunca se devuelve por ningún punto final aquí, y una exportación de GenericSetup lleva un marcador de posición en lugar del valor."
+
+#: pas/plugins/identity/server/profiles.zcml:20
+msgid "pas.plugins.identity: Authorization server"
+msgstr "pas.plugins.identity: Servidor de autorización"
+
+#: pas/plugins/identity/profiles.zcml:87
 msgid "pas.plugins.identity: Example content"
-msgstr ""
+msgstr "pas.plugins.identity: Contenido de ejemplo"
 
-#: pas/plugins/identity/profiles.zcml:13
+#: pas/plugins/identity/profiles.zcml:14
 msgid "pas.plugins.identity: Install"
-msgstr ""
+msgstr "pas.plugins.identity: Instalar"
 
-#: pas/plugins/identity/profiles.zcml:30
+#: pas/plugins/identity/profiles.zcml:29
+msgid "pas.plugins.identity: Rebuild the user catalog"
+msgstr "pas.plugins.identity: Reconstruir el catálogo de usuarios"
+
+#: pas/plugins/identity/profiles.zcml:38
 msgid "pas.plugins.identity: Uninstall"
-msgstr ""
+msgstr "pas.plugins.identity: Desinstalar"
+
+#: pas/plugins/identity/server/profiles.zcml:29
+msgid "pas.plugins.identity: Uninstall the authorization server"
+msgstr "pas.plugins.identity: Desinstalar el servidor de autorización"

@@ -4,7 +4,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2026-08-20 21:38+0000\n"
+"POT-Creation-Date: 2026-09-15 00:14+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI +ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,26 +17,996 @@ msgstr ""
 "Preferred-Encodings: utf-8 latin1\n"
 "Domain: pas.plugins.identity\n"
 
-#: pas/plugins/identity/profiles.zcml:13
-msgid "A Plone add-on implementing a complete OAuth solution"
+#: pas/plugins/identity/profiles/default/types/PrincipalsContainer.xml
+msgid "A folder of user profiles and groups."
 msgstr ""
 
-#: pas/plugins/identity/profiles.zcml:22
-msgid "Create example content to showcase this addon."
+#: pas/plugins/identity/profiles/default/types/UserGroup.xml
+msgid "A group, backed by content. Membership is a field on each Profile, not a list here."
 msgstr ""
 
-#: pas/plugins/identity/profiles.zcml:30
+#: pas/plugins/identity/core/drivers/settings.py:57
+msgid "A random id"
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:282
+msgid "A redirect URI cannot be empty."
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:287
+msgid "A redirect URI may not carry a fragment."
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:131
+msgid "A redirect URI may not use a wildcard in its port."
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:197
+msgid "A redirect URI may not use a wildcard in its query string."
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:128
+msgid "A redirect URI may not use a wildcard with a user name."
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:142
+msgid "A redirect URI may use only one host wildcard."
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:171
+msgid "A redirect URI may use only one path wildcard."
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:285
+msgid "A redirect URI must be absolute, with a scheme."
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:293
+msgid "A redirect URI must name a host."
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:306
+msgid "A redirect URI must use https, a loopback address, or a private-use scheme such as com.example.app:/callback."
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:135
+msgid "A wildcard host must be the whole leftmost label, as in https://*.example.com/callback."
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:146
+msgid "A wildcard host needs a registered domain under it, as in https://*.example.com/callback."
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:165
+msgid "A wildcard path must be the whole last segment, as in https://example.com/app/*."
+msgstr ""
+
+#: pas/plugins/identity/server/interfaces.py:190
+msgid "Access token lifetime (seconds)"
+msgstr ""
+
+#: pas/plugins/identity/server/interfaces.py:191
+msgid "Access tokens are self-encoded and there is no denylist, so this is also the worst-case window between a revocation and the last token honouring it."
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:120
+msgid "Accounts"
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+msgid "Active"
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:401
+msgid "Acts as"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:325
+msgid "Address preference"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:296
+msgid "Allow the avatar to be fetched over plain HTTP"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:403
+msgid "Also applied per requesting address. The endpoint answers identically whether or not the address belongs to an account, so this is what stops it being used to enumerate them."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:325
+msgid "An SVG file. Empty means no icon, and the frontend then draws the title alone rather than a placeholder every provider shares."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:557
+msgid "Ask a person with several verified addresses which one is theirs"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:197
+msgid "Attach to an existing account with the same verified email"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:199
+msgid "Audit destinations"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:175
+msgid "Audit entries kept per user"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:239
+msgid "Audit log"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:182
+msgid "Audit retention in days"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:135
+msgid "Avatar fetch timeout in seconds"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:335
+msgid "Background colour"
+msgstr ""
+
+#: pas/plugins/identity/core/contents/profile.py:94
+msgid "Biography"
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Bring a deactivated account back. It returns as incomplete rather than complete: whatever made it worth deactivating is worth reviewing."
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+msgid "Bring the group back, with the membership it always had."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:386
+msgid "Claim"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:380
+msgid "Claim path to Profile field, applied on every login. One record rather than one per row: the keys are claim paths an operator types, so a record each would mean creating and deleting records as the map is edited."
+msgstr ""
+
+#: pas/plugins/identity/profiles.zcml:29
+msgid "Clear the dedicated user catalog and index every user profile in the site again. Re-runnable, and safe to run at any time."
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:82
+msgid "Client ID"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:88
+msgid "Client secret"
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Comments about the last transition"
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Complete"
+msgstr ""
+
+#: pas/plugins/identity/server/interfaces.py:165
+msgid "Consent screen URL"
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/types/UserProfile.xml
+msgid "Content-backed profile for one Plone user."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:121
+msgid "Copy provider avatars into portrait storage"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:149
+msgid "Counted off the stream rather than taken from a header, so a provider cannot understate it. This is a limit on what a user-supplied URL may make this site read into memory: raise it knowing that, and see the documentation on why avatar syncing is off by default."
+msgstr ""
+
+#: pas/plugins/identity/profiles.zcml:87
+msgid "Create example content to showcase the new website"
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Deactivate"
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Deactivated"
+msgstr ""
+
+#: pas/plugins/identity/core/contents/group.py:70
+msgid "Description"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:209
+msgid "Destination"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:214
+msgid "Discovery is fetched from <issuer>/.well-known/openid-configuration."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:284
+msgid "Driver"
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/types/PrincipalsContainer.xml
+#: pas/plugins/identity/profiles/default/types/UserGroup.xml
+#: pas/plugins/identity/profiles/default/types/UserProfile.xml
+msgid "Edit"
+msgstr ""
+
+#: pas/plugins/identity/core/behaviors/email.py:70
+msgid "Email"
+msgstr ""
+
+#: pas/plugins/identity/core/behaviors/configure.zcml:50
+#: pas/plugins/identity/core/behaviors/email.py:75
+msgid "Email addresses"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:298
+#: pas/plugins/identity/server/controlpanel/interfaces.py:349
+msgid "Enabled"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:183
+msgid "Entries older than this are dropped."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:587
+msgid "Enumeration-active group states"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:516
+msgid "Enumeration-active states"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:531
+msgid "Extra view names never redirected while a profile is incomplete, matched against the last segment of the path. The sign-in, sign-out and OAuth authorization endpoints are already exempt; this is for a browser-based flow another add-on publishes, which would otherwise be interrupted halfway."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:573
+msgid "Fields a user must fill in before their profile counts as complete. Empty means the fields the profile type itself marks required, which is the right answer for a site that has not thought about it and for a site with its own user type. Naming a field here that the type does not require will keep asking for something the edit form does not insist on."
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:435
+msgid "Flow"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:346
+msgid "Foreground colour"
+msgstr ""
+
+#: pas/plugins/identity/core/contents/profile.py:85
+msgid "Full name"
+msgstr ""
+
+#: pas/plugins/identity/core/behaviors/configure.zcml:63
+#: pas/plugins/identity/core/behaviors/roles.py:73
+msgid "Global roles"
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:374
+msgid "Grants"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:484
+msgid "Group container id"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:474
+msgid "Group container parent"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:110
+msgid "Group container path"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:495
+msgid "Group container title"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:505
+msgid "Group container type"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:98
+msgid "Group content type"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:405
+msgid "Group map"
+msgstr ""
+
+#: pas/plugins/identity/core/behaviors/configure.zcml:38
+msgid "Group membership"
+msgstr ""
+
+#: pas/plugins/identity/core/behaviors/membership.py:76
+#: pas/plugins/identity/core/drivers/settings.py:262
+msgid "Groups"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:226
+msgid "Groups arrive in the claim"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:588
+msgid "Groups in these workflow states are visible to group enumeration and grant membership."
+msgstr ""
+
+#: pas/plugins/identity/server/interfaces.py:201
+msgid "Groups never released in a claim"
+msgstr ""
+
+#: pas/plugins/identity/server/interfaces.py:202
+msgid "Groups this site keeps to itself. A group named here is left out of the `groups` claim for every relying party, which is how an operations or on-call group stays a local matter. It does not change who is in the group, only what this server says about it."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:544
+msgid "Hold users on their profile until it is complete"
+msgstr ""
+
+#: pas/plugins/identity/core/behaviors/details.py:52
+msgid "Home page"
+msgstr ""
+
+#: pas/plugins/identity/core/behaviors/configure.zcml:73
+msgid "Home page, location and picture."
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:393
+msgid "How long a link stays redeemable. Capped at fifteen minutes whatever is configured, and a token is burned after one use."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:136
+msgid "How long to wait for a provider's avatar. This runs while somebody is waiting to log in, so the right number depends on where the provider is: a container on this host answers in milliseconds, a distant CDN may not. A fetch that times out is a missing picture, never a failed login."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:162
+msgid "How long to wait for a provider's metadata document. Separate from the avatar timeout because it fails differently: an avatar that does not arrive is a missing picture, while metadata that does not arrive is a login that cannot start."
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:424
+msgid "How this client authenticates at the token endpoint. Decided by whether it was registered with a secret."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:324
+msgid "Icon"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:285
+msgid "Id of the driver that talks to this provider."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:485
+msgid "Id of the folder holding groups. Empty means groups are filed with the profiles, which is what a site that has not thought about it wants."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:447
+msgid "Id of the folder holding user profiles."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/controlpanel.py:38
+#: pas/plugins/identity/core/controlpanel/view.py:26
+#: pas/plugins/identity/profiles/default/controlpanel.xml
+msgid "Identity providers"
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Incomplete"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:213
+#: pas/plugins/identity/server/interfaces.py:152
+msgid "Issuer URL"
+msgstr ""
+
+#: pas/plugins/identity/server/interfaces.py:130
+msgid "JSON list of client registrations. Written through the control panel rather than by hand; client secrets are stored hashed and cannot be read back."
+msgstr ""
+
+#: pas/plugins/identity/server/interfaces.py:141
+msgid "JSON list of private JWKs, newest first. Generated when the server profile is applied and rotated from the control panel; never edited by hand. Only the public halves are published, as the JWKS relying parties fetch."
+msgstr ""
+
+#: pas/plugins/identity/core/behaviors/configure.zcml:18
+msgid "Keep this user's password on the object rather than in source_users."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:148
+msgid "Largest avatar accepted, in bytes"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:241
+msgid "Leave it empty and anybody this provider authenticates may sign in. Name groups here and a sign-in is refused unless the provider says the person is in one of them. An entry matches either a name the provider sends or a local group id the map turns one into, so it can be written in whichever vocabulary the policy is easier to state in. This needs a group claim: with none configured no groups arrive, and nobody matches."
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:161
+msgid "Let this provider create accounts"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:276
+msgid "Let this provider set group membership"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:392
+msgid "Link lifetime (seconds)"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:402
+msgid "Links per address per hour"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:415
+msgid "Local group"
+msgstr ""
+
+#: pas/plugins/identity/core/behaviors/details.py:57
+msgid "Location"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:227
+msgid "Login"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:48
+msgid "Login callback URL"
+msgstr ""
+
+#: pas/plugins/identity/core/contents/profile.py:79
+msgid "Login name"
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Mark complete"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:198
+msgid "Matches a verified address: one this site confirmed with a magic link, or one a provider it trusts confirmed. Needs this provider's own verification to be trusted too, since the address being matched on is the one it just sent."
+msgstr ""
+
+#: pas/plugins/identity/profiles.zcml:14
+msgid "Multi-provider external authentication for Plone, with users and groups as content."
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:413
+msgid "Never edited and never shown. The secret itself exists once, in the response that registered or rotated it."
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/panel.py:46
+#: pas/plugins/identity/server/profiles/default/controlpanel.xml
+msgid "OAuth clients"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:190
+msgid "Off by default. Enabling this stores personal data; see the privacy notes in the documentation."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:122
+msgid "Off by default. When on, a changed picture_url claim is fetched over HTTPS on login and stored as the user's portrait. The URL is a claim, so at many providers it is whatever the user typed: enabling this makes the login path fetch an address the user chose. See the documentation before turning it on."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:176
+msgid "Older entries are dropped once a user passes this many."
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:98
+msgid "One permission per entry. They are joined with spaces when the authorize URL is built, which is the encoding OAuth 2 defines -- a scope containing a space is not one scope."
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:297
+msgid "Only for a provider on a network you control -- a demo or development stack with no certificate. Portrait syncing fetches a URL the provider supplies, and over plain HTTP that fetch can be aimed at an internal service and read back through the portrait. Leave this off for any provider on the public internet."
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:240
+msgid "Only these groups may sign in"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:363
+msgid "Order"
+msgstr ""
+
+#: pas/plugins/identity/core/behaviors/configure.zcml:18
+msgid "Password storage"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:475
+msgid "Path of the folder the group container lives in, relative to the site root. Only read when a group container id is set."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:437
+msgid "Path of the folder the profile container lives in, relative to the site root. Empty means the site root itself."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:530
+msgid "Paths the profile gate leaves alone"
+msgstr ""
+
+#: pas/plugins/identity/core/behaviors/details.py:62
+msgid "Picture"
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:299
+msgid "Plain HTTP is only allowed for a loopback address, such as 127.0.0.1."
+msgstr ""
+
+#: pas/plugins/identity/server/profiles.zcml:20
+msgid "Plone as an OAuth 2.1 / OIDC provider."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:99
+msgid "Portal type created when somebody adds a group. Installing this add-on points it at UserGroup. The type must provide IGroupContent, and one that does not hands group creation back to Plone's own source_groups."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:71
+msgid "Portal type created when somebody adds a user. Installing this add-on points it at UserProfile; change it only to substitute a user type of your own. The type must provide IUserContent, and one that does not is refused rather than created -- adding a user then falls back to Plone's own source_users, which is stock behaviour rather than a failure. Empty does the same."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:506
+msgid "Portal type used when this add-on creates the group container. The parent folder must allow it; when it does not, creating the container fails rather than choosing another type."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:464
+msgid "Portal type used when this add-on creates the profile container. The parent folder must allow it; when it does not, creating the container fails rather than choosing another type."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:233
+msgid "Portraits"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:364
+msgid "Position among the providers. Stored rather than derived: records live in a BTree and read back alphabetically, and this is the order the login buttons appear in."
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/types/PrincipalsContainer.xml
+msgid "Principals folder"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:271
+msgid "Profile"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:446
+msgid "Profile container id"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:436
+msgid "Profile container parent"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:453
+msgid "Profile container title"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:463
+msgid "Profile container type"
+msgstr ""
+
+#: pas/plugins/identity/core/behaviors/configure.zcml:73
+msgid "Profile details"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:397
+msgid "Profile field"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:517
+msgid "Profiles in these workflow states are visible to user enumeration and to the properties plugin."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:379
+msgid "Property map"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:161
+msgid "Provider discovery timeout in seconds"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:414
+msgid "Provider group"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:406
+msgid "Provider-side group name to local group id, applied on every login. Empty by default: a provider grants no group until somebody says which of its groups mean something here, and a name with no entry grants nothing rather than creating a group. A login only ever takes back a group the same provider granted, so a group given to somebody by hand survives."
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Provides access to workflow history"
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Reactivate"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:189
+msgid "Record IP address and user agent"
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:359
+msgid "Redirect URIs"
+msgstr ""
+
+#: pas/plugins/identity/server/interfaces.py:180
+msgid "Refresh token lifetime (seconds)"
+msgstr ""
+
+#: pas/plugins/identity/server/interfaces.py:181
+msgid "Refresh tokens are rotated on every use, so this is how long a client may stay away before a human has to sign in again."
+msgstr ""
+
+#: pas/plugins/identity/server/interfaces.py:129
+msgid "Registered OAuth clients"
+msgstr ""
+
+#: pas/plugins/identity/server/profiles.zcml:29
+msgid "Remove the authorization server's settings and browser layer."
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Reopen"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:572
+msgid "Required profile fields"
+msgstr ""
+
+#: pas/plugins/identity/core/contents/profile.py:86
+msgid "Required: it is how this user is named everywhere the site shows them, and a provider is not obliged to send one."
+msgstr ""
+
+#: pas/plugins/identity/core/behaviors/roles.py:68
+msgid "Roles"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:97
+msgid "Scope"
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:387
+msgid "Scopes"
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:412
+msgid "Secret hash"
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Send the profile back for completion."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:310
+msgid "Show on the login screen"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:292
+msgid "Shown on the login button."
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:340
+msgid "Shown to the user on the consent screen, which is the one place a person decides whether to trust this client. A client id is not a name."
+msgstr ""
+
+#: pas/plugins/identity/core/contents/group.py:65
+msgid "Shown wherever the group is listed."
+msgstr ""
+
+#: pas/plugins/identity/core/behaviors/details.py:63
+msgid "Shown wherever this user is represented. When it is empty the portrait stored on the member is used instead, and failing that the user's initials."
+msgstr ""
+
+#: pas/plugins/identity/server/interfaces.py:140
+msgid "Signing key ring"
+msgstr ""
+
+#: pas/plugins/identity/core/behaviors/roles.py:74
+msgid "Site-wide roles every member of this group holds. The same roles the groups control panel sets, readable and writable here so that an export carries them and an import restores them."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/view.py:27
+msgid "Site-wide settings for external identity providers. The provider list is stored as JSON; the frontend control panel edits it one provider at a time, with a form generated from each driver."
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:182
+msgid "Some providers send email_verified as the string \"true\" rather than as a boolean -- Oracle Access Manager does, and so do some Keycloak configurations. Only a real boolean counts here, so against such a provider every address arrives unverified and nothing explains why. Switch this on for that provider only, having established that this is what it does: it repairs the value before anything reads it, and changes nothing about what a verified address then means."
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "Stop enumerating this account."
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+msgid "Stop this group granting anything."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:358
+msgid "Style"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:162
+msgid "Switch it off to authenticate against this provider while admitting only people who already have an account here. A site federating with a large directory usually does not want everybody who *can* authenticate to *get* an account: membership is decided elsewhere, and the provider only proves who somebody is. An account is found by matching the verified address, so the two switches below have to be on as well -- without them there is nothing to match on and nobody would ever be admitted."
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:277
+msgid "Switch it off to keep the provider for signing in while deciding group membership here. A site may trust a provider to say who somebody is without trusting it to say what they may do, and group membership is usually what grants permissions. Switching it off leaves the groups this provider already granted in place: taking those away is a separate decision, and one to make deliberately rather than at the next login."
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "The ID of the user who performed the last transition"
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:402
+msgid "The Plone user a client-credentials token acts as. Only meaningful for a client registered for that grant, which has no person behind it and would otherwise act as nobody."
+msgstr ""
+
+#: pas/plugins/identity/server/interfaces.py:153
+msgid "The `iss` value this server puts in tokens, and the base for its discovery document. Configured rather than derived from the portal URL, because it must stay byte-identical across every deployment detail that can rewrite a URL -- a proxy, a virtual host, a trailing slash -- or clients will reject the tokens."
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "The account should no longer appear anywhere. Excluded from enumeration by the default registry setting; the Profile and its data are kept."
+msgstr ""
+
+#: pas/plugins/identity/core/behaviors/email.py:97
+msgid "The address that stands for this person: the first verified one in the list above, or the first one at all when none is verified. Derived rather than typed, so there is no second value to disagree with the list."
+msgstr ""
+
+#: pas/plugins/identity/core/behaviors/configure.zcml:50
+msgid "The addresses this person is reached and recognised by."
+msgstr ""
+
+#: pas/plugins/identity/core/behaviors/email.py:76
+msgid "The addresses this person uses, most preferred first. At least one is required: a Profile exists to be the thing somebody is reached and recognised by. Adding an address here does not prove it -- verifying one sends a link to it, and only an address this site has verified can be used to sign in or to attach a new provider account to this one."
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:59
+msgid "The email address"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:49
+msgid "The frontend route the provider redirects to after login. A path such as /login-identity is resolved against this site's URL and is what most deployments want. Give an absolute URL instead when the frontend is served from another origin, since no portal URL can describe one Plone is never reached on. It is a route in the frontend rather than a backend view: the frontend reads code and state off the query string and posts them to @identity-callback. Either way it must match the redirect URI registered with every provider exactly."
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+msgid "The group is enumerated and grants membership to the Profiles that list it."
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+msgid "The group stops being enumerated and stops granting membership, without being deleted and without editing a single Profile."
+msgstr ""
+
+#: pas/plugins/identity/core/behaviors/configure.zcml:38
+msgid "The groups this principal belongs to."
+msgstr ""
+
+#: pas/plugins/identity/core/behaviors/membership.py:82
+msgid "The groups this principal belongs to. Membership is kept on the member rather than on the group, so editing this field and calling api.group.add_user are two ways to the same place. On a group, this nests it: everybody in this group is also in every group named here."
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:83
+msgid "The identifier this provider issued for this site."
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "The last transition"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:336
+msgid "The login button's background. Empty leaves the frontend's own styling alone."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:347
+msgid "The login button's text and icon colour. Empty leaves the frontend's own styling alone."
+msgstr ""
+
+#: pas/plugins/identity/core/contents/profile.py:80
+msgid "The name this user logs in with."
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:356
+msgid "The other site's URL, as it serves /.well-known/openid-configuration -- for a Plone site that is the site root, with no path segment after it."
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "The profile exists but the user has not completed it. Still enumerable: the account works, it is just sparse."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:631
+msgid "The profile gate"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:60
+msgid "The provider's subject identifier"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:58
+msgid "The provider's username"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:375
+msgid "The realm's URL, https://<server>/realms/<realm> -- not the server root, which serves no discovery document."
+msgstr ""
+
+#: pas/plugins/identity/core/behaviors/configure.zcml:63
+msgid "The site-wide roles this group grants its members."
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "The user has filled in their profile."
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "The user has filled the profile in. Visible to authenticated members, which is what makes a Sharing-tab search useful."
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:181
+msgid "This provider sends verification flags as text"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:147
+msgid "This provider's email verification counts"
+msgstr ""
+
+#: pas/plugins/identity/core/contents/group.py:64
+#: pas/plugins/identity/core/controlpanel/interfaces.py:291
+#: pas/plugins/identity/server/controlpanel/interfaces.py:339
+msgid "Title"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:496
+msgid "Title given to the group container when this add-on creates it. Changing it later does not rename an existing folder."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:454
+msgid "Title given to the profile container when this add-on creates it. Changing it later does not rename an existing folder."
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:423
+msgid "Token endpoint authentication"
+msgstr ""
+
+#: pas/plugins/identity/profiles.zcml:38
 msgid "Uninstall pas.plugins.identity setup."
 msgstr ""
 
-#: pas/plugins/identity/profiles.zcml:22
+#: pas/plugins/identity/profiles/default/types/UserGroup.xml
+msgid "User Group"
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/types/UserProfile.xml
+msgid "User Profile"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:84
+msgid "User container path"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:70
+msgid "User content type"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:131
+msgid "Userid taken from"
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/types/PrincipalsContainer.xml
+#: pas/plugins/identity/profiles/default/types/UserGroup.xml
+#: pas/plugins/identity/profiles/default/types/UserProfile.xml
+msgid "View"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:132
+msgid "What the Plone userid is minted from the first time somebody signs in with this provider. A random id is the safe default: it leaks nothing and never has to change. The others are readable, which matters when a person has to be recognised in Plone -- and they are claims, so two providers can offer the same one. A userid already in use is never handed out: the new one gets a numeric suffix."
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:388
+msgid "What this client may ask for. Only what this server issues is offered, so a registration cannot name a scope that would be narrowed away later. A request for anything outside this is narrowed rather than refused."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:558
+msgid "When a first sign-in leaves a profile with more than one verified address, the profile stays incomplete until its owner confirms which of them stands for them. Only first sign-ins made while this is on are asked. It is asked after sign-in, so it has no say in which existing account a provider's addresses link to: the provider's address preference decides that. The Volto add-on asks the question; no page this site renders does."
+msgstr ""
+
+#: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
+#: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
+msgid "When the previous transition was performed"
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:148
+msgid "When this provider says it verified an address, record the address as verified here too -- exactly as a magic link from this site would. Switch it on only for a provider that really does check, since a verified address is what an account can be attached to. Anything left off still shows what the provider claimed; it just proves nothing."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:200
+msgid "Where authentication events are written, in order. Every destination listed gets every event, and one that is unreachable is logged and stepped over rather than allowed to fail the sign-in. Reads answer from the first destination that can be read back, so list that one first if you record to several. Leave empty to record only to this site's own log."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:610
+msgid "Where principals are filed"
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:360
+msgid "Where this client may be sent back to, matched exactly. One per entry: https, a loopback address for a native app, or a private-use scheme. A fragment is refused, and so is a wildcard -- neither can ever match."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:111
+msgid "Where those objects are created, as a path relative to the site root. Derived and required alongside the type, for the reason the user container path is."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:85
+msgid "Where those objects are created, as a path relative to the site root. Derived from the profile container settings and kept in step with them, so moving the container moves this. Required alongside the type: a type with nowhere to go would fail at the moment somebody adds a user, which is the worst time to discover a configuration gap."
+msgstr ""
+
+#: pas/plugins/identity/server/interfaces.py:166
+msgid "Where to send the browser to ask a user whether they agree to an authorization request. Set it to the frontend route that renders the consent screen, and the question is asked in the site's own look; leave it empty and the server renders a standalone page of its own. The authorization request is appended as the query string, and the screen sends the browser back to the authorization endpoint with the answer."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:311
+msgid "Whether the login screen offers a button for this provider. An enabled provider that is not shown still works: it stays linkable from a user's own identities page, and an account already linked to it still signs in through it. That is what a staff-only provider looks like -- usable, but not advertised to everybody who reaches the login form."
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:350
+msgid "Whether this client may obtain tokens at all. Disabling keeps the registration and its secret, and refuses every grant."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:299
+msgid "Whether this provider can be used at all. A disabled provider keeps its settings and its stored identities, and nothing may sign in or link through it. Whether it is *offered* on the login screen is a separate setting."
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:227
+msgid "Which claim carries the group names this provider asserts. A dotted path reaches into a nested claim, so a provider putting them under realm_access.roles is reachable without a driver of its own. What the names then grant is the group map, which is empty until an operator fills it in -- an unmapped group grants nothing and is never created here."
+msgstr ""
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:375
+msgid "Which flows this client may use. Only what the token endpoint implements is offered, so a registration cannot name a grant that would be refused later."
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:326
+msgid "Which of the account's addresses comes first. The first one becomes the email address, and a new profile lists the addresses in this order. Linking to an existing account by email tries them in this order too, and the first one that belongs to an account decides. Each entry is @ followed by a domain, such as @example.org, for an address on exactly that domain, or * for every address no other entry matches. An address no entry matches goes last, and none is ever dropped. Leave it empty to keep GitHub's order: the primary address first, then the verified ones."
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:625
+msgid "Which states count"
+msgstr ""
+
+#: pas/plugins/identity/core/controlpanel/interfaces.py:545
+msgid "While a profile is missing required information, every page its owner asks for is answered with a redirect to its edit form. Managers and site administrators are never held, so that a required field nobody can supply cannot lock the site. Turn this off to make the profile a suggestion rather than a gate."
+msgstr ""
+
+#: pas/plugins/identity/core/drivers/settings.py:89
+msgid "Write-only. It is never sent back by any endpoint here, and a GenericSetup export carries a placeholder rather than the value."
+msgstr ""
+
+#: pas/plugins/identity/server/profiles.zcml:20
+msgid "pas.plugins.identity: Authorization server"
+msgstr ""
+
+#: pas/plugins/identity/profiles.zcml:87
 msgid "pas.plugins.identity: Example content"
 msgstr ""
 
-#: pas/plugins/identity/profiles.zcml:13
+#: pas/plugins/identity/profiles.zcml:14
 msgid "pas.plugins.identity: Install"
 msgstr ""
 
-#: pas/plugins/identity/profiles.zcml:30
+#: pas/plugins/identity/profiles.zcml:29
+msgid "pas.plugins.identity: Rebuild the user catalog"
+msgstr ""
+
+#: pas/plugins/identity/profiles.zcml:38
 msgid "pas.plugins.identity: Uninstall"
+msgstr ""
+
+#: pas/plugins/identity/server/profiles.zcml:29
+msgid "pas.plugins.identity: Uninstall the authorization server"
 msgstr ""
