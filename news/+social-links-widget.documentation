@@ -1,0 +1,1 @@
+Removed the social media list widget from the frontend reference and from the how-to guide for editing a list field as a table. The add-on no longer registers a widget name belonging to another add-on, so the step that told you to order the two add-ons is gone with it. @ericof

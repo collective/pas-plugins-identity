@@ -5,10 +5,7 @@ import React from 'react';
 
 import config from '@plone/volto/registry';
 
-import OrderedObjectListWidget, {
-  columnsOf,
-  SocialLinksWidget,
-} from './OrderedObjectListWidget';
+import OrderedObjectListWidget, { columnsOf } from './OrderedObjectListWidget';
 import { SOCIAL_LINK_SCHEMA, SOCIAL_LINKS } from '../../../stories/fixtures';
 
 let widgets: any;
@@ -146,19 +143,5 @@ describe('OrderedObjectListWidget', () => {
     expect(value.slice(0, 2)).toEqual(SOCIAL_LINKS);
     expect(value[2].title).toBe('Blog');
     expect(value[2]['@id']).toMatch(/^[0-9a-f-]{36}$/);
-  });
-});
-
-describe('SocialLinksWidget', () => {
-  it('summarizes a link by its network and title', () => {
-    renderWidget({}, SocialLinksWidget);
-
-    expect(headers()).toEqual(['', 'Network', 'Title', 'Actions']);
-  });
-
-  it('shows the columns a backend asks for instead', () => {
-    renderWidget({ columns: ['href'] }, SocialLinksWidget);
-
-    expect(headers()).toEqual(['', 'Target', 'Actions']);
   });
 });

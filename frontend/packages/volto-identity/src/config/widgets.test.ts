@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import install from './widgets';
-import OrderedObjectListWidget, {
-  SocialLinksWidget,
-} from '../components/Widgets/OrderedObjectListWidget/OrderedObjectListWidget';
+import OrderedObjectListWidget from '../components/Widgets/OrderedObjectListWidget/OrderedObjectListWidget';
 import OrderedStringListWidget from '../components/Widgets/OrderedStringListWidget/OrderedStringListWidget';
 import ProviderIconWidget from '../components/Widgets/ProviderIconWidget';
 
@@ -28,14 +26,14 @@ describe('install', () => {
     expect(widgets.identity_object_list).toBe(OrderedObjectListWidget);
   });
 
-  it("replaces volto-social-media's widget when it was registered first", () => {
-    // Add-on configuration runs in the order the add-ons are listed, so this
-    // is the case where volto-identity comes after volto-social-media.
+  it('leaves another add-on’s widget alone', () => {
+    // This package registers only names it owns, so a field belonging to
+    // another add-on keeps that add-on's component.
     const theirs = () => null;
 
     expect(
       configured({ social_media_object_list: theirs }).social_media_object_list,
-    ).toBe(SocialLinksWidget);
+    ).toBe(theirs);
   });
 
   it('keeps the widgets already registered', () => {

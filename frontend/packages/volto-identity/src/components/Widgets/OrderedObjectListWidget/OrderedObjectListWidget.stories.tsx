@@ -2,9 +2,7 @@ import React, { useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 
-import OrderedObjectListWidget, {
-  SocialLinksWidget,
-} from './OrderedObjectListWidget';
+import OrderedObjectListWidget from './OrderedObjectListWidget';
 import type { OrderedObjectListWidgetProps } from './OrderedObjectListWidget';
 import { DND_LIBRARIES } from '../../ControlPanel/ProvidersTable';
 import {
@@ -68,13 +66,4 @@ export const Default: Story = {
 export const PickedColumns: Story = {
   ...Default,
   args: { columns: ['title', 'href'] },
-};
-
-/**
- * Registered as `social_media_object_list`, standing in for
- * `volto-social-media`'s widget: a link summarized by network and title.
- */
-export const SocialLinks: Story = {
-  ...Default,
-  render: keeping(SocialLinksWidget),
 };

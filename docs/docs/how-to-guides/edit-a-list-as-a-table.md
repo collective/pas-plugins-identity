@@ -12,9 +12,8 @@ This guide shows you how to make a field holding an ordered list render in Volto
 as a table: one row per entry, a handle to drag it by, and a dialog to edit it.
 
 `@plone-collective/volto-identity` supplies the widgets, and your field asks for
-one by name. The
-examples are the two fields that use them already: a Profile's `emails`, and
-`social_links` from `plonegovbr.socialmedia`.
+one by name. The example running through this guide is the field that uses one
+already: a Profile's `emails`.
 
 ## 1. Pick the widget
 
@@ -62,8 +61,7 @@ the widget accepts a repeated entry there.
 <!-- source: @plone/volto src/components/manage/Form/Field.jsx -->
 
 For a list of objects, also pass the item schema's name, and the columns to show,
-in `widgetProps`. This is `plonegovbr.socialmedia`'s `social_links` field under
-another name, with `columns` added:
+in `widgetProps`:
 
 ```python
 from plone.autoform import directives
@@ -131,28 +129,6 @@ well, so it can translate its titles with `intl.formatMessage`.
 
 Volto's own `object_list` widget finds its schema through `schemaName` too, so a
 field written for that widget needs no new utility.
-
-## 4. List the add-ons in order
-
-<!-- source: @plone/registry src/addon-registry/create-addons-loader.ts -->
-
-Only `social_links` needs this step. `plonegovbr.socialmedia` asks for the widget
-`social_media_object_list`, which both `@plonegovbr/volto-social-media` and
-`@plone-collective/volto-identity` register. Add-on configuration is applied in the order the
-add-ons are listed, so the last one listed wins.
-
-In `volto.config.js`, list `@plone-collective/volto-identity` after
-`@plonegovbr/volto-social-media`:
-
-```js
-const addons = [
-  '@plonegovbr/volto-social-media',
-  '@plone-collective/volto-identity',
-];
-```
-
-The table shows each link's network and title. Its dialog is still
-`@plonegovbr/volto-social-media`'s `socialMedia` schema.
 
 ## Verify
 
