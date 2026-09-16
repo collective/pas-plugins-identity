@@ -107,9 +107,15 @@ class TestWhatIsMissing:
         assert missing_fields(self.profile) == ("emails",)
 
     def test_an_empty_collection_is_missing(self):
-        api.portal.set_registry_record(REQUIRED_FIELDS_RECORD, ("group_ids",))
+        # ``emails`` rather than ``group_ids``, which this named until a
+        # required field its owner may not write stopped being counted at all:
+        # ``group_ids`` is guarded by a Manager-only permission, so it now
+        # answers the question in :class:`TestAFieldTheOwnerMayNotWrite`
+        # instead of this one.
+        api.portal.set_registry_record(REQUIRED_FIELDS_RECORD, ("emails",))
+        self.profile.emails = ()
 
-        assert missing_fields(self.profile) == ("group_ids",)
+        assert missing_fields(self.profile) == ("emails",)
 
     def test_a_falsy_value_that_is_a_value_is_not_missing(self):
         """``0`` and ``False`` are answers somebody gave.
@@ -175,6 +181,64 @@ class TestReconcile:
 
         with api.env.adopt_roles(["Anonymous"]):
             assert reconcile(self.profile) == "complete"
+
+
+class TestAFieldTheOwnerMayNotWrite:
+    """The loop nobody can leave.
+
+    A required field whose write permission its owner does not hold is not on
+    the edit form they are sent to, so counting it holds them there for ever.
+    ``login`` is the shipped example: required, and guarded by
+    ``pas.plugins.identity.content.editlogin``, which the owner of a profile
+    deliberately does not hold.
+
+    The question is asked of the profile's own permission map rather than of
+    PAS: which roles is the permission granted to here, and does the owner
+    hold one. So these tests need no user -- and deliberately have none,
+    because resolving one is the thing that must not happen.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, make_profile) -> None:
+        self.portal = portal
+        self.profile = make_profile(
+            "alice", email="alice@example.com", fullname="Alice Liddell"
+        )
+
+    def test_it_is_not_counted_as_missing(self):
+        self.profile.login = ""
+
+        assert "login" not in missing_fields(self.profile)
+
+    def test_the_profile_is_therefore_complete(self):
+        """The point of all of it: the gate releases them."""
+        self.profile.login = ""
+        modified(self.profile)
+
+        assert state(self.profile) == "complete"
+
+    def test_a_field_the_owner_may_write_is_still_counted(self):
+        """The control. Without it, "skip everything" would pass the test
+        above and quietly switch the whole feature off."""
+        self.profile.fullname = ""
+
+        assert missing_fields(self.profile) == ("fullname",)
+
+    def test_an_unregistered_permission_keeps_being_asked(self, monkeypatch):
+        """Every uncertainty keeps the field required.
+
+        A schema naming a permission whose ZCML never loaded says nothing
+        about who may write the field, and "we cannot tell" is not a reason
+        to stop asking for it.
+        """
+        monkeypatch.setattr(
+            completeness,
+            "_write_permission",
+            lambda profile, name: "nobody.registered.this",
+        )
+        self.profile.fullname = ""
+
+        assert missing_fields(self.profile) == ("fullname",)
 
 
 class TestWritingToAProfileReconcilesIt:
