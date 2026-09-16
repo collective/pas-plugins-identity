@@ -153,4 +153,12 @@
   <column value="group_id" />
   <column value="group_ids" />
 
+  <!--
+    What the profile is still waiting for, as the object counted it: the one
+    answer that knows which required fields this person is actually able to
+    write. Filled by the indexer in ``core.indexers``; see it for the two
+    things that leave it stale and for the rebuild that fixes them.
+  -->
+  <column value="missing_fields" />
+
 </object>

@@ -286,6 +286,14 @@ def redirect_target(request) -> str | None:
         # Already on the profile: its edit form, its widgets, its save.
         return None
 
+    # At ``info``, and naming what it wants. A redirect on its own says only
+    # that something is wrong, which is what a user reports and what nobody
+    # can act on -- see the module docstring.
+    logger.info(
+        "Holding %s at their profile, which is waiting for: %s",
+        user.getId(),
+        ", ".join(missing_from_brain(brain)) or "something the catalog cannot name",
+    )
     return f"{brain.getURL()}/edit"
 
 

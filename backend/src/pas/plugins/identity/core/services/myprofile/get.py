@@ -25,6 +25,7 @@ class MyProfileGet(IdentityService):
         return profile_state(
             api.user.get_current().getId(),
             self.context.absolute_url(),
+            self.request,
         )
 
 

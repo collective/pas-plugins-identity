@@ -93,6 +93,7 @@ PROFILE_METADATA = (
     "description",
     "location",
     "group_ids",
+    "missing_fields",
 )
 
 #: Columns that mean something on a Group.

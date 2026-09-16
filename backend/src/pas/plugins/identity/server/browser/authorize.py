@@ -26,6 +26,7 @@ any later request for a scope not already agreed to.
 """
 
 from AccessControl import Unauthorized
+from pas.plugins.identity import logger
 from pas.plugins.identity.core.subscribers.gate import incomplete_profile_url
 from pas.plugins.identity.server.consent.screen import consent_screen_url
 from pas.plugins.identity.server.controlpanel.clients import get_client
@@ -250,6 +251,15 @@ class AuthorizeView(BrowserView):
             # nothing yet and hears from us when the browser comes back. The
             # return trip is the whole request, carried the same way the
             # consent screen carries it.
+            #
+            # Logged, because from the relying party's side this is
+            # indistinguishable from a slow user: no error is sent, and the
+            # code simply never arrives.
+            logger.info(
+                "Pausing the authorization request of %s at their profile, "
+                "which this site is still waiting on",
+                user.getId(),
+            )
             return f"{elsewhere}?{urlencode({RESUME_PARAM: self.request_url()})}"
 
         plugin = api.portal.get_tool("acl_users")[PLUGIN_ID]

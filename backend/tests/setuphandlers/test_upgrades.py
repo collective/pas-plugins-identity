@@ -8,6 +8,7 @@ run, and nothing reports its absence -- so these assert the registration and
 the effect separately.
 """
 
+from Missing import Value as MISSING_VALUE
 from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
@@ -63,6 +64,7 @@ class TestTheStepIsRegistered:
             ("1005",),
             ("1006",),
             ("1007",),
+            ("1008",),
         } <= dests, dests
 
     def test_a_site_at_the_latest_version_is_offered_nothing(self, setup_tool):
@@ -114,7 +116,78 @@ class TestTheStepDoesTheWork:
 
         self.setup_tool.upgradeProfile(PROFILE)
 
-        assert self.setup_tool.getLastVersionForProfile(PROFILE) == ("1007",)
+        assert self.setup_tool.getLastVersionForProfile(PROFILE) == ("1008",)
+
+
+class TestV1008RecordsWhatIsMissing:
+    """The column the profile gate explains a hold from.
+
+    Unlike the column v1007 added, an empty one here is not harmless. A brain
+    reads a column nothing has indexed into as ``Missing.Value``, which
+    ``missing_from_brain`` treats as "not asked yet" and answers by scanning
+    columns for emptiness -- the behaviour the column exists to replace. So the
+    step has to populate it, and a site whose users are all complete would
+    otherwise wait for a write that never comes.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, setup_tool, container) -> None:
+        self.portal = portal
+        self.setup_tool = setup_tool
+        self.container = container
+        self.catalog = query_catalog()
+
+    def make_profile(self, userid: str, fullname: str) -> object:
+        """Create one Profile in the configured container.
+
+        Inline for the same reason as in
+        :class:`TestV1003OrdersPeopleByName`: the ``make_profile`` fixture
+        lives under ``tests/core`` and is not visible here.
+
+        :param userid: The userid, which is also the object id.
+        :param fullname: The name the Profile is titled by.
+        :returns: The Profile.
+        """
+        with api.env.adopt_roles(["Manager"]):
+            return api.content.create(
+                container=self.container,
+                type=PROFILE_PORTAL_TYPE,
+                id=userid,
+                userid=userid,
+                login=f"{userid}@example.com",
+                fullname=fullname,
+            )
+
+    def _upgrade_from(self, version: str) -> None:
+        """Run the upgrade machinery as a site at ``version`` would.
+
+        :param version: The profile version the site is pretending to be at.
+        """
+        self.setup_tool.setLastVersionForProfile(PROFILE, version)
+        self.setup_tool.upgradeProfile(PROFILE)
+
+    def test_the_column_exists_after_the_upgrade(self):
+        # Removed first, so this tests the upgrade rather than the install.
+        self.catalog.delColumn("missing_fields")
+        assert "missing_fields" not in self.catalog.schema()
+
+        self._upgrade_from("1007")
+
+        assert "missing_fields" in self.catalog.schema()
+
+    def test_the_column_is_filled_rather_than_merely_created(self):
+        """The half no XML can carry, and the half that matters: read as
+        ``Missing.Value`` the column sends every caller back to the old scan,
+        with nothing to say it did."""
+        profile = self.make_profile("alice", fullname="Alice Liddell")
+        profile.fullname = ""
+        self.catalog.delColumn("missing_fields")
+
+        self._upgrade_from("1007")
+
+        brain = self.catalog.unrestrictedSearchResults(userid="alice")[0]
+        assert brain.missing_fields is not MISSING_VALUE
+        assert "fullname" in brain.missing_fields
 
 
 class TestV1002PutsTheFieldsOnBehaviors:

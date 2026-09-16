@@ -44,6 +44,7 @@ administrator's decision about an account, and a machine that reads "not
 missing anything" has no business reversing it.
 """
 
+from Missing import Value as MISSING_VALUE
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.confirmation import confirmation_pending
@@ -56,6 +57,7 @@ from plone.autoform.interfaces import WRITE_PERMISSIONS_KEY
 from plone.dexterity.utils import iterSchemata
 from plone.dexterity.utils import iterSchemataForType
 from zope.component import queryUtility
+from zope.interface.interfaces import ComponentLookupError
 from zope.schema import getFieldsInOrder
 from zope.security.interfaces import IPermission
 
@@ -94,6 +96,15 @@ def configured_fields() -> tuple[str, ...]:
         value = api.portal.get_registry_record(REQUIRED_FIELDS_RECORD, default=())
     except InvalidParameterError:
         # A site without this layer's settings. Nothing requires anything.
+        return ()
+    except ComponentLookupError:
+        # No current site to hold a registry: a zconsole script that never
+        # called ``setSite``, or a site being deleted from the Zope root. The
+        # indexer runs there -- see
+        # :func:`~pas.plugins.identity.core.indexers.missing_fields_index` --
+        # and indexing a profile must not be what raises out of a deletion.
+        # Falling through to what the type declares is the same answer an
+        # unset record gets.
         return ()
     return tuple(name for name in (value or ()) if name)
 
@@ -238,16 +249,33 @@ def missing_from_brain(brain) -> tuple[str, ...]:
     every page load by the frontend gate, and this package's whole claim about
     the catalog is that reading a user costs no object load.
 
-    Every field of the shipped type except the picture is catalog metadata, so
-    in practice this answers completely. A configured field that is *not* a
-    metadata column cannot be judged from a brain and is reported as missing:
-    the workflow state is the authority on whether anything is missing at all,
-    and this list only explains it. Saying too much is a worse-worded prompt;
-    saying too little is a prompt that names nothing.
+    **Answered from the ``missing_fields`` column wherever there is one**, which
+    is the same tuple :func:`missing_fields` computed the last time the profile
+    was indexed. That is the only answer that knows which of these fields their
+    owner is able to write, because the permission is granted per profile and a
+    brain cannot be asked about it -- see
+    :func:`~pas.plugins.identity.core.indexers.missing_fields_index`. It is
+    also the answer ``review_state`` was decided from, in the same breath, so
+    the state and the reason given for it cannot disagree.
+
+    The scan below is the fallback, for a site whose catalog predates the
+    column and has not been rebuilt yet. It judges emptiness column by column,
+    which gets two things wrong and cannot do better without the object: it
+    counts a field its owner may not write, and it reports any configured field
+    that is not a metadata column as missing however full it is. Saying too
+    much is a worse-worded prompt; saying too little is a prompt that names
+    nothing, so over-reporting is the right way to be wrong here.
+
+    An empty tuple is a real answer and is returned as one. ``Missing.Value``
+    is not: it is what a brain reads for a column no object has been indexed
+    into, and it means the question has not been asked yet.
 
     :param brain: A brain from the identity catalog.
     :returns: Field names.
     """
+    stored = getattr(brain, "missing_fields", MISSING_VALUE)
+    if stored is not MISSING_VALUE and stored is not None:
+        return tuple(stored)
     names = configured_fields() or _brain_declared()
     return tuple(name for name in names if _is_empty(getattr(brain, name, None)))
 
@@ -288,6 +316,58 @@ def is_complete(profile: UserProfile) -> bool:
     return not missing_fields(profile) and not confirmation_pending(profile)
 
 
+def _excluded_fields(profile: UserProfile) -> tuple[str, ...]:
+    """Return the required fields left uncounted because of their permission.
+
+    :param profile: The profile to inspect.
+    :returns: Field names, empty when nothing is excluded.
+    """
+    return tuple(
+        name
+        for name in required_fields(profile)
+        if _is_empty(getattr(profile, name, None))
+        and not _owner_may_write(profile, name)
+    )
+
+
+def _report(profile: UserProfile, state: str) -> None:
+    """Say what a profile is waiting for, and what it has stopped asking for.
+
+    The gate itself is a redirect, and a redirect says nothing about what it
+    wants. Without this the only record of a user held on their own edit form
+    -- or of a site requiring something nobody can supply -- is the user
+    saying so.
+
+    Runs on every reconciliation rather than only on a transition, because the
+    case worth seeing is the one where nothing changes: somebody fills the
+    form in, saves, and is sent back to it.
+
+    :param profile: The profile just examined.
+    :param state: The state it is in.
+    """
+    userid = getattr(profile, "userid", "?")
+    if excluded := _excluded_fields(profile):
+        # A site asking for something its own users cannot give. Not fatal --
+        # the field is simply not counted -- but somebody configured it, and
+        # nothing else would ever tell them.
+        logger.warning(
+            "Profile %s: %s required but not counted, because its owner may "
+            "not write it",
+            userid,
+            ", ".join(excluded),
+        )
+    if state != INCOMPLETE:
+        return
+    waiting = list(missing_fields(profile))
+    if confirmation_pending(profile):
+        waiting.append("an address confirmation")
+    logger.info(
+        "Profile %s is incomplete, waiting for: %s",
+        userid,
+        ", ".join(waiting) or "nothing it can name",
+    )
+
+
 def reconcile(profile: UserProfile) -> str | None:
     """Bring a profile's workflow state in line with what it carries.
 
@@ -308,21 +388,19 @@ def reconcile(profile: UserProfile) -> str | None:
         return None
 
     wanted = COMPLETE if is_complete(profile) else INCOMPLETE
+    # Before the early return, so the case that says the most is the one where
+    # nothing changes: a user who has just filled the form in and is about to
+    # be sent back to it.
+    _report(profile, wanted)
     if state == wanted:
         return None
 
     transition = TRANSITIONS[state]
     with api.env.adopt_roles(["Manager"]):
         api.content.transition(obj=profile, transition=transition)
-    missing = list(missing_fields(profile))
-    if confirmation_pending(profile):
-        missing.append("an address confirmation")
-    logger.info(
-        "Profile %s: %s (missing %s)",
-        getattr(profile, "userid", "?"),
-        transition,
-        ", ".join(missing) or "nothing",
-    )
+    # What it is waiting for is :func:`_report`'s to say, and it has just said
+    # it. This one is the transition itself.
+    logger.info("Profile %s: %s", getattr(profile, "userid", "?"), transition)
     return transition
 
 

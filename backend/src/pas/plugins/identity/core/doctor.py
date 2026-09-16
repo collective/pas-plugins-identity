@@ -27,6 +27,7 @@ from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import profile_brains
 from pas.plugins.identity.core.catalog import PROFILE_METADATA
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
+from pas.plugins.identity.core.completeness import missing_fields
 from plone import api
 from plone.dexterity.content import Container
 from Products.ZCatalog.CatalogBrains import AbstractCatalogBrain
@@ -95,6 +96,11 @@ def _expected(obj: Container, column: str) -> object:
     """
     if column == "review_state":
         return api.content.get_state(obj)
+    if column == "missing_fields":
+        # Computed, like the state beside it, and by the same call the indexer
+        # makes. Read as a plain attribute it is absent, so every profile
+        # waiting for something would read as drift.
+        return missing_fields(obj)
     value = getattr(obj, column, None)
     # ZCatalog calls a callable attribute when it records metadata, so the
     # check has to call it too -- otherwise every computed column, Title

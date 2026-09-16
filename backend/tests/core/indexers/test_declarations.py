@@ -21,6 +21,7 @@ the bug fixed in #38, and the test below is what stops the next one arriving
 unnoticed.
 """
 
+from Missing import Value as MISSING_VALUE
 from pas.plugins.identity.core.catalog import GROUP_METADATA
 from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import PROFILE_METADATA
@@ -72,6 +73,17 @@ def our_indexers() -> list:
             getattr(registration.factory, "callable", None), "__module__", ""
         ).startswith("pas.plugins.identity")
     ]
+
+
+#: Columns whose empty value is a real answer rather than a gap. The sweep
+#: below tests every other column for a value, and would otherwise force a
+#: fixture to fake one here.
+#:
+#: ``missing_fields`` carries what a Profile is still waiting for. A Profile
+#: with nothing missing is the ordinary case and the one this fixture builds,
+#: so an empty tuple is the correct answer and a non-empty one would mean the
+#: fixture had stopped filling the Profile in.
+EMPTY_IS_AN_ANSWER = frozenset({"missing_fields"})
 
 
 class TestEveryDeclaredIndexAndColumnIsAnswered:
@@ -132,8 +144,28 @@ class TestEveryDeclaredIndexAndColumnIsAnswered:
         ]
 
         assert [
-            name for name in PROFILE_METADATA if not getattr(brain, name, None)
+            name
+            for name in PROFILE_METADATA
+            if name not in EMPTY_IS_AN_ANSWER and not getattr(brain, name, None)
         ] == []
+
+    def test_the_exempt_column_is_still_written(self):
+        """The other half of the exemption above, which would otherwise read
+        as "this column is not checked".
+
+        ``missing_fields`` is empty here because this Profile is filled in,
+        and that is the answer. What must not happen is the column never being
+        written at all: a brain reads one nothing has indexed into as
+        ``Missing.Value``, which
+        :func:`~pas.plugins.identity.core.completeness.missing_from_brain`
+        treats as "not asked yet" and answers by scanning columns instead.
+        """
+        brain = self.catalog.unrestrictedSearchResults(portal_type=PROFILE_PORTAL_TYPE)[
+            0
+        ]
+
+        assert brain.missing_fields is not MISSING_VALUE
+        assert tuple(brain.missing_fields) == ()
 
     def test_every_group_column_has_a_value(self):
         """The same for the other type in the catalog."""

@@ -1,0 +1,1 @@
+Documented what the profile gate now tells the person it is holding. The endpoint reference covers `missing_titles` beside `missing` in `@my-profile`, the frontend reference says that `ProfileGate` explains every redirect as a toast and under which labels, and the upgrade guide carries profile version 1008 and the catalog column it adds. @ericof

@@ -102,6 +102,19 @@ class TestWithAProfile:
             self.service.reply()["@id"] == f"{self.portal.absolute_url()}/@my-profile"
         )
 
+    def test_missing_fields_carry_their_form_labels(self):
+        """What the gate has to show the person it is holding.
+
+        ``fullname`` is a schema name. ``Full name`` is what the form calls
+        it, and the message is read by somebody looking at that form.
+        """
+        self.make_profile(TEST_USER_ID)
+
+        body = self.service.reply()
+
+        assert "fullname" in body["missing"]
+        assert body["missing_titles"]["fullname"] == "Full name"
+
 
 class TestTheProfilesOwnAddresses:
     """What the account page renders the verify buttons from.
