@@ -44,7 +44,8 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useHistory, useLocation } from 'react-router-dom';
 import { defineMessages, useIntl } from 'react-intl';
-import { addMessage } from '@plone/volto/actions';
+import { toast } from 'react-toastify';
+import Toast from '@plone/volto/components/manage/Toast/Toast';
 
 import { getMyProfile } from '../../actions';
 import {
@@ -95,7 +96,6 @@ const ProfileGate: React.FC<ProfileGateProps> = ({ apiPath = '' }) => {
   const location = useLocation();
   const intl = useIntl();
   const asked = useRef(false);
-  const explained = useRef<string | null>(null);
 
   const token = useSelector((state: any) => state.userSession?.token);
   const fetched = useSelector((state: any) => state.myProfile);
@@ -196,29 +196,41 @@ const ProfileGate: React.FC<ProfileGateProps> = ({ apiPath = '' }) => {
       ) {
         rememberReturn(`${location.pathname}${location.search}`);
       }
-      // Once per destination rather than once. The form and the confirmation
-      // page want different things, and somebody sent on from one to the
-      // other needs telling what the second one wants.
-      if (explained.current !== target) {
-        explained.current = target;
-        const missing = profile.data?.missing ?? [];
-        const confirming = target === CONFIRM_EMAIL_PATH;
-        dispatch(
-          addMessage(
-            intl.formatMessage(
-              confirming ? messages.confirmTitle : messages.title,
-            ),
+      // On every redirect, not once per destination. Being sent back to the
+      // same form is exactly when somebody needs telling why, and `toastId`
+      // is what keeps that from stacking: react-toastify drops a toast whose
+      // id is already on screen, and shows it again once it is gone.
+      //
+      // A toast rather than `addMessage`: Volto 19 mounts no `Messages`
+      // component, so that action wrote to the store and nothing rendered it.
+      // The gate explained itself to nobody.
+      const missing = profile.data?.missing ?? [];
+      const titles = profile.data?.missing_titles ?? {};
+      const confirming = target === CONFIRM_EMAIL_PATH;
+      // The field's own label where the backend sends one, so the message
+      // names what the form calls it rather than what the schema does.
+      const fields = missing.map((name: string) => titles[name] ?? name);
+      // `warn`, not `warning`: the two are the same function -- the library
+      // assigns one to the other -- but only `warn` is in its type
+      // declarations, so `warning` fails the typecheck.
+      toast.warn(
+        <Toast
+          warning
+          title={intl.formatMessage(
+            confirming ? messages.confirmTitle : messages.title,
+          )}
+          content={
             confirming
               ? intl.formatMessage(messages.confirmBody)
-              : missing.length
+              : fields.length
                 ? intl.formatMessage(messages.bodyWithFields, {
-                    fields: missing.join(', '),
+                    fields: fields.join(', '),
                   })
-                : intl.formatMessage(messages.body),
-            'warning',
-          ),
-        );
-      }
+                : intl.formatMessage(messages.body)
+          }
+        />,
+        { toastId: `identity-gate:${target}` },
+      );
       history.replace(target);
     }
   }, [

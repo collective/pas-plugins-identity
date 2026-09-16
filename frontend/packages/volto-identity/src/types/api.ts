@@ -235,6 +235,15 @@ export interface MyProfile {
    */
   missing: string[];
   /**
+   * The label each missing field carries on the form, keyed by field name.
+   *
+   * What the gate names in its message: a person filling a form in looks for
+   * `Full name`, not `fullname`. Absent for a backend that predates it, and
+   * absent for any field whose title cannot be resolved -- consumers fall
+   * back to the name itself.
+   */
+  missing_titles?: Record<string, string>;
+  /**
    * The addresses the Profile carries, and which of them are verified.
    *
    * Optional because a client may be talking to a backend that predates it,

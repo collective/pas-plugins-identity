@@ -9,10 +9,11 @@
  * or after an error, makes a backend hiccup look like a locked site.
  */
 import { describe, expect, it } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import React from 'react';
 import { MemoryRouter, Route, useLocation } from 'react-router-dom';
 import { Provider } from 'react-redux';
+import { ToastContainer } from 'react-toastify';
 import { IntlProvider } from '../../testing';
 
 import ProfileGate from './ProfileGate';
@@ -61,6 +62,9 @@ function mountAt(pathname: string, state: any): { path: string } {
         <MemoryRouter initialEntries={[pathname]}>
           <ProfileGate />
           <Route path="*" component={Spy} />
+          {/* The gate explains itself with a toast, and a toast renders
+              nowhere without this. Inert for every test that raises none. */}
+          <ToastContainer />
         </MemoryRouter>
       </IntlProvider>
     </Provider>,
@@ -181,12 +185,15 @@ describe('ProfileGate', () => {
     expect(dispatched.length).toBe(0);
   });
 
-  it('says what it wants before sending them away', () => {
+  it('says what it wants, on screen, before sending them away', async () => {
     // A user dropped on an edit form with no explanation cannot tell a
-    // requirement from a broken site. The backend reports which fields are
-    // missing so the message can name them.
-    dispatched.length = 0;
-
+    // requirement from a broken site.
+    //
+    // Asserted against the DOM, and that is the whole point of this test.
+    // It used to dispatch Volto's `addMessage` and assert on the action --
+    // which passed for a year while Volto 19 mounted no `Messages` component
+    // at all, so the explanation was written to the store and rendered
+    // nowhere. A message nobody can see is the bug, not the fix.
     withStorage(() => {
       mountAt('/news', {
         userSession: { token: 'a-token' },
@@ -197,18 +204,16 @@ describe('ProfileGate', () => {
             profile: PROFILE,
             review_state: 'incomplete',
             missing: ['email', 'fullname'],
+            missing_titles: { fullname: 'Full name' },
           },
         }),
       });
     });
 
-    // Volto's `addMessage` action is flat: {type, id, title, body, level}.
-    const message = dispatched.find(
-      (action: any) => typeof action?.body === 'string',
-    );
-    expect(message?.body).toContain('email');
-    expect(message?.body).toContain('fullname');
-    expect(message?.level).toBe('warning');
+    // The backend's title where it sent one, the field's own name where it
+    // did not.
+    expect(await screen.findByText(/Full name/)).toBeTruthy();
+    expect(await screen.findByText(/email/)).toBeTruthy();
   });
 
   it('returns the user to where they were going once it is complete', () => {
@@ -339,9 +344,7 @@ describe('a profile held only for an address confirmation', () => {
     expect(seen?.path).toBe('/confirm-email');
   });
 
-  it('says what it wants rather than which fields', () => {
-    dispatched.length = 0;
-
+  it('says what it wants rather than which fields', async () => {
     withStorage(() => {
       mountAt('/news', {
         userSession: { token: 'a-token' },
@@ -349,10 +352,11 @@ describe('a profile held only for an address confirmation', () => {
       });
     });
 
-    const message = dispatched.find(
-      (action: any) => typeof action?.body === 'string',
-    );
-    expect(message?.title).toBe('Confirm your email address');
+    // The confirmation page asks a different question from the edit form, so
+    // it carries its own title -- and, like its sibling above, this is
+    // asserted where the user would read it rather than on an action nothing
+    // renders.
+    expect(await screen.findByText('Confirm your email address')).toBeTruthy();
   });
 
   it('keeps where they were going when sent on from their own profile', () => {

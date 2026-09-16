@@ -65,6 +65,10 @@ profile is waiting only on an address confirmation, rather than to the edit form
 A profile that is also missing fields goes to the edit form first. See
 {doc}`profiles-and-groups`.
 
+`ProfileGate` says why each time it redirects, as a toast: the fields the profile
+is waiting for, under the labels `missing_titles` gives them. A redirect on its
+own tells a user only that something is wrong.
+
 ## Environment variables
 
 <!-- source: frontend/packages/volto-identity/src/helpers/showPloneLogin.ts -->
