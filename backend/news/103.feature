@@ -1,1 +1,0 @@
-Made a Profile's email addresses ask Volto for the `identity_string_list` widget, so their order, which decides the address that stands for the person, is edited as a table rather than in a select. @ericof

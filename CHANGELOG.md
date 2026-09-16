@@ -7,6 +7,49 @@
 -->
 
 <!-- towncrier release notes start -->
+## 1.0.0a8 (2026-09-16)
+
+### Backend
+
+
+#### Feature
+
+- Translated the backend's messages into Brazilian Portuguese, German and Spanish. @ericof [#102](https://github.com/collective/pas-plugins-identity/issues/102)
+- Made a Profile's email addresses ask Volto for the `identity_string_list` widget, so their order, which decides the address that stands for the person, is edited as a table rather than in a select. @ericof [#103](https://github.com/collective/pas-plugins-identity/issues/103)
+
+
+#### Bugfix
+
+- Stopped counting a required profile field its owner may not write. `plone.autoform` leaves such a field off the edit form, so a profile held for one could never be completed by the person being held: every page they asked for answered with the same form, and the form did not ask for it. A field with no write permission of its own, an owner the site cannot resolve, and a permission whose ZCML never loaded all keep the field required, as before. The hold is also written down now: what a profile is still waiting for after a write, at `info`; a required field its owner may not write, at `warning`; and the request the authorization endpoint pauses, which a relying party cannot otherwise distinguish from a slow user. `@my-profile` reports each missing field's form label beside its name, so what is shown to the person being held reads as an instruction rather than a schema dump. What a profile is waiting for is a catalog column now, written as the profile itself counted it: `@my-profile` and the gate used to explain a hold by scanning columns for emptiness, which named fields their owner may not write and any required field that is not a column at all. Upgrade step 1008 adds the column and fills it. @ericof [#105](https://github.com/collective/pas-plugins-identity/issues/105)
+
+
+
+### Frontend
+
+
+#### Feature
+
+- Translated the add-on's messages into Brazilian Portuguese, German and Spanish, and gave the German catalogue the charset and plural rule its header was missing. @ericof [#102](https://github.com/collective/pas-plugins-identity/issues/102)
+- Added two widgets that edit an ordered list as a table, the way the providers control panel lists providers: `identity_string_list` for a list of strings, and `identity_object_list` for a list of objects an item schema describes. Each row drags by a handle, Edit opens the entry in a dialog, and Delete asks first; a `columns` prop picks which fields an object list shows. @ericof [#103](https://github.com/collective/pas-plugins-identity/issues/103)
+
+
+#### Bugfix
+
+- The profile gate now explains itself where somebody can see it. It dispatched Volto's `addMessage`, and Volto 19 mounts no component that renders those, so the explanation reached the store and nothing else; it is a toast now. It also speaks up on every redirect rather than once per destination, so being sent back to the same form says why again, and it names each field by the label the form gives it rather than by its schema name. @ericof [#105](https://github.com/collective/pas-plugins-identity/issues/105)
+
+
+
+### Project
+
+
+#### Documentation
+
+- Documented the ordered list widgets: the props each one reads in the frontend reference, and a how-to guide for editing a list field as a table. @ericof [#103](https://github.com/collective/pas-plugins-identity/issues/103)
+- Documented what the profile gate now tells the person it is holding. The endpoint reference covers `missing_titles` beside `missing` in `@my-profile`, the frontend reference says that `ProfileGate` explains every redirect as a toast and under which labels, and the upgrade guide carries profile version 1008 and the catalog column it adds. @ericof [#105](https://github.com/collective/pas-plugins-identity/issues/105)
+- Removed the social media list widget from the frontend reference and from the how-to guide for editing a list field as a table. The add-on no longer registers a widget name belonging to another add-on, so the step that told you to order the two add-ons is gone with it. @ericof 
+
+
+
 ## 1.0.0a7 (2026-09-12)
 
 ### Backend

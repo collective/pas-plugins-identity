@@ -1,1 +1,0 @@
-Added two widgets that edit an ordered list as a table, the way the providers control panel lists providers: `identity_string_list` for a list of strings, and `identity_object_list` for a list of objects an item schema describes. Each row drags by a handle, Edit opens the entry in a dialog, and Delete asks first; a `columns` prop picks which fields an object list shows. @ericof

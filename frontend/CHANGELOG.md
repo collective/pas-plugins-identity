@@ -8,6 +8,19 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0-alpha.8 (2026-09-16)
+
+
+### Feature
+
+- Translated the add-on's messages into Brazilian Portuguese, German and Spanish, and gave the German catalogue the charset and plural rule its header was missing. @ericof [#102](https://github.com/collective/pas-plugins-identity/issues/102)
+- Added two widgets that edit an ordered list as a table, the way the providers control panel lists providers: `identity_string_list` for a list of strings, and `identity_object_list` for a list of objects an item schema describes. Each row drags by a handle, Edit opens the entry in a dialog, and Delete asks first; a `columns` prop picks which fields an object list shows. @ericof [#103](https://github.com/collective/pas-plugins-identity/issues/103)
+
+
+### Bugfix
+
+- The profile gate now explains itself where somebody can see it. It dispatched Volto's `addMessage`, and Volto 19 mounts no component that renders those, so the explanation reached the store and nothing else; it is a toast now. It also speaks up on every redirect rather than once per destination, so being sent back to the same form says why again, and it names each field by the label the form gives it rather than by its schema name. @ericof [#105](https://github.com/collective/pas-plugins-identity/issues/105)
+
 ## 1.0.0-alpha.7 (2026-09-12)
 
 

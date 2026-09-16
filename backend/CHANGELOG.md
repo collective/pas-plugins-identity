@@ -9,6 +9,19 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0a8 (2026-09-16)
+
+
+### Feature
+
+- Translated the backend's messages into Brazilian Portuguese, German and Spanish. @ericof [#102](https://github.com/collective/pas-plugins-identity/issues/102)
+- Made a Profile's email addresses ask Volto for the `identity_string_list` widget, so their order, which decides the address that stands for the person, is edited as a table rather than in a select. @ericof [#103](https://github.com/collective/pas-plugins-identity/issues/103)
+
+
+### Bugfix
+
+- Stopped counting a required profile field its owner may not write. `plone.autoform` leaves such a field off the edit form, so a profile held for one could never be completed by the person being held: every page they asked for answered with the same form, and the form did not ask for it. A field with no write permission of its own, an owner the site cannot resolve, and a permission whose ZCML never loaded all keep the field required, as before. The hold is also written down now: what a profile is still waiting for after a write, at `info`; a required field its owner may not write, at `warning`; and the request the authorization endpoint pauses, which a relying party cannot otherwise distinguish from a slow user. `@my-profile` reports each missing field's form label beside its name, so what is shown to the person being held reads as an instruction rather than a schema dump. What a profile is waiting for is a catalog column now, written as the profile itself counted it: `@my-profile` and the gate used to explain a hold by scanning columns for emptiness, which named fields their owner may not write and any required field that is not a column at all. Upgrade step 1008 adds the column and fills it. @ericof [#105](https://github.com/collective/pas-plugins-identity/issues/105)
+
 ## 1.0.0a7 (2026-09-12)
 
 
