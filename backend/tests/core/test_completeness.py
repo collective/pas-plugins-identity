@@ -13,15 +13,19 @@ that world, which is why the tests below are all about transitions rather than
 about initial state.
 """
 
+from Missing import Value as MISSING_VALUE
 from pas.plugins.identity.core import completeness
+from pas.plugins.identity.core.catalog import get_catalog
 from pas.plugins.identity.core.completeness import is_complete
 from pas.plugins.identity.core.completeness import missing_fields
+from pas.plugins.identity.core.completeness import missing_from_brain
 from pas.plugins.identity.core.completeness import reconcile
 from pas.plugins.identity.core.completeness import required_fields
 from pas.plugins.identity.core.completeness import REQUIRED_FIELDS_RECORD
 from plone import api
 from zope.lifecycleevent import modified
 
+import logging
 import pytest
 
 
@@ -107,9 +111,15 @@ class TestWhatIsMissing:
         assert missing_fields(self.profile) == ("emails",)
 
     def test_an_empty_collection_is_missing(self):
-        api.portal.set_registry_record(REQUIRED_FIELDS_RECORD, ("group_ids",))
+        # ``emails`` rather than ``group_ids``, which this named until a
+        # required field its owner may not write stopped being counted at all:
+        # ``group_ids`` is guarded by a Manager-only permission, so it now
+        # answers the question in :class:`TestAFieldTheOwnerMayNotWrite`
+        # instead of this one.
+        api.portal.set_registry_record(REQUIRED_FIELDS_RECORD, ("emails",))
+        self.profile.emails = ()
 
-        assert missing_fields(self.profile) == ("group_ids",)
+        assert missing_fields(self.profile) == ("emails",)
 
     def test_a_falsy_value_that_is_a_value_is_not_missing(self):
         """``0`` and ``False`` are answers somebody gave.
@@ -175,6 +185,190 @@ class TestReconcile:
 
         with api.env.adopt_roles(["Anonymous"]):
             assert reconcile(self.profile) == "complete"
+
+
+class TestAFieldTheOwnerMayNotWrite:
+    """The loop nobody can leave.
+
+    A required field whose write permission its owner does not hold is not on
+    the edit form they are sent to, so counting it holds them there for ever.
+    ``login`` is the shipped example: required, and guarded by
+    ``pas.plugins.identity.content.editlogin``, which the owner of a profile
+    deliberately does not hold.
+
+    The question is asked of the profile's own permission map rather than of
+    PAS: which roles is the permission granted to here, and does the owner
+    hold one. So these tests need no user -- and deliberately have none,
+    because resolving one is the thing that must not happen.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, make_profile) -> None:
+        self.portal = portal
+        self.profile = make_profile(
+            "alice", email="alice@example.com", fullname="Alice Liddell"
+        )
+
+    def test_it_is_not_counted_as_missing(self):
+        self.profile.login = ""
+
+        assert "login" not in missing_fields(self.profile)
+
+    def test_the_profile_is_therefore_complete(self):
+        """The point of all of it: the gate releases them."""
+        self.profile.login = ""
+        modified(self.profile)
+
+        assert state(self.profile) == "complete"
+
+    def test_a_field_the_owner_may_write_is_still_counted(self):
+        """The control. Without it, "skip everything" would pass the test
+        above and quietly switch the whole feature off."""
+        self.profile.fullname = ""
+
+        assert missing_fields(self.profile) == ("fullname",)
+
+    def test_an_unregistered_permission_keeps_being_asked(self, monkeypatch):
+        """Every uncertainty keeps the field required.
+
+        A schema naming a permission whose ZCML never loaded says nothing
+        about who may write the field, and "we cannot tell" is not a reason
+        to stop asking for it.
+        """
+        monkeypatch.setattr(
+            completeness,
+            "_write_permission",
+            lambda profile, name: "nobody.registered.this",
+        )
+        self.profile.fullname = ""
+
+        assert missing_fields(self.profile) == ("fullname",)
+
+
+class TestTheLogSaysWhy:
+    """A redirect on its own says nothing anybody can act on.
+
+    The gate answers a page with a redirect, and that is all a user sees and
+    all the log used to hold. These are the two lines an operator needs: what
+    a profile is waiting for, and what it has stopped asking for.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, make_profile) -> None:
+        self.portal = portal
+        api.portal.set_registry_record(REQUIRED_FIELDS_RECORD, ("email", "location"))
+        self.profile = make_profile(
+            "alice", email="alice@example.com", fullname="Alice Liddell"
+        )
+
+    def test_a_write_that_leaves_it_incomplete_says_what_it_waits_for(self, caplog):
+        """The moment somebody fills the form in, saves, and is sent back to
+        it. Nothing was written down about that before."""
+        caplog.set_level(logging.INFO)
+
+        modified(self.profile)
+
+        assert "is incomplete, waiting for" in caplog.text
+        assert "location" in caplog.text
+
+    def test_a_field_its_owner_may_not_write_is_reported(self, caplog):
+        """Not fatal -- it is simply not counted -- but somebody configured
+        it, and nothing else would ever tell them."""
+        caplog.set_level(logging.INFO)
+        api.portal.set_registry_record(REQUIRED_FIELDS_RECORD, ())
+        self.profile.login = ""
+
+        reconcile(self.profile)
+
+        assert "may not write it" in caplog.text
+        assert "login" in caplog.text
+
+
+class TestTheBrainAnswersLikeTheObject:
+    """The two answers had drifted, and the message users read came from the
+    wrong one.
+
+    ``missing_fields`` has the object and can ask whether a field's owner is
+    allowed to write it; ``missing_from_brain`` has a brain and cannot. It used
+    to scan columns for emptiness instead, so ``@my-profile`` and the Classic
+    UI gate told people to go and fill in fields their own form does not show
+    them. The ``missing_fields`` column is what closes that: the object's
+    answer, written down at index time.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, make_profile) -> None:
+        self.portal = portal
+        self.profile = make_profile(
+            "alice", email="alice@example.com", fullname="Alice Liddell"
+        )
+
+    def _brain(self):
+        """Return this profile's brain, freshly read.
+
+        :returns: The brain.
+        """
+        catalog = get_catalog()
+        return catalog.unrestrictedSearchResults(userid="alice")[0]
+
+    def test_the_column_carries_what_the_object_counted(self):
+        self.profile.fullname = ""
+        modified(self.profile)
+
+        assert tuple(self._brain().missing_fields) == missing_fields(self.profile)
+
+    def test_a_field_its_owner_may_not_write_is_not_named_to_them(self):
+        """The bug, asked of the brain. ``login`` is required and deliberately
+        not writable by the person it belongs to, so a message built from this
+        list used to send them to a form that does not have the field on it."""
+        self.profile.login = ""
+        self.profile.fullname = ""
+        modified(self.profile)
+
+        assert missing_from_brain(self._brain()) == ("fullname",)
+
+    def test_an_empty_column_means_nothing_is_missing(self):
+        """An empty tuple is an answer, and must not be mistaken for the
+        column never having been written."""
+        modified(self.profile)
+
+        assert missing_from_brain(self._brain()) == ()
+
+    def test_a_catalog_without_the_column_still_answers(self):
+        """The fallback, for a site upgraded but not yet rebuilt. A brain reads
+        a column nothing has indexed into as ``Missing.Value``, and the old
+        scan is still a better answer than none."""
+        self.profile.fullname = ""
+        modified(self.profile)
+        brain = self._brain()
+
+        assert "fullname" in missing_from_brain(_BrainWithoutTheColumn(brain))
+
+
+class _BrainWithoutTheColumn:
+    """A brain reading ``Missing.Value`` for the column, as an old one does.
+
+    Every other attribute is the real brain's. Faked rather than built by
+    removing the column from the catalog, which would be a schema change the
+    rest of the test session inherits.
+    """
+
+    def __init__(self, brain) -> None:
+        """Wrap a brain.
+
+        :param brain: The brain to read everything else from.
+        """
+        self._brain = brain
+
+    def __getattr__(self, name: str) -> object:
+        """Answer ``Missing.Value`` for the column and delegate the rest.
+
+        :param name: Attribute name.
+        :returns: The value the brain would carry.
+        """
+        if name == "missing_fields":
+            return MISSING_VALUE
+        return getattr(self._brain, name)
 
 
 class TestWritingToAProfileReconcilesIt:

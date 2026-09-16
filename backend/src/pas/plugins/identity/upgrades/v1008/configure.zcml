@@ -1,0 +1,21 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    >
+
+  <!-- The column the profile gate explains a hold from. Unlike the column
+       v1007 added, this one has to be populated: read as Missing.Value it
+       means "not asked yet" and falls back to the behaviour being fixed. -->
+  <genericsetup:upgradeSteps
+      profile="pas.plugins.identity:default"
+      source="1007"
+      destination="1008"
+      >
+    <genericsetup:upgradeStep
+        title="Record what each profile is waiting for"
+        description="Adds the missing_fields column to the identity catalog and reindexes every Profile into it, so that a hold is explained with the same list the object itself counted."
+        handler=".add_missing_fields_column"
+        />
+  </genericsetup:upgradeSteps>
+
+</configure>

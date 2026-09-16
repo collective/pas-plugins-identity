@@ -65,6 +65,10 @@ profile is waiting only on an address confirmation, rather than to the edit form
 A profile that is also missing fields goes to the edit form first. See
 {doc}`profiles-and-groups`.
 
+`ProfileGate` says why each time it redirects, as a toast: the fields the profile
+is waiting for, under the labels `missing_titles` gives them. A redirect on its
+own tells a user only that something is wrong.
+
 ## Environment variables
 
 <!-- source: frontend/packages/volto-identity/src/helpers/showPloneLogin.ts -->
@@ -215,7 +219,6 @@ Each is a title and a body, because neither type has rich text.
 | `provider_icon` | The SVG icon field on the provider form. Shows the driver's default icon until one is uploaded. |
 | `identity_string_list` | An ordered list of strings, edited as a table. A Profile's email addresses use it. The dialog renders the widget of the list's value type. |
 | `identity_object_list` | An ordered list of objects an item schema describes, edited as a table. The `columns` prop picks the fields shown; without it every field is a column. |
-| `social_media_object_list` | `identity_object_list`, showing a link's network and title. Replaces `@plonegovbr/volto-social-media`'s widget on `social_links` when this add-on is listed after that one. |
 
 The backend decides which widget a field uses, through
 `directives.widget(..., frontendOptions={"widget": ...})`, and Volto looks the
@@ -245,7 +248,7 @@ saved.
 | `uniqueItems` | `identity_string_list` | `plone.restapi`, `true` for a `Tuple`, a `Set`, and a `List` of `Choice` | Refuses an entry already on the list |
 | `schemaName` | `identity_object_list` | `widgetProps` | Names a registered `schema` utility that builds the item schema. Wins over `schema` |
 | `schema` | `identity_object_list` | A form schema built in the frontend | The item schema, or a function returning it. Ignored when it has no `fieldsets` |
-| `columns` | `identity_object_list` | `widgetProps` | The item schema's fields shown as columns, in order. Every field when absent; `id` and `title` for `social_media_object_list` |
+| `columns` | `identity_object_list` | `widgetProps` | The item schema's fields shown as columns, in order. Every field when absent |
 | `isDisabled` | Both | Volto's form | Removes the handles and disables every action |
 
 | Widget | Value |

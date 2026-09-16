@@ -1,7 +1,5 @@
 import type { ConfigType } from '@plone/registry';
-import OrderedObjectListWidget, {
-  SocialLinksWidget,
-} from '../components/Widgets/OrderedObjectListWidget/OrderedObjectListWidget';
+import OrderedObjectListWidget from '../components/Widgets/OrderedObjectListWidget/OrderedObjectListWidget';
 import OrderedStringListWidget from '../components/Widgets/OrderedStringListWidget/OrderedStringListWidget';
 import ProviderIconWidget from '../components/Widgets/ProviderIconWidget';
 
@@ -20,12 +18,10 @@ import ProviderIconWidget from '../components/Widgets/ProviderIconWidget';
  * backend decides what a field is and how it should be edited, and the
  * frontend supplies the component when it has one Volto does not.
  *
- * **One name here is somebody else's.** `social_media_object_list` is what
- * `plonegovbr.socialmedia` asks for on `social_links`, a field this package
- * does not own and so cannot point at `identity_object_list`. Registering the
- * same name replaces `volto-social-media`'s widget -- but add-on configuration
- * is applied in the order the add-ons are listed, so it only does that when
- * this add-on comes after `volto-social-media`.
+ * **Only names this package owns.** A field belonging to another add-on keeps
+ * that add-on's widget: registering somebody else's name here would replace
+ * their component on their own field, decided by nothing more than the order
+ * the add-ons happen to be listed in.
  */
 export default function install(config: ConfigType) {
   config.widgets.widget = {
@@ -33,7 +29,6 @@ export default function install(config: ConfigType) {
     provider_icon: ProviderIconWidget,
     identity_string_list: OrderedStringListWidget,
     identity_object_list: OrderedObjectListWidget,
-    social_media_object_list: SocialLinksWidget,
   };
 
   return config;

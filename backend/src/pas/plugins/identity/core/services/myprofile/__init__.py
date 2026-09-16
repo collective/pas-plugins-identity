@@ -47,14 +47,18 @@ itself would be a copy to keep in step with, and the one that drifted would be
 the one nobody was testing.
 """
 
+from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.completeness import missing_from_brain
 from pas.plugins.identity.core.confirmation import confirmation_pending_on_brain
 from pas.plugins.identity.core.interfaces import JSONDict
 from plone import api
+from plone.dexterity.utils import iterSchemataForType
+from zope.i18n import translate
+from zope.schema import getFieldsInOrder
 
 
-def profile_state(userid: str, base_url: str) -> JSONDict:
+def profile_state(userid: str, base_url: str, request=None) -> JSONDict:
     """Return one user's Profile state.
 
     :param userid: The Plone userid to report on.
@@ -62,6 +66,9 @@ def profile_state(userid: str, base_url: str) -> JSONDict:
         rather than derived, because the expander runs against a content
         object and the endpoint lives only at the site root -- see
         :mod:`.expander`.
+    :param request: The current request, for the language the titles in
+        ``missing_titles`` are rendered in. Optional so that a caller with no
+        request still gets a usable answer, in the message ids' own language.
     :returns: The body, complete for a user with no Profile as well as one
         with, so a frontend that asks every site the same question gets a
         usable answer rather than one it has to special-case.
@@ -72,6 +79,7 @@ def profile_state(userid: str, base_url: str) -> JSONDict:
         "profile": None,
         "review_state": None,
         "missing": [],
+        "missing_titles": {},
         "emails": [],
         "confirm_email": False,
     }
@@ -95,9 +103,41 @@ def profile_state(userid: str, base_url: str) -> JSONDict:
     # itself: a user redirected to a form with no reason given does not know
     # whether the site is broken.
     body["missing"] = list(missing_from_brain(brain))
+    # Beside the names rather than instead of them: the frontend matches on
+    # the name and shows the title, and a field the type does not declare has
+    # no title to show.
+    body["missing_titles"] = field_titles(tuple(body["missing"]), request)
     body["emails"] = addresses(brain)
     body["confirm_email"] = confirmation_pending_on_brain(brain)
     return body
+
+
+def field_titles(names: tuple[str, ...], request=None) -> JSONDict:
+    """Return the label each named field carries on the form.
+
+    A person filling a form in is looking for ``Full name``, not ``fullname``.
+    The gate's message is the only place these names are shown to anybody, and
+    a message naming schema fields reads as a fault rather than an
+    instruction.
+
+    Read from the *type* rather than from an object, like everything else
+    here: the names came off a brain, and resolving their titles must not be
+    the thing that wakes the profile.
+
+    :param names: Field names, as ``missing`` reports them.
+    :param request: The current request, for the caller's language.
+    :returns: Name to title. A name the type does not declare is absent rather
+        than echoed, so a consumer can tell a real title from a fallback.
+    """
+    if not names:
+        return {}
+    wanted = set(names)
+    titles: JSONDict = {}
+    for schema in iterSchemataForType(PROFILE_PORTAL_TYPE):
+        for name, field in getFieldsInOrder(schema):
+            if name in wanted and name not in titles and field.title:
+                titles[name] = translate(field.title, context=request)
+    return titles
 
 
 def addresses(brain) -> list[JSONDict]:
@@ -134,4 +174,4 @@ def site_url() -> str:
     return api.portal.get().absolute_url()
 
 
-__all__ = ["addresses", "profile_state", "site_url"]
+__all__ = ["addresses", "field_titles", "profile_state", "site_url"]

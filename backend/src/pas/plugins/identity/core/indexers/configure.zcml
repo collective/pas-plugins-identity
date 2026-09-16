@@ -44,6 +44,15 @@
       name="login"
       />
 
+  <!-- A metadata column, not an index: it is read back off a brain so that
+       ``@my-profile`` and the gate explain a hold with the same list the
+       object itself counted. Ours only, because a Profile is catalogued in
+       portal_catalog too and this means nothing there. -->
+  <adapter
+      factory=".missing_fields_index"
+      name="missing_fields"
+      />
+
   <adapter
       factory=".searchable_text_index"
       name="SearchableText"

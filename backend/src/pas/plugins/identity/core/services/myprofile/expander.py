@@ -68,4 +68,8 @@ class MyProfile:
         base = site_url()
         if not expand:
             return {"my-profile": {"@id": f"{base}/@my-profile"}}
-        return {"my-profile": profile_state(api.user.get_current().getId(), base)}
+        return {
+            "my-profile": profile_state(
+                api.user.get_current().getId(), base, self.request
+            )
+        }

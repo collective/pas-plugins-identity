@@ -114,20 +114,4 @@ const OrderedObjectListWidget: React.FC<OrderedObjectListWidgetProps> = (
   );
 };
 
-/** What a social link is summarized by: its network, and its title. */
-export const SOCIAL_LINK_COLUMNS = ['id', 'title'];
-
-/**
- * The widget, standing in for `volto-social-media`'s.
- *
- * `plonegovbr.socialmedia` asks for `social_media_object_list` on its
- * `social_links` field, with the `socialMedia` schema name, and this package
- * does not own that field to point it anywhere else. So this is registered
- * under that name too, with the two columns a link is recognised by. A
- * `columns` the backend sends still wins.
- */
-export const SocialLinksWidget: React.FC<OrderedObjectListWidgetProps> = (
-  props,
-) => <OrderedObjectListWidget columns={SOCIAL_LINK_COLUMNS} {...props} />;
-
 export default OrderedObjectListWidget;
