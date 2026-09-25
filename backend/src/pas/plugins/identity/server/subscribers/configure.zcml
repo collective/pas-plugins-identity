@@ -8,4 +8,8 @@
        one that knows there are refresh tokens to revoke. -->
   <subscriber handler=".revoke_refresh_tokens" />
 
+  <!-- A user authorizing a client is an authentication event at this site,
+       so it goes to the same audit log as a sign-in through a provider. -->
+  <subscriber handler=".record_client_authorized" />
+
 </configure>

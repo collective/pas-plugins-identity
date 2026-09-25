@@ -1,8 +1,8 @@
 ---
 myst:
   html_meta:
-    "description": "The five events pas.plugins.identity fires, and the normalized claim keys they carry."
-    "property=og:description": "The five events pas.plugins.identity fires, and the normalized claim keys they carry."
+    "description": "The events pas.plugins.identity fires, and the normalized claim keys they carry."
+    "property=og:description": "The events pas.plugins.identity fires, and the normalized claim keys they carry."
     "property=og:title": "Events"
 ---
 
@@ -12,7 +12,8 @@ myst:
 
 <!-- source: backend/src/pas/plugins/identity/core/events/__init__.py -->
 
-The core layer fires five events. They are the public API of this package: the
+The core layer fires six events, and the `[server]` layer one more. They are the
+public API of this package: the
 audit log, the content layer, and any integration you write are all consumers of
 the same contract.
 
@@ -58,7 +59,7 @@ Anything read from `raw` is your own compatibility problem, not this contract's.
 
 See {doc}`/concepts/email-verification` for what `email_verified` is worth.
 
-## The five events
+## The core events
 
 | Event | Fired when | Carries |
 |---|---|---|
@@ -67,6 +68,7 @@ See {doc}`/concepts/email-verification` for what `email_verified` is worth.
 | `IdentityUnlinked` | An identity was detached | `userid`, `provider`, `subject` |
 | `EmailVerified` | An address was proven to belong to a userid, by that user following a link this site sent to it | `userid`, `address` (lowercased) |
 | `UserClaimsRefreshed` | Stored claims were updated outside the sign-in path | `userid`, `provider`, `claims` |
+| `SessionsRevoked` | A provider ended the user's session through back-channel logout | `userid`, `provider`, `subject`, `sessions_ended` |
 
 ### Attribute meanings
 
@@ -78,6 +80,7 @@ See {doc}`/concepts/email-verification` for what `email_verified` is worth.
 | `claims` | Normalized claims, in the shape above. |
 | `is_new_user` | `True` when this sign-in minted the user id. |
 | `is_new_identity` | `True` when this sign-in attached the identity. |
+| `sessions_ended` | `True` when Plone's own session tickets could be ended. `False` means `plone.session` is not configured with `per_user_keyring`, so the user's existing tickets live out their timeout. |
 
 `is_new_user` and `is_new_identity` are separate. Linking a second provider to an
 existing account is a new identity for an existing user, so a consumer that
@@ -107,6 +110,49 @@ def welcome(event):
 <subscriber handler=".subscribers.welcome" />
 ```
 
+## The authorization server's event
+
+<!-- source: backend/src/pas/plugins/identity/server/events.py -->
+<!-- source: backend/src/pas/plugins/identity/server/browser/authorize.py -->
+
+A site running the `[server]` layer fires one more event, on the other side of
+a sign-in: this site is the provider, and a relying party is asking it for a
+code.
+
+| Event | Fired when | Carries |
+|---|---|---|
+| `ClientAuthorized` | The authorization endpoint issued a code to a client | `userid`, `client_id`, `scope` |
+
+| Attribute | Meaning |
+|---|---|
+| `userid` | The Plone user id the code was issued for, which is the `sub` the client receives. |
+| `client_id` | The client the code was issued to. |
+| `scope` | The granted scope, space-separated, as the client requested it. |
+
+It fires once for every issued code. That includes a silent `prompt=none`
+sign-in and one whose consent was already on record, so a subscriber runs on
+every sign-in through a client, not only the first. Write only when something
+changes, or every sign-in costs a database write.
+
+It does not fire when the request stops before a code is issued: the user has
+to sign in, their profile is incomplete, consent is pending or refused, or the
+request itself is refused. The client-credentials grant never fires it, because
+no person is present.
+
+`IClientAuthorized` extends `IIdentityEvent`, so a subscriber to every identity
+event hears it too. The audit log records it as `client-authorized`.
+
+```python
+from pas.plugins.identity import api
+from zope.component import adapter
+
+
+@adapter(api.IClientAuthorized)
+def remember_client(event):
+    # Runs on every sign-in: check before writing.
+    ...
+```
+
 ## What is not an event
 
 Refusals.
@@ -121,6 +167,7 @@ event that will not arrive.
 ## Related
 
 - {doc}`audit-log`—where refusals are recorded
+- {doc}`/how-to-guides/enable-back-channel-logout`—what fires `SessionsRevoked`
 - {doc}`claims`—claims going the other way, out to a relying party
 - {doc}`stability`—what this contract promises
 - {doc}`/how-to-guides/read-the-audit-log`—reacting to failures

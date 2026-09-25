@@ -77,6 +77,12 @@ MAGIC_LINK_REFUSED = "magic-link-refused"
 #: attack.
 SIGNIN_REFUSED = "signin-refused"
 
+#: A user authorized a client at this site's authorization server. Recorded
+#: by the ``[server]`` layer, which is the only thing that fires the event
+#: behind it; named here with the rest so that the vocabulary a consumer
+#: filters on lives in one place.
+CLIENT_AUTHORIZED = "client-authorized"
+
 
 class AuditEntry(Persistent):
     """One recorded authentication event.
