@@ -1,0 +1,1 @@
+Documented that an import fires one modification event per user and group. @ericof

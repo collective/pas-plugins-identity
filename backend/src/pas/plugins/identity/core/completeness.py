@@ -316,6 +316,18 @@ def is_complete(profile: UserProfile) -> bool:
     return not missing_fields(profile) and not confirmation_pending(profile)
 
 
+#: The sets of uncounted fields already warned about in this process.
+#:
+#: The warning describes the site's configuration, not a person: every Profile
+#: missing the same fields says the same thing about it. Said per Profile and
+#: per reconciliation, it repeated four times for one account in an import and
+#: again at every login of every affected user, which buries it rather than
+#: announcing it. Per process rather than per site, so each instance of a
+#: cluster says it once, and a change of configuration that yields a new set
+#: is said again.
+_ANNOUNCED: set[tuple[str, ...]] = set()
+
+
 def _excluded_fields(profile: UserProfile) -> tuple[str, ...]:
     """Return the required fields left uncounted because of their permission.
 
@@ -340,7 +352,9 @@ def _report(profile: UserProfile, state: str) -> None:
 
     Runs on every reconciliation rather than only on a transition, because the
     case worth seeing is the one where nothing changes: somebody fills the
-    form in, saves, and is sent back to it.
+    form in, saves, and is sent back to it. The one exception is the warning
+    about fields nobody may write, which is about the site rather than the
+    Profile and is said once -- see :data:`_ANNOUNCED`.
 
     :param profile: The profile just examined.
     :param state: The state it is in.
@@ -349,8 +363,17 @@ def _report(profile: UserProfile, state: str) -> None:
     if excluded := _excluded_fields(profile):
         # A site asking for something its own users cannot give. Not fatal --
         # the field is simply not counted -- but somebody configured it, and
-        # nothing else would ever tell them.
-        logger.warning(
+        # nothing else would ever tell them. Once per set of fields, at
+        # warning; each Profile it applies to, at debug. See `_ANNOUNCED`.
+        if excluded not in _ANNOUNCED:
+            _ANNOUNCED.add(excluded)
+            logger.warning(
+                "Required profile fields %s are not counted, because their "
+                "owners may not write them (first seen on profile %s)",
+                ", ".join(excluded),
+                userid,
+            )
+        logger.debug(
             "Profile %s: %s required but not counted, because its owner may "
             "not write it",
             userid,

@@ -88,6 +88,16 @@ Running the same document twice writes the same site: an existing user is
 updated rather than duplicated, and an identity already pointing at the right
 userid is left alone.
 
+<!-- source: backend/src/pas/plugins/identity/exportimport/importer.py -->
+
+Each user and group the import writes to receives one modification event, after
+every record for it has been applied, identities included. A Profile is
+therefore reconciled, reindexed and, with versioning on, given a new version
+once per import rather than once per pass. A newly created one has its creation
+event and receives a second only when its group membership was written
+afterward. Linking an identity fires `IdentityLinked` as well, as a sign-in
+does.
+
 ## Import from `pas.plugins.authomatic`
 
 1. Produce the dump on the old site. The format and a working extraction are in
