@@ -438,6 +438,34 @@ reach the same place.
 Nesting is closed over when the question is asked rather than stored expanded, so
 removing an edge takes effect everywhere at once.
 
+## Finding a user
+
+<!-- source: backend/src/pas/plugins/identity/core/pas/profile.py, enumerateUsers and _exact_brains -->
+
+User enumeration is served from the identity catalog. What a search costs
+depends on what it asks for.
+
+| Search | Served from | Matching | Reads |
+|---|---|---|---|
+| Exact, by `id` | The `userid` index | **Case-sensitive**: `Alice` does not find `alice` | The matches only |
+| Exact, by `login` | The `login` index | Case-insensitive; the index stores logins folded | The matches only |
+| Exact, by `id` and `login` | Both indexes, merged | Either one matches; a user matching both is returned once | The matches only |
+| Exact, by `fullname`, `email` or `name` | Every active Profile's brain | Whole value, case-insensitive | Every active Profile |
+| Part of a value, the default | Every active Profile's brain | Anywhere in the value, case-insensitive | Every active Profile |
+| No criteria | Every active Profile's brain | Everybody | Every active Profile |
+
+PAS resolves every `getUserById` with an exact search by `id`, so that is the
+row that decides how fast a listing of users or of a group's members is. None
+of the rows wakes a `UserProfile`.
+
+Only Profiles in a state named by `profile_enumeration_states` are found, on
+every row.
+
+PAS resolves a user by asking each enumeration plugin in turn, and stops at the
+first that answers. A user who also has a `source_users` account is resolved there,
+and this plugin is asked only about users that have a Profile alone—every
+account an import or a federated sign-in created.
+
 ## Maintenance
 
 | Step | Does | Does not |
