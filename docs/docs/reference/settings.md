@@ -146,8 +146,29 @@ Only the two lifetimes are written by the install profile. `server_clients` and
 A site with no clients and no issuer is the correct initial state: the server
 signs nothing until it is told what it is called.
 
-Set `server_issuer` yourself. See {doc}`/concepts/federation` for why it is
-configured rather than derived.
+Set `server_issuer` yourself, under **Server settings** in the OAuth clients
+control panel. See {doc}`/concepts/federation` for why it is configured rather
+than derived.
+
+<!-- source: backend/src/pas/plugins/identity/server/controlpanel/interfaces.py, IServerPanelSchema and is_issuer -->
+
+The control panel carries five of these records: the issuer, the consent
+screen, both lifetimes and the unreleased groups. `server_clients` and
+`server_signing_keys` are not on it, and `@controlpanels/identity-clients`
+neither serves them nor writes them. The key ring holds private keys.
+
+The panel refuses an issuer that relying parties would not match:
+
+| Refused | Why |
+|---|---|
+| A trailing slash | Relying parties compare the issuer byte for byte, and the server publishes it without one. |
+| No scheme or no host | Every endpoint the discovery document names is built from it. |
+| A query or a fragment | OpenID Connect Discovery forbids them. |
+| Leading or trailing space | Invisible in the form, and not what is published: the server strips it when it reads the record. |
+
+The rule is on the panel, not on the record. A value written straight to the
+registry is not checked, and the server strips spaces and a trailing slash when
+it reads one.
 
 The two defaults are chosen, not arbitrary:
 

@@ -138,6 +138,7 @@ applied. These are bound to `IIdentityServerLayer`, so a site without that
 profile does not publish them at all.
 
 <!-- source: backend/src/pas/plugins/identity/server/services/configure.zcml -->
+<!-- source: backend/src/pas/plugins/identity/server/controlpanel/panel.py -->
 
 | Method | Path | Requires | Purpose |
 |---|---|---|---|
@@ -147,6 +148,8 @@ profile does not publish them at all.
 | PATCH | `@identity-clients/<id>` | `Manage portal` | Change title, redirect URIs, grants, scope, service user, and enabled. `client_id` and `auth_method` are not editable, and an unknown field is refused rather than ignored. |
 | DELETE | `@identity-clients/<id>` | `Manage portal` | Remove one. |
 | GET | `@identity-keys` | `Manage portal` | Describe the signing ring. |
+| GET | `@controlpanels/identity-clients` | `Manage portal` | The server settings and their schema: issuer, consent screen, token lifetimes, and unreleased groups. Neither the client list nor the signing keys. |
+| PATCH | `@controlpanels/identity-clients` | `Manage portal` | Change those settings. An issuer that relying parties would not match is refused; a field outside the five is ignored. |
 | POST | `@identity-keys/rotate` | `Manage portal` | Rotate the signing key. Older keys stay in the ring so tokens already issued keep verifying. |
 | GET | `@oauth-consent` | authenticated | What a client is asking for, for the consent screen. |
 | GET | `@oauth-grants` | authenticated | Applications the caller has granted access to. |

@@ -28,6 +28,15 @@ pointing at the right userid is left alone rather than re-added. A migration
 you cannot re-run is a migration nobody dares run, which is the same rule
 :mod:`pas.plugins.identity.migration` states.
 
+**One modification event per object, at the end.** Each pass writes
+something different to the same Profile, and a modification event per pass
+reconciled it, reindexed both catalogs and cut a new version once per pass --
+four times for one account in a real sync. So the passes write and remember
+what they wrote, and :func:`import_site` fires one ``modified()`` per object
+once every pass is done, identities included, so the reconciliation sees the
+finished Profile. A newly created object has had its ``ObjectAddedEvent``
+already and needs another only if a later pass wrote to it.
+
 **A dry run writes nothing at all.** Not "writes and rolls back" -- the write
 is never attempted, so a dry run cannot leave a half-applied transaction
 behind if something outside this package commits. Read the report first.
@@ -38,6 +47,7 @@ from Acquisition import aq_inner
 from Acquisition import aq_parent
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.behaviors.roles import IGlobalRoles
+from pas.plugins.identity.core.catalog import catalog_for
 from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
@@ -57,6 +67,13 @@ from pas.plugins.identity.exportimport.schema import validate
 from plone import api
 from typing import Any
 from zope.lifecycleevent import modified
+
+
+#: What a pass wrote to without firing an event: ``(portal_type, index,
+#: value)``, in the order first touched. Keys rather than objects, because the
+#: containment pass moves groups and a wrapper taken before the move is
+#: acquired from a parent the object no longer has.
+Touched = dict[tuple[str, str, str], None]
 
 
 def _plugin():
@@ -111,12 +128,16 @@ def _apply_roles(obj, group: dict[str, Any]) -> None:
     roles.global_roles = tuple(group.get(GROUP_ROLES_FIELD) or ())
 
 
-def _import_group(group: dict[str, Any], result: Result, dry_run: bool) -> None:
+def _import_group(
+    group: dict[str, Any], result: Result, dry_run: bool, touched: Touched
+) -> None:
     """Create or update one group, without its nesting.
 
     :param group: The group record.
     :param result: The result to record into.
     :param dry_run: Whether to write.
+    :param touched: Where an updated group is remembered, for the one
+        modification event :func:`import_site` fires at the end.
     """
     group_id = group["group_id"]
     existing = _existing(GROUP_PORTAL_TYPE, "group_id", group_id)
@@ -127,8 +148,7 @@ def _import_group(group: dict[str, Any], result: Result, dry_run: bool) -> None:
             for name, value in fields.items():
                 setattr(existing, name, value)
             _apply_roles(existing, group)
-            # An event, not a reindex: see ``_apply_membership``.
-            modified(existing)
+            touched[(GROUP_PORTAL_TYPE, "group_id", group_id)] = None
         result.groups.append(group_id)
         return
 
@@ -153,12 +173,16 @@ def _import_group(group: dict[str, Any], result: Result, dry_run: bool) -> None:
     result.groups.append(group_id)
 
 
-def _import_user(user: dict[str, Any], result: Result, dry_run: bool) -> None:
+def _import_user(
+    user: dict[str, Any], result: Result, dry_run: bool, touched: Touched
+) -> None:
     """Create or update one user's Profile, without its identities.
 
     :param user: The user record.
     :param result: The result to record into.
     :param dry_run: Whether to write.
+    :param touched: Where an updated Profile is remembered, for the one
+        modification event :func:`import_site` fires at the end.
     """
     userid = user["userid"]
     existing = _existing(PROFILE_PORTAL_TYPE, "userid", userid)
@@ -182,8 +206,7 @@ def _import_user(user: dict[str, Any], result: Result, dry_run: bool) -> None:
                 setattr(existing, name, value)
             existing.login = login
             existing.emails = tuple(emails)
-            # An event, not a reindex: see ``_apply_membership``.
-            modified(existing)
+            touched[(PROFILE_PORTAL_TYPE, "userid", userid)] = None
         result.users.append(userid)
         return
 
@@ -247,7 +270,9 @@ def _apply_containment(group: dict[str, Any], result: Result, dry_run: bool) -> 
     api.content.move(source=obj, target=parent)
 
 
-def _apply_membership(record: dict[str, Any], portal_type: str, dry_run: bool) -> None:
+def _apply_membership(
+    record: dict[str, Any], portal_type: str, dry_run: bool, touched: Touched
+) -> None:
     """Write a principal's group membership, once every group exists.
 
     ``portal_type`` is passed rather than inferred from the record's keys. A
@@ -259,6 +284,8 @@ def _apply_membership(record: dict[str, Any], portal_type: str, dry_run: bool) -
     :param record: The user or group record.
     :param portal_type: Which of the two types this record is.
     :param dry_run: Whether to write.
+    :param touched: Where the principal is remembered, for the one
+        modification event :func:`import_site` fires at the end.
     """
     wanted = [group_id for group_id in record.get("group_ids") or () if group_id]
     if not wanted or dry_run:
@@ -283,15 +310,19 @@ def _apply_membership(record: dict[str, Any], portal_type: str, dry_run: bool) -
             ", ".join(missing),
         )
     obj.group_ids = tuple(known)
-    # ``reindexObject`` maintains ``portal_catalog`` and fires no event, while
-    # the identity catalog is maintained *only* by the subscribers in
-    # ``core.indexers``, which answer ``IObjectModifiedEvent`` and three
-    # others. A write followed by a reindex therefore left every object right
-    # and every brain stale -- and ``getGroupsForPrincipal`` reads the brain,
-    # so an import wrote the membership and nobody was in the group. Creation
-    # was never affected: ``api.content.create`` fires ``ObjectAddedEvent``,
-    # which the catalog does listen for. Issue #30.
-    modified(obj)
+    # The identity catalog now, the event later. ``getGroupsForPrincipal``
+    # reads ``group_ids`` off the *brain*, and the identity pass that follows
+    # fires subscribers that ask it -- so the brain cannot wait for the event
+    # :func:`import_site` fires at the end.
+    #
+    # This catalog's own ``reindexObject``, not the object's: that one
+    # maintains ``portal_catalog`` and nothing else, which is how an import
+    # once wrote every membership and left nobody in any group (issue #30).
+    touched[(portal_type, index, record[index])] = None
+    catalog = catalog_for(obj) or query_catalog()
+    if catalog is None:  # pragma: no cover - the object was found through it
+        return
+    catalog.reindexObject(obj)
 
 
 def _import_identities(
@@ -361,6 +392,21 @@ def _import_identities(
                 ):
                     result.identities.append((EMAIL_PROVIDER, address, userid))
         result.identities.append((provider, subject, userid))
+
+
+def _announce(touched: Touched) -> None:
+    """Fire one modification event for every object a pass wrote to.
+
+    Resolved afresh rather than carried from the pass that wrote it: see
+    :data:`Touched`.
+
+    :param touched: What the passes wrote to without an event.
+    """
+    for portal_type, index, value in touched:
+        obj = _existing(portal_type, index, value)
+        if obj is None:  # pragma: no cover - written in this run
+            continue
+        modified(obj)
 
 
 def _check_providers(document: dict[str, Any]) -> str:
@@ -492,26 +538,29 @@ def import_site(
 
     groups = document.get("groups") or []
     users = document.get("users") or []
+    touched: Touched = {}
 
     # Elevated throughout: filing a principal needs an add permission that no
     # ordinary member holds, and this runs from a console script whose
     # security context is whatever the caller set up.
     with api.env.adopt_roles(["Manager"]):
         for group in groups:
-            _import_group(group, result, dry_run)
+            _import_group(group, result, dry_run, touched)
         for user in users:
-            _import_user(user, result, dry_run)
+            _import_user(user, result, dry_run, touched)
         # Nesting last, so a group may name one that came after it.
         for group in groups:
             _apply_containment(group, result, dry_run)
         for group in groups:
-            _apply_membership(group, GROUP_PORTAL_TYPE, dry_run)
+            _apply_membership(group, GROUP_PORTAL_TYPE, dry_run, touched)
         for user in users:
             if user["userid"] in result.users:
-                _apply_membership(user, PROFILE_PORTAL_TYPE, dry_run)
+                _apply_membership(user, PROFILE_PORTAL_TYPE, dry_run, touched)
         for user in users:
             if user["userid"] in result.users:
                 _import_identities(user, plugin, result, dry_run, trust_verified_emails)
+        # Last, and once each: see the module docstring.
+        _announce(touched)
 
     logger.info(
         "Imported %d users, %d groups and %d identities%s",

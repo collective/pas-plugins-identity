@@ -435,6 +435,11 @@ msgstr ""
 msgid "Loading keys"
 msgstr ""
 
+#. Default: "Loading settings…"
+#: components/ControlPanel/ClientsPanel
+msgid "Loading settings"
+msgstr ""
+
 #. Default: "Loading sign-in options…"
 #: components/Login/LoginForm
 msgid "Loading sign-in options"
@@ -537,6 +542,11 @@ msgstr ""
 #. Default: "No drivers are installed, so there is nothing to configure. Install an add-on that registers one."
 #: components/ControlPanel/ProvidersControlPanel
 msgid "No drivers are installed."
+msgstr ""
+
+#. Default: "No issuer is configured, so this server signs nothing and its discovery document answers 503. Set it under Server settings."
+#: components/ControlPanel/ClientsPanel
+msgid "No issuer is configured"
 msgstr ""
 
 #. Default: "No login callback URL is configured, so no provider can complete a sign-in. Set it under Settings."
@@ -769,6 +779,12 @@ msgstr ""
 msgid "Sending"
 msgstr ""
 
+#. Default: "Server settings"
+#: components/ControlPanel/ClientsControlPanel
+#: components/ControlPanel/ClientsPanel
+msgid "Server settings"
+msgstr ""
+
 #. Default: "Settings"
 #: components/ControlPanel/ProvidersControlPanel
 #: helpers/providerSchema
@@ -889,6 +905,11 @@ msgstr ""
 #. Default: "The providers could not be read, so this form cannot open."
 #: components/ControlPanel/ProvidersControlPanel
 msgid "The providers could not be read"
+msgstr ""
+
+#. Default: "The server settings could not be read, so they cannot be edited here."
+#: components/ControlPanel/ClientsPanel
+msgid "The server settings could not be read"
 msgstr ""
 
 #. Default: "The site settings could not be read, so they cannot be edited here. The most likely cause is a settings field with no registry record, which happens when the add-on gained one and its profile has not been reapplied since."

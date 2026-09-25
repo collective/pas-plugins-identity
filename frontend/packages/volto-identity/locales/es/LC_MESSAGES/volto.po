@@ -442,6 +442,11 @@ msgstr "Cargando clientes…"
 msgid "Loading keys"
 msgstr "Cargando claves…"
 
+#. Default: "Loading settings…"
+#: components/ControlPanel/ClientsPanel
+msgid "Loading settings"
+msgstr "Cargando la configuración…"
+
 #. Default: "Loading sign-in options…"
 #: components/Login/LoginForm
 msgid "Loading sign-in options"
@@ -545,6 +550,11 @@ msgstr "Ningún cliente está registrado aún."
 #: components/ControlPanel/ProvidersControlPanel
 msgid "No drivers are installed."
 msgstr "Ningún controlador está instalado."
+
+#. Default: "No issuer is configured, so this server signs nothing and its discovery document answers 503. Set it under Server settings."
+#: components/ControlPanel/ClientsPanel
+msgid "No issuer is configured"
+msgstr "No hay ningún emisor configurado, así que este servidor no firma nada y su documento de descubrimiento responde 503. Configúrelo en Configuración del servidor."
 
 #. Default: "No login callback URL is configured, so no provider can complete a sign-in. Set it under Settings."
 #: components/ControlPanel/ProvidersControlPanel
@@ -776,6 +786,12 @@ msgstr "Secreto para {clientId}"
 msgid "Sending"
 msgstr "Enviando"
 
+#. Default: "Server settings"
+#: components/ControlPanel/ClientsControlPanel
+#: components/ControlPanel/ClientsPanel
+msgid "Server settings"
+msgstr "Configuración del servidor"
+
 #. Default: "Settings"
 #: components/ControlPanel/ProvidersControlPanel
 #: helpers/providerSchema
@@ -897,6 +913,11 @@ msgstr "El proveedor rechazó el inicio de sesión."
 #: components/ControlPanel/ProvidersControlPanel
 msgid "The providers could not be read"
 msgstr "Los proveedores no pudieron ser leídos"
+
+#. Default: "The server settings could not be read, so they cannot be edited here."
+#: components/ControlPanel/ClientsPanel
+msgid "The server settings could not be read"
+msgstr "No se pudo leer la configuración del servidor, así que no se puede editar aquí."
 
 #. Default: "The site settings could not be read, so they cannot be edited here. The most likely cause is a settings field with no registry record, which happens when the add-on gained one and its profile has not been reapplied since."
 #: components/ControlPanel/ProvidersControlPanel

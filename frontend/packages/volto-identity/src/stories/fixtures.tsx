@@ -32,6 +32,7 @@ import type {
   OAuthClient,
   OAuthGrants,
   ProfileUserContent,
+  ServerSettingsPanel,
   SigningKeyRing,
   UserAccount,
   UserProfile,
@@ -633,6 +634,96 @@ export const KEYRING: SigningKeyRing = {
     { kid: 'q7Yk2mVx', active: true },
     { kid: 'b1Rn8dTs', active: false },
   ],
+};
+
+/**
+ * The authorization server's settings, as `@controlpanels/identity-clients`
+ * serves them: the five fields an operator edits, and nothing else. The
+ * descriptions are the backend's, shortened.
+ */
+export const SERVER_SETTINGS: ServerSettingsPanel = {
+  '@id': 'http://localhost:8080/Plone/@controlpanels/identity-clients',
+  title: 'OAuth clients',
+  schema: {
+    properties: {
+      server_issuer: {
+        type: 'string',
+        title: 'Issuer URL',
+        description:
+          'The `iss` value this server puts in tokens, and the base for its ' +
+          'discovery document.',
+        factory: 'Text line (String)',
+        default: '',
+      },
+      server_consent_url: {
+        type: 'string',
+        title: 'Consent screen URL',
+        description:
+          'Where to send the browser to ask a user whether they agree to an ' +
+          'authorization request.',
+        factory: 'Text line (String)',
+        default: '',
+      },
+      server_refresh_token_ttl: {
+        type: 'integer',
+        title: 'Refresh token lifetime (seconds)',
+        factory: 'Integer',
+        default: 1209600,
+      },
+      server_access_token_ttl: {
+        type: 'integer',
+        title: 'Access token lifetime (seconds)',
+        factory: 'Integer',
+        default: 900,
+      },
+      server_unreleased_groups: {
+        type: 'array',
+        title: 'Groups never released in a claim',
+        factory: 'Tuple',
+        default: [],
+        uniqueItems: true,
+        items: {
+          type: 'string',
+          factory: 'Choice',
+          vocabulary: {
+            '@id': `http://localhost:8080/Plone/@vocabularies/${GROUPS_VOCABULARY}`,
+          },
+        },
+      },
+    },
+    required: [],
+    fieldsets: [
+      {
+        id: 'default',
+        title: 'Default',
+        fields: [
+          'server_issuer',
+          'server_consent_url',
+          'server_refresh_token_ttl',
+          'server_access_token_ttl',
+          'server_unreleased_groups',
+        ],
+      },
+    ],
+  },
+  data: {
+    server_issuer: 'https://id.example.org',
+    server_consent_url: 'https://id.example.org/consent',
+    server_refresh_token_ttl: 1209600,
+    server_access_token_ttl: 900,
+    server_unreleased_groups: ['Site Administrators'],
+  },
+};
+
+/** The same, on a server nobody has configured yet. */
+export const UNCONFIGURED_SERVER_SETTINGS: ServerSettingsPanel = {
+  ...SERVER_SETTINGS,
+  data: {
+    ...SERVER_SETTINGS.data,
+    server_issuer: '',
+    server_consent_url: '',
+    server_unreleased_groups: [],
+  },
 };
 
 /**

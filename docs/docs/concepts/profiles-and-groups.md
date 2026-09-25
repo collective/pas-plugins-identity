@@ -46,6 +46,23 @@ Rendering a row filled one key by userid, which searches the catalog a second ti
 A brain already knows its own URL.
 The endpoint is now exercised by the same activation-counting test as the plugins, which is the durable half of that fix: the plugins were covered from the start and the endpoint was not, so nothing was watching the place the regression landed.
 
+## Nor does one lookup read every Profile
+
+Not waking objects is half of it.
+The other half is how many brains a question reads.
+
+PAS resolves every user it is handed with an exact search by id, and the Users and Groups control panels hand it every user and every group member on load.
+A search that read every Profile to find one made each lookup cost as much as the whole site, and a listing cost the site squared.
+On 1,727 Profiles one request for the groups ran for more than seven minutes, long enough to fill every worker until the health check restarted the container.
+
+So an exact search by id or login is one or two index queries, and reads the users it returns and nobody else.
+The test suite counts the brains a lookup reads rather than timing it, on a site large enough that a scan cannot hide inside the bound, and it shows that the count sees a scan when there is one.
+
+The index matches a userid as it is stored, so an exact search by id is case-sensitive, as Plone userids are.
+Logins stay case-insensitive: the index stores them folded, and the search folds too.
+Searches for part of a value still read every active Profile, because the text index matches word prefixes and a search for part of a name has to find it anywhere.
+See {doc}`/reference/profiles-and-groups` for which search is served how.
+
 ## Why a row is serialized off the site, not off the brain
 
 A deployment that wants one more field on a membership row—a badge, a job title, a photograph—subclasses the serializer this package ships and registers the subclass for its own browser layer.

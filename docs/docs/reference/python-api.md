@@ -62,8 +62,8 @@ These are the same objects the layer defines, not copies, so an adapter register
 | Content interfaces | `IUserContent`, `IUserProfile`, `IUserGroup`, `IGroupContent` |
 | Extension points | `IProfileEnricher`, `IDriver`, `IAuditSink`, `IAuditSource`, `IIdentityStore` |
 | Catalog | `IIdentityProfileCatalog` |
-| Event classes | `ExternalIdentityAuthenticated`, `IdentityLinked`, `IdentityUnlinked`, `EmailVerified`, `SessionsRevoked`, `UserClaimsRefreshed` |
-| Event interfaces | `IIdentityEvent`, `IExternalIdentityAuthenticated`, `IIdentityLinked`, `IIdentityUnlinked`, `IEmailVerified`, `ISessionsRevoked`, `IUserClaimsRefreshed` |
+| Event classes | `ExternalIdentityAuthenticated`, `IdentityLinked`, `IdentityUnlinked`, `EmailVerified`, `SessionsRevoked`, `UserClaimsRefreshed`, `ClientAuthorized` (`[server]`) |
+| Event interfaces | `IIdentityEvent`, `IExternalIdentityAuthenticated`, `IIdentityLinked`, `IIdentityUnlinked`, `IEmailVerified`, `ISessionsRevoked`, `IUserClaimsRefreshed`, `IClientAuthorized` (`[server]`) |
 | Driver authoring | `BaseDriver`, `IDriverSettings`, `IOAuth2Settings`, `IOIDCSettings`, `IGitHubSettings`, `IEmailSettings`, `IPloneIdentitySettings`, `USERID_SOURCES` |
 | Records and types | `IdentityRecord`, `Claims`, `ProviderEmail`, `JSONDict` |
 | Exceptions | `IdentityCollision`, `ClaimsError`, `ProviderUnusable` |

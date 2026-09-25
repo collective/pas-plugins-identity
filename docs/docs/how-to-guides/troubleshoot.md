@@ -35,6 +35,7 @@ The event name in the log is the fastest route into the table below.
 | `email-verified` | an address was recorded as verified |
 | `claims-refreshed` | profile fields were updated from the provider |
 | `magic-link-sent` / `magic-link-confirmed` / `magic-link-refused` | the magic-link flow |
+| `client-authorized` | a relying party was issued a code for this user |
 
 ## The login button for a provider does not appear
 

@@ -254,8 +254,12 @@ class TestTheLogSaysWhy:
     """
 
     @pytest.fixture(autouse=True)
-    def _setup(self, portal, make_profile) -> None:
+    def _setup(self, portal, make_profile, monkeypatch) -> None:
         self.portal = portal
+        self.make_profile = make_profile
+        # The warning is said once per process, so each test starts from a
+        # process that has said nothing yet.
+        monkeypatch.setattr(completeness, "_ANNOUNCED", set())
         api.portal.set_registry_record(REQUIRED_FIELDS_RECORD, ("email", "location"))
         self.profile = make_profile(
             "alice", email="alice@example.com", fullname="Alice Liddell"
@@ -280,8 +284,81 @@ class TestTheLogSaysWhy:
 
         reconcile(self.profile)
 
-        assert "may not write it" in caplog.text
+        assert "may not write them" in caplog.text
         assert "login" in caplog.text
+
+    def warnings(self, caplog) -> list[str]:
+        """Return the "not counted" warnings logged so far.
+
+        :param caplog: pytest's log capture.
+        :returns: Their messages.
+        """
+        return [
+            record.getMessage()
+            for record in caplog.records
+            if record.levelno == logging.WARNING
+            and "not counted" in record.getMessage()
+        ]
+
+    def test_it_is_said_once_however_often_the_profile_is_reconciled(self, caplog):
+        """Issue #109: an import reconciled one Profile four times and said
+        the same thing four times, and every login said it again."""
+        caplog.set_level(logging.INFO)
+        api.portal.set_registry_record(REQUIRED_FIELDS_RECORD, ())
+        self.profile.login = ""
+
+        for _ in range(4):
+            reconcile(self.profile)
+
+        assert len(self.warnings(caplog)) == 1
+
+    def test_it_is_said_once_for_every_profile_it_applies_to(self, caplog):
+        """It is about the site's configuration, which is the same for all
+        of them."""
+        caplog.set_level(logging.INFO)
+        api.portal.set_registry_record(REQUIRED_FIELDS_RECORD, ())
+        other = self.make_profile(
+            "bob", email="bob@example.com", fullname="Bob Dobalina"
+        )
+        self.profile.login = ""
+        other.login = ""
+
+        reconcile(self.profile)
+        reconcile(other)
+
+        assert len(self.warnings(caplog)) == 1
+
+    def test_each_profile_is_still_named_at_debug(self, caplog):
+        """For whoever is chasing one particular account."""
+        caplog.set_level(logging.DEBUG)
+        api.portal.set_registry_record(REQUIRED_FIELDS_RECORD, ())
+        self.profile.login = ""
+
+        reconcile(self.profile)
+        reconcile(self.profile)
+
+        debug = [
+            record.getMessage()
+            for record in caplog.records
+            if record.levelno == logging.DEBUG
+            and "may not write it" in record.getMessage()
+        ]
+        assert len(debug) == 2
+        assert all("alice" in message for message in debug)
+
+    def test_a_different_set_of_fields_is_said_again(self, caplog, monkeypatch):
+        """A change of configuration is news, and is worth a line of its
+        own."""
+        caplog.set_level(logging.INFO)
+        answers = iter([("login",), ("login", "location")])
+        monkeypatch.setattr(
+            completeness, "_excluded_fields", lambda profile: next(answers)
+        )
+
+        reconcile(self.profile)
+        reconcile(self.profile)
+
+        assert len(self.warnings(caplog)) == 2
 
 
 class TestTheBrainAnswersLikeTheObject:

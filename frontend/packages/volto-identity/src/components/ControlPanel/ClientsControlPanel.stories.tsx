@@ -6,6 +6,8 @@ import {
   KEYRING,
   LOADED,
   LOADING,
+  SERVER_SETTINGS,
+  UNCONFIGURED_SERVER_SETTINGS,
   withStore,
 } from '../../stories/fixtures';
 
@@ -25,6 +27,11 @@ const base = {
   clientDelete: {},
   clientSecretRotate: {},
   keyRotate: {},
+  controlpanels: {
+    controlpanel: SERVER_SETTINGS,
+    get: LOADED,
+    update: {},
+  },
 };
 
 export const Default: Story = { decorators: [withStore(base)] };
@@ -35,4 +42,17 @@ export const Loading: Story = {
 
 export const RotatingAKey: Story = {
   decorators: [withStore({ ...base, keyRotate: LOADING })],
+};
+
+/** Straight after deploying: no issuer yet, and the page says so. */
+export const NotConfigured: Story = {
+  decorators: [
+    withStore({
+      ...base,
+      controlpanels: {
+        ...base.controlpanels,
+        controlpanel: UNCONFIGURED_SERVER_SETTINGS,
+      },
+    }),
+  ],
 };

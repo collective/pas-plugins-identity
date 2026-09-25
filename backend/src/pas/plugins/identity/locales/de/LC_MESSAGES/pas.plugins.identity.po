@@ -26,55 +26,55 @@ msgstr "Eine Gruppe, deren Backup durch Inhalte erfolgt. Die Mitgliedschaft ist 
 msgid "A random id"
 msgstr "Eine Zufalls-ID"
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:282
+#: pas/plugins/identity/server/controlpanel/interfaces.py:284
 msgid "A redirect URI cannot be empty."
 msgstr "Eine Umleitungs-URI darf nicht leer sein."
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:287
+#: pas/plugins/identity/server/controlpanel/interfaces.py:289
 msgid "A redirect URI may not carry a fragment."
 msgstr "Eine Umleitungs-URI darf kein Fragment enthalten."
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:131
+#: pas/plugins/identity/server/controlpanel/interfaces.py:133
 msgid "A redirect URI may not use a wildcard in its port."
 msgstr "Eine Umleitungs-URI darf keinen Platzhalter in ihrem Port verwenden."
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:197
+#: pas/plugins/identity/server/controlpanel/interfaces.py:199
 msgid "A redirect URI may not use a wildcard in its query string."
 msgstr "Eine Umleitungs-URI darf keinen Platzhalter in ihrer Abfragezeichenfolge verwenden."
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:128
+#: pas/plugins/identity/server/controlpanel/interfaces.py:130
 msgid "A redirect URI may not use a wildcard with a user name."
 msgstr "Eine Umleitungs-URI darf keinen Platzhalter mit einem Benutzernamen verwenden."
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:142
+#: pas/plugins/identity/server/controlpanel/interfaces.py:144
 msgid "A redirect URI may use only one host wildcard."
 msgstr "Eine Umleitungs-URI darf nur einen Host-Platzhalter verwenden."
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:171
+#: pas/plugins/identity/server/controlpanel/interfaces.py:173
 msgid "A redirect URI may use only one path wildcard."
 msgstr "Eine Umleitungs-URI darf nur einen Pfad-Platzhalter verwenden."
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:285
+#: pas/plugins/identity/server/controlpanel/interfaces.py:287
 msgid "A redirect URI must be absolute, with a scheme."
 msgstr "Eine Umleitungs-URI muss absolut sein und ein Schema haben."
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:293
+#: pas/plugins/identity/server/controlpanel/interfaces.py:295
 msgid "A redirect URI must name a host."
 msgstr "Eine Umleitungs-URI muss einen Host benennen."
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:306
+#: pas/plugins/identity/server/controlpanel/interfaces.py:308
 msgid "A redirect URI must use https, a loopback address, or a private-use scheme such as com.example.app:/callback."
 msgstr "Eine Umleitungs-URI muss HTTPS, eine Loopback-Adresse oder ein privates Schema wie com.example.app:/callback verwenden."
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:135
+#: pas/plugins/identity/server/controlpanel/interfaces.py:137
 msgid "A wildcard host must be the whole leftmost label, as in https://*.example.com/callback."
 msgstr "Ein Platzhalter-Host muss das gesamte linke Label sein, wie in https://*.example.com/callback."
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:146
+#: pas/plugins/identity/server/controlpanel/interfaces.py:148
 msgid "A wildcard host needs a registered domain under it, as in https://*.example.com/callback."
 msgstr "Ein Platzhalter-Host braucht eine registrierte Domäne darunter, wie in https://*.example.com/callback."
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:165
+#: pas/plugins/identity/server/controlpanel/interfaces.py:167
 msgid "A wildcard path must be the whole last segment, as in https://example.com/app/*."
 msgstr "Ein Platzhalter-Pfad muss das ganze letzte Segment sein, wie in https://example.com/app/*."
 
@@ -94,7 +94,7 @@ msgstr "Konten"
 msgid "Active"
 msgstr "Aktiv"
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:401
+#: pas/plugins/identity/server/controlpanel/interfaces.py:403
 msgid "Acts as"
 msgstr "Fungiert als"
 
@@ -249,7 +249,7 @@ msgid "Email addresses"
 msgstr "E-Mail-Adressen"
 
 #: pas/plugins/identity/core/controlpanel/interfaces.py:298
-#: pas/plugins/identity/server/controlpanel/interfaces.py:349
+#: pas/plugins/identity/server/controlpanel/interfaces.py:351
 msgid "Enabled"
 msgstr "Aktiviert"
 
@@ -273,7 +273,7 @@ msgstr "Zusätzliche Ansichtsnamen, die niemals umgeleitet werden, während ein 
 msgid "Fields a user must fill in before their profile counts as complete. Empty means the fields the profile type itself marks required, which is the right answer for a site that has not thought about it and for a site with its own user type. Naming a field here that the type does not require will keep asking for something the edit form does not insist on."
 msgstr "Felder, die ein Benutzer ausfüllen muss, bevor sein Profil als vollständig gilt. Leer bedeutet die Felder, die der Profiltyp selbst als erforderlich markiert, was die richtige Antwort für eine Website ist, die nicht darüber nachgedacht hat, und für eine Website mit ihrem eigenen Benutzertyp. Das Benennen eines Felds hier, das der Typ nicht erfordert, wird immer wieder nach etwas fragen, auf dem das Bearbeitungsformular nicht besteht."
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:435
+#: pas/plugins/identity/server/controlpanel/interfaces.py:437
 msgid "Flow"
 msgstr "Fluss"
 
@@ -290,7 +290,7 @@ msgstr "Vollständiger Name"
 msgid "Global roles"
 msgstr "Globale Rollen"
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:374
+#: pas/plugins/identity/server/controlpanel/interfaces.py:376
 msgid "Grants"
 msgstr "Gewährungen"
 
@@ -371,7 +371,7 @@ msgstr "Wie lange auf den Avatar eines Anbieters zu warten. Dies läuft, währen
 msgid "How long to wait for a provider's metadata document. Separate from the avatar timeout because it fails differently: an avatar that does not arrive is a missing picture, while metadata that does not arrive is a login that cannot start."
 msgstr "Wie lange auf das Metadatendokument eines Anbieters zu warten. Getrennt vom Avatar-Timeout, da es unterschiedlich fehlschlägt: Ein Avatar, der nicht ankommt, ist ein fehlendes Bild, während Metadaten, die nicht ankommen, eine Anmeldung sind, die nicht gestartet werden kann."
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:424
+#: pas/plugins/identity/server/controlpanel/interfaces.py:426
 msgid "How this client authenticates at the token endpoint. Decided by whether it was registered with a secret."
 msgstr "Wie sich dieser Client am Token-Endpunkt authentifiziert. Entschieden danach, ob er mit einem Geheimnis registriert wurde."
 
@@ -474,11 +474,11 @@ msgstr "Entspricht einer verifizierten Adresse: einer, die diese Website mit ein
 msgid "Multi-provider external authentication for Plone, with users and groups as content."
 msgstr "Multi-Anbieter-externe Authentifizierung für Plone mit Benutzern und Gruppen als Inhalte."
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:413
+#: pas/plugins/identity/server/controlpanel/interfaces.py:415
 msgid "Never edited and never shown. The secret itself exists once, in the response that registered or rotated it."
 msgstr "Niemals bearbeitet und niemals gezeigt. Das Geheimnis selbst existiert einmal in der Antwort, die es registriert oder rotiert hat."
 
-#: pas/plugins/identity/server/controlpanel/panel.py:46
+#: pas/plugins/identity/server/controlpanel/panel.py:51
 #: pas/plugins/identity/server/profiles/default/controlpanel.xml
 msgid "OAuth clients"
 msgstr "OAuth-Clients"
@@ -531,7 +531,7 @@ msgstr "Pfade, die das Profiltor allein lässt"
 msgid "Picture"
 msgstr "Bild"
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:299
+#: pas/plugins/identity/server/controlpanel/interfaces.py:301
 msgid "Plain HTTP is only allowed for a loopback address, such as 127.0.0.1."
 msgstr "Einfaches HTTP ist nur für eine Loopback-Adresse zulässig, wie 127.0.0.1."
 
@@ -629,7 +629,7 @@ msgstr "Reaktivieren"
 msgid "Record IP address and user agent"
 msgstr "IP-Adresse und Benutzer-Agent aufzeichnen"
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:359
+#: pas/plugins/identity/server/controlpanel/interfaces.py:361
 msgid "Redirect URIs"
 msgstr "Umleitungs-URIs"
 
@@ -669,11 +669,11 @@ msgstr "Rollen"
 msgid "Scope"
 msgstr "Bereich"
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:387
+#: pas/plugins/identity/server/controlpanel/interfaces.py:389
 msgid "Scopes"
 msgstr "Bereiche"
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:412
+#: pas/plugins/identity/server/controlpanel/interfaces.py:414
 msgid "Secret hash"
 msgstr "Geheimnishash"
 
@@ -689,7 +689,7 @@ msgstr "Auf dem Anmeldungsbildschirm anzeigen"
 msgid "Shown on the login button."
 msgstr "Auf der Anmeldungsschaltfläche angezeigt."
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:340
+#: pas/plugins/identity/server/controlpanel/interfaces.py:342
 msgid "Shown to the user on the consent screen, which is the one place a person decides whether to trust this client. A client id is not a name."
 msgstr "Dem Benutzer auf dem Zustimmungsbildschirm angezeigt, was der einzige Ort ist, an dem eine Person entscheidet, ob sie diesem Client vertraut. Eine Client-ID ist kein Name."
 
@@ -742,7 +742,7 @@ msgstr "Schalten Sie es aus, um den Anbieter zum Anmelden beizubehalten, währen
 msgid "The ID of the user who performed the last transition"
 msgstr "Die ID des Benutzers, der den letzten Übergang durchgeführt hat"
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:402
+#: pas/plugins/identity/server/controlpanel/interfaces.py:404
 msgid "The Plone user a client-credentials token acts as. Only meaningful for a client registered for that grant, which has no person behind it and would otherwise act as nobody."
 msgstr "Der Plone-Benutzer, für den ein Client-Anmeldeinformationen-Token fungiert. Nur bedeutsam für einen Client, der für diese Gewährung registriert ist, der keine Person hinter sich hat und ansonsten als niemand fungieren würde."
 
@@ -793,6 +793,22 @@ msgstr "Die Gruppen, denen dieser Benutzer oder diese Gruppe angehört. Die Mitg
 #: pas/plugins/identity/core/drivers/settings.py:83
 msgid "The identifier this provider issued for this site."
 msgstr "Die Kennung, die dieser Anbieter für diese Website ausgestellt hat."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:475
+msgid "The issuer may not carry a query or a fragment."
+msgstr "Der Aussteller darf weder eine Abfrage noch ein Fragment enthalten."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:478
+msgid "The issuer may not end with a slash. Relying parties compare it byte for byte, so write it without one."
+msgstr "Der Aussteller darf nicht mit einem Schrägstrich enden. Vertrauende Parteien vergleichen ihn Byte für Byte, also schreiben Sie ihn ohne."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:470
+msgid "The issuer may not start or end with a space."
+msgstr "Der Aussteller darf nicht mit einem Leerzeichen beginnen oder enden."
+
+#: pas/plugins/identity/server/controlpanel/interfaces.py:473
+msgid "The issuer must be an absolute URL, with a host."
+msgstr "Der Aussteller muss eine absolute URL mit einem Host sein."
 
 #: pas/plugins/identity/profiles/default/workflows/user_group_workflow/definition.xml
 #: pas/plugins/identity/profiles/default/workflows/user_profile_workflow/definition.xml
@@ -857,7 +873,7 @@ msgstr "Die E-Mail-Verifizierung dieses Anbieters zählt"
 
 #: pas/plugins/identity/core/contents/group.py:64
 #: pas/plugins/identity/core/controlpanel/interfaces.py:291
-#: pas/plugins/identity/server/controlpanel/interfaces.py:339
+#: pas/plugins/identity/server/controlpanel/interfaces.py:341
 msgid "Title"
 msgstr "Titel"
 
@@ -869,7 +885,7 @@ msgstr "Titel, der dem Gruppenbehälter gegeben wird, wenn dieses Add-on ihn ers
 msgid "Title given to the profile container when this add-on creates it. Changing it later does not rename an existing folder."
 msgstr "Titel, der dem Profilbehälter gegeben wird, wenn dieses Add-on ihn erstellt. Das später ändern benennt einen vorhandenen Ordner nicht um."
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:423
+#: pas/plugins/identity/server/controlpanel/interfaces.py:425
 msgid "Token endpoint authentication"
 msgstr "Token-Endpunkt-Authentifizierung"
 
@@ -907,7 +923,7 @@ msgstr "Ansicht"
 msgid "What the Plone userid is minted from the first time somebody signs in with this provider. A random id is the safe default: it leaks nothing and never has to change. The others are readable, which matters when a person has to be recognised in Plone -- and they are claims, so two providers can offer the same one. A userid already in use is never handed out: the new one gets a numeric suffix."
 msgstr "Woraus die Plone-Benutzer-ID zum ersten Mal geprägt wird, wenn sich jemand mit diesem Anbieter anmeldet. Eine zufällige ID ist die sichere Standardeinstellung: Sie gibt nichts preis und muss sich nie ändern. Die anderen sind lesbar, was wichtig ist, wenn eine Person in Plone erkannt werden muss -- und sie sind Ansprüche, daher können zwei Anbieter den gleichen anbieten. Eine bereits verwendete Benutzer-ID wird nie abgegeben: Die neue erhält ein numerisches Suffix."
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:388
+#: pas/plugins/identity/server/controlpanel/interfaces.py:390
 msgid "What this client may ask for. Only what this server issues is offered, so a registration cannot name a scope that would be narrowed away later. A request for anything outside this is narrowed rather than refused."
 msgstr "Was dieser Client fragen darf. Nur das, was dieser Server ausgibt, wird angeboten, daher kann eine Registrierung keinen Bereich benennen, der später eingeengt würde. Eine Anfrage für etwas außerhalb wird eher eingegrenzt als abgelehnt."
 
@@ -932,7 +948,7 @@ msgstr "Wohin Authentifizierungsereignisse der Reihe nach geschrieben werden. Je
 msgid "Where principals are filed"
 msgstr "Wo Benutzer und Gruppen abgelegt werden"
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:360
+#: pas/plugins/identity/server/controlpanel/interfaces.py:362
 msgid "Where this client may be sent back to, matched exactly. One per entry: https, a loopback address for a native app, or a private-use scheme. A fragment is refused, and so is a wildcard -- neither can ever match."
 msgstr "Wohin dieser Client zurückgesendet werden kann, genau abgeglichen. Eine pro Eintrag: HTTPS, eine Loopback-Adresse für eine native App oder ein privates Schema. Ein Fragment wird abgelehnt, ebenso ein Platzhalter -- keiner kann jemals passen."
 
@@ -952,7 +968,7 @@ msgstr "Wohin der Browser gesendet werden soll, um einen Benutzer zu fragen, ob 
 msgid "Whether the login screen offers a button for this provider. An enabled provider that is not shown still works: it stays linkable from a user's own identities page, and an account already linked to it still signs in through it. That is what a staff-only provider looks like -- usable, but not advertised to everybody who reaches the login form."
 msgstr "Ob der Anmeldungsbildschirm eine Schaltfläche für diesen Anbieter anbietet. Ein aktivierter Anbieter, der nicht angezeigt wird, funktioniert immer noch: Er bleibt von der eigenen Identitätenseite eines Benutzers aus verknüpfbar, und ein bereits damit verknüpftes Konto meldet sich immer noch damit an. So sieht ein reiner Staff-Anbieter aus -- nutzbar, aber nicht jedem Beworbenen, der das Anmeldungsformular erreicht."
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:350
+#: pas/plugins/identity/server/controlpanel/interfaces.py:352
 msgid "Whether this client may obtain tokens at all. Disabling keeps the registration and its secret, and refuses every grant."
 msgstr "Ob dieser Client überhaupt Tokens beziehen darf. Das Deaktivieren behält die Registrierung und ihr Geheimnis bei und lehnt alle Gewährungen ab."
 
@@ -964,7 +980,7 @@ msgstr "Ob dieser Anbieter überhaupt verwendet werden kann. Ein deaktivierter A
 msgid "Which claim carries the group names this provider asserts. A dotted path reaches into a nested claim, so a provider putting them under realm_access.roles is reachable without a driver of its own. What the names then grant is the group map, which is empty until an operator fills it in -- an unmapped group grants nothing and is never created here."
 msgstr "Welcher Anspruch die Gruppennamen trägt, die dieser Anbieter geltend macht. Ein gepunkteter Pfad reicht in einen verschachtelten Anspruch ein, daher kann ein Anbieter, der sie unter realm_access.roles ablegt, ohne eigenen Treiber erreichbar sein. Das, was die Namen dann gewähren, ist die Gruppenzuordnung, die leer ist, bis ein Operator sie ausfüllt -- Eine nicht zugeordnete Gruppe gewährt nichts und wird hier nie erstellt."
 
-#: pas/plugins/identity/server/controlpanel/interfaces.py:375
+#: pas/plugins/identity/server/controlpanel/interfaces.py:377
 msgid "Which flows this client may use. Only what the token endpoint implements is offered, so a registration cannot name a grant that would be refused later."
 msgstr "Welche Flüsse dieser Client verwenden darf. Nur das, was der Token-Endpunkt implementiert, wird angeboten, daher kann eine Registrierung keine Gewährung benennen, die später abgelehnt würde."
 

@@ -1,0 +1,1 @@
+Made an exact user lookup by id case-sensitive, as Plone userids are: `enumerateUsers(id="Alice", exact_match=True)` no longer finds `alice`. Lookups by login are still case-insensitive. @ericof

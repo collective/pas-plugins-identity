@@ -11,6 +11,7 @@ myst:
 # The audit log
 
 <!-- source: backend/src/pas/plugins/identity/core/audit/ -->
+<!-- source: backend/src/pas/plugins/identity/server/subscribers/__init__.py -->
 
 The package records every authentication event it fires, along with the refusals
 that fire no event at all.
@@ -39,6 +40,7 @@ Stable strings, so a consumer can filter on them.
 | `claims-refreshed` | Stored claims were refreshed on a later login. The claims themselves are not recorded. |
 | `magic-link-sent` | A single-use link was sent. |
 | `magic-link-confirmed` | A link was redeemed. |
+| `client-authorized` | A user authorized a client at this site's authorization server (`[server]`). The provider field holds the client id. Detail carries `client_id` and `scope`, never the code. |
 
 ### Refusals
 

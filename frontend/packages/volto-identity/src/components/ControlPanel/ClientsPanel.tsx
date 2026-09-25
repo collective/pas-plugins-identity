@@ -6,9 +6,10 @@
  * rather than inline, and the form rendered by Volto's `Form` from a schema.
  * Nothing here lays out an input.
  *
- * Which of the three views is on screen is the container's decision, because
- * the toolbar buttons that switch between them live there. This renders the
- * one it is given.
+ * Which view is on screen is the container's decision, because the toolbar
+ * buttons that switch between them live there. This renders the one it is
+ * given: the client list, a client's form, the signing keys, or the server's
+ * own settings.
  * @module components/ControlPanel/ClientsPanel
  */
 import React from 'react';
@@ -22,7 +23,12 @@ import pencilSVG from '@plone/volto/icons/pencil.svg';
 import refreshSVG from '@plone/volto/icons/refresh.svg';
 
 import { clientSchema, toFormData } from '../../helpers/clientSchema';
-import type { JsonSchema, OAuthClient, SigningKeyRing } from '../../types';
+import type {
+  JsonSchema,
+  OAuthClient,
+  ServerSettingsPanel,
+  SigningKeyRing,
+} from '../../types';
 import SecretReveal from './SecretReveal';
 
 import './ClientsPanel.scss';
@@ -92,10 +98,26 @@ const messages = defineMessages({
       'access-token lifetime will invalidate tokens still in flight.',
   },
   loadingKeys: { id: 'Loading keys', defaultMessage: 'Loading keys…' },
+  serverSettings: { id: 'Server settings', defaultMessage: 'Server settings' },
+  loadingSettings: {
+    id: 'Loading settings',
+    defaultMessage: 'Loading settings…',
+  },
+  settingsUnavailable: {
+    id: 'The server settings could not be read',
+    defaultMessage:
+      'The server settings could not be read, so they cannot be edited here.',
+  },
+  noIssuer: {
+    id: 'No issuer is configured',
+    defaultMessage:
+      'No issuer is configured, so this server signs nothing and its ' +
+      'discovery document answers 503. Set it under Server settings.',
+  },
 });
 
-/** Which of the panel's three views is on screen. */
-export type ClientsView = 'list' | 'add' | 'edit' | 'keys';
+/** Which of the panel's views is on screen. */
+export type ClientsView = 'list' | 'add' | 'edit' | 'keys' | 'settings';
 
 interface ClientsPanelProps {
   clients: OAuthClient[];
@@ -108,6 +130,14 @@ interface ClientsPanelProps {
    */
   schema?: JsonSchema;
   keys: SigningKeyRing | null;
+  /**
+   * The server's own settings, or null until they have arrived. The settings
+   * form is built from the schema served with them, and the list warns while
+   * they name no issuer.
+   */
+  settings?: ServerSettingsPanel | null;
+  /** Whether reading the settings failed, as opposed to not having finished. */
+  settingsFailed?: boolean;
   loading: boolean;
   busy: boolean;
   /** The client whose secret was just minted, if any. */
@@ -120,6 +150,7 @@ interface ClientsPanelProps {
   /** A failed request, rendered by `Form` above the fields. */
   error?: unknown;
   onSubmit: (data: Record<string, unknown>) => void;
+  onSaveSettings: (data: Record<string, unknown>) => void;
   onCancel: () => void;
   onEdit: (clientId: string) => void;
   onRotateSecret: (clientId: string) => void;
@@ -135,6 +166,8 @@ const ClientsPanel: React.FC<ClientsPanelProps> = ({
   clients,
   schema,
   keys,
+  settings = null,
+  settingsFailed = false,
   loading,
   busy,
   minted,
@@ -143,6 +176,7 @@ const ClientsPanel: React.FC<ClientsPanelProps> = ({
   formRef,
   error,
   onSubmit,
+  onSaveSettings,
   onCancel,
   onEdit,
   onRotateSecret,
@@ -236,6 +270,47 @@ const ClientsPanel: React.FC<ClientsPanelProps> = ({
     );
   }
 
+  if (view === 'settings') {
+    // Volto's `Form` reads `schema.fieldsets` on its first render, so it waits
+    // for the schema rather than mounting empty and staying that way.
+    if (!settings?.schema) {
+      return (
+        <Segment.Group raised className="identity-clients">
+          <Segment className="primary">
+            {intl.formatMessage(messages.serverSettings)}
+          </Segment>
+          <Segment>
+            {settingsFailed ? (
+              <p role="alert" className="identity-error">
+                {intl.formatMessage(messages.settingsUnavailable)}
+              </p>
+            ) : (
+              <p role="status">
+                {intl.formatMessage(messages.loadingSettings)}
+              </p>
+            )}
+          </Segment>
+        </Segment.Group>
+      );
+    }
+    return (
+      <Form
+        ref={formRef}
+        key="settings"
+        title={intl.formatMessage(messages.serverSettings)}
+        // Served by the backend from the settings interface, so nothing here
+        // describes a field, and the issuer rule it enforces is the same one
+        // a PATCH from anywhere else meets.
+        schema={settings.schema}
+        formData={settings.data}
+        requestError={error}
+        onSubmit={onSaveSettings}
+        onCancel={onCancel}
+        hideActions
+      />
+    );
+  }
+
   if (view === 'add' || view === 'edit') {
     return (
       <Form
@@ -266,6 +341,13 @@ const ClientsPanel: React.FC<ClientsPanelProps> = ({
       <Segment className="primary">
         {intl.formatMessage(messages.registered)}
       </Segment>
+      {settings && !settings.data?.server_issuer ? (
+        // The first thing an operator meets after deploying, and until now
+        // the only sign of it was a 503 from the discovery document.
+        <Segment className="identity-clients__warning" secondary role="alert">
+          <strong>{intl.formatMessage(messages.noIssuer)}</strong>
+        </Segment>
+      ) : null}
       <Segment>
         {minted ? (
           <SecretReveal client={minted} onDismiss={onDismissSecret} />

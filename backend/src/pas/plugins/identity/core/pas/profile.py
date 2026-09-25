@@ -174,6 +174,53 @@ class IdentityProfilePlugin(BasePlugin):
             brain for brain in profile_brains(catalog) if brain.review_state in states
         ]
 
+    def _exact_brains(
+        self,
+        ids: list[str],
+        logins: list[str],
+        max_results: int | None = None,
+    ) -> list[AbstractCatalogBrain]:
+        """Return the active Profile brains with one of these ids or logins.
+
+        Index lookups rather than a scan. PAS resolves every ``getUserById``
+        through an exact ``enumerateUsers(id=...)``, so a scan here made each
+        lookup O(n) in Profiles, and anything resolving many users -- the
+        Users and Groups control panels list everybody on load -- O(n²).
+        Measured on 1,727 Profiles, one ``@groups`` request ran for more than
+        seven minutes (issue #110).
+
+        Ids are matched as stored, so an exact id lookup is case-sensitive,
+        as Plone userids are. Logins are folded, because the ``login`` index
+        stores them lowercased.
+
+        :param ids: Userids to match.
+        :param logins: Login names to match, in any case.
+        :param max_results: Stop once this many brains are found.
+        :returns: Brains, each once, even when it matched both criteria.
+        """
+        catalog = query_catalog()
+        states = self.enumeration_states()
+        if catalog is None or not states:
+            return []
+        found: dict[int, AbstractCatalogBrain] = {}
+        # One query per index, merged: PAS criteria are ORed, and the catalog
+        # would AND two indexes named in one query.
+        for index, terms in (
+            ("userid", ids),
+            ("login", [term.lower() for term in logins]),
+        ):
+            if not terms:
+                continue
+            for brain in catalog.unrestrictedSearchResults(
+                portal_type=PROFILE_PORTAL_TYPE,
+                review_state=list(states),
+                **{index: terms},
+            ):
+                found.setdefault(brain.getRID(), brain)
+                if max_results and len(found) >= max_results:
+                    return list(found.values())
+        return list(found.values())
+
     def _brain_for_userid(self, userid: str | None) -> AbstractCatalogBrain | None:
         """Return the brain of one user's Profile.
 
@@ -359,13 +406,19 @@ class IdentityProfilePlugin(BasePlugin):
     ) -> tuple[dict[str, str], ...]:
         """Enumerate users from Profile brains.
 
-        Matching is substring by default, which is what ``source_users`` does
-        and therefore what every caller expects. That rules out serving this
-        from the ``SearchableText`` index, whose globbing is word-prefix only
-        and would silently miss an infix match; the index is there for site
-        search and admin tooling, not for this. Scanning brains is O(n) in
-        Profiles, exactly as the stock plugin is O(n) in its BTree, and it
-        costs no object loads.
+        **An exact lookup by id or login is served from the indexes**, and
+        costs a couple of index lookups however many Profiles there are. It
+        is the call PAS makes for every ``getUserById``, so it is the hottest
+        one this plugin answers -- see :meth:`_exact_brains`. Exact ids are
+        case-sensitive there, as Plone userids are; logins are not.
+
+        Everything else scans. Matching is substring by default, which is
+        what ``source_users`` does and therefore what every caller expects.
+        That rules out serving it from the ``SearchableText`` index, whose
+        globbing is word-prefix only and would silently miss an infix match;
+        the index is there for site search and admin tooling, not for this.
+        Scanning brains is O(n) in Profiles, exactly as the stock plugin is
+        O(n) in its BTree, and it costs no object loads.
 
         :param id: Userid or userids to match.
         :param login: Login name or names to match; folded, since login names
@@ -377,10 +430,22 @@ class IdentityProfilePlugin(BasePlugin):
         :returns: One record per matching user.
         """
         criteria = self._criteria(id, login, kw)
+        if exact_match and criteria and not any(kw.get(key) for key in SEARCH_FIELDS):
+            # Only ids and logins, which are indexed. An empty term matches
+            # nothing on either path, so it is dropped rather than queried.
+            brains = self._exact_brains(
+                [term for term in _as_terms(id) if term],
+                [term for term in _as_terms(login) if term],
+                max_results,
+            )
+        else:
+            brains = [
+                brain
+                for brain in self._active_brains()
+                if not criteria or self._brain_matches(brain, criteria, exact_match)
+            ]
         results = []
-        for brain in self._active_brains():
-            if criteria and not self._brain_matches(brain, criteria, exact_match):
-                continue
+        for brain in brains:
             results.append({
                 "id": brain.userid,
                 "login": brain.login,

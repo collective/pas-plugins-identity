@@ -99,6 +99,8 @@ from pas.plugins.identity.core.interfaces import ProviderEmail
 from pas.plugins.identity.core.interfaces import ProviderUnusable
 from pas.plugins.identity.core.store import IdentityRecord
 from pas.plugins.identity.core.utils.propertymap import MAPPABLE_FIELDS
+from pas.plugins.identity.server.events import ClientAuthorized
+from pas.plugins.identity.server.events import IClientAuthorized
 
 
 # Sorted, because RUF022 requires it -- so this list does not group by kind.
@@ -111,10 +113,12 @@ __all__ = [
     "BaseDriver",
     "Claims",
     "ClaimsError",
+    "ClientAuthorized",
     "EmailVerified",
     "ExternalIdentityAuthenticated",
     "IAuditSink",
     "IAuditSource",
+    "IClientAuthorized",
     "IDriver",
     "IDriverSettings",
     "IEmailSettings",

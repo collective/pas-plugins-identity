@@ -31,6 +31,7 @@ from pas.plugins.identity.core.subscribers.gate import incomplete_profile_url
 from pas.plugins.identity.server.consent.screen import consent_screen_url
 from pas.plugins.identity.server.controlpanel.clients import get_client
 from pas.plugins.identity.server.discovery import AUTHORIZE_VIEW
+from pas.plugins.identity.server.events import ClientAuthorized
 from pas.plugins.identity.server.grants.codes import ChallengeError
 from pas.plugins.identity.server.grants.codes import check_challenge
 from pas.plugins.identity.server.pas import PLUGIN_ID
@@ -42,6 +43,7 @@ from Products.Five.browser import BrowserView
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from urllib.parse import urlencode
 from zExceptions import Forbidden
+from zope.event import notify
 from zope.interface import alsoProvides
 
 import html
@@ -291,6 +293,10 @@ class AuthorizeView(BrowserView):
             challenge=challenge,
             nonce=self._param("nonce"),
         )
+        # After the code exists and before anything else can fail: every
+        # path that stops earlier has returned or raised above, so a
+        # subscriber hears about exactly the authorizations that happened.
+        notify(ClientAuthorized(user.getId(), client.client_id, scope))
         params = {"code": code}
         state = self._param("state")
         if state:

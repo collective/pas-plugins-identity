@@ -12,13 +12,21 @@ of it. What it cannot reach is an access token already in flight: those are
 self-encoded and there is no denylist, so they live out their lifetime.
 The refresh tokens are the part that would otherwise let a client keep
 renewing access long after the person behind it signed out somewhere else.
+
+It also records the layer's own event,
+:class:`~pas.plugins.identity.server.events.ClientAuthorized`, to the audit
+log core keeps, so that a sign-in through this site's authorization server is
+on the same record as a sign-in through a provider.
 """
 
 from pas.plugins.identity import logger
+from pas.plugins.identity.core import audit
 from pas.plugins.identity.core.events import ISessionsRevoked
+from pas.plugins.identity.server.events import IClientAuthorized
 from pas.plugins.identity.server.pas import PLUGIN_ID
 from plone import api
 from zope.component import adapter
+from zope.globalrequest import getRequest
 
 
 @adapter(ISessionsRevoked)
@@ -43,3 +51,23 @@ def revoke_refresh_tokens(event) -> None:
             revoked,
             event.userid,
         )
+
+
+@adapter(IClientAuthorized)
+def record_client_authorized(event) -> None:
+    """Record a user authorizing a client.
+
+    The entry's provider is the client: in a sign-in through this site's
+    authorization server, the client is the other party, as the provider is
+    in a sign-in through somebody else's. The code itself is never recorded.
+
+    :param event: The :class:`IClientAuthorized` event.
+    """
+    audit.record(
+        event.userid,
+        audit.CLIENT_AUTHORIZED,
+        event.client_id,
+        True,
+        {"client_id": event.client_id, "scope": event.scope},
+        request=getRequest(),
+    )
