@@ -40,7 +40,7 @@ Point a conforming OpenID Connect client at the issuer URL and it needs nothing 
 
 The document carries the endpoints, the `jwks_uri`, the signing algorithm, the supported scopes, and the claim list below.
 
-Configure the issuer with `pas.plugins.identity.server_issuer`.
+Configure the issuer under **Server settings** in the OAuth clients control panel, which writes `pas.plugins.identity.server_issuer`.
 The package never derives it from the portal URL, and it builds every URL in the document from it.
 See {doc}`/concepts/federation`.
 

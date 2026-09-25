@@ -440,6 +440,11 @@ msgstr "Carregando clientes"
 msgid "Loading keys"
 msgstr "Carregando chaves"
 
+#. Default: "Loading settings…"
+#: components/ControlPanel/ClientsPanel
+msgid "Loading settings"
+msgstr "Carregando configurações…"
+
 #. Default: "Loading sign-in options…"
 #: components/Login/LoginForm
 msgid "Loading sign-in options"
@@ -543,6 +548,11 @@ msgstr "Nenhum cliente registrado ainda."
 #: components/ControlPanel/ProvidersControlPanel
 msgid "No drivers are installed."
 msgstr "Nenhum driver instalado."
+
+#. Default: "No issuer is configured, so this server signs nothing and its discovery document answers 503. Set it under Server settings."
+#: components/ControlPanel/ClientsPanel
+msgid "No issuer is configured"
+msgstr "Nenhum emissor está configurado, então este servidor não assina nada e seu documento de descoberta responde 503. Defina-o em Configurações do servidor."
 
 #. Default: "No login callback URL is configured, so no provider can complete a sign-in. Set it under Settings."
 #: components/ControlPanel/ProvidersControlPanel
@@ -774,6 +784,12 @@ msgstr "Segredo para {clientId}"
 msgid "Sending"
 msgstr "Enviando"
 
+#. Default: "Server settings"
+#: components/ControlPanel/ClientsControlPanel
+#: components/ControlPanel/ClientsPanel
+msgid "Server settings"
+msgstr "Configurações do servidor"
+
 #. Default: "Settings"
 #: components/ControlPanel/ProvidersControlPanel
 #: helpers/providerSchema
@@ -895,6 +911,11 @@ msgstr "O provedor recusou o acesso."
 #: components/ControlPanel/ProvidersControlPanel
 msgid "The providers could not be read"
 msgstr "Os provedores não puderam ser lidos"
+
+#. Default: "The server settings could not be read, so they cannot be edited here."
+#: components/ControlPanel/ClientsPanel
+msgid "The server settings could not be read"
+msgstr "Não foi possível ler as configurações do servidor, então elas não podem ser editadas aqui."
 
 #. Default: "The site settings could not be read, so they cannot be edited here. The most likely cause is a settings field with no registry record, which happens when the add-on gained one and its profile has not been reapplied since."
 #: components/ControlPanel/ProvidersControlPanel

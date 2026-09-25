@@ -25,8 +25,10 @@ that every route in -- the endpoint, a GenericSetup profile, a test -- is held
 to the same rule.
 """
 
+from copy import copy
 from pas.plugins.identity import _
 from pas.plugins.identity.server.interfaces import GRANT_TYPES
+from pas.plugins.identity.server.interfaces import IServerSettings
 from pas.plugins.identity.server.interfaces import PUBLIC_AUTH_METHOD
 from pas.plugins.identity.server.vocabularies.scopes import SCOPES_VOCABULARY
 from plone.autoform import directives
@@ -437,6 +439,92 @@ class IClientRecords(Interface):
     )
 
 
+def is_issuer(value: str) -> bool:
+    """Refuse an issuer a relying party would not match.
+
+    A relying party compares the ``iss`` of every token, and the ``issuer`` of
+    the discovery document, with the issuer it was configured with, byte for
+    byte. So the rules are about bytes that look harmless and are not:
+
+    * **No trailing slash.** ``https://id.example.org/`` and
+      ``https://id.example.org`` are two issuers to a relying party. The
+      server strips one when it reads the record, so what is published never
+      carries it -- and refusing it here keeps the form showing the issuer
+      relying parties are actually given, rather than one an operator would
+      copy into their configuration and see rejected.
+    * **Absolute, with a host.** Every URL the discovery document publishes
+      is built from it.
+    * **No query and no fragment**, which OpenID Connect Discovery forbids.
+
+    Empty is allowed: it is the state of a server nobody has configured yet,
+    and the discovery document says so rather than publishing a wrong one.
+
+    :param value: The issuer.
+    :returns: True, or the constraint has raised.
+    :raises Invalid: When relying parties would not accept it.
+    """
+    issuer = value or ""
+    if not issuer:
+        return True
+    if issuer != issuer.strip():
+        raise Invalid(_("The issuer may not start or end with a space."))
+    parts = urlsplit(issuer)
+    if not parts.scheme or not parts.netloc:
+        raise Invalid(_("The issuer must be an absolute URL, with a host."))
+    if parts.query or parts.fragment or "?" in issuer or "#" in issuer:
+        raise Invalid(_("The issuer may not carry a query or a fragment."))
+    if issuer.endswith("/"):
+        raise Invalid(
+            _(
+                "The issuer may not end with a slash. Relying parties compare "
+                "it byte for byte, so write it without one."
+            )
+        )
+    return True
+
+
+def _panel_field(name: str, **changes) -> schema.Field:
+    """Return a copy of a server setting, for the panel schema.
+
+    A copy, so the field the registry record was created from is left as it
+    is: ``plone.registry`` refuses a custom constraint on a stored field.
+
+    :param name: A field of :class:`IServerSettings`.
+    :param changes: Attributes to set on the copy.
+    :returns: The copy.
+    """
+    field = copy(IServerSettings[name])
+    for attribute, value in changes.items():
+        setattr(field, attribute, value)
+    return field
+
+
+class IServerPanelSchema(Interface):
+    """The server settings an operator edits, and nothing else.
+
+    What ``@controlpanels/identity-clients`` serves and accepts. It used to
+    be :class:`IServerSettings` whole, which put two records on it that have
+    no business on a form: the client list, which has its own endpoint and
+    its own validation, and the signing key ring, which holds **private**
+    keys. The panel served both to every GET and wrote whatever a PATCH sent
+    for either, so a settings form built from it would have carried the
+    private keys to the browser on every load, in a textarea where a typo
+    breaks every token issued.
+
+    The fields are copies under the same names, so ``registry.forInterface``
+    resolves them against the records that already exist and nothing new is
+    written to the registry. The issuer's copy carries :func:`is_issuer`,
+    which the stored record cannot; the panel validates against this schema
+    before it writes, so the form and a ``PATCH`` are both held to it.
+    """
+
+    server_issuer = _panel_field("server_issuer", constraint=is_issuer)
+    server_consent_url = _panel_field("server_consent_url")
+    server_refresh_token_ttl = _panel_field("server_refresh_token_ttl")
+    server_access_token_ttl = _panel_field("server_access_token_ttl")
+    server_unreleased_groups = _panel_field("server_unreleased_groups")
+
+
 __all__ = [
     "FLOW_FIELDSET",
     "GRANTS",
@@ -444,6 +532,8 @@ __all__ = [
     "LOOPBACK_SUFFIX",
     "SAFE_SCHEMES",
     "IClientRecords",
+    "IServerPanelSchema",
+    "is_issuer",
     "is_loopback",
     "is_redirect_uri",
 ]

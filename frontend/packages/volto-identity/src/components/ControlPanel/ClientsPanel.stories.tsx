@@ -4,8 +4,11 @@ import React from 'react';
 import ClientsPanel from './ClientsPanel';
 import {
   CLIENTS,
+  GROUPS_STATE,
   KEYRING,
   MINTED_CLIENT,
+  SERVER_SETTINGS,
+  UNCONFIGURED_SERVER_SETTINGS,
   withStore,
 } from '../../stories/fixtures';
 
@@ -15,6 +18,7 @@ const meta: Meta<typeof ClientsPanel> = {
   args: {
     clients: CLIENTS,
     keys: KEYRING,
+    settings: SERVER_SETTINGS,
     loading: false,
     busy: false,
     minted: null,
@@ -22,6 +26,7 @@ const meta: Meta<typeof ClientsPanel> = {
     editing: null,
     formRef: React.createRef(),
     onSubmit: () => {},
+    onSaveSettings: () => {},
     onCancel: () => {},
     onEdit: () => {},
     onRotateSecret: () => {},
@@ -69,3 +74,30 @@ export const Keys: Story = { args: { view: 'keys' } };
 
 /** A site whose server layer is installed but has never signed anything. */
 export const NoKeysYet: Story = { args: { view: 'keys', keys: null } };
+
+/**
+ * A server nobody has given an issuer yet: it signs nothing, and says so
+ * above the list rather than leaving the discovery document's 503 to.
+ */
+export const NotConfigured: Story = {
+  args: { settings: UNCONFIGURED_SERVER_SETTINGS, clients: [] },
+};
+
+/**
+ * The server's own settings, behind the toolbar's settings button. The groups
+ * picker reads its vocabulary from the store, so one is loaded for it.
+ */
+export const ServerSettings: Story = {
+  args: { view: 'settings' },
+  decorators: [withStore({ vocabularies: GROUPS_STATE })],
+};
+
+/** Opened before the settings have arrived. */
+export const ServerSettingsLoading: Story = {
+  args: { view: 'settings', settings: null },
+};
+
+/** Opened on a backend that would not serve them. */
+export const ServerSettingsUnavailable: Story = {
+  args: { view: 'settings', settings: null, settingsFailed: true },
+};

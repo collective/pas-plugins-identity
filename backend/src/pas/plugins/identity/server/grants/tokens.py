@@ -98,8 +98,9 @@ def get_issuer() -> str:
     issuer = (api.portal.get_registry_record(ISSUER_RECORD, default="") or "").strip()
     if not issuer:
         raise TokenError(
-            "No issuer is configured for the authorization server; set "
-            f"{ISSUER_RECORD} to the URL relying parties will see"
+            "No issuer is configured for the authorization server; set it "
+            "to the URL relying parties will see, in the OAuth clients "
+            f"control panel or as {ISSUER_RECORD}"
         )
     return issuer.rstrip("/")
 

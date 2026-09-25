@@ -1,8 +1,9 @@
 """The control panel entry for the authorization server.
 
 The panel itself is rendered by the frontend against ``@identity-clients`` and
-``@identity-keys``. What is registered here is the *entry*: without it the
-panel exists but nothing links to it and ``@controlpanels`` does not list it.
+``@identity-keys``, with a settings form built from what this entry serves.
+Without the entry the panel exists but nothing links to it and
+``@controlpanels`` does not list it.
 
 Registered against the ``[server]`` browser layer, so it appears only in a
 site that switched the authorization server on. A control panel for managing
@@ -11,8 +12,8 @@ an empty page and a question.
 """
 
 from pas.plugins.identity import _
+from pas.plugins.identity.server.controlpanel.interfaces import IServerPanelSchema
 from pas.plugins.identity.server.interfaces import IIdentityServerLayer
-from pas.plugins.identity.server.interfaces import IServerSettings
 from plone.restapi.controlpanels import RegistryConfigletPanel
 from plone.restapi.controlpanels.interfaces import IControlpanel
 from zope.component import adapter
@@ -37,9 +38,13 @@ class IIdentityServerControlpanel(IControlpanel):
 @adapter(Interface, IIdentityServerLayer)
 @implementer(IIdentityServerControlpanel)
 class IdentityServerConfigletPanel(RegistryConfigletPanel):
-    """Expose the server settings through ``@controlpanels``."""
+    """Expose the server settings through ``@controlpanels``.
 
-    schema = IServerSettings
+    The editable ones only: see :class:`IServerPanelSchema` for what is left
+    out and why.
+    """
+
+    schema = IServerPanelSchema
     schema_prefix = "pas.plugins.identity"
     configlet_id = CONFIGLET_ID
     configlet_category_id = CONFIGLET_CATEGORY_ID

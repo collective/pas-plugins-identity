@@ -1,0 +1,1 @@
+Made the server settings refuse an issuer that relying parties would not match: one with a trailing slash, no scheme or host, a query or fragment, or surrounding spaces. The error for a site with no issuer now says where to set it. @ericof

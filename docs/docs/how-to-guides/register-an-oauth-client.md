@@ -20,14 +20,28 @@ All of these calls need `Manage portal`.
 
 ## Before you start
 
-Set the issuer, if you have not:
+<!-- source: backend/src/pas/plugins/identity/server/controlpanel/interfaces.py, IServerPanelSchema -->
+<!-- source: frontend/packages/volto-identity/src/components/ControlPanel/ClientsControlPanel.tsx -->
+
+Set the issuer, if you have not. Until it is set, the server signs nothing, the
+discovery document answers `503 server_not_configured`, and the client list says
+the server is not configured.
+
+1. Open the **OAuth clients** control panel, `/controlpanel/identity-clients`.
+2. Choose **Server settings** in the toolbar.
+3. Enter the address relying parties will know this server by, without a trailing
+   slash, and save.
+
+Without the frontend, send the same value to the panel:
 
 ```text
-pas.plugins.identity.server_issuer
+PATCH @controlpanels/identity-clients
+{"server_issuer": "https://id.example.org"}
 ```
 
 The package never derives it from the portal URL. See {doc}`/concepts/federation`
-for why, and {doc}`/reference/settings` for the other server records.
+for why, and {doc}`/reference/settings` for the other server settings on the same
+form.
 
 ## Register the client
 

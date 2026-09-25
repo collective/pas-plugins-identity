@@ -491,3 +491,24 @@ export interface SigningKeyRing {
   items_total: number;
   items: SigningKey[];
 }
+
+/**
+ * The authorization server's settings, as `@controlpanels/identity-clients`
+ * serves them: the schema the settings form is built from, and the values.
+ *
+ * Only what an operator edits. The client list and the signing keys have
+ * their own endpoints and are not in it.
+ */
+export interface ServerSettingsPanel {
+  '@id': string;
+  title?: string;
+  schema: JsonSchema;
+  data: {
+    /** Empty until somebody sets it, and nothing is signed until then. */
+    server_issuer?: string;
+    server_consent_url?: string;
+    server_refresh_token_ttl?: number;
+    server_access_token_ttl?: number;
+    server_unreleased_groups?: string[];
+  };
+}

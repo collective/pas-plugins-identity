@@ -3,6 +3,10 @@ import { fireEvent, render, screen } from '../../testing';
 import React from 'react';
 
 import ClientsPanel from './ClientsPanel';
+import {
+  SERVER_SETTINGS,
+  UNCONFIGURED_SERVER_SETTINGS,
+} from '../../stories/fixtures';
 import type { OAuthClient, SigningKeyRing } from '../../types';
 
 const CLIENT: OAuthClient = {
@@ -40,7 +44,8 @@ const KEYS: SigningKeyRing = {
 };
 
 /**
- * The `add` and `edit` views are not rendered here: they are Volto's `Form`,
+ * The `add`, `edit` and loaded `settings` views are not rendered here: they
+ * are Volto's `Form`,
  * which needs a store and a router this renderer does not provide. What they
  * put on the wire is `helpers/clientSchema`'s own test, and how they look is
  * the stories'.
@@ -50,6 +55,7 @@ function renderPanel(
 ) {
   const handlers = {
     onSubmit: vi.fn(),
+    onSaveSettings: vi.fn(),
     onCancel: vi.fn(),
     onEdit: vi.fn(),
     onRotateSecret: vi.fn(),
@@ -263,5 +269,43 @@ describe('ClientsPanel', () => {
     expect(
       (screen.getByText('Rotate signing key') as HTMLButtonElement).disabled,
     ).toBe(true);
+  });
+
+  it('warns when no issuer is configured', () => {
+    renderPanel({ settings: UNCONFIGURED_SERVER_SETTINGS });
+
+    expect(screen.getByRole('alert').textContent).toContain(
+      'No issuer is configured',
+    );
+  });
+
+  it('does not warn once an issuer is configured', () => {
+    renderPanel({ settings: SERVER_SETTINGS });
+
+    expect(screen.queryByText(/No issuer is configured/)).toBeNull();
+  });
+
+  it('does not warn before the settings have arrived', () => {
+    // A warning on every page load, gone a moment later, is one an operator
+    // learns to ignore.
+    renderPanel({ settings: null });
+
+    expect(screen.queryByText(/No issuer is configured/)).toBeNull();
+  });
+
+  it('waits for the settings before opening their form', () => {
+    renderPanel({ view: 'settings', settings: null });
+
+    expect(screen.getByRole('status').textContent).toContain(
+      'Loading settings',
+    );
+  });
+
+  it('says so when the settings cannot be read', () => {
+    renderPanel({ view: 'settings', settings: null, settingsFailed: true });
+
+    expect(screen.getByRole('alert').textContent).toContain(
+      'could not be read',
+    );
   });
 });

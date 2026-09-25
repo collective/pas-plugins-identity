@@ -4,8 +4,8 @@
  *
  * The chrome is the providers panel's chrome, which is Volto's own: a
  * centred container, and a toolbar carrying the actions that switch what the
- * page shows -- the signing keys, a registration form, and the way back to
- * the control-panel listing. Which view is on is decided here rather than in
+ * page shows -- the server settings, the signing keys, a registration form,
+ * and the way back to the control-panel listing. Which view is on is decided here rather than in
  * the panel, because those buttons live here.
  * @module components/ControlPanel/ClientsControlPanel
  */
@@ -22,9 +22,14 @@ import { useClient } from '@plone/volto/hooks/client/useClient';
 import Icon from '@plone/volto/components/theme/Icon/Icon';
 import Toolbar from '@plone/volto/components/manage/Toolbar/Toolbar';
 import Toast from '@plone/volto/components/manage/Toast/Toast';
+import {
+  getControlpanel,
+  updateControlpanel,
+} from '@plone/volto/actions/controlpanels/controlpanels';
 import addSVG from '@plone/volto/icons/add.svg';
 import backSVG from '@plone/volto/icons/back.svg';
 import clearSVG from '@plone/volto/icons/clear.svg';
+import configurationSVG from '@plone/volto/icons/configuration.svg';
 import keySVG from '@plone/volto/icons/key.svg';
 import saveSVG from '@plone/volto/icons/save.svg';
 
@@ -40,7 +45,13 @@ import {
 import { fromFormData } from '../../helpers/clientSchema';
 import ClientsPanel from './ClientsPanel';
 import type { ClientsView } from './ClientsPanel';
-import type { OAuthClient } from '../../types';
+import type { OAuthClient, ServerSettingsPanel } from '../../types';
+
+/**
+ * The configlet id, which is also the name the server settings are served
+ * under at `@controlpanels/<id>`.
+ */
+const CONFIGLET_ID = 'identity-clients';
 
 const messages = defineMessages({
   // The configlet's own title, so the page, the browser tab and the entry in
@@ -49,6 +60,7 @@ const messages = defineMessages({
   back: { id: 'Back', defaultMessage: 'Back' },
   add: { id: 'Register a client', defaultMessage: 'Register a client' },
   keys: { id: 'Signing keys', defaultMessage: 'Signing keys' },
+  settings: { id: 'Server settings', defaultMessage: 'Server settings' },
   save: { id: 'Save', defaultMessage: 'Save' },
   cancel: { id: 'Cancel', defaultMessage: 'Cancel' },
   saved: { id: 'Changes saved', defaultMessage: 'Changes saved' },
@@ -85,10 +97,25 @@ const ClientsControlPanel: React.FC = () => {
   const updated = useSelector((state: any) => state.clientUpdate);
   const removed = useSelector((state: any) => state.clientDelete);
   const keyRotated = useSelector((state: any) => state.keyRotate);
+  // Volto keeps one control panel in the store, whichever was read last. The
+  // providers panel reads its own under the same key, so one still there from
+  // a visit a moment ago is not these settings and would say no issuer is set.
+  const served = useSelector(
+    (state: any) => state.controlpanels?.controlpanel,
+  ) as ServerSettingsPanel | null | undefined;
+  const settings =
+    served?.['@id']?.endsWith(`/@controlpanels/${CONFIGLET_ID}`) === true
+      ? served
+      : null;
+  const settingsRequest = useSelector((state: any) => state.controlpanels?.get);
+  const settingsSaving = useSelector(
+    (state: any) => state.controlpanels?.update?.loading,
+  );
 
   useEffect(() => {
     dispatch(listClients());
     dispatch(listKeys());
+    dispatch(getControlpanel(CONFIGLET_ID));
   }, [dispatch]);
 
   useEffect(() => {
@@ -186,9 +213,30 @@ const ClientsControlPanel: React.FC = () => {
       .catch(fail);
   }, [dispatch, fail, intl]);
 
+  const onSaveSettings = useCallback(
+    (data: Record<string, unknown>) => {
+      if (!settings) {
+        return;
+      }
+      const { '@id': _atId, ...values } = data ?? {};
+      (dispatch(updateControlpanel(settings['@id'], values)) as any)
+        .then(() => {
+          toast.success(
+            <Toast success title={intl.formatMessage(messages.saved)} />,
+          );
+          closeForm();
+          // Read back rather than trusted: the list's notice is decided by
+          // what the server holds, not by what was typed.
+          dispatch(getControlpanel(CONFIGLET_ID));
+        })
+        .catch(fail);
+    },
+    [closeForm, dispatch, fail, intl, settings],
+  );
+
   const onDismissSecret = useCallback(() => setMinted(null), []);
 
-  const isForm = view === 'add' || view === 'edit';
+  const isForm = view === 'add' || view === 'edit' || view === 'settings';
 
   return (
     <div id="page-controlpanel" className="identity-controlpanel">
@@ -198,13 +246,16 @@ const ClientsControlPanel: React.FC = () => {
           schema={clientFormSchema}
           clients={clients?.data ?? []}
           keys={keys?.data ?? null}
+          settings={settings}
+          settingsFailed={Boolean(settingsRequest?.error)}
           loading={Boolean(clients?.loading)}
           busy={Boolean(
             created?.loading ||
               updated?.loading ||
               removed?.loading ||
               rotated?.loading ||
-              keyRotated?.loading,
+              keyRotated?.loading ||
+              settingsSaving,
           )}
           minted={minted}
           view={view}
@@ -212,6 +263,7 @@ const ClientsControlPanel: React.FC = () => {
           formRef={formRef}
           error={error}
           onSubmit={onSubmit}
+          onSaveSettings={onSaveSettings}
           onCancel={closeForm}
           onEdit={onEdit}
           onRotateSecret={onRotateSecret}
@@ -269,6 +321,21 @@ const ClientsControlPanel: React.FC = () => {
                 </Button>
               ) : (
                 <>
+                  <Button
+                    id="toolbar-settings"
+                    aria-label={intl.formatMessage(messages.settings)}
+                    onClick={() => {
+                      setError(null);
+                      setView('settings');
+                    }}
+                  >
+                    <Icon
+                      name={configurationSVG}
+                      className="circled"
+                      size="30px"
+                      title={intl.formatMessage(messages.settings)}
+                    />
+                  </Button>
                   <Button
                     id="toolbar-keys"
                     aria-label={intl.formatMessage(messages.keys)}
