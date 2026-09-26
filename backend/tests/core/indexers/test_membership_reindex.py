@@ -9,7 +9,7 @@ metadata record is still refreshed, because the brain is what
 
 from pas.plugins.identity.core.behaviors.membership import IGroupMembership
 from pas.plugins.identity.core.catalog import IdentityProfileCatalog
-from pas.plugins.identity.core.indexers import _indexes_for
+from pas.plugins.identity.core.indexers.subscribers import _indexes_for
 from plone import api
 from zope.interface import Interface
 from zope.lifecycleevent import Attributes

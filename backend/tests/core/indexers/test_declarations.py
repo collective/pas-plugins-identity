@@ -27,7 +27,9 @@ from pas.plugins.identity.core.catalog import GROUP_METADATA
 from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import PROFILE_METADATA
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
-from pas.plugins.identity.core.indexers import site_searchable_text_index
+from pas.plugins.identity.core.indexers.searchable_text import (
+    site_searchable_text_index,
+)
 from pas.plugins.identity.core.interfaces import IIdentityProfileCatalog
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from plone import api

@@ -12,19 +12,19 @@
   <subscriber
       for="..interfaces.IIdentityCatalogued
            zope.lifecycleevent.interfaces.IObjectMovedEvent"
-      handler=".profile_moved"
+      handler=".subscribers.profile_moved"
       />
 
   <subscriber
       for="..interfaces.IIdentityCatalogued
            OFS.interfaces.IObjectWillBeMovedEvent"
-      handler=".profile_will_be_moved"
+      handler=".subscribers.profile_will_be_moved"
       />
 
   <subscriber
       for="..interfaces.IIdentityCatalogued
            zope.lifecycleevent.interfaces.IObjectModifiedEvent"
-      handler=".profile_modified"
+      handler=".subscribers.profile_modified"
       />
 
   <!-- A transition changes review_state, which is both an index and a
@@ -32,7 +32,7 @@
   <subscriber
       for="..interfaces.IIdentityCatalogued
            Products.DCWorkflow.interfaces.IAfterTransitionEvent"
-      handler=".profile_modified"
+      handler=".subscribers.profile_modified"
       />
 
   <!-- Both indexers fold or narrow what the field literally holds; see the
@@ -40,7 +40,7 @@
        so it applies where enumeration reads and nowhere else: a Profile is
        ordinary content and is catalogued in portal_catalog too. -->
   <adapter
-      factory=".login_index"
+      factory=".profile.login_index"
       name="login"
       />
 
@@ -49,12 +49,12 @@
        object itself counted. Ours only, because a Profile is catalogued in
        portal_catalog too and this means nothing there. -->
   <adapter
-      factory=".missing_fields_index"
+      factory=".profile.missing_fields_index"
       name="missing_fields"
       />
 
   <adapter
-      factory=".searchable_text_index"
+      factory=".searchable_text.searchable_text_index"
       name="SearchableText"
       />
 
@@ -63,7 +63,7 @@
        two, so the multi-adapter lookup prefers the one above wherever the
        catalog is ours. -->
   <adapter
-      factory=".site_searchable_text_index"
+      factory=".searchable_text.site_searchable_text_index"
       name="SearchableText"
       />
 

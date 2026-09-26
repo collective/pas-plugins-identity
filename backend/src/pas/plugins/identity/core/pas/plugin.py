@@ -175,7 +175,7 @@ def _reindex(obj) -> None:
 
     Says which attribute changed, so the identity catalog reindexes the one
     index it feeds rather than all of them; see
-    :func:`pas.plugins.identity.core.indexers.profile_modified`.
+    :func:`pas.plugins.identity.core.indexers.subscribers.profile_modified`.
 
     :param obj: The object that changed.
     """
