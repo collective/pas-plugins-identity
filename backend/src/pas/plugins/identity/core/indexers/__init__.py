@@ -76,6 +76,29 @@ def profile_will_be_moved(obj: UserProfile, event: IObjectWillBeMovedEvent) -> N
         catalog.unindexObject(obj)
 
 
+#: Attributes indexed under their own name and feeding no other index. An event
+#: that names only these reindexes only them. Anything else reindexes every
+#: index, because a field's name need not be an index's: ``fullname`` feeds
+#: ``sortable_title`` and ``SearchableText`` as well.
+SELF_INDEXED = frozenset({"group_ids"})
+
+
+def _indexes_for(event: IObjectModifiedEvent) -> list[str] | None:
+    """Return the indexes an event's descriptions confine a reindex to.
+
+    :param event: The modification or transition event.
+    :returns: Index names, or ``None`` for all of them.
+    """
+    names = {
+        name
+        for description in getattr(event, "descriptions", ())
+        for name in getattr(description, "attributes", ())
+    }
+    if names and names <= SELF_INDEXED:
+        return sorted(names)
+    return None
+
+
 def profile_modified(obj: UserProfile, event: IObjectModifiedEvent) -> None:
     """Reindex a Profile whose fields or workflow state changed.
 
@@ -83,12 +106,16 @@ def profile_modified(obj: UserProfile, event: IObjectModifiedEvent) -> None:
     ``IAfterTransitionEvent``: a transition changes ``review_state``, which is
     both an index and a metadata column, and nothing else notices.
 
+    A membership change names ``group_ids`` and reindexes that index alone,
+    with the metadata record. The other indexes would be rewritten with the
+    values they already hold.
+
     :param obj: The Profile.
     :param event: The modification or transition event.
     """
     catalog = _catalog_for(obj)
     if catalog is not None:
-        catalog.reindexObject(obj)
+        catalog.reindexObject(obj, idxs=_indexes_for(event))
 
 
 @indexer(IUserProfile, IIdentityProfileCatalog)

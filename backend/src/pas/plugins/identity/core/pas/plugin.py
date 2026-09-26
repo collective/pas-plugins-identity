@@ -173,11 +173,17 @@ def _reindex(obj) -> None:
     see: the layer serving these objects answers out of catalog metadata,
     which is the whole reason it never wakes one.
 
+    Says which attribute changed, so the identity catalog reindexes the one
+    index it feeds rather than all of them; see
+    :func:`pas.plugins.identity.core.indexers.profile_modified`.
+
     :param obj: The object that changed.
     """
+    from pas.plugins.identity.core.behaviors.membership import IGroupMembership
+    from zope.lifecycleevent import Attributes
     from zope.lifecycleevent import modified
 
-    modified(obj)
+    modified(obj, Attributes(IGroupMembership, "group_ids"))
 
 
 def _record(name: str) -> str:
