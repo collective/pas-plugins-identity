@@ -60,11 +60,13 @@ from pas.plugins.identity import logger
 from pas.plugins.identity.core.controlpanel.interfaces import DEFAULT_PORTRAIT_MAX_BYTES
 from pas.plugins.identity.core.controlpanel.interfaces import DEFAULT_PORTRAIT_TIMEOUT
 from pas.plugins.identity.core.profiles import get_profile
+from pas.plugins.identity.core.profiles import profile_brain
 from pas.plugins.identity.core.profiles import remember_picture_url
 from pas.plugins.identity.core.profiles import remembered_picture_url
 from plone import api
 from plone.namedfile.file import NamedBlobImage
 from Products.PlonePAS.utils import scale_image
+from Products.ZCatalog.CatalogBrains import AbstractCatalogBrain
 from urllib.parse import urlparse
 from zope.lifecycleevent import modified
 
@@ -105,11 +107,22 @@ def picture_url(userid: str) -> str | None:
         no picture. ``None`` is what makes the member portrait the fallback,
         so it has to mean "nothing here" rather than "no Profile".
     """
-    profile = get_profile(userid)
-    if profile is None or getattr(profile, "image", None) is None:
+    return picture_url_of(profile_brain(userid))
+
+
+def picture_url_of(brain: AbstractCatalogBrain | None) -> str | None:
+    """Return the URL of the picture on the Profile a brain stands for.
+
+    Answered from the ``image_scales`` column, so it wakes nothing: ``@users``
+    asks it once per user it lists.
+
+    :param brain: The Profile's catalog record, or ``None``.
+    :returns: An absolute URL, or ``None`` as :func:`picture_url` does.
+    """
+    if brain is None or "image" not in (brain.image_scales or {}):
         return None
     # `@@images` rather than `@@download` so a caller may ask for a scale.
-    return f"{profile.absolute_url()}/@@images/image"
+    return f"{brain.getURL()}/@@images/image"
 
 
 def store_provider_picture(userid: str, data: bytes, url: str) -> bool:

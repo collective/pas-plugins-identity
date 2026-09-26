@@ -101,7 +101,7 @@ def configured_fields() -> tuple[str, ...]:
         # No current site to hold a registry: a zconsole script that never
         # called ``setSite``, or a site being deleted from the Zope root. The
         # indexer runs there -- see
-        # :func:`~pas.plugins.identity.core.indexers.missing_fields_index` --
+        # :func:`~pas.plugins.identity.core.indexers.profile.missing_fields_index` --
         # and indexing a profile must not be what raises out of a deletion.
         # Falling through to what the type declares is the same answer an
         # unset record gets.
@@ -254,7 +254,7 @@ def missing_from_brain(brain) -> tuple[str, ...]:
     was indexed. That is the only answer that knows which of these fields their
     owner is able to write, because the permission is granted per profile and a
     brain cannot be asked about it -- see
-    :func:`~pas.plugins.identity.core.indexers.missing_fields_index`. It is
+    :func:`~pas.plugins.identity.core.indexers.profile.missing_fields_index`. It is
     also the answer ``review_state`` was decided from, in the same breath, so
     the state and the reason given for it cannot disagree.
 

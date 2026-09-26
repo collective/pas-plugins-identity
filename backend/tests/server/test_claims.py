@@ -267,6 +267,9 @@ class TestPictureOnASiteWithProfiles:
         self.profile.image = NamedBlobImage(
             data=PNG, contentType="image/png", filename="me.png"
         )
+        # Every path that sets a picture reindexes, and whether there is one
+        # is read from the catalog.
+        modified(self.profile)
 
     def test_the_claim_is_released(self):
         """The bug: empty, because only memberdata was consulted."""
@@ -278,6 +281,7 @@ class TestPictureOnASiteWithProfiles:
         """A Profile is not itself a picture. With neither store holding one
         the claim still has to be omitted."""
         self.profile.image = None
+        modified(self.profile)
 
         assert "picture" not in claims_for(USERID, "profile")
 

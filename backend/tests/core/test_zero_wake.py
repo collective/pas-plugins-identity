@@ -16,15 +16,18 @@ cache; a test that only checked ghost state would miss a load followed by a
 deactivation.
 """
 
+from .. import PNG
 from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.contents.group import UserGroup
 from pas.plugins.identity.core.contents.profile import UserProfile
 from pas.plugins.identity.core.services.groups.get import GroupMembersGet
 from plone import api
+from plone.namedfile.file import NamedBlobImage
 from plone.restapi.interfaces import ISerializeToJson
 from Products.CMFCore.indexing import processQueue
 from zope.component import getMultiAdapter
+from zope.lifecycleevent import modified
 
 import pytest
 import transaction
@@ -334,6 +337,67 @@ class TestTheGroupMembersEndpointWakesNothing:
     def test_everything_is_still_a_ghost(self):
         """The other half of the claim, as everywhere else in this module."""
         self.listing("editors")
+
+        assert [profile._p_changed for profile in self.profiles] == [None] * 12
+
+
+class TestTheUserSerializerWakesNothing:
+    """``@users`` serializes every user it lists, and used to wake each Profile.
+
+    It needed two things from the object: its URL, for ``profile_url``, and
+    whether it holds a picture, for ``portrait``. The brain answers both, the
+    second through the ``image_scales`` column. Before that, listing the users of
+    a site loaded every Profile on it (issue #112).
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_, profiles, loads) -> None:
+        self.request = request_
+        self.profiles = profiles
+        self.loads = loads
+        # One picture, so the portrait half has something to find. Written
+        # through the object, then ghosted again like the rest.
+        pictured = portal["identity-profiles"]["user1"]
+        pictured.image = NamedBlobImage(data=PNG, filename="user1.png")
+        modified(pictured)
+        # Indexed before the savepoint rather than after: indexing writes to
+        # the object, and a changed object cannot be ghosted.
+        processQueue()
+        transaction.savepoint(optimistic=True)
+        pictured._p_deactivate()
+        self.loads.clear()
+
+    def serialize(self, userid: str) -> dict:
+        """Serialize one user the way ``@users`` does.
+
+        :param userid: The user to serialize.
+        :returns: The serialized user.
+        """
+        member = api.user.get(userid=userid)
+        return getMultiAdapter((member, self.request), ISerializeToJson)()
+
+    def test_serializing_every_user_wakes_nothing(self):
+        for index in range(10):
+            self.serialize(f"user{index}")
+
+        assert profile_loads(self.loads) == []
+
+    def test_it_still_answers_from_the_profile(self):
+        """The half that keeps the zero honest: both keys are what used to
+        cost the activation."""
+        pictured = self.serialize("user1")
+        plain = self.serialize("user2")
+
+        assert pictured["profile_url"].endswith("/identity-profiles/user1")
+        assert pictured["portrait"] == f"{pictured['profile_url']}/@@images/image"
+        assert plain["profile_url"].endswith("/identity-profiles/user2")
+        assert plain["portrait"] is None
+        assert profile_loads(self.loads) == []
+
+    def test_everything_is_still_a_ghost(self):
+        """The other half of the claim, as everywhere else in this module."""
+        for index in range(10):
+            self.serialize(f"user{index}")
 
         assert [profile._p_changed for profile in self.profiles] == [None] * 12
 

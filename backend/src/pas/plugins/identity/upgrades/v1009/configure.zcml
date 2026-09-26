@@ -1,0 +1,20 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    >
+
+  <!-- The column a user listing reads a Profile picture from. Populated, like
+       v1008's: read as Missing.Value it means "no picture". -->
+  <genericsetup:upgradeSteps
+      profile="pas.plugins.identity:default"
+      source="1008"
+      destination="1009"
+      >
+    <genericsetup:upgradeStep
+        title="Record which profiles hold a picture"
+        description="Adds the image_scales column to the identity catalog and reindexes every Profile into it, so that listing users no longer loads every Profile."
+        handler=".add_image_scales_column"
+        />
+  </genericsetup:upgradeSteps>
+
+</configure>

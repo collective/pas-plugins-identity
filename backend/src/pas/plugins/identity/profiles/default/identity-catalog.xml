@@ -59,9 +59,9 @@
   </index>
 
   <!--
-    Lowercased at index time by the indexer in ``core.indexers``, and so it
-    must be lowercased at query time by every caller: login names are case
-    insensitive in Plone and a FieldIndex is not.
+    Lowercased at index time by the indexer in ``core.indexers.profile``, and
+    so it must be lowercased at query time by every caller: login names are
+    case insensitive in Plone and a FieldIndex is not.
   -->
   <index meta_type="FieldIndex"
          name="login"
@@ -156,9 +156,17 @@
   <!--
     What the profile is still waiting for, as the object counted it: the one
     answer that knows which required fields this person is actually able to
-    write. Filled by the indexer in ``core.indexers``; see it for the two
+    write. Filled by the indexer in ``core.indexers.profile``; see it for the two
     things that leave it stale and for the rebuild that fixes them.
   -->
   <column value="missing_fields" />
+
+  <!--
+    Plone's own column, the image fields an object holds and their scales,
+    filled by the indexer Products.CMFPlone registers for all Dexterity content.
+    A listing reads whether a Profile has a picture from it, rather than waking
+    every Profile it returns.
+  -->
+  <column value="image_scales" />
 
 </object>

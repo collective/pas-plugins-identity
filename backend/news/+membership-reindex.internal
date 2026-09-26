@@ -1,0 +1,1 @@
+Made a group membership change reindex only the `group_ids` index in the identity catalog, rather than every index with the values it already held. About 45 fewer objects are loaded per change on a site of 500 users. @ericof

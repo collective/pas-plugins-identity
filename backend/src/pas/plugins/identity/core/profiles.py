@@ -70,6 +70,7 @@ from pas.plugins.identity.core.utils.propertymap import resolve_claim
 from persistent.mapping import PersistentMapping
 from plone import api
 from plone.base.utils import safe_text
+from Products.ZCatalog.CatalogBrains import AbstractCatalogBrain
 from zope.annotation.interfaces import IAnnotations
 from zope.lifecycleevent import modified
 
@@ -133,23 +134,34 @@ def _profile_id(userid: str) -> str:
     return userid
 
 
-def get_profile(userid: str) -> UserProfile | None:
-    """Return a user's Profile object, or ``None``.
+def profile_brain(userid: str) -> AbstractCatalogBrain | None:
+    """Return the catalog record of a user's Profile, or ``None``.
 
-    Wakes the object, so this is for the paths that are going to write to it.
-    Reads that only need a value should go through the catalog; see
-    :mod:`pas.plugins.identity.core.pas.profile`.
+    What a read that only needs a value should use: a brain answers from the
+    catalog's metadata without waking the Profile, and its ``getURL()`` is the
+    Profile's URL.
 
     :param userid: Canonical Plone userid.
-    :returns: The Profile, or ``None``.
+    :returns: The brain, or ``None``.
     """
     catalog = query_catalog()
     if catalog is None:
         return None
     brains = catalog.unrestrictedSearchResults(userid=userid)
-    if not brains:
-        return None
-    return brains[0]._unrestrictedGetObject()
+    return brains[0] if brains else None
+
+
+def get_profile(userid: str) -> UserProfile | None:
+    """Return a user's Profile object, or ``None``.
+
+    Wakes the object, so this is for the paths that are going to write to it.
+    Reads that only need a value should use :func:`profile_brain`.
+
+    :param userid: Canonical Plone userid.
+    :returns: The Profile, or ``None``.
+    """
+    brain = profile_brain(userid)
+    return brain._unrestrictedGetObject() if brain is not None else None
 
 
 def ensure_profile(userid: str, login: str, claims: Claims) -> UserProfile | None:
@@ -376,6 +388,7 @@ __all__ = [
     "claim_fields",
     "ensure_profile",
     "get_profile",
+    "profile_brain",
     "remember_picture_url",
     "remembered_picture_url",
     "sync_addresses",

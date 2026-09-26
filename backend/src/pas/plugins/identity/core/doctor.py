@@ -29,8 +29,11 @@ from pas.plugins.identity.core.catalog import PROFILE_METADATA
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.completeness import missing_fields
 from plone import api
+from plone.base.interfaces import IImageScalesAdapter
 from plone.dexterity.content import Container
 from Products.ZCatalog.CatalogBrains import AbstractCatalogBrain
+from zope.component import queryMultiAdapter
+from zope.globalrequest import getRequest
 
 
 #: An object exists in the site but has no entry in the identity catalog.
@@ -87,6 +90,19 @@ def _site_objects(portal_type: str) -> dict[str, Container]:
     }
 
 
+def image_fields(obj: Container) -> list[str]:
+    """Return the image fields an object holds, as ``image_scales`` records them.
+
+    Asks the adapter Plone's ``image_scales`` indexer asks, so the answer is
+    the one the catalog was given.
+
+    :param obj: The catalogued object.
+    :returns: Field names; empty when there is no image.
+    """
+    adapter = queryMultiAdapter((obj, getRequest()), IImageScalesAdapter)
+    return list(adapter() or {}) if adapter is not None else []
+
+
 def _expected(obj: Container, column: str) -> object:
     """Return what a metadata column should hold for an object.
 
@@ -101,6 +117,11 @@ def _expected(obj: Container, column: str) -> object:
         # makes. Read as a plain attribute it is absent, so every profile
         # waiting for something would read as drift.
         return missing_fields(obj)
+    if column == "image_scales":
+        # Computed too, and compared by field name only: a scale's download
+        # path carries a hash that changes with every render, so comparing
+        # the whole mapping would report drift that is not there.
+        return tuple(sorted(image_fields(obj)))
     value = getattr(obj, column, None)
     # ZCatalog calls a callable attribute when it records metadata, so the
     # check has to call it too -- otherwise every computed column, Title
@@ -126,6 +147,8 @@ def _check_metadata(
     for column in columns:
         expected = _expected(obj, column)
         actual = getattr(brain, column, None)
+        if column == "image_scales":
+            actual = tuple(sorted(actual)) if actual else None
         # Missing.Value, None and empty all read as "nothing stored"; a field
         # the user never filled in is not drift.
         if (expected or None) != (actual or None):

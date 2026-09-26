@@ -5,8 +5,8 @@ from pas.plugins.identity.core.catalog import all_brains
 from pas.plugins.identity.core.catalog import catalog_for
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
-from pas.plugins.identity.core.indexers import profile_moved
-from pas.plugins.identity.core.indexers import profile_will_be_moved
+from pas.plugins.identity.core.indexers.subscribers import profile_moved
+from pas.plugins.identity.core.indexers.subscribers import profile_will_be_moved
 from plone import api
 from zope.component.hooks import getSite
 from zope.component.hooks import setSite

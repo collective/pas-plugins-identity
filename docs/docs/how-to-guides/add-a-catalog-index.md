@@ -13,7 +13,7 @@ myst:
 
 <!-- source: backend/src/pas/plugins/identity/profiles/default/identity-catalog.xml -->
 <!-- source: backend/src/pas/plugins/identity/setuphandlers/catalogxml.py -->
-<!-- source: backend/src/pas/plugins/identity/core/indexers/__init__.py -->
+<!-- source: backend/src/pas/plugins/identity/core/indexers/profile.py -->
 
 The user catalog is declared in `profiles/default/identity-catalog.xml` and
 applied by the `identity-catalog` GenericSetup step. Adding an index is an edit
@@ -44,7 +44,8 @@ A field a site added through its own behavior gets neither by default.
    ```
 
 2. If the value is not a plain attribute read—folded, narrowed, or derived—add
-   an indexer beside the two in `core/indexers/__init__.py` and register it:
+   an indexer to `core/indexers/profile.py` and register it in that package's
+   `configure.zcml`:
 
    ```python
    @indexer(IUserProfile)
@@ -53,7 +54,7 @@ A field a site added through its own behavior gets neither by default.
    ```
 
    ```xml
-   <adapter factory=".nickname_index" name="nickname" />
+   <adapter factory=".profile.nickname_index" name="nickname" />
    ```
 
    `login` is the worked example: it is case-folded at index time, so every
