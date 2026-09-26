@@ -8,6 +8,13 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0-alpha.9 (2026-09-26)
+
+
+### Feature
+
+- Added a **Server settings** form to the OAuth clients control panel, so the issuer, the consent URL, the token lifetimes and the unreleased groups can be set from the frontend. Until an issuer is set, the client list says the server is not configured, rather than leaving a `503` from the discovery document as the first sign of it. @ericof [#107](https://github.com/collective/pas-plugins-identity/issues/107)
+
 ## 1.0.0-alpha.8 (2026-09-16)
 
 

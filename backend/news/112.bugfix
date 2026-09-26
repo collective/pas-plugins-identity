@@ -1,1 +1,0 @@
-Stopped `@users` loading the Profile of every user it lists. It woke each one to learn its URL and whether it held a picture; both now come from the identity catalog, which carries Plone's own `image_scales` column. Upgrade step 1009 adds the column and fills it. @ericof

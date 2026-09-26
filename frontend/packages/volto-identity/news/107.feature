@@ -1,1 +1,0 @@
-Added a **Server settings** form to the OAuth clients control panel, so the issuer, the consent URL, the token lifetimes and the unreleased groups can be set from the frontend. Until an issuer is set, the client list says the server is not configured, rather than leaving a `503` from the discovery document as the first sign of it. @ericof

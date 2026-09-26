@@ -1,1 +1,0 @@
-Split `core/indexers` into one module per concern: `subscribers` for filing a Profile in the identity catalog, `profile` for the indexers that fold or compute a field, and `searchable_text` for the two `SearchableText` indexers. @ericof

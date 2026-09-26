@@ -1,1 +1,0 @@
-Documented the `ClientAuthorized` event in the events reference and the Python API, and its `client-authorized` audit entry. The events reference now also lists `SessionsRevoked`, which core fired without it being documented. @ericof

@@ -1,1 +1,0 @@
-Split the upgrade step tests into `tests/setuphandlers/upgrades/`: shared fixtures in a `conftest.py`, the registration checks in one module, and a module per profile version. @ericof

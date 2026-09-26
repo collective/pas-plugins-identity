@@ -9,6 +9,39 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0a9 (2026-09-26)
+
+
+### Breaking
+
+- Made an exact user lookup by id case-sensitive, as Plone userids are: `enumerateUsers(id="Alice", exact_match=True)` no longer finds `alice`. Lookups by login are still case-insensitive. @ericof [#110](https://github.com/collective/pas-plugins-identity/issues/110)
+
+
+### Feature
+
+- Made the server settings refuse an issuer that relying parties would not match: one with a trailing slash, no scheme or host, a query or fragment, or surrounding spaces. The error for a site with no issuer now says where to set it. @ericof [#107](https://github.com/collective/pas-plugins-identity/issues/107)
+- Added `ClientAuthorized`, fired by the authorization endpoint for every code it issues, with the user id, the client id and the granted scope. An integration can now react to somebody signing in through a client, for example by adding them to a group for that client, without overriding the endpoint. It fires on a silent `prompt=none` sign-in and when consent was already on record, never for a request that stops before a code is issued, and never for the client-credentials grant. Subscribe to `api.IClientAuthorized`. Each one is also recorded to the audit log as `client-authorized`, with the client id and the scope, never the code. @ericof [#108](https://github.com/collective/pas-plugins-identity/issues/108)
+
+
+### Bugfix
+
+- Stopped `@controlpanels/identity-clients` serving and accepting the client list and the signing key ring, which holds the private signing keys. It now serves the five settings an operator edits: the issuer, the consent URL, both token lifetimes and the unreleased groups. The client list keeps its own endpoint, `@identity-clients`, and the key ring its own, `@identity-keys`. @ericof [#107](https://github.com/collective/pas-plugins-identity/issues/107)
+- Stopped an import from reconciling, reindexing and versioning a Profile once per pass. The user, membership and group passes now record what they wrote, and the import fires one modification event per user and group at the end, after the identities, so what answers it sees the finished Profile. The warning about a required field its owner may not write is now logged once per set of fields rather than for every Profile at every reconciliation, including every login; each Profile it applies to is logged at `debug`. @ericof [#109](https://github.com/collective/pas-plugins-identity/issues/109)
+- Served an exact user lookup by id or login from the identity catalog's indexes instead of reading every Profile. PAS makes that lookup for every `getUserById`, so each one cost as much as the whole site, and a listing of users or of a group's members cost the site squared: on 1,727 Profiles, one `@groups` request ran for more than seven minutes. A lookup now reads the users it returns. Substring searches, and exact searches by full name, email or name, still read every active Profile. @ericof [#110](https://github.com/collective/pas-plugins-identity/issues/110)
+- Stopped `@users` loading the Profile of every user it lists. It woke each one to learn its URL and whether it held a picture; both now come from the identity catalog, which carries Plone's own `image_scales` column. Upgrade step 1009 adds the column and fills it. @ericof [#112](https://github.com/collective/pas-plugins-identity/issues/112)
+
+
+### Internal
+
+- Made a group membership change reindex only the `group_ids` index in the identity catalog, rather than every index with the values it already held. About 45 fewer objects are loaded per change on a site of 500 users. @ericof 
+- Split `core/indexers` into one module per concern: `subscribers` for filing a Profile in the identity catalog, `profile` for the indexers that fold or compute a field, and `searchable_text` for the two `SearchableText` indexers. @ericof 
+
+
+### Tests
+
+- Pinned the behaviour a password login through `@login` relies on to reach the login subscriber: the event names the person who signed in, not Anonymous. @ericof [#113](https://github.com/collective/pas-plugins-identity/issues/113)
+- Split the upgrade step tests into `tests/setuphandlers/upgrades/`: shared fixtures in a `conftest.py`, the registration checks in one module, and a module per profile version. @ericof 
+
 ## 1.0.0a8 (2026-09-16)
 
 
