@@ -1,0 +1,1 @@
+Pinned the behaviour a password login through `@login` relies on to reach the login subscriber: the event names the person who signed in, not Anonymous. @ericof
