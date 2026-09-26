@@ -5,11 +5,14 @@ only half of it: a check that returns ``[]`` unconditionally would pass that
 test too. These damage the catalog on purpose, one mode at a time.
 """
 
+from .. import PNG
 from pas.plugins.identity.core import doctor
 from pas.plugins.identity.core import subscribers
 from pas.plugins.identity.core.subscribers import DuplicateGroupId
 from plone import api
 from plone.api.exc import InvalidParameterError
+from plone.namedfile.file import NamedBlobImage
+from zope.lifecycleevent import modified
 
 import pytest
 
@@ -37,6 +40,16 @@ class TestClean:
     def test_healthy_profile_is_clean(self):
         """A Profile created through the normal path is consistent."""
         self.make_profile("alice", fullname="Alice Liddell")
+
+        assert doctor.check() == []
+
+    def test_a_profile_with_a_picture_is_clean(self):
+        """``image_scales`` is compared by field name. The scales themselves
+        carry a download hash, and comparing those would report every
+        pictured Profile as drift."""
+        profile = self.make_profile("alice", fullname="Alice Liddell")
+        profile.image = NamedBlobImage(data=PNG, filename="alice.png")
+        modified(profile)
 
         assert doctor.check() == []
 
@@ -83,6 +96,16 @@ class TestDrift:
         assert "fullname" in details
         # Title is computed from the full name, so it goes stale with it.
         assert "Title" in details
+
+    def test_a_picture_nothing_reindexed_is_reported(self):
+        """``@users`` reads whether there is a picture from the catalog."""
+        profile = self.make_profile("alice")
+        profile.image = NamedBlobImage(data=PNG, filename="alice.png")
+
+        findings = doctor.check()
+
+        assert kinds(findings) == {doctor.STALE}
+        assert "image_scales" in findings[0]["detail"]
 
     def test_cleared_field_is_reported(self):
         """Clearing a field silently is drift too, and easier to miss."""

@@ -8,11 +8,13 @@ run, and nothing reports its absence -- so these assert the registration and
 the effect separately.
 """
 
+from .. import PNG
 from Missing import Value as MISSING_VALUE
 from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
 from plone import api
+from plone.namedfile.file import NamedBlobImage
 from unittest.mock import patch
 
 import pytest
@@ -65,6 +67,7 @@ class TestTheStepIsRegistered:
             ("1006",),
             ("1007",),
             ("1008",),
+            ("1009",),
         } <= dests, dests
 
     def test_a_site_at_the_latest_version_is_offered_nothing(self, setup_tool):
@@ -116,7 +119,7 @@ class TestTheStepDoesTheWork:
 
         self.setup_tool.upgradeProfile(PROFILE)
 
-        assert self.setup_tool.getLastVersionForProfile(PROFILE) == ("1008",)
+        assert self.setup_tool.getLastVersionForProfile(PROFILE) == ("1009",)
 
 
 class TestV1008RecordsWhatIsMissing:
@@ -188,6 +191,41 @@ class TestV1008RecordsWhatIsMissing:
         brain = self.catalog.unrestrictedSearchResults(userid="alice")[0]
         assert brain.missing_fields is not MISSING_VALUE
         assert "fullname" in brain.missing_fields
+
+
+class TestV1009RecordsWhoHasAPicture:
+    """The column ``@users`` reads a Profile picture from.
+
+    Populated rather than merely created: read as ``Missing.Value`` the column
+    says "no picture", and every Profile picture would drop out of ``@users``
+    and the ``picture`` claim until that Profile's next write.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, setup_tool, container) -> None:
+        self.setup_tool = setup_tool
+        self.catalog = query_catalog()
+        with api.env.adopt_roles(["Manager"]):
+            self.profile = api.content.create(
+                container=container,
+                type=PROFILE_PORTAL_TYPE,
+                id="alice",
+                userid="alice",
+                login="alice@example.com",
+                fullname="Alice Liddell",
+            )
+        self.profile.image = NamedBlobImage(data=PNG, filename="alice.png")
+
+    def test_the_column_is_filled_after_the_upgrade(self):
+        # Removed first, so this tests the upgrade rather than the install.
+        self.catalog.delColumn("image_scales")
+        assert "image_scales" not in self.catalog.schema()
+
+        self.setup_tool.setLastVersionForProfile(PROFILE, "1008")
+        self.setup_tool.upgradeProfile(PROFILE)
+
+        brain = self.catalog.unrestrictedSearchResults(userid="alice")[0]
+        assert "image" in brain.image_scales
 
 
 class TestV1002PutsTheFieldsOnBehaviors:

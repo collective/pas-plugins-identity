@@ -161,4 +161,12 @@
   -->
   <column value="missing_fields" />
 
+  <!--
+    Plone's own column, the image fields an object holds and their scales,
+    filled by the indexer Products.CMFPlone registers for all Dexterity content.
+    A listing reads whether a Profile has a picture from it, rather than waking
+    every Profile it returns.
+  -->
+  <column value="image_scales" />
+
 </object>

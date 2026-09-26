@@ -21,6 +21,7 @@ the bug fixed in #38, and the test below is what stops the next one arriving
 unnoticed.
 """
 
+from ... import PNG
 from Missing import Value as MISSING_VALUE
 from pas.plugins.identity.core.catalog import GROUP_METADATA
 from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
@@ -31,6 +32,7 @@ from pas.plugins.identity.core.interfaces import IIdentityProfileCatalog
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from plone import api
 from plone.indexer.interfaces import IIndexer
+from plone.namedfile.file import NamedBlobImage
 from Products.ZCatalog.interfaces import IZCatalog
 from zope.component import getGlobalSiteManager
 from zope.lifecycleevent import modified
@@ -118,6 +120,8 @@ class TestEveryDeclaredIndexAndColumnIsAnswered:
         # asking, which is nearly all of them; only a marked one gives the
         # column a value to be checked.
         self.profile.email_confirmation_pending = True
+        # ``image_scales`` is empty for a Profile without a picture.
+        self.profile.image = NamedBlobImage(data=PNG, filename="alice.png")
         modified(self.profile)
 
     def test_every_index_holds_something(self):

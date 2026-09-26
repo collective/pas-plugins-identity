@@ -20,8 +20,8 @@ reported would be whichever record came back first.
 
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.pas import PLUGIN_ID
-from pas.plugins.identity.core.portraits import picture_url
-from pas.plugins.identity.core.profiles import get_profile
+from pas.plugins.identity.core.portraits import picture_url_of
+from pas.plugins.identity.core.profiles import profile_brain
 from pas.plugins.identity.interfaces import IBrowserLayer
 from plone import api
 from plone.restapi.interfaces import ISerializeToJson
@@ -86,8 +86,11 @@ class SerializeIdentityUserToJson(SerializeUserToJson):
         userid = self.context.getUserId()
         data["source"] = source_of(userid)
         data["identities"] = identities_of(userid)
-        profile = get_profile(userid)
-        data["profile_url"] = profile.absolute_url() if profile is not None else None
+        # The brain rather than the object: this runs once per user ``@users``
+        # lists, and waking every Profile to learn its URL made listing the
+        # users of a site load every one of them.
+        brain = profile_brain(userid)
+        data["profile_url"] = brain.getURL() if brain is not None else None
         # The Profile's own picture wins over the member portrait: a picture on
         # the Profile is one somebody chose and uploaded, while the member
         # portrait is where a provider-synced avatar lands, and a claim a
@@ -96,7 +99,7 @@ class SerializeIdentityUserToJson(SerializeUserToJson):
         # Set only when there is one. `portrait` already holds the member
         # portrait, and overwriting it with `None` would take away the
         # provider-synced avatar this is meant to take precedence over.
-        picture = picture_url(userid)
+        picture = picture_url_of(brain)
         if picture is not None:
             data["portrait"] = picture
         return data

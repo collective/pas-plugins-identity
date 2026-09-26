@@ -16,6 +16,7 @@ from plone import api
 from plone.namedfile.file import NamedBlobImage
 from plone.restapi.interfaces import ISerializeToJson
 from zope.component import getMultiAdapter
+from zope.lifecycleevent import modified
 
 import pytest
 
@@ -171,6 +172,9 @@ class TestProfileUrl(SerializerCase):
         self.profile.image = NamedBlobImage(
             data=PNG, filename="face.png", contentType="image/png"
         )
+        # Every path that sets a picture reindexes, and the URL is read from
+        # the catalog.
+        modified(self.profile)
 
         assert picture_url("alice") == (f"{self.profile.absolute_url()}/@@images/image")
 
@@ -179,6 +183,9 @@ class TestProfileUrl(SerializerCase):
         self.profile.image = NamedBlobImage(
             data=PNG, filename="face.png", contentType="image/png"
         )
+        # Every path that sets a picture reindexes, and the URL is read from
+        # the catalog.
+        modified(self.profile)
 
         assert self.serialize("alice")["portrait"].endswith("/@@images/image")
 
