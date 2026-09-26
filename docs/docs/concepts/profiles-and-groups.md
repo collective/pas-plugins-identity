@@ -122,8 +122,10 @@ That is true.
 What turned out not to matter is the conclusion drawn from it, that a recursive answer computed from brains stops being a single lookup.
 
 The recursion is not over the thing that is large.
-A site has as many people as it has people and as many groups as it has teams; the group graph is the small one, it lives entirely in catalog metadata, and one query returns all of it.
-The cost grows with the number of teams, not with the number of users, which is the number that grows.
+A site has as many people as it has people and as many groups as it has teams; the group graph is the small one, and it lives entirely in catalog metadata.
+A listing that needs the whole graph reads it in one query, once per request.
+A permission check does not read it whole: it walks upwards from the principal's own groups, one query per level, and reads only the groups it reaches.
+Neither cost grows with the number of users, which is the number that grows, and a permission check does not grow with the number of groups either.
 
 Three consequences worth stating.
 

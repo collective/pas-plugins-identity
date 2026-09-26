@@ -130,6 +130,64 @@ class TestOneLookup:
         assert brains_read[0] >= PROFILES
 
 
+class TestGroupsOnTheSite:
+    """A lookup against the number of Groups, rather than of Profiles.
+
+    ``getGroupsForPrincipal`` used to read every Group brain to build the
+    group graph, and PAS asks it five times while building one user -- once
+    for the user, three times from Plone's ``recursive_groups`` for the groups
+    it found, once from PlonePAS for the roles. So one ``getUserById`` read
+    ``4 + 5·G`` brains, and every authenticated request paid it (issue #115).
+    """
+
+    @pytest.fixture
+    def groups(self, request, portal, make_group) -> int:
+        """Create the parametrized number of Groups, and alice in the first.
+
+        Built here rather than in the test, before the meter is installed:
+        the meter patches the persistent catalog, and a savepoint taken while
+        the patch is on would try to pickle it.
+
+        :param request: pytest's request, carrying the number of Groups.
+        :param portal: The Plone site.
+        :param make_group: Factory for Group content.
+        :returns: The number of Groups on the site.
+        """
+        with api.env.adopt_roles(["Manager"]):
+            for index in range(request.param):
+                make_group(f"team{index}")
+            api.content.create(
+                container=portal["identity-profiles"],
+                type=PROFILE_PORTAL_TYPE,
+                id="alice",
+                userid="alice",
+                login="alice@example.org",
+                group_ids=("team0",),
+            )
+        return request.param
+
+    @pytest.mark.parametrize("groups", [1, 10, 50], indirect=True)
+    def test_a_lookup_does_not_grow_with_the_groups(
+        self, groups, acl_users, brains_read
+    ):
+        user = acl_users.getUserById("alice")
+
+        assert "team0" in user.getGroups()
+        assert brains_read[0] <= 7
+
+    @pytest.mark.parametrize("groups", [10], indirect=True)
+    def test_the_whole_graph_is_read_once_per_request(
+        self, groups, profile_plugin, brains_read
+    ):
+        """The readers that do need every Group -- listings, the group
+        control panel -- share one read within a request."""
+        profile_plugin.getGroupIds()
+        profile_plugin.enumerateGroups()
+        profile_plugin.getNestedGroupIds("team0")
+
+        assert brains_read[0] == groups
+
+
 class TestTheLookupIsExact:
     """What moving to the index changed, stated so nobody rediscovers it."""
 

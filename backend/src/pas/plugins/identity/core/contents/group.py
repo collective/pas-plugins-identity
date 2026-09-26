@@ -29,9 +29,10 @@ This was refused once, on the grounds that a group whose members are groups
 makes ``getGroupsForPrincipal`` recursive and that a recursive answer computed
 from brains stops being a single lookup. The first half is true; the second
 turned out not to matter, because the recursion is not over the thing that is
-large. A site has as many groups as it has teams, the whole graph is in
-catalog metadata, and one query returns it -- so the cost grows with the
-number of teams rather than with the number of people. See
+large. A site has as many groups as it has teams and the whole graph is in
+catalog metadata, so a listing reads it in one query per request, and a
+permission check reads only the groups the principal reaches -- neither grows
+with the number of people. See
 :mod:`pas.plugins.identity.core.utils.nesting`, which also says what happens to a
 cycle.
 """

@@ -23,11 +23,17 @@ are groups makes ``getGroupsForPrincipal`` recursive, and that a recursive
 answer computed from catalog metadata stops being a single lookup. Both halves
 are true and neither is fatal, because the recursion is not over the thing
 that is large. A site has as many users as it has people and as many groups as
-it has teams; the group graph is the small one, it is entirely in catalog
-*metadata*, and one query returns all of it. So the walk here reads every
-group brain once -- one query, no object loads -- and then closes over an
-in-memory mapping. The cost does not grow with the number of users, which is
-the number that grows.
+it has teams; the group graph is the small one, and it is entirely in catalog
+*metadata*. The functions here close over that graph in memory once it has
+been read -- one query, no object loads, kept for the rest of the request.
+
+``getGroupsForPrincipal`` does not read it whole. PAS asks that several times
+for every user it builds, on every authenticated request, and a whole-graph
+read per ask made each request pay for every group on the site (issue #115).
+It walks upwards from the principal's own groups instead, one index query per
+level, and reads only the groups it reaches. The same closure, with the same
+cycle guard and the same :data:`MAX_DEPTH`; the plugin's tests hold the two to
+the same answer.
 
 **Cycles are expected, not exceptional.** Nothing stops an operator putting A
 in B and B in A, through two edit forms that each looked reasonable on their
@@ -177,9 +183,9 @@ def members_of(group_id: str, edges: dict[str, tuple[str, ...]]) -> tuple[str, .
     """
     if group_id not in edges:
         return ()
-    # Inverted once per call rather than kept: the graph is read fresh from
-    # brains each time, and an index that outlived one request would be a
-    # cache with no invalidation.
+    # Inverted once per call rather than kept alongside the graph: inverting
+    # is cheap next to reading it, and one more kept structure is one more
+    # thing that has to agree with the catalog.
     children: dict[str, list[str]] = {}
     for inner, outers in edges.items():
         for outer in outers:
