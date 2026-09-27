@@ -35,12 +35,14 @@ this plugin, not an incidental property.
 from AccessControl.class_init import InitializeClass
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.catalog import group_brains
+from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
+from pas.plugins.identity.core.catalog import IdentityProfileCatalog
 from pas.plugins.identity.core.catalog import profile_brains
 from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.interfaces import IOwnsUserProperties
 from pas.plugins.identity.core.utils.nesting import build_edges
-from pas.plugins.identity.core.utils.nesting import close_over
+from pas.plugins.identity.core.utils.nesting import MAX_DEPTH
 from pas.plugins.identity.core.utils.nesting import members_of
 from plone import api
 from Products.PlonePAS.interfaces.capabilities import IDeleteCapability
@@ -57,9 +59,13 @@ from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
 from Products.PluggableAuthService.PropertiedUser import PropertiedUser
 from Products.PluggableAuthService.utils import classImplements
 from Products.ZCatalog.CatalogBrains import AbstractCatalogBrain
+from zope.annotation.interfaces import IAnnotations
+from zope.globalrequest import getRequest
 from zope.interface import implementer
 from zope.lifecycleevent import modified
 from ZPublisher.HTTPRequest import HTTPRequest
+
+import transaction
 
 
 #: Object id of the plugin inside ``acl_users``.
@@ -73,6 +79,9 @@ ENUMERATION_STATES_RECORD = "pas.plugins.identity.profile_enumeration_states"
 
 #: Registry record listing the workflow states a Group is enumerated in.
 GROUP_STATES_RECORD = "pas.plugins.identity.group_enumeration_states"
+
+#: Request annotation holding the group graph read during that request.
+GROUP_GRAPH_KEY = "pas.plugins.identity.group_graph"
 
 #: Member properties served from brain metadata. Deliberately the standard
 #: Plone set and nothing invented: a property Plone has no idea about is a
@@ -509,18 +518,67 @@ class IdentityProfilePlugin(BasePlugin):
         states = api.portal.get_registry_record(GROUP_STATES_RECORD, default=None)
         return tuple(states) if states else ()
 
+    def _group_graph(
+        self,
+    ) -> tuple[tuple[AbstractCatalogBrain, ...], dict[str, tuple[str, ...]]]:
+        """Return every active Group brain and the graph built from them.
+
+        Read once per request and kept on it. The listings, the group control
+        panel and ``@groups`` each need the whole graph, and each asks for it
+        more than once; before this, every one of those asks was a read of
+        every Group on the site.
+
+        The kept copy is only reused while it is still true. It is keyed on:
+
+        ``getCounter()``
+            the catalog's change counter, which Plone's ``CatalogTool`` bumps
+            on every ``catalog_object`` and ``uncatalog_object``. This catalog
+            indexes immediately rather than through the queue, so a Group
+            added, edited, moved, transitioned or deleted earlier in the same
+            request is seen by the next read.
+        the transaction
+            because an abort rolls the counter back, and the next change
+            would then bring it to a value the kept copy already carries.
+        the active states
+            a registry record, which a request can change too.
+
+        What it does not see is a savepoint rolled back and followed by as
+        many new catalog writes as were undone, all in one transaction.
+        Nothing in this package does that.
+
+        :returns: Brains and the graph. Both are shared between callers in
+            the request, so neither may be mutated.
+        """
+        catalog = query_catalog()
+        if catalog is None:
+            return (), {}
+        states = self._group_states()
+        key = (
+            "/".join(catalog.getPhysicalPath()),
+            catalog.getCounter(),
+            transaction.get(),
+            states,
+        )
+        request = getRequest()
+        annotations = IAnnotations(request, None) if request is not None else None
+        kept = annotations.get(GROUP_GRAPH_KEY) if annotations is not None else None
+        if kept is not None and kept[0] == key:
+            return kept[1], kept[2]
+
+        brains = tuple(
+            brain for brain in group_brains(catalog) if brain.review_state in states
+        )
+        edges = build_edges(brains)
+        if annotations is not None:
+            annotations[GROUP_GRAPH_KEY] = (key, brains, edges)
+        return brains, edges
+
     def active_group_brains(self) -> list[AbstractCatalogBrain]:
         """Return brains for every Group in an enumeration-active state.
 
         :returns: Brains, or an empty list when the layer is not installed.
         """
-        catalog = query_catalog()
-        if catalog is None:
-            return []
-        states = self._group_states()
-        return [
-            brain for brain in group_brains(catalog) if brain.review_state in states
-        ]
+        return list(self._group_graph()[0])
 
     def _active_group_ids(self) -> set[str]:
         """Return the ids of the groups that currently exist and are active.
@@ -532,15 +590,119 @@ class IdentityProfilePlugin(BasePlugin):
     def group_edges(self) -> dict[str, tuple[str, ...]]:
         """Return the group-in-group graph, read from brains.
 
-        One catalog query and no object loads, which is what makes the
-        transitive answers below affordable on the paths that ask them. Only
-        active groups are in it, so a deactivated group neither grants nor
-        conducts -- deactivating has to remove the access of everybody who
-        reached something *through* that group, or it is not a control.
+        One catalog query per request and no object loads, which is what
+        makes the transitive answers below affordable on the paths that ask
+        them. Only active groups are in it, so a deactivated group neither
+        grants nor conducts -- deactivating has to remove the access of
+        everybody who reached something *through* that group, or it is not a
+        control.
 
-        :returns: Group id to the ids of the groups it belongs to.
+        Not used by :meth:`getGroupsForPrincipal`, which walks only the
+        groups a principal reaches -- see :meth:`_groups_reached`.
+
+        :returns: Group id to the ids of the groups it belongs to. Shared
+            within the request, so it must not be mutated.
         """
-        return build_edges(self.active_group_brains())
+        return self._group_graph()[1]
+
+    def _active_groups(
+        self,
+        catalog: IdentityProfileCatalog,
+        states: tuple[str, ...],
+        **query: object,
+    ) -> list[AbstractCatalogBrain]:
+        """Return the active Group brains matching one index query.
+
+        The state is part of the query rather than a filter afterwards, so a
+        deactivated group is never read at all.
+
+        :param catalog: The Profile catalog.
+        :param states: The active Group states; never empty.
+        :param query: Further index criteria; never empty.
+        :returns: Brains.
+        """
+        return list(
+            catalog.unrestrictedSearchResults(
+                portal_type=GROUP_PORTAL_TYPE, review_state=list(states), **query
+            )
+        )
+
+    def _parents_of(
+        self,
+        catalog: IdentityProfileCatalog,
+        states: tuple[str, ...],
+        brains: list[AbstractCatalogBrain],
+        known: set[str],
+    ) -> list[AbstractCatalogBrain]:
+        """Return the active groups a set of groups is directly in.
+
+        Both kinds of edge, as
+        :func:`~pas.plugins.identity.core.utils.nesting.build_edges` reads
+        them: the ``group_ids`` field, asked of the ``group_id`` index, and
+        the group each one is filed inside, asked of the path index at depth
+        0. The container of a group filed in an ordinary folder is that
+        folder, which the ``portal_type`` criterion drops.
+
+        :param catalog: The Profile catalog.
+        :param states: The active Group states.
+        :param brains: The groups whose parents are wanted.
+        :param known: Group ids already walked, not asked for again.
+        :returns: Brains; a container may repeat a group found by id.
+        """
+        group_ids: set[str] = set()
+        containers: set[str] = set()
+        for brain in brains:
+            group_ids.update(getattr(brain, "group_ids", None) or ())
+            containers.add(brain.getPath().rsplit("/", 1)[0])
+        group_ids -= known
+        parents = []
+        if group_ids:
+            parents.extend(
+                self._active_groups(catalog, states, group_id=sorted(group_ids))
+            )
+        if containers:
+            parents.extend(
+                self._active_groups(
+                    catalog, states, path={"query": sorted(containers), "depth": 0}
+                )
+            )
+        return parents
+
+    def _groups_reached(
+        self,
+        catalog: IdentityProfileCatalog,
+        states: tuple[str, ...],
+        frontier: list[AbstractCatalogBrain],
+    ) -> set[str]:
+        """Walk upwards from some groups, reading only the groups on the way.
+
+        The same closure as
+        :func:`~pas.plugins.identity.core.utils.nesting.close_over` over
+        :meth:`group_edges`, level by level against the catalog instead of
+        over the whole graph: a group on the path is read, a group elsewhere
+        on the site is not. So the cost follows how deep a principal's groups
+        nest, not how many groups the site has (issue #115).
+
+        Bounded and cycle-safe the same way: ``seen`` stops a cycle, and
+        :data:`~pas.plugins.identity.core.utils.nesting.MAX_DEPTH` stops a
+        chain that is merely absurd.
+
+        :param catalog: The Profile catalog.
+        :param states: The active Group states.
+        :param frontier: The first level: brains of active groups.
+        :returns: The ids of every group reached, the first level included.
+        """
+        seen: set[str] = set()
+        depth = 0
+        while frontier and depth < MAX_DEPTH:
+            fresh = []
+            for brain in frontier:
+                if brain.group_id not in seen:
+                    seen.add(brain.group_id)
+                    fresh.append(brain)
+            frontier = self._parents_of(catalog, states, fresh, seen)
+            depth += 1
+        return seen
 
     def getGroupsForPrincipal(
         self, principal: PropertiedUser, request: HTTPRequest | None = None
@@ -559,35 +721,49 @@ class IdentityProfilePlugin(BasePlugin):
 
         Nesting is closed over here rather than stored: a group carries
         ``group_ids`` too, and a member of an inner group is a member of every
-        group that group belongs to. The walk is over the group graph, which
-        is the small one -- it grows with the number of teams, not with the
-        number of people -- and it comes out of catalog metadata in a single
-        query. See :mod:`pas.plugins.identity.core.utils.nesting`.
+        group that group belongs to. The walk reads only the groups the
+        principal reaches, one index query per level, so it grows with how
+        deep the nesting goes and not with how many groups the site has -- PAS
+        asks this several times per user, and reading the whole graph each
+        time made every authenticated request pay for every group (issue
+        #115). See :mod:`pas.plugins.identity.core.utils.nesting`.
 
         :param principal: The user PAS is asking about.
         :param request: The request, unused.
-        :returns: Group ids, direct and inherited.
+        :returns: Group ids, direct and inherited, sorted.
         """
         principal_id = principal.getId()
         brain = self._brain_for_userid(principal_id)
         if brain is not None:
             claimed = tuple(getattr(brain, "group_ids", None) or ())
-            return close_over(claimed, self.group_edges()) if claimed else ()
+            if not claimed:
+                return ()
+            catalog = query_catalog()
+            states = self._group_states()
+            if catalog is None or not states:
+                return ()
+            frontier = self._active_groups(catalog, states, group_id=list(claimed))
+            return tuple(sorted(self._groups_reached(catalog, states, frontier)))
 
         # A group is a principal too, and PAS asks this about one while
         # working out what a group's roles are. Answering it here means the
         # nesting holds however the question arrives, rather than only on the
         # path that happens to start from a user.
-        edges = self.group_edges()
-        if principal_id in edges:
-            return tuple(
-                group_id
-                for group_id in close_over(edges[principal_id], edges)
-                # A cycle would otherwise make a group a member of itself,
-                # which nothing downstream expects to see.
-                if group_id != principal_id
-            )
-        return ()
+        catalog = query_catalog()
+        states = self._group_states()
+        if catalog is None or not states:
+            return ()
+        own = self._active_groups(catalog, states, group_id=principal_id)
+        if not own:
+            return ()
+        frontier = self._parents_of(catalog, states, own, set())
+        return tuple(
+            group_id
+            for group_id in sorted(self._groups_reached(catalog, states, frontier))
+            # A cycle would otherwise make a group a member of itself,
+            # which nothing downstream expects to see.
+            if group_id != principal_id
+        )
 
     def enumerateGroups(
         self,
