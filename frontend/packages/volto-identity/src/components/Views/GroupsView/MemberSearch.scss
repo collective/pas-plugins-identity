@@ -1,0 +1,95 @@
+/**
+ * The member search: a label, an outlined field, and a clear button inside
+ * its right-hand end.
+ *
+ * Drawn here in full rather than adjusted. `SearchField.css` styles the box
+ * with custom properties from a stylesheet this add-on does not load, so what
+ * it would have supplied -- a border, a background, the clear button's
+ * colours -- resolves to nothing, and a theme's own input rules win over it
+ * anyway, since it is declared in a cascade layer. Every value is a
+ * `--identity-search-*` token in `styles.css`.
+ */
+.identity-member-search {
+  max-width: var(--identity-search-max-width);
+  margin: var(--identity-gap) 0 4px;
+
+  .react-aria-SearchField {
+    display: grid;
+    width: 100%;
+    align-items: center;
+    grid-template-areas:
+      'label label'
+      'input button';
+    grid-template-columns: 1fr auto;
+    row-gap: 6px;
+  }
+
+  .react-aria-Label {
+    font-size: 14px;
+    font-weight: 500;
+    grid-area: label;
+  }
+
+  .react-aria-Input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: var(--identity-search-padding);
+    border: var(--identity-search-border);
+    border-radius: var(--identity-search-radius);
+    margin: 0;
+    background: var(--identity-search-bg);
+    color: inherit;
+    font-size: var(--identity-search-font-size);
+    grid-area: input;
+    outline: none;
+
+    /* The browser's own clear control, which would sit beside ours. */
+    &::-webkit-search-cancel-button,
+    &::-webkit-search-decoration {
+      -webkit-appearance: none;
+    }
+
+    &::placeholder {
+      color: var(--identity-muted);
+    }
+
+    &[data-focused] {
+      border-color: var(--identity-accent);
+      box-shadow: var(--identity-search-focus-ring);
+    }
+  }
+
+  /* Over the input's right-hand end, in the room its padding leaves. */
+  .react-aria-Button {
+    display: inline-flex;
+    width: var(--identity-search-clear-size);
+    height: var(--identity-search-clear-size);
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    margin-right: 10px;
+    margin-left: calc(-1 * var(--identity-search-clear-size) - 10px);
+    background: var(--identity-search-clear-bg);
+    color: var(--identity-search-clear-color);
+    cursor: pointer;
+    font-size: 11px;
+    grid-area: button;
+    line-height: 1;
+
+    &[data-hovered],
+    &[data-pressed] {
+      background: var(--identity-search-clear-bg-hover);
+    }
+
+    &[data-focus-visible] {
+      box-shadow: var(--identity-search-focus-ring);
+    }
+  }
+
+  /* Nothing to clear. */
+  .react-aria-SearchField[data-empty] .react-aria-Button {
+    display: none;
+  }
+}

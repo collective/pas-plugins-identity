@@ -1,0 +1,15 @@
+/**
+ * A list of groups, one to a line, ruled like the rest of a group page.
+ */
+.identity-group-links {
+  ul {
+    padding: 0;
+    margin: 8px 0 0;
+    list-style: none;
+  }
+
+  li {
+    padding: 6px 0;
+    border-bottom: var(--identity-border);
+  }
+}

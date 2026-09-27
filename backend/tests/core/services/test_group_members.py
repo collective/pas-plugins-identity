@@ -253,6 +253,49 @@ class TestSearching(GroupMembersCase):
         assert len(self.listing("staff", query="")["items"]) == 2
 
 
+class TestTotals(GroupMembersCase):
+    """How big a group is, which a group page shows instead of a list."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_, acl_users, make_group) -> None:
+        self.portal = portal
+        self.request = request_
+        self.acl_users = acl_users
+        setRoles(portal, TEST_USER_ID, ["Manager"])
+        login(portal, TEST_USER_NAME)
+        make_group("staff", title="Staff")
+        make_group("developers", title="Developers")
+        make_group("empty", title="Empty")
+        self.nest("developers", "staff")
+        self.member("alice", "developers", fullname="Alice Liddell")
+        self.member("bob", "staff", fullname="Bob Cratchit")
+        self.member("carol", "staff", "developers", fullname="Carol Danvers")
+
+    def test_the_total_counts_nested_members(self):
+        assert self.listing("staff")["members_total"] == 3
+
+    def test_the_direct_total_leaves_out_nested_members(self):
+        """Alice is in staff only through developers; Carol is in both."""
+        assert self.listing("staff")["direct_members_total"] == 2
+
+    def test_a_nested_group_counts_its_own_members(self):
+        result = self.listing("developers")
+
+        assert (result["members_total"], result["direct_members_total"]) == (2, 2)
+
+    def test_the_totals_ignore_the_search(self):
+        """A page searching a group still says how big the group is."""
+        result = self.listing("staff", query="alice")
+
+        assert result["items_total"] == 1
+        assert (result["members_total"], result["direct_members_total"]) == (3, 2)
+
+    def test_an_empty_group_counts_nobody(self):
+        result = self.listing("empty")
+
+        assert (result["members_total"], result["direct_members_total"]) == (0, 0)
+
+
 class TestAccess(GroupMembersCase):
     @pytest.fixture(autouse=True)
     def _setup(self, portal, request_, acl_users, make_group) -> None:

@@ -1,0 +1,1 @@
+Added `members_total` and `direct_members_total` to `@group-members`, so a client can say how big a group is, and how many of its members are in it directly, without listing them. Both stay the same whatever `query` narrows the rows to. @ericof

@@ -1,0 +1,14 @@
+/**
+ * A name, and beside it where the person came from.
+ */
+.identity-member-row {
+  display: flex;
+  align-items: baseline;
+  padding: 6px 0;
+  border-bottom: var(--identity-border);
+  gap: 8px;
+
+  a {
+    font-weight: 600;
+  }
+}

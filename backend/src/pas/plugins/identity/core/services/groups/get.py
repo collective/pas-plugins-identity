@@ -3,9 +3,11 @@
 from pas.plugins.identity.core.interfaces import IGroupMemberSerializer
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.services.base import IdentityService
+from pas.plugins.identity.core.services.groups import direct_members
 from pas.plugins.identity.core.services.groups import get_profile_plugin
 from pas.plugins.identity.core.services.groups import MANAGE_PERMISSION
 from pas.plugins.identity.core.services.groups import member_brains
+from pas.plugins.identity.core.services.groups import search_members
 from plone import api
 from plone.restapi.batching import HypermediaBatch
 from Products.CMFPlone.Portal import PloneSite
@@ -64,9 +66,8 @@ class GroupMembersGet(IdentityService):
         if refusal is not None:
             return refusal
 
-        brains = member_brains(
-            group_id, plugin, search=self.request.form.get("query", "") or ""
-        )
+        everybody = member_brains(group_id, plugin)
+        brains = search_members(everybody, self.request.form.get("query", "") or "")
         batch = HypermediaBatch(self.request, brains)
         # Once, not once per row: the adapter is stateless and the lookup is
         # the only part of rendering a row that is not a dictionary literal.
@@ -78,6 +79,11 @@ class GroupMembersGet(IdentityService):
             "group": group_id,
             "items_total": batch.items_total,
             "items": [serialize(brain) for brain in batch],
+            # The size of the group whatever was searched for, so a page can
+            # say how many people are in it without listing them. Counted from
+            # the membership the search narrowed, so it costs no second query.
+            "members_total": len(everybody),
+            "direct_members_total": len(direct_members(group_id, everybody)),
             # The nesting, so a group page can say what feeds into it without
             # a second request per level.
             "nested_groups": self._render_groups(

@@ -1,5 +1,5 @@
 import type { ConfigType } from '@plone/registry';
-import GroupView from '../components/Views/GroupView';
+import GroupView from '../components/Views/GroupsView/GroupView';
 import ProfileView from '../components/Views/ProfileView';
 
 /** Portal type of a user's Profile. */

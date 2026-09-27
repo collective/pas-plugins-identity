@@ -1,0 +1,15 @@
+/**
+ * The counts as a row of stats boxes: the total, then how it splits.
+ *
+ * Stretched to one height, so a box whose label wraps onto a second line
+ * does not leave its neighbours looking short. Wraps onto a new row on a
+ * narrow screen rather than squeezing the boxes.
+ */
+.identity-members-count {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  justify-content: center;
+  margin: var(--identity-gap) 0 0;
+  gap: var(--identity-gap);
+}

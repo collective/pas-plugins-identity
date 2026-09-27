@@ -1,0 +1,17 @@
+/**
+ * A group page: what is in it, and who.
+ *
+ * Three sections with the same rhythm, so a group nested three deep and a
+ * flat one read as the same page with different amounts on it. What is in
+ * each section is styled by the component that draws it.
+ */
+.identity-group-view {
+  section {
+    margin-top: var(--identity-gap);
+  }
+
+  h2 {
+    margin-bottom: 4px;
+    font-size: 1.15em;
+  }
+}
