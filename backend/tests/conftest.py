@@ -178,8 +178,8 @@ def _pooled_signing_keys():
     a verifier picks the key out of the JWKS by ``kid``, and a ``kid`` that is
     not in the ring fails to verify exactly as it did before.
 
-    ``tests/server/test_keys.py`` imports ``generate_key`` by name, so its
-    three tests of generation itself still exercise the real thing.
+    ``tests/server/utils/test_keys.py`` imports ``generate_key`` by name, so
+    its three tests of generation itself still exercise the real thing.
 
     :returns: Nothing; patches for the session and restores afterwards.
     """
