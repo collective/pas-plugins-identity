@@ -88,6 +88,49 @@
   --identity-provider-oidc-bg: #333;
   --identity-provider-oidc-bg-hover: #555;
   --identity-provider-oidc-color: #fff;
+
+  /* Stats boxes: a figure over what it counts, as on a group page's
+     `42 members · 12 directly`. A box is at least this wide and grows for a
+     long label rather than breaking it -- a translated label is often longer
+     than the English one. */
+  --identity-count-min-width: 150px;
+  --identity-count-min-height: 120px;
+  --identity-count-padding: 16px 12px;
+  --identity-count-gap: var(--identity-gap);
+  --identity-count-bg: var(--identity-surface-bg);
+  --identity-count-border: 1px solid var(--identity-surface-border);
+  --identity-count-radius: var(--identity-radius);
+  /* The primary box is marked along its top edge, so the total reads first
+     in a row of them. */
+  --identity-count-accent: 3px solid var(--identity-accent);
+  --identity-count-value-size: 2rem;
+  --identity-count-value-weight: 600;
+  --identity-count-value-color: var(--identity-accent);
+  --identity-count-label-size: 0.9em;
+  --identity-count-label-color: var(--identity-muted);
+  /* A secondary box qualifies the one beside it. It steps back by surface
+     and colour rather than by opacity, which would take the text below a
+     readable contrast along with the box. */
+  --identity-count-secondary-bg: var(--identity-surface-header-bg);
+  --identity-count-secondary-value-color: inherit;
+  --identity-count-secondary-value-weight: 400;
+
+  /* Search boxes. `@plone/components`' SearchField.css draws every one of
+     these with a custom property from a theme.css this add-on never loads
+     -- the same gap `--identity-field-border` fills for the text fields -- so
+     the box declares its own. An outlined field rather than an underline:
+     it stands on its own on a page, not inside a form. */
+  --identity-search-max-width: 28em;
+  --identity-search-bg: var(--identity-surface-bg);
+  --identity-search-border: 1px solid var(--identity-field-border);
+  --identity-search-radius: var(--identity-radius);
+  --identity-search-padding: 8px 36px 8px 12px;
+  --identity-search-font-size: 1rem;
+  --identity-search-focus-ring: 0 0 0 2px var(--identity-accent);
+  --identity-search-clear-size: 20px;
+  --identity-search-clear-bg: var(--identity-muted);
+  --identity-search-clear-bg-hover: var(--identity-accent);
+  --identity-search-clear-color: var(--identity-surface-bg);
 }
 
 /* Base classes ------------------------------------------------------------

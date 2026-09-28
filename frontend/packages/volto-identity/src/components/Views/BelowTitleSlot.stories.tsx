@@ -16,7 +16,7 @@ import React from 'react';
 import config from '@plone/volto/registry';
 
 import BelowTitleSlot from './BelowTitleSlot';
-import GroupView from './GroupView';
+import GroupView from './GroupsView/GroupView';
 import ProfileView from './ProfileView';
 import {
   LOADED,

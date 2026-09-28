@@ -356,7 +356,7 @@ msgid "Group map"
 msgstr "Gruppenzuordnung"
 
 #. Default: "Groups in this group"
-#: components/Views/GroupView
+#: components/Views/GroupsView/GroupView
 msgid "Groups in this group"
 msgstr "Gruppen in dieser Gruppe"
 
@@ -498,7 +498,7 @@ msgid "Mapping"
 msgstr "Zuordnung"
 
 #. Default: "Members"
-#: components/Views/GroupView
+#: components/Views/GroupsView/GroupView
 msgid "Members"
 msgstr "Mitglieder"
 
@@ -601,7 +601,7 @@ msgid "Page"
 msgstr "Seite"
 
 #. Default: "Part of"
-#: components/Views/GroupView
+#: components/Views/GroupsView/GroupView
 msgid "Part of"
 msgstr "Teil von"
 
@@ -1126,28 +1126,73 @@ msgstr "Es gibt keine E-Mail-Adresse, die auf Bestätigung wartet."
 msgid "confirm-email-submit"
 msgstr "Bestätigen"
 
+#. Default: "directly"
+#: components/Views/GroupsView/MembersCount
+msgid "group-view-direct-total"
+msgstr "direkt"
+
+#. Default: "through nested groups"
+#: components/Views/GroupsView/MembersCount
+msgid "group-view-inherited-total"
+msgstr "durch verschachtelte Gruppen"
+
 #. Default: "Loading members…"
-#: components/Views/GroupView
+#: components/Views/GroupsView/GroupView
 msgid "group-view-loading"
 msgstr "Mitglieder werden geladen…"
 
+#. Default: "{count, plural, one {member} other {members}}"
+#: components/Views/GroupsView/MembersCount
+msgid "group-view-members-total"
+msgstr "{count, plural, one {Mitglied} other {Mitglieder}}"
+
 #. Default: "Everybody in these groups is in this one as well, at any depth."
-#: components/Views/GroupView
+#: components/Views/GroupsView/GroupView
 msgid "group-view-nested-help"
 msgstr "Jeder in diesen Gruppen ist auch in dieser, in beliebiger Tiefe."
 
+#. Default: "Nobody in this group matches “{query}”."
+#: components/Views/GroupsView/MemberResults
+msgid "group-view-no-match"
+msgstr "Niemand in dieser Gruppe passt zu „{query}“."
+
 #. Default: "Nobody is in this group yet."
-#: components/Views/GroupView
+#: components/Views/GroupsView/GroupView
 msgid "group-view-no-members"
 msgstr "Bisher niemand in dieser Gruppe."
 
+#. Default: "Showing {shown} of {total} matches. Narrow the search to see the rest."
+#: components/Views/GroupsView/MemberResults
+msgid "group-view-partial"
+msgstr "{shown} von {total} Treffern. Grenzen Sie die Suche ein, um den Rest zu sehen."
+
 #. Default: "You can see this group but not who is in it. A membership list is visible to its own members and to somebody who manages users."
-#: components/Views/GroupView
+#: components/Views/GroupsView/GroupView
 msgid "group-view-refused"
 msgstr "Sie können diese Gruppe sehen, aber nicht wer darin ist. Eine Mitgliederliste ist sichtbar für ihre eigenen Mitglieder und für jemanden, der Benutzer verwaltet."
 
+#. Default: "Search members"
+#: components/Views/GroupsView/MemberSearch
+msgid "group-view-search"
+msgstr "Mitglieder suchen"
+
+#. Default: "Search by name or login to find somebody in this group."
+#: components/Views/GroupsView/MemberResults
+msgid "group-view-search-hint"
+msgstr "Suchen Sie nach Name oder Anmeldename, um jemanden in dieser Gruppe zu finden."
+
+#. Default: "Name or login"
+#: components/Views/GroupsView/MemberSearch
+msgid "group-view-search-placeholder"
+msgstr "Name oder Anmeldename"
+
+#. Default: "Searching…"
+#: components/Views/GroupsView/MemberResults
+msgid "group-view-searching"
+msgstr "Suche läuft…"
+
 #. Default: "through {groups}"
-#: components/Views/GroupView
+#: components/Views/GroupsView/MemberRow
 msgid "group-view-through"
 msgstr "durch {groups}"
 

@@ -24,7 +24,7 @@ import {
 } from './clients';
 import { consentRequest, grantWithdraw, oauthGrants } from './consent';
 import { identityDrivers } from './drivers';
-import { groupMembers } from './groups';
+import { groupMemberSearch, groupMembers } from './groups';
 import {
   identities,
   identityLinking,
@@ -62,7 +62,7 @@ export {
 } from './clients';
 export { consentRequest, grantWithdraw, oauthGrants } from './consent';
 export { identityDrivers } from './drivers';
-export { groupMembers } from './groups';
+export { groupMemberSearch, groupMembers } from './groups';
 export {
   identities,
   identityLinking,
@@ -98,6 +98,7 @@ const reducers = {
   identities,
   linkableProviders,
   groupMembers,
+  groupMemberSearch,
   userAccount,
   identityLinking,
   identityUnlink,

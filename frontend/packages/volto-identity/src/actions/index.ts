@@ -22,7 +22,7 @@ export {
 } from './clients';
 export { getConsentRequest, listGrants, withdrawGrant } from './consent';
 export { listDrivers } from './drivers';
-export { listGroupMembers } from './groups';
+export { listGroupMembers, searchGroupMembers } from './groups';
 export { listIdentities, startLinking, unlinkIdentity } from './identities';
 export { listKeys, rotateKey } from './keys';
 export {

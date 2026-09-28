@@ -3,7 +3,25 @@
  * @module actions/groups
  */
 
-import { LIST_GROUP_MEMBERS } from '../constants/ActionTypes';
+import {
+  LIST_GROUP_MEMBERS,
+  SEARCH_GROUP_MEMBERS,
+} from '../constants/ActionTypes';
+
+/**
+ * Build the request for `@group-members/<id>`.
+ *
+ * @param groupId The group to read.
+ * @param query Case-insensitive substring, matched against name and login.
+ * @returns The request half of an action.
+ */
+function groupMembersRequest(groupId: string, query: string) {
+  const search = query ? `?query=${encodeURIComponent(query)}` : '';
+  return {
+    op: 'get',
+    path: `/@group-members/${encodeURIComponent(groupId)}${search}`,
+  };
+}
 
 /**
  * List the members of one group, nested memberships included.
@@ -16,12 +34,26 @@ import { LIST_GROUP_MEMBERS } from '../constants/ActionTypes';
  * @param query Case-insensitive substring, matched against name and login.
  */
 export function listGroupMembers(groupId: string, query = '') {
-  const search = query ? `?query=${encodeURIComponent(query)}` : '';
   return {
     type: LIST_GROUP_MEMBERS,
-    request: {
-      op: 'get',
-      path: `/@group-members/${encodeURIComponent(groupId)}${search}`,
-    },
+    request: groupMembersRequest(groupId, query),
+  };
+}
+
+/**
+ * Search the members of one group.
+ *
+ * The same endpoint as `listGroupMembers`, answered into a store slot of its
+ * own. A request clears its slot while it is pending, and a group page keeps
+ * its counts and its nesting on screen while somebody types -- so the search
+ * cannot share the slot that holds them.
+ *
+ * @param groupId The group to search.
+ * @param query Case-insensitive substring, matched against name and login.
+ */
+export function searchGroupMembers(groupId: string, query: string) {
+  return {
+    type: SEARCH_GROUP_MEMBERS,
+    request: groupMembersRequest(groupId, query),
   };
 }

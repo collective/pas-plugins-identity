@@ -1,0 +1,50 @@
+/**
+ * A stats box: the figure large, what it counts underneath.
+ *
+ * Every measure and colour is a token in `styles.css`, so a site restyles
+ * the boxes by overriding `--identity-count-*` rather than these rules.
+ *
+ * The primary box carries the accent on its top edge and in its figure; a
+ * secondary one qualifies the box beside it and steps back by surface and
+ * colour, not by opacity.
+ */
+.identity-count {
+  display: flex;
+  min-width: var(--identity-count-min-width);
+  min-height: var(--identity-count-min-height);
+  box-sizing: border-box;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--identity-count-padding);
+  border: var(--identity-count-border);
+  border-radius: var(--identity-count-radius);
+  border-top: var(--identity-count-accent);
+  background: var(--identity-count-bg);
+  gap: var(--identity-count-gap);
+  text-align: center;
+}
+
+.identity-count__value {
+  color: var(--identity-count-value-color);
+  font-size: var(--identity-count-value-size);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--identity-count-value-weight);
+  line-height: 1;
+}
+
+.identity-count__label {
+  color: var(--identity-count-label-color);
+  font-size: var(--identity-count-label-size);
+  overflow-wrap: break-word;
+}
+
+.identity-count--secondary {
+  border-top: var(--identity-count-border);
+  background: var(--identity-count-secondary-bg);
+
+  .identity-count__value {
+    color: var(--identity-count-secondary-value-color);
+    font-weight: var(--identity-count-secondary-value-weight);
+  }
+}

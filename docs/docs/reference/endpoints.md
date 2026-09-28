@@ -105,6 +105,25 @@ Volto's `apiExpanders` has no way to mark an entry authenticated-only, so
 with nothing keeps a public site's payload exactly as it was.
 
 
+### A membership listing
+
+<!-- source: backend/src/pas/plugins/identity/core/services/groups/get.py -->
+
+What `GET @group-members/<group id>` answers with. `?query=` narrows the rows
+to the members whose full name or login contains it, ignoring case.
+
+| Key | What it holds |
+|---|---|
+| `@id` | This listing. |
+| `group` | The group id. |
+| `items` | One page of rows, sorted by name. See the next section. |
+| `items_total` | How many members match `query`, or all of them without one. |
+| `members_total` | Everybody in the group, nested memberships included. The same whatever `query` is. |
+| `direct_members_total` | The members in the group itself rather than through a nested group. The same whatever `query` is. |
+| `nested_groups` | The groups nested inside this one, at any depth. |
+| `parent_groups` | The groups this one is directly nested inside. |
+| `batching` | The `plone.restapi` batch links, present when there is more than one page. |
+
 ### A membership row
 
 <!-- source: backend/src/pas/plugins/identity/core/serializers/groupmember.py -->

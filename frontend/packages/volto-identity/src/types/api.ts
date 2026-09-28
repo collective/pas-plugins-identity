@@ -337,8 +337,18 @@ export interface NestedGroup {
 export interface GroupMembers {
   '@id': string;
   group: string;
+  /** How many of the members matched the query, or all of them without one. */
   items_total: number;
   items: GroupMember[];
+  /**
+   * Everybody in the group, nested memberships included.
+   *
+   * Independent of the query, so a group page can say how big the group is
+   * without listing it.
+   */
+  members_total: number;
+  /** The members who are in this group itself rather than through another. */
+  direct_members_total: number;
   /** Groups nested inside this one, at any depth. */
   nested_groups: NestedGroup[];
   /** Groups this one is nested inside, as stored rather than as closed. */

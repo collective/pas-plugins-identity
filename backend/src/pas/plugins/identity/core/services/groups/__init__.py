@@ -57,9 +57,7 @@ def get_profile_plugin():
     return plugin
 
 
-def member_brains(
-    group_id: str, plugin, search: str = ""
-) -> list[AbstractCatalogBrain]:
+def member_brains(group_id: str, plugin) -> list[AbstractCatalogBrain]:
     """Return the Profile brains of everybody in a group.
 
     The nesting is resolved into a list of group ids first and the catalog is
@@ -68,8 +66,6 @@ def member_brains(
 
     :param group_id: The group asked about.
     :param plugin: The profile PAS plugin.
-    :param search: Case-insensitive substring matched against full name and
-        login. Empty returns everybody.
     :returns: Profile brains, ordered by ``sortable_title`` -- the name each
         person is shown under, decided by the catalog rather than here.
     """
@@ -80,7 +76,7 @@ def member_brains(
     if not feeding:
         return []
     states = plugin.enumeration_states()
-    brains = [
+    return [
         brain
         for brain in catalog.unrestrictedSearchResults(
             portal_type=PROFILE_PORTAL_TYPE,
@@ -93,25 +89,54 @@ def member_brains(
         )
         if brain.review_state in states
     ]
+
+
+def search_members(
+    brains: list[AbstractCatalogBrain], search: str
+) -> list[AbstractCatalogBrain]:
+    """Narrow a group's members to the ones a search matches.
+
+    Filtered here rather than in the query: the fields a person is recognised
+    by are metadata, not indexes, and adding indexes for a substring search
+    over a group's own membership would be indexing the whole site to narrow a
+    list somebody is already looking at. It also leaves the whole membership
+    in hand, which is what the group's totals are counted from.
+
+    :param brains: The members, as :func:`member_brains` returns them.
+    :param search: Case-insensitive substring matched against full name and
+        login. Empty matches everybody.
+    :returns: The matching brains, in the order given -- so still sorted.
+    """
     term = search.strip().lower()
-    if term:
-        # Filtered here rather than in the query: the fields a person is
-        # recognised by are metadata, not indexes, and adding indexes for a
-        # substring search over a group's own membership would be indexing the
-        # whole site to narrow a list somebody is already looking at.
-        brains = [
-            brain
-            for brain in brains
-            if term in (brain.fullname or "").lower()
-            or term in (brain.login or "").lower()
-        ]
-    # Already ordered: the query sorted on `sortable_title`, and filtering a
-    # sorted list keeps it sorted.
-    return brains
+    if not term:
+        return brains
+    return [
+        brain
+        for brain in brains
+        if term in (brain.fullname or "").lower() or term in (brain.login or "").lower()
+    ]
+
+
+def direct_members(
+    group_id: str, brains: list[AbstractCatalogBrain]
+) -> list[AbstractCatalogBrain]:
+    """Keep the members who are in a group itself rather than through another.
+
+    :param group_id: The group asked about.
+    :param brains: Its members, nested memberships included.
+    :returns: The brains whose own ``group_ids`` name the group.
+    """
+    return [
+        brain
+        for brain in brains
+        if group_id in (getattr(brain, "group_ids", None) or ())
+    ]
 
 
 __all__ = [
     "MANAGE_PERMISSION",
+    "direct_members",
     "get_profile_plugin",
     "member_brains",
+    "search_members",
 ]
