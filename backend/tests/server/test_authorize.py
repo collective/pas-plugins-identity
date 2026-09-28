@@ -397,3 +397,84 @@ class TestPKCERequired:
         )
 
         assert query(location)["error"] == "invalid_request"
+
+
+#: A redirect URI with a query of its own, as Matomo's RebelOIDC plugin
+#: registers one.
+REDIRECT_WITH_QUERY = (
+    "https://stats.example.org/index.php?module=RebelOIDC&action=callback&provider=oidc"
+)
+
+
+class TestRedirectUriWithAQuery:
+    """RFC 6749, section 3.1.2: a query in the redirection endpoint "MUST be
+    retained when adding additional query parameters"."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, add_client, consented) -> None:
+        self.portal = portal
+        add_client(
+            "stats",
+            redirect_uris=[REDIRECT_WITH_QUERY],
+            grant_types=["authorization_code"],
+            public=False,
+        )
+        consented("stats")
+
+    def test_a_code_is_added_to_the_query(self):
+        _status, location, _body = call(
+            self.portal,
+            response_type="code",
+            client_id="stats",
+            redirect_uri=REDIRECT_WITH_QUERY,
+            state="xyzzy",
+        )
+
+        assert query(location) == {
+            "module": "RebelOIDC",
+            "action": "callback",
+            "provider": "oidc",
+            "code": query(location)["code"],
+            "state": "xyzzy",
+        }
+
+    def test_the_registered_query_is_kept_verbatim(self):
+        _status, location, _body = call(
+            self.portal,
+            response_type="code",
+            client_id="stats",
+            redirect_uri=REDIRECT_WITH_QUERY,
+        )
+
+        assert location.startswith(f"{REDIRECT_WITH_QUERY}&code=")
+
+    def test_an_error_is_added_to_the_query(self):
+        _status, location, _body = call(
+            self.portal,
+            response_type="token",
+            client_id="stats",
+            redirect_uri=REDIRECT_WITH_QUERY,
+            state="xyzzy",
+        )
+
+        assert query(location) == {
+            "module": "RebelOIDC",
+            "action": "callback",
+            "provider": "oidc",
+            "error": "unsupported_response_type",
+            "error_description": query(location)["error_description"],
+            "state": "xyzzy",
+        }
+
+    def test_the_code_redeems_against_the_registered_uri(self):
+        _status, location, _body = call(
+            self.portal,
+            response_type="code",
+            client_id="stats",
+            redirect_uri=REDIRECT_WITH_QUERY,
+        )
+
+        codes = api.portal.get_tool("acl_users")[PLUGIN_ID].codes
+        grant = codes.redeem(query(location)["code"], "stats", REDIRECT_WITH_QUERY)
+
+        assert grant.subject == api.user.get_current().getId()

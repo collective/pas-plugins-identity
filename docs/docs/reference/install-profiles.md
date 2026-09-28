@@ -18,10 +18,10 @@ myst:
 
 | Profile id | Title | Version |
 |---|---|---|
-| `pas.plugins.identity:default` | Install | 1000 |
+| `pas.plugins.identity:default` | Install | 1009 |
 | `pas.plugins.identity:rebuild-catalog` | Rebuild the user catalog |—|
 | `pas.plugins.identity:uninstall` | Uninstall |—|
-| `pas.plugins.identity.server:default` | Authorization server | 1000 |
+| `pas.plugins.identity.server:default` | Authorization server | 1001 |
 | `pas.plugins.identity.server:uninstall` | Uninstall the authorization server |—|
 
 All are `EXTENSION` profiles.
@@ -86,11 +86,13 @@ every `UserProfile` object and its data exactly where it is.
 ## Upgrades
 
 <!-- source: backend/src/pas/plugins/identity/upgrades/configure.zcml -->
+<!-- source: backend/src/pas/plugins/identity/server/upgrades/configure.zcml -->
 
-`pas.plugins.identity:default` is at version 1007. `upgrades/` holds one package
+`pas.plugins.identity:default` is at version 1009. `upgrades/` holds one package
 per version, each registering the steps that take a site to it, and
 `portal_setup` offers them to a site installed against an earlier release.
-`pas.plugins.identity.server:default` is at 1000 and declares none.
+`pas.plugins.identity.server:default` is at 1001, with its steps laid out the
+same way in `server/upgrades/`.
 {doc}`/how-to-guides/upgrade` lists what each step does.
 
 An upgrade step is for what a reapplied profile cannot carry. Everything else—a

@@ -90,6 +90,35 @@ no ignoring the query string, no treating a trailing slash as equivalent.
 A wildcard is a real widening. See {doc}`/concepts/threat-model` before
 registering one.
 
+A redirect URI may carry a query string of its own. The response is added
+to it, so a client registered with
+`https://stats.example.org/index.php?module=RebelOIDC&action=callback`
+is sent back to `…&action=callback&code=…&state=…`.
+
+### Restrict a client to some groups
+
+<!-- source: backend/src/pas/plugins/identity/server/grants/membership.py -->
+<!-- source: backend/src/pas/plugins/identity/server/browser/authorize.py, _authorize -->
+<!-- source: backend/src/pas/plugins/identity/server/browser/token.py, _refresh -->
+
+By default, anybody with an account may sign in to a client. Pick groups in
+**Allowed groups**, or send `allowed_groups` as a list of group ids, and only
+their members may. A member of a group nested in one of them counts.
+
+- Anybody else is refused with `access_denied` at the client's redirect URI,
+  before the profile gate and before the consent screen. No consent is
+  recorded, and `ClientAuthorized` does not fire.
+- A refresh checks again. Somebody removed from the groups is refused with
+  `invalid_grant` at their next refresh, and their tokens for that client are
+  revoked.
+- Each refusal is recorded in the audit log as `client-refused`.
+- The client-credentials grant is not affected, since no person is signing
+  in.
+
+The form offers only groups that exist. The API also keeps an id that names
+no group yet, so a client can be registered before its group. Until the
+group exists, that id admits nobody.
+
 ## Point the client at the discovery document
 
 Give the client the issuer URL and its credential. It needs nothing else.
@@ -108,7 +137,7 @@ PATCH @identity-clients/<id>
 ```
 
 You can change the title, the redirect URIs, the grants, the scope, the service
-user, and whether the client is enabled.
+user, the allowed groups, and whether the client is enabled.
 
 You **cannot** change `client_id` or `auth_method`. Renaming a client would
 orphan every token already minted for it, and turning a confidential client

@@ -83,6 +83,12 @@ SIGNIN_REFUSED = "signin-refused"
 #: filters on lives in one place.
 CLIENT_AUTHORIZED = "client-authorized"
 
+#: A user the authorization server turned away because the client admits
+#: only members of groups they are not in, whether at the authorization
+#: endpoint or at a refresh. Distinct from a refused consent, which is the
+#: user's own decision; this one is the site's policy.
+CLIENT_REFUSED = "client-refused"
+
 
 class AuditEntry(Persistent):
     """One recorded authentication event.

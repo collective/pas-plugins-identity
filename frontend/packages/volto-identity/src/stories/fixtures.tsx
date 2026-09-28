@@ -28,6 +28,7 @@ import type {
   Driver,
   GroupContent,
   Identity,
+  JsonSchema,
   LoginProvider,
   OAuthClient,
   OAuthGrants,
@@ -547,10 +548,22 @@ export const CLIENT: OAuthClient = {
   public: false,
   enabled: true,
   service_user: '',
+  allowed_groups: [],
 };
 
 export const CLIENTS: OAuthClient[] = [
   CLIENT,
+  {
+    ...CLIENT,
+    '@id': '/@identity-clients/stats',
+    client_id: 'stats',
+    title: 'Site statistics',
+    redirect_uris: [
+      'https://stats.example.org/index.php?module=RebelOIDC&action=callback&provider=oidc',
+    ],
+    grant_types: ['authorization_code'],
+    allowed_groups: ['Reviewers', 'Site Administrators'],
+  },
   {
     ...CLIENT,
     '@id': '/@identity-clients/kiosk',
@@ -561,6 +574,105 @@ export const CLIENTS: OAuthClient[] = [
     enabled: false,
   },
 ];
+
+/**
+ * The client form's schema, as `@identity-clients` serves it from
+ * `IClientRecords`. Descriptions are the backend's, shortened.
+ */
+export const CLIENT_SCHEMA: JsonSchema = {
+  properties: {
+    title: {
+      type: 'string',
+      title: 'Title',
+      description: 'Shown to the user on the consent screen.',
+      factory: 'Text line (String)',
+    },
+    enabled: {
+      type: 'boolean',
+      title: 'Enabled',
+      factory: 'Yes/No',
+      default: true,
+    },
+    allowed_groups: {
+      type: 'array',
+      title: 'Allowed groups',
+      description:
+        'Only members of these groups, directly or through a nested group, ' +
+        'may sign in to this client. Empty means everybody with an account.',
+      factory: 'Tuple',
+      default: [],
+      uniqueItems: true,
+      items: {
+        type: 'string',
+        factory: 'Choice',
+        vocabulary: {
+          '@id': `http://localhost:8080/Plone/@vocabularies/${GROUPS_VOCABULARY}`,
+        },
+      },
+    },
+    redirect_uris: {
+      type: 'array',
+      title: 'Redirect URIs',
+      factory: 'Tuple',
+      widget: 'token',
+      default: [],
+      items: { type: 'string', factory: 'Text line (String)' },
+    },
+    grant_types: {
+      type: 'array',
+      title: 'Grants',
+      factory: 'Tuple',
+      default: [],
+      uniqueItems: true,
+      items: {
+        type: 'string',
+        factory: 'Choice',
+        choices: [
+          ['authorization_code', 'Authorization code'],
+          ['refresh_token', 'Refresh token'],
+          ['client_credentials', 'Client credentials'],
+        ],
+      },
+    },
+    scope: {
+      type: 'array',
+      title: 'Scopes',
+      factory: 'Tuple',
+      default: [],
+      uniqueItems: true,
+      items: {
+        type: 'string',
+        factory: 'Choice',
+        choices: [
+          ['openid', 'openid'],
+          ['email', 'email'],
+          ['profile', 'profile'],
+          ['groups', 'groups'],
+        ],
+      },
+    },
+    service_user: {
+      type: 'string',
+      title: 'Acts as',
+      description: 'The Plone user a client-credentials token acts as.',
+      factory: 'Text line (String)',
+      default: '',
+    },
+  },
+  required: ['title'],
+  fieldsets: [
+    {
+      id: 'default',
+      title: 'Default',
+      fields: ['title', 'enabled', 'allowed_groups'],
+    },
+    {
+      id: 'flow',
+      title: 'Flow',
+      fields: ['redirect_uris', 'grant_types', 'scope', 'service_user'],
+    },
+  ],
+};
 
 /** A client as it comes back from the one response that carries a secret. */
 export const MINTED_CLIENT: OAuthClient = {

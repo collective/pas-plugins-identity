@@ -36,6 +36,7 @@ The event name in the log is the fastest route into the table below.
 | `claims-refreshed` | profile fields were updated from the provider |
 | `magic-link-sent` / `magic-link-confirmed` / `magic-link-refused` | the magic-link flow |
 | `client-authorized` | a relying party was issued a code for this user |
+| `client-refused` | the user is outside the groups a client admits |
 
 ## The login button for a provider does not appear
 

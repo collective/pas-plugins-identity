@@ -67,6 +67,7 @@ class ClientsPost(ClientsService):
                 scope=data.get("scope", ()),
                 public=public,
                 service_user=data.get("service_user", ""),
+                allowed_groups=data.get("allowed_groups", ()),
             )
         except ServerError as exc:
             # Reusing an id would silently re-point every token already

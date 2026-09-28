@@ -97,6 +97,16 @@ class TestClients:
         assert client.client_id == "demo"
         assert secret
 
+    def test_registering_can_restrict_to_groups(self):
+        """Passed through to the registry, not dropped by the wrapper."""
+        api.clients.add(
+            "demo",
+            redirect_uris=["https://app.example.org/cb"],
+            allowed_groups=["editors"],
+        )
+
+        assert api.clients.get("demo").allowed_groups == ["editors"]
+
     def test_the_registered_client_is_found(self):
         """Written through the façade, read back through it."""
         api.clients.add("demo", redirect_uris=["https://app.example.org/cb"])

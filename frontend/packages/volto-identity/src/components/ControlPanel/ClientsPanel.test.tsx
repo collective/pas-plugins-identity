@@ -20,6 +20,7 @@ const CLIENT: OAuthClient = {
   public: false,
   enabled: true,
   service_user: '',
+  allowed_groups: [],
 };
 
 const PUBLIC_CLIENT: OAuthClient = {
@@ -142,6 +143,22 @@ describe('ClientsPanel', () => {
     // Comma-separated, the way the grants beside them read. The record holds
     // a list now, and rendering it straight would run the scopes together.
     expect(screen.getByText('openid, profile')).toBeTruthy();
+  });
+
+  it('names the groups a restricted client admits', () => {
+    renderPanel({
+      clients: [{ ...CLIENT, allowed_groups: ['Reviewers', 'Editors'] }],
+    });
+
+    expect(screen.getByText('Reviewers, Editors')).toBeTruthy();
+  });
+
+  it('says an unrestricted client admits everybody', () => {
+    // Empty is the default and means every account, which a blank cell or a
+    // dash would read as the opposite.
+    renderPanel();
+
+    expect(screen.getByText('Everybody')).toBeTruthy();
   });
 
   it('opens the edit form for a client', () => {

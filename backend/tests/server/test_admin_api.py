@@ -445,3 +445,64 @@ class TestTheKeyRing:
         status, _payload = call(KeysPost, self.portal, "detonate")
 
         assert status == 400
+
+
+class TestAllowedGroups:
+    """The group restriction, through the same endpoints as every field."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, manager, registered) -> None:
+        self.portal = portal
+
+    def test_it_is_served_empty_by_default(self):
+        _status, payload = call(ClientsGet, self.portal, "app")
+
+        assert payload["allowed_groups"] == []
+
+    def test_it_can_be_set_at_registration(self):
+        _status, payload = call(
+            ClientsPost,
+            self.portal,
+            body={
+                "client_id": "stats",
+                "redirect_uris": [REDIRECT],
+                "allowed_groups": ["editors"],
+            },
+        )
+
+        assert payload["allowed_groups"] == ["editors"]
+        assert get_client("stats").allowed_groups == ["editors"]
+
+    def test_it_can_be_amended(self):
+        _status, payload = call(
+            ClientsPatch, self.portal, "app", body={"allowed_groups": ["editors"]}
+        )
+
+        assert payload["allowed_groups"] == ["editors"]
+        assert get_client("app").allowed_groups == ["editors"]
+
+    def test_it_can_be_cleared(self):
+        call(ClientsPatch, self.portal, "app", body={"allowed_groups": ["editors"]})
+
+        call(ClientsPatch, self.portal, "app", body={"allowed_groups": []})
+
+        assert get_client("app").allowed_groups == []
+
+    def test_a_group_that_does_not_exist_yet_is_kept(self):
+        """A client can be registered before the group it is meant for."""
+        call(ClientsPatch, self.portal, "app", body={"allowed_groups": ["not-yet"]})
+
+        assert get_client("app").allowed_groups == ["not-yet"]
+
+    def test_the_form_schema_offers_it_as_a_group_picker(self):
+        """The control panel builds its form from this schema, so this is
+        what puts the field in front of an operator."""
+        _status, payload = call(ClientsGet, self.portal)
+
+        schema = payload["schema"]
+        field = schema["properties"]["allowed_groups"]
+        assert field["items"]["vocabulary"]["@id"].endswith(
+            "@vocabularies/pas.plugins.identity.Groups"
+        )
+        default = next(f for f in schema["fieldsets"] if f["id"] == "default")
+        assert "allowed_groups" in default["fields"]

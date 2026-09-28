@@ -65,6 +65,8 @@ const messages = defineMessages({
   columnTitle: { id: 'Title', defaultMessage: 'Title' },
   columnId: { id: 'Client ID', defaultMessage: 'Client ID' },
   columnEnabled: { id: 'Enabled', defaultMessage: 'Enabled' },
+  columnGroups: { id: 'Allowed groups', defaultMessage: 'Allowed groups' },
+  everybody: { id: 'Everybody', defaultMessage: 'Everybody' },
   columnActions: { id: 'Actions', defaultMessage: 'Actions' },
   yes: { id: 'Yes', defaultMessage: 'Yes' },
   no: { id: 'No', defaultMessage: 'No' },
@@ -374,6 +376,9 @@ const ClientsPanel: React.FC<ClientsPanelProps> = ({
                   {intl.formatMessage(messages.scope)}
                 </Table.HeaderCell>
                 <Table.HeaderCell>
+                  {intl.formatMessage(messages.columnGroups)}
+                </Table.HeaderCell>
+                <Table.HeaderCell>
                   {intl.formatMessage(messages.columnEnabled)}
                 </Table.HeaderCell>
                 <Table.HeaderCell textAlign="right">
@@ -409,6 +414,13 @@ const ClientsPanel: React.FC<ClientsPanelProps> = ({
                     {client.grant_types.join(', ') || NOTHING}
                   </Table.Cell>
                   <Table.Cell>{client.scope.join(', ') || NOTHING}</Table.Cell>
+                  <Table.Cell>
+                    {/* Empty is not "nobody": it is the default, open to
+                        every account, and the column says so in words. */}
+                    {client.allowed_groups?.length
+                      ? client.allowed_groups.join(', ')
+                      : intl.formatMessage(messages.everybody)}
+                  </Table.Cell>
                   <Table.Cell>
                     {intl.formatMessage(
                       client.enabled ? messages.yes : messages.no,

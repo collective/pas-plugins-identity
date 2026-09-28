@@ -28,4 +28,6 @@
       post_handler=".setuphandlers.post_uninstall"
       />
 
+  <include package=".upgrades" />
+
 </configure>

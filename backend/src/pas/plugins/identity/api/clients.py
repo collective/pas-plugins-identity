@@ -44,6 +44,7 @@ def add(
     scope: list[str] | tuple[str, ...] | str | None = None,
     public: bool = False,
     service_user: str = "",
+    allowed_groups: list[str] | tuple[str, ...] | None = None,
 ) -> tuple[ClientConfig, str]:
     """Register a client, minting a secret for a confidential one.
 
@@ -54,6 +55,8 @@ def add(
     :param scope: Scopes this client may ask for.
     :param public: Whether the client authenticates with no secret.
     :param service_user: Plone userid a client-credentials token acts as.
+    :param allowed_groups: Groups whose members may authorize the client,
+        nested memberships included; empty for anybody.
     :returns: The stored client and its plaintext secret, which is empty for a
         public client and unrecoverable afterwards for any other.
     :raises ServerError: When the client id is already registered. Replacing
@@ -67,6 +70,7 @@ def add(
         scope=scope,
         public=public,
         service_user=service_user,
+        allowed_groups=allowed_groups,
     )
 
 

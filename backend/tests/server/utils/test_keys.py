@@ -5,7 +5,7 @@ invalidate what is still in flight", so most of what is asserted here is about
 the ring rather than about any single key.
 """
 
-from . import PROFILE_ID
+from .. import PROFILE_ID
 from pas.plugins.identity.server.interfaces import ServerError
 from pas.plugins.identity.server.utils.keys import current_key
 from pas.plugins.identity.server.utils.keys import ensure_keys

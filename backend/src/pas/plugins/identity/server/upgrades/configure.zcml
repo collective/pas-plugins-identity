@@ -1,0 +1,12 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    >
+
+  <!-- One package per version of the server profile, laid out as the core
+       profile's steps are. A version left out below is a step nobody runs
+       and nothing reports. -->
+
+  <include package=".v1001" />
+
+</configure>

@@ -34,7 +34,9 @@ from pas.plugins.identity.server.discovery import AUTHORIZE_VIEW
 from pas.plugins.identity.server.events import ClientAuthorized
 from pas.plugins.identity.server.grants.codes import ChallengeError
 from pas.plugins.identity.server.grants.codes import check_challenge
+from pas.plugins.identity.server.grants.membership import admitted
 from pas.plugins.identity.server.pas import PLUGIN_ID
+from pas.plugins.identity.server.utils.urls import redirect_with
 from plone import api
 from plone.protect.authenticator import AuthenticatorView
 from plone.protect.authenticator import createToken
@@ -171,7 +173,7 @@ class AuthorizeView(BrowserView):
             params = {"error": exc.error, "error_description": exc.description}
             if state:
                 params["state"] = state
-            location = f"{redirect_uri}?{urlencode(params)}"
+            location = redirect_with(redirect_uri, params)
         else:
             if location is None:
                 # The user is being asked. Nothing has been issued, nothing
@@ -230,6 +232,17 @@ class AuthorizeView(BrowserView):
             # sanitising a return URL is exactly the thing not to write twice.
             raise Unauthorized(
                 "The end user must authenticate before authorizing a client."
+            )
+
+        # Before the profile gate and before consent: somebody the client
+        # does not admit is not asked to complete a profile for it, is never
+        # shown its consent screen, and leaves no consent on record. Refused
+        # whether or not the client forbade interaction, since asking would
+        # not change the answer.
+        if not admitted(client, user.getId(), "authorize"):
+            raise AuthorizationError(
+                "access_denied",
+                "The end user is not allowed to use this client.",
             )
 
         # Before consent, not after. A site that requires an email address
@@ -303,7 +316,7 @@ class AuthorizeView(BrowserView):
             # Echoed verbatim and never interpreted: it is the client's CSRF
             # token, and this server's only job is to hand it back unchanged.
             params["state"] = state
-        return f"{redirect_uri}?{urlencode(params)}"
+        return redirect_with(redirect_uri, params)
 
     def _check_request(self, client) -> tuple[str, str]:
         """Validate everything about the request that the client controls.
