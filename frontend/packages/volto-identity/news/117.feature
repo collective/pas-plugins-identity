@@ -1,1 +1,0 @@
-Redesigned the group page: it now says how many people are in the group, and how many of them directly rather than through a nested group, and offers a search instead of listing every member. The search is kept in the URL as `?q=`, so a search can be linked to. @ericof

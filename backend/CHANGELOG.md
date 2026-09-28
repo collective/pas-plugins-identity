@@ -9,6 +9,18 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0a10 (2026-09-28)
+
+
+### Feature
+
+- Added `members_total` and `direct_members_total` to `@group-members`, so a client can say how big a group is, and how many of its members are in it directly, without listing them. Both stay the same whatever `query` narrows the rows to. @ericof [#117](https://github.com/collective/pas-plugins-identity/issues/117)
+
+
+### Bugfix
+
+- Made a user lookup read only the groups that user reaches. Before, every lookup read every group on the site five times, so every authenticated request cost more as groups were added: on a site with 50 groups, one `getUserById` read 254 catalog records. It now reads 7, however many groups the site has. Listings that need every group, such as the group control panel and `@groups`, now read them once per request instead of once per call. @ericof [#115](https://github.com/collective/pas-plugins-identity/issues/115)
+
 ## 1.0.0a9 (2026-09-26)
 
 

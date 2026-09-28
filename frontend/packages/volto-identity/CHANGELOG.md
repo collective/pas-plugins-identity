@@ -8,6 +8,13 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0-alpha.10 (2026-09-28)
+
+
+### Feature
+
+- Redesigned the group page: it now says how many people are in the group, and how many of them directly rather than through a nested group, and offers a search instead of listing every member. The search is kept in the URL as `?q=`, so a search can be linked to. @ericof [#117](https://github.com/collective/pas-plugins-identity/issues/117)
+
 ## 1.0.0-alpha.9 (2026-09-26)
 
 
