@@ -11,7 +11,15 @@ from plone.restapi.deserializer import json_body
 #: would orphan every token already minted for it, and ``auth_method`` is
 #: absent because turning a confidential client public would leave a stored
 #: secret hash that nothing checks -- both are a delete and a re-register.
-EDITABLE = ("title", "redirect_uris", "grant_types", "scope", "enabled", "service_user")
+EDITABLE = (
+    "title",
+    "redirect_uris",
+    "grant_types",
+    "scope",
+    "enabled",
+    "service_user",
+    "allowed_groups",
+)
 
 
 class ClientsPatch(ClientsService):

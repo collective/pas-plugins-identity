@@ -1,0 +1,20 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    >
+
+  <!-- The allowed groups a client may be restricted to. Written into every
+       stored registration, empty, which admits everybody as before. -->
+  <genericsetup:upgradeSteps
+      profile="pas.plugins.identity.server:default"
+      source="1000"
+      destination="1001"
+      >
+    <genericsetup:upgradeStep
+        title="Add allowed groups to every OAuth client"
+        description="Writes an empty allowed_groups list into every stored client registration, so every client keeps admitting everybody until an operator restricts it."
+        handler=".add_allowed_groups"
+        />
+  </genericsetup:upgradeSteps>
+
+</configure>

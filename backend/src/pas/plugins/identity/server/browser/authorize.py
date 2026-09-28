@@ -34,6 +34,7 @@ from pas.plugins.identity.server.discovery import AUTHORIZE_VIEW
 from pas.plugins.identity.server.events import ClientAuthorized
 from pas.plugins.identity.server.grants.codes import ChallengeError
 from pas.plugins.identity.server.grants.codes import check_challenge
+from pas.plugins.identity.server.grants.membership import admitted
 from pas.plugins.identity.server.pas import PLUGIN_ID
 from pas.plugins.identity.server.utils.urls import redirect_with
 from plone import api
@@ -231,6 +232,17 @@ class AuthorizeView(BrowserView):
             # sanitising a return URL is exactly the thing not to write twice.
             raise Unauthorized(
                 "The end user must authenticate before authorizing a client."
+            )
+
+        # Before the profile gate and before consent: somebody the client
+        # does not admit is not asked to complete a profile for it, is never
+        # shown its consent screen, and leaves no consent on record. Refused
+        # whether or not the client forbade interaction, since asking would
+        # not change the answer.
+        if not admitted(client, user.getId(), "authorize"):
+            raise AuthorizationError(
+                "access_denied",
+                "The end user is not allowed to use this client.",
             )
 
         # Before consent, not after. A site that requires an email address

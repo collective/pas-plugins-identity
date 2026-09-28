@@ -419,6 +419,11 @@ export interface OAuthClient {
   enabled: boolean;
   service_user: string;
   /**
+   * The groups whose members may authorize this client, nested memberships
+   * included. Empty means anybody with an account may.
+   */
+  allowed_groups: string[];
+  /**
    * The plaintext secret. Present only in the response that minted it, at
    * registration or rotation, and never readable again: the server stores a
    * hash. Anything holding this has to show it to the operator at once.

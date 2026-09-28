@@ -36,6 +36,7 @@ export const EDITABLE = [
   'scope',
   'enabled',
   'service_user',
+  'allowed_groups',
 ];
 
 const messages = defineMessages({
@@ -136,6 +137,7 @@ export function toFormData(client?: OAuthClient): Record<string, unknown> {
     redirect_uris: [...(client.redirect_uris ?? [])],
     scope: [...(client.scope ?? [])],
     service_user: client.service_user ?? '',
+    allowed_groups: [...(client.allowed_groups ?? [])],
   };
 }
 
@@ -164,6 +166,7 @@ export function fromFormData(
     redirect_uris: (data.redirect_uris ?? []).filter(Boolean),
     scope: (data.scope ?? []).filter(Boolean),
     service_user: data.service_user ?? '',
+    allowed_groups: (data.allowed_groups ?? []).filter(Boolean),
   };
 
   if (adding) {

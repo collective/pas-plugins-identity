@@ -60,6 +60,11 @@ msgstr ""
 msgid "Allow {client} to use your account?"
 msgstr ""
 
+#. Default: "Allowed groups"
+#: components/ControlPanel/ClientsPanel
+msgid "Allowed groups"
+msgstr ""
+
 #. Default: "An export carries every client secret in the clear. Handle the file the way you would handle the secrets inside it."
 #: components/ControlPanel/ProvidersControlPanel
 msgid "An export carries every client secret in the clear."
@@ -313,6 +318,11 @@ msgstr ""
 #: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Error"
+msgstr ""
+
+#. Default: "Everybody"
+#: components/ControlPanel/ClientsPanel
+msgid "Everybody"
 msgstr ""
 
 #. Default: "Expand toolbar"

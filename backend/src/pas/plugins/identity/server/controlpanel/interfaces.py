@@ -27,6 +27,7 @@ to the same rule.
 
 from copy import copy
 from pas.plugins.identity import _
+from pas.plugins.identity.core.vocabularies.groups import GROUPS_VOCABULARY
 from pas.plugins.identity.server.interfaces import GRANT_TYPES
 from pas.plugins.identity.server.interfaces import IServerSettings
 from pas.plugins.identity.server.interfaces import PUBLIC_AUTH_METHOD
@@ -325,13 +326,16 @@ GRANTS = SimpleVocabulary([SimpleTerm(grant, grant, grant) for grant in GRANT_TY
 class IClientRecords(Interface):
     """The fields every registered OAuth client has.
 
-    Registered once per client, under
-    ``pas.plugins.identity.clients.<id>`` as the prefix, exactly as a provider
-    is -- so a GenericSetup export lists the real fields with the real types
-    and a profile can declare a client with a single ``<records>`` node.
+    Clients are stored as a JSON list in a single registry record (see
+    :data:`~pas.plugins.identity.server.controlpanel.clients.CLIENTS_RECORD`).
+    This interface describes one entry of that list, and ``@identity-clients``
+    serves it as the schema the control panel's client form is built from.
+    Nothing validates stored entries against it: a group in
+    ``allowed_groups`` that does not exist yet is kept, although the form
+    only offers existing ones.
 
-    ``client_id`` and ``auth_method`` are not here. The first is the record
-    prefix, so it cannot be edited without being a different client; the
+    ``client_id`` and ``auth_method`` are not here. The first identifies the
+    client, so it cannot be edited without being a different client; the
     second is decided by whether a secret was minted, which is a fact about
     registration rather than a setting. Neither has ever been editable, and a
     form offering them would be offering to break every token already issued.
@@ -355,6 +359,20 @@ class IClientRecords(Interface):
         ),
         required=False,
         default=True,
+    )
+
+    allowed_groups = schema.Tuple(
+        title=_("Allowed groups"),
+        description=_(
+            "Only members of these groups, directly or through a nested "
+            "group, may sign in to this client. Anybody else is refused "
+            "before being asked to consent. Empty means everybody with an "
+            "account."
+        ),
+        required=False,
+        default=(),
+        missing_value=(),
+        value_type=schema.Choice(vocabulary=GROUPS_VOCABULARY),
     )
 
     redirect_uris = schema.Tuple(

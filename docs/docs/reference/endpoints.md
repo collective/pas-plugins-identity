@@ -164,7 +164,7 @@ profile does not publish them at all.
 | GET | `@identity-clients` | `Manage portal` | Registered OAuth clients, or one with `/<id>`. |
 | POST | `@identity-clients` | `Manage portal` | Register one. **The secret is in this response and nowhere else.** |
 | POST | `@identity-clients/<id>/rotate-secret` | `Manage portal` | Mint a fresh secret. Same warning applies. |
-| PATCH | `@identity-clients/<id>` | `Manage portal` | Change title, redirect URIs, grants, scope, service user, and enabled. `client_id` and `auth_method` are not editable, and an unknown field is refused rather than ignored. |
+| PATCH | `@identity-clients/<id>` | `Manage portal` | Change title, redirect URIs, grants, scope, service user, allowed groups, and enabled. `client_id` and `auth_method` are not editable, and an unknown field is refused rather than ignored. |
 | DELETE | `@identity-clients/<id>` | `Manage portal` | Remove one. |
 | GET | `@identity-keys` | `Manage portal` | Describe the signing ring. |
 | GET | `@controlpanels/identity-clients` | `Manage portal` | The server settings and their schema: issuer, consent screen, token lifetimes, and unreleased groups. Neither the client list nor the signing keys. |

@@ -16,6 +16,7 @@ const CLIENT: OAuthClient = {
   public: false,
   enabled: true,
   service_user: '',
+  allowed_groups: [],
   secret: 's3cr3t',
   notice: 'This is the only time this secret is shown.',
 };

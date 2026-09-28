@@ -23,6 +23,7 @@ attacker nothing they did not already have the secret to learn.
 from pas.plugins.identity.server.controlpanel.clients import authenticate
 from pas.plugins.identity.server.controlpanel.clients import get_client
 from pas.plugins.identity.server.grants.codes import CodeError
+from pas.plugins.identity.server.grants.membership import admitted
 from pas.plugins.identity.server.grants.refresh import RefreshError
 from pas.plugins.identity.server.grants.tokens import token_response
 from pas.plugins.identity.server.interfaces import AUTHORIZATION_CODE
@@ -295,6 +296,17 @@ class TokenView(BrowserView):
         replacement, grant = store.rotate(
             self._param("refresh_token"), client.client_id
         )
+
+        # Asked again at every rotation, so somebody removed from the
+        # client's allowed groups stops getting tokens once their access
+        # token expires. Their remaining tokens for this client go too,
+        # including the replacement just minted, which nobody has seen.
+        if not admitted(client, grant.subject, "refresh"):
+            store.revoke_for_client(grant.subject, client.client_id)
+            raise GrantError(
+                "invalid_grant",
+                "The user is no longer allowed to use this client.",
+            )
 
         # RFC 6749 §6: a refresh request may narrow the scope, never widen
         # it. Silently granting more than the user agreed to at the

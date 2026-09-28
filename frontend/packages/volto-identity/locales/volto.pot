@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Plone\n"
-"POT-Creation-Date: 2026-09-27T22:48:30.872Z\n"
+"POT-Creation-Date: 2026-09-28T18:18:16.751Z\n"
 "Last-Translator: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Language-Team: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -60,6 +60,11 @@ msgstr ""
 #. Default: "Allow {client} to use your account?"
 #: components/Consent/ConsentPanel
 msgid "Allow {client} to use your account?"
+msgstr ""
+
+#. Default: "Allowed groups"
+#: components/ControlPanel/ClientsPanel
+msgid "Allowed groups"
 msgstr ""
 
 #. Default: "An export carries every client secret in the clear. Handle the file the way you would handle the secrets inside it."
@@ -315,6 +320,11 @@ msgstr ""
 #: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Error"
+msgstr ""
+
+#. Default: "Everybody"
+#: components/ControlPanel/ClientsPanel
+msgid "Everybody"
 msgstr ""
 
 #. Default: "Expand toolbar"

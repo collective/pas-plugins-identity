@@ -42,10 +42,15 @@ const SERVED = {
     },
     scope: { title: 'Scopes', type: 'array' },
     service_user: { title: 'Acts as', type: 'string' },
+    allowed_groups: { title: 'Allowed groups', type: 'array' },
   },
   required: ['title'],
   fieldsets: [
-    { id: 'default', title: 'Default', fields: ['title', 'enabled'] },
+    {
+      id: 'default',
+      title: 'Default',
+      fields: ['title', 'enabled', 'allowed_groups'],
+    },
     {
       id: 'flow',
       title: 'Flow',
@@ -101,6 +106,12 @@ describe('clientSchema', () => {
     expect(offered.every((field) => EDITABLE.includes(field))).toBe(true);
   });
 
+  it('lets an edit restrict a client to some groups', () => {
+    const schema = clientSchema(SERVED, false, intl);
+
+    expect(schema.fieldsets[0].fields).toContain('allowed_groups');
+  });
+
   it('survives a backend that sent no schema', () => {
     // An empty form is recoverable; a crash on `schema.fieldsets` is not.
     const schema = clientSchema(undefined, true, intl);
@@ -129,6 +140,19 @@ describe('toFormData', () => {
     const client = { scope: ['openid'] } as OAuthClient;
 
     expect(toFormData(client).scope).not.toBe(client.scope);
+  });
+
+  it('edits the allowed groups as a copy', () => {
+    const client = { allowed_groups: ['Reviewers'] } as OAuthClient;
+
+    const data = toFormData(client);
+
+    expect(data.allowed_groups).toEqual(['Reviewers']);
+    expect(data.allowed_groups).not.toBe(client.allowed_groups);
+  });
+
+  it('has no allowed groups for a client stored before they existed', () => {
+    expect(toFormData({} as OAuthClient).allowed_groups).toEqual([]);
   });
 
   it('has no scopes for a client that carries none', () => {
@@ -168,6 +192,21 @@ describe('fromFormData', () => {
     );
 
     expect(payload.redirect_uris).toEqual(['  https://a.example/cb#frag  ']);
+  });
+
+  it('sends the allowed groups, without empty rows', () => {
+    const payload = fromFormData(
+      { allowed_groups: ['Reviewers', '', null] },
+      false,
+    );
+
+    expect(payload.allowed_groups).toEqual(['Reviewers']);
+  });
+
+  it('sends no allowed groups as an empty list, not as nothing', () => {
+    // An empty list is how an edit lifts a restriction; leaving the key out
+    // would keep it.
+    expect(fromFormData({}, false).allowed_groups).toEqual([]);
   });
 
   it('sends only what a PATCH accepts', () => {

@@ -3,6 +3,7 @@ import React from 'react';
 
 import ClientsPanel from './ClientsPanel';
 import {
+  CLIENT_SCHEMA,
   CLIENTS,
   GROUPS_STATE,
   KEYRING,
@@ -17,6 +18,7 @@ const meta: Meta<typeof ClientsPanel> = {
   component: ClientsPanel,
   args: {
     clients: CLIENTS,
+    schema: CLIENT_SCHEMA,
     keys: KEYRING,
     settings: SERVER_SETTINGS,
     loading: false,
@@ -41,9 +43,10 @@ type Story = StoryObj<typeof ClientsPanel>;
 
 /**
  * Volto's `Form` is a connected component, so the two form views need a
- * store above them even though this schema asks nothing of it.
+ * store above them. The allowed groups picker reads its vocabulary from
+ * it, so one is loaded.
  */
-const withForm = withStore({});
+const withForm = withStore({ vocabularies: GROUPS_STATE });
 
 /** Who may log in *to* this site. The add action lives in the toolbar. */
 export const Registered: Story = {};
@@ -66,6 +69,15 @@ export const Registering: Story = {
 /** The same form over a stored client, minus what cannot be changed. */
 export const Editing: Story = {
   args: { view: 'edit', editing: CLIENTS[0].client_id },
+  decorators: [withForm],
+};
+
+/**
+ * A client only some people may sign in to: members of the groups picked
+ * here, directly or through a nested group.
+ */
+export const EditingRestricted: Story = {
+  args: { view: 'edit', editing: 'stats' },
   decorators: [withForm],
 };
 

@@ -178,6 +178,28 @@ def as_scope_list(scopes: list[str] | tuple[str, ...] | str | None) -> list[str]
     return stored
 
 
+def as_group_list(groups: list[str] | tuple[str, ...] | None) -> list[str]:
+    """Return group ids as a list, stripped, without blanks or duplicates.
+
+    An id that names no group is kept rather than refused: a client can be
+    registered before the group it is meant for exists. It grants nothing
+    until then, since nobody is a member of it.
+
+    A single string is one group id, never a sequence of one-letter ones.
+
+    :param groups: Group ids as supplied, or nothing.
+    :returns: The group ids to store, in the order given.
+    """
+    if isinstance(groups, str):
+        groups = [groups]
+    stored: list[str] = []
+    for group in groups or ():
+        group = group.strip()
+        if group and group not in stored:
+            stored.append(group)
+    return stored
+
+
 class ClientConfig:
     """One registered OAuth client.
 
@@ -193,6 +215,8 @@ class ClientConfig:
     :ivar enabled: Whether the client may obtain tokens at all.
     :ivar service_user: The Plone userid a client-credentials token for this
         client acts as. Empty unless the client is registered for that grant.
+    :ivar allowed_groups: The groups whose members may authorize this client.
+        Empty means anybody with an account may.
     """
 
     def __init__(
@@ -206,6 +230,7 @@ class ClientConfig:
         secret_hash: str = "",
         enabled: bool = True,
         service_user: str = "",
+        allowed_groups: list[str] | tuple[str, ...] | None = None,
     ) -> None:
         """Build a client registration.
 
@@ -218,6 +243,8 @@ class ClientConfig:
         :param secret_hash: Stored secret hash.
         :param enabled: Whether the client is usable.
         :param service_user: Plone userid for the client-credentials grant.
+        :param allowed_groups: Groups whose members may authorize the client;
+            empty for anybody.
         """
         self.client_id = client_id
         self.title = title
@@ -228,6 +255,7 @@ class ClientConfig:
         self.secret_hash = secret_hash
         self.enabled = enabled
         self.service_user = service_user
+        self.allowed_groups = allowed_groups
 
     @property
     def redirect_uris(self) -> list[str]:
@@ -290,6 +318,25 @@ class ClientConfig:
             accepted, which is what everything registered before this held.
         """
         self._scope = as_scope_list(value)
+
+    @property
+    def allowed_groups(self) -> list[str]:
+        """Return the groups whose members may authorize this client.
+
+        :returns: The registered group ids; empty for anybody.
+        """
+        return self._allowed_groups
+
+    @allowed_groups.setter
+    def allowed_groups(self, value: list[str] | tuple[str, ...] | None) -> None:
+        """Store group ids in one shape.
+
+        A property for the reason :attr:`scope` is one: the PATCH endpoint
+        assigns to it directly.
+
+        :param value: Group ids as supplied.
+        """
+        self._allowed_groups = as_group_list(value)
 
     @property
     def scope_string(self) -> str:
@@ -372,6 +419,18 @@ class ClientConfig:
         """
         return grant_type in self.grant_types
 
+    def admits(self, groups: list[str] | tuple[str, ...] | set[str]) -> bool:
+        """Whether a user in these groups may authorize this client.
+
+        :param groups: Every group the user belongs to, nested memberships
+            included, as PAS answers ``getGroups``.
+        :returns: True when no group is required, or when the user is in at
+            least one of the allowed groups.
+        """
+        if not self.allowed_groups:
+            return True
+        return not set(self.allowed_groups).isdisjoint(groups)
+
     def scopes(self) -> set[str]:
         """Return the scopes this client may ask for, as a set.
 
@@ -399,6 +458,7 @@ class ClientConfig:
             "public": self.is_public,
             "enabled": self.enabled,
             "service_user": self.service_user,
+            "allowed_groups": list(self.allowed_groups),
         }
         if include_hash:
             data["secret_hash"] = self.secret_hash
@@ -421,6 +481,7 @@ class ClientConfig:
             secret_hash=data.get("secret_hash", ""),
             enabled=data.get("enabled", True),
             service_user=data.get("service_user", ""),
+            allowed_groups=data.get("allowed_groups", ()),
         )
 
     def __repr__(self) -> str:
@@ -472,6 +533,7 @@ def add_client(
     scope: list[str] | tuple[str, ...] | str | None = None,
     public: bool = False,
     service_user: str = "",
+    allowed_groups: list[str] | tuple[str, ...] | None = None,
 ) -> tuple[ClientConfig, str]:
     """Register a client, minting a secret for a confidential one.
 
@@ -482,6 +544,8 @@ def add_client(
     :param scope: Scopes this client may ask for.
     :param public: Whether the client authenticates with no secret.
     :param service_user: Plone userid a client-credentials token acts as.
+    :param allowed_groups: Groups whose members may authorize the client;
+        empty for anybody.
     :returns: The stored client and its plaintext secret. The secret is empty
         for a public client, and this is the only time it exists: it is hashed
         on the way in and cannot be read back.
@@ -501,6 +565,7 @@ def add_client(
         auth_method=PUBLIC_AUTH_METHOD if public else "client_secret_post",
         secret_hash="" if public else hash_secret(secret),
         service_user=service_user,
+        allowed_groups=allowed_groups,
     )
     set_clients([*get_clients(), client])
     return client, secret

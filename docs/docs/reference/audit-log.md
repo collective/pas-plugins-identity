@@ -52,10 +52,12 @@ Stable strings, so a consumer can filter on them.
 | `link-refused` | A linking flow was completed by a different session than the one that started it. Answers `403`. |
 | `link-collision` | The identity is already linked to a different userid. Answers `409`. Two people are never merged into one account. |
 | `magic-link-refused` | A magic-link send or redemption was refused. |
+| `client-refused` | The authorization server refused a user outside a client's allowed groups (`[server]`). The provider field holds the client id. Detail carries `client_id` and `stage`: `authorize` at the authorization endpoint, `refresh` at a refresh. |
 
 `flow-refused` and `signin-refused` are deliberately distinct. A run of the first
 is somebody failing to authenticate; a run of the second is your own
-configuration.
+configuration. `client-refused` is the same kind of entry as `signin-refused`,
+for a client of this site instead of a provider.
 
 ## Endpoints
 
