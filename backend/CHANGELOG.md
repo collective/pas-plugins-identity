@@ -9,6 +9,18 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0a11 (2026-09-28)
+
+
+### Feature
+
+- Added `allowed_groups` to OAuth client registrations, so a client can be restricted to members of some groups, nested memberships included. Anybody else is refused with `access_denied` before the profile gate and the consent screen, and a refresh checks again, refusing with `invalid_grant` and revoking the user's tokens for that client. Each refusal is recorded in the audit log as `client-refused`. `@identity-clients` and `api.clients.add` accept the field, and upgrade step 1001, the server profile's first, adds it empty to every registered client. @ericof [#120](https://github.com/collective/pas-plugins-identity/issues/120)
+
+
+### Bugfix
+
+- Kept the query string of a client's redirect URI when the authorization endpoint answers. A client registered with a redirect URI such as `https://stats.example.org/index.php?module=RebelOIDC&action=callback&provider=oidc` was sent back to `…&provider=oidc?code=…`, so it never found the `code`, and a refusal's `error` was lost the same way. The response parameters are now added to the registered query, as RFC 6749 requires. @ericof [#121](https://github.com/collective/pas-plugins-identity/issues/121)
+
 ## 1.0.0a10 (2026-09-28)
 
 

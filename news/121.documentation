@@ -1,1 +1,0 @@
-Documented that a client's redirect URI may carry a query string of its own, and how the authorization response is added to it. @ericof

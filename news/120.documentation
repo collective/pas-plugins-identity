@@ -1,1 +1,0 @@
-Documented restricting an OAuth client to some groups, the `client-refused` audit entry, and the server profile's first upgrade step. Corrected the profile versions stated in the install profiles and stability references. @ericof

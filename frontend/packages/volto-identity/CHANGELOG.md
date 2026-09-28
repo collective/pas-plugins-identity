@@ -8,6 +8,13 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0-alpha.11 (2026-09-28)
+
+
+### Feature
+
+- Added an **Allowed groups** picker to the OAuth client form and an **Allowed groups** column to the client list, which says "Everybody" for a client open to every account. @ericof [#120](https://github.com/collective/pas-plugins-identity/issues/120)
+
 ## 1.0.0-alpha.10 (2026-09-28)
 
 

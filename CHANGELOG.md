@@ -7,6 +7,41 @@
 -->
 
 <!-- towncrier release notes start -->
+## 1.0.0a11 (2026-09-28)
+
+### Backend
+
+
+#### Feature
+
+- Added `allowed_groups` to OAuth client registrations, so a client can be restricted to members of some groups, nested memberships included. Anybody else is refused with `access_denied` before the profile gate and the consent screen, and a refresh checks again, refusing with `invalid_grant` and revoking the user's tokens for that client. Each refusal is recorded in the audit log as `client-refused`. `@identity-clients` and `api.clients.add` accept the field, and upgrade step 1001, the server profile's first, adds it empty to every registered client. @ericof [#120](https://github.com/collective/pas-plugins-identity/issues/120)
+
+
+#### Bugfix
+
+- Kept the query string of a client's redirect URI when the authorization endpoint answers. A client registered with a redirect URI such as `https://stats.example.org/index.php?module=RebelOIDC&action=callback&provider=oidc` was sent back to `…&provider=oidc?code=…`, so it never found the `code`, and a refusal's `error` was lost the same way. The response parameters are now added to the registered query, as RFC 6749 requires. @ericof [#121](https://github.com/collective/pas-plugins-identity/issues/121)
+
+
+
+### Frontend
+
+
+#### Feature
+
+- Added an **Allowed groups** picker to the OAuth client form and an **Allowed groups** column to the client list, which says "Everybody" for a client open to every account. @ericof [#120](https://github.com/collective/pas-plugins-identity/issues/120)
+
+
+
+### Project
+
+
+#### Documentation
+
+- Documented restricting an OAuth client to some groups, the `client-refused` audit entry, and the server profile's first upgrade step. Corrected the profile versions stated in the install profiles and stability references. @ericof [#120](https://github.com/collective/pas-plugins-identity/issues/120)
+- Documented that a client's redirect URI may carry a query string of its own, and how the authorization response is added to it. @ericof [#121](https://github.com/collective/pas-plugins-identity/issues/121)
+
+
+
 ## 1.0.0a10 (2026-09-28)
 
 ### Backend
