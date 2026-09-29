@@ -3,12 +3,12 @@ myst:
   html_meta:
     "description": "See which providers a user signs in with, when they last authenticated, and which of their addresses this site verified."
     "property=og:description": "See which providers a user signs in with, when they last authenticated, and which of their addresses this site verified."
-    "property=og:title": "How to review a user's account"
+    "property=og:title": "Review a user's account"
 ---
 
 (how-to-review-a-user-account)=
 
-# How to review a user's account
+# Review a user's account
 
 This guide shows you how to find out how one person signs in to your site, and when they last did.
 
@@ -80,11 +80,11 @@ A password, in any form.
 Nothing in this package can read one, and the audit log has never recorded credentials or tokens.
 
 An IP address or a browser, unless you turned that on.
-See {doc}`read-the-audit-log`.
+See {doc}`/how-to-guides/operate/read-the-audit-log`.
 
 ## Next steps
 
--   {doc}`read-the-audit-log` to query the same events across the whole site.
--   {doc}`configure-a-provider` to re-enable or recreate a provider a badge is complaining about.
--   {doc}`troubleshoot` when the account looks right and the sign-in still fails.
+-   {doc}`/how-to-guides/operate/read-the-audit-log` to query the same events across the whole site.
+-   {doc}`/how-to-guides/providers/configure-a-provider` to re-enable or recreate a provider a badge is complaining about.
+-   {doc}`/how-to-guides/operate/troubleshoot` when the account looks right and the sign-in still fails.
 -   {doc}`/reference/profiles-and-groups` for the endpoint's full answer.

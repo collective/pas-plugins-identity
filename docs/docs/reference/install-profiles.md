@@ -55,7 +55,7 @@ here would be read by that step and applied to the site catalog.
 
 The step is additive and re-runnable, and it exports as well as imports. It does
 not populate what it creates—see
-{doc}`/how-to-guides/add-a-catalog-index`.
+{doc}`/how-to-guides/extend/add-a-catalog-index`.
 
 ### `pas.plugins.identity:rebuild-catalog`
 
@@ -63,7 +63,7 @@ Re-catalogs every principal and reports what it repaired.
 
 Apply it when enumeration or group membership returns stale answers—typically
 after a release that changed what the catalog stores. See
-{doc}`/how-to-guides/upgrade`.
+{doc}`/how-to-guides/install/upgrade`.
 
 ### `pas.plugins.identity.server:default`
 
@@ -93,18 +93,18 @@ per version, each registering the steps that take a site to it, and
 `portal_setup` offers them to a site installed against an earlier release.
 `pas.plugins.identity.server:default` is at 1001, with its steps laid out the
 same way in `server/upgrades/`.
-{doc}`/how-to-guides/upgrade` lists what each step does.
+{doc}`/how-to-guides/install/upgrade` lists what each step does.
 
 An upgrade step is for what a reapplied profile cannot carry. Everything else—a
 registry record, a content type, a workflow, a plugin—reaches an existing site
 **only if the profile is reapplied**.
 
 This is what the alpha status means in practice. See {doc}`stability` for what
-that implies, and {doc}`/how-to-guides/upgrade` for the procedure.
+that implies, and {doc}`/how-to-guides/install/upgrade` for the procedure.
 
 ## Related
 
-- {doc}`/how-to-guides/install`—applying these
-- {doc}`/how-to-guides/upgrade`—reapplying them
+- {doc}`/how-to-guides/install/backend`—applying these
+- {doc}`/how-to-guides/install/upgrade`—reapplying them
 - {doc}`settings`—the records the install profile writes
 - {doc}`permissions`—the rolemap it installs

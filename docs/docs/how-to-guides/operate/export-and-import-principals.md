@@ -3,13 +3,13 @@ myst:
   html_meta:
     "description": "Export a site's users, groups and identities as JSON, and import them into another site."
     "property=og:description": "Export a site's users, groups and identities as JSON, and import them into another site."
-    "property=og:title": "How to export and import principals"
+    "property=og:title": "Export and import principals"
     "keywords": "Plone, pas.plugins.identity, export, import, backup, migration"
 ---
 
 (how-to-export-and-import-principals)=
 
-# How to export and import principals
+# Export and import principals
 
 Move a site's users, groups and identity join between sites as a single JSON
 file.
@@ -19,7 +19,7 @@ site from an old one, or to import a `pas.plugins.authomatic` site that is not i
 this instance and cannot be.
 
 If both plugins are installed in the same instance and the site is staying where
-it is, use {doc}`migrate-from-authomatic` instead.
+it is, use {doc}`/how-to-guides/migrate/from-authomatic` instead.
 
 ## Export a site
 
@@ -209,5 +209,5 @@ context yourself, which is what the console commands do for you.
 ## Next steps
 
 - {doc}`/reference/principal-documents`—the document format and every refusal
-- {doc}`migrate-from-authomatic`—the in-place alternative
-- {doc}`troubleshoot`—if a migrated person gets a second account
+- {doc}`/how-to-guides/migrate/from-authomatic`—the in-place alternative
+- {doc}`/how-to-guides/operate/troubleshoot`—if a migrated person gets a second account

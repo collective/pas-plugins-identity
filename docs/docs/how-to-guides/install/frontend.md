@@ -3,18 +3,18 @@ myst:
   html_meta:
     "description": "Add the volto-identity add-on to a Volto project so users can sign in."
     "property=og:description": "Add the volto-identity add-on to a Volto project so users can sign in."
-    "property=og:title": "How to install the frontend"
+    "property=og:title": "Install the frontend"
 ---
 
 (how-to-install-the-frontend)=
 
-# How to install the frontend
+# Install the frontend
 
 Add `@plone-collective/volto-identity` to a Volto project.
 
 Without it the backend is installed and nobody can sign in: every sign-in route this package uses is registered by the frontend add-on.
 
-Do {doc}`install` first.
+Do {doc}`/how-to-guides/install/backend` first.
 
 ## Requirements
 
@@ -88,7 +88,7 @@ If the page is Volto's own username-and-password form instead, the add-on is not
 registered. Check that it is in the `addons` key of your add-on's `package.json`,
 not only in `dependencies`, and re-run `make frontend-install`.
 
-If the page loads but lists no providers, the backend has none enabled yet: see {doc}`providers/index`.
+If the page loads but lists no providers, the backend has none enabled yet: see {doc}`/how-to-guides/providers/index`.
 
 ## Hide the Plone login form
 
@@ -146,6 +146,6 @@ The full surface is in {doc}`/reference/frontend`.
 
 ## Next steps
 
-1. {doc}`providers/index`—add your first provider.
+1. {doc}`/how-to-guides/providers/index`—add your first provider.
 2. {doc}`/reference/frontend`—routes, environment variables, and what you can override.
-3. {doc}`troubleshoot`—if `/login` does not show what you expect.
+3. {doc}`/how-to-guides/operate/troubleshoot`—if `/login` does not show what you expect.

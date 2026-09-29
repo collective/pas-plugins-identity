@@ -306,7 +306,29 @@ notfound_template = "404.html"
 
 # -- sphinx-reredirects configuration ----------------------------------
 # https://documatt.com/sphinx-reredirects/usage.html
-redirects = {}
+redirects = {
+    "how-to-guides/add-a-catalog-index": "extend/add-a-catalog-index.html",
+    "how-to-guides/configure-a-provider": "providers/configure-a-provider.html",
+    "how-to-guides/control-account-creation": "accounts/control-account-creation.html",
+    "how-to-guides/edit-a-list-as-a-table": "extend/edit-a-list-as-a-table.html",
+    "how-to-guides/enable-back-channel-logout": "operate/enable-back-channel-logout.html",
+    "how-to-guides/export-and-import-principals": "operate/export-and-import-principals.html",
+    "how-to-guides/extend-a-profile-page": "extend/extend-a-profile-page.html",
+    "how-to-guides/install": "install/backend.html",
+    "how-to-guides/install-the-frontend": "install/frontend.html",
+    "how-to-guides/link-accounts-by-email": "accounts/link-accounts-by-email.html",
+    "how-to-guides/map-provider-groups": "accounts/map-provider-groups.html",
+    "how-to-guides/migrate-from-authomatic": "migrate/from-authomatic.html",
+    "how-to-guides/migrate-from-oidc": "migrate/from-oidc.html",
+    "how-to-guides/read-the-audit-log": "operate/read-the-audit-log.html",
+    "how-to-guides/register-an-oauth-client": "server/register-an-oauth-client.html",
+    "how-to-guides/review-a-user-account": "operate/review-a-user-account.html",
+    "how-to-guides/serialize-a-claim": "extend/serialize-a-claim.html",
+    "how-to-guides/troubleshoot": "operate/troubleshoot.html",
+    "how-to-guides/upgrade": "install/upgrade.html",
+    "how-to-guides/write-a-driver": "extend/write-a-driver.html",
+    "how-to-guides/write-a-profile-enricher": "extend/write-a-profile-enricher.html",
+}
 
 
 # -- sphinx-tippy configuration ----------------------------------

@@ -14,7 +14,7 @@ sent blank.
 
 That split is what makes a downstream package able to add a claim, or a whole
 scope, by registering an adapter rather than by mutating a dict in this
-module at import time. See :doc:`/how-to-guides/serialize-a-claim`.
+module at import time. See :doc:`/how-to-guides/extend/serialize-a-claim`.
 
 **The source of a value.** Claims are read from **Plone user properties**,
 never from a Profile. That is what keeps the ``[server]`` layer independent of

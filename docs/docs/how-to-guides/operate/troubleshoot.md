@@ -3,12 +3,12 @@ myst:
   html_meta:
     "description": "Find the cause of a failed sign-in by symptom, using the audit log."
     "property=og:description": "Find the cause of a failed sign-in by symptom, using the audit log."
-    "property=og:title": "How to troubleshoot sign-in"
+    "property=og:title": "Troubleshoot sign-in"
 ---
 
 (how-to-troubleshoot)=
 
-# How to troubleshoot sign-in
+# Troubleshoot sign-in
 
 Find what went wrong, by symptom.
 
@@ -19,7 +19,7 @@ well as successes, and it tells an unknown identity apart from a denied group an
 a link collision.
 
 Open **Identity providers → Audit log**, or `GET @audit-log`. Reading it needs
-`Manage portal`. See {doc}`read-the-audit-log`.
+`Manage portal`. See {doc}`/how-to-guides/operate/read-the-audit-log`.
 
 The event name in the log is the fastest route into the table below.
 
@@ -50,7 +50,7 @@ An enabled provider that is not shown is still usable—it stays linkable from a
 user's own sign-in methods page—it simply has no button.
 
 If no provider at all appears and you configured one, check the frontend add-on
-is registered: see {doc}`install-the-frontend`.
+is registered: see {doc}`/how-to-guides/install/frontend`.
 
 ## `/login` goes straight to the provider
 
@@ -61,7 +61,7 @@ its own.
 - To see the page anyway, open `/login?choose=1`.
 - To show the button every time, set
   `RAZZLE_IDENTITY_REDIRECT_TO_SOLE_PROVIDER=false`—see
-  {doc}`install-the-frontend`.
+  {doc}`/how-to-guides/install/frontend`.
 - Volto's own password form is at `/fallback_login` either way.
 
 ## The login page shows Volto's username and password form instead
@@ -70,7 +70,7 @@ The frontend add-on is not loaded. Check `volto.config.js` names
 `@plone-collective/volto-identity`, and that the install linked it.
 
 If you *want* both, that is `RAZZLE_IDENTITY_SHOW_PLONE_LOGIN=true`—see
-{doc}`install-the-frontend`.
+{doc}`/how-to-guides/install/frontend`.
 
 ## Redirected to the provider, then `redirect_uri_mismatch`
 
@@ -96,8 +96,8 @@ Read the audit log entry.
 
 | Reason in the entry | Cause | Fix |
 |---|---|---|
-| a group restriction | the person is in none of the listed groups | {doc}`map-provider-groups` |
-| account creation refused | no account matched and creation is off | {doc}`control-account-creation` |
+| a group restriction | the person is in none of the listed groups | {doc}`/how-to-guides/accounts/map-provider-groups` |
+| account creation refused | no account matched and creation is off | {doc}`/how-to-guides/accounts/control-account-creation` |
 | `payload-rejected` | the token or userinfo did not validate | check clock skew and the issuer value |
 
 The person signing in is told only that it failed. Naming the reason on the login
@@ -106,7 +106,7 @@ page would tell anyone who can reach it which groups matter here.
 ## An account was created when it should have linked to an existing one
 
 Linking by email needs three switches, and all three must be on. See
-{doc}`link-accounts-by-email`.
+{doc}`/how-to-guides/accounts/link-accounts-by-email`.
 
 The most common cause is the third: the provider sends `email_verified` as the
 string `"true"`, so every address arrives unverified and matching never fires.
@@ -140,7 +140,7 @@ In order:
 
 1. **The provider is sending groups at all.** Keycloak sends none until a Group
    Membership mapper exists; Entra sends none until the app manifest asks.
-   Verified for Keycloak 26—see {doc}`providers/keycloak`.
+   Verified for Keycloak 26—see {doc}`/how-to-guides/providers/keycloak`.
 2. {guilabel}`Groups arrive in the claim` matches the claim name the provider uses.
 3. The group map has a row for that provider-side name. An unmapped name grants
    nothing, by design.
@@ -194,10 +194,10 @@ so a successful-looking response does not prove the address is known here.
 A logout token carrying only a `sid`, with no `sub`, cannot be resolved to a
 session this site knows about.
 
-See {doc}`enable-back-channel-logout`.
+See {doc}`/how-to-guides/operate/enable-back-channel-logout`.
 
 ## Related
 
-- {doc}`read-the-audit-log`—how to read what the log records
+- {doc}`/how-to-guides/operate/read-the-audit-log`—how to read what the log records
 - {doc}`/reference/audit-log`—every event name and field
 - {doc}`/reference/stability`—what may change between alpha releases

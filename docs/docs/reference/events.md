@@ -167,7 +167,7 @@ event that will not arrive.
 ## Related
 
 - {doc}`audit-log`—where refusals are recorded
-- {doc}`/how-to-guides/enable-back-channel-logout`—what fires `SessionsRevoked`
+- {doc}`/how-to-guides/operate/enable-back-channel-logout`—what fires `SessionsRevoked`
 - {doc}`claims`—claims going the other way, out to a relying party
 - {doc}`stability`—what this contract promises
-- {doc}`/how-to-guides/read-the-audit-log`—reacting to failures
+- {doc}`/how-to-guides/operate/read-the-audit-log`—reacting to failures

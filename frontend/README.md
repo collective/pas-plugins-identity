@@ -64,14 +64,14 @@ A shadowed path is a wiring decision, not somewhere to keep code nothing can imp
 
 Full documentation is published at [collective.github.io/pas-plugins-identity](https://collective.github.io/pas-plugins-identity/), and its source lives in [`docs/`](https://github.com/collective/pas-plugins-identity/tree/main/docs) at the repository root.
 
-The pages closest to this package are [Configure a provider](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/how-to-guides/configure-a-provider.md), [Review a user account](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/how-to-guides/review-a-user-account.md), and the [federation tutorial](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/tutorials/federation-demo.md), which walks two Plone sites into trusting each other.
+The pages closest to this package are [Configure a provider](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/how-to-guides/providers/configure-a-provider.md), [Review a user account](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/how-to-guides/operate/review-a-user-account.md), and the [federation tutorial](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/tutorials/federation-demo.md), which walks two Plone sites into trusting each other.
 
 Every component this add-on ships is in [Storybook](https://collective.github.io/pas-plugins-identity/storybook/), which is the fastest way to see one without a running Plone site.
 
 ## Installation
 
 This add-on requires Volto 19 and `pas.plugins.identity` installed on the Plone site.
-It is developed against Volto 19.3.0; see [the frontend install guide](https://collective.github.io/pas-plugins-identity/how-to-guides/install-the-frontend.html) for the full requirement table.
+It is developed against Volto 19.3.0; see [the frontend install guide](https://collective.github.io/pas-plugins-identity/how-to-guides/install/frontend.html) for the full requirement table.
 
 Add `@plone-collective/volto-identity` to your `package.json`.
 

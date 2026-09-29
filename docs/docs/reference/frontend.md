@@ -25,7 +25,7 @@ Everything `@plone-collective/volto-identity` adds to a Volto project.
 `peerDependencies` does not name `@plone/volto` itself. The Volto version above
 is what the monorepo builds against (`frontend/mrs.developer.json`).
 
-Installing it is {doc}`/how-to-guides/install-the-frontend`.
+Installing it is {doc}`/how-to-guides/install/frontend`.
 
 ```{note}
 Every component in this package has a story. **[Browse them in Storybook](https://collective.github.io/pas-plugins-identity/storybook/)**
@@ -223,7 +223,7 @@ Each is a title and a body, because neither type has rich text.
 The backend decides which widget a field uses, through
 `directives.widget(..., frontendOptions={"widget": ...})`, and Volto looks the
 name up here. The frontend composes what it is served rather than describing it.
-Asking for a list widget is {doc}`/how-to-guides/edit-a-list-as-a-table`.
+Asking for a list widget is {doc}`/how-to-guides/extend/edit-a-list-as-a-table`.
 
 ### The list widgets
 
@@ -291,7 +291,7 @@ Three slots reach a profile page and a group page.
 
 The two outer slots come with registering a view in
 `config.views.contentTypesViews`. `belowTitle` is rendered by each view itself.
-Registering into any of them is {doc}`/how-to-guides/extend-a-profile-page`.
+Registering into any of them is {doc}`/how-to-guides/extend/extend-a-profile-page`.
 
 ## Other registrations
 
@@ -302,5 +302,5 @@ Reducers, a menu entry, and `appExtras`.
 - [Storybook](https://collective.github.io/pas-plugins-identity/storybook/)—every component, rendered
 - {doc}`endpoints`—the REST services these routes call
 - {doc}`stability`—what may change between alpha releases
-- {doc}`/how-to-guides/install-the-frontend`—installing it
-- {doc}`/how-to-guides/edit-a-list-as-a-table`—asking for a list widget from a field
+- {doc}`/how-to-guides/install/frontend`—installing it
+- {doc}`/how-to-guides/extend/edit-a-list-as-a-table`—asking for a list widget from a field

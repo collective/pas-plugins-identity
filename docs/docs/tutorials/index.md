@@ -29,4 +29,4 @@ federation-demo
 ```
 
 Afterwards, {doc}`/concepts/mental-model` names everything you just watched
-happen, and {doc}`/how-to-guides/install` starts a real setup.
+happen, and {doc}`/how-to-guides/install/backend` starts a real setup.

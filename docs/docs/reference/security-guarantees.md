@@ -112,8 +112,8 @@ dangerous version.
 | **A client granted `profile` receives the group list** | `groups` rides on `profile` rather than a scope of its own. `AuthenticatedUsers` is never released, and a user in no other group gets no claim at all. See {doc}`claims`. |
 | **A group inside a group grants through it** | At any depth, so a nesting is a grant and reviewing one group's access means reviewing what feeds into it. An inactive group grants nothing and passes nothing through. A cycle terminates rather than raising; it means both groups grant each other. |
 | **A membership list is personal data about other people** | `@group-members` needs `Manage users` or membership of the group; `@user-account` needs `Manage users` except for a caller asking about themselves. |
-| **A provider's groups grant nothing until you map them** | A group map starts empty, an unmapped provider group grants nothing and is never created locally, and a row pointing at a group this site does not have is skipped and logged. Every sign-in reconciles, and takes back only what that same provider granted. See {doc}`/how-to-guides/map-provider-groups`. |
-| **Access tokens cannot be recalled** | They are self-encoded and there is no denylist, so a revoked client's tokens die when they expire—at most the configured access-token TTL. See {doc}`/how-to-guides/enable-back-channel-logout`. |
+| **A provider's groups grant nothing until you map them** | A group map starts empty, an unmapped provider group grants nothing and is never created locally, and a row pointing at a group this site does not have is skipped and logged. Every sign-in reconciles, and takes back only what that same provider granted. See {doc}`/how-to-guides/accounts/map-provider-groups`. |
+| **Access tokens cannot be recalled** | They are self-encoded and there is no denylist, so a revoked client's tokens die when they expire—at most the configured access-token TTL. See {doc}`/how-to-guides/operate/enable-back-channel-logout`. |
 
 ## Related
 

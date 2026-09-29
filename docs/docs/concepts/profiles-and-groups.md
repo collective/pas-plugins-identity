@@ -154,7 +154,7 @@ Without it, a sign-in would write one provider's answer over the whole of a memb
 Membership is written through the group tool rather than to any store of this package's own, so it lands wherever the site keeps membership: `group_ids` on a `UserProfile` where users are content, and `source_groups` where they are not.
 `getGroupsForPrincipal` stays the single metadata read described above.
 
-See {doc}`federation` for the provider's half, and {doc}`/how-to-guides/configure-a-provider` for the map itself.
+See {doc}`federation` for the provider's half, and {doc}`/how-to-guides/providers/configure-a-provider` for the map itself.
 
 ## Claims refresh, and why clearing a field is an edit
 
@@ -244,5 +244,5 @@ Not at the end, after every step, because a bug that self-corrects two operation
 
 -   {doc}`/reference/profiles-and-groups` for the states, records, permissions and endpoints.
 -   {doc}`users-as-content` for the mechanism underneath, and why a user is content at all.
--   {doc}`/how-to-guides/map-provider-groups` to put a provider's groups to work.
+-   {doc}`/how-to-guides/accounts/map-provider-groups` to put a provider's groups to work.
 -   {doc}`email-verification` for what a verified address is allowed to mean here.

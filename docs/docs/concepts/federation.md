@@ -134,7 +134,7 @@ Both names are read as-is elsewhere: `groups` is what Keycloak, Okta, and Entra 
 And a namespaced claim only this server's own peers would understand buys nothing but a second thing to configure at both ends.
 
 Those two are what *this package* ships under a registered scope.
-A site that wants a field of its own released registers a scope serializer, which is a different question: see {doc}`/how-to-guides/serialize-a-claim`.
+A site that wants a field of its own released registers a scope serializer, which is a different question: see {doc}`/how-to-guides/extend/serialize-a-claim`.
 
 What this package does not do is invent a claim name on a site's behalf.
 A name only one deployment understands costs a relying party a mapping, so choosing one is a decision for whoever knows the relying party at the other end, and the mechanism leaves it to them rather than guessing.
@@ -159,4 +159,4 @@ If your site's group names are themselves sensitive, do not grant `profile` to c
 
 -   {doc}`/tutorials/federation-demo` to run it.
 -   {doc}`/reference/claims` for what a Plone provider releases.
--   {doc}`/how-to-guides/register-an-oauth-client` to register a relying party of your own.
+-   {doc}`/how-to-guides/server/register-an-oauth-client` to register a relying party of your own.

@@ -43,7 +43,7 @@ One canonical Plone user id maps to many external identities — GitHub, Google,
 
 [`pas.plugins.oidc`](https://github.com/collective/pas.plugins.oidc) does one OIDC provider, and does it well. If that is what you need, it is the smaller and more mature dependency; there is no reason to move.
 
-The difference is linking. Neither of the above maps several external identities onto one canonical Plone user id, and that mapping is what this package is arranged around. Migrations from both have shipped: they are dry-run by default, idempotent, and report what they would do before you let them do it. See [Migrating from `pas.plugins.authomatic`](docs/docs/how-to-guides/migrate-from-authomatic.md) and [Migrating from `pas.plugins.oidc`](docs/docs/how-to-guides/migrate-from-oidc.md) for what each can and cannot recover.
+The difference is linking. Neither of the above maps several external identities onto one canonical Plone user id, and that mapping is what this package is arranged around. Migrations from both have shipped: they are dry-run by default, idempotent, and report what they would do before you let them do it. See [Migrating from `pas.plugins.authomatic`](docs/docs/how-to-guides/migrate/from-authomatic.md) and [Migrating from `pas.plugins.oidc`](docs/docs/how-to-guides/migrate/from-oidc.md) for what each can and cannot recover.
 
 For how this compares with `Products.membrane` — a similar problem solved a different way — see [About users as content](docs/docs/concepts/users-as-content.md).
 
@@ -51,9 +51,9 @@ For how this compares with `Products.membrane` — a similar problem solved a di
 
 Full documentation lives in [`docs/`](./docs) and is published at [collective.github.io/pas-plugins-identity](https://collective.github.io/pas-plugins-identity/).
 
-- **Start here:** [Install](./docs/docs/how-to-guides/install.md), then [Configure a provider](./docs/docs/how-to-guides/configure-a-provider.md).
+- **Start here:** [Install](./docs/docs/how-to-guides/install/backend.md), then [Configure a provider](./docs/docs/how-to-guides/providers/configure-a-provider.md).
 - **Tutorial:** [Two Plone sites, one login](./docs/docs/tutorials/federation-demo.md) — build a federation end to end.
-- **How-to guides:** [write a driver](./docs/docs/how-to-guides/write-a-driver.md), [register an OAuth client](./docs/docs/how-to-guides/register-an-oauth-client.md), [read the audit log](./docs/docs/how-to-guides/read-the-audit-log.md), [export and import principals](./docs/docs/how-to-guides/export-and-import-principals.md).
+- **How-to guides:** [write a driver](./docs/docs/how-to-guides/extend/write-a-driver.md), [register an OAuth client](./docs/docs/how-to-guides/server/register-an-oauth-client.md), [read the audit log](./docs/docs/how-to-guides/operate/read-the-audit-log.md), [export and import principals](./docs/docs/how-to-guides/operate/export-and-import-principals.md).
 - **Concepts:** [identities](./docs/docs/concepts/identities.md), [the two layers](./docs/docs/concepts/layers.md), [users as content](./docs/docs/concepts/users-as-content.md), [secrets](./docs/docs/concepts/secrets.md), [federation](./docs/docs/concepts/federation.md).
 - **Reference:** [shipped drivers](./docs/docs/reference/shipped-drivers.md), [events](./docs/docs/reference/events.md), [claims](./docs/docs/reference/claims.md), [security guarantees](./docs/docs/reference/security-guarantees.md).
 

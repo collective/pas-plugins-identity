@@ -93,6 +93,6 @@ would turn the login page into a way to test which addresses have accounts here.
 
 ## Related
 
-- {doc}`../link-accounts-by-email`—what a verified address then allows
+- {doc}`/how-to-guides/accounts/link-accounts-by-email`—what a verified address then allows
 - {doc}`/reference/audit-log`—the three magic-link event names
-- {doc}`../troubleshoot`—when the link never arrives
+- {doc}`/how-to-guides/operate/troubleshoot`—when the link never arrives

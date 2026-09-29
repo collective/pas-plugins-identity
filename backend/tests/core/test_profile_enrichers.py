@@ -468,7 +468,7 @@ class TestTwoEnrichersOnOneField:
 
 
 class TestTheDocumentedDispatchPattern:
-    """The example in ``docs/how-to-guides/write-a-profile-enricher.md``.
+    """The example in ``docs/how-to-guides/extend/write-a-profile-enricher.md``.
 
     Shipped code that nobody runs is a claim rather than an example, and this
     one has two edges worth holding still: ``getattr`` needs its default, or a

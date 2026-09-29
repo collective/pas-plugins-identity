@@ -3,12 +3,12 @@ myst:
   html_meta:
     "description": "Take a new release of pas.plugins.identity into an existing Plone site."
     "property=og:description": "Take a new release of pas.plugins.identity into an existing Plone site."
-    "property=og:title": "How to upgrade"
+    "property=og:title": "Upgrade"
 ---
 
 (how-to-upgrade)=
 
-# How to upgrade
+# Upgrade
 
 Take a new release into a site that already has this add-on.
 
@@ -74,7 +74,7 @@ This is what alpha means here. See {doc}`/reference/stability`.
    pas.plugins.identity.server:default
    ```
 
-5. Check the four items under "Verify" in {doc}`install`.
+5. Check the four items under "Verify" in {doc}`/how-to-guides/install/backend`.
 
 Reapplying a profile is safe for your data: it rewrites configuration, and leaves
 every `UserProfile` and `UserGroup` object where it is.
@@ -109,4 +109,4 @@ missing, see {doc}`/concepts/secrets`.
 
 - {doc}`/reference/stability`—what is settled and what is not
 - {doc}`/reference/install-profiles`—every profile id and what it installs
-- {doc}`troubleshoot`—if the site looks installed and the control panel is empty
+- {doc}`/how-to-guides/operate/troubleshoot`—if the site looks installed and the control panel is empty

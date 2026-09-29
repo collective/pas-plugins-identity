@@ -172,7 +172,7 @@ For writing a serializer of your own, the same group carries what you subclass a
 | `IScopeSerializer` | The interface a scope serializer is registered under |
 | `ProfileScope`, `EmailScope`, `AddressScope` | The shipped serializers, to subclass when adding a claim to a scope this package already releases |
 
-See {doc}`/how-to-guides/serialize-a-claim`.
+See {doc}`/how-to-guides/extend/serialize-a-claim`.
 
 ## `api.clients`
 
@@ -205,6 +205,6 @@ Inside this package the layers keep importing each other directly; the façade i
 
 ## Next steps
 
-- Add a field to a Profile and fill it at login: {doc}`/how-to-guides/write-a-profile-enricher`.
-- Release a claim about it: {doc}`/how-to-guides/serialize-a-claim`.
+- Add a field to a Profile and fill it at login: {doc}`/how-to-guides/extend/write-a-profile-enricher`.
+- Release a claim about it: {doc}`/how-to-guides/extend/serialize-a-claim`.
 - What is settled and what is not: {doc}`stability`.

@@ -32,8 +32,8 @@ This is one solution in two packages, and a working site needs both.
 
 They are versioned and released together, and neither is useful alone: the
 backend publishes the endpoints and the frontend is what calls them. Install
-{doc}`the backend <how-to-guides/install>` first, then
-{doc}`the frontend <how-to-guides/install-the-frontend>`.
+{doc}`the backend </how-to-guides/install/backend>` first, then
+{doc}`the frontend </how-to-guides/install/frontend>`.
 
 Volto is not optional today: Classic UI sign-in is not supported yet.
 
@@ -55,9 +55,9 @@ It names the six things this package deals with, shows what a sign-in actually d
 Then, by what you came to do:
 
 - **Run something today**—{doc}`tutorials/federation-demo` starts two Plone sites in Docker and signs in to one against the other.
-- **Set it up for real**—{doc}`how-to-guides/install`, then {doc}`how-to-guides/install-the-frontend`, then a recipe from {doc}`how-to-guides/providers/index`.
+- **Set it up for real**—{doc}`/how-to-guides/install/backend`, then {doc}`/how-to-guides/install/frontend`, then a recipe from {doc}`how-to-guides/providers/index`.
 - **Write Python against it**—{doc}`reference/python-api` is the one import path, and the only one to write against.
-- **Something is broken**—{doc}`how-to-guides/troubleshoot` is organized by symptom.
+- **Something is broken**—{doc}`/how-to-guides/operate/troubleshoot` is organized by symptom.
 
 ```{important}
 Building an add-on or a policy package on top of this?
@@ -155,34 +155,12 @@ For the reasoning behind each guarantee, see {doc}`concepts/threat-model`.
 ```
 
 ```{toctree}
-:caption: Tutorials
 :maxdepth: 2
 :hidden: true
 
 tutorials/index
-```
-
-```{toctree}
-:caption: How-to guides
-:maxdepth: 2
-:hidden: true
-
 how-to-guides/index
-```
-
-```{toctree}
-:caption: Reference
-:maxdepth: 2
-:hidden: true
-
 reference/index
-```
-
-```{toctree}
-:caption: Concepts
-:maxdepth: 2
-:hidden: true
-
 concepts/index
 ```
 

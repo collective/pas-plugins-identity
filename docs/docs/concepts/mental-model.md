@@ -111,10 +111,10 @@ Six decisions live in that diagram, and each is a setting:
 |---|---|---|
 | resolve by subject | `userid_source` | {doc}`identities` |
 | is the address verified | `trust_email_verification` | {doc}`email-verification` |
-| attach to an existing account | `auto_link_by_email` | {doc}`/how-to-guides/link-accounts-by-email` |
-| create an account | `create_user` | {doc}`/how-to-guides/control-account-creation` |
-| reconcile groups | `sync_groups`, the group map | {doc}`/how-to-guides/map-provider-groups` |
-| restrict sign-in | `allowed_groups` | {doc}`/how-to-guides/map-provider-groups` |
+| attach to an existing account | `auto_link_by_email` | {doc}`/how-to-guides/accounts/link-accounts-by-email` |
+| create an account | `create_user` | {doc}`/how-to-guides/accounts/control-account-creation` |
+| reconcile groups | `sync_groups`, the group map | {doc}`/how-to-guides/accounts/map-provider-groups` |
+| restrict sign-in | `allowed_groups` | {doc}`/how-to-guides/accounts/map-provider-groups` |
 
 ## Two things this package refuses to guess
 
@@ -135,10 +135,10 @@ who can name a group there create one here.
 ````{grid-item-card} 🛠️ Administrator
 You are setting this up for a site.
 
-{doc}`/how-to-guides/install` → {doc}`/how-to-guides/install-the-frontend` → a
+{doc}`/how-to-guides/install/backend` → {doc}`/how-to-guides/install/frontend` → a
 recipe from {doc}`/how-to-guides/providers/index`.
 
-Keep {doc}`/how-to-guides/troubleshoot` open.
+Keep {doc}`/how-to-guides/operate/troubleshoot` open.
 ````
 
 ````{grid-item-card} ⚖️ Integrator
@@ -153,7 +153,7 @@ Then {doc}`threat-model`.
 ````{grid-item-card} 🔌 Driver author
 You are adding support for a new provider.
 
-{doc}`/how-to-guides/write-a-driver`, and {doc}`/reference/driver-contract` for
+{doc}`/how-to-guides/extend/write-a-driver`, and {doc}`/reference/driver-contract` for
 what a driver must implement.
 ````
 

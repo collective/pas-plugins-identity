@@ -3,12 +3,12 @@ myst:
   html_meta:
     "description": "Register the back-channel logout endpoint and turn on the per-user keyring that makes it work."
     "property=og:description": "Register the back-channel logout endpoint and turn on the per-user keyring that makes it work."
-    "property=og:title": "How to enable back-channel logout"
+    "property=og:title": "Enable back-channel logout"
 ---
 
 (how-to-enable-back-channel-logout)=
 
-# How to enable back-channel logout
+# Enable back-channel logout
 
 This guide shows you how to make a sign-out at the provider end the matching session on this site.
 
@@ -49,7 +49,7 @@ The package logs the failure as an error rather than passing over it quietly, an
 Sign in through the provider, then sign out at the provider rather than at this site.
 
 The audit log records the logout.
-See {doc}`read-the-audit-log`.
+See {doc}`/how-to-guides/operate/read-the-audit-log`.
 
 ## Know what a logout reaches
 
@@ -67,5 +67,5 @@ For what the endpoint refuses and why, see {doc}`/reference/security-guarantees`
 ## Next steps
 
 - {doc}`/reference/endpoints`—the `@@backchannel-logout` view
-- {doc}`troubleshoot`—"Back-channel logout returns 200 and the session persists"
+- {doc}`/how-to-guides/operate/troubleshoot`—"Back-channel logout returns 200 and the session persists"
 - {doc}`/concepts/threat-model`—why a `sid`-only token is out of scope

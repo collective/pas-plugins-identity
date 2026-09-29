@@ -3,12 +3,12 @@ myst:
   html_meta:
     "description": "Move a site from pas.plugins.authomatic to pas.plugins.identity, keeping every user id."
     "property=og:description": "Move a site from pas.plugins.authomatic to pas.plugins.identity, keeping every user id."
-    "property=og:title": "How to migrate from pas.plugins.authomatic"
+    "property=og:title": "Migrate from pas.plugins.authomatic"
 ---
 
 (how-to-migrate-from-authomatic)=
 
-# How to migrate from `pas.plugins.authomatic`
+# From `pas.plugins.authomatic`
 
 Move a site from `pas.plugins.authomatic` to this package, keeping every user id.
 
@@ -23,7 +23,7 @@ people is how one person ends up with two accounts.
 ```
 
 Both plugins must be installed in the same instance. If the old site is somewhere
-this instance cannot reach, use {doc}`export-and-import-principals` instead.
+this instance cannot reach, use {doc}`/how-to-guides/operate/export-and-import-principals` instead.
 
 ## Steps
 
@@ -55,7 +55,7 @@ this instance cannot reach, use {doc}`export-and-import-principals` instead.
 
    authomatic's callback was `<portal_url>/authomatic-handler/<provider>`. This
    package uses a frontend route instead—the callback URL you set during
-   {doc}`install`, by default:
+   {doc}`/how-to-guides/install/backend`, by default:
 
    ```text
    https://www.example.com/login-identity
@@ -71,8 +71,8 @@ this instance cannot reach, use {doc}`export-and-import-principals` instead.
 3. Check the audit log has an `authenticated` entry, not `identity-linked`
    followed by a new account.
 
-If a sign-in fails, read the audit log first—see {doc}`read-the-audit-log` and
-{doc}`troubleshoot`.
+If a sign-in fails, read the audit log first—see {doc}`/how-to-guides/operate/read-the-audit-log` and
+{doc}`/how-to-guides/operate/troubleshoot`.
 
 ## What comes across, and what does not
 
@@ -108,5 +108,5 @@ configuration change.
 ## Next steps
 
 - {doc}`/reference/migration-reports`—every field and refusal
-- {doc}`configure-a-provider`—checking the migrated providers
-- {doc}`troubleshoot`—if somebody lands on a new account
+- {doc}`/how-to-guides/providers/configure-a-provider`—checking the migrated providers
+- {doc}`/how-to-guides/operate/troubleshoot`—if somebody lands on a new account

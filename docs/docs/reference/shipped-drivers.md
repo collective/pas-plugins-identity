@@ -165,7 +165,7 @@ or is not an SVG document, is logged and drawn as no icon.
 :   See below.
 
 To add a driver for a provider not listed here, see
-{doc}`/how-to-guides/write-a-driver`.
+{doc}`/how-to-guides/extend/write-a-driver`.
 
 ## Group claims
 
@@ -178,7 +178,7 @@ provider grants nothing rather than guessing at a claim name.
 all use, and the one this package's own `[server]` layer releases. Set a dotted
 path for a provider that nests them, such as `realm_access.roles`.
 
-Mapping and revocation are covered in {doc}`/how-to-guides/map-provider-groups`.
+Mapping and revocation are covered in {doc}`/how-to-guides/accounts/map-provider-groups`.
 
 (reference-magic-link)=
 
@@ -219,4 +219,4 @@ spent either way.
 - {doc}`driver-contract`—what a driver must implement
 - {doc}`settings`—every field named here
 - {doc}`endpoints`—including back-channel logout
-- {doc}`/how-to-guides/write-a-driver`—adding one
+- {doc}`/how-to-guides/extend/write-a-driver`—adding one

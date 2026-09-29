@@ -3,12 +3,12 @@ myst:
   html_meta:
     "description": "Move a site from pas.plugins.oidc to pas.plugins.identity, and understand when the migration refuses."
     "property=og:description": "Move a site from pas.plugins.oidc to pas.plugins.identity, and understand when the migration refuses."
-    "property=og:title": "How to migrate from pas.plugins.oidc"
+    "property=og:title": "Migrate from pas.plugins.oidc"
 ---
 
 (how-to-migrate-from-the-legacy-plugin)=
 
-# How to migrate from `pas.plugins.oidc`
+# From `pas.plugins.oidc`
 
 Move a site from `pas.plugins.oidc` to this package—and find out whether your
 site can move at all.
@@ -93,7 +93,7 @@ supported and not tested.
    It is idempotent. Running it twice does nothing the second time.
 
 6. **Update the redirect URI at the provider** to the callback URL you set during
-   {doc}`install`, by default `https://www.example.com/login-identity`.
+   {doc}`/how-to-guides/install/backend`, by default `https://www.example.com/login-identity`.
 
 7. **Remove the old plugin.**
 
@@ -103,8 +103,8 @@ supported and not tested.
 2. Confirm you land on the account you had before, not a new one.
 3. Check the audit log for an `authenticated` entry.
 
-If a sign-in fails, read the audit log first—see {doc}`read-the-audit-log` and
-{doc}`troubleshoot`.
+If a sign-in fails, read the audit log first—see {doc}`/how-to-guides/operate/read-the-audit-log` and
+{doc}`/how-to-guides/operate/troubleshoot`.
 
 ## What comes across
 
@@ -114,5 +114,5 @@ issuer, client id, client secret, scope, and title.
 ## Next steps
 
 - {doc}`/reference/migration-reports`—every field and refusal
-- {doc}`export-and-import-principals`—the alternative when the old site is elsewhere
-- {doc}`troubleshoot`—if somebody lands on a new account
+- {doc}`/how-to-guides/operate/export-and-import-principals`—the alternative when the old site is elsewhere
+- {doc}`/how-to-guides/operate/troubleshoot`—if somebody lands on a new account

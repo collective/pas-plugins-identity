@@ -73,7 +73,7 @@ A GitHub account can hold several addresses, and all of them go onto the
 person's profile. The first one becomes the `email` claim, and a new profile
 lists the addresses in that order. With linking by email switched on, the
 verified addresses are tried in that order too; see
-{doc}`../link-accounts-by-email`.
+{doc}`/how-to-guides/accounts/link-accounts-by-email`.
 
 Without a preference the driver keeps GitHub's order: the primary address
 first, then the verified ones. To put your own domain first, fill in **Address
@@ -99,7 +99,7 @@ preference** on the **Accounts** tab, one entry at a time:
 claim to name and no allowed-groups list to fill in. GitHub sends none.
 
 To restrict sign-in with GitHub, do it another way: turn off account creation and
-add the accounts yourself. See {doc}`../control-account-creation`.
+add the accounts yourself. See {doc}`/how-to-guides/accounts/control-account-creation`.
 
 ## Verify
 
@@ -120,5 +120,5 @@ add the accounts yourself. See {doc}`../control-account-creation`.
 ## Related
 
 - {doc}`/reference/shipped-drivers`—the driver's exact defaults
-- {doc}`../link-accounts-by-email`—what a trusted verified address allows
-- {doc}`../troubleshoot`
+- {doc}`/how-to-guides/accounts/link-accounts-by-email`—what a trusted verified address allows
+- {doc}`/how-to-guides/operate/troubleshoot`

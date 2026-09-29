@@ -225,4 +225,4 @@ ledger.
 - {doc}`/reference/security-guarantees`—the same properties, as a checklist the tests enforce
 - {doc}`email-verification`—the trust decision that matters most
 - {doc}`secrets`—why secrets behave differently in each direction
-- {doc}`/how-to-guides/troubleshoot`—when a protection is doing its job and looks like a bug
+- {doc}`/how-to-guides/operate/troubleshoot`—when a protection is doing its job and looks like a bug

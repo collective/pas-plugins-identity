@@ -137,8 +137,8 @@ Who the provider's answer makes the person standing here.
 Shown for every driver except `email`. **Address preference** is on the
 `github` form only.
 
-See {doc}`/how-to-guides/link-accounts-by-email` and
-{doc}`/how-to-guides/control-account-creation`.
+See {doc}`/how-to-guides/accounts/link-accounts-by-email` and
+{doc}`/how-to-guides/accounts/control-account-creation`.
 
 ## Groups tab
 
@@ -152,7 +152,7 @@ Shown only for `keycloak`, `oidc-generic` and `plone-identity`, the three
 drivers whose settings schema is `IOIDCSettings` or extends it. `github`, `google` and `email` carry no
 groups this package can read, so none of them gets this tab.
 
-See {doc}`/how-to-guides/map-provider-groups`.
+See {doc}`/how-to-guides/accounts/map-provider-groups`.
 
 ## Profile tab
 
@@ -191,4 +191,4 @@ string, which is a different instruction, and it destroys the stored secret.
 
 - {doc}`settings`—the same fields as registry records
 - {doc}`shipped-drivers`—each driver's defaults
-- {doc}`/how-to-guides/configure-a-provider`—the procedure
+- {doc}`/how-to-guides/providers/configure-a-provider`—the procedure

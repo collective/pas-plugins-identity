@@ -75,7 +75,7 @@ schema is `IOAuth2Settings`, which carries no group claim, no allowed-groups
 list, and no sync switch. Google sends this package no groups it can read.
 
 To restrict which Google accounts may sign in, turn off account creation and add
-the accounts yourself. See {doc}`../control-account-creation`.
+the accounts yourself. See {doc}`/how-to-guides/accounts/control-account-creation`.
 
 ## Verify
 
@@ -95,5 +95,5 @@ the accounts yourself. See {doc}`../control-account-creation`.
 ## Related
 
 - {doc}`/reference/shipped-drivers`—the driver's exact defaults
-- {doc}`../link-accounts-by-email`
-- {doc}`../troubleshoot`
+- {doc}`/how-to-guides/accounts/link-accounts-by-email`
+- {doc}`/how-to-guides/operate/troubleshoot`

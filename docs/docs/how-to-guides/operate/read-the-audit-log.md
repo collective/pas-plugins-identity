@@ -3,12 +3,12 @@ myst:
   html_meta:
     "description": "Query the authentication audit log, tune its retention, and send entries to a SIEM."
     "property=og:description": "Query the authentication audit log, tune its retention, and send entries to a SIEM."
-    "property=og:title": "How to read the audit log"
+    "property=og:title": "Read the audit log"
 ---
 
 (how-to-read-the-audit-log)=
 
-# How to read the audit log
+# Read the audit log
 
 Query the audit log, change what it keeps, and send its entries somewhere else.
 
@@ -31,7 +31,7 @@ credential-stuffing run shows up.
 1. Read the log before you read the source. Failures are recorded as carefully as
    successes.
 2. Find the entry's event name.
-3. Look it up in {doc}`troubleshoot`, which is organized by exactly these.
+3. Look it up in {doc}`/how-to-guides/operate/troubleshoot`, which is organized by exactly these.
 
 An unknown identity, a sign-in denied by a group restriction, and a link
 collision are three different entries, and telling them apart is most of what the
@@ -131,5 +131,5 @@ over rather than allowed to fail the sign-in it was auditing.
 ## Next steps
 
 - {doc}`/reference/audit-log`—every event name and field
-- {doc}`troubleshoot`—the symptom-by-symptom table
+- {doc}`/how-to-guides/operate/troubleshoot`—the symptom-by-symptom table
 - {doc}`/concepts/threat-model`—what the log is and is not evidence of

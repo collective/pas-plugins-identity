@@ -71,7 +71,7 @@ curl -s -o /dev/null -w "%{http_code}\n" http://plone.localhost
 curl -s -o /dev/null -w "%{http_code}\n" http://id.localhost
 ```
 
-Both answer `200`. If either does not, the backends may still be starting; give them a minute. If they stay down, see {doc}`/how-to-guides/troubleshoot`.
+Both answer `200`. If either does not, the backends may still be starting; give them a minute. If they stay down, see {doc}`/how-to-guides/operate/troubleshoot`.
 
 Open <http://plone.localhost> in a browser.
 Notice that the login page offers exactly one way in, and does not wait for you to click it.
@@ -247,5 +247,5 @@ The `identitydemo` package is never published to PyPI, is not installed into the
 
 - {doc}`/concepts/federation` explains why the issuer is configured rather than derived, why one URL has to resolve both inside and outside the containers, and how a Volto login becomes a Zope principal.
 - {doc}`/how-to-guides/providers/another-plone-site` is this setup, for a site you actually run.
-- {doc}`/how-to-guides/register-an-oauth-client` is the other half: registering a client on the provider.
+- {doc}`/how-to-guides/server/register-an-oauth-client` is the other half: registering a client on the provider.
 - {doc}`/concepts/mental-model` names everything you just watched happen.

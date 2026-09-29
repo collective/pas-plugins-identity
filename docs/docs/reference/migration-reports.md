@@ -57,7 +57,7 @@ side is not supported and not tested.
 
 ## Related
 
-- {doc}`/how-to-guides/migrate-from-authomatic`
-- {doc}`/how-to-guides/migrate-from-oidc`
+- {doc}`/how-to-guides/migrate/from-authomatic`
+- {doc}`/how-to-guides/migrate/from-oidc`
 - {doc}`principal-documents`—the file format one of them consumes
 - {doc}`profiles-and-groups`—what a migrated person ends up as

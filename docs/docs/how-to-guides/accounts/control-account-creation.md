@@ -3,12 +3,12 @@ myst:
   html_meta:
     "description": "Decide whether a provider may create Plone accounts, or only sign in people who already have one."
     "property=og:description": "Decide whether a provider may create Plone accounts, or only sign in people who already have one."
-    "property=og:title": "How to control account creation"
+    "property=og:title": "Control account creation"
 ---
 
 (how-to-control-account-creation)=
 
-# How to control account creation
+# Control account creation
 
 Authenticate people against a provider while admitting only those who already
 have an account here.
@@ -25,7 +25,7 @@ On the provider's **Accounts** tab, switch off
 ## 2. Give it a way to find the existing account
 
 An existing account is found by matching a verified address, so both switches
-described in {doc}`link-accounts-by-email` have to be on as well.
+described in {doc}`/how-to-guides/accounts/link-accounts-by-email` have to be on as well.
 
 Saving the combination without them is **refused**: with nothing to match on,
 every sign-in through the provider would be turned away and nothing on the login
@@ -61,6 +61,6 @@ gates *creating* an account, not resolving one that already exists.
 
 ## Next steps
 
-- {doc}`link-accounts-by-email`—the two switches this depends on
-- {doc}`map-provider-groups`—restricting sign-in by group instead
-- {doc}`troubleshoot`—"Account created when it should have linked to an existing one"
+- {doc}`/how-to-guides/accounts/link-accounts-by-email`—the two switches this depends on
+- {doc}`/how-to-guides/accounts/map-provider-groups`—restricting sign-in by group instead
+- {doc}`/how-to-guides/operate/troubleshoot`—"Account created when it should have linked to an existing one"

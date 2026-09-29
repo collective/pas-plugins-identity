@@ -3,12 +3,12 @@ myst:
   html_meta:
     "description": "Register a scope serializer so this authorization server releases a claim of your own to relying parties."
     "property=og:description": "Register a scope serializer so this authorization server releases a claim of your own to relying parties."
-    "property=og:title": "How to serialize a claim"
+    "property=og:title": "Serialize a claim"
 ---
 
 (how-to-serialize-a-claim)=
 
-# How to serialize a claim
+# Serialize a claim
 
 This guide shows you how to make this site, acting as an authorization server, release a claim it does not ship.
 
@@ -21,7 +21,7 @@ Both are one registered adapter.
 
 ```{note}
 This is the `[server]` layer, where Plone *is* the identity provider.
-If you want to read a claim *from* a provider and put it on a Profile, you want {doc}`write-a-profile-enricher` instead.
+If you want to read a claim *from* a provider and put it on a Profile, you want {doc}`/how-to-guides/extend/write-a-profile-enricher` instead.
 ```
 
 ## What a scope serializer is
@@ -180,6 +180,6 @@ def test_the_consent_screen_can_enumerate_it(self):
 ## Related
 
 - {doc}`/reference/claims`—every claim this server releases, and where its value comes from
-- {doc}`register-an-oauth-client`—granting a client the scope you just added
-- {doc}`write-a-profile-enricher`—the other direction: a claim *from* a provider onto a Profile
+- {doc}`/how-to-guides/server/register-an-oauth-client`—granting a client the scope you just added
+- {doc}`/how-to-guides/extend/write-a-profile-enricher`—the other direction: a claim *from* a provider onto a Profile
 - {doc}`/concepts/layers`—why the server layer reads Plone user properties rather than a Profile

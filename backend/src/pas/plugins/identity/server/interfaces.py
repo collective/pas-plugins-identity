@@ -87,7 +87,7 @@ class IScopeSerializer(Interface):
     for its own browser layer, which is more specific and therefore wins. It
     calls ``super().__call__(user)`` and adds to the result, the way a
     ``plone.restapi`` serializer does. See
-    :doc:`/how-to-guides/serialize-a-claim`.
+    :doc:`/how-to-guides/extend/serialize-a-claim`.
 
     **What is not reachable from here.** ``sub`` is minted by
     :func:`~pas.plugins.identity.server.claims.claims_for` and belongs to no
