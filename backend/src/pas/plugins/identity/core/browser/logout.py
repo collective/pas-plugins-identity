@@ -16,7 +16,7 @@ from pas.plugins.identity.core.logout import LogoutError
 from pas.plugins.identity.core.logout import revoke_sessions
 from pas.plugins.identity.core.logout import validate_logout_token
 from pas.plugins.identity.core.pas import PLUGIN_ID
-from plone import api
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from plone.protect.interfaces import IDisableCSRFProtection
 from Products.Five.browser import BrowserView
 from zope.event import notify
@@ -59,7 +59,7 @@ class BackChannelLogoutView(BrowserView):
         except LogoutError as exc:
             return self._error(response, 400, str(exc))
 
-        plugin = api.portal.get_tool("acl_users")[PLUGIN_ID]
+        plugin = get_plugin(PLUGIN_ID)
         jti = claims["jti"]
         if plugin.logout_jtis.seen(jti):
             # Back-Channel Logout 1.0 §2.6 requires a replay to be refused.

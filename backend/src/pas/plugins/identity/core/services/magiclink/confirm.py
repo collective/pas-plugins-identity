@@ -22,6 +22,7 @@ from pas.plugins.identity.core.services.base import IdentityService
 from pas.plugins.identity.core.services.jwt import mint_token
 from pas.plugins.identity.core.services.magiclink import get_provider_config
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from plone import api
 from plone.restapi.deserializer import json_body
 from zope.interface import alsoProvides
@@ -59,7 +60,7 @@ class MagicLinkConfirm(IdentityService):
         except FlowError as exc:
             return self._refuse(str(exc))
 
-        plugin = api.portal.get_tool("acl_users")[PLUGIN_ID]
+        plugin = get_plugin(PLUGIN_ID)
         store = plugin.magic_links
         jti = claims["jti"]
         if store.is_burned(jti):
@@ -153,9 +154,7 @@ class MagicLinkConfirm(IdentityService):
             )
 
         try:
-            api.portal.get_tool("acl_users")[PLUGIN_ID].link(
-                userid, EMAIL_PROVIDER, address, claims
-            )
+            get_plugin(PLUGIN_ID).link(userid, EMAIL_PROVIDER, address, claims)
         except IdentityCollision as exc:
             # Never merge two people into one account.
             logger.warning("Identity collision on an email link: %s", exc)

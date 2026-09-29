@@ -28,6 +28,7 @@ submission does not have.
 from AccessControl.class_init import InitializeClass
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from plone import api
 from Products.PluggableAuthService.interfaces.plugins import IAuthenticationPlugin
 from Products.PluggableAuthService.interfaces.plugins import IExtractionPlugin
@@ -97,11 +98,19 @@ class IdentityAuthorizeSessionPlugin(BasePlugin):
         if not self._wants_the_authorization_endpoint(request):
             return {}
 
-        # An Authorization header outranks the cookie: it is the credential
-        # the caller chose to present, and plone.restapi will read it anyway.
+        # A Bearer header outranks the cookie: it is the credential the
+        # caller chose to present, and plone.restapi will read it anyway.
         # Extracting the cookie as well would let a stale cookie decide a
         # request that named a different principal.
-        if getattr(request, "_auth", None):
+        #
+        # Only Bearer, because that is the only scheme plone.restapi reads.
+        # Browsers resend cached Basic credentials to every path on a host,
+        # so a proxy's basic auth elsewhere on the site would otherwise hide
+        # the Volto session here and send the visitor round the login page
+        # for ever. Basic credentials that are a real Plone login still win:
+        # this plugin is activated after the site's basic auth extractor.
+        auth = getattr(request, "_auth", None) or ""
+        if auth[:7].lower() == "bearer ":
             return {}
 
         token = request.cookies.get(COOKIE_NAME) or ""
@@ -128,7 +137,7 @@ class IdentityAuthorizeSessionPlugin(BasePlugin):
         if credentials.get("extractor") != self.getId():
             return None
 
-        jwt_plugin = api.portal.get_tool("acl_users").get(JWT_PLUGIN_ID)
+        jwt_plugin = get_plugin(JWT_PLUGIN_ID)
         if jwt_plugin is None:
             # A site without plone.restapi's JWT plugin has no Volto session
             # to read. Nothing is wrong; there is simply nothing here.

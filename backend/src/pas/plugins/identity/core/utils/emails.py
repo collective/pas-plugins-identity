@@ -31,6 +31,7 @@ it is actually read.
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from plone import api
 
 
@@ -70,12 +71,11 @@ def _store():
         plugins have been removed.
     """
     try:
-        acl = api.portal.get_tool("acl_users")
+        plugin = get_plugin(CORE_PLUGIN_ID)
     except api.exc.CannotGetPortalError:
         # No site: an object being constructed outside a request, or a test
         # touching the class directly. Nothing is verified in that world.
         return None
-    plugin = getattr(acl, CORE_PLUGIN_ID, None)
     if plugin is None:
         logger.debug("No %s plugin in this site", CORE_PLUGIN_ID)
         return None

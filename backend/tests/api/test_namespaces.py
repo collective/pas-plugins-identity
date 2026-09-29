@@ -155,3 +155,17 @@ class TestProvider:
         """A downstream package asking "is this installed here" should not
         have to know the plugin id or reach into ``acl_users``."""
         assert api.provider.plugin() is not None
+
+
+class TestPlugin:
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+
+    def test_any_installed_plugin_is_found(self):
+        """Not only this package's own: the façade is for any PAS plugin."""
+        assert api.plugin.get("source_users").getId() == "source_users"
+
+    def test_an_unknown_plugin_is_none(self):
+        """A lookup, so it answers ``None`` rather than raising."""
+        assert api.plugin.get("no-such-plugin") is None

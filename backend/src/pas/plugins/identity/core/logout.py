@@ -39,8 +39,8 @@ from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.flows import metadata as flow_metadata
 from pas.plugins.identity.core.interfaces import FlowError
 from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from persistent import Persistent
-from plone import api
 from plone.keyring.interfaces import IKeyManager
 from zope.component import getUtility
 
@@ -220,7 +220,7 @@ def revoke_sessions(userid: str) -> bool:
     :param userid: The Plone userid whose sessions should end.
     :returns: Whether the sessions were actually ended.
     """
-    session = getattr(api.portal.get_tool("acl_users"), "session", None)
+    session = get_plugin("session")
     if session is None:  # pragma: no cover - can't-happen: Plone always has one
         logger.warning("No session plugin; cannot end sessions for %s", userid)
         return False

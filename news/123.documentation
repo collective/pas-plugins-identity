@@ -1,0 +1,1 @@
+Explained which `Authorization` header takes precedence over the Volto session cookie at the authorization endpoint, and why a `Basic` one does not. @ericof

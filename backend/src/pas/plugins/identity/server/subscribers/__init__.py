@@ -22,9 +22,9 @@ on the same record as a sign-in through a provider.
 from pas.plugins.identity import logger
 from pas.plugins.identity.core import audit
 from pas.plugins.identity.core.events import ISessionsRevoked
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from pas.plugins.identity.server.events import IClientAuthorized
 from pas.plugins.identity.server.pas import PLUGIN_ID
-from plone import api
 from zope.component import adapter
 from zope.globalrequest import getRequest
 
@@ -35,8 +35,7 @@ def revoke_refresh_tokens(event) -> None:
 
     :param event: The :class:`ISessionsRevoked` event.
     """
-    acl_users = api.portal.get_tool("acl_users")
-    plugin = acl_users.get(PLUGIN_ID)
+    plugin = get_plugin(PLUGIN_ID)
     if plugin is None:
         # This site is a relying party but not an authorization server, so
         # there are no refresh tokens of its own to revoke. The [server]

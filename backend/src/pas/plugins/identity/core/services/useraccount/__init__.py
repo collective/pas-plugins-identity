@@ -34,7 +34,7 @@ from pas.plugins.identity.core import audit
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.pas import PLUGIN_ID
-from plone import api
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from Products.CMFCore.permissions import ManageUsers
 
 
@@ -61,7 +61,7 @@ def identity_plugin():
     :returns: The plugin, or ``None`` when this package is not installed in
         the current site.
     """
-    plugin = getattr(api.portal.get_tool("acl_users"), PLUGIN_ID, None)
+    plugin = get_plugin(PLUGIN_ID)
     if plugin is None:
         logger.debug("No %s plugin in this site", PLUGIN_ID)
     return plugin

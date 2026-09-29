@@ -1,0 +1,1 @@
+Added `api.plugin.get(name)`, which returns any PAS plugin in the site's `acl_users` by its id, or `None` when there is none. The package's own code now finds its plugins through the same lookup, which no longer finds attributes of the site through acquisition. @ericof

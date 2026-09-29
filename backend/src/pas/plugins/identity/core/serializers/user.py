@@ -22,6 +22,7 @@ from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.portraits import picture_url_of
 from pas.plugins.identity.core.profiles import profile_brain
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from pas.plugins.identity.interfaces import IBrowserLayer
 from plone import api
 from plone.restapi.interfaces import ISerializeToJson
@@ -52,8 +53,7 @@ def identities_of(userid: str) -> list[JSONDict]:
     :param userid: Canonical Plone userid.
     :returns: One entry per linked identity, oldest first as stored.
     """
-    acl = api.portal.get_tool("acl_users")
-    plugin = getattr(acl, PLUGIN_ID, None)
+    plugin = get_plugin(PLUGIN_ID)
     if plugin is None:
         # The core plugin is what stores identities; without it there are
         # none rather than an error. A site can have this package's code on

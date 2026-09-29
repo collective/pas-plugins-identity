@@ -25,6 +25,7 @@ from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.interfaces import IGroupContent
 from pas.plugins.identity.core.pas import PLUGIN_ID
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from pas.plugins.identity.exportimport.schema import DOCUMENT_VERSION
 from pas.plugins.identity.exportimport.schema import ExportImportError
 from pas.plugins.identity.exportimport.schema import GENERATOR
@@ -62,7 +63,7 @@ def _identity_store():
         an error -- and an empty document that looks like a backup is worse
         than a refusal.
     """
-    plugin = api.portal.get_tool("acl_users").get(PLUGIN_ID)
+    plugin = get_plugin(PLUGIN_ID)
     if plugin is None:
         raise ExportImportError(
             "This site has no identity plugin, so there is nothing to export. "

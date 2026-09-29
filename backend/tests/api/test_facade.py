@@ -35,7 +35,7 @@ class TestEveryNameResolves:
         imports it, so this is a real property of ``__init__`` rather than a
         tautology.
         """
-        for name in ("profile", "portrait", "provider", "claims", "clients"):
+        for name in ("profile", "portrait", "provider", "plugin", "claims", "clients"):
             assert hasattr(api, name), name
 
 
@@ -168,6 +168,7 @@ class TestImportingItNeedsNothing:
         ("profile", ("get", "get_current", "get_or_create")),
         ("portrait", ("has_picture", "get_url", "store", "sync_portrait")),
         ("provider", ("get", "get_all", "plugin")),
+        ("plugin", ("get",)),
         ("claims", ("get", "get_scopes", "get_released")),
         ("clients", ("get", "get_all", "add", "remove")),
     ],

@@ -10,8 +10,8 @@ would export the problem rather than solve it.
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from pas.plugins.identity.server.serializers.base import ScopeSerializer
-from plone import api
 
 
 def email_is_verified(userid: str, address: str) -> bool:
@@ -31,7 +31,7 @@ def email_is_verified(userid: str, address: str) -> bool:
     :param address: The address being asserted.
     :returns: Whether it is verified.
     """
-    plugin = api.portal.get_tool("acl_users").get(CORE_PLUGIN_ID)
+    plugin = get_plugin(CORE_PLUGIN_ID)
     if plugin is None:  # pragma: no cover - can't-happen: core is always installed
         return False
     return any(

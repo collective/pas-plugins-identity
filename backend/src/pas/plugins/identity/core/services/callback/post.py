@@ -30,6 +30,7 @@ from pas.plugins.identity.core.pas import CREDENTIALS_KEY
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.services.base import IdentityService
 from pas.plugins.identity.core.services.jwt import mint_token
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from plone import api
 from plone.restapi.deserializer import json_body
 from zope.interface import alsoProvides
@@ -248,9 +249,7 @@ class IdentityCallback(IdentityService):
             )
 
         try:
-            api.portal.get_tool("acl_users")[PLUGIN_ID].link(
-                userid, provider_id, subject, claims
-            )
+            get_plugin(PLUGIN_ID).link(userid, provider_id, subject, claims)
         except IdentityCollision as exc:
             # Never merge two people into one account.
             logger.warning("Identity collision on %r: %s", provider_id, exc)
@@ -348,7 +347,7 @@ class IdentityCallback(IdentityService):
             ``allowed_groups`` list nobody matched, or a new account at a
             provider not allowed to create one.
         """
-        plugin = api.portal.get_tool("acl_users")[PLUGIN_ID]
+        plugin = get_plugin(PLUGIN_ID)
         self.request.other[CREDENTIALS_KEY] = {
             "provider": provider_id,
             "subject": subject,

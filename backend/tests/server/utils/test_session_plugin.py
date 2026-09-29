@@ -14,6 +14,7 @@ from pas.plugins.identity.server.utils.session import IdentityAuthorizeSessionPl
 from pas.plugins.identity.server.utils.session import PLUGIN_ID
 from plone import api
 
+import base64
 import pytest
 
 
@@ -90,14 +91,27 @@ class TestScope(SessionCase):
 
         assert self.plugin.extractCredentials(request) == {}
 
-    def test_an_authorization_header_outranks_the_cookie(self):
+    @pytest.mark.parametrize("scheme", ["Bearer", "bearer", "BEARER"])
+    def test_a_bearer_header_outranks_the_cookie(self, scheme: str):
         """The header is the credential the caller chose to present. A stale
-        cookie must not decide a request that named a different principal."""
+        cookie must not decide a request that named a different principal.
+        The scheme is matched as plone.restapi matches it."""
         request = self.request_for(
-            AUTHORIZE_URL, token="cookie-token", auth="Bearer header-token"
+            AUTHORIZE_URL, token="cookie-token", auth=f"{scheme} header-token"
         )
 
         assert self.plugin.extractCredentials(request) == {}
+
+    @pytest.mark.parametrize(
+        "auth", ["Basic c29tZW9uZTpzb21ldGhpbmc=", "Digest username=someone"]
+    )
+    def test_another_scheme_does_not_hide_the_cookie(self, auth: str):
+        """plone.restapi reads only Bearer. A browser resending a proxy's
+        cached Basic credentials must not make a signed-in visitor
+        anonymous here."""
+        request = self.request_for(AUTHORIZE_URL, token="cookie-token", auth=auth)
+
+        assert self.plugin.extractCredentials(request)["token"] == "cookie-token"
 
 
 class TestAuthentication(SessionCase):
@@ -168,6 +182,61 @@ class TestAuthentication(SessionCase):
             })
             is None
         )
+
+
+class TestThroughPAS(SessionCase):
+    """The plugin as PAS reaches it, beside the site's other extractors."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+        self.acl_users = portal.acl_users
+        api.user.create(
+            email="carol@example.org", username="carol", password="s3cret!x"
+        )
+        api.user.create(email="dave@example.org", username="dave", password="s3cret!y")
+
+    def user_ids(self, request: object) -> list[str]:
+        """Resolve a request to user ids, in the order PAS would try them.
+
+        :param request: The prepared request.
+        :returns: The user ids PAS authenticated.
+        """
+        found = self.acl_users._extractUserIds(request, self.acl_users.plugins)
+        return [user_id for user_id, _login in found]
+
+    @staticmethod
+    def basic(login: str, password: str) -> str:
+        """Build a Basic ``Authorization`` value.
+
+        :param login: The login to present.
+        :param password: The password to present.
+        :returns: The header value.
+        """
+        return "Basic " + base64.b64encode(f"{login}:{password}".encode()).decode()
+
+    def test_a_proxys_basic_credentials_leave_the_session_signed_in(self):
+        """The loop reported on id.plone.org: a browser resending Basic
+        credentials that belong to a proxy, not to Plone, was anonymous at
+        the authorization endpoint."""
+        request = self.request_for(
+            AUTHORIZE_URL,
+            token=self.token_for("carol"),
+            auth=self.basic("someone", "something"),
+        )
+
+        assert self.user_ids(request) == ["carol"]
+
+    def test_basic_credentials_for_a_plone_user_still_come_first(self):
+        """Letting the cookie through beside a Basic header must not let it
+        decide a request that named a real principal."""
+        request = self.request_for(
+            AUTHORIZE_URL,
+            token=self.token_for("carol"),
+            auth=self.basic("dave", "s3cret!y"),
+        )
+
+        assert self.user_ids(request)[0] == "dave"
 
 
 class TestInstallation:

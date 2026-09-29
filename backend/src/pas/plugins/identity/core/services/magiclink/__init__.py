@@ -31,6 +31,7 @@ from pas.plugins.identity.core.flows import magiclink
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from plone import api
 from urllib.parse import urlencode
 from ZPublisher.HTTPRequest import HTTPRequest
@@ -108,7 +109,7 @@ def check_rate_limits(config: JSONDict, address: str, request: HTTPRequest) -> N
     :param request: The current request, for the IP bucket.
     :raises RateLimited: When either bucket is over its limit.
     """
-    store = api.portal.get_tool("acl_users")[PLUGIN_ID].magic_links
+    store = get_plugin(PLUGIN_ID).magic_links
     store.check_and_record(
         f"address:{address}",
         int(config.get("rate_limit_per_hour") or magiclink.DEFAULT_RATE_LIMIT),

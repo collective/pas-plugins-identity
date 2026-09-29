@@ -20,6 +20,7 @@ integration errors an operator has to be able to read, and saying so tells an
 attacker nothing they did not already have the secret to learn.
 """
 
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from pas.plugins.identity.server.controlpanel.clients import authenticate
 from pas.plugins.identity.server.controlpanel.clients import get_client
 from pas.plugins.identity.server.grants.codes import CodeError
@@ -239,7 +240,7 @@ class TokenView(BrowserView):
         if not client.allows_grant(AUTHORIZATION_CODE):
             raise CodeError("The authorization code was refused")
 
-        codes = api.portal.get_tool("acl_users")[PLUGIN_ID].codes
+        codes = get_plugin(PLUGIN_ID).codes
         grant = codes.redeem(
             code=self._param("code"),
             client_id=client.client_id,
@@ -273,7 +274,7 @@ class TokenView(BrowserView):
         """
         if not client.allows_grant(REFRESH_TOKEN):
             return body
-        store = api.portal.get_tool("acl_users")[PLUGIN_ID].refresh
+        store = get_plugin(PLUGIN_ID).refresh
         body["refresh_token"] = store.issue(client.client_id, subject, scope)
         return body
 
@@ -292,7 +293,7 @@ class TokenView(BrowserView):
                 "This client is not registered for the refresh token grant.",
             )
 
-        store = api.portal.get_tool("acl_users")[PLUGIN_ID].refresh
+        store = get_plugin(PLUGIN_ID).refresh
         replacement, grant = store.rotate(
             self._param("refresh_token"), client.client_id
         )

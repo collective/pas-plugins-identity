@@ -34,7 +34,7 @@ from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.pas.profile import PLUGIN_ID as PROFILE_PLUGIN_ID
 from pas.plugins.identity.core.utils.nesting import members_of
-from plone import api
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from Products.CMFCore.permissions import ManageUsers
 from Products.ZCatalog.CatalogBrains import AbstractCatalogBrain
 
@@ -50,8 +50,7 @@ def get_profile_plugin():
         applied to the site -- in which case there are no content-backed
         groups to answer about.
     """
-    acl = api.portal.get_tool("acl_users")
-    plugin = getattr(acl, PROFILE_PLUGIN_ID, None)
+    plugin = get_plugin(PROFILE_PLUGIN_ID)
     if plugin is None:
         logger.debug("No %s plugin in this site", PROFILE_PLUGIN_ID)
     return plugin

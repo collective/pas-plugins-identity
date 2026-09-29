@@ -2,6 +2,7 @@
 
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.services.base import IdentityService
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from pas.plugins.identity.server.grants.tokens import TTL_RECORD
 from pas.plugins.identity.server.pas import PLUGIN_ID
 from plone import api
@@ -70,7 +71,7 @@ class GrantsDelete(IdentityService):
         client_id = self.segments[0]
 
         userid = api.user.get_current().getId()
-        plugin = api.portal.get_tool("acl_users")[PLUGIN_ID]
+        plugin = get_plugin(PLUGIN_ID)
 
         if not plugin.consent.forget(userid, client_id):
             # Nothing agreed to, or already withdrawn. Reported as 404

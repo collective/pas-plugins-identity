@@ -57,6 +57,7 @@ from pas.plugins.identity.core.container import PROFILE
 from pas.plugins.identity.core.interfaces import IdentityCollision
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from pas.plugins.identity.core.verification import record_verified_addresses
 from pas.plugins.identity.exportimport.schema import ExportImportError
 from pas.plugins.identity.exportimport.schema import GROUP_FIELDS
@@ -82,7 +83,7 @@ def _plugin():
     :returns: The plugin.
     :raises ExportImportError: When the add-on is not installed here.
     """
-    plugin = api.portal.get_tool("acl_users").get(PLUGIN_ID)
+    plugin = get_plugin(PLUGIN_ID)
     if plugin is None:
         raise ExportImportError(
             "This site has no identity plugin, so there is nowhere to import "
