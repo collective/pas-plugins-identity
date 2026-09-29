@@ -45,9 +45,9 @@ from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.utils.claims import scrub_payload
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from pas.plugins.identity.migration import profiles_for
 from pas.plugins.identity.migration import Report
-from plone import api
 from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
 from typing import Any
 
@@ -73,8 +73,7 @@ def _authomatic_plugin() -> BasePlugin | None:
 
     :returns: The plugin, or ``None``.
     """
-    acl_users = api.portal.get_tool("acl_users")
-    return acl_users.get(AUTHOMATIC_PLUGIN_ID)
+    return get_plugin(AUTHOMATIC_PLUGIN_ID)
 
 
 def _authomatic_config() -> JSONDict:
@@ -248,7 +247,7 @@ def migrate(dry_run: bool = True) -> Report:
         )
         return report
 
-    identity_plugin = api.portal.get_tool("acl_users").get(PLUGIN_ID)
+    identity_plugin = get_plugin(PLUGIN_ID)
     if identity_plugin is None:
         report.refusals.append(
             "pas.plugins.identity is not installed in this site; install it "

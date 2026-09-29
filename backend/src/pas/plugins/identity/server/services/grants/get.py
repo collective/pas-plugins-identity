@@ -2,6 +2,7 @@
 
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.services.base import IdentityService
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from pas.plugins.identity.server.claims import scope_claims
 from pas.plugins.identity.server.controlpanel.clients import get_client
 from pas.plugins.identity.server.grants.tokens import TTL_RECORD
@@ -25,7 +26,7 @@ class GrantsGet(IdentityService):
             )
 
         userid = api.user.get_current().getId()
-        plugin = api.portal.get_tool("acl_users")[PLUGIN_ID]
+        plugin = get_plugin(PLUGIN_ID)
         base = f"{self.context.absolute_url()}/@oauth-grants"
 
         return {

@@ -41,7 +41,7 @@ from pas.plugins.identity.core.interfaces import IdentityCollision
 from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from pas.plugins.identity.core.utils.emails import normalize
-from plone import api
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 
 
 def trusts_verification(provider_id: str) -> bool:
@@ -127,7 +127,7 @@ def record_verified_addresses(
     if not addresses or not trust:
         return ()
 
-    plugin = api.portal.get_tool("acl_users").get(CORE_PLUGIN_ID)
+    plugin = get_plugin(CORE_PLUGIN_ID)
     if plugin is None:  # pragma: no cover - can't-happen: core is always installed
         return ()
 

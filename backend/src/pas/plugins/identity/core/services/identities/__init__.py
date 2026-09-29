@@ -23,6 +23,7 @@ else's login.
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.pas.plugin import IdentityPlugin
 from pas.plugins.identity.core.services.base import IdentityService
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from plone import api
 from Products.CMFPlone.Portal import PloneSite
 from zope.interface import alsoProvides
@@ -73,7 +74,7 @@ class IdentitiesBase(IdentityService):
 
         :returns: The plugin installed in this site.
         """
-        return api.portal.get_tool("acl_users")[PLUGIN_ID]
+        return get_plugin(PLUGIN_ID)
 
     def _disable_csrf(self) -> None:
         """Exempt a write from plone.protect's form authenticator.

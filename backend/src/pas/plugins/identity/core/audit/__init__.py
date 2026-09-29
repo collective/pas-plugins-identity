@@ -23,6 +23,7 @@ from pas.plugins.identity import logger
 from pas.plugins.identity.core.interfaces import IAuditSink
 from pas.plugins.identity.core.interfaces import IAuditSource
 from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from persistent import Persistent
 from persistent.list import PersistentList
 from persistent.mapping import PersistentMapping
@@ -297,7 +298,7 @@ def _log() -> AuditLog | None:
     from pas.plugins.identity.core.pas import PLUGIN_ID
 
     try:
-        plugin = api.portal.get_tool("acl_users")[PLUGIN_ID]
+        plugin = get_plugin(PLUGIN_ID)
     except (KeyError, AttributeError, api.exc.CannotGetPortalError):
         logger.info("No identity plugin here; dropping an audit entry")
         return None

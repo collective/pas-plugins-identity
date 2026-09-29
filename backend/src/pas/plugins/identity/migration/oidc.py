@@ -46,6 +46,7 @@ from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.store import IdentityStore
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from pas.plugins.identity.migration import profiles_for
 from pas.plugins.identity.migration import Report
 from plone import api
@@ -116,8 +117,7 @@ def _candidate_userids(userids: list[str] | None) -> list[str]:
     """
     if userids is not None:
         return sorted(userids)
-    acl_users = api.portal.get_tool("acl_users")
-    source_users = acl_users.get("source_users")
+    source_users = get_plugin("source_users")
     if source_users is None:
         return []
     return sorted(source_users.getUserIds())
@@ -194,7 +194,7 @@ def migrate(dry_run: bool = True, userids: list[str] | None = None) -> Report:
         )
         return report
 
-    identity_plugin = api.portal.get_tool("acl_users").get(PLUGIN_ID)
+    identity_plugin = get_plugin(PLUGIN_ID)
     if identity_plugin is None:
         report.refusals.append(
             "pas.plugins.identity is not installed in this site; install it "

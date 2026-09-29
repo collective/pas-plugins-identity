@@ -22,6 +22,7 @@ which is the idiom this audience already knows:
 :mod:`.profile`     Finding a person's Profile
 :mod:`.portrait`    Their picture, in whichever store holds it
 :mod:`.provider`    The providers this site signs people in against
+:mod:`.plugin`      The PAS plugins installed in this site
 :mod:`.claims`      What this site releases about a person  (``[server]``)
 :mod:`.clients`     The OAuth clients registered here       (``[server]``)
 ==================  =========================================================
@@ -53,6 +54,7 @@ Naming note: ``from pas.plugins.identity import api`` shadows
 
 from pas.plugins.identity.api import claims
 from pas.plugins.identity.api import clients
+from pas.plugins.identity.api import plugin
 from pas.plugins.identity.api import portrait
 from pas.plugins.identity.api import profile
 from pas.plugins.identity.api import provider
@@ -153,6 +155,7 @@ __all__ = [
     "UserProfile",
     "claims",
     "clients",
+    "plugin",
     "portrait",
     "profile",
     "provider",

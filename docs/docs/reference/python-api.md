@@ -139,6 +139,14 @@ A batch import learns *why* a picture was refused only from the log.
 Read-only.
 Registering or editing a provider goes through the control panel or a GenericSetup profile, so that every route in is held to the same validation.
 
+## `api.plugin`
+
+<!-- Source: backend/src/pas/plugins/identity/api/plugin.py -->
+
+| Call | Answers |
+|---|---|
+| `get(name)` | The PAS plugin with that id in `acl_users`, any plugin rather than only this package's own, or `None` |
+
 ## `api.claims`
 
 Only on a site running the authorization server.

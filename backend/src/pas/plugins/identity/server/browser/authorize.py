@@ -28,6 +28,7 @@ any later request for a scope not already agreed to.
 from AccessControl import Unauthorized
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.subscribers.gate import incomplete_profile_url
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from pas.plugins.identity.server.consent.screen import consent_screen_url
 from pas.plugins.identity.server.controlpanel.clients import get_client
 from pas.plugins.identity.server.discovery import AUTHORIZE_VIEW
@@ -277,7 +278,7 @@ class AuthorizeView(BrowserView):
             )
             return f"{elsewhere}?{urlencode({RESUME_PARAM: self.request_url()})}"
 
-        plugin = api.portal.get_tool("acl_users")[PLUGIN_ID]
+        plugin = get_plugin(PLUGIN_ID)
         decision = self._consent_decision(plugin, user.getId(), client, scope)
         if decision is CONSENT_PENDING:
             if quiet:

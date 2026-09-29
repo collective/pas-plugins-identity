@@ -28,6 +28,7 @@ submission does not have.
 from AccessControl.class_init import InitializeClass
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from plone import api
 from Products.PluggableAuthService.interfaces.plugins import IAuthenticationPlugin
 from Products.PluggableAuthService.interfaces.plugins import IExtractionPlugin
@@ -136,7 +137,7 @@ class IdentityAuthorizeSessionPlugin(BasePlugin):
         if credentials.get("extractor") != self.getId():
             return None
 
-        jwt_plugin = api.portal.get_tool("acl_users").get(JWT_PLUGIN_ID)
+        jwt_plugin = get_plugin(JWT_PLUGIN_ID)
         if jwt_plugin is None:
             # A site without plone.restapi's JWT plugin has no Volto session
             # to read. Nothing is wrong; there is simply nothing here.
