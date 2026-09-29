@@ -68,6 +68,8 @@ Measured on a running site: the authorize view with only the cookie answers as a
 Two halves that each work, unable to talk to each other.
 
 So the `[server]` layer installs a PAS plugin that reads that cookie, for the authorization endpoint and nothing else.
+A `Bearer` header on the same request outranks the cookie, because `plone.restapi` reads it anyway.
+Any other scheme does not: browsers resend cached `Basic` credentials to every path on a host, so a proxy's basic auth elsewhere on the site would otherwise hide the Volto session and loop the visitor back to the login page.
 Everywhere else the site behaves exactly as `plone.restapi` left it, because widening the reader would mean every request in the site now accepts a credential from a cookie, which is a different security posture than the one the site was configured with.
 
 There was a second problem in the same area.

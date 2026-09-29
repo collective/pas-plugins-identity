@@ -97,11 +97,19 @@ class IdentityAuthorizeSessionPlugin(BasePlugin):
         if not self._wants_the_authorization_endpoint(request):
             return {}
 
-        # An Authorization header outranks the cookie: it is the credential
-        # the caller chose to present, and plone.restapi will read it anyway.
+        # A Bearer header outranks the cookie: it is the credential the
+        # caller chose to present, and plone.restapi will read it anyway.
         # Extracting the cookie as well would let a stale cookie decide a
         # request that named a different principal.
-        if getattr(request, "_auth", None):
+        #
+        # Only Bearer, because that is the only scheme plone.restapi reads.
+        # Browsers resend cached Basic credentials to every path on a host,
+        # so a proxy's basic auth elsewhere on the site would otherwise hide
+        # the Volto session here and send the visitor round the login page
+        # for ever. Basic credentials that are a real Plone login still win:
+        # this plugin is activated after the site's basic auth extractor.
+        auth = getattr(request, "_auth", None) or ""
+        if auth[:7].lower() == "bearer ":
             return {}
 
         token = request.cookies.get(COOKIE_NAME) or ""
