@@ -3,17 +3,21 @@ myst:
   html_meta:
     "description": "Step-by-step recipes for each identity provider pas.plugins.identity can talk to."
     "property=og:description": "Step-by-step recipes for each identity provider pas.plugins.identity can talk to."
-    "property=og:title": "Provider recipes"
+    "property=og:title": "Sign in with a provider"
 ---
 
 (how-to-providers)=
 
-# Provider recipes
+# Sign in with a provider
 
-One page per provider, each with the same shape: what to get from the provider,
-which driver to choose, what to type in the form, and how to tell that it worked.
+Let people sign in to your site with accounts they already have elsewhere.
 
-Do {doc}`../install` and {doc}`../install-the-frontend` first.
+Do {doc}`/how-to-guides/install/backend` and {doc}`/how-to-guides/install/frontend` first.
+Then read {doc}`configure-a-provider` for the settings every provider shares,
+and follow the recipe for yours.
+
+Each recipe has the same shape: what to get from the provider, which driver to
+choose, what to type in the form, and how to tell that it worked.
 
 ## Pick a recipe
 
@@ -71,12 +75,13 @@ side of every recipe is read from this package's source and is accurate.
 
 - {doc}`/reference/shipped-drivers`—every driver and its defaults
 - {doc}`/reference/provider-form`—every form field, by tab
-- {doc}`../troubleshoot`—when a sign-in does not work
+- {doc}`/how-to-guides/operate/troubleshoot`—when a sign-in does not work
 
 ```{toctree}
 :maxdepth: 1
 :hidden: true
 
+configure-a-provider
 another-plone-site
 generic-oidc
 magic-link

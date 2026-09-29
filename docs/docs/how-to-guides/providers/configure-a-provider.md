@@ -3,12 +3,12 @@ myst:
   html_meta:
     "description": "Add, test, style, edit, and delete an identity provider from the Plone control panel."
     "property=og:description": "Add, test, style, edit, and delete an identity provider from the Plone control panel."
-    "property=og:title": "How to configure a provider"
+    "property=og:title": "Configure a provider"
 ---
 
 (how-to-configure-a-provider)=
 
-# How to configure a provider
+# Configure a provider
 
 Register an identity provider, test it, and remove it.
 
@@ -17,7 +17,7 @@ a kind of service; the provider record holds this site's credentials for one
 particular service. Two GitHub organizations are two providers sharing one
 driver.
 
-For a specific provider, {doc}`providers/index` has a recipe. This page is the
+For a specific provider, {doc}`/how-to-guides/providers/index` has a recipe. This page is the
 part every provider has in common.
 
 ## Add a provider
@@ -155,7 +155,7 @@ one.
 ```
 
 To write a field the map cannot reach—a list, or a value that has to be built
-rather than copied—see {doc}`write-a-profile-enricher`.
+rather than copied—see {doc}`/how-to-guides/extend/write-a-profile-enricher`.
 
 ## Replace or keep the client secret
 
@@ -257,7 +257,7 @@ A working provider has all four of these:
 - a sign-in through it returns you signed in
 - the audit log has an `authenticated` entry for it
 
-If any of those fails, {doc}`troubleshoot` is organized by exactly these
+If any of those fails, {doc}`/how-to-guides/operate/troubleshoot` is organized by exactly these
 symptoms.
 
 ## Next steps
@@ -265,7 +265,7 @@ symptoms.
 The decisions about what the provider is *allowed to mean* are separate guides,
 because each is a real decision rather than a field to fill in:
 
-- {doc}`link-accounts-by-email`—attaching a sign-in to an account that already exists
-- {doc}`control-account-creation`—admitting only people who already have an account
-- {doc}`map-provider-groups`—turning the provider's groups into local ones, and restricting sign-in
-- {doc}`enable-back-channel-logout`—so a sign-out at the provider ends the session here
+- {doc}`/how-to-guides/accounts/link-accounts-by-email`—attaching a sign-in to an account that already exists
+- {doc}`/how-to-guides/accounts/control-account-creation`—admitting only people who already have an account
+- {doc}`/how-to-guides/accounts/map-provider-groups`—turning the provider's groups into local ones, and restricting sign-in
+- {doc}`/how-to-guides/operate/enable-back-channel-logout`—so a sign-out at the provider ends the session here

@@ -293,4 +293,4 @@ See {doc}`/concepts/secrets`.
 - {doc}`provider-form`—the same fields, arranged as the control panel shows them
 - {doc}`shipped-drivers`—each driver's defaults
 - {doc}`install-profiles`—which profile writes what
-- {doc}`/how-to-guides/configure-a-provider`—setting them
+- {doc}`/how-to-guides/providers/configure-a-provider`—setting them

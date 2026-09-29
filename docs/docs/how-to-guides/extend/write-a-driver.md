@@ -3,12 +3,12 @@ myst:
   html_meta:
     "description": "Write, register, and test a driver for a provider that pas.plugins.identity does not ship."
     "property=og:description": "Write, register, and test a driver for a provider that pas.plugins.identity does not ship."
-    "property=og:title": "How to write a driver"
+    "property=og:title": "Write a driver"
 ---
 
 (how-to-write-a-driver)=
 
-# How to write a driver
+# Write a driver
 
 This guide shows you how to add support for a provider the package does not ship.
 
@@ -163,4 +163,4 @@ It costs nothing to run, it does not need credentials, and it still catches the 
 - {doc}`/reference/driver-contract`—the ten rules, and what enforces each
 - {doc}`/reference/claims`—the claim names to normalize to
 - {doc}`/reference/shipped-drivers`—five worked examples
-- {doc}`configure-a-provider`—configuring a provider that uses your driver
+- {doc}`/how-to-guides/providers/configure-a-provider`—configuring a provider that uses your driver

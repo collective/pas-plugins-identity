@@ -80,5 +80,5 @@ Which is worth knowing before you delete a client to tidy up.
 
 ## Where to go next
 
--   {doc}`/how-to-guides/configure-a-provider` for the client side.
--   {doc}`/how-to-guides/register-an-oauth-client` for the server side.
+-   {doc}`/how-to-guides/providers/configure-a-provider` for the client side.
+-   {doc}`/how-to-guides/server/register-an-oauth-client` for the server side.

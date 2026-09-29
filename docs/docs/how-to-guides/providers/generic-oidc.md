@@ -104,7 +104,7 @@ On the **Groups** tab, set **Groups arrive in the claim** to the claim your
 provider uses. `groups` is the default. Use a dotted path for a provider that
 nests them, such as `realm_access.roles`.
 
-Then map the ones that mean something here—see {doc}`../map-provider-groups`.
+Then map the ones that mean something here—see {doc}`/how-to-guides/accounts/map-provider-groups`.
 
 ## Verify
 
@@ -113,7 +113,7 @@ Then map the ones that mean something here—see {doc}`../map-provider-groups`.
 3. `/identities` lists the identity.
 4. The audit log has an `authenticated` entry.
 
-If any step fails, {doc}`../troubleshoot` is organized by exactly these symptoms.
+If any step fails, {doc}`/how-to-guides/operate/troubleshoot` is organized by exactly these symptoms.
 
 ## Related
 

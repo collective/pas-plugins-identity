@@ -12,7 +12,7 @@ myst:
 # Contributing
 
 Everything in this page is run from a checkout. If you only want to *use* the
-package, {doc}`how-to-guides/install` is the page you want instead.
+package, {doc}`/how-to-guides/install/backend` is the page you want instead.
 
 If you are a coding agent, read
 [`AGENTS.md`](https://github.com/collective/pas-plugins-identity/blob/main/AGENTS.md)
@@ -212,5 +212,5 @@ Not through the issue tracker. Follow
 
 - {doc}`concepts/layers`—the boundary `make check-imports` enforces
 - {doc}`reference/stability`—what may change before 1.0.0
-- {doc}`how-to-guides/write-a-driver`—the most common thing to contribute
+- {doc}`/how-to-guides/extend/write-a-driver`—the most common thing to contribute
 - {doc}`reference/driver-contract`—what a driver must implement

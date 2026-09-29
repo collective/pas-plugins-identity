@@ -14,7 +14,7 @@ myst:
 A principal document is a single JSON file holding a site's users, groups and identity join.
 `pas.plugins.identity.exportimport` writes one and reads one back.
 
-For the commands that produce and consume it, see {doc}`/how-to-guides/export-and-import-principals`.
+For the commands that produce and consume it, see {doc}`/how-to-guides/operate/export-and-import-principals`.
 
 ## The document
 
@@ -320,12 +320,12 @@ No human knows it and none could type it, so moving it moves a credential nobody
 
 | Tool | Moves | Use it when |
 |---|---|---|
-| `pas.plugins.identity.migration` | A site **in place**, with both plugins installed in the same instance | There is one site and it is staying put. See {doc}`/how-to-guides/migrate-from-authomatic`. |
+| `pas.plugins.identity.migration` | A site **in place**, with both plugins installed in the same instance | There is one site and it is staying put. See {doc}`/how-to-guides/migrate/from-authomatic`. |
 | `plone.exportimport` | Content | Always, alongside this. It does not know about the identity store, so a site restored with it alone has profiles nobody can sign in to. Export content with `plone-exporter` and principals with `identity-exporter`. |
 
 ## Related
 
-- {doc}`/how-to-guides/export-and-import-principals`—the commands
+- {doc}`/how-to-guides/operate/export-and-import-principals`—the commands
 - {doc}`migration-reports`—what a run reports
 - {doc}`profiles-and-groups`—what an imported person becomes
 - {doc}`/concepts/email-verification`—what a verified address means here

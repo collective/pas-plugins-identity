@@ -83,7 +83,7 @@ until something reindexes—and a query against an empty index answers "nothing
 matched" rather than failing, so the mistake is silent.
 
 Apply `pas.plugins.identity:rebuild-catalog` afterwards. See
-{doc}`/how-to-guides/upgrade`.
+{doc}`/how-to-guides/install/upgrade`.
 ```
 
 ## Remove one
@@ -112,4 +112,4 @@ reading a `ZCatalog` from XML is inherited from GenericSetup.
 
 - {doc}`/reference/user-content`—what the catalog holds today
 - {doc}`/reference/install-profiles`—the profiles and steps this package ships
-- {doc}`upgrade`—when a release changes what the catalog stores
+- {doc}`/how-to-guides/install/upgrade`—when a release changes what the catalog stores

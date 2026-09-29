@@ -3,12 +3,12 @@ myst:
   html_meta:
     "description": "Attach a new sign-in to an account that already exists, by matching a verified email address."
     "property=og:description": "Attach a new sign-in to an account that already exists, by matching a verified email address."
-    "property=og:title": "How to link accounts by email"
+    "property=og:title": "Link accounts by email"
 ---
 
 (how-to-link-accounts-by-email)=
 
-# How to link accounts by email
+# Link accounts by email
 
 Make somebody signing in with a new provider land on the account they already
 have here, instead of getting a second one.
@@ -48,7 +48,7 @@ verified one here.
 
 Every address the provider verified is tried, not only the first. They are tried
 in order—for GitHub, the order its **Address preference** sets, see
-{doc}`providers/github`—and the first one that belongs to an account decides.
+{doc}`/how-to-guides/providers/github`—and the first one that belongs to an account decides.
 
 This needs step 1 as well. The address being matched on is the one this provider
 just sent, so a provider whose word the site does not take cannot reach an
@@ -109,6 +109,6 @@ Merging two accounts is not something this package will guess at. See
 
 ## Next steps
 
-- {doc}`control-account-creation`—the switch that decides what happens when no match is found
+- {doc}`/how-to-guides/accounts/control-account-creation`—the switch that decides what happens when no match is found
 - {doc}`/concepts/email-verification`—the whole trust rule, and why an absent claim is not a `true`
-- {doc}`troubleshoot`—"Existing account not matched by email"
+- {doc}`/how-to-guides/operate/troubleshoot`—"Existing account not matched by email"

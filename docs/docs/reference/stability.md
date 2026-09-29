@@ -19,16 +19,16 @@ What you can build against today, and what may change before 1.0.0.
 | Backend | `pas.plugins.identity` |
 | Frontend | `@plone-collective/volto-identity` |
 
-They are versioned and released together. See {doc}`/how-to-guides/install` and {doc}`/how-to-guides/install-the-frontend`.
+They are versioned and released together. See {doc}`/how-to-guides/install/backend` and {doc}`/how-to-guides/install/frontend`.
 
 ## What alpha means here
 
 A change to a registry record, a content type or a plugin reaches an existing site when the profile is reapplied, and only then.
 `pas.plugins.identity:default` is at version 1009 and declares an upgrade step for each thing a reapplied profile cannot carry: a persistent object written at install, and a value only a walk of the site can compute.
 `pas.plugins.identity.server:default` is at 1001 and does the same.
-{doc}`/how-to-guides/upgrade` lists what each step does.
+{doc}`/how-to-guides/install/upgrade` lists what each step does.
 
-Plan for that: treat an alpha site as one you can rebuild, and read {doc}`/how-to-guides/upgrade` before taking a new release.
+Plan for that: treat an alpha site as one you can rebuild, and read {doc}`/how-to-guides/install/upgrade` before taking a new release.
 
 ## Settled
 
@@ -53,7 +53,7 @@ Expect these to change without a migration path before 1.0.0.
 | REST endpoint names and payloads | Named in {doc}`endpoints`; no deprecation cycle yet |
 | Registry keys and defaults | Named in {doc}`settings`; a rename means a reinstall |
 | The driver contract | {doc}`driver-contract` is the current shape; a third-party driver may need edits |
-| The scope serializer contract | {doc}`/how-to-guides/serialize-a-claim` is the current shape; a downstream serializer may need edits |
+| The scope serializer contract | {doc}`/how-to-guides/extend/serialize-a-claim` is the current shape; a downstream serializer may need edits |
 | Frontend routes and component names | Named in {doc}`frontend`; shadowed components especially |
 | The `[sql]` audit schema | One table today, and no migration tooling for it |
 | Event interfaces | Named in {doc}`events` |
@@ -78,4 +78,4 @@ Report anything else as a GitHub issue.
 - {doc}`security-guarantees`—the properties the test suite enforces
 - {doc}`/concepts/threat-model`—the reasoning behind them
 - {doc}`/concepts/layers`—what each layer is for
-- {doc}`/how-to-guides/upgrade`—taking a new release
+- {doc}`/how-to-guides/install/upgrade`—taking a new release

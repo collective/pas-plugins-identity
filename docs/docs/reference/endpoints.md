@@ -181,7 +181,7 @@ profile does not publish them at all.
 | Path | Layer | Purpose |
 |---|---|---|
 | `@@identity-controlpanel` | core | The control panel view. |
-| `@@backchannel-logout` | core | Receives a logout token from a provider. See {doc}`/how-to-guides/enable-back-channel-logout`. |
+| `@@backchannel-logout` | core | Receives a logout token from a provider. See {doc}`/how-to-guides/operate/enable-back-channel-logout`. |
 | `@@oauth-authorize` | server | The authorization endpoint. Public: the browser reaching it may be anonymous, and the view refuses an unauthenticated end user itself with the error code the specification names. |
 | `@@oauth-token` | server | The token endpoint. Public: the caller is a server holding client credentials, authenticated inside against the client registry. |
 | `@@oauth-jwks` | server | The signing keys, as JWKS. |
@@ -222,7 +222,7 @@ A logout for an identity this site has never seen answers `200`, not an error.
 There is nothing to end, and answering differently would tell an unauthenticated
 caller which of a provider's subjects have accounts here.
 
-To enable it, see {doc}`/how-to-guides/enable-back-channel-logout`.
+To enable it, see {doc}`/how-to-guides/operate/enable-back-channel-logout`.
 
 ### Why `.well-known` is registered oddly
 

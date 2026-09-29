@@ -68,10 +68,10 @@ Full documentation is published at [collective.github.io/pas-plugins-identity](h
 
 The pages closest to this package:
 
-- **Start here:** [Install](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/how-to-guides/install.md) and [Configure a provider](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/how-to-guides/configure-a-provider.md).
+- **Start here:** [Install](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/how-to-guides/install/backend.md) and [Configure a provider](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/how-to-guides/providers/configure-a-provider.md).
 - **Concepts:** [identities](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/concepts/identities.md), [layers](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/concepts/layers.md), [users as content](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/concepts/users-as-content.md), [secrets](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/concepts/secrets.md).
 - **Reference:** [shipped drivers](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/reference/shipped-drivers.md), [the event contract](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/reference/events.md), [the audit log](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/reference/audit-log.md), [security guarantees](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/reference/security-guarantees.md).
-- **Writing a driver:** [Write a driver](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/how-to-guides/write-a-driver.md).
+- **Writing a driver:** [Write a driver](https://github.com/collective/pas-plugins-identity/blob/main/docs/docs/how-to-guides/extend/write-a-driver.md).
 
 ## Installation
 

@@ -92,7 +92,7 @@ Two things to know once you do:
   follow. A user in many groups may arrive with none.
 
 Set **Groups arrive in the claim** to `groups` once it is emitted, and map the
-ids you care about—see {doc}`../map-provider-groups`.
+ids you care about—see {doc}`/how-to-guides/accounts/map-provider-groups`.
 
 ## Verify
 
@@ -112,4 +112,4 @@ ids you care about—see {doc}`../map-provider-groups`.
 
 - {doc}`generic-oidc`—the same driver, generally
 - {doc}`/concepts/email-verification`—why an absent claim is not a `true`
-- {doc}`../control-account-creation`—the safer arrangement for Entra
+- {doc}`/how-to-guides/accounts/control-account-creation`—the safer arrangement for Entra

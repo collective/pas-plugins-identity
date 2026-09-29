@@ -3,12 +3,12 @@ myst:
   html_meta:
     "description": "Write a named utility that puts data from a provider payload onto a Profile field the property map cannot reach."
     "property=og:description": "Write a named utility that puts data from a provider payload onto a Profile field the property map cannot reach."
-    "property=og:title": "How to write a profile enricher"
+    "property=og:title": "Write a profile enricher"
 ---
 
 (how-to-write-a-profile-enricher)=
 
-# How to write a profile enricher
+# Write a profile enricher
 
 This guide shows you how to put data from a provider's payload onto a Profile
 field that the claim-to-field property map cannot carry.
@@ -22,7 +22,7 @@ it changed.
 
 Reach for the property map first. It carries a value from a provider document to
 a Profile field with no code at all, it is edited in the control panel, and
-{doc}`configure-a-provider` covers it. It reads dotted paths into the provider's
+{doc}`/how-to-guides/providers/configure-a-provider` covers it. It reads dotted paths into the provider's
 own payload, so `address.formatted` and `raw` sub-keys are already within reach.
 
 <!-- The three limits below are MAPPABLE_FIELDS in
@@ -275,6 +275,6 @@ does nothing rather than raising.
 ## Next steps
 
 - {doc}`/reference/claims`—the claim names, and what `raw` carries
-- {doc}`configure-a-provider`—the property map, which handles the easy cases
-- {doc}`write-a-driver`—for a provider this package does not ship
+- {doc}`/how-to-guides/providers/configure-a-provider`—the property map, which handles the easy cases
+- {doc}`/how-to-guides/extend/write-a-driver`—for a provider this package does not ship
 - {doc}`/concepts/profiles-and-groups`—why a provider may only replace what it wrote

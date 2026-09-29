@@ -23,7 +23,7 @@ tell you whether they are still signed in, and it does not record what they did
 afterward.
 ```
 
-For how to query it, see {doc}`/how-to-guides/read-the-audit-log`.
+For how to query it, see {doc}`/how-to-guides/operate/read-the-audit-log`.
 
 ## Event names
 
@@ -167,7 +167,7 @@ including yours.
 
 ## Related
 
-- {doc}`/how-to-guides/read-the-audit-log`—querying it
+- {doc}`/how-to-guides/operate/read-the-audit-log`—querying it
 - {doc}`events`—what fires these entries
 - {doc}`settings`—the four records above
 - {doc}`endpoints`—`@audit-log`

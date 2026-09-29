@@ -55,11 +55,19 @@ If a page is doing two of those, it is two pages.
 
 ### How-to guides
 
+- Every guide lives in a topic directory under `how-to-guides/`, and is listed
+  in that directory's `index.md`. A guide that fits no topic is a new topic,
+  not a page at the top level.
+- The title is the task, in the imperative, without "How to": `Read the audit
+  log`. The section already says these are how-to guides. Inside `migrate/`,
+  the title names the source: `From pas.plugins.oidc`.
+- Moving a published page adds an entry to `redirects` in `docs/conf.py`, so
+  the old address keeps working.
 - Numbered, imperative steps. "Open the control panel", not "you can open the
   control panel".
 - One outcome per guide, named in the first sentence.
 - A `## Verify` section at the end, saying what the reader should be able to see.
-- Provider recipes additionally carry `## Known quirks`.
+- Provider and client recipes additionally carry `## Known quirks`.
 
 ### Reference
 

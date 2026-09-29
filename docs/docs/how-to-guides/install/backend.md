@@ -3,22 +3,22 @@ myst:
   html_meta:
     "description": "Install the pas.plugins.identity backend in a Plone site and verify the result."
     "property=og:description": "Install the pas.plugins.identity backend in a Plone site and verify the result."
-    "property=og:title": "How to install the backend"
+    "property=og:title": "Install the backend"
 ---
 
 (how-to-install)=
 
-# How to install the backend
+# Install the backend
 
 Install `pas.plugins.identity` in a Plone site and confirm it works.
 
 This guide covers the backend only.
-The frontend is a separate package and a separate guide: {doc}`install-the-frontend`.
+The frontend is a separate package and a separate guide: {doc}`/how-to-guides/install/frontend`.
 
 ```{note}
 Taking a new alpha into a site that already has this add-on means reapplying the
 profile, and running the upgrade steps `portal_setup` offers.
-See {doc}`upgrade` for the procedure and {doc}`/reference/stability` for what alpha implies.
+See {doc}`/how-to-guides/install/upgrade` for the procedure and {doc}`/reference/stability` for what alpha implies.
 ```
 
 ## Requirements
@@ -181,6 +181,6 @@ Uninstalling an add-on is a configuration change, not an instruction to delete e
 
 ## Next steps
 
-1. {doc}`install-the-frontend`—the Volto add-on, without which nobody can sign in.
-2. {doc}`providers/index`—pick the provider you are adding and follow its recipe.
-3. {doc}`troubleshoot`—if sign-in fails, start here rather than in the source.
+1. {doc}`/how-to-guides/install/frontend`—the Volto add-on, without which nobody can sign in.
+2. {doc}`/how-to-guides/providers/index`—pick the provider you are adding and follow its recipe.
+3. {doc}`/how-to-guides/operate/troubleshoot`—if sign-in fails, start here rather than in the source.

@@ -3,12 +3,12 @@ myst:
   html_meta:
     "description": "Turn a provider's group membership into local Plone groups, and restrict who may sign in."
     "property=og:description": "Turn a provider's group membership into local Plone groups, and restrict who may sign in."
-    "property=og:title": "How to map provider groups"
+    "property=og:title": "Map provider groups"
 ---
 
 (how-to-map-provider-groups)=
 
-# How to map provider groups
+# Map provider groups
 
 Let a provider grant local group membership, and decide which of its groups mean
 anything here.
@@ -117,4 +117,4 @@ one login reconcile.
 
 - {doc}`/concepts/profiles-and-groups`—why a group is content, and what that costs
 - {doc}`/concepts/federation`—what one site may say about the members of another
-- {doc}`troubleshoot`—"Groups not granted after login"
+- {doc}`/how-to-guides/operate/troubleshoot`—"Groups not granted after login"

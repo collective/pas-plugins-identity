@@ -28,7 +28,7 @@ that never applied the server profile does not publish them at all, and all of
 them require `Manage portal`. They are listed with their exact sub-paths in
 {doc}`endpoints`.
 
-To use them, see {doc}`/how-to-guides/register-an-oauth-client`.
+To use them, see {doc}`/how-to-guides/server/register-an-oauth-client`.
 
 ## Discovery
 
@@ -143,7 +143,7 @@ See {doc}`settings`.
 Every scope above is a named adapter, registered by this package, and the table
 is what those adapters declare rather than a list held anywhere.
 A downstream package registers one of its own to add a claim to a scope here,
-or to add a scope. See {doc}`/how-to-guides/serialize-a-claim`.
+or to add a scope. See {doc}`/how-to-guides/extend/serialize-a-claim`.
 
 | Fact | Value |
 |---|---|
@@ -164,5 +164,5 @@ Moving one between scopes, or changing what `email_verified` asserts, is not.
 - {doc}`endpoints`—the client, key and OAuth endpoints, with their sub-paths
 - {doc}`events`—claims coming the other way, in from a provider
 - {doc}`/concepts/federation`—why `description` and `groups` are released under `profile`
-- {doc}`/how-to-guides/register-an-oauth-client`—putting a relying party on the other end
-- {doc}`/how-to-guides/serialize-a-claim`—releasing a claim this table does not list
+- {doc}`/how-to-guides/server/register-an-oauth-client`—putting a relying party on the other end
+- {doc}`/how-to-guides/extend/serialize-a-claim`—releasing a claim this table does not list

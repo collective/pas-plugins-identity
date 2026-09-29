@@ -3,10 +3,10 @@ myst:
   html_meta:
     "description": "Make a field that holds an ordered list of strings or objects render in Volto as a table, with rows dragged by a handle and each entry edited in a dialog."
     "property=og:description": "Make a field that holds an ordered list of strings or objects render in Volto as a table, with rows dragged by a handle and each entry edited in a dialog."
-    "property=og:title": "How to edit a list field as a table"
+    "property=og:title": "Edit a list field as a table"
 ---
 
-# How to edit a list field as a table
+# Edit a list field as a table
 
 This guide shows you how to make a field holding an ordered list render in Volto
 as a table: one row per entry, a handle to drag it by, and a dialog to edit it.
@@ -147,4 +147,4 @@ undoes all of it.
 
 - {doc}`/reference/frontend`—every widget the add-on registers, and the props the list widgets read
 - [Storybook](https://collective.github.io/pas-plugins-identity/storybook/)—the widgets rendered, without a site
-- {doc}`write-a-profile-enricher`—filling a list field from what a provider sends
+- {doc}`/how-to-guides/extend/write-a-profile-enricher`—filling a list field from what a provider sends

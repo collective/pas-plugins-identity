@@ -3,12 +3,12 @@ myst:
   html_meta:
     "description": "Register an OAuth client against a Plone site running the server layer, and rotate its secret and signing keys."
     "property=og:description": "Register an OAuth client against a Plone site running the server layer, and rotate its secret and signing keys."
-    "property=og:title": "How to register an OAuth client"
+    "property=og:title": "Register an OAuth client"
 ---
 
 (how-to-register-a-client)=
 
-# How to register an OAuth client
+# Register an OAuth client
 
 Let another application sign its users in against your Plone site.
 
@@ -216,5 +216,5 @@ second copy would only be something to fetch out of step with the first.
 
 - {doc}`/reference/claims`—every endpoint, scope, and claim the server releases
 - {doc}`/reference/endpoints`—the server layer's full surface
-- {doc}`providers/another-plone-site`—the other side, if the client is a Plone site
+- {doc}`/how-to-guides/providers/another-plone-site`—the other side, if the client is a Plone site
 - {doc}`/tutorials/federation-demo`—the whole thing running end to end

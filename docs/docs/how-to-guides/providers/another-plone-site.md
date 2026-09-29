@@ -30,7 +30,7 @@ Ask whoever runs it for:
 | Client ID | minted when they register your site |
 | Client secret | shown **once**, when the client is created |
 
-They create the client by following {doc}`../register-an-oauth-client`, giving
+They create the client by following {doc}`/how-to-guides/server/register-an-oauth-client`, giving
 your redirect URI:
 
 ```text
@@ -80,9 +80,9 @@ On the **Accounts** tab:
 
 | Field | Set it to | Why |
 |---|---|---|
-| Trust this provider's email verification | on, if you run both sites | See {doc}`../link-accounts-by-email` |
+| Trust this provider's email verification | on, if you run both sites | See {doc}`/how-to-guides/accounts/link-accounts-by-email` |
 | Attach to an existing account with the same verified email | on, to merge with existing accounts | Needs the switch above |
-| Let this provider create accounts | on, unless membership is decided here | See {doc}`../control-account-creation` |
+| Let this provider create accounts | on, unless membership is decided here | See {doc}`/how-to-guides/accounts/control-account-creation` |
 
 A Plone site running this package releases `email_verified: true` only for
 addresses it has actually verified, so trusting it is reasonable when you run
@@ -94,7 +94,7 @@ sign-up rules, not about this software.
 On the **Groups** tab, leave **Groups arrive in the claim** at `groups`—that is
 what a Plone site running the `server` layer emits.
 
-Then add one row per group you want to honour. See {doc}`../map-provider-groups`.
+Then add one row per group you want to honour. See {doc}`/how-to-guides/accounts/map-provider-groups`.
 
 An unmapped group grants nothing and is never created here.
 
@@ -108,7 +108,7 @@ once, and returns you here signed in.
 ## Verify
 
 - `/identities` on this site lists the new identity, naming the provider.
-- The audit log has an `authenticated` entry for it—see {doc}`../read-the-audit-log`.
+- The audit log has an `authenticated` entry for it—see {doc}`/how-to-guides/operate/read-the-audit-log`.
 - The user's profile carries the fullname, email and, if you mapped them, the
   website, description, location and portrait that came across.
 
@@ -124,4 +124,4 @@ once, and returns you here signed in.
 
 - {doc}`/tutorials/federation-demo`—this recipe, running, in Docker
 - {doc}`/concepts/federation`—why the issuer is configured rather than derived
-- {doc}`../register-an-oauth-client`—the other side of this setup
+- {doc}`/how-to-guides/server/register-an-oauth-client`—the other side of this setup

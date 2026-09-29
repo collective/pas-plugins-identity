@@ -123,7 +123,7 @@ attributes, and mappers releasing them, can map more on the **Mapping** tab.
 **`email_verified` is a proper boolean in a default Keycloak.** You do not need
 **This provider sends verification flags as text** unless your realm has been
 customized to send a string. Turn it on only if you have established that yours
-does—see {doc}`../link-accounts-by-email`.
+does—see {doc}`/how-to-guides/accounts/link-accounts-by-email`.
 
 ## 6. Check the account defaults
 
@@ -156,7 +156,7 @@ On the **Groups** tab:
 2. Add one row per Keycloak group you want to honour, pointing at a local group id.
 
 An unmapped Keycloak group grants nothing here and is never created. See
-{doc}`../map-provider-groups`.
+{doc}`/how-to-guides/accounts/map-provider-groups`.
 
 ## Verify
 
@@ -180,5 +180,5 @@ If groups never arrive, go back to step 3—that is the cause almost every time.
 
 - {doc}`generic-oidc`—the driver this one is built on
 - {doc}`/reference/shipped-drivers`—the `keycloak` driver's defaults
-- {doc}`../map-provider-groups`—the group map and revocation
-- {doc}`../troubleshoot`—"Groups not granted after login"
+- {doc}`/how-to-guides/accounts/map-provider-groups`—the group map and revocation
+- {doc}`/how-to-guides/operate/troubleshoot`—"Groups not granted after login"

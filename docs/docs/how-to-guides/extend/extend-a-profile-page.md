@@ -3,12 +3,12 @@ myst:
   html_meta:
     "description": "Render your own component on a profile or group page by registering it into one of the three slots the views expose."
     "property=og:description": "Render your own component on a profile or group page by registering it into one of the three slots the views expose."
-    "property=og:title": "How to extend a profile or group page"
+    "property=og:title": "Extend a profile or group page"
 ---
 
 (how-to-extend-a-profile-page)=
 
-# How to extend a profile or group page
+# Extend a profile or group page
 
 This guide shows you how to put your own component on a profile page or a group
 page without shadowing either view.
@@ -133,4 +133,4 @@ A profile whose owner is in no group renders exactly as it did before.
   routes these pages live on
 - {doc}`/reference/profiles-and-groups`—the fields a profile and a group carry
 - {doc}`/concepts/profiles-and-groups`—why membership is stored on the member
-- {doc}`install-the-frontend`—installing the add-on this extends
+- {doc}`/how-to-guides/install/frontend`—installing the add-on this extends
