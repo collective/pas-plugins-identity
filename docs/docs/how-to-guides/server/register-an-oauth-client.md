@@ -95,6 +95,8 @@ to it, so a client registered with
 `https://stats.example.org/index.php?module=RebelOIDC&action=callback`
 is sent back to `…&action=callback&code=…&state=…`.
 
+(how-to-restrict-a-client)=
+
 ### Restrict a client to some groups
 
 <!-- source: backend/src/pas/plugins/identity/server/grants/membership.py -->
@@ -214,6 +216,7 @@ second copy would only be something to fetch out of step with the first.
 
 ## Next steps
 
+- {doc}`/how-to-guides/server/index`—recipes for Discourse, Portainer, Matomo, GitLab, oauth2-proxy, and another Plone site
 - {doc}`/reference/claims`—every endpoint, scope, and claim the server releases
 - {doc}`/reference/endpoints`—the server layer's full surface
 - {doc}`/how-to-guides/providers/another-plone-site`—the other side, if the client is a Plone site
