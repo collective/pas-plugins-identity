@@ -1,0 +1,1 @@
+Documented a user type whose objects are users one by one: the how-to for using your own user type now shows the subscriber that marks an account `IUserProfile` and files it in the user catalog, and the user content reference lists what a login does for each kind of user type. @ericof

@@ -62,6 +62,7 @@ from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.container import get_container
 from pas.plugins.identity.core.contents.profile import UserProfile
 from pas.plugins.identity.core.interfaces import Claims
+from pas.plugins.identity.core.interfaces import IUserContent
 from pas.plugins.identity.core.interfaces import IUserProfile
 from pas.plugins.identity.core.principal_types import type_provides
 from pas.plugins.identity.core.principal_types import user_portal_type
@@ -176,8 +177,9 @@ def ensure_profile(userid: str, login: str, claims: Claims) -> UserProfile | Non
     :param userid: Canonical Plone userid.
     :param login: Login name to record.
     :param claims: Normalized claims to seed from.
-    :returns: The Profile, or ``None`` when the layer is not installed here or
-        the site's user type is not one it can catalogue.
+    :returns: The Profile, or ``None`` when the layer is not installed here,
+        the site's user type is not a user, or the object created is not one
+        it can catalogue.
     """
     if query_catalog() is None:
         return None
@@ -187,13 +189,12 @@ def ensure_profile(userid: str, login: str, claims: Claims) -> UserProfile | Non
         return profile
 
     portal_type = user_portal_type()
-    if not type_provides(portal_type, IUserProfile):
-        # The site keeps its users as a type this layer cannot catalogue, so
-        # the object is somebody else's to create. Creating one anyway would
-        # be a second record of the same person that nothing here could find,
-        # and falling back to ``UserProfile`` was exactly that duplicate.
+    if not type_provides(portal_type, IUserContent):
+        # The question ``doAddUser`` asks. A record naming a type that is not
+        # a user at all is a misconfiguration, and the object is somebody
+        # else's to create.
         logger.info(
-            "Not creating a profile for %s: %r does not provide IUserProfile",
+            "Not creating a profile for %s: %r does not provide IUserContent",
             userid,
             portal_type,
         )
@@ -201,6 +202,16 @@ def ensure_profile(userid: str, login: str, claims: Claims) -> UserProfile | Non
 
     with api.env.adopt_roles(["Manager"]):
         container = get_container(create=True)
+        if not container.getTypeInfo().allowType(portal_type):
+            # A user type the site files somewhere else, and creates itself.
+            # Creating it here would fail inside a login rather than decline.
+            logger.info(
+                "Not creating a profile for %s: %r is not allowed in %r",
+                userid,
+                portal_type,
+                container.getId(),
+            )
+            return None
         profile = api.content.create(
             container=container,
             type=portal_type,
@@ -208,6 +219,21 @@ def ensure_profile(userid: str, login: str, claims: Claims) -> UserProfile | Non
             userid=userid,
             login=login,
         )
+        # Asked of the instance, not the FTI. A site may keep users and
+        # non-users in one type and mark only the accounts, from a subscriber
+        # to the add event that has just run. An object left unmarked is one
+        # the identity catalog never files, so nothing here could find it
+        # again -- and leaving it in place would make the next login's create
+        # collide with its id.
+        if not IUserProfile.providedBy(profile):
+            api.content.delete(obj=profile, check_linkintegrity=False)
+            logger.info(
+                "Not creating a profile for %s: the %r created does not provide "
+                "IUserProfile",
+                userid,
+                portal_type,
+            )
+            return None
     logger.info("Created profile for %s", userid)
     note_profile_created(profile)
     return profile

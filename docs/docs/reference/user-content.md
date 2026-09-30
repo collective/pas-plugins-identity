@@ -190,18 +190,25 @@ cannot be found: PAS looks a principal back up immediately after adding it.
 
 <!-- source: backend/src/pas/plugins/identity/core/profiles.py, ensure_profile -->
 
-`identity_profile` enumerates whatever type the records name, provided the type
-is filed in the user catalog: a user type has to provide `IUserProfile` as well
-as `IUserContent`, and a group type `IUserGroup` as well as `IGroupContent`.
+`identity_profile` enumerates whatever type the records name, provided its
+objects are filed in the user catalog: a user object has to provide
+`IUserProfile` as well as `IUserContent`, and a group object `IUserGroup` as
+well as `IGroupContent`.
 
-| The user type provides | Created at login | Created by `api.user.create` | Enumerated by `identity_profile` |
+A login asks the type for `IUserContent`, the same question the adder asks, and
+then asks the object it created for `IUserProfile`.
+
+| The user type | Created at login | Created by `api.user.create` | Enumerated by `identity_profile` |
 |---|---|---|---|
-| `IUserContent` and `IUserProfile` | yes | yes | yes |
-| `IUserContent` only | no, and logged | yes, and fails at `setMemberProperties` unless another plugin enumerates it | no |
+| Provides `IUserContent` and `IUserProfile` | yes | yes | yes |
+| Provides `IUserContent`, and a subscriber marks its objects `IUserProfile` when added | yes | yes | the marked objects |
+| Provides `IUserContent`, and the object created is not marked | no: the object is removed again, and logged | yes, and fails at `setMemberProperties` unless another plugin enumerates it | no |
+| Provides `IUserContent`, and is not allowed in the principals container | no, and logged | in the container the user container path record names, when that container allows it | no |
+| Does not provide `IUserContent` | no, and logged | no: `source_users` adds the user | no |
 
 ```{important}
-A user type that provides `IUserContent` alone is yours to create at login and
-yours to enumerate. See {doc}`/how-to-guides/extend/use-your-own-user-type`.
+A user type whose objects are not filed in the user catalog is yours to create at
+login and yours to enumerate. See {doc}`/how-to-guides/extend/use-your-own-user-type`.
 ```
 
 (credential-storage)=
