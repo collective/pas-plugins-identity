@@ -109,6 +109,40 @@ interface stops Dexterity from answering the defaults of other behaviors'
 `userid` and `login` fields. See {ref}`principal-behaviors`.
 ```
 
+## When only some objects of your type are users
+
+<!-- source: backend/src/pas/plugins/identity/core/profiles.py, ensure_profile -->
+<!-- source: backend/src/pas/plugins/identity/core/indexers/configure.zcml -->
+
+A type can hold users and non-users both—a `Person` for each account and a
+`Person` for each team page. {guilabel}`Site user` does not fit there: it makes
+every object of the type a user, and every team page a user who cannot sign in.
+
+Instead, make the type's schema extend `IUserContent`, and apply `IUserProfile`
+to the objects that are accounts from a subscriber of your own. An object this
+package creates for a user always has a `login`:
+
+```python
+from pas.plugins.identity.core.indexers.subscribers import profile_moved
+from pas.plugins.identity.core.interfaces import IUserProfile
+from zope.interface import alsoProvides
+
+
+def person_added(person, event):
+    if IUserProfile.providedBy(person) or not person.login:
+        return
+    alsoProvides(person, IUserProfile)
+    profile_moved(person, event)
+```
+
+Register it for your schema and `zope.lifecycleevent.interfaces.IObjectAddedEvent`.
+Steps 2 to 6 still apply.
+
+| Line | Why |
+|---|---|
+| `alsoProvides(person, IUserProfile)` | A login keeps the object only if it provides `IUserProfile` once it is added. An object left unmarked is removed again. |
+| `profile_moved(person, event)` | The user catalog's subscribers are bound to the marker, and the ones for this event were looked up before yours ran. Without the call the object is marked and never filed. |
+
 ## Verify
 
 1. Sign in with a provider as a user who has never signed in before.
@@ -128,7 +162,8 @@ interface stops Dexterity from answering the defaults of other behaviors'
 
 ```{note}
 The behaviors, the workflow, the container and the records are exercised
-together, for a user type and a group type, by
+together, for a user type, a user type marked one object at a time and a group
+type, by
 `backend/tests/core/principal_types/test_own_user_type.py`, which sets them up in Python. The
 XML files above are the GenericSetup spelling of the same configuration and are
 not run by the test suite.

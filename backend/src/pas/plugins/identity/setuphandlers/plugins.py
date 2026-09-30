@@ -19,6 +19,7 @@ from pas.plugins.identity.core.pas.profile import PLUGIN_ID as PROFILE_PLUGIN_ID
 from pas.plugins.identity.core.pas.profile import PLUGIN_TITLE as PROFILE_PLUGIN_TITLE
 from Products.PlonePAS.interfaces.group import IGroupIntrospection
 from Products.PlonePAS.interfaces.group import IGroupManagement
+from Products.PlonePAS.interfaces.plugins import IUserIntrospection
 from Products.PlonePAS.interfaces.plugins import IUserManagement
 from Products.PluggableAuthService.interfaces.plugins import IAuthenticationPlugin
 from Products.PluggableAuthService.interfaces.plugins import ICredentialsResetPlugin
@@ -68,12 +69,18 @@ FIRST_REFUSAL_INTERFACES = (
 #: ``source_users`` held -- nothing, for a user who signed in through a
 #: provider -- and left the Profile answering enumeration and serving
 #: properties, so the user was not deleted and nothing said so.
+#:
+#: ``IUserIntrospection`` is PlonePAS's too, for the same kind of reason:
+#: without it ``api.user.get_users()`` and ``listMembers()`` left out every
+#: user who has a Profile and no ``source_users`` row, while searches found
+#: them.
 PROFILE_ACTIVATED_INTERFACES = (
     IPropertiesPlugin,
     IUserEnumerationPlugin,
     IGroupsPlugin,
     IGroupEnumerationPlugin,
     IGroupIntrospection,
+    IUserIntrospection,
     IUserManagement,
 )
 

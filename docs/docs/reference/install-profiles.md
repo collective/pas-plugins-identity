@@ -18,7 +18,7 @@ myst:
 
 | Profile id | Title | Version |
 |---|---|---|
-| `pas.plugins.identity:default` | Install | 1009 |
+| `pas.plugins.identity:default` | Install | 1010 |
 | `pas.plugins.identity:rebuild-catalog` | Rebuild the user catalog |—|
 | `pas.plugins.identity:uninstall` | Uninstall |—|
 | `pas.plugins.identity.server:default` | Authorization server | 1001 |
@@ -88,7 +88,7 @@ every `UserProfile` object and its data exactly where it is.
 <!-- source: backend/src/pas/plugins/identity/upgrades/configure.zcml -->
 <!-- source: backend/src/pas/plugins/identity/server/upgrades/configure.zcml -->
 
-`pas.plugins.identity:default` is at version 1009. `upgrades/` holds one package
+`pas.plugins.identity:default` is at version 1010. `upgrades/` holds one package
 per version, each registering the steps that take a site to it, and
 `portal_setup` offers them to a site installed against an earlier release.
 `pas.plugins.identity.server:default` is at 1001, with its steps laid out the

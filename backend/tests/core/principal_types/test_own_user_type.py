@@ -15,7 +15,13 @@ behaviors supply the fields the catalog reads. It mirrors
 ``docs/docs/how-to-guides/extend/use-your-own-user-type.md``, in Python rather
 than XML. The group side, with ``principal_group``, closes the module.
 
-A type that is a user but not a Profile is the other case, covered in
+A type whose *instances* are marked one by one is the case after that (#129):
+a site keeping accounts and team pages in one type, with a subscriber of its
+own applying ``IUserProfile`` to the accounts only. A login creates one, and
+an object the subscriber leaves unmarked is removed again rather than left to
+collide with the next login.
+
+A user type the Profile container does not allow is the last case, covered in
 ``tests/core/pas/test_external_user_record.py``: the layer leaves it to
 whoever created it rather than making a second record of the same person.
 """
@@ -25,6 +31,10 @@ from pas.plugins.identity.core.catalog import CATALOG_ID
 from pas.plugins.identity.core.catalog import group_brains
 from pas.plugins.identity.core.catalog import profile_brains
 from pas.plugins.identity.core.completeness import required_fields
+from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
+from pas.plugins.identity.core.indexers.subscribers import profile_moved
+from pas.plugins.identity.core.interfaces import IUserContent
+from pas.plugins.identity.core.interfaces import IUserProfile
 from pas.plugins.identity.core.principal_types import GROUP_CONTENT_TYPE_RECORD
 from pas.plugins.identity.core.principal_types import USER_CONTENT_TYPE_RECORD
 from pas.plugins.identity.core.profiles import ensure_profile
@@ -36,8 +46,13 @@ from plone.dexterity.fti import DexterityFTI
 from plone.dexterity.schema import SCHEMA_CACHE
 from plone.supermodel import model
 from zope import schema
+from zope.component import getGlobalSiteManager
+from zope.event import notify
+from zope.interface import alsoProvides
 from zope.lifecycleevent import modified
+from zope.lifecycleevent.interfaces import IObjectAddedEvent
 
+import logging
 import pytest
 
 
@@ -46,6 +61,9 @@ PERSON = "Person"
 
 #: The site's own group type.
 TEAM = "Team"
+
+#: A user type whose instances are marked as Profiles one by one.
+ACCOUNT = "Account"
 
 #: The behaviors the how-to enables on the user type: the one that makes it a
 #: user, and the three ``UserProfile`` gets the catalog's fields from.
@@ -71,6 +89,28 @@ class IPersonSchema(model.Schema):
 
 class ITeamSchema(model.Schema):
     """The site's own group schema, which says nothing about groups."""
+
+
+class IAccountSchema(model.Schema, IUserContent):
+    """A user type whose objects are Profiles only once somebody marks them."""
+
+
+def mark_account(obj, event) -> None:
+    """Make an object a Profile when it is created with a login.
+
+    The site's own subscriber, as kitconcept-core writes it for ``Person``:
+    an object with a login is an account, and one without is a page.
+
+    It files the object itself. The identity catalog's subscribers are bound
+    to the marker, and the ones for this event were looked up before this
+    handler ran, so without the call the object is marked and never filed.
+
+    :param obj: The object just added.
+    :param event: The add event.
+    """
+    if getattr(obj, "login", None):
+        alsoProvides(obj, IUserProfile)
+        profile_moved(obj, event)
 
 
 def add_principal_type(
@@ -126,6 +166,34 @@ def team_type(portal):
     SCHEMA_CACHE.clear()
 
 
+@pytest.fixture
+def account_type(portal):
+    """Register the ``Account`` type, a user type no behavior makes a Profile.
+
+    :param portal: The Plone site.
+    :returns: The Plone site.
+    """
+    add_principal_type(
+        portal, ACCOUNT, IAccountSchema, USER_BEHAVIORS[1:], "UserProfile"
+    )
+    api.portal.set_registry_record(USER_CONTENT_TYPE_RECORD, ACCOUNT)
+    yield portal
+    SCHEMA_CACHE.clear()
+
+
+@pytest.fixture
+def marking(account_type):
+    """The ``Account`` site, with its subscriber marking accounts.
+
+    :param account_type: The Plone site with the ``Account`` type.
+    :returns: The Plone site.
+    """
+    registry = getGlobalSiteManager()
+    registry.registerHandler(mark_account, (IAccountSchema, IObjectAddedEvent))
+    yield account_type
+    registry.unregisterHandler(mark_account, (IAccountSchema, IObjectAddedEvent))
+
+
 def types_in_container(portal) -> set[str]:
     """Return the portal types in the Profile container.
 
@@ -157,6 +225,132 @@ class TestALoginCreatesThePerson:
         second = ensure_profile("alice", "alice@example.com", {})
 
         assert first.UID() == second.UID()
+
+
+class TestALoginCreatesAnAccountMarkedOnItsOwn:
+    """#129: the type is a user, and only its instances are Profiles."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, marking, catalog) -> None:
+        self.portal = marking
+        self.catalog = catalog
+
+    def test_the_profile_is_the_sites_type(self):
+        profile = ensure_profile("alice", "alice@example.com", {})
+
+        assert profile.portal_type == ACCOUNT
+
+    def test_it_is_catalogued(self):
+        ensure_profile("alice", "alice@example.com", {})
+
+        assert [brain.userid for brain in profile_brains(self.catalog)] == ["alice"]
+
+    def test_a_second_login_finds_it(self):
+        first = ensure_profile("alice", "alice@example.com", {})
+        second = ensure_profile("alice", "alice@example.com", {})
+
+        assert first.UID() == second.UID()
+
+
+class TestAFederatedLoginOnAnAccount:
+    """The whole login path, not ``ensure_profile`` alone.
+
+    The claims sync writes onto whatever the login created, and a type of the
+    site's own is where a field that does not round-trip shows up: the name a
+    login wrote has to read back as written, or no later login may update it.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, marking) -> None:
+        self.portal = marking
+
+    def login(self, fullname: str) -> None:
+        """Sign ``grace`` in through a provider this site has no map for.
+
+        :param fullname: The name the provider sends.
+        """
+        notify(
+            ExternalIdentityAuthenticated(
+                userid="grace",
+                provider="example",
+                subject="1906",
+                claims={"fullname": fullname, "email": "grace@example.com"},
+                is_new_user=False,
+                is_new_identity=False,
+            )
+        )
+
+    def test_the_account_is_created(self):
+        self.login("Grace Hopper")
+
+        assert self.portal["identity-profiles"]["grace"].portal_type == ACCOUNT
+
+    def test_the_name_is_synced(self):
+        self.login("Grace Hopper")
+
+        assert self.portal["identity-profiles"]["grace"].fullname == "Grace Hopper"
+
+    def test_the_address_is_synced(self):
+        self.login("Grace Hopper")
+
+        assert self.portal["identity-profiles"]["grace"].emails == (
+            "grace@example.com",
+        )
+
+    def test_a_later_login_updates_the_name(self):
+        self.login("Grace Hopper")
+        self.login("Grace Brewster Hopper")
+
+        assert self.portal["identity-profiles"]["grace"].fullname == (
+            "Grace Brewster Hopper"
+        )
+
+
+class TestAnAccountLeftUnmarked:
+    """The same type with nothing marking it: not a Profile, and not left."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, account_type) -> None:
+        self.portal = account_type
+
+    def test_no_profile_is_answered(self):
+        assert ensure_profile("alice", "alice@example.com", {}) is None
+
+    def test_nothing_is_left_behind(self):
+        ensure_profile("alice", "alice@example.com", {})
+
+        assert types_in_container(self.portal) == set()
+
+    def test_a_second_login_does_not_fail(self):
+        """What leaving the object in place did: the next create collided
+        with its id, inside the login."""
+        ensure_profile("alice", "alice@example.com", {})
+
+        assert ensure_profile("alice", "alice@example.com", {}) is None
+
+    def test_it_is_reported(self, caplog):
+        caplog.set_level(logging.INFO)
+        ensure_profile("alice", "alice@example.com", {})
+
+        assert "does not provide IUserProfile" in caplog.text
+
+
+class TestATypeThatIsNotAUser:
+    """A record naming a type that is not a user: declined before creating."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+        api.portal.set_registry_record(USER_CONTENT_TYPE_RECORD, "Document")
+
+    def test_no_profile_is_answered(self):
+        assert ensure_profile("alice", "alice@example.com", {}) is None
+
+    def test_it_is_reported(self, caplog):
+        caplog.set_level(logging.INFO)
+        ensure_profile("alice", "alice@example.com", {})
+
+        assert "does not provide IUserContent" in caplog.text
 
 
 class TestTheLayerServesIt:

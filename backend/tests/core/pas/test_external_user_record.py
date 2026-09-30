@@ -28,6 +28,7 @@ from .stubs import IStubUserSchema
 from .stubs import NOT_A_USER
 from .stubs import USER_TYPE
 from .stubs import USERS
+from pas.plugins.identity.core.container import get_container
 from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
 from pas.plugins.identity.core.pas import EXTRACTOR
 from pas.plugins.identity.core.pas import PLUGIN_ID
@@ -184,6 +185,17 @@ class TestNothingClaimsTheUser:
         self.plugin.authenticateCredentials(self.credentials)
 
         assert "as an identity and as nothing else" in caplog.text
+
+    def test_no_profile_container_is_created(self):
+        """The login declines to create a Profile of this type, so it has no
+        reason to create the folder one would have gone in."""
+        # The layer's site already has one; a site that has not yet filed a
+        # Profile does not.
+        api.content.delete(obj=get_container(), check_linkintegrity=False)
+
+        self.plugin.authenticateCredentials(self.credentials)
+
+        assert get_container() is None
 
     def test_the_warning_names_the_type_that_was_not_created(self, caplog):
         """A site reading this has to know which record to look at."""

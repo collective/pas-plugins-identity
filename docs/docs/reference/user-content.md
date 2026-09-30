@@ -183,25 +183,46 @@ left where they are.
 | Plugin | Does |
 |---|---|
 | `identity` | Creates user and group objects, and authenticates. |
-| `identity_profile` | Enumerates them, serves their properties, and deletes them. |
+| `identity_profile` | Enumerates them, lists them, serves their properties, and deletes them. |
 
 Installing the package installs both. One without the other gives you a user that
 cannot be found: PAS looks a principal back up immediately after adding it.
 
+<!-- source: backend/src/pas/plugins/identity/core/pas/profile.py, IUserIntrospection -->
+
+Searching and listing are separate PAS questions, answered by separate interfaces.
+
+| Call | Asks | `identity_profile` answers with |
+|---|---|---|
+| `acl_users.searchUsers()`, `@users` | `IUserEnumerationPlugin` | Every matching user in an enumeration-active state |
+| `acl_users.getUserIds()`, `getUserNames()`, `getUsers()`, `api.user.get_users()`, `portal_membership.listMembers()` | `IUserIntrospection` | Every user in an enumeration-active state that no other `IUserIntrospection` plugin lists |
+
+PlonePAS concatenates the answers to a listing without removing duplicates. A
+user added through `api.user.create` has a `source_users` credential as well as
+a content object, so `source_users` lists them and `identity_profile` leaves
+them out. Each user is listed once.
+
 <!-- source: backend/src/pas/plugins/identity/core/profiles.py, ensure_profile -->
 
-`identity_profile` enumerates whatever type the records name, provided the type
-is filed in the user catalog: a user type has to provide `IUserProfile` as well
-as `IUserContent`, and a group type `IUserGroup` as well as `IGroupContent`.
+`identity_profile` enumerates whatever type the records name, provided its
+objects are filed in the user catalog: a user object has to provide
+`IUserProfile` as well as `IUserContent`, and a group object `IUserGroup` as
+well as `IGroupContent`.
 
-| The user type provides | Created at login | Created by `api.user.create` | Enumerated by `identity_profile` |
+A login asks the type for `IUserContent`, the same question the adder asks, and
+then asks the object it created for `IUserProfile`.
+
+| The user type | Created at login | Created by `api.user.create` | Enumerated by `identity_profile` |
 |---|---|---|---|
-| `IUserContent` and `IUserProfile` | yes | yes | yes |
-| `IUserContent` only | no, and logged | yes, and fails at `setMemberProperties` unless another plugin enumerates it | no |
+| Provides `IUserContent` and `IUserProfile` | yes | yes | yes |
+| Provides `IUserContent`, and a subscriber marks its objects `IUserProfile` when added | yes | yes | the marked objects |
+| Provides `IUserContent`, and the object created is not marked | no: the object is removed again, and logged | yes, and fails at `setMemberProperties` unless another plugin enumerates it | no |
+| Provides `IUserContent`, and is not allowed in the principals container | no, and logged | in the container the user container path record names, when that container allows it | no |
+| Does not provide `IUserContent` | no, and logged | no: `source_users` adds the user | no |
 
 ```{important}
-A user type that provides `IUserContent` alone is yours to create at login and
-yours to enumerate. See {doc}`/how-to-guides/extend/use-your-own-user-type`.
+A user type whose objects are not filed in the user catalog is yours to create at
+login and yours to enumerate. See {doc}`/how-to-guides/extend/use-your-own-user-type`.
 ```
 
 (credential-storage)=
