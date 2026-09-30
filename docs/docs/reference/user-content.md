@@ -78,6 +78,31 @@ own schema first, so an inherited `Attribute` would shadow the behavior's field.
 `IGroupContent` declares no members accessor. Membership is named by each user's
 `group_ids` and is read from there.
 
+(principal-behaviors)=
+
+### Marking a type of your own
+
+<!-- source: backend/src/pas/plugins/identity/core/behaviors/principal.py -->
+<!-- source: backend/src/pas/plugins/identity/core/behaviors/configure.zcml -->
+
+Two behaviors give a type of your own both markers it needs.
+
+| Behavior | Title | Marker applied | Which is |
+|---|---|---|---|
+| `pas.plugins.identity.principal_user` | Site user | `IPrincipalUser` | `IUserContent` and `IUserProfile` |
+| `pas.plugins.identity.principal_group` | Site group | `IPrincipalGroup` | `IGroupContent` and `IUserGroup` |
+
+Both live in `pas.plugins.identity.core.behaviors.principal`. Each has a
+factory, and its `provides` interface declares nothing: the markers arrive as
+the behavior's `marker` instead.
+
+| Marked with | Dexterity's default for another behavior's `login` field |
+|---|---|
+| A shipped behavior above | Answered |
+| An interface extending `IUserContent`, registered as a behavior's `provides` | `AttributeError`: the lookup reads `default` off `IUserContent.login` and stops there |
+
+The same applies to `userid`, and to `group_id` on a group type.
+
 ### A group's global roles
 
 `global_roles` on a group is supplied by the
@@ -130,7 +155,7 @@ A type provides the marker when any of these does:
 | Route | Example |
 |---|---|
 | The type's schema | `UserProfile`, whose schema extends `IUserContent` |
-| A behavior's schema, or its marker | A behavior whose `provides` extends `IUserContent` |
+| A behavior's schema, or its marker | `pas.plugins.identity.principal_user`; see {ref}`principal-behaviors` |
 | The content class | `<class><implements interface="…" /></class>` in ZCML |
 
 Declining is the protocol rather than an error: `ZODBUserManager.doAddUser`

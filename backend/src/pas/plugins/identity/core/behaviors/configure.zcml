@@ -72,4 +72,27 @@
       provides=".details.IProfileDetails"
       />
 
+  <!-- A site's own type as a user or a group this package serves. Enabling
+       one gives the type both markers it needs: the one the adder checks and
+       the one the identity catalog files. A factory, with an empty provides,
+       so the markers' Attribute declarations never shadow another behavior's
+       field in Dexterity's default lookup. See .principal. -->
+  <plone:behavior
+      name="pas.plugins.identity.principal_user"
+      title="Site user"
+      description="Objects of this type are the site's users."
+      factory=".principal.PrincipalUser"
+      provides=".principal.IPrincipalUserBehavior"
+      marker=".principal.IPrincipalUser"
+      />
+
+  <plone:behavior
+      name="pas.plugins.identity.principal_group"
+      title="Site group"
+      description="Objects of this type are the site's groups."
+      factory=".principal.PrincipalGroup"
+      provides=".principal.IPrincipalGroupBehavior"
+      marker=".principal.IPrincipalGroup"
+      />
+
 </configure>

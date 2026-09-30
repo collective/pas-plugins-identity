@@ -21,60 +21,34 @@ catalog rebuild, the export and the consistency check all read it. No
 
 - A Plone add-on of your own, with a GenericSetup profile that depends on
   `pas.plugins.identity:default`. See {doc}`/how-to-guides/install/backend`.
-- Your content type, as a Dexterity type in that profile.
+- Your content type, as a Dexterity type in that profile. It needs no Python:
+  every marker and field this package reads comes from behaviors it ships.
 
 ## Steps
 
 <!-- source: backend/src/pas/plugins/identity/core/principal_types.py -->
 <!-- source: backend/src/pas/plugins/identity/core/profiles.py, ensure_profile -->
 
-1. Declare a marker that makes your type both a user and a Profile, in your
-   package's `interfaces.py`:
+<!-- source: backend/src/pas/plugins/identity/core/behaviors/configure.zcml -->
 
-   ```python
-   from pas.plugins.identity.core.interfaces import IUserContent
-   from pas.plugins.identity.core.interfaces import IUserProfile
-
-
-   class IIdentityUser(IUserContent, IUserProfile):
-       """A content type whose objects are this site's users."""
-   ```
-
-   `IUserContent` is what lets the package create your type when somebody adds a
-   user. `IUserProfile` is what the user catalog's indexers and subscribers are
-   registered for. A type that provides only `IUserContent` is created by
-   `api.user.create` but is never created at login and never catalogued.
-
-2. Register it as a behavior, in your package's `configure.zcml`:
-
-   ```xml
-   <plone:behavior
-       name="mysite.identity_user"
-       title="Site user"
-       description="Objects of this type are the site's users."
-       provides=".interfaces.IIdentityUser"
-       />
-   ```
-
-   With no `factory`, the `provides` interface is also the marker applied to
-   every object of the type.
-
-3. Enable that behavior on your type, together with the three behaviors
+1. Enable {guilabel}`Site user` on your type, together with the three behaviors
    `UserProfile` gets its fields from, in your type's FTI:
 
    ```xml
    <property name="behaviors" purge="false">
-     <element value="mysite.identity_user" />
+     <element value="pas.plugins.identity.principal_user" />
      <element value="pas.plugins.identity.profile_details" />
      <element value="pas.plugins.identity.email_addresses" />
      <element value="pas.plugins.identity.group_membership" />
    </property>
    ```
 
-   The user catalog reads its columns from these fields. See
+   `pas.plugins.identity.principal_user` makes your type both a user, so the
+   package creates it when somebody adds a user, and a Profile, so the user
+   catalog files it. The other three supply the fields the catalog reads. See
    {doc}`/reference/profiles-and-groups` for what each one adds.
 
-4. Bind the Profile workflow to your type, in your profile's `workflows.xml`:
+2. Bind the Profile workflow to your type, in your profile's `workflows.xml`:
 
    ```xml
    <object name="portal_workflow" meta_type="Plone Workflow Tool">
@@ -90,7 +64,7 @@ catalog rebuild, the export and the consistency check all read it. No
    listed in {guilabel}`Enumeration-active states`. A user in any other state is
    not found by user enumeration.
 
-5. Allow your type in the principals container, in
+3. Allow your type in the principals container, in
    `profiles/default/types/PrincipalsContainer.xml`:
 
    ```xml
@@ -101,7 +75,7 @@ catalog rebuild, the export and the consistency check all read it. No
    </object>
    ```
 
-6. Name your type in the registry, in `profiles/default/registry.xml`:
+4. Name your type in the registry, in `profiles/default/registry.xml`:
 
    ```xml
    <registry>
@@ -115,19 +89,25 @@ catalog rebuild, the export and the consistency check all read it. No
    when it is empty, so your profile's value survives a reinstall and a change
    to the container settings.
 
-7. Optionally, keep groups in Plone's own `source_groups` rather than as
-   content. Empty the group record in the same file:
+5. Optionally, decide where groups go. Leave the group record alone to keep
+   `UserGroup`, or change it in the same file:
 
-   ```xml
-   <record name="pas.plugins.identity.group_content_type">
-     <value></value>
-   </record>
-   ```
+   | To keep groups | Group record | Also |
+   |---|---|---|
+   | In Plone's own `source_groups` | `<value></value>` | Nothing |
+   | As a type of your own | Your type's name | Steps 1 to 3 for that type, with `pas.plugins.identity.principal_group`, `pas.plugins.identity.group_membership` and `user_group_workflow` |
 
-   Adding a group then creates a `source_groups` group. Reads that look for
-   group content look for `UserGroup` and find none.
+   With the record empty, adding a group creates a `source_groups` group, and
+   reads that look for group content look for `UserGroup` and find none.
 
-8. Install your profile, or apply it to an existing site.
+6. Install your profile, or apply it to an existing site.
+
+```{warning}
+Mark your type with the shipped behavior rather than with an interface of your
+own that extends `IUserContent`. Registered as a behavior's `provides`, such an
+interface stops Dexterity from answering the defaults of other behaviors'
+`userid` and `login` fields. See {ref}`principal-behaviors`.
+```
 
 ## Verify
 
@@ -147,10 +127,11 @@ catalog rebuild, the export and the consistency check all read it. No
   them.
 
 ```{note}
-The marker, the behavior, the workflow, the container and the record are
-exercised together by `backend/tests/core/test_own_user_type.py`, which
-registers them in Python. The ZCML and XML files above are the GenericSetup
-spelling of the same configuration and are not run by the test suite.
+The behaviors, the workflow, the container and the records are exercised
+together, for a user type and a group type, by
+`backend/tests/core/test_own_user_type.py`, which sets them up in Python. The
+XML files above are the GenericSetup spelling of the same configuration and are
+not run by the test suite.
 ```
 
 ## Related
