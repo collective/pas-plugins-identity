@@ -60,6 +60,7 @@ login.
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.container import get_container
+from pas.plugins.identity.core.container import settings as container_settings
 from pas.plugins.identity.core.contents.profile import UserProfile
 from pas.plugins.identity.core.interfaces import Claims
 from pas.plugins.identity.core.interfaces import IUserContent
@@ -167,6 +168,28 @@ def get_profile(userid: str) -> UserProfile | None:
     return brain._unrestrictedGetObject() if brain is not None else None
 
 
+def _container_allows(portal_type: str) -> bool:
+    """Report whether the Profile container will take a user type.
+
+    Asked before the container is created, so that a login which is going to
+    decline leaves no folder behind. The container's own FTI when it exists,
+    which may be a type this package did not create; otherwise the FTI of the
+    type :func:`~pas.plugins.identity.core.container.get_container` would
+    create it as.
+
+    :param portal_type: The user type.
+    :returns: Whether an object of that type may be added there.
+    """
+    container = get_container()
+    if container is not None:
+        fti = container.getTypeInfo()
+    else:
+        fti = api.portal.get_tool("portal_types").getTypeInfo(
+            container_settings()["type"]
+        )
+    return fti is not None and bool(fti.allowType(portal_type))
+
+
 def ensure_profile(userid: str, login: str, claims: Claims) -> UserProfile | None:
     """Return the user's Profile, creating it on first login.
 
@@ -200,18 +223,18 @@ def ensure_profile(userid: str, login: str, claims: Claims) -> UserProfile | Non
         )
         return None
 
+    if not _container_allows(portal_type):
+        # A user type the site files somewhere else, and creates itself.
+        # Creating it here would fail inside a login rather than decline.
+        logger.info(
+            "Not creating a profile for %s: %r is not allowed in the Profile container",
+            userid,
+            portal_type,
+        )
+        return None
+
     with api.env.adopt_roles(["Manager"]):
         container = get_container(create=True)
-        if not container.getTypeInfo().allowType(portal_type):
-            # A user type the site files somewhere else, and creates itself.
-            # Creating it here would fail inside a login rather than decline.
-            logger.info(
-                "Not creating a profile for %s: %r is not allowed in %r",
-                userid,
-                portal_type,
-                container.getId(),
-            )
-            return None
         profile = api.content.create(
             container=container,
             type=portal_type,

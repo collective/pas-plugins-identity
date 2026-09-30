@@ -31,6 +31,7 @@ from pas.plugins.identity.core.catalog import CATALOG_ID
 from pas.plugins.identity.core.catalog import group_brains
 from pas.plugins.identity.core.catalog import profile_brains
 from pas.plugins.identity.core.completeness import required_fields
+from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
 from pas.plugins.identity.core.indexers.subscribers import profile_moved
 from pas.plugins.identity.core.interfaces import IUserContent
 from pas.plugins.identity.core.interfaces import IUserProfile
@@ -46,6 +47,7 @@ from plone.dexterity.schema import SCHEMA_CACHE
 from plone.supermodel import model
 from zope import schema
 from zope.component import getGlobalSiteManager
+from zope.event import notify
 from zope.interface import alsoProvides
 from zope.lifecycleevent import modified
 from zope.lifecycleevent.interfaces import IObjectAddedEvent
@@ -248,6 +250,60 @@ class TestALoginCreatesAnAccountMarkedOnItsOwn:
         second = ensure_profile("alice", "alice@example.com", {})
 
         assert first.UID() == second.UID()
+
+
+class TestAFederatedLoginOnAnAccount:
+    """The whole login path, not ``ensure_profile`` alone.
+
+    The claims sync writes onto whatever the login created, and a type of the
+    site's own is where a field that does not round-trip shows up: the name a
+    login wrote has to read back as written, or no later login may update it.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, marking) -> None:
+        self.portal = marking
+
+    def login(self, fullname: str) -> None:
+        """Sign ``grace`` in through a provider this site has no map for.
+
+        :param fullname: The name the provider sends.
+        """
+        notify(
+            ExternalIdentityAuthenticated(
+                userid="grace",
+                provider="example",
+                subject="1906",
+                claims={"fullname": fullname, "email": "grace@example.com"},
+                is_new_user=False,
+                is_new_identity=False,
+            )
+        )
+
+    def test_the_account_is_created(self):
+        self.login("Grace Hopper")
+
+        assert self.portal["identity-profiles"]["grace"].portal_type == ACCOUNT
+
+    def test_the_name_is_synced(self):
+        self.login("Grace Hopper")
+
+        assert self.portal["identity-profiles"]["grace"].fullname == "Grace Hopper"
+
+    def test_the_address_is_synced(self):
+        self.login("Grace Hopper")
+
+        assert self.portal["identity-profiles"]["grace"].emails == (
+            "grace@example.com",
+        )
+
+    def test_a_later_login_updates_the_name(self):
+        self.login("Grace Hopper")
+        self.login("Grace Brewster Hopper")
+
+        assert self.portal["identity-profiles"]["grace"].fullname == (
+            "Grace Brewster Hopper"
+        )
 
 
 class TestAnAccountLeftUnmarked:
