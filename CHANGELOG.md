@@ -7,6 +7,35 @@
 -->
 
 <!-- towncrier release notes start -->
+## 1.0.0a13 (2026-09-30)
+
+### Backend
+
+
+#### Bugfix
+
+- Created the site's own user type again at a first login when the type is a user and a subscriber of the site marks each account `IUserProfile` as it is added, as kitconcept-core does for `collective.person`'s `Person`. Since 1.0.0a12 a login asked the type for `IUserProfile` and refused such a type, so federated and `source_users` logins created no profile and synced no claims. A login now asks the type for `IUserContent`, as the user adder does, and asks the object it created for `IUserProfile`. An object left unmarked is removed again, so the next login does not collide with its id, and a user type that the principals container does not allow is declined instead of failing inside the login, and without creating the container first. @ericof [#129](https://github.com/collective/pas-plugins-identity/issues/129)
+- Listed users who have a profile and no `source_users` account, such as everyone who signed in through a provider, in `api.user.get_users()`, `portal_membership.listMembers()` and `acl_users.getUserIds()`, `getUserNames()` and `getUsers()`. Searches found them, but listings did not, because the `identity_profile` plugin did not implement `IUserIntrospection`. It now does, for the users in an enumeration-active state that no other introspection plugin lists, so a user with both a profile and a `source_users` account is still listed once. Upgrade step 1010 activates the interface on existing sites. @ericof [#131](https://github.com/collective/pas-plugins-identity/issues/131)
+
+
+
+### Frontend
+
+No significant changes.
+
+
+
+
+### Project
+
+
+#### Documentation
+
+- Documented a user type whose objects are users one by one: the how-to for using your own user type now shows the subscriber that marks an account `IUserProfile` and files it in the user catalog, and the user content reference lists what a login does for each kind of user type. @ericof [#129](https://github.com/collective/pas-plugins-identity/issues/129)
+- Documented which PAS interface answers a search and which answers a listing of every user, and added upgrade step 1010 to the upgrade guide. @ericof [#131](https://github.com/collective/pas-plugins-identity/issues/131)
+
+
+
 ## 1.0.0a12 (2026-09-30)
 
 ### Backend
