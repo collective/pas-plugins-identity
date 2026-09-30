@@ -58,11 +58,13 @@ login.
 """
 
 from pas.plugins.identity import logger
-from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.container import get_container
 from pas.plugins.identity.core.contents.profile import UserProfile
 from pas.plugins.identity.core.interfaces import Claims
+from pas.plugins.identity.core.interfaces import IUserProfile
+from pas.plugins.identity.core.principal_types import type_provides
+from pas.plugins.identity.core.principal_types import user_portal_type
 from pas.plugins.identity.core.txn import note_profile_created
 from pas.plugins.identity.core.utils.emails import normalize
 from pas.plugins.identity.core.utils.propertymap import MAPPABLE_FIELDS
@@ -174,7 +176,8 @@ def ensure_profile(userid: str, login: str, claims: Claims) -> UserProfile | Non
     :param userid: Canonical Plone userid.
     :param login: Login name to record.
     :param claims: Normalized claims to seed from.
-    :returns: The Profile, or ``None`` when the layer is not installed here.
+    :returns: The Profile, or ``None`` when the layer is not installed here or
+        the site's user type is not one it can catalogue.
     """
     if query_catalog() is None:
         return None
@@ -183,11 +186,24 @@ def ensure_profile(userid: str, login: str, claims: Claims) -> UserProfile | Non
     if profile is not None:
         return profile
 
+    portal_type = user_portal_type()
+    if not type_provides(portal_type, IUserProfile):
+        # The site keeps its users as a type this layer cannot catalogue, so
+        # the object is somebody else's to create. Creating one anyway would
+        # be a second record of the same person that nothing here could find,
+        # and falling back to ``UserProfile`` was exactly that duplicate.
+        logger.info(
+            "Not creating a profile for %s: %r does not provide IUserProfile",
+            userid,
+            portal_type,
+        )
+        return None
+
     with api.env.adopt_roles(["Manager"]):
         container = get_container(create=True)
         profile = api.content.create(
             container=container,
-            type=PROFILE_PORTAL_TYPE,
+            type=portal_type,
             id=_profile_id(userid),
             userid=userid,
             login=login,

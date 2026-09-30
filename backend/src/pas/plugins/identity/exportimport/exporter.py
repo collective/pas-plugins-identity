@@ -20,11 +20,11 @@ from datetime import datetime
 from datetime import UTC
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.behaviors.roles import IGlobalRoles
-from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
-from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.interfaces import IGroupContent
 from pas.plugins.identity.core.pas import PLUGIN_ID
+from pas.plugins.identity.core.principal_types import group_portal_type
+from pas.plugins.identity.core.principal_types import user_portal_type
 from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from pas.plugins.identity.exportimport.schema import DOCUMENT_VERSION
 from pas.plugins.identity.exportimport.schema import ExportImportError
@@ -172,8 +172,8 @@ def export_site(dry_run: bool = False) -> dict[str, Any]:
     :raises ExportImportError: When this site has no identity plugin.
     """
     store = _identity_store()
-    groups = [export_group(obj) for obj in _objects_of_type(GROUP_PORTAL_TYPE)]
-    users = [export_user(obj, store) for obj in _objects_of_type(PROFILE_PORTAL_TYPE)]
+    groups = [export_group(obj) for obj in _objects_of_type(group_portal_type())]
+    users = [export_user(obj, store) for obj in _objects_of_type(user_portal_type())]
 
     orphaned = sorted(set(store.userids()) - {user["userid"] for user in users})
     if orphaned:

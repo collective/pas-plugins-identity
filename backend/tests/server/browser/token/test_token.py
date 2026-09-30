@@ -5,8 +5,8 @@ the error code rather than a message, and several exist only to prove that two
 different mistakes are indistinguishable from outside.
 """
 
-from . import PROFILE_ID
-from . import REDIRECT
+from ... import PROFILE_ID
+from ... import REDIRECT
 from pas.plugins.identity.server.browser.token import TokenView
 from pas.plugins.identity.server.grants.codes import make_verifier
 from pas.plugins.identity.server.grants.tokens import decode_access_token

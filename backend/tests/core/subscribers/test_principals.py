@@ -1,7 +1,8 @@
 """Pointing core's principal records at this layer, and keeping them pointed.
 
 Core creates a user or a group as content by reading four registry records.
-This layer sets them, and the interesting part is *when*: where Profiles live
+This layer seeds the two types once and sets the two paths, and the
+interesting part is *when*: where Profiles live
 is configurable, and a profile layered on top of this one sets the container's
 parent and id after this package's install handler has run. A path written
 once at install names the container the layered profile is about to move.
@@ -22,7 +23,11 @@ from pas.plugins.identity.core.pas.plugin import USER_CONTAINER_PATH_RECORD
 from pas.plugins.identity.core.pas.plugin import USER_CONTENT_TYPE_RECORD
 from pas.plugins.identity.core.subscribers.principals import container_path
 from pas.plugins.identity.core.subscribers.principals import on_folder_added
+from pas.plugins.identity.core.subscribers.principals import seed_type_records
+from pas.plugins.identity.setuphandlers import post_install
 from plone import api
+from plone.registry.interfaces import IRegistry
+from zope.component import getUtility
 from zope.component.hooks import setSite
 
 import pytest
@@ -88,6 +93,71 @@ class TestItFollowsTheContainer:
         api.portal.set_registry_record("pas.plugins.identity.audit_max_days", 42)
 
         assert record(USER_CONTAINER_PATH_RECORD) == before
+
+
+class TestTheTypesAreTheSites:
+    """The paths follow the container; the types do not follow anything.
+
+    A policy package that keeps its users as its own type names it in the
+    user record, and one that keeps groups in ``source_groups`` leaves the
+    group record empty. Both used to be undone by the next change to the
+    container settings, which rewrote the types along with the paths.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+        self.registry = getUtility(IRegistry)
+
+    def test_moving_the_container_keeps_a_site_type(self):
+        api.portal.set_registry_record(USER_CONTENT_TYPE_RECORD, "Person")
+        api.portal.set_registry_record(GROUP_CONTENT_TYPE_RECORD, "")
+
+        api.portal.set_registry_record(ID_RECORD, "people")
+
+        assert record(USER_CONTAINER_PATH_RECORD) == "people"
+        assert record(USER_CONTENT_TYPE_RECORD) == "Person"
+        assert record(GROUP_CONTENT_TYPE_RECORD) == ""
+
+    def test_seeding_fills_an_empty_record(self):
+        self.registry[USER_CONTENT_TYPE_RECORD] = None
+        api.portal.set_registry_record(GROUP_CONTENT_TYPE_RECORD, "")
+
+        seed_type_records()
+
+        assert record(USER_CONTENT_TYPE_RECORD) == PROFILE_PORTAL_TYPE
+        assert record(GROUP_CONTENT_TYPE_RECORD) == GROUP_PORTAL_TYPE
+
+    def test_seeding_keeps_a_site_type(self):
+        api.portal.set_registry_record(USER_CONTENT_TYPE_RECORD, "Person")
+
+        seed_type_records()
+
+        assert record(USER_CONTENT_TYPE_RECORD) == "Person"
+
+    def test_seeding_declines_before_the_records_exist(self):
+        """The profile's own ``registry.xml`` reaches the subscribers while
+        the records are still being created."""
+        del self.registry.records[USER_CONTENT_TYPE_RECORD]
+
+        seed_type_records()
+
+        assert USER_CONTENT_TYPE_RECORD not in self.registry.records
+
+    def test_a_reinstall_keeps_a_site_type(self):
+        """``post_install`` seeds; it does not overwrite."""
+        api.portal.set_registry_record(USER_CONTENT_TYPE_RECORD, "Person")
+
+        post_install(None)
+
+        assert record(USER_CONTENT_TYPE_RECORD) == "Person"
+
+    def test_install_seeds_an_empty_record(self):
+        api.portal.set_registry_record(USER_CONTENT_TYPE_RECORD, "")
+
+        post_install(None)
+
+        assert record(USER_CONTENT_TYPE_RECORD) == PROFILE_PORTAL_TYPE
 
 
 class TestThePathItself:

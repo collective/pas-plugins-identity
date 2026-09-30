@@ -21,8 +21,8 @@ that nothing between the authorize request and the token response freezes
 them.
 """
 
-from . import PROFILE_ID
-from . import REDIRECT
+from ... import PROFILE_ID
+from ... import REDIRECT
 from pas.plugins.identity.server.browser.token import TokenView
 from pas.plugins.identity.server.pas import PLUGIN_ID
 from plone import api

@@ -8,9 +8,9 @@ it, exactly one is entitled to it, there is no way to tell which, and so
 neither keeps access.
 """
 
-from . import PROFILE_ID
-from . import REDIRECT
-from . import USERID
+from ... import PROFILE_ID
+from ... import REDIRECT
+from ... import USERID
 from datetime import datetime
 from datetime import timedelta
 from datetime import UTC

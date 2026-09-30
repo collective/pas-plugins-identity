@@ -119,10 +119,11 @@ control panel never writes them.
 | `group_content_type` | `TextLine` | `''` | Content type used for groups. |
 | `group_container_path` | `TextLine` | `''` | Where groups are filed. |
 
-All four are empty by default. The install profile sets them, and a subscriber
-sets them again whenever a record under **Where principals are filed** changes:
-the paths from the container records, the types to this package's own. Set the
-container records, not these. See {doc}`user-content`.
+All four are empty by default. A subscriber sets the two paths at install and
+again whenever a record under **Where principals are filed** changes: set the
+container records, not these. The install handler fills the two types with
+`UserProfile` and `UserGroup` only when they are empty, so a site's own profile
+may name its own. See {doc}`user-content`.
 
 ## Server layer
 

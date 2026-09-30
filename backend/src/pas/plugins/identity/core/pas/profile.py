@@ -35,12 +35,12 @@ this plugin, not an incidental property.
 from AccessControl.class_init import InitializeClass
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.catalog import group_brains
-from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import IdentityProfileCatalog
 from pas.plugins.identity.core.catalog import profile_brains
-from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.interfaces import IOwnsUserProperties
+from pas.plugins.identity.core.principal_types import group_portal_type
+from pas.plugins.identity.core.principal_types import user_portal_type
 from pas.plugins.identity.core.utils.nesting import build_edges
 from pas.plugins.identity.core.utils.nesting import MAX_DEPTH
 from pas.plugins.identity.core.utils.nesting import members_of
@@ -221,7 +221,7 @@ class IdentityProfilePlugin(BasePlugin):
             if not terms:
                 continue
             for brain in catalog.unrestrictedSearchResults(
-                portal_type=PROFILE_PORTAL_TYPE,
+                portal_type=user_portal_type(),
                 review_state=list(states),
                 **{index: terms},
             ):
@@ -623,7 +623,7 @@ class IdentityProfilePlugin(BasePlugin):
         """
         return list(
             catalog.unrestrictedSearchResults(
-                portal_type=GROUP_PORTAL_TYPE, review_state=list(states), **query
+                portal_type=group_portal_type(), review_state=list(states), **query
             )
         )
 
@@ -921,7 +921,7 @@ class IdentityProfilePlugin(BasePlugin):
             sorted({
                 brain.userid
                 for brain in catalog.unrestrictedSearchResults(
-                    portal_type=PROFILE_PORTAL_TYPE, group_ids=list(feeding)
+                    portal_type=user_portal_type(), group_ids=list(feeding)
                 )
                 if brain.review_state in states
             })

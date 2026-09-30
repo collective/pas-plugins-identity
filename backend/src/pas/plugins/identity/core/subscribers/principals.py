@@ -3,7 +3,9 @@
 Core can create a user or a group as content without knowing what type that
 is: it reads four registry records naming the portal type and the container,
 and it checks the type provides ``IUserContent`` or ``IGroupContent``. This
-module is what points those records at ``UserProfile`` and ``UserGroup``.
+module seeds the two type records with ``UserProfile`` and ``UserGroup`` once,
+at install, and keeps the two container paths in step with the settings they
+come from. The types are then the site's to change; the paths never are.
 
 **Why a subscriber and not a value in ``registry.xml``.** Where Profiles live
 is itself configurable, and
@@ -29,8 +31,6 @@ whole fix.
 """
 
 from pas.plugins.identity import logger
-from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
-from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.container import grant_add_permission
 from pas.plugins.identity.core.container import grant_add_permissions
 from pas.plugins.identity.core.container import GROUP
@@ -41,9 +41,11 @@ from pas.plugins.identity.core.container import PARENT_RECORD
 from pas.plugins.identity.core.container import PROFILE
 from pas.plugins.identity.core.container import settings
 from pas.plugins.identity.core.pas.plugin import GROUP_CONTAINER_PATH_RECORD
-from pas.plugins.identity.core.pas.plugin import GROUP_CONTENT_TYPE_RECORD
 from pas.plugins.identity.core.pas.plugin import USER_CONTAINER_PATH_RECORD
-from pas.plugins.identity.core.pas.plugin import USER_CONTENT_TYPE_RECORD
+from pas.plugins.identity.core.principal_types import GROUP_CONTENT_TYPE_RECORD
+from pas.plugins.identity.core.principal_types import GROUP_PORTAL_TYPE
+from pas.plugins.identity.core.principal_types import PROFILE_PORTAL_TYPE
+from pas.plugins.identity.core.principal_types import USER_CONTENT_TYPE_RECORD
 from plone import api
 from plone.api.exc import CannotGetPortalError
 from plone.api.exc import InvalidParameterError
@@ -78,8 +80,37 @@ def container_path(kind: str = PROFILE) -> str:
     return f"{parent}/{container_id}" if parent else container_id
 
 
+def seed_type_records() -> None:
+    """Name this package's own types in the two type records, if they are empty.
+
+    Run once, at install, and never again on its own. The type records are a
+    site's to change -- a policy package that keeps its users as its own type
+    names it here, and one that keeps groups in ``source_groups`` leaves the
+    group record empty -- and a record this package rewrote whenever the
+    container moved would take that choice away at the next change of an
+    unrelated setting.
+
+    A record that already names a type is left alone, so reinstalling over a
+    site's own type keeps it.
+
+    Declines before the records exist, as :func:`sync_core_records` does.
+    """
+    try:
+        for record, value in (
+            (USER_CONTENT_TYPE_RECORD, PROFILE_PORTAL_TYPE),
+            (GROUP_CONTENT_TYPE_RECORD, GROUP_PORTAL_TYPE),
+        ):
+            if not api.portal.get_registry_record(record):
+                api.portal.set_registry_record(record, value)
+    except InvalidParameterError as error:
+        logger.debug("Not seeding the principal type records yet: %s", error)
+
+
 def sync_core_records() -> None:
-    """Point the four principal records at this package's own types.
+    """Point the two container path records at the configured containers.
+
+    Only the paths. The type records are seeded once, by
+    :func:`seed_type_records`, and belong to the site from then on.
 
     Users and groups are pointed separately now that they may be filed apart.
     On a site that has not asked for that they resolve to the same path, which
@@ -106,9 +137,7 @@ def sync_core_records() -> None:
         profile_path = container_path(PROFILE)
         group_path = container_path(GROUP)
         for record, value in (
-            (USER_CONTENT_TYPE_RECORD, PROFILE_PORTAL_TYPE),
             (USER_CONTAINER_PATH_RECORD, profile_path),
-            (GROUP_CONTENT_TYPE_RECORD, GROUP_PORTAL_TYPE),
             (GROUP_CONTAINER_PATH_RECORD, group_path),
         ):
             api.portal.set_registry_record(record, value)
@@ -201,5 +230,6 @@ __all__ = [
     "container_path",
     "on_container_setting_changed",
     "on_folder_added",
+    "seed_type_records",
     "sync_core_records",
 ]

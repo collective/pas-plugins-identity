@@ -14,9 +14,9 @@ reached only the token would be released without ever being offered, asked for
 or consented to.
 """
 
-from . import ISSUER
-from . import PROFILE_ID
-from . import USERID
+from .. import ISSUER
+from .. import PROFILE_ID
+from .. import USERID
 from pas.plugins.identity.server.claims import claims_for
 from pas.plugins.identity.server.claims import released
 from pas.plugins.identity.server.claims import scope_claims

@@ -40,6 +40,15 @@ from Acquisition import aq_inner
 from Acquisition import aq_parent
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.interfaces import IIdentityProfileCatalog
+from pas.plugins.identity.core.principal_types import catalogued_types
+from pas.plugins.identity.core.principal_types import (
+    GROUP_PORTAL_TYPE as GROUP_PORTAL_TYPE,
+)
+from pas.plugins.identity.core.principal_types import group_portal_type
+from pas.plugins.identity.core.principal_types import (
+    PROFILE_PORTAL_TYPE as PROFILE_PORTAL_TYPE,
+)
+from pas.plugins.identity.core.principal_types import user_portal_type
 from plone import api
 from Products.CMFCore.CMFCatalogAware import CMFCatalogAware
 from Products.CMFPlone.CatalogTool import CatalogTool
@@ -52,17 +61,11 @@ from zope.interface import implementer
 #: one and because the ZMI has to call it something.
 CATALOG_ID = "portal_identity_catalog"
 
-#: ``portal_type`` of the Profile content type. Lives here rather than in
-#: ``core.contents.profile`` because the catalog and the subscribers both need
-#: it and neither should have to import the class to get it.
-PROFILE_PORTAL_TYPE = "UserProfile"
-
-#: ``portal_type`` of the Group content type.
-GROUP_PORTAL_TYPE = "UserGroup"
-
-#: Every type filed in this catalog. Used by the rebuild, which must find
-#: them all, and nowhere else -- see :func:`brains_of_type`.
-CATALOGUED_TYPES = (PROFILE_PORTAL_TYPE, GROUP_PORTAL_TYPE)
+# ``PROFILE_PORTAL_TYPE`` and ``GROUP_PORTAL_TYPE`` are imported above as
+# ``X as X``: they moved to ``core.principal_types`` and are re-exported so the
+# names callers already import from here keep working. They are this
+# package's own types, not necessarily the site's -- ask
+# ``user_portal_type()`` and ``group_portal_type()`` for those.
 
 # The indexes and the metadata columns are not declared here. They live in
 # ``profiles/default/identity-catalog.xml``, applied by the ``identity-catalog``
@@ -164,7 +167,7 @@ class IdentityProfileCatalog(CatalogTool):
         portal = aq_parent(aq_inner(self))
         count = 0
         for brain in portal.portal_catalog.unrestrictedSearchResults(
-            portal_type=CATALOGUED_TYPES
+            portal_type=catalogued_types()
         ):
             obj = brain._unrestrictedGetObject()
             self.catalog_object(obj, "/".join(obj.getPhysicalPath()))
@@ -260,7 +263,7 @@ def profile_brains(catalog: IdentityProfileCatalog) -> list[AbstractCatalogBrain
     :param catalog: The Profile catalog.
     :returns: Profile brains.
     """
-    return brains_of_type(catalog, PROFILE_PORTAL_TYPE)
+    return brains_of_type(catalog, user_portal_type())
 
 
 def group_brains(catalog: IdentityProfileCatalog) -> list[AbstractCatalogBrain]:
@@ -269,7 +272,7 @@ def group_brains(catalog: IdentityProfileCatalog) -> list[AbstractCatalogBrain]:
     :param catalog: The Profile catalog.
     :returns: Group brains.
     """
-    return brains_of_type(catalog, GROUP_PORTAL_TYPE)
+    return brains_of_type(catalog, group_portal_type())
 
 
 def all_brains(catalog: IdentityProfileCatalog) -> list[AbstractCatalogBrain]:

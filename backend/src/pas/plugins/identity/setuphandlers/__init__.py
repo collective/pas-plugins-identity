@@ -15,6 +15,7 @@ from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.container import grant_add_permissions
 from pas.plugins.identity.core.controlpanel.interfaces import IIdentitySettings
 from pas.plugins.identity.core.controlpanel.interfaces import IProfileSettings
+from pas.plugins.identity.core.subscribers.principals import seed_type_records
 from pas.plugins.identity.core.subscribers.principals import sync_core_records
 from pas.plugins.identity.core.versioning import register_modifier
 from pas.plugins.identity.core.versioning import unregister_modifier
@@ -134,6 +135,9 @@ def post_install(context: SetupTool) -> None:
     # setting this profile's registry.xml wrote. Doing it again here covers
     # the site that reinstalls without changing one, and costs a write.
     sync_core_records()
+    # Only where the site has named no type yet: a reinstall over a site's own
+    # user type keeps it.
+    seed_type_records()
     # A container an operator made by hand, or one left behind by an earlier
     # install, has no add permission on it and nothing else would ever give it
     # one -- the grant otherwise only happens when this package creates the

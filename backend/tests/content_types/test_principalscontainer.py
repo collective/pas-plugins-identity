@@ -2,7 +2,7 @@
 
 What the FTI declares. What a container does once it exists -- its order, its
 first block, the refusal when a parent will not take it -- is tested beside
-the code that creates it, in ``tests/core/test_container.py``.
+the code that creates it, in ``tests/core/container/test_container.py``.
 """
 
 from pas.plugins.identity.core.container import CONTAINER_PORTAL_TYPE

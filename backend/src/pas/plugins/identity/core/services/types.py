@@ -26,29 +26,9 @@ this would have decorated is never empty when there is anything to put in it.
 See :func:`~pas.plugins.identity.core.profiles.sync_addresses`.
 """
 
-from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.completeness import configured_fields
-from pas.plugins.identity.core.pas.plugin import USER_CONTENT_TYPE_RECORD
-from plone import api
-from plone.api.exc import InvalidParameterError
+from pas.plugins.identity.core.principal_types import user_portal_type
 from plone.restapi.services.types.get import TypesGet
-
-
-def user_content_type() -> str:
-    """Return the portal type this site keeps its users in.
-
-    Read from core's record rather than assumed, so a site running its own
-    user type gets its own form corrected rather than ours.
-
-    :returns: A portal type id.
-    """
-    try:
-        configured = api.portal.get_registry_record(
-            USER_CONTENT_TYPE_RECORD, default=""
-        )
-    except InvalidParameterError:
-        configured = ""
-    return configured or PROFILE_PORTAL_TYPE
 
 
 class ProfileTypesGet(TypesGet):
@@ -83,7 +63,7 @@ class ProfileTypesGet(TypesGet):
         portal_type = self.params[0] if self.params else ""
         schema = super().reply_for_type()
 
-        if portal_type != user_content_type():
+        if portal_type != user_portal_type():
             return schema
         if not isinstance(schema, dict) or "required" not in schema:
             # A 404 body, or a shape a future plone.restapi answers with.
@@ -102,4 +82,4 @@ class ProfileTypesGet(TypesGet):
         return schema
 
 
-__all__ = ["ProfileTypesGet", "user_content_type"]
+__all__ = ["ProfileTypesGet"]
