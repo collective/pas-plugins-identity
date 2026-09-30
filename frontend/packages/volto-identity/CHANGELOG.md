@@ -8,6 +8,13 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0-alpha.12 (2026-09-30)
+
+
+### Documentation
+
+- Pointed the README at the regrouped how-to guides. @ericof 
+
 ## 1.0.0-alpha.11 (2026-09-28)
 
 

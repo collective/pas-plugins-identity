@@ -1,1 +1,0 @@
-Added client recipes for connecting other applications to a Plone site running the server layer: another Plone site, Discourse, Portainer, Matomo with RebelOIDC, a self-managed GitLab, and oauth2-proxy. Their index lists the paths to route to the backend and the values every client is given, and says which recipes have been verified. @ericof

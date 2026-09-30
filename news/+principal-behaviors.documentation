@@ -1,1 +1,0 @@
-Rewrote "Use your own user type" around the new `principal_user` and `principal_group` behaviors, so a site's own user or group type needs no Python, and documented why a hand-written marker interface registered as a behavior's `provides` breaks other behaviors' field defaults. @ericof

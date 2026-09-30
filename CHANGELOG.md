@@ -7,6 +7,57 @@
 -->
 
 <!-- towncrier release notes start -->
+## 1.0.0a12 (2026-09-30)
+
+### Backend
+
+
+#### Feature
+
+- Added `api.plugin.get(name)`, which returns any PAS plugin in the site's `acl_users` by its id, or `None` when there is none. The package's own code now finds its plugins through the same lookup, which no longer finds attributes of the site through acquisition. @ericof 
+- Added the `pas.plugins.identity.principal_user` and `pas.plugins.identity.principal_group` behaviors. Enabling one on a content type of the site's own makes it a user or a group this package creates, catalogues and enumerates, with no marker interface to write. Each has an empty `provides` and applies its marker as the behavior's `marker`, so the `Attribute` declarations on `IUserContent` and `IGroupContent` never hide the defaults of another behavior's `userid`, `login` or `group_id` fields. @ericof 
+
+
+#### Bugfix
+
+- Kept a Volto session signed in at the authorization endpoint when the browser also sends a `Basic` `Authorization` header. A browser resends cached basic credentials to every path on a host, so signing in to a page behind a proxy's basic auth made every later sign-in to a relying party loop back to the login page. Only a `Bearer` header, the one plone.restapi reads, now takes precedence over the session cookie, and basic credentials for a real Plone user still win. @ericof [#123](https://github.com/collective/pas-plugins-identity/issues/123)
+- Honoured `user_content_type` and `group_content_type` everywhere, not only when a user is added. A first login now creates the site's own user type instead of a `UserProfile` beside it, and enumeration, group membership, `@group-members`, required fields, the catalog rebuild, the consistency check, and export and import all read the configured types, with `UserProfile` and `UserGroup` as the fallback for an empty record. Installing seeds the two type records only when they are empty, and a change to the container settings no longer points them back at this package's own types. A type now counts as a user or a group when a behavior or its class provides the marker, not only its schema. A user type that does not provide `IUserProfile` is left to whoever creates it, and a login no longer creates a `UserProfile` for it. @ericof [#127](https://github.com/collective/pas-plugins-identity/issues/127)
+
+
+#### Documentation
+
+- Pointed the README and the docstrings at the regrouped how-to guides. @ericof 
+
+
+#### Tests
+
+- Grouped the test modules that exercise the same source module into folders mirroring the source layout: `core/upgrades`, `core/principal_types`, `core/container` and `core/portraits`, the first-login record tests under `core/pas`, and on the server side `browser/authorize`, `browser/token`, `consent` and `claims`. @ericof 
+
+
+
+### Frontend
+
+
+#### Documentation
+
+- Pointed the README at the regrouped how-to guides. @ericof 
+
+
+
+### Project
+
+
+#### Documentation
+
+- Explained which `Authorization` header takes precedence over the Volto session cookie at the authorization endpoint, and why a `Basic` one does not. @ericof [#123](https://github.com/collective/pas-plugins-identity/issues/123)
+- Added client recipes for connecting other applications to a Plone site running the server layer: another Plone site, Discourse, Portainer, Matomo with RebelOIDC, a self-managed GitLab, and oauth2-proxy. Their index lists the paths to route to the backend and the values every client is given, and says which recipes have been verified. @ericof [#124](https://github.com/collective/pas-plugins-identity/issues/124)
+- Added "Use your own user type", a guide to keeping a site's users as a content type of its own, and corrected the reference pages that said a change to the container settings points the type records back at `UserProfile` and `UserGroup`. @ericof [#127](https://github.com/collective/pas-plugins-identity/issues/127)
+- Documented `api.plugin` in the Python API reference. @ericof 
+- Grouped the how-to guides by task: install and upgrade, sign in with a provider, decide what a provider may do, operate a site, act as an identity provider, migrate from other plugins, and extend the package. Guide titles no longer start with "How to", and the old addresses redirect to the new ones. @ericof 
+- Rewrote "Use your own user type" around the new `principal_user` and `principal_group` behaviors, so a site's own user or group type needs no Python, and documented why a hand-written marker interface registered as a behavior's `provides` breaks other behaviors' field defaults. @ericof 
+
+
+
 ## 1.0.0a11 (2026-09-28)
 
 ### Backend

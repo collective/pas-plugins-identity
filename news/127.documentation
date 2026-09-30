@@ -1,1 +1,0 @@
-Added "Use your own user type", a guide to keeping a site's users as a content type of its own, and corrected the reference pages that said a change to the container settings points the type records back at `UserProfile` and `UserGroup`. @ericof

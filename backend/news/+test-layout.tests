@@ -1,1 +1,0 @@
-Grouped the test modules that exercise the same source module into folders mirroring the source layout: `core/upgrades`, `core/principal_types`, `core/container` and `core/portraits`, the first-login record tests under `core/pas`, and on the server side `browser/authorize`, `browser/token`, `consent` and `claims`. @ericof
