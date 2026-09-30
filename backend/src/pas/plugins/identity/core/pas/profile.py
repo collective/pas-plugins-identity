@@ -47,6 +47,7 @@ from pas.plugins.identity.core.utils.nesting import members_of
 from plone import api
 from Products.PlonePAS.interfaces.capabilities import IDeleteCapability
 from Products.PlonePAS.interfaces.group import IGroupIntrospection
+from Products.PlonePAS.interfaces.plugins import IUserIntrospection
 from Products.PlonePAS.interfaces.plugins import IUserManagement
 from Products.PlonePAS.plugins.group import PloneGroup
 from Products.PlonePAS.sheet import MutablePropertySheet
@@ -143,6 +144,7 @@ def _matches(candidate: str | None, terms: list[str], exact: bool) -> bool:
     IGroupsPlugin,
     IGroupEnumerationPlugin,
     IGroupIntrospection,
+    IUserIntrospection,
 )
 class IdentityProfilePlugin(BasePlugin):
     """Serves properties, user enumeration and groups from the catalog."""
@@ -507,6 +509,55 @@ class IdentityProfilePlugin(BasePlugin):
             _matches(getattr(brain, attribute, None), terms, exact_match)
             for attribute, terms in criteria
         )
+
+    # -- IUserIntrospection ----------------------------------------------
+    #
+    # "Every user", as opposed to "the users matching this". PAS answers
+    # ``getUserIds``, ``getUserNames`` and ``getUsers`` -- and through them
+    # ``listMembers`` and ``api.user.get_users`` -- by concatenating what each
+    # introspector says, and never removes a duplicate. A user added through
+    # ``api.user.create`` has a Profile and a ``source_users`` credential, so
+    # listing every Profile would list that user twice. These list the users
+    # no other introspector holds, which is every user exactly once whichever
+    # order the plugins are in.
+
+    def _introspected_brains(self) -> list[AbstractCatalogBrain]:
+        """Return the active Profile brains no other introspector lists.
+
+        :returns: Brains, in catalog order.
+        """
+        held: set[str] = set()
+        plugins = self._getPAS()._getOb("plugins")
+        for introspector_id, introspector in plugins.listPlugins(IUserIntrospection):
+            if introspector_id != self.getId():
+                held.update(introspector.getUserIds())
+        return [brain for brain in self._active_brains() if brain.userid not in held]
+
+    def getUserIds(self) -> list[str]:
+        """Return the ids of the users only this plugin holds.
+
+        :returns: Userids.
+        """
+        return [brain.userid for brain in self._introspected_brains()]
+
+    def getUserNames(self) -> list[str]:
+        """Return the login names of the users only this plugin holds.
+
+        :returns: Login names.
+        """
+        return [brain.login for brain in self._introspected_brains()]
+
+    def getUsers(self) -> list[PropertiedUser]:
+        """Return the users only this plugin holds, resolved by PAS.
+
+        Through ``getUserById``, as ``source_users`` does, so each one carries
+        the property sheets, groups and roles every plugin gives it.
+
+        :returns: User objects.
+        """
+        pas = self._getPAS()
+        users = (pas.getUserById(userid) for userid in self.getUserIds())
+        return [user for user in users if user is not None]
 
     # -- groups -------------------------------------------------
 
@@ -1041,6 +1092,7 @@ classImplements(
     IGroupsPlugin,
     IGroupEnumerationPlugin,
     IGroupIntrospection,
+    IUserIntrospection,
     IUserManagement,
     IDeleteCapability,
 )

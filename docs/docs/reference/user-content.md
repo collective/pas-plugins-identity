@@ -183,10 +183,24 @@ left where they are.
 | Plugin | Does |
 |---|---|
 | `identity` | Creates user and group objects, and authenticates. |
-| `identity_profile` | Enumerates them, serves their properties, and deletes them. |
+| `identity_profile` | Enumerates them, lists them, serves their properties, and deletes them. |
 
 Installing the package installs both. One without the other gives you a user that
 cannot be found: PAS looks a principal back up immediately after adding it.
+
+<!-- source: backend/src/pas/plugins/identity/core/pas/profile.py, IUserIntrospection -->
+
+Searching and listing are separate PAS questions, answered by separate interfaces.
+
+| Call | Asks | `identity_profile` answers with |
+|---|---|---|
+| `acl_users.searchUsers()`, `@users` | `IUserEnumerationPlugin` | Every matching user in an enumeration-active state |
+| `acl_users.getUserIds()`, `getUserNames()`, `getUsers()`, `api.user.get_users()`, `portal_membership.listMembers()` | `IUserIntrospection` | Every user in an enumeration-active state that no other `IUserIntrospection` plugin lists |
+
+PlonePAS concatenates the answers to a listing without removing duplicates. A
+user added through `api.user.create` has a `source_users` credential as well as
+a content object, so `source_users` lists them and `identity_profile` leaves
+them out. Each user is listed once.
 
 <!-- source: backend/src/pas/plugins/identity/core/profiles.py, ensure_profile -->
 

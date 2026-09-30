@@ -1,0 +1,20 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    >
+
+  <!-- Listing every user. The class answers the question from the deploy on;
+       an existing site's acl_users has to be told to ask it. -->
+  <genericsetup:upgradeSteps
+      profile="pas.plugins.identity:default"
+      source="1009"
+      destination="1010"
+      >
+    <genericsetup:upgradeStep
+        title="List users who only have a profile"
+        description="Activates the identity_profile plugin for IUserIntrospection, so that listing every user includes those who signed in through a provider and have no source_users account."
+        handler=".activate_user_introspection"
+        />
+  </genericsetup:upgradeSteps>
+
+</configure>
