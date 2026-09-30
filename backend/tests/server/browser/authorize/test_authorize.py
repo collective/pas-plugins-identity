@@ -6,8 +6,8 @@ reported to the client at its registered URI. Getting that backwards is an
 open redirect, so it is asserted in both directions.
 """
 
-from . import PROFILE_ID
-from . import REDIRECT
+from ... import PROFILE_ID
+from ... import REDIRECT
 from AccessControl import Unauthorized
 from pas.plugins.identity.server.browser.authorize import AuthorizeView
 from pas.plugins.identity.server.grants.codes import make_verifier

@@ -9,8 +9,8 @@ that basis would export the problem rather than solve it, so it is true only
 when this site verified the address itself.
 """
 
-from . import PROFILE_ID
-from . import USERID
+from .. import PROFILE_ID
+from .. import USERID
 from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from pas.plugins.identity.server.claims import claims_for

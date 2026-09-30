@@ -167,7 +167,7 @@ Register the adapter for the test and restore what it displaced.
 Registering under a name already in use *replaces* that registration rather than shadowing it.
 A test that overrides `profile` and then removes only its own adapter leaves that scope with no serializer for the rest of the run, and the failure lands on a later test.
 
-`backend/tests/server/conftest.py` has a `register_scope` fixture that does the restoring, and `backend/tests/server/test_scope_serializers.py` is the worked example of both shapes.
+`backend/tests/server/conftest.py` has a `register_scope` fixture that does the restoring, and `backend/tests/server/claims/test_scope_serializers.py` is the worked example of both shapes.
 
 Assert the reach, not only the value.
 A claim that arrives in the token while the consent screen does not list it is released outside the consent:

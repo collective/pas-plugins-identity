@@ -7,8 +7,8 @@ that matter most here are the ones about when the prompt appears -- and about
 the request that arrives claiming they already answered.
 """
 
-from . import PROFILE_ID
-from . import REDIRECT
+from .. import PROFILE_ID
+from .. import REDIRECT
 from bs4 import BeautifulSoup
 from pas.plugins.identity.server.browser.authorize import AuthorizeView
 from pas.plugins.identity.server.consent import ConsentStore

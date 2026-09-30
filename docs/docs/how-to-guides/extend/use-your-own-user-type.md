@@ -129,7 +129,7 @@ interface stops Dexterity from answering the defaults of other behaviors'
 ```{note}
 The behaviors, the workflow, the container and the records are exercised
 together, for a user type and a group type, by
-`backend/tests/core/test_own_user_type.py`, which sets them up in Python. The
+`backend/tests/core/principal_types/test_own_user_type.py`, which sets them up in Python. The
 XML files above are the GenericSetup spelling of the same configuration and are
 not run by the test suite.
 ```

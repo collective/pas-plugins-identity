@@ -7,9 +7,9 @@ no code. And a refresh asks again, so leaving the group ends access once the
 access token expires rather than when the refresh token does.
 """
 
-from . import PROFILE_ID
-from . import REDIRECT
-from . import USERID
+from ... import PROFILE_ID
+from ... import REDIRECT
+from ... import USERID
 from pas.plugins.identity.core import audit
 from pas.plugins.identity.server.browser import authorize
 from pas.plugins.identity.server.browser.authorize import AuthorizeView

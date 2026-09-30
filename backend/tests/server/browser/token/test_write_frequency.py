@@ -26,9 +26,9 @@ stores' internal BTrees, not on the store objects), which is a good reason
 not to guess at all.
 """
 
-from . import ISSUER
-from . import PROFILE_ID
-from . import SERVICE_USER
+from ... import ISSUER
+from ... import PROFILE_ID
+from ... import SERVICE_USER
 from pas.plugins.identity.server.browser.token import TokenView
 from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
 from pas.plugins.identity.server.pas import PLUGIN_ID

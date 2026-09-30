@@ -10,8 +10,8 @@ its own type is most likely to use a behavior, the one route ``UserProfile``
 does not.
 """
 
-from .pas.stubs import add_type
-from .pas.stubs import IStubDocumentSchema
+from ..pas.stubs import add_type
+from ..pas.stubs import IStubDocumentSchema
 from pas.plugins.identity.core.interfaces import IUserContent
 from pas.plugins.identity.core.interfaces import IUserProfile
 from pas.plugins.identity.core.principal_types import catalogued_types

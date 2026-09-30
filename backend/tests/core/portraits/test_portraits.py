@@ -382,7 +382,7 @@ class TestStoring:
 class TestWhereItLands:
     """Which store answers for a user who has no Profile.
 
-    The Profile-backed half is ``tests/core/test_provider_picture.py``: this
+    The Profile-backed half is ``tests/core/portraits/test_provider_picture.py``: this
     is the site that has never heard of it, and has to keep working exactly
     as it did.
     """

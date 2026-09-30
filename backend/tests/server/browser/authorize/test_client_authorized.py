@@ -7,9 +7,9 @@ because a fire moved one step earlier in the view would still pass every test
 of the first half.
 """
 
-from . import PROFILE_ID
-from . import REDIRECT
-from . import SERVICE_USER
+from ... import PROFILE_ID
+from ... import REDIRECT
+from ... import SERVICE_USER
 from AccessControl import Unauthorized
 from pas.plugins.identity import api as identity_api
 from pas.plugins.identity.core import audit
