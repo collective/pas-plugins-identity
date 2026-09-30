@@ -47,11 +47,11 @@ itself would be a copy to keep in step with, and the one that drifted would be
 the one nobody was testing.
 """
 
-from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.completeness import missing_from_brain
 from pas.plugins.identity.core.confirmation import confirmation_pending_on_brain
 from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity.core.principal_types import user_portal_type
 from plone import api
 from plone.dexterity.utils import iterSchemataForType
 from zope.i18n import translate
@@ -133,7 +133,7 @@ def field_titles(names: tuple[str, ...], request=None) -> JSONDict:
         return {}
     wanted = set(names)
     titles: JSONDict = {}
-    for schema in iterSchemataForType(PROFILE_PORTAL_TYPE):
+    for schema in iterSchemataForType(user_portal_type()):
         for name, field in getFieldsInOrder(schema):
             if name in wanted and name not in titles and field.title:
                 titles[name] = translate(field.title, context=request)

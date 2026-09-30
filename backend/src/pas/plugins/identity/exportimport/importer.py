@@ -48,14 +48,14 @@ from Acquisition import aq_parent
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.behaviors.roles import IGlobalRoles
 from pas.plugins.identity.core.catalog import catalog_for
-from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
-from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.container import get_container
 from pas.plugins.identity.core.container import GROUP
 from pas.plugins.identity.core.container import PROFILE
 from pas.plugins.identity.core.interfaces import IdentityCollision
 from pas.plugins.identity.core.pas import PLUGIN_ID
+from pas.plugins.identity.core.principal_types import group_portal_type
+from pas.plugins.identity.core.principal_types import user_portal_type
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from pas.plugins.identity.core.verification import record_verified_addresses
@@ -141,7 +141,7 @@ def _import_group(
         modification event :func:`import_site` fires at the end.
     """
     group_id = group["group_id"]
-    existing = _existing(GROUP_PORTAL_TYPE, "group_id", group_id)
+    existing = _existing(group_portal_type(), "group_id", group_id)
     fields = {name: group.get(name) or "" for name in GROUP_FIELDS}
 
     if existing is not None:
@@ -149,7 +149,7 @@ def _import_group(
             for name, value in fields.items():
                 setattr(existing, name, value)
             _apply_roles(existing, group)
-            touched[(GROUP_PORTAL_TYPE, "group_id", group_id)] = None
+            touched[(group_portal_type(), "group_id", group_id)] = None
         result.groups.append(group_id)
         return
 
@@ -163,7 +163,7 @@ def _import_group(
         return
     created = api.content.create(
         container=container,
-        type=GROUP_PORTAL_TYPE,
+        type=group_portal_type(),
         id=group_id,
         group_id=group_id,
         **fields,
@@ -186,7 +186,7 @@ def _import_user(
         modification event :func:`import_site` fires at the end.
     """
     userid = user["userid"]
-    existing = _existing(PROFILE_PORTAL_TYPE, "userid", userid)
+    existing = _existing(user_portal_type(), "userid", userid)
     emails = [address for address in user.get("emails") or () if address]
     if not emails:
         # ``emails`` is required on the Profile and ``email`` is derived from
@@ -207,7 +207,7 @@ def _import_user(
                 setattr(existing, name, value)
             existing.login = login
             existing.emails = tuple(emails)
-            touched[(PROFILE_PORTAL_TYPE, "userid", userid)] = None
+            touched[(user_portal_type(), "userid", userid)] = None
         result.users.append(userid)
         return
 
@@ -221,7 +221,7 @@ def _import_user(
         return
     api.content.create(
         container=container,
-        type=PROFILE_PORTAL_TYPE,
+        type=user_portal_type(),
         id=userid,
         userid=userid,
         login=login,
@@ -255,11 +255,11 @@ def _apply_containment(group: dict[str, Any], result: Result, dry_run: bool) -> 
     if not container_id or dry_run:
         return
     group_id = group["group_id"]
-    obj = _existing(GROUP_PORTAL_TYPE, "group_id", group_id)
+    obj = _existing(group_portal_type(), "group_id", group_id)
     if obj is None:  # pragma: no cover - written a moment ago
         return
 
-    parent = _existing(GROUP_PORTAL_TYPE, "group_id", container_id)
+    parent = _existing(group_portal_type(), "group_id", container_id)
     if parent is None:
         result.skipped.append(
             f"group {group_id}: no group {container_id!r} to file it inside"
@@ -291,14 +291,14 @@ def _apply_membership(
     wanted = [group_id for group_id in record.get("group_ids") or () if group_id]
     if not wanted or dry_run:
         return
-    index = "userid" if portal_type == PROFILE_PORTAL_TYPE else "group_id"
+    index = "userid" if portal_type == user_portal_type() else "group_id"
     obj = _existing(portal_type, index, record[index])
     if obj is None:  # pragma: no cover - written a moment ago
         return
     known = [
         group_id
         for group_id in wanted
-        if _existing(GROUP_PORTAL_TYPE, "group_id", group_id) is not None
+        if _existing(group_portal_type(), "group_id", group_id) is not None
     ]
     missing = sorted(set(wanted) - set(known))
     if missing:
@@ -553,10 +553,10 @@ def import_site(
         for group in groups:
             _apply_containment(group, result, dry_run)
         for group in groups:
-            _apply_membership(group, GROUP_PORTAL_TYPE, dry_run, touched)
+            _apply_membership(group, group_portal_type(), dry_run, touched)
         for user in users:
             if user["userid"] in result.users:
-                _apply_membership(user, PROFILE_PORTAL_TYPE, dry_run, touched)
+                _apply_membership(user, user_portal_type(), dry_run, touched)
         for user in users:
             if user["userid"] in result.users:
                 _import_identities(user, plugin, result, dry_run, trust_verified_emails)

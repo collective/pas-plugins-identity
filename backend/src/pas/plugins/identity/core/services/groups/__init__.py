@@ -30,9 +30,9 @@ which is also where a deployment adds a field to it.
 """
 
 from pas.plugins.identity import logger
-from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.pas.profile import PLUGIN_ID as PROFILE_PLUGIN_ID
+from pas.plugins.identity.core.principal_types import user_portal_type
 from pas.plugins.identity.core.utils.nesting import members_of
 from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from Products.CMFCore.permissions import ManageUsers
@@ -78,7 +78,7 @@ def member_brains(group_id: str, plugin) -> list[AbstractCatalogBrain]:
     return [
         brain
         for brain in catalog.unrestrictedSearchResults(
-            portal_type=PROFILE_PORTAL_TYPE,
+            portal_type=user_portal_type(),
             group_ids=list(feeding),
             # Ordered by the catalog rather than in Python. The previous
             # version read every member of the group and sorted the whole list

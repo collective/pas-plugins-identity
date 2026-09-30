@@ -31,6 +31,9 @@ from pas.plugins.identity.core.pas import CREDENTIALS_KEY
 from pas.plugins.identity.core.pas import EXTRACTOR
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.pas import PLUGIN_TITLE
+from pas.plugins.identity.core.principal_types import GROUP_CONTENT_TYPE_RECORD
+from pas.plugins.identity.core.principal_types import type_provides
+from pas.plugins.identity.core.principal_types import USER_CONTENT_TYPE_RECORD
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from pas.plugins.identity.core.store import IdentityRecord
 from pas.plugins.identity.core.store import IdentityStore
@@ -145,24 +148,13 @@ def mint_userid(
     return f"{normalized}-{counter}"
 
 
-#: Portal type created for a new user. Installing this add-on points it at
-#: ``UserProfile`` -- see
-#: :func:`~pas.plugins.identity.core.subscribers.principals.sync_core_records` -- and it
-#: stays a record rather than a constant so a site may substitute a user type
-#: of its own. A type that does not provide :class:`IUserContent` is refused
-#: rather than created.
-USER_CONTENT_TYPE_RECORD = "pas.plugins.identity.user_content_type"
-
-#: Where those objects go, relative to the site root. Derived from the
-#: container settings, so moving the container in the control panel moves
-#: this with it.
+#: Where new users go, relative to the site root. Derived from the container
+#: settings, so moving the container in the control panel moves this with it.
+#: The type records beside it live in
+#: :mod:`~pas.plugins.identity.core.principal_types`.
 USER_CONTAINER_PATH_RECORD = "pas.plugins.identity.user_container_path"
 
-#: Portal type created for a new group, ``UserGroup`` unless a site says
-#: otherwise.
-GROUP_CONTENT_TYPE_RECORD = "pas.plugins.identity.group_content_type"
-
-#: Where those objects go, relative to the site root.
+#: Where new groups go, relative to the site root.
 GROUP_CONTAINER_PATH_RECORD = "pas.plugins.identity.group_container_path"
 
 
@@ -519,33 +511,6 @@ class IdentityPlugin(BasePlugin):
         portal = api.portal.get()
         return portal.unrestrictedTraverse(path.strip("/"), None)
 
-    def _provides(self, portal_type: str, marker) -> bool:
-        """Report whether a portal type's schema provides a marker.
-
-        Asked of the FTI rather than of an instance, because the answer has
-        to be known before anything is created. A record naming a type that
-        is not a user, or not a group, is a misconfiguration, and creating
-        the object anyway would leave every later query having to tolerate
-        it.
-
-        :param portal_type: The type to check.
-        :param marker: :class:`IUserContent` or :class:`IGroupContent`.
-        :returns: Whether objects of that type satisfy the marker.
-        """
-        from plone import api
-        from plone.dexterity.interfaces import IDexterityFTI
-
-        fti = getattr(api.portal.get_tool("portal_types"), portal_type, None)
-        if not IDexterityFTI.providedBy(fti):
-            return False
-        try:
-            schema = fti.lookupSchema()
-        except (AttributeError, ImportError):
-            # A type whose schema will not load is not one to create in, and
-            # a broken FTI must not break adding a user or a group.
-            return False
-        return schema.isOrExtends(marker)
-
     def _configured(
         self,
         type_record: str,
@@ -587,7 +552,11 @@ class IdentityPlugin(BasePlugin):
             logger.warning("%r does not resolve to a container", container_path)
             return None
 
-        if not self._provides(portal_type, marker):
+        # Asked of the FTI rather than of an instance, because the answer has
+        # to be known before anything is created. A record naming a type that
+        # is not a user, or not a group, is a misconfiguration, and creating
+        # the object anyway would leave every later query tolerating it.
+        if not type_provides(portal_type, marker):
             logger.warning("%r does not provide %s", portal_type, marker.__name__)
             return None
         return container, portal_type
@@ -1497,4 +1466,11 @@ classImplements(
 InitializeClass(IdentityPlugin)
 
 
-__all__ = ["IdentityPlugin", "mint_userid"]
+__all__ = [
+    "GROUP_CONTAINER_PATH_RECORD",
+    "GROUP_CONTENT_TYPE_RECORD",
+    "USER_CONTAINER_PATH_RECORD",
+    "USER_CONTENT_TYPE_RECORD",
+    "IdentityPlugin",
+    "mint_userid",
+]

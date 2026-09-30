@@ -18,6 +18,7 @@ Add to this package from one of your own, without changing it.
 | {doc}`add-a-catalog-index` | An index or a metadata column to the user catalog |
 | {doc}`extend-a-profile-page` | Your own component, in a slot on a profile or group page |
 | {doc}`edit-a-list-as-a-table` | A table editor, in Volto, for a list field |
+| {doc}`use-your-own-user-type` | Your own content type, in place of `UserProfile` |
 
 ## Related
 
@@ -35,4 +36,5 @@ serialize-a-claim
 add-a-catalog-index
 extend-a-profile-page
 edit-a-list-as-a-table
+use-your-own-user-type
 ```

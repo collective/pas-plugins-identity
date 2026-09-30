@@ -46,11 +46,11 @@ missing anything" has no business reversing it.
 
 from Missing import Value as MISSING_VALUE
 from pas.plugins.identity import logger
-from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.confirmation import confirmation_pending
 from pas.plugins.identity.core.container import PREFIX
 from pas.plugins.identity.core.contents.profile import UserProfile
 from pas.plugins.identity.core.localroles import SELF_ROLE
+from pas.plugins.identity.core.principal_types import user_portal_type
 from plone import api
 from plone.api.exc import InvalidParameterError
 from plone.autoform.interfaces import WRITE_PERMISSIONS_KEY
@@ -298,7 +298,7 @@ def _brain_declared() -> tuple[str, ...]:
     :returns: Field names, in schema order.
     """
     names = []
-    for schema in iterSchemataForType(PROFILE_PORTAL_TYPE):
+    for schema in iterSchemataForType(user_portal_type()):
         for name, field in getFieldsInOrder(schema):
             if field.required and name not in NEVER_REQUIRED and name not in names:
                 names.append(name)

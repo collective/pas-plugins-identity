@@ -23,11 +23,11 @@ the one that mattered.
 from pas.plugins.identity.core.catalog import get_catalog
 from pas.plugins.identity.core.catalog import group_brains
 from pas.plugins.identity.core.catalog import GROUP_METADATA
-from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import profile_brains
 from pas.plugins.identity.core.catalog import PROFILE_METADATA
-from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
 from pas.plugins.identity.core.completeness import missing_fields
+from pas.plugins.identity.core.principal_types import group_portal_type
+from pas.plugins.identity.core.principal_types import user_portal_type
 from plone import api
 from plone.base.interfaces import IImageScalesAdapter
 from plone.dexterity.content import Container
@@ -256,10 +256,10 @@ def check() -> list[dict[str, str]]:
     catalog = get_catalog()
 
     profiles, findings = _check_type(
-        PROFILE_PORTAL_TYPE, profile_brains(catalog), PROFILE_METADATA
+        user_portal_type(), profile_brains(catalog), PROFILE_METADATA
     )
     groups, group_findings = _check_type(
-        GROUP_PORTAL_TYPE, group_brains(catalog), GROUP_METADATA
+        group_portal_type(), group_brains(catalog), GROUP_METADATA
     )
     findings.extend(group_findings)
 

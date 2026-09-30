@@ -61,8 +61,10 @@ class IIdentitySettings(Interface):
         default="/login-identity",
     )
 
-    # The four records below are what core reads, and none of them is a
-    # setting: a subscriber derives them from the container settings. They
+    # The four records below are what core reads. The two paths are not
+    # settings: a subscriber derives them from the container settings. The two
+    # types are seeded once, at install, and are then the site's to change --
+    # a policy profile's own registry.xml, not this panel. They
     # are not read-only *here*, because ``registerInterface`` creates no record
     # for a read-only field. :class:`IIdentityPanelSchema` is where the panel
     # is told to leave them alone.

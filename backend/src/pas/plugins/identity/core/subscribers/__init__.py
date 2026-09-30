@@ -13,7 +13,6 @@ Nothing here commits. Login runs inside the request's transaction, and a
 Profile minted for a login that then fails should not outlive it.
 """
 
-from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.completeness import reconcile
 from pas.plugins.identity.core.confirmation import ask_if_needed
@@ -23,6 +22,7 @@ from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
 from pas.plugins.identity.core.events import IdentityLinked
 from pas.plugins.identity.core.events import UserClaimsRefreshed
 from pas.plugins.identity.core.interfaces import Claims
+from pas.plugins.identity.core.principal_types import group_portal_type
 from pas.plugins.identity.core.profiles import ensure_profile
 from pas.plugins.identity.core.profiles import get_profile
 from pas.plugins.identity.core.profiles import sync_addresses
@@ -303,7 +303,7 @@ def refuse_duplicate_group(group, event) -> None:
     group_id = group.getId()
     own_path = "/".join(group.getPhysicalPath())
     for brain in catalog.unrestrictedSearchResults(
-        portal_type=GROUP_PORTAL_TYPE, group_id=group_id
+        portal_type=group_portal_type(), group_id=group_id
     ):
         # Its own record, whether or not the indexing subscriber has run yet:
         # both orderings are legal and neither is worth depending on.

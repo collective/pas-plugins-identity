@@ -18,9 +18,11 @@ types this package ships on top of it, read {doc}`profiles-and-groups`.
 ## Registry records
 
 <!-- source: backend/src/pas/plugins/identity/core/pas/plugin.py -->
+<!-- source: backend/src/pas/plugins/identity/core/principal_types.py -->
+<!-- source: backend/src/pas/plugins/identity/core/subscribers/principals.py -->
 
-Four records control the mechanism. All four are empty by default, which means
-the feature is off and Plone's own plugins do the work.
+Four records control the mechanism. All four are empty in the schema, which
+means the feature is off and Plone's own plugins do the work.
 
 | Record | Names |
 |---|---|
@@ -34,14 +36,23 @@ moment somebody adds a user, which is the worst time to discover a configuration
 gap.
 
 None of the four is on the settings form, and a save through the control panel
-never writes them. Installing the package sets all four, and a subscriber sets
-them again whenever a container record changes: the paths from the container
-records, the types to this package's own. So moving the container in the
-control panel needs no reinstall.
+never writes them.
 
-A site substituting its own types sets these records in its own GenericSetup
-profile. A later change to the container records points the types back at this
-package's own. See {doc}`settings`.
+| Records | Written by | When |
+|---|---|---|
+| The two paths | A subscriber, from the container records | At install, and whenever a container record changes |
+| The two types | The install handler, `UserProfile` and `UserGroup` | At install, and only into a record that is empty |
+
+So moving the container in the control panel needs no reinstall, and a type a
+site names in its own GenericSetup profile stays named. See
+{doc}`/how-to-guides/extend/use-your-own-user-type`.
+
+What an empty type record means depends on who reads it.
+
+| Reader | Empty user or group type record |
+|---|---|
+| Adding a user or a group | Declines. `source_users` or `source_groups` does the work. |
+| Everything that finds, lists, catalogues, exports or checks principals | Reads as `UserProfile` or `UserGroup` |
 
 ## The marker contracts
 
@@ -111,8 +122,16 @@ cases.
 | The container path record is empty | no |
 | The container path does not resolve to an object | warning |
 | The named portal type is not a Dexterity type | warning |
-| The named type's schema does not provide the required marker | warning |
-| The named type's schema fails to load | warning |
+| The named type does not provide the required marker | warning |
+| The named type's schema or class fails to load | warning |
+
+A type provides the marker when any of these does:
+
+| Route | Example |
+|---|---|
+| The type's schema | `UserProfile`, whose schema extends `IUserContent` |
+| A behavior's schema, or its marker | A behavior whose `provides` extends `IUserContent` |
+| The content class | `<class><implements interface="…" /></class>` in ZCML |
 
 Declining is the protocol rather than an error: `ZODBUserManager.doAddUser`
 returns false on a duplicate id for the same reason. An unset record logs nothing
@@ -144,10 +163,20 @@ left where they are.
 Installing the package installs both. One without the other gives you a user that
 cannot be found: PAS looks a principal back up immediately after adding it.
 
+<!-- source: backend/src/pas/plugins/identity/core/profiles.py, ensure_profile -->
+
+`identity_profile` enumerates whatever type the records name, provided the type
+is filed in the user catalog: a user type has to provide `IUserProfile` as well
+as `IUserContent`, and a group type `IUserGroup` as well as `IGroupContent`.
+
+| The user type provides | Created at login | Created by `api.user.create` | Enumerated by `identity_profile` |
+|---|---|---|---|
+| `IUserContent` and `IUserProfile` | yes | yes | yes |
+| `IUserContent` only | no, and logged | yes, and fails at `setMemberProperties` unless another plugin enumerates it | no |
+
 ```{important}
-If you point the records at a content type of your own, make sure something on
-the site enumerates it. `UserProfile` and `UserGroup` are enumerated by the
-plugin this package installs; another type is your responsibility.
+A user type that provides `IUserContent` alone is yours to create at login and
+yours to enumerate. See {doc}`/how-to-guides/extend/use-your-own-user-type`.
 ```
 
 (credential-storage)=
@@ -233,4 +262,5 @@ which also drops the store's record of them.
 - {doc}`/concepts/users-as-content`—why a user is content here
 - {doc}`profiles-and-groups`—the two types this package ships
 - {doc}`settings`—the four records, with their defaults
+- {doc}`/how-to-guides/extend/use-your-own-user-type`—a site's own type, in place of `UserProfile`
 - {doc}`permissions`—what protects the objects
