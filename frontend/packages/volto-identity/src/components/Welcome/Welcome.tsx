@@ -13,13 +13,13 @@ import { useIntl } from 'react-intl';
 import { flattenToAppURL } from '@plone/volto/helpers/Url/Url';
 
 import { getUserAccount } from '../../actions';
-import { useridFromToken } from '../../helpers/token';
 import {
   fillPlaceholders,
   providerTitle,
   recentSignIns,
   SIGN_IN_EVENTS,
-} from '../../helpers/welcome';
+  useridFromToken,
+} from '@plone-collective/identity-core';
 import type { SignInBlockData, UserAccount, UserProfile } from '../../types';
 import { defaultGreeting } from '../Blocks/SignIn/schema';
 import WelcomeCard from './WelcomeCard';

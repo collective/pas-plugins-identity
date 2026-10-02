@@ -17,7 +17,7 @@ import React, { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { getUserProfile } from '../../actions';
-import { useridFromToken } from '../../helpers/token';
+import { useridFromToken } from '@plone-collective/identity-core';
 
 const UserProfileLoader: React.FC = () => {
   const dispatch = useDispatch();

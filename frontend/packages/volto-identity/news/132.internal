@@ -1,0 +1,1 @@
+Moved the REST payload types, the vocabulary names, every REST path and the framework-free helpers into the new `@plone-collective/identity-core` package, which the add-on now depends on. Nothing changes for a site, but code importing `@plone-collective/volto-identity/helpers/...` for one of the moved helpers now imports it from `@plone-collective/identity-core`. @sneridagh

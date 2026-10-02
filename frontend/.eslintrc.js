@@ -21,6 +21,53 @@ module.exports = {
   rules: {
     'import/no-unresolved': 1,
   },
+  overrides: [
+    {
+      // identity-core is shared by the Volto and the Aurora add-on, so it may
+      // import neither frontend, nor anything only one of them provides.
+      files: ['packages/identity-core/**'],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            patterns: [
+              {
+                group: [
+                  '@plone/volto',
+                  '@plone/volto/*',
+                  '@plone/volto-*',
+                  '@plone/aurora',
+                  '@plone/aurora/*',
+                  '@plone/react-router',
+                  '@plone/registry',
+                  '@plone/registry/*',
+                  '@plone-collective/volto-identity',
+                  '@plone-collective/volto-identity/*',
+                  '@plone-collective/aurora-identity',
+                  '@plone-collective/aurora-identity/*',
+                  '**/volto-identity/**',
+                  '**/aurora-identity/**',
+                  'react',
+                  'react/*',
+                  'react-dom',
+                  'react-dom/*',
+                  'react-redux',
+                  'react-intl',
+                  'react-i18next',
+                  'i18next',
+                  'react-router',
+                  'react-router-dom',
+                  'semantic-ui-react',
+                ],
+                message:
+                  'identity-core is framework-agnostic: adapt it in volto-identity or aurora-identity instead.',
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ],
   settings: {
     'import/resolver': {
       alias: {

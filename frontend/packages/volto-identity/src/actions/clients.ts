@@ -13,9 +13,7 @@ import {
   ROTATE_CLIENT_SECRET,
   UPDATE_CLIENT,
 } from '../constants/ActionTypes';
-
-/** Base path of the OAuth client registry. */
-const CLIENTS = '/@identity-clients';
+import { endpoints } from '@plone-collective/identity-core';
 
 /**
  * List the OAuth clients registered against this site.
@@ -23,7 +21,7 @@ const CLIENTS = '/@identity-clients';
 export function listClients() {
   return {
     type: LIST_CLIENTS,
-    request: { op: 'get', path: CLIENTS },
+    request: { op: 'get', path: endpoints.clients() },
   };
 }
 
@@ -39,7 +37,7 @@ export function listClients() {
 export function createClient(data: Record<string, unknown>) {
   return {
     type: CREATE_CLIENT,
-    request: { op: 'post', path: CLIENTS, data },
+    request: { op: 'post', path: endpoints.clients(), data },
   };
 }
 
@@ -58,7 +56,7 @@ export function updateClient(clientId: string, data: Record<string, unknown>) {
     type: UPDATE_CLIENT,
     request: {
       op: 'patch',
-      path: `${CLIENTS}/${encodeURIComponent(clientId)}`,
+      path: endpoints.client(clientId),
       data,
     },
   };
@@ -76,7 +74,7 @@ export function updateClient(clientId: string, data: Record<string, unknown>) {
 export function deleteClient(clientId: string) {
   return {
     type: DELETE_CLIENT,
-    request: { op: 'del', path: `${CLIENTS}/${encodeURIComponent(clientId)}` },
+    request: { op: 'del', path: endpoints.client(clientId) },
   };
 }
 
@@ -92,7 +90,7 @@ export function rotateClientSecret(clientId: string) {
     type: ROTATE_CLIENT_SECRET,
     request: {
       op: 'post',
-      path: `${CLIENTS}/${encodeURIComponent(clientId)}/rotate-secret`,
+      path: endpoints.clientSecretRotation(clientId),
       data: {},
     },
   };

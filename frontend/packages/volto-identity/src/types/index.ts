@@ -1,12 +1,9 @@
 /**
- * The package's types, in four parts.
+ * The package's types.
  *
- * `api.ts`
- *     What each endpoint answers with. One interface per payload, named for
- *     the thing it describes rather than for the route.
- *
- * `blocks.ts`
- *     What the add-on's blocks store.
+ * The payloads of each endpoint and what the blocks store live in
+ * `@plone-collective/identity-core`, which both frontends share. This file
+ * re-exports them, beside the two parts that are Volto's own.
  *
  * `content.ts`
  *     The two content types as Volto receives them, tied to `@plone/types`
@@ -17,12 +14,11 @@
  *     The add-on's own frontend settings, `config.settings.identity`, and the
  *     `@plone/types` augmentation that puts them there.
  *
- * This file re-exports all four, so `from '../types'` keeps resolving for
- * everything that already imports it.
+ * Re-exporting everything keeps `from '../types'` resolving for everything
+ * that already imports it.
  * @module types
  */
 
-export * from './api';
-export * from './blocks';
+export type * from '@plone-collective/identity-core';
 export * from './content';
 export * from './settings';

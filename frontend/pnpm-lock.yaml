@@ -110,6 +110,9 @@ importers:
 
   .:
     dependencies:
+      '@plone-collective/identity-core':
+        specifier: workspace:*
+        version: link:packages/identity-core
       '@plone-collective/volto-identity':
         specifier: workspace:*
         version: link:packages/volto-identity
@@ -1341,8 +1344,23 @@ importers:
         specifier: 'catalog:'
         version: 20.2.1(@types/node@24.13.3)(magicast@0.3.5)
 
+  packages/identity-core:
+    devDependencies:
+      jsdom:
+        specifier: 'catalog:'
+        version: 28.1.0(@noble/hashes@1.8.0)
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.1.2
+        version: 3.2.7(@types/debug@4.1.13)(@types/node@24.13.3)(@vitest/ui@3.2.7)(jiti@2.7.0)(jsdom@28.1.0(@noble/hashes@1.8.0))(less@3.13.1)(lightningcss@1.33.0)(sass@1.58.0)(terser@5.50.0)(yaml@2.9.0)
+
   packages/volto-identity:
     dependencies:
+      '@plone-collective/identity-core':
+        specifier: workspace:*
+        version: link:../identity-core
       react:
         specifier: ^18.2.0
         version: 18.2.0

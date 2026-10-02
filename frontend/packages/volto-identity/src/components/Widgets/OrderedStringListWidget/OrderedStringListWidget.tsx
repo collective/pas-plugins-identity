@@ -21,7 +21,7 @@ import React, { useMemo } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 
 import OrderedListTable from '../OrderedListTable/OrderedListTable';
-import type { ItemSchema, Row } from '../../../helpers/orderedList';
+import type { ItemSchema, Row } from '@plone-collective/identity-core';
 
 /** The one field an entry's dialog has. */
 const FIELD = 'value';

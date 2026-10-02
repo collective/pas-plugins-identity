@@ -88,6 +88,7 @@ carries through to the browser.
 <!-- source: frontend/packages/volto-identity/src/config/settings.ts -->
 <!-- source: frontend/packages/volto-identity/src/types/settings.ts -->
 <!-- source: frontend/packages/volto-identity/src/helpers/avatar.ts -->
+<!-- source: frontend/packages/identity-core/src/helpers/avatar.ts -->
 
 Every setting the add-on reads is under `config.settings.identity`, typed as
 `IdentitySettings`.
@@ -230,7 +231,7 @@ Asking for a list widget is {doc}`/how-to-guides/extend/edit-a-list-as-a-table`.
 <!-- source: frontend/packages/volto-identity/src/components/Widgets/OrderedListTable/OrderedListTable.tsx -->
 <!-- source: frontend/packages/volto-identity/src/components/Widgets/OrderedStringListWidget/OrderedStringListWidget.tsx -->
 <!-- source: frontend/packages/volto-identity/src/components/Widgets/OrderedObjectListWidget/OrderedObjectListWidget.tsx -->
-<!-- source: frontend/packages/volto-identity/src/helpers/orderedList.ts -->
+<!-- source: frontend/packages/identity-core/src/helpers/orderedList.ts -->
 
 | Action | What it does |
 |---|---|

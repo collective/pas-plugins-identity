@@ -12,12 +12,20 @@ separately, under different licences.
 | Directory | Package | Released as |
 |---|---|---|
 | `backend/` | `pas.plugins.identity` | PyPI, GPL-2.0-only |
+| `frontend/packages/identity-core/` | `@plone-collective/identity-core` | Not yet published; MIT |
 | `frontend/packages/volto-identity/` | `@plone-collective/volto-identity` | npm, MIT |
 | `docs/` | The published documentation and its screenshot harness | — |
 
 They live together on purpose: a REST API payload and the component that reads
 it change in one commit, and a reference page cannot drift from the source it
 documents.
+
+`identity-core` holds what the Volto add-on shares with the planned Aurora
+add-on ([#132](https://github.com/collective/pas-plugins-identity/issues/132)):
+the REST payload types, the endpoint table and the framework-free helpers. An
+ESLint override in `frontend/.eslintrc.js` rejects any framework import in it --
+Volto, Aurora, React, Redux, a router or an i18n library. Code that needs one
+belongs in the add-on.
 
 `frontend/core` is **not ours**. It is a `mrs.developer` checkout of Volto,
 excluded by `frontend/.gitignore`. Never edit it, never cite it as this
@@ -85,7 +93,7 @@ and `make lint`.
 
 ### Every change carries a news fragment
 
-There are three towncrier scopes. A change adds one fragment to each scope it
+There are four towncrier scopes. A change adds one fragment to each scope it
 touches:
 
 | Scope | Folder |
@@ -93,6 +101,7 @@ touches:
 | Repository and documentation | `news/` |
 | Backend | `backend/news/` |
 | Frontend | `frontend/packages/volto-identity/news/` |
+| Frontend core | `frontend/packages/identity-core/news/` |
 
 Name it `<issue>.<type>`, or `+<slug>.<type>` when no issue exists. Types:
 `breaking`, `feature`, `bugfix`, `documentation`, `internal`, `tests`. Write in

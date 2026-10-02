@@ -1,109 +1,37 @@
 /**
- * Standing in for a portrait nobody uploaded.
+ * Standing in for a portrait nobody uploaded, with this project's palette.
  *
- * Volto draws a camera icon when a user has no portrait, which is the same
- * picture for everybody: it says "no image here" rather than "this is you".
- * Initials on a colour derived from the userid are recognisable at a glance
- * and stay put -- the same person gets the same colour on every visit, on
- * every device, without anything being stored.
+ * The drawing rules live in `identity-core`. This module supplies the one
+ * thing they need from Volto: the palette a project configured as
+ * `config.settings.identity.avatarColors`.
  * @module helpers/avatar
  */
 import config from '@plone/volto/registry';
+import {
+  colorFor as colorFromPalette,
+  paletteOrDefault,
+} from '@plone-collective/identity-core';
 
-/**
- * The palette initials are drawn on, unless a project configures its own as
- * `config.settings.identity.avatarColors`.
- *
- * Chosen for contrast against white text rather than for variety: every one
- * of these clears WCAG AA at the size the avatar renders. Ten is enough that
- * two people in a room rarely collide and few enough that each stays
- * distinct -- a larger palette mostly adds colours that look alike.
- */
-export const DEFAULT_AVATAR_COLORS = [
-  // Not Plone's own #0083be, which is 4.21:1 against white: this is the
-  // lightest colour of its hue that clears 4.5:1.
-  '#007db6',
-  '#005d7a',
-  '#8b2f8b',
-  '#a13d63',
-  '#b5451b',
-  '#7a5c00',
-  '#2d6a4f',
-  '#1b5e8b',
-  '#5f3dc4',
-  '#8a3324',
-] as const;
+export {
+  DEFAULT_AVATAR_COLORS,
+  initialsFor,
+} from '@plone-collective/identity-core';
 
 /**
  * Return the palette initials are drawn on.
  *
- * The one a project configured, or the shipped one when it configured none.
- * An empty list counts as none: a palette with no colour in it cannot pick
- * one, and every avatar would be drawn with no background at all.
- *
- * Not checked for contrast. The shipped palette was chosen for it; a
- * project's own is the project's to choose.
- *
- * @returns The palette.
+ * @returns The configured palette, or the shipped one.
  */
 export function avatarColors(): readonly string[] {
-  const configured = config.settings.identity?.avatarColors;
-  return configured?.length ? configured : DEFAULT_AVATAR_COLORS;
+  return paletteOrDefault(config.settings.identity?.avatarColors);
 }
 
 /**
- * Return the initials to draw for a user.
- *
- * @param name The user's full name, or their login when they have no name.
- * @returns One or two uppercase letters, or an empty string when the name
- *   carries no letter at all.
- */
-export function initialsFor(name: string | undefined | null): string {
-  const words = (name ?? '')
-    .trim()
-    .split(/\s+/)
-    .filter((word) => /\p{L}/u.test(word));
-  if (words.length === 0) {
-    return '';
-  }
-  // First and last rather than the first two: "Érico de Andrei" reads as ÉA,
-  // and a middle name should not push the surname out.
-  const letters =
-    words.length === 1
-      ? [...words[0]].filter((c) => /\p{L}/u.test(c)).slice(0, 2)
-      : [firstLetter(words[0]), firstLetter(words[words.length - 1])];
-  return letters.join('').toLocaleUpperCase();
-}
-
-/**
- * Return the first letter of a word, skipping anything that is not one.
- *
- * @param word The word.
- * @returns The letter, or an empty string.
- */
-function firstLetter(word: string): string {
-  return [...word].find((c) => /\p{L}/u.test(c)) ?? '';
-}
-
-/**
- * Return the colour a user's initials are drawn on.
- *
- * Derived from the userid rather than the name, so somebody correcting the
- * spelling of their own name does not change colour. A palette of a
- * different length moves most people to another colour, since the pick is
- * the hash modulo its length.
+ * Return the colour a user's initials are drawn on, from this project's palette.
  *
  * @param userid The canonical Plone userid.
  * @returns One of the colours of :func:`avatarColors`.
  */
 export function colorFor(userid: string | undefined | null): string {
-  const palette = avatarColors();
-  const seed = userid ?? '';
-  let hash = 0;
-  for (const char of seed) {
-    // Ordinary string hash. It needs to be stable and spread, not secure --
-    // this picks a colour, and knowing how it picks reveals nothing.
-    hash = (hash * 31 + char.codePointAt(0)!) % 0xffffffff;
-  }
-  return palette[hash % palette.length];
+  return colorFromPalette(userid, avatarColors());
 }

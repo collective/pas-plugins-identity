@@ -11,6 +11,7 @@ FROM plone/frontend-builder:${VOLTO_VERSION} AS builder
 # `runtimeConfig` instead, on both the server and the client, and belongs in
 # the container's environment at run time.
 
+COPY --chown=node packages/identity-core /app/packages/identity-core
 COPY --chown=node packages/volto-identity /app/packages/volto-identity
 COPY --chown=node volto.config.js /app/
 COPY --chown=node package.json /app/package.json.temp

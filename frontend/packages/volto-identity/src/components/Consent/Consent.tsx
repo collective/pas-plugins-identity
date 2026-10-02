@@ -21,7 +21,7 @@ import { Helmet } from '@plone/volto/helpers/Helmet/Helmet';
 import { getConsentRequest } from '../../actions';
 import type { ConsentRequest } from '../../types';
 import ConsentPanel from './ConsentPanel';
-import { goTo } from '../../helpers/navigate';
+import { goTo } from '@plone-collective/identity-core';
 
 const messages = defineMessages({
   title: { id: 'Authorize', defaultMessage: 'Authorize' },

@@ -26,7 +26,7 @@ traps that are only discoverable by hitting them.
 | Directory | Holds |
 |---|---|
 | `backend/` | The Plone add-on `pas.plugins.identity`, its test suite, and the demo stack's own package. |
-| `frontend/` | The Volto add-on `@plone-collective/volto-identity`, and its Storybook stories. |
+| `frontend/` | The Volto add-on `@plone-collective/volto-identity` and its Storybook stories, and `@plone-collective/identity-core`, the framework-agnostic part a future Aurora add-on will share. |
 | `docs/` | These pages, and the screenshot harness that illustrates them. |
 
 They are one repository on purpose. A change to a REST API payload and the
@@ -36,7 +36,7 @@ checkout.
 
 The two packages are released separately, under different licences:
 `pas.plugins.identity` is GPL-2.0-only on PyPI, `@plone-collective/volto-identity`
-is MIT on npm.
+is MIT on npm. `@plone-collective/identity-core` is MIT, and not published yet.
 
 ## Set up a checkout
 
@@ -123,13 +123,14 @@ inside a function does not get past it. That is deliberate—see
 ### Changelog
 
 Every change carries a [towncrier](https://towncrier.readthedocs.io/) news
-fragment. There are three scopes, and a change adds one to each it touches:
+fragment. There are four scopes, and a change adds one to each it touches:
 
 | Scope | Folder |
 |---|---|
 | Repository and documentation | `news/` |
 | Backend | `backend/news/` |
 | Frontend | `frontend/packages/volto-identity/news/` |
+| Frontend core | `frontend/packages/identity-core/news/` |
 
 Name it `<issue>.<type>` when an issue exists, `+<slug>.<type>` when none does.
 The types are `breaking`, `feature`, `bugfix`, `documentation`, `internal` and

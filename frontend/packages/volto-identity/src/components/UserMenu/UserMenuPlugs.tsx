@@ -37,7 +37,7 @@ import { useSelector } from 'react-redux';
 import { defineMessages, useIntl } from 'react-intl';
 import { Plug } from '@plone/volto/components/manage/Pluggable';
 
-import { profileHoldsTheFields } from '../../helpers/profileSource';
+import { profileHoldsTheFields } from '@plone-collective/identity-core';
 import MenuItem from './MenuItem';
 
 const messages = defineMessages({

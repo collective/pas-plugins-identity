@@ -4,15 +4,13 @@
  */
 
 import { LIST_KEYS, ROTATE_KEY } from '../constants/ActionTypes';
-
-/** Base path of the signing key ring. */
-const KEYS = '/@identity-keys';
+import { endpoints } from '@plone-collective/identity-core';
 
 /** Describe the signing key ring. Metadata only; never key material. */
 export function listKeys() {
   return {
     type: LIST_KEYS,
-    request: { op: 'get', path: KEYS },
+    request: { op: 'get', path: endpoints.keys() },
   };
 }
 
@@ -26,6 +24,6 @@ export function listKeys() {
 export function rotateKey() {
   return {
     type: ROTATE_KEY,
-    request: { op: 'post', path: `${KEYS}/rotate`, data: {} },
+    request: { op: 'post', path: endpoints.keyRotation(), data: {} },
   };
 }

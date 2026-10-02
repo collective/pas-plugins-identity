@@ -50,14 +50,14 @@ import Toast from '@plone/volto/components/manage/Toast/Toast';
 import { getMyProfile } from '../../actions';
 import {
   CONFIRM_EMAIL_PATH,
-  expandedProfile,
   gateTarget,
+  goTo,
   handedOverReturn,
   onProfile,
   rememberReturn,
   takeReturn,
-} from '../../helpers/profileGate';
-import { goTo } from '../../helpers/navigate';
+} from '@plone-collective/identity-core';
+import { expandedProfile } from '../../helpers/expandedProfile';
 
 const messages = defineMessages({
   title: {

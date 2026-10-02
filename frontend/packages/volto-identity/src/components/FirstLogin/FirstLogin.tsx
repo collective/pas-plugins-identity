@@ -28,8 +28,7 @@ import { useHistory, useLocation } from 'react-router-dom';
 import { defineMessages, useIntl } from 'react-intl';
 
 import { getMyProfile } from '../../actions';
-import { afterLogin } from '../../helpers/firstLogin';
-import { returnUrl } from '../../helpers/returnUrl';
+import { afterLogin, returnUrl } from '@plone-collective/identity-core';
 import LoginPanel from '../Login/LoginPanel';
 
 import './FirstLogin.scss';
