@@ -30,8 +30,8 @@ import type { IntlShape } from 'react-intl';
 import config from '@plone/volto/registry';
 
 import OrderedListTable from '../OrderedListTable/OrderedListTable';
-import { withRowIds } from '../../../helpers/orderedList';
-import type { ItemSchema, Row } from '../../../helpers/orderedList';
+import { withRowIds } from '@plone-collective/identity-core';
+import type { ItemSchema, Row } from '@plone-collective/identity-core';
 
 type SchemaSource =
   | ItemSchema

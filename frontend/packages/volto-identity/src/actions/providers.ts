@@ -12,6 +12,7 @@ import {
   TEST_PROVIDER,
   UPDATE_PROVIDER,
 } from '../constants/ActionTypes';
+import { endpoints } from '@plone-collective/identity-core';
 
 /**
  * List the configured providers.
@@ -19,7 +20,7 @@ import {
 export function listProviders() {
   return {
     type: LIST_PROVIDERS,
-    request: { op: 'get', path: '/@identity-providers' },
+    request: { op: 'get', path: endpoints.providers() },
   };
 }
 
@@ -31,7 +32,7 @@ export function listProviders() {
 export function createProvider(data: Record<string, unknown>) {
   return {
     type: CREATE_PROVIDER,
-    request: { op: 'post', path: '/@identity-providers', data },
+    request: { op: 'post', path: endpoints.providers(), data },
   };
 }
 
@@ -49,7 +50,7 @@ export function updateProvider(
     type: UPDATE_PROVIDER,
     request: {
       op: 'patch',
-      path: `/@identity-providers/${encodeURIComponent(providerId)}`,
+      path: endpoints.provider(providerId),
       data,
     },
   };
@@ -70,7 +71,7 @@ export function reorderProviders(providerIds: string[]) {
     type: REORDER_PROVIDERS,
     request: {
       op: 'patch',
-      path: '/@identity-providers',
+      path: endpoints.providers(),
       data: { order: providerIds },
     },
   };
@@ -90,10 +91,7 @@ export function exportProviders(providerId?: string) {
     type: EXPORT_PROVIDERS,
     request: {
       op: 'get',
-      path:
-        providerId === undefined
-          ? '/@identity-providers/@export'
-          : `/@identity-providers/${encodeURIComponent(providerId)}/export`,
+      path: endpoints.providersExport(providerId),
     },
   };
 }
@@ -108,7 +106,7 @@ export function deleteProvider(providerId: string) {
     type: DELETE_PROVIDER,
     request: {
       op: 'del',
-      path: `/@identity-providers/${encodeURIComponent(providerId)}`,
+      path: endpoints.provider(providerId),
     },
   };
 }
@@ -123,7 +121,7 @@ export function testProvider(providerId: string) {
     type: TEST_PROVIDER,
     request: {
       op: 'post',
-      path: `/@identity-providers/${encodeURIComponent(providerId)}/test-connection`,
+      path: endpoints.providerTest(providerId),
       data: {},
     },
   };

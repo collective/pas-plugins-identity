@@ -4,6 +4,7 @@
  */
 
 import { CONFIRM_MAGIC_LINK, SEND_MAGIC_LINK } from '../constants/ActionTypes';
+import { endpoints } from '@plone-collective/identity-core';
 
 /**
  * Ask for a magic link.
@@ -13,7 +14,7 @@ import { CONFIRM_MAGIC_LINK, SEND_MAGIC_LINK } from '../constants/ActionTypes';
 export function sendMagicLink(email: string) {
   return {
     type: SEND_MAGIC_LINK,
-    request: { op: 'post', path: '/@magic-link', data: { email } },
+    request: { op: 'post', path: endpoints.magicLink(), data: { email } },
   };
 }
 
@@ -27,7 +28,7 @@ export function confirmMagicLink(token: string) {
     type: CONFIRM_MAGIC_LINK,
     request: {
       op: 'post',
-      path: '/@magic-link-confirm',
+      path: endpoints.magicLinkConfirm(),
       data: { token },
     },
   };

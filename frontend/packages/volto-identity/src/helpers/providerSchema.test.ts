@@ -20,7 +20,7 @@ import {
   suggestedProviderId,
   toFormData,
 } from './providerSchema';
-import { USER_FIELDS_VOCABULARY } from '../constants/vocabularies';
+import { USER_FIELDS_VOCABULARY } from '@plone-collective/identity-core';
 import type { Driver, VoltoSchema } from '../types';
 
 const intl = {

@@ -1,0 +1,1 @@
+Created the package, holding what the Volto and Aurora frontends share: the REST payload types, the vocabulary names, a table of every REST path, and the helpers that need no frontend framework. @sneridagh

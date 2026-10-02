@@ -11,7 +11,7 @@ import { Container } from '@plone/components';
 import { defineMessages, useIntl } from 'react-intl';
 
 import type { LoginProvider } from '../../types';
-import { EMAIL_DRIVER } from '../../helpers/identities';
+import { EMAIL_DRIVER } from '@plone-collective/identity-core';
 import LoginOverlay, { useDismissibleError } from './LoginOverlay';
 import MagicLinkForm from './MagicLinkForm';
 import PasswordForm from './PasswordForm';

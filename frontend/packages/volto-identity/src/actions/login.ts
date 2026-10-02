@@ -8,6 +8,7 @@ import {
   LIST_LOGIN_PROVIDERS,
   START_PROVIDER_LOGIN,
 } from '../constants/ActionTypes';
+import { endpoints } from '@plone-collective/identity-core';
 
 /**
  * List the providers this site offers.
@@ -15,7 +16,7 @@ import {
 export function listLoginProviders() {
   return {
     type: LIST_LOGIN_PROVIDERS,
-    request: { op: 'get', path: '/@login-providers' },
+    request: { op: 'get', path: endpoints.loginProviders() },
   };
 }
 
@@ -30,10 +31,9 @@ export function listLoginProviders() {
  * @param cameFrom Where to send the user afterwards.
  */
 export function startProviderLogin(providerId: string, cameFrom = '') {
-  const query = cameFrom ? `?came_from=${encodeURIComponent(cameFrom)}` : '';
   return {
     type: START_PROVIDER_LOGIN,
-    request: { op: 'get', path: `/@login-providers/${providerId}${query}` },
+    request: { op: 'get', path: endpoints.loginProvider(providerId, cameFrom) },
   };
 }
 
@@ -53,7 +53,7 @@ export function completeCallback(
     type: COMPLETE_CALLBACK,
     request: {
       op: 'post',
-      path: '/@identity-callback',
+      path: endpoints.callback(),
       data: { provider, code, state },
     },
   };

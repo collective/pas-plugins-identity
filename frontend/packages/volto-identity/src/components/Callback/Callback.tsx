@@ -24,13 +24,12 @@ import {
   confirmMagicLink,
   listIdentities,
 } from '../../actions';
-import { readCallback } from '../../helpers/callback';
+import { goTo, readCallback } from '@plone-collective/identity-core';
 import { CHOOSE_LOGIN_PATH } from '../../helpers/redirectToSoleProvider';
 import { IDENTITIES_PATH } from '../../config/routes';
 import LoginPanel from '../Login/LoginPanel';
 
 import './Callback.scss';
-import { goTo } from '../../helpers/navigate';
 
 const messages = defineMessages({
   // The same id the login page's heading uses: the same card, so the same

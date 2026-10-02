@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 
 import ProvidersTable, { DND_LIBRARIES } from './ProvidersTable';
-import { inOrder } from '../../helpers/providerOrder';
+import { inOrder } from '@plone-collective/identity-core';
 import {
   CONFIGURED,
   loadLazyLibraries,

@@ -12,7 +12,7 @@ import UserAccount from '../components/ControlPanel/UserAccount';
 import Identities from '../components/Identities/Identities';
 import Login from '../components/Login/Login';
 import VoltoLogin from '@plone/volto/components/theme/Login/Login';
-import { CONFIRM_EMAIL_PATH } from '../helpers/profileGate';
+import { CONFIRM_EMAIL_PATH } from '@plone-collective/identity-core';
 
 /**
  * Where a signed-in user is asked which verified address stands for them.

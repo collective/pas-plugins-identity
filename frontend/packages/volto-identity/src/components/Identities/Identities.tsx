@@ -24,10 +24,9 @@ import {
   startLinking,
   unlinkIdentity,
 } from '../../actions';
-import { EMAIL_DRIVER } from '../../helpers/identities';
+import { EMAIL_DRIVER, goTo } from '@plone-collective/identity-core';
 import type { Identity, LoginProvider, ProfileEmail } from '../../types';
 import IdentitiesList from './IdentitiesList';
-import { goTo } from '../../helpers/navigate';
 
 const messages = defineMessages({
   title: { id: 'Sign-in methods', defaultMessage: 'Sign-in methods' },

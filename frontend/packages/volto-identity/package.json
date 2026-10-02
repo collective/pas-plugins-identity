@@ -30,9 +30,13 @@
     "release-major-alpha": "release-it major --preRelease=alpha",
     "release-alpha": "release-it --preRelease=alpha"
   },
-  "addons": [],
+  "addons": [
+    "@plone-collective/identity-core"
+  ],
   "theme": "",
-  "dependencies": {},
+  "dependencies": {
+    "@plone-collective/identity-core": "workspace:*"
+  },
   "peerDependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

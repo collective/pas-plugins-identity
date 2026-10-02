@@ -27,8 +27,12 @@
  */
 import { defineMessages } from 'react-intl';
 
-import { toGroupRows, fromGroupRows } from './groupmap';
-import { toRows, fromRows } from './propertymap';
+import {
+  fromGroupRows,
+  fromRows,
+  toGroupRows,
+  toRows,
+} from '@plone-collective/identity-core';
 import type { Driver, JsonSchema, VoltoSchema } from '../types';
 
 import type { IntlShape } from 'react-intl';

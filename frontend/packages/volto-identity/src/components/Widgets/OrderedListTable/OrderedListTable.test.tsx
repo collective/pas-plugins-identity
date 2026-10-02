@@ -16,7 +16,7 @@ import config from '@plone/volto/registry';
 import OrderedListTable from './OrderedListTable';
 import { DND_LIBRARIES } from '../../ControlPanel/ProvidersTable';
 import { loadLazyLibraries } from '../../../stories/fixtures';
-import type { ItemSchema, Row } from '../../../helpers/orderedList';
+import type { ItemSchema, Row } from '@plone-collective/identity-core';
 
 let libraries: Record<string, any>;
 let widgets: any;

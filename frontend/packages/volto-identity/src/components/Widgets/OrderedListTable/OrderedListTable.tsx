@@ -44,8 +44,8 @@ import pencilSVG from '@plone/volto/icons/pencil.svg';
 
 import ConfirmModal from '../../ControlPanel/ConfirmModal';
 import { DND_LIBRARIES } from '../../ControlPanel/ProvidersTable';
-import { cellText, movedRows, rowKeys } from '../../../helpers/orderedList';
-import type { ItemSchema, Row } from '../../../helpers/orderedList';
+import { cellText, movedRows, rowKeys } from '@plone-collective/identity-core';
+import type { ItemSchema, Row } from '@plone-collective/identity-core';
 
 import './OrderedListTable.scss';
 

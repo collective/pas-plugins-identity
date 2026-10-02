@@ -4,6 +4,7 @@
  */
 
 import { GET_USER_ACCOUNT } from '../constants/ActionTypes';
+import { endpoints } from '@plone-collective/identity-core';
 
 /**
  * Read how one account gets in, and when it last did.
@@ -15,12 +16,11 @@ import { GET_USER_ACCOUNT } from '../constants/ActionTypes';
  *   backend's default; it caps the number either way.
  */
 export function getUserAccount(userid: string, events?: number) {
-  const query = events === undefined ? '' : `?events=${events}`;
   return {
     type: GET_USER_ACCOUNT,
     request: {
       op: 'get',
-      path: `/@user-account/${encodeURIComponent(userid)}${query}`,
+      path: endpoints.userAccount(userid, events),
     },
   };
 }

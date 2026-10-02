@@ -27,7 +27,7 @@ import pencilSVG from '@plone/volto/icons/pencil.svg';
 import worldSVG from '@plone/volto/icons/world.svg';
 
 import { providerEditUrl } from '../../config/routes';
-import { movedIds } from '../../helpers/providerOrder';
+import { movedIds } from '@plone-collective/identity-core';
 import type { ConfiguredProvider } from '../../types';
 
 /** The lazy libraries dragging a row needs. */

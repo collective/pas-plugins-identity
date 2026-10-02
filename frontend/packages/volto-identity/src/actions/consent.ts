@@ -8,9 +8,7 @@ import {
   LIST_GRANTS,
   WITHDRAW_GRANT,
 } from '../constants/ActionTypes';
-
-/** Base path of the caller's own OAuth grants. */
-const GRANTS = '/@oauth-grants';
+import { endpoints } from '@plone-collective/identity-core';
 
 /**
  * Describe the authorization request the browser arrived with.
@@ -29,7 +27,7 @@ const GRANTS = '/@oauth-grants';
 export function getConsentRequest(search: string) {
   return {
     type: GET_CONSENT_REQUEST,
-    request: { op: 'get', path: `/@oauth-consent${search}` },
+    request: { op: 'get', path: endpoints.consent(search) },
   };
 }
 
@@ -42,7 +40,7 @@ export function getConsentRequest(search: string) {
 export function listGrants() {
   return {
     type: LIST_GRANTS,
-    request: { op: 'get', path: GRANTS },
+    request: { op: 'get', path: endpoints.grants() },
   };
 }
 
@@ -62,7 +60,7 @@ export function withdrawGrant(clientId: string) {
     type: WITHDRAW_GRANT,
     request: {
       op: 'del',
-      path: `${GRANTS}/${encodeURIComponent(clientId)}`,
+      path: endpoints.grant(clientId),
     },
   };
 }

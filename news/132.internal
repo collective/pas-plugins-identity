@@ -1,0 +1,1 @@
+Added `frontend/packages/identity-core`, a framework-agnostic package shared by the frontends, with a lint rule that rejects any framework import in it. @sneridagh

@@ -8,6 +8,7 @@ import {
   START_LINKING,
   UNLINK_IDENTITY,
 } from '../constants/ActionTypes';
+import { endpoints } from '@plone-collective/identity-core';
 
 /**
  * List the identities the signed-in user owns.
@@ -22,10 +23,9 @@ import {
  * @param withProviders Whether to expand the login providers alongside.
  */
 export function listIdentities(withProviders = false) {
-  const query = withProviders ? '?expand=login-providers' : '';
   return {
     type: LIST_IDENTITIES,
-    request: { op: 'get', path: `/@identities${query}` },
+    request: { op: 'get', path: endpoints.identities(withProviders) },
   };
 }
 
@@ -45,7 +45,7 @@ export function startLinking(providerId: string, cameFrom = '', email = '') {
     type: START_LINKING,
     request: {
       op: 'post',
-      path: '/@identities',
+      path: endpoints.identities(),
       // Sent only when there is one: the backend requires an address for the
       // email provider and takes none for any other.
       data: email
@@ -66,7 +66,7 @@ export function unlinkIdentity(provider: string, subject: string) {
     type: UNLINK_IDENTITY,
     request: {
       op: 'del',
-      path: `/@identities/${encodeURIComponent(provider)}/${encodeURIComponent(subject)}`,
+      path: endpoints.identity(provider, subject),
     },
   };
 }

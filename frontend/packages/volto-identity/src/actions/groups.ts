@@ -7,6 +7,7 @@ import {
   LIST_GROUP_MEMBERS,
   SEARCH_GROUP_MEMBERS,
 } from '../constants/ActionTypes';
+import { endpoints } from '@plone-collective/identity-core';
 
 /**
  * Build the request for `@group-members/<id>`.
@@ -16,10 +17,9 @@ import {
  * @returns The request half of an action.
  */
 function groupMembersRequest(groupId: string, query: string) {
-  const search = query ? `?query=${encodeURIComponent(query)}` : '';
   return {
     op: 'get',
-    path: `/@group-members/${encodeURIComponent(groupId)}${search}`,
+    path: endpoints.groupMembers(groupId, query),
   };
 }
 

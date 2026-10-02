@@ -9,6 +9,7 @@ import {
   GET_USER_PROFILE,
   SET_PREFERRED_EMAIL,
 } from '../constants/ActionTypes';
+import { endpoints } from '@plone-collective/identity-core';
 
 /**
  * Read a user, with what this add-on knows about them.
@@ -25,7 +26,7 @@ import {
 export function getUserProfile(userid: string) {
   return {
     type: GET_USER_PROFILE,
-    request: { op: 'get', path: `/@users/${userid}` },
+    request: { op: 'get', path: endpoints.user(userid) },
   };
 }
 
@@ -40,7 +41,7 @@ export function getUserProfile(userid: string) {
 export function getMyProfile() {
   return {
     type: GET_MY_PROFILE,
-    request: { op: 'get', path: '/@my-profile' },
+    request: { op: 'get', path: endpoints.myProfile() },
   };
 }
 
@@ -85,7 +86,7 @@ export function confirmEmail(address: string) {
     type: CONFIRM_EMAIL,
     request: {
       op: 'post',
-      path: '/@confirm-email',
+      path: endpoints.confirmEmail(),
       data: { email: address },
     },
   };

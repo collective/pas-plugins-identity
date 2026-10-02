@@ -61,8 +61,7 @@ import {
   PROVIDER_ADD_PATH,
   PROVIDERS_SETTINGS_PATH,
 } from '../../config/routes';
-import { downloadText } from '../../helpers/download';
-import { inOrder } from '../../helpers/providerOrder';
+import { downloadText, inOrder } from '@plone-collective/identity-core';
 import {
   CONFIG_PREFIX,
   fromFormData,

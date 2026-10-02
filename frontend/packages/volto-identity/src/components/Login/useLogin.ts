@@ -20,8 +20,7 @@ import {
 } from '../../actions';
 import { login } from '@plone/volto/actions/userSession/userSession';
 
-import { goTo } from '../../helpers/navigate';
-import { returnUrl } from '../../helpers/returnUrl';
+import { goTo, returnUrl } from '@plone-collective/identity-core';
 import { showPloneLogin } from '../../helpers/showPloneLogin';
 import type { LoginProvider } from '../../types';
 import type { LoginFormProps } from './LoginForm';

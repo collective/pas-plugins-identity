@@ -18,9 +18,11 @@ import type { ReactNode } from 'react';
 import { Provider } from 'react-redux';
 
 import LoginPanel from '../components/Login/LoginPanel';
-import { GROUPS_VOCABULARY } from '../constants/vocabularies';
-import { USER_FIELDS_VOCABULARY } from '../constants/vocabularies';
-import type { ItemSchema } from '../helpers/orderedList';
+import {
+  GROUPS_VOCABULARY,
+  USER_FIELDS_VOCABULARY,
+} from '@plone-collective/identity-core';
+import type { ItemSchema } from '@plone-collective/identity-core';
 
 import type {
   ConfiguredProvider,

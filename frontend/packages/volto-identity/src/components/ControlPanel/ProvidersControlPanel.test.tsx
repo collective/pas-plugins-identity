@@ -19,7 +19,7 @@ import {
   EXPORT_PROVIDERS,
   REORDER_PROVIDERS,
 } from '../../constants/ActionTypes';
-import { downloadText } from '../../helpers/download';
+import { downloadText } from '@plone-collective/identity-core';
 import install, {
   CONTROLPANEL_PATH,
   PROVIDER_ADD_PATH,
@@ -43,7 +43,10 @@ vi.mock('react-toastify', async (importOriginal) => ({
 }));
 
 // jsdom saves no files. What the tests ask is what would have been saved.
-vi.mock('../../helpers/download', () => ({ downloadText: vi.fn() }));
+vi.mock('@plone-collective/identity-core', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@plone-collective/identity-core')>()),
+  downloadText: vi.fn(),
+}));
 
 // The toolbar reads store slices this page does not own, so it is replaced by
 // one that renders what the panel puts in it: the actions under test live

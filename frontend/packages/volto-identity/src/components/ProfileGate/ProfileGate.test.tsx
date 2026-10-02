@@ -17,7 +17,7 @@ import { ToastContainer } from 'react-toastify';
 import { IntlProvider } from '../../testing';
 
 import ProfileGate from './ProfileGate';
-import { rememberReturn, takeReturn } from '../../helpers/profileGate';
+import { rememberReturn, takeReturn } from '@plone-collective/identity-core';
 
 const PROFILE = 'https://example.org/identity-profiles/alice';
 
