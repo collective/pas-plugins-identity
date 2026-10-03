@@ -79,11 +79,11 @@ build-deps: core/packages/registry/dist core/packages/components/dist ## Build d
 
 .PHONY: i18n
 i18n: ## Sync i18n
-	pnpm --filter $(ADDON_NAME) i18n
+	pnpm --filter @plone-collective/identity-core --filter $(ADDON_NAME) i18n
 
 .PHONY: ci-i18n
 ci-i18n: ## Check if i18n is not synced
-	pnpm --filter $(ADDON_NAME) i18n && git diff -G'^[^\"POT]' --exit-code
+	pnpm --filter @plone-collective/identity-core --filter $(ADDON_NAME) i18n && git diff -G'^[^\"POT]' --exit-code
 
 .PHONY: format
 format: ## Format codebase

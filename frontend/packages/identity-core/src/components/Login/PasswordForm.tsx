@@ -1,8 +1,8 @@
 /**
  * Signing in with a local account.
  *
- * This route replaces Volto's own login page, so without it a site that
- * installs this add-on loses password sign-in entirely. That is wrong for any
+ * The add-on's login route replaces the frontend's own login page, so without
+ * this form a site that installs it loses password sign-in entirely. That is wrong for any
  * site with local accounts and impossible for one running the `[server]`
  * layer: an authorization server has to be able to authenticate its own
  * users, and "sign in with somebody else" is not an answer it can give.
@@ -19,11 +19,7 @@
 import React, { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Button, Container, TextField } from '@plone/components';
-import { Link } from 'react-router-dom';
-import { defineMessages, useIntl } from 'react-intl';
-import Icon from '@plone/volto/components/theme/Icon/Icon';
-import aheadSVG from '@plone/volto/icons/ahead.svg';
-import clearSVG from '@plone/volto/icons/clear.svg';
+import { defineMessages } from '#i18n';
 
 // The widget's own stylesheet. `@plone/components` ships its CSS separately
 // from its components, so a TextField rendered without this is unstyled --
@@ -31,6 +27,7 @@ import clearSVG from '@plone/volto/icons/clear.svg';
 // markup and the class names matching it exactly.
 import '@plone/components/src/styles/basic/TextField.css';
 
+import { useIdentityUI } from '../IdentityUI/IdentityUI';
 import LoginOverlay, { useDismissibleError } from './LoginOverlay';
 
 import './PasswordForm.scss';
@@ -65,7 +62,7 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
   error,
   onSubmit,
 }) => {
-  const intl = useIntl();
+  const { t, Link, icons } = useIdentityUI();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showError, dismissError] = useDismissibleError(error);
@@ -86,19 +83,19 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
     <form method="post" className="PloneAuth" onSubmit={submit}>
       <Container className="form">
         <TextField
-          label={intl.formatMessage(messages.loginName)}
+          label={t(messages.loginName)}
           name="username"
-          placeholder={intl.formatMessage(messages.loginName)}
+          placeholder={t(messages.loginName)}
           autoComplete="username"
           isRequired
           value={username}
           onChange={setUsername}
         />
         <TextField
-          label={intl.formatMessage(messages.password)}
+          label={t(messages.password)}
           name="password"
           type="password"
-          placeholder={intl.formatMessage(messages.password)}
+          placeholder={t(messages.password)}
           autoComplete="current-password"
           isRequired
           value={password}
@@ -108,9 +105,7 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
 
       <Container className="forgotPassword">
         <p className="help">
-          <Link to="/passwordreset">
-            {intl.formatMessage(messages.forgotPassword)}
-          </Link>
+          <Link href="/passwordreset">{t(messages.forgotPassword)}</Link>
         </p>
       </Container>
 
@@ -119,36 +114,32 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
           id="login-form-submit"
           type="submit"
           isDisabled={loading || !username || !password}
-          aria-label={intl.formatMessage(
-            loading ? messages.signingIn : messages.signIn,
-          )}
+          aria-label={t(loading ? messages.signingIn : messages.signIn)}
         >
-          <Icon className="circled" name={aheadSVG} size="30px" />
+          {icons.submit}
         </Button>
 
         <Button
           id="login-form-cancel"
           type="button"
           onPress={clear}
-          aria-label={intl.formatMessage(messages.clear)}
+          aria-label={t(messages.clear)}
         >
-          <Icon className="circled" name={clearSVG} size="30px" />
+          {icons.clear}
         </Button>
       </Container>
 
       {/* Over the form rather than inside it: a refusal that pushed the
           action row down moved the button the reader was about to press
           again. The wait carries no dismiss -- it is not theirs to end. */}
-      {loading ? (
-        <LoginOverlay message={intl.formatMessage(messages.signingIn)} />
-      ) : null}
+      {loading ? <LoginOverlay message={t(messages.signingIn)} /> : null}
 
       {/* One message for a wrong name and a wrong password alike: telling
           them apart is an account-enumeration oracle. */}
       {showError ? (
         <LoginOverlay
           error
-          message={intl.formatMessage(messages.refused)}
+          message={t(messages.refused)}
           onDismiss={dismissError}
         />
       ) : null}

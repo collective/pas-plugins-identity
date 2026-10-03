@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '../../testing';
-import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
 
 import LoginForm from './LoginForm';
@@ -27,28 +26,24 @@ function renderForm(
   const onSendMagicLink = vi.fn();
   const onPasswordLogin = vi.fn();
   const tree = (extra: Partial<React.ComponentProps<typeof LoginForm>>) => (
-    // The password form links to /passwordreset, the way volto-authomatic's
-    // does, so it needs a router.
-    <MemoryRouter>
-      <LoginForm
-        providers={[DEX]}
-        loading={false}
-        starting={false}
-        magicLinkSent={false}
-        magicLinkLoading={false}
-        passwordLoading={false}
-        // The default here, not the product's: most of these are about the
-        // picker, and a picker needs something to pick between.
-        showPloneLogin
-        // The product's default. The container is what turns it off.
-        redirectToSoleProvider
-        onSelectProvider={onSelectProvider}
-        onSendMagicLink={onSendMagicLink}
-        onPasswordLogin={onPasswordLogin}
-        {...props}
-        {...extra}
-      />
-    </MemoryRouter>
+    <LoginForm
+      providers={[DEX]}
+      loading={false}
+      starting={false}
+      magicLinkSent={false}
+      magicLinkLoading={false}
+      passwordLoading={false}
+      // The default here, not the product's: most of these are about the
+      // picker, and a picker needs something to pick between.
+      showPloneLogin
+      // The product's default. The container is what turns it off.
+      redirectToSoleProvider
+      onSelectProvider={onSelectProvider}
+      onSendMagicLink={onSendMagicLink}
+      onPasswordLogin={onPasswordLogin}
+      {...props}
+      {...extra}
+    />
   );
   const result = render(tree({}));
   return {

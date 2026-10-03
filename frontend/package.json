@@ -17,7 +17,7 @@
     "start:prod": "pnpm --filter @plone/volto start:prod",
     "build": "VOLTOCONFIG=$(pwd)/volto.config.js pnpm --filter @plone/volto build",
     "build:deps": "pnpm --filter @plone/registry --filter @plone/components build",
-    "i18n": "pnpm --filter @plone-collective/volto-identity i18n && VOLTOCONFIG=$(pwd)/volto.config.js pnpm --filter @plone/volto i18n",
+    "i18n": "pnpm --filter @plone-collective/identity-core --filter @plone-collective/volto-identity i18n && VOLTOCONFIG=$(pwd)/volto.config.js pnpm --filter @plone/volto i18n",
     "test": "pnpm --filter @plone-collective/identity-core exec vitest run && pnpm --filter @plone-collective/volto-identity exec vitest",
     "typecheck": "pnpm --filter @plone-collective/identity-core --filter @plone-collective/volto-identity typecheck",
     "lint": "VOLTOCONFIG=$(pwd)/volto.config.js eslint --max-warnings=0 'packages/**/src/**/*.{js,jsx,ts,tsx}'",

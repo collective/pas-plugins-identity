@@ -1,0 +1,107 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Plone\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-04-06T16:01:32.969Z\n"
+"PO-Revision-Date: \n"
+"Last-Translator: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
+"Language: \n"
+"Language-Team: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"MIME-Version: 1.0\n"
+"Language-Code: pt_BR\n"
+"Language-Name: Português do Brasil\n"
+"Preferred-Encodings: utf-8\n"
+"Domain: volto\n"
+
+#. Default: "Back to sign-in options"
+#: components/Login/LoginForm
+msgid "Back to sign-in options"
+msgstr "Voltar para opções de acesso"
+
+#. Default: "Clear"
+#: components/Login/PasswordForm
+msgid "Clear"
+msgstr "Limpar"
+
+#. Default: "Close"
+#: components/Login/LoginOverlay
+msgid "Close"
+msgstr "Fechar"
+
+#. Default: "Email address"
+#: components/Login/MagicLinkForm
+msgid "Email address"
+msgstr "Endereço de e-mail"
+
+#. Default: "Email me a link"
+#: components/Login/MagicLinkForm
+msgid "Email me a link"
+msgstr "Enviar um link por email"
+
+#. Default: "If that address can sign in here, a link is on its way. It works once, and only for a few minutes."
+#: components/Login/MagicLinkForm
+msgid "If that address can sign in here"
+msgstr "Se esse endereço pode entrar aqui"
+
+#. Default: "Loading sign-in options…"
+#: components/Login/LoginForm
+msgid "Loading sign-in options"
+msgstr "Carregando opções de acesso"
+
+#. Default: "Login name"
+#: components/Login/PasswordForm
+msgid "Login name"
+msgstr "Nome de login"
+
+#. Default: "Password"
+#: components/Login/PasswordForm
+msgid "Password"
+msgstr "Senha"
+
+#. Default: "Sending"
+#: components/Login/MagicLinkForm
+msgid "Sending"
+msgstr "Enviando"
+
+#. Default: "Sign in"
+#: components/Login/PasswordForm
+msgid "Sign in"
+msgstr "Entrar"
+
+#. Default: "Sign in with a password"
+#: components/Login/LoginForm
+msgid "Sign in with a password"
+msgstr "Entrar com uma senha"
+
+#. Default: "Signing in"
+#: components/Login/PasswordForm
+msgid "Signing in"
+msgstr "Entrando"
+
+#. Default: "Taking you to {provider}…"
+#: components/Login/LoginForm
+msgid "Taking you to {provider}…"
+msgstr "Levando você para {provider}…"
+
+#. Default: "That did not work. Please try again in a little while."
+#: components/Login/MagicLinkForm
+msgid "That did not work. Please try again in a little while."
+msgstr "Isso não funcionou. Tente novamente em um momento."
+
+#. Default: "That login name and password did not match."
+#: components/Login/PasswordForm
+msgid "That login name and password did not match."
+msgstr "Esse nome de login e senha não correspondem."
+
+#. Default: "That sign-in option is not available right now."
+#: components/Login/LoginForm
+msgid "That sign-in option is not available right now."
+msgstr "Essa opção de acesso não está disponível no momento."
+
+#. Default: "Forgot your password?"
+#: components/Login/PasswordForm
+msgid "box_forgot_password_option"
+msgstr "Esqueceu sua senha?"

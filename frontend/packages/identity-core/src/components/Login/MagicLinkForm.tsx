@@ -16,15 +16,14 @@
 import React, { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Button, Container, TextField } from '@plone/components';
-import { defineMessages, useIntl } from 'react-intl';
-import Icon from '@plone/volto/components/theme/Icon/Icon';
-import aheadSVG from '@plone/volto/icons/ahead.svg';
+import { defineMessages } from '#i18n';
 
 // The widget's own stylesheet, for the same reason `PasswordForm` imports it:
 // `@plone/components` ships its CSS separately from its components, so a
 // TextField rendered without this is unstyled.
 import '@plone/components/src/styles/basic/TextField.css';
 
+import { useIdentityUI } from '../IdentityUI/IdentityUI';
 import LoginOverlay, { useDismissibleError } from './LoginOverlay';
 
 import './MagicLinkForm.scss';
@@ -58,7 +57,7 @@ const MagicLinkForm: React.FC<MagicLinkFormProps> = ({
   error,
   onSend,
 }) => {
-  const intl = useIntl();
+  const { t, icons } = useIdentityUI();
   const [email, setEmail] = useState('');
   const [showError, dismissError] = useDismissibleError(error);
 
@@ -71,7 +70,7 @@ const MagicLinkForm: React.FC<MagicLinkFormProps> = ({
         className="identity-magic-link identity-magic-link--sent"
         role="status"
       >
-        {intl.formatMessage(messages.sent)}
+        {t(messages.sent)}
       </p>
     );
   }
@@ -91,10 +90,10 @@ const MagicLinkForm: React.FC<MagicLinkFormProps> = ({
     >
       <Container className="form">
         <TextField
-          label={intl.formatMessage(messages.email)}
+          label={t(messages.email)}
           name="email"
           type="email"
-          placeholder={intl.formatMessage(messages.email)}
+          placeholder={t(messages.email)}
           autoComplete="email"
           isRequired
           value={email}
@@ -107,22 +106,18 @@ const MagicLinkForm: React.FC<MagicLinkFormProps> = ({
           id="magic-link-form-submit"
           type="submit"
           isDisabled={loading || !email.trim()}
-          aria-label={intl.formatMessage(
-            loading ? messages.sending : messages.send,
-          )}
+          aria-label={t(loading ? messages.sending : messages.send)}
         >
-          <Icon className="circled" name={aheadSVG} size="30px" />
+          {icons.submit}
         </Button>
       </Container>
 
-      {loading ? (
-        <LoginOverlay message={intl.formatMessage(messages.sending)} />
-      ) : null}
+      {loading ? <LoginOverlay message={t(messages.sending)} /> : null}
 
       {showError ? (
         <LoginOverlay
           error
-          message={intl.formatMessage(messages.failed)}
+          message={t(messages.failed)}
           onDismiss={dismissError}
         />
       ) : null}

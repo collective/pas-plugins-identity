@@ -3,6 +3,9 @@
   "version": "1.0.0-alpha.13",
   "description": "Framework-agnostic core shared by the Volto and Aurora frontends of pas.plugins.identity",
   "main": "src/index.ts",
+  "imports": {
+    "#i18n": "./src/i18n.ts"
+  },
   "license": "MIT",
   "keywords": [
     "plone",
@@ -23,11 +26,28 @@
   },
   "scripts": {
     "test": "vitest",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "i18n": "rm -rf build/messages && NODE_ENV=production i18n --addon"
   },
   "dependencies": {},
+  "peerDependencies": {
+    "@plone/components": "^4.2.1 || ^5.0.0-alpha.4",
+    "react": "^18.2.0 || ^19.0.0",
+    "react-aria-components": "^1.17.0",
+    "react-dom": "^18.2.0 || ^19.0.0"
+  },
   "devDependencies": {
+    "@plone/babel-preset-razzle": "workspace:*",
+    "@plone/components": "workspace:*",
+    "@plone/scripts": "workspace:*",
+    "@storybook/react": "^8.0.4",
+    "@testing-library/react": "^16.2.0",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.1",
     "jsdom": "catalog:",
+    "react": "18.2.0",
+    "react-aria-components": "catalog:",
+    "react-dom": "18.2.0",
     "typescript": "^5.7.3",
     "vitest": "^3.1.2"
   }

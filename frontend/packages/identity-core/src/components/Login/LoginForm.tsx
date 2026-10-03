@@ -8,10 +8,11 @@
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { Container } from '@plone/components';
-import { defineMessages, useIntl } from 'react-intl';
+import { defineMessages } from '#i18n';
 
 import type { LoginProvider } from '../../types';
-import { EMAIL_DRIVER } from '@plone-collective/identity-core';
+import { EMAIL_DRIVER } from '../../helpers/identities';
+import { useIdentityUI } from '../IdentityUI/IdentityUI';
 import LoginOverlay, { useDismissibleError } from './LoginOverlay';
 import MagicLinkForm from './MagicLinkForm';
 import PasswordForm from './PasswordForm';
@@ -116,7 +117,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
   onSendMagicLink,
   onPasswordLogin,
 }) => {
-  const intl = useIntl();
+  const { t } = useIdentityUI();
   // Which form has replaced the picker, or `null` while the picker is up.
   //
   // The forms replace the other ways in rather than sitting under them: each
@@ -167,7 +168,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
   if (loading) {
     return (
       <div className="identity-login">
-        <LoginOverlay message={intl.formatMessage(messages.loading)} />
+        <LoginOverlay message={t(messages.loading)} />
       </div>
     );
   }
@@ -211,7 +212,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
     return (
       <div className="identity-login">
         <LoginOverlay
-          message={intl.formatMessage(messages.redirecting, {
+          message={t(messages.redirecting, {
             provider: goStraightTo.title || goStraightTo.id,
           })}
         />
@@ -241,7 +242,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
         )}
         <Container className="identity-password-toggle">
           <button type="button" onClick={() => setStep(null)}>
-            {intl.formatMessage(messages.backToOptions)}
+            {t(messages.backToOptions)}
           </button>
         </Container>
       </div>
@@ -296,7 +297,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
           <li>
             <ProviderButton
               driver={PASSWORD_DRIVER}
-              label={intl.formatMessage(messages.usePassword)}
+              label={t(messages.usePassword)}
               disabled={starting}
               onSelect={() => setStep('password')}
             />
@@ -312,10 +313,10 @@ const LoginForm: React.FC<LoginFormProps> = ({
         <LoginOverlay
           message={
             going
-              ? intl.formatMessage(messages.redirecting, {
+              ? t(messages.redirecting, {
                   provider: going.title || going.id,
                 })
-              : intl.formatMessage(messages.loading)
+              : t(messages.loading)
           }
         />
       ) : null}
@@ -323,7 +324,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
       {showError ? (
         <LoginOverlay
           error
-          message={intl.formatMessage(messages.unavailable)}
+          message={t(messages.unavailable)}
           onDismiss={dismissError}
         />
       ) : null}

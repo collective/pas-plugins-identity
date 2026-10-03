@@ -1,1 +1,1 @@
-Added `frontend/packages/identity-core`, a framework-agnostic package shared by the frontends, with a lint rule that rejects any framework import in it. @sneridagh
+Added `frontend/packages/identity-core`, a package shared by the frontends, with a lint rule that rejects any import of Volto, Aurora, Redux, a router or an i18n library in it. Its messages are extracted, translated and checked by `make i18n` and `make ci-i18n` alongside the add-on's. @sneridagh

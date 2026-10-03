@@ -22,10 +22,20 @@ documents.
 
 `identity-core` holds what the Volto add-on shares with the planned Aurora
 add-on ([#132](https://github.com/collective/pas-plugins-identity/issues/132)):
-the REST payload types, the endpoint table and the framework-free helpers. An
-ESLint override in `frontend/.eslintrc.js` rejects any framework import in it --
-Volto, Aurora, React, Redux, a router or an i18n library. Code that needs one
-belongs in the add-on.
+the REST payload types, the endpoint table, the framework-free helpers and the
+login components. An ESLint override in `frontend/.eslintrc.js` rejects any
+import of Volto, Aurora, Redux, a router or an i18n library in it. React,
+`react-aria-components` and `@plone/components` are allowed, because both
+frontends have them. Code that needs anything else belongs in the add-on.
+
+Core components get translations, links and icons from `useIdentityUI()`.
+Each add-on provides them through an `IdentityUIProvider`; Volto's is
+`VoltoIdentityUI`, wrapped around every container that renders one.
+
+Core declares its messages with `defineMessages` imported from `#i18n`, never
+by a relative path: the extractor recognises the call by that import name
+(`identity-core/babel.config.js`). A message declared any other way is
+silently left out of the catalogue.
 
 `frontend/core` is **not ours**. It is a `mrs.developer` checkout of Volto,
 excluded by `frontend/.gitignore`. Never edit it, never cite it as this
