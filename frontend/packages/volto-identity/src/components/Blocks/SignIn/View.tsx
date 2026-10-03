@@ -12,8 +12,9 @@ import { useSelector } from 'react-redux';
 import type { BlocksFormData } from '@plone/types';
 import { useClient } from '@plone/volto/hooks/client/useClient';
 
-import LoginCard from '../../Login/LoginCard';
-import LoginForm from '../../Login/LoginForm';
+import { LoginCard, LoginForm } from '@plone-collective/identity-core';
+
+import VoltoIdentityUI from '../../IdentityUI/VoltoIdentityUI';
 import { useLogin } from '../../Login/useLogin';
 import type { SignInBlockData } from '../../../types';
 import Welcome from '../../Welcome/Welcome';
@@ -44,13 +45,15 @@ export const SignInOptions: React.FC<SignInOptionsProps> = ({
 }) => {
   const { form, title, description } = useLogin();
   return (
-    <LoginCard title={title} description={description}>
-      <LoginForm
-        {...form}
-        {...(preview ? INERT : {})}
-        redirectToSoleProvider={false}
-      />
-    </LoginCard>
+    <VoltoIdentityUI>
+      <LoginCard title={title} description={description}>
+        <LoginForm
+          {...form}
+          {...(preview ? INERT : {})}
+          redirectToSoleProvider={false}
+        />
+      </LoginCard>
+    </VoltoIdentityUI>
   );
 };
 

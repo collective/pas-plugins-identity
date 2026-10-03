@@ -12,7 +12,9 @@ import {
   asksToChoose,
   redirectToSoleProvider,
 } from '../../helpers/redirectToSoleProvider';
-import LoginForm from './LoginForm';
+import { LoginForm } from '@plone-collective/identity-core';
+
+import VoltoIdentityUI from '../IdentityUI/VoltoIdentityUI';
 import LoginPanel from './LoginPanel';
 import { useLogin } from './useLogin';
 
@@ -34,9 +36,11 @@ const Login: React.FC = () => {
     !asksToChoose(location.search);
 
   return (
-    <LoginPanel title={title} description={description}>
-      <LoginForm {...form} redirectToSoleProvider={redirect} />
-    </LoginPanel>
+    <VoltoIdentityUI>
+      <LoginPanel title={title} description={description}>
+        <LoginForm {...form} redirectToSoleProvider={redirect} />
+      </LoginPanel>
+    </VoltoIdentityUI>
   );
 };
 

@@ -1,0 +1,102 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language: en\n"
+"Language-Team: \n"
+"Content-Type: \n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. Default: "Back to sign-in options"
+#: components/Login/LoginForm
+msgid "Back to sign-in options"
+msgstr ""
+
+#. Default: "Clear"
+#: components/Login/PasswordForm
+msgid "Clear"
+msgstr ""
+
+#. Default: "Close"
+#: components/Login/LoginOverlay
+msgid "Close"
+msgstr ""
+
+#. Default: "Email address"
+#: components/Login/MagicLinkForm
+msgid "Email address"
+msgstr ""
+
+#. Default: "Email me a link"
+#: components/Login/MagicLinkForm
+msgid "Email me a link"
+msgstr ""
+
+#. Default: "If that address can sign in here, a link is on its way. It works once, and only for a few minutes."
+#: components/Login/MagicLinkForm
+msgid "If that address can sign in here"
+msgstr ""
+
+#. Default: "Loading sign-in options…"
+#: components/Login/LoginForm
+msgid "Loading sign-in options"
+msgstr ""
+
+#. Default: "Login name"
+#: components/Login/PasswordForm
+msgid "Login name"
+msgstr ""
+
+#. Default: "Password"
+#: components/Login/PasswordForm
+msgid "Password"
+msgstr ""
+
+#. Default: "Sending"
+#: components/Login/MagicLinkForm
+msgid "Sending"
+msgstr ""
+
+#. Default: "Sign in"
+#: components/Login/PasswordForm
+msgid "Sign in"
+msgstr ""
+
+#. Default: "Sign in with a password"
+#: components/Login/LoginForm
+msgid "Sign in with a password"
+msgstr ""
+
+#. Default: "Signing in"
+#: components/Login/PasswordForm
+msgid "Signing in"
+msgstr ""
+
+#. Default: "Taking you to {provider}…"
+#: components/Login/LoginForm
+msgid "Taking you to {provider}…"
+msgstr ""
+
+#. Default: "That did not work. Please try again in a little while."
+#: components/Login/MagicLinkForm
+msgid "That did not work. Please try again in a little while."
+msgstr ""
+
+#. Default: "That login name and password did not match."
+#: components/Login/PasswordForm
+msgid "That login name and password did not match."
+msgstr ""
+
+#. Default: "That sign-in option is not available right now."
+#: components/Login/LoginForm
+msgid "That sign-in option is not available right now."
+msgstr ""
+
+#. Default: "Forgot your password?"
+#: components/Login/PasswordForm
+msgid "box_forgot_password_option"
+msgstr ""

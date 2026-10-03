@@ -10,8 +10,21 @@
     "module": "preserve",
     "noEmit": true,
     "strict": false,
-    "lib": ["es2022", "dom", "dom.iterable"]
+    "lib": [
+      "es2022",
+      "dom",
+      "dom.iterable"
+    ],
+    "jsx": "react-jsx"
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "build", "coverage"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "build",
+    "coverage"
+  ]
 }

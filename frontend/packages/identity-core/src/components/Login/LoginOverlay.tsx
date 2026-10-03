@@ -19,8 +19,9 @@
  * @module components/Login/LoginOverlay
  */
 import React, { useState } from 'react';
-import { defineMessages, useIntl } from 'react-intl';
+import { defineMessages } from '#i18n';
 
+import { useIdentityUI } from '../IdentityUI/IdentityUI';
 import './LoginOverlay.scss';
 
 const messages = defineMessages({
@@ -52,7 +53,7 @@ const LoginOverlay: React.FC<LoginOverlayProps> = ({
   error = false,
   onDismiss,
 }) => {
-  const intl = useIntl();
+  const { t } = useIdentityUI();
   const kind = error ? 'identity-overlay--error' : 'identity-overlay--waiting';
 
   return (
@@ -74,7 +75,7 @@ const LoginOverlay: React.FC<LoginOverlayProps> = ({
             data-action="dismiss"
             onClick={onDismiss}
           >
-            {intl.formatMessage(messages.dismiss)}
+            {t(messages.dismiss)}
           </button>
         ) : null}
       </div>

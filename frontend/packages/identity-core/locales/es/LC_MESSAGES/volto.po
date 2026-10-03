@@ -1,0 +1,109 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Plone\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-05-09 11:45-0400\n"
+"PO-Revision-Date: 2023-05-10 11:34-0400\n"
+"Last-Translator: Leonardo J. Caballero G. <leonardocaballero@gmail.com>\n"
+"Language: es\n"
+"Language-Team: ES <LL@li.org>\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Preferred-Encodings: utf-8\n"
+"MIME-Version: 1.0\n"
+"Language-Code: es\n"
+"Language-Name: Español\n"
+"Domain: volto\n"
+"X-Is-Fallback-For: es-ar es-bo es-cl es-co es-cr es-do es-ec es-es es-sv es-gt es-hn es-mx es-ni es-pa es-py es-pe es-pr es-us es-uy es-ve\n"
+"X-Generator: Poedit 2.2.1\n"
+
+#. Default: "Back to sign-in options"
+#: components/Login/LoginForm
+msgid "Back to sign-in options"
+msgstr "Volver a las opciones de inicio de sesión"
+
+#. Default: "Clear"
+#: components/Login/PasswordForm
+msgid "Clear"
+msgstr "Limpiar"
+
+#. Default: "Close"
+#: components/Login/LoginOverlay
+msgid "Close"
+msgstr "Cerrar"
+
+#. Default: "Email address"
+#: components/Login/MagicLinkForm
+msgid "Email address"
+msgstr "Dirección de correo"
+
+#. Default: "Email me a link"
+#: components/Login/MagicLinkForm
+msgid "Email me a link"
+msgstr "Envíeme un enlace"
+
+#. Default: "If that address can sign in here, a link is on its way. It works once, and only for a few minutes."
+#: components/Login/MagicLinkForm
+msgid "If that address can sign in here"
+msgstr "If that address can sign in here, a link is on its way. It works once, and only for a few minutes."
+
+#. Default: "Loading sign-in options…"
+#: components/Login/LoginForm
+msgid "Loading sign-in options"
+msgstr "Cargando opciones de inicio de sesión…"
+
+#. Default: "Login name"
+#: components/Login/PasswordForm
+msgid "Login name"
+msgstr "Nombre de usuario"
+
+#. Default: "Password"
+#: components/Login/PasswordForm
+msgid "Password"
+msgstr "Contraseña"
+
+#. Default: "Sending"
+#: components/Login/MagicLinkForm
+msgid "Sending"
+msgstr "Enviando"
+
+#. Default: "Sign in"
+#: components/Login/PasswordForm
+msgid "Sign in"
+msgstr "Iniciar sesión"
+
+#. Default: "Sign in with a password"
+#: components/Login/LoginForm
+msgid "Sign in with a password"
+msgstr "Inicie sesión con una contraseña"
+
+#. Default: "Signing in"
+#: components/Login/PasswordForm
+msgid "Signing in"
+msgstr "Iniciando sesión"
+
+#. Default: "Taking you to {provider}…"
+#: components/Login/LoginForm
+msgid "Taking you to {provider}…"
+msgstr "Llevándolo a {provider}…"
+
+#. Default: "That did not work. Please try again in a little while."
+#: components/Login/MagicLinkForm
+msgid "That did not work. Please try again in a little while."
+msgstr "Eso no funcionó. Por favor, intente de nuevo en un momento."
+
+#. Default: "That login name and password did not match."
+#: components/Login/PasswordForm
+msgid "That login name and password did not match."
+msgstr "Ese nombre de usuario y contraseña no coincidieron."
+
+#. Default: "That sign-in option is not available right now."
+#: components/Login/LoginForm
+msgid "That sign-in option is not available right now."
+msgstr "Esa opción de inicio de sesión no está disponible en este momento."
+
+#. Default: "Forgot your password?"
+#: components/Login/PasswordForm
+msgid "box_forgot_password_option"
+msgstr "¿Olvidó su contraseña?"

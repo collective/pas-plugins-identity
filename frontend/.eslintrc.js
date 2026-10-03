@@ -25,6 +25,8 @@ module.exports = {
     {
       // identity-core is shared by the Volto and the Aurora add-on, so it may
       // import neither frontend, nor anything only one of them provides.
+      // React, react-aria-components and @plone/components are allowed: both
+      // frontends have them.
       files: ['packages/identity-core/**'],
       rules: {
         'no-restricted-imports': [
@@ -47,10 +49,6 @@ module.exports = {
                   '@plone-collective/aurora-identity/*',
                   '**/volto-identity/**',
                   '**/aurora-identity/**',
-                  'react',
-                  'react/*',
-                  'react-dom',
-                  'react-dom/*',
                   'react-redux',
                   'react-intl',
                   'react-i18next',
@@ -79,6 +77,8 @@ module.exports = {
             '@plone-collective/volto-identity',
             './packages/volto-identity/src',
           ],
+          // identity-core's subpath import, declared in its package.json.
+          ['#i18n', './packages/identity-core/src/i18n.ts'],
           ...addonAliases,
         ],
         extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],

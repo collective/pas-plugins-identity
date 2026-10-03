@@ -1,0 +1,102 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language: de\n"
+"Language-Team: \n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. Default: "Back to sign-in options"
+#: components/Login/LoginForm
+msgid "Back to sign-in options"
+msgstr "Zurück zu Anmeldeoptionen"
+
+#. Default: "Clear"
+#: components/Login/PasswordForm
+msgid "Clear"
+msgstr "Löschen"
+
+#. Default: "Close"
+#: components/Login/LoginOverlay
+msgid "Close"
+msgstr "Schließen"
+
+#. Default: "Email address"
+#: components/Login/MagicLinkForm
+msgid "Email address"
+msgstr "E-Mail-Adresse"
+
+#. Default: "Email me a link"
+#: components/Login/MagicLinkForm
+msgid "Email me a link"
+msgstr "Senden Sie mir einen Link per E-Mail"
+
+#. Default: "If that address can sign in here, a link is on its way. It works once, and only for a few minutes."
+#: components/Login/MagicLinkForm
+msgid "If that address can sign in here"
+msgstr "Wenn sich diese Adresse hier anmelden kann, ist ein Link unterwegs. Es funktioniert einmal, und nur für ein paar Minuten."
+
+#. Default: "Loading sign-in options…"
+#: components/Login/LoginForm
+msgid "Loading sign-in options"
+msgstr "Anmeldeoptionen werden geladen…"
+
+#. Default: "Login name"
+#: components/Login/PasswordForm
+msgid "Login name"
+msgstr "Anmeldungsname"
+
+#. Default: "Password"
+#: components/Login/PasswordForm
+msgid "Password"
+msgstr "Passwort"
+
+#. Default: "Sending"
+#: components/Login/MagicLinkForm
+msgid "Sending"
+msgstr "Wird gesendet"
+
+#. Default: "Sign in"
+#: components/Login/PasswordForm
+msgid "Sign in"
+msgstr "Anmelden"
+
+#. Default: "Sign in with a password"
+#: components/Login/LoginForm
+msgid "Sign in with a password"
+msgstr "Mit einem Passwort anmelden"
+
+#. Default: "Signing in"
+#: components/Login/PasswordForm
+msgid "Signing in"
+msgstr "Wird angemeldet"
+
+#. Default: "Taking you to {provider}…"
+#: components/Login/LoginForm
+msgid "Taking you to {provider}…"
+msgstr "Sie werden zu {provider} geleitet…"
+
+#. Default: "That did not work. Please try again in a little while."
+#: components/Login/MagicLinkForm
+msgid "That did not work. Please try again in a little while."
+msgstr "Das funktionierte nicht. Bitte versuchen Sie es in einer Weile erneut."
+
+#. Default: "That login name and password did not match."
+#: components/Login/PasswordForm
+msgid "That login name and password did not match."
+msgstr "Dieser Anmeldungsname und das Passwort stimmten nicht überein."
+
+#. Default: "That sign-in option is not available right now."
+#: components/Login/LoginForm
+msgid "That sign-in option is not available right now."
+msgstr "Diese Anmeldeoption ist gerade nicht verfügbar."
+
+#. Default: "Forgot your password?"
+#: components/Login/PasswordForm
+msgid "box_forgot_password_option"
+msgstr "Passwort vergessen?"

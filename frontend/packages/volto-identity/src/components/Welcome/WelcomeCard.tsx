@@ -13,7 +13,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { defineMessages, useIntl } from 'react-intl';
 
-import LoginCard from '../Login/LoginCard';
+import { LoginCard } from '@plone-collective/identity-core';
 import type { ProfileEmail } from '../../types';
 
 import './WelcomeCard.scss';

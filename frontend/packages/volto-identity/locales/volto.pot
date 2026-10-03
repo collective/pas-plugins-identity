@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Plone\n"
-"POT-Creation-Date: 2026-09-28T18:18:16.751Z\n"
+"POT-Creation-Date: 2026-10-03T08:17:30.878Z\n"
 "Last-Translator: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Language-Team: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -111,7 +111,6 @@ msgstr ""
 
 #. Default: "Back to sign-in options"
 #: components/Callback/Callback
-#: components/Login/LoginForm
 msgid "Back to sign-in options"
 msgstr ""
 
@@ -158,11 +157,6 @@ msgstr ""
 msgid "Claim path"
 msgstr ""
 
-#. Default: "Clear"
-#: components/Login/PasswordForm
-msgid "Clear"
-msgstr ""
-
 #. Default: "Client ID"
 #: components/ControlPanel/ClientsPanel
 #: helpers/clientSchema
@@ -177,11 +171,6 @@ msgstr ""
 #. Default: "Client unregistered"
 #: components/ControlPanel/ClientsControlPanel
 msgid "Client unregistered"
-msgstr ""
-
-#. Default: "Close"
-#: components/Login/LoginOverlay
-msgid "Close"
 msgstr ""
 
 #. Default: "Collection"
@@ -293,20 +282,10 @@ msgstr ""
 msgid "Editing"
 msgstr ""
 
-#. Default: "Email address"
-#: components/Login/MagicLinkForm
-msgid "Email address"
-msgstr ""
-
 #. Default: "Email addresses"
 #: components/ControlPanel/UserAccountPanel
 #: components/Identities/IdentitiesList
 msgid "Email addresses"
-msgstr ""
-
-#. Default: "Email me a link"
-#: components/Login/MagicLinkForm
-msgid "Email me a link"
 msgstr ""
 
 #. Default: "Enabled"
@@ -397,11 +376,6 @@ msgstr ""
 msgid "Identity providers"
 msgstr ""
 
-#. Default: "If that address can sign in here, a link is on its way. It works once, and only for a few minutes."
-#: components/Login/MagicLinkForm
-msgid "If that address can sign in here"
-msgstr ""
-
 #. Default: "It can read:"
 #: components/Applications/ApplicationsPanel
 msgid "It can read:"
@@ -452,11 +426,6 @@ msgstr ""
 msgid "Loading settings"
 msgstr ""
 
-#. Default: "Loading sign-in options…"
-#: components/Login/LoginForm
-msgid "Loading sign-in options"
-msgstr ""
-
 #. Default: "Loading the applications you have authorized…"
 #: components/Applications/ApplicationsPanel
 msgid "Loading the applications you have authorized"
@@ -482,11 +451,6 @@ msgstr ""
 #: components/FirstLogin/FirstLogin
 #: components/Login/useLogin
 msgid "Log in"
-msgstr ""
-
-#. Default: "Login name"
-#: components/Login/PasswordForm
-msgid "Login name"
 msgstr ""
 
 #. Default: "Login screen"
@@ -615,11 +579,6 @@ msgstr ""
 #. Default: "Part of"
 #: components/Views/GroupsView/GroupView
 msgid "Part of"
-msgstr ""
-
-#. Default: "Password"
-#: components/Login/PasswordForm
-msgid "Password"
 msgstr ""
 
 #. Default: "Personal Information"
@@ -786,11 +745,6 @@ msgstr ""
 msgid "Secret for {clientId}"
 msgstr ""
 
-#. Default: "Sending"
-#: components/Login/MagicLinkForm
-msgid "Sending"
-msgstr ""
-
 #. Default: "Server settings"
 #: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ClientsPanel
@@ -806,16 +760,6 @@ msgstr ""
 #. Default: "Shrink toolbar"
 #: components/Toolbar/Toolbar
 msgid "Shrink toolbar"
-msgstr ""
-
-#. Default: "Sign in"
-#: components/Login/PasswordForm
-msgid "Sign in"
-msgstr ""
-
-#. Default: "Sign in with a password"
-#: components/Login/LoginForm
-msgid "Sign in with a password"
 msgstr ""
 
 #. Default: "Sign in with your account on this site."
@@ -834,11 +778,6 @@ msgstr ""
 #: components/Identities/IdentitiesList
 #: components/UserMenu/IdentitiesMenuItem
 msgid "Sign-in methods"
-msgstr ""
-
-#. Default: "Signing in"
-#: components/Login/PasswordForm
-msgid "Signing in"
 msgstr ""
 
 #. Default: "Signing key rotated"
@@ -863,20 +802,10 @@ msgstr ""
 msgid "Site Setup"
 msgstr ""
 
-#. Default: "Taking you to {provider}…"
-#: components/Login/LoginForm
-msgid "Taking you to {provider}…"
-msgstr ""
-
 #. Default: "Test connection"
 #: components/ControlPanel/ProvidersControlPanel
 #: components/ControlPanel/ProvidersTable
 msgid "Test connection"
-msgstr ""
-
-#. Default: "That did not work. Please try again in a little while."
-#: components/Login/MagicLinkForm
-msgid "That did not work. Please try again in a little while."
 msgstr ""
 
 #. Default: "That did not work. Please try again."
@@ -889,19 +818,9 @@ msgstr ""
 msgid "That list could not be loaded."
 msgstr ""
 
-#. Default: "That login name and password did not match."
-#: components/Login/PasswordForm
-msgid "That login name and password did not match."
-msgstr ""
-
 #. Default: "That sign-in link is no longer valid. Please start again."
 #: components/Callback/Callback
 msgid "That sign-in link is no longer valid. Please start again."
-msgstr ""
-
-#. Default: "That sign-in option is not available right now."
-#: components/Login/LoginForm
-msgid "That sign-in option is not available right now."
 msgstr ""
 
 #. Default: "The new order could not be saved"
@@ -1086,11 +1005,6 @@ msgstr ""
 #. Default: "Your verified addresses"
 #: components/ConfirmEmail/ConfirmEmail
 msgid "Your verified addresses"
-msgstr ""
-
-#. Default: "Forgot your password?"
-#: components/Login/PasswordForm
-msgid "box_forgot_password_option"
 msgstr ""
 
 #. Default: "Permanent. It is what every token already issued is bound to, so it cannot be changed afterwards."

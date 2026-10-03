@@ -126,7 +126,7 @@ That key is no longer read.
 ## The sole-provider redirect
 
 <!-- source: frontend/packages/volto-identity/src/components/Login/Login.tsx -->
-<!-- source: frontend/packages/volto-identity/src/components/Login/LoginForm.tsx -->
+<!-- source: frontend/packages/identity-core/src/components/Login/LoginForm.tsx -->
 <!-- source: frontend/packages/volto-identity/src/components/Callback/Callback.tsx -->
 
 When the only way in on `/login` is one provider—no magic link and no password

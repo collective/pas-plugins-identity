@@ -5,6 +5,9 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     environment: 'jsdom',
-    include: ['src/**/*.test.ts'],
+    // Testing Library unmounts after each test only when it can find a global
+    // `afterEach`; without it, one test's DOM leaks into the next.
+    globals: true,
+    include: ['src/**/*.test.{ts,tsx}'],
   },
 });

@@ -22,7 +22,7 @@ import { Tab, TabList, TabPanel } from 'react-aria-components';
 import '@plone/components/src/styles/basic/Tabs.css';
 
 import type { Identity, LoginProvider, ProfileEmail } from '../../types';
-import ProviderButton from '../Login/ProviderButton';
+import { ProviderButton } from '@plone-collective/identity-core';
 import ProfileEmails from './ProfileEmails';
 
 import './IdentitiesList.scss';

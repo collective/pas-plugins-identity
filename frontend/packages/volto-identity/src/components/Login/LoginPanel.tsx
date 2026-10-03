@@ -11,8 +11,8 @@
 import React from 'react';
 import { Helmet } from '@plone/volto/helpers/Helmet/Helmet';
 
-import LoginCard from './LoginCard';
-import type { LoginCardProps } from './LoginCard';
+import { LoginCard } from '@plone-collective/identity-core';
+import type { LoginCardProps } from '@plone-collective/identity-core';
 
 /** The card's props. Its `title` is the browser title as well. */
 type LoginPanelProps = LoginCardProps;

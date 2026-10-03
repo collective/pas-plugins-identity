@@ -23,7 +23,7 @@ import { login } from '@plone/volto/actions/userSession/userSession';
 import { goTo, returnUrl } from '@plone-collective/identity-core';
 import { showPloneLogin } from '../../helpers/showPloneLogin';
 import type { LoginProvider } from '../../types';
-import type { LoginFormProps } from './LoginForm';
+import type { LoginFormProps } from '@plone-collective/identity-core';
 
 const messages = defineMessages({
   title: { id: 'Log in', defaultMessage: 'Log in' },
