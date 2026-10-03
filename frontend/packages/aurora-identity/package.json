@@ -1,0 +1,64 @@
+{
+  "name": "@plone-collective/aurora-identity",
+  "version": "1.0.0-alpha.13",
+  "description": "Plone Aurora add-on for multi-provider external authentication in Plone, with identity linking",
+  "main": "index.ts",
+  "license": "MIT",
+  "keywords": [
+    "plone",
+    "aurora",
+    "authentication",
+    "oidc",
+    "oauth"
+  ],
+  "author": "Érico Andrei",
+  "homepage": "https://collective.github.io/pas-plugins-identity/",
+  "bugs": {
+    "url": "https://github.com/collective/pas-plugins-identity/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:collective/pas-plugins-identity"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "i18n": "node scripts/i18n.mjs",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json"
+  },
+  "dependencies": {
+    "@plone-collective/identity-core": "workspace:*"
+  },
+  "peerDependencies": {
+    "@plone/components": "workspace:*",
+    "@plone/react-router": "workspace:*",
+    "@plone/registry": "workspace:*",
+    "i18next": "catalog:",
+    "react": "catalog:",
+    "react-aria-components": "catalog:",
+    "react-dom": "catalog:",
+    "react-i18next": "catalog:",
+    "react-router": "catalog:"
+  },
+  "devDependencies": {
+    "@plone/components": "workspace:*",
+    "@plone/react-router": "workspace:*",
+    "@plone/registry": "workspace:*",
+    "@plone/types": "workspace:*",
+    "@testing-library/react": "catalog:",
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "i18next": "catalog:",
+    "jsdom": "^28.1.0",
+    "react": "catalog:",
+    "react-aria-components": "catalog:",
+    "react-dom": "catalog:",
+    "react-i18next": "catalog:",
+    "react-router": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

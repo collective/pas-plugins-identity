@@ -17,6 +17,7 @@ msgstr ""
 "Domain: volto\n"
 
 #. Default: "Back to sign-in options"
+#: components/Callback/CallbackCard
 #: components/Login/LoginForm
 msgid "Back to sign-in options"
 msgstr "Voltar para opções de acesso"
@@ -30,6 +31,11 @@ msgstr "Limpar"
 #: components/Login/LoginOverlay
 msgid "Close"
 msgstr "Fechar"
+
+#. Default: "Confirming your address…"
+#: components/Callback/CallbackCard
+msgid "Confirming your address"
+msgstr "Confirmando seu endereço"
 
 #. Default: "Email address"
 #: components/Login/MagicLinkForm
@@ -50,6 +56,11 @@ msgstr "Se esse endereço pode entrar aqui"
 #: components/Login/LoginForm
 msgid "Loading sign-in options"
 msgstr "Carregando opções de acesso"
+
+#. Default: "Log in"
+#: components/Callback/CallbackCard
+msgid "Log in"
+msgstr "Entrar"
 
 #. Default: "Login name"
 #: components/Login/PasswordForm
@@ -81,6 +92,11 @@ msgstr "Entrar com uma senha"
 msgid "Signing in"
 msgstr "Entrando"
 
+#. Default: "Signing you in…"
+#: components/Callback/CallbackCard
+msgid "Signing you in"
+msgstr "Entrando"
+
 #. Default: "Taking you to {provider}…"
 #: components/Login/LoginForm
 msgid "Taking you to {provider}…"
@@ -96,10 +112,26 @@ msgstr "Isso não funcionou. Tente novamente em um momento."
 msgid "That login name and password did not match."
 msgstr "Esse nome de login e senha não correspondem."
 
+#. Default: "That sign-in link is no longer valid. Please start again."
+#: components/Callback/CallbackCard
+msgid "That sign-in link is no longer valid. Please start again."
+msgstr "O link de acesso não é mais válido. Por favor, comece novamente."
+
 #. Default: "That sign-in option is not available right now."
+#: components/Callback/CallbackCard
 #: components/Login/LoginForm
 msgid "That sign-in option is not available right now."
 msgstr "Essa opção de acesso não está disponível no momento."
+
+#. Default: "The provider refused the sign-in."
+#: components/Callback/CallbackCard
+msgid "The provider refused the sign-in."
+msgstr "O provedor recusou o acesso."
+
+#. Default: "This sign-in link is incomplete."
+#: components/Callback/CallbackCard
+msgid "This sign-in link is incomplete."
+msgstr "O link de acesso está incompleto."
 
 #. Default: "Forgot your password?"
 #: components/Login/PasswordForm

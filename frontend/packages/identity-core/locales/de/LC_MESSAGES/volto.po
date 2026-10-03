@@ -12,6 +12,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #. Default: "Back to sign-in options"
+#: components/Callback/CallbackCard
 #: components/Login/LoginForm
 msgid "Back to sign-in options"
 msgstr "Zurück zu Anmeldeoptionen"
@@ -25,6 +26,11 @@ msgstr "Löschen"
 #: components/Login/LoginOverlay
 msgid "Close"
 msgstr "Schließen"
+
+#. Default: "Confirming your address…"
+#: components/Callback/CallbackCard
+msgid "Confirming your address"
+msgstr "Adresse wird bestätigt…"
 
 #. Default: "Email address"
 #: components/Login/MagicLinkForm
@@ -45,6 +51,11 @@ msgstr "Wenn sich diese Adresse hier anmelden kann, ist ein Link unterwegs. Es f
 #: components/Login/LoginForm
 msgid "Loading sign-in options"
 msgstr "Anmeldeoptionen werden geladen…"
+
+#. Default: "Log in"
+#: components/Callback/CallbackCard
+msgid "Log in"
+msgstr "Anmelden"
 
 #. Default: "Login name"
 #: components/Login/PasswordForm
@@ -76,6 +87,11 @@ msgstr "Mit einem Passwort anmelden"
 msgid "Signing in"
 msgstr "Wird angemeldet"
 
+#. Default: "Signing you in…"
+#: components/Callback/CallbackCard
+msgid "Signing you in"
+msgstr "Sie werden angemeldet…"
+
 #. Default: "Taking you to {provider}…"
 #: components/Login/LoginForm
 msgid "Taking you to {provider}…"
@@ -91,10 +107,26 @@ msgstr "Das funktionierte nicht. Bitte versuchen Sie es in einer Weile erneut."
 msgid "That login name and password did not match."
 msgstr "Dieser Anmeldungsname und das Passwort stimmten nicht überein."
 
+#. Default: "That sign-in link is no longer valid. Please start again."
+#: components/Callback/CallbackCard
+msgid "That sign-in link is no longer valid. Please start again."
+msgstr "Dieser Anmeldelink ist nicht mehr gültig. Bitte beginnen Sie erneut."
+
 #. Default: "That sign-in option is not available right now."
+#: components/Callback/CallbackCard
 #: components/Login/LoginForm
 msgid "That sign-in option is not available right now."
 msgstr "Diese Anmeldeoption ist gerade nicht verfügbar."
+
+#. Default: "The provider refused the sign-in."
+#: components/Callback/CallbackCard
+msgid "The provider refused the sign-in."
+msgstr "Der Anbieter lehnte die Anmeldung ab."
+
+#. Default: "This sign-in link is incomplete."
+#: components/Callback/CallbackCard
+msgid "This sign-in link is incomplete."
+msgstr "Dieser Anmeldelink ist unvollständig."
 
 #. Default: "Forgot your password?"
 #: components/Login/PasswordForm

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { useridFromToken } from './token';
+import { expiryFromToken, useridFromToken } from './token';
 
 /**
  * Build a JWT-shaped string around a payload.
@@ -58,5 +58,27 @@ describe('useridFromToken', () => {
 
   it('answers nobody when the subject is not a string', () => {
     expect(useridFromToken(tokenFor({ sub: 42 }))).toBe('');
+  });
+});
+
+describe('expiryFromToken', () => {
+  it('reads the exp claim as a date', () => {
+    expect(
+      expiryFromToken(tokenFor({ sub: 'alice', exp: 1700000000 })),
+    ).toEqual(new Date(1700000000 * 1000));
+  });
+
+  it('is null for a token without one', () => {
+    expect(expiryFromToken(tokenFor({ sub: 'alice' }))).toBeNull();
+  });
+
+  it('is null for an exp that is not a number', () => {
+    expect(expiryFromToken(tokenFor({ exp: 'soon' }))).toBeNull();
+  });
+
+  it('is null when there is no usable token', () => {
+    expect(expiryFromToken(undefined)).toBeNull();
+    expect(expiryFromToken('not-a-jwt')).toBeNull();
+    expect(expiryFromToken('a.!!!.c')).toBeNull();
   });
 });

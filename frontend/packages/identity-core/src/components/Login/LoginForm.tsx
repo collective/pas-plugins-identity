@@ -18,7 +18,7 @@ import MagicLinkForm from './MagicLinkForm';
 import PasswordForm from './PasswordForm';
 import ProviderButton from './ProviderButton';
 
-import './LoginForm.scss';
+import './LoginForm.css';
 
 const messages = defineMessages({
   loading: {

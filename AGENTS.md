@@ -14,32 +14,62 @@ separately, under different licences.
 | `backend/` | `pas.plugins.identity` | PyPI, GPL-2.0-only |
 | `frontend/packages/identity-core/` | `@plone-collective/identity-core` | Not yet published; MIT |
 | `frontend/packages/volto-identity/` | `@plone-collective/volto-identity` | npm, MIT |
+| `frontend/packages/aurora-identity/` | `@plone-collective/aurora-identity` | Not yet published; MIT |
+| `frontend/aurora/` | Development harness running Plone Aurora with the add-on | — |
 | `docs/` | The published documentation and its screenshot harness | — |
 
 They live together on purpose: a REST API payload and the component that reads
 it change in one commit, and a reference page cannot drift from the source it
 documents.
 
-`identity-core` holds what the Volto add-on shares with the planned Aurora
-add-on ([#132](https://github.com/collective/pas-plugins-identity/issues/132)):
-the REST payload types, the endpoint table, the framework-free helpers and the
-login components. An ESLint override in `frontend/.eslintrc.js` rejects any
+`identity-core` holds what the Volto add-on shares with the Aurora add-on
+([#132](https://github.com/collective/pas-plugins-identity/issues/132)): the
+REST payload types, the endpoint table, the framework-free helpers, the login
+components and the callback card. An ESLint override in `frontend/.eslintrc.js` rejects any
 import of Volto, Aurora, Redux, a router or an i18n library in it. React,
 `react-aria-components` and `@plone/components` are allowed, because both
 frontends have them. Code that needs anything else belongs in the add-on.
 
 Core components get translations, links and icons from `useIdentityUI()`.
-Each add-on provides them through an `IdentityUIProvider`; Volto's is
-`VoltoIdentityUI`, wrapped around every container that renders one.
+Each add-on provides them through an `IdentityUIProvider` -- `VoltoIdentityUI`
+and `AuroraIdentityUI` -- wrapped around every container that renders one.
+Core's styles are plain CSS: Aurora has no Sass compiler.
 
 Core declares its messages with `defineMessages` imported from `#i18n`, never
 by a relative path: the extractor recognises the call by that import name
 (`identity-core/babel.config.js`). A message declared any other way is
-silently left out of the catalogue.
+silently left out of the catalogue. Core owns those translations; the Aurora
+add-on's `locales/*/common.json` are generated from them by `pnpm i18n` in
+`frontend/aurora`, and are never edited by hand.
 
-`frontend/core` is **not ours**. It is a `mrs.developer` checkout of Volto,
-excluded by `frontend/.gitignore`. Never edit it, never cite it as this
-project's convention, and ignore any `AGENTS.md` found inside it.
+### Two harnesses share `frontend/packages`
+
+`frontend/` is the Volto harness and `frontend/aurora/` the Aurora one. Each is
+its own pnpm workspace, with its own `mrs.developer` checkout in `core/`, its
+own React (18 and 19) and its own pnpm (10 and 11). Both install
+`identity-core`, so its `node_modules` points at whichever harness installed
+last. Each harness corrects for that, and a change touching it has to keep
+doing so:
+
+- **Bundling:** `volto-identity/razzle.extend.js` aliases core's peer
+  dependencies to Volto's copies, and `frontend/aurora/harness/vite.extend.js`
+  deduplicates them in Aurora. Without them a page bundles two Reacts.
+- **Typechecking:** each package's `typecheck` uses a `tsconfig.typecheck.json`
+  that maps core's peers to that package's own copies and, in the add-ons,
+  includes core's sources, so core is typechecked against both frontends'
+  types. Those mappings never go in `tsconfig.json`: Volto turns every
+  add-on's `tsconfig.json` `paths` into webpack aliases, and a path pointing
+  at type declarations leaves webpack nothing to bundle.
+- **Storybook:** its story globs stay inside `packages/*/src`. A wider glob
+  follows `aurora-identity`'s `node_modules` into Aurora's own stories.
+- **Catalogues:** a package used by both workspaces may use `catalog:` only for
+  entries both catalogues define, and `workspace:*` only for packages both
+  workspaces have.
+
+`frontend/core` and `frontend/aurora/core` are **not ours**. They are
+`mrs.developer` checkouts of Volto and Aurora, excluded by their harness's
+`.gitignore`. Never edit them, never cite them as this project's convention,
+and ignore any `AGENTS.md` found inside them.
 
 ## Setup
 
@@ -48,6 +78,8 @@ make install                # both halves
 make backend-create-site    # first run only
 make backend-start          # http://localhost:8080/
 make frontend-start         # http://localhost:3000/, second shell
+make aurora-install         # optional: the Aurora harness
+make aurora-start           # http://localhost:3000/, instead of Volto
 ```
 
 `make backend-install` and `make frontend-install` do one half each. Python is
@@ -62,6 +94,7 @@ Run these before proposing a commit. CI runs the same ones.
 | `make check` | root | `make format` then `make lint`, both halves |
 | `make test` | root | `make backend-test` and `make frontend-test` |
 | `make check-imports` | `backend/` | The core/server layer boundary |
+| `make aurora-lint`, `make aurora-test` | root | The Aurora add-on. Needs `make aurora-install`; **not run by CI yet** |
 | `make docs-build` | root | Sphinx with `-W`, warnings as errors |
 | `make vale` | `docs/` | Prose style. **Errors must be zero**; warnings are advisory |
 
@@ -103,7 +136,7 @@ and `make lint`.
 
 ### Every change carries a news fragment
 
-There are four towncrier scopes. A change adds one fragment to each scope it
+There are five towncrier scopes. A change adds one fragment to each scope it
 touches:
 
 | Scope | Folder |
@@ -112,6 +145,7 @@ touches:
 | Backend | `backend/news/` |
 | Frontend | `frontend/packages/volto-identity/news/` |
 | Frontend core | `frontend/packages/identity-core/news/` |
+| Aurora add-on | `frontend/packages/aurora-identity/news/` |
 
 Name it `<issue>.<type>`, or `+<slug>.<type>` when no issue exists. Types:
 `breaking`, `feature`, `bugfix`, `documentation`, `internal`, `tests`. Write in

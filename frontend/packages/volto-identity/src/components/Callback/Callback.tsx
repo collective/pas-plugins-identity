@@ -13,50 +13,29 @@
  * @module components/Callback/Callback
  */
 import React, { useEffect, useRef, useState } from 'react';
-import type { MessageDescriptor } from 'react-intl';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link, useHistory, useLocation } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { defineMessages, useIntl } from 'react-intl';
 import { LOGIN } from '@plone/volto/constants/ActionTypes';
+import { Helmet } from '@plone/volto/helpers/Helmet/Helmet';
 
 import {
   completeCallback,
   confirmMagicLink,
   listIdentities,
 } from '../../actions';
-import { goTo, readCallback } from '@plone-collective/identity-core';
+import {
+  CallbackCard,
+  goTo,
+  readCallback,
+} from '@plone-collective/identity-core';
+import type { CallbackFailure } from '@plone-collective/identity-core';
 import { CHOOSE_LOGIN_PATH } from '../../helpers/redirectToSoleProvider';
 import { IDENTITIES_PATH } from '../../config/routes';
-import LoginPanel from '../Login/LoginPanel';
-
-import './Callback.scss';
+import VoltoIdentityUI from '../IdentityUI/VoltoIdentityUI';
 
 const messages = defineMessages({
-  // The same id the login page's heading uses: the same card, so the same
-  // word, and one translation covers both.
   title: { id: 'Log in', defaultMessage: 'Log in' },
-  working: { id: 'Signing you in', defaultMessage: 'Signing you in…' },
-  linking: {
-    id: 'Confirming your address',
-    defaultMessage: 'Confirming your address…',
-  },
-  refused: {
-    id: 'The provider refused the sign-in.',
-    defaultMessage: 'The provider refused the sign-in.',
-  },
-  incomplete: {
-    id: 'This sign-in link is incomplete.',
-    defaultMessage: 'This sign-in link is incomplete.',
-  },
-  invalid: {
-    id: 'That sign-in link is no longer valid. Please start again.',
-    defaultMessage: 'That sign-in link is no longer valid. Please start again.',
-  },
-  // The same id as the login form's own way back, and one translation.
-  backToOptions: {
-    id: 'Back to sign-in options',
-    defaultMessage: 'Back to sign-in options',
-  },
 });
 
 interface CallbackProps {
@@ -72,7 +51,7 @@ const Callback: React.FC<CallbackProps> = ({ onToken }) => {
   const dispatched = useRef(false);
   // The descriptor rather than the formatted string: what is stored is
   // which refusal happened, and rendering it is the renderer's job.
-  const [refusal, setRefusal] = useState<MessageDescriptor | null>(null);
+  const [refusal, setRefusal] = useState<CallbackFailure | null>(null);
 
   const callback = useSelector((state: any) => state.identityCallback);
   const magic = useSelector((state: any) => state.magicLinkConfirm);
@@ -95,9 +74,7 @@ const Callback: React.FC<CallbackProps> = ({ onToken }) => {
         ),
       );
     } else {
-      setRefusal(
-        parsed.kind === 'error' ? messages.refused : messages.incomplete,
-      );
+      setRefusal(parsed.kind === 'error' ? 'refused' : 'incomplete');
     }
   }, [dispatch, location.search]);
 
@@ -155,33 +132,19 @@ const Callback: React.FC<CallbackProps> = ({ onToken }) => {
   // this page can say more precisely, because no credential ever reached the
   // backend for it to be vague about.
   const failure =
-    refusal ?? (callback?.error || magic?.error ? messages.invalid : null);
+    refusal ?? (callback?.error || magic?.error ? 'invalid' : null);
 
   return (
-    <LoginPanel title={intl.formatMessage(messages.title)}>
-      {failure ? (
-        <>
-          <p
-            className="identity-callback identity-callback--error"
-            role="alert"
-          >
-            {intl.formatMessage(failure)}
-          </p>
-          {/* To the options rather than to `/login`: on a site with one
-              provider, `/login` starts that provider again, and a provider
-              that refused somebody refuses them every time. */}
-          <p className="identity-callback identity-callback--retry">
-            <Link to={CHOOSE_LOGIN_PATH}>
-              {intl.formatMessage(messages.backToOptions)}
-            </Link>
-          </p>
-        </>
-      ) : (
-        <p className="identity-callback" role="status">
-          {intl.formatMessage(linked ? messages.linking : messages.working)}
-        </p>
-      )}
-    </LoginPanel>
+    <div id="page-login">
+      <Helmet title={intl.formatMessage(messages.title)} />
+      <VoltoIdentityUI>
+        <CallbackCard
+          failure={failure}
+          linking={linked}
+          retryHref={CHOOSE_LOGIN_PATH}
+        />
+      </VoltoIdentityUI>
+    </div>
   );
 };
 

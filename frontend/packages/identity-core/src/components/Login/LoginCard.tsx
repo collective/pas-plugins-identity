@@ -20,7 +20,7 @@ import React from 'react';
 import type { ReactNode } from 'react';
 import { Container } from '@plone/components';
 
-import './LoginCard.scss';
+import './LoginCard.css';
 
 export interface LoginCardProps {
   /** The heading. */

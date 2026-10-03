@@ -1,0 +1,28 @@
+{
+  "identity": {
+    "Back to sign-in options": "Voltar para opções de acesso",
+    "Clear": "Limpar",
+    "Close": "Fechar",
+    "Confirming your address": "Confirmando seu endereço",
+    "Email address": "Endereço de e-mail",
+    "Email me a link": "Enviar um link por email",
+    "If that address can sign in here": "Se esse endereço pode entrar aqui",
+    "Loading sign-in options": "Carregando opções de acesso",
+    "Log in": "Entrar",
+    "Login name": "Nome de login",
+    "Password": "Senha",
+    "Sending": "Enviando",
+    "Sign in": "Entrar",
+    "Sign in with a password": "Entrar com uma senha",
+    "Signing in": "Entrando",
+    "Signing you in": "Entrando",
+    "Taking you to {provider}…": "Levando você para {provider}…",
+    "That did not work. Please try again in a little while.": "Isso não funcionou. Tente novamente em um momento.",
+    "That login name and password did not match.": "Esse nome de login e senha não correspondem.",
+    "That sign-in link is no longer valid. Please start again.": "O link de acesso não é mais válido. Por favor, comece novamente.",
+    "That sign-in option is not available right now.": "Essa opção de acesso não está disponível no momento.",
+    "The provider refused the sign-in.": "O provedor recusou o acesso.",
+    "This sign-in link is incomplete.": "O link de acesso está incompleto.",
+    "box_forgot_password_option": "Esqueceu sua senha?"
+  }
+}

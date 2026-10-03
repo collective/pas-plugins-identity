@@ -1,0 +1,11 @@
+/**
+ * The callback page has no layout of its own: Aurora's login route is the
+ * only one that draws one for signing in. So the card is centred here.
+ */
+.identity-callback-page {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}

@@ -114,11 +114,6 @@ msgstr "Autorizado"
 msgid "Back"
 msgstr "Atrás"
 
-#. Default: "Back to sign-in options"
-#: components/Callback/Callback
-msgid "Back to sign-in options"
-msgstr "Volver a las opciones de inicio de sesión"
-
 #. Default: "Back to the list"
 #: components/Applications/ApplicationsPanel
 msgid "Back to the list"
@@ -198,11 +193,6 @@ msgstr "Confidencial"
 #: components/ProfileGate/ProfileGate
 msgid "Confirm your email address"
 msgstr "Confirme su dirección de correo"
-
-#. Default: "Confirming your address…"
-#: components/Callback/Callback
-msgid "Confirming your address"
-msgstr "Confirmando su dirección…"
 
 #. Default: "Contents"
 #: components/Toolbar/Toolbar
@@ -797,7 +787,6 @@ msgid "Signing keys"
 msgstr "Claves de firma"
 
 #. Default: "Signing you in…"
-#: components/Callback/Callback
 #: components/FirstLogin/FirstLogin
 msgid "Signing you in"
 msgstr "Iniciando su sesión…"
@@ -823,20 +812,10 @@ msgstr "Eso no funcionó. Por favor, intente de nuevo."
 msgid "That list could not be loaded."
 msgstr "Esa lista no pudo ser cargada."
 
-#. Default: "That sign-in link is no longer valid. Please start again."
-#: components/Callback/Callback
-msgid "That sign-in link is no longer valid. Please start again."
-msgstr "Ese enlace de inicio de sesión ya no es válido. Por favor, comience de nuevo."
-
 #. Default: "The new order could not be saved"
 #: components/ControlPanel/ProvidersControlPanel
 msgid "The new order could not be saved"
 msgstr "El nuevo orden no pudo ser guardado"
-
-#. Default: "The provider refused the sign-in."
-#: components/Callback/Callback
-msgid "The provider refused the sign-in."
-msgstr "El proveedor rechazó el inicio de sesión."
 
 #. Default: "The providers could not be read, so this form cannot open."
 #: components/ControlPanel/ProvidersControlPanel
@@ -882,11 +861,6 @@ msgstr "Esta es la única vez que se muestra este secreto."
 #: components/Identities/IdentitiesList
 msgid "This is your only way to sign in. Add another first."
 msgstr "Esta es la única forma de iniciar sesión. Agregue otra primero."
-
-#. Default: "This sign-in link is incomplete."
-#: components/Callback/Callback
-msgid "This sign-in link is incomplete."
-msgstr "Este enlace de inicio de sesión está incompleto."
 
 #. Default: "Title"
 #: components/ControlPanel/ClientsPanel

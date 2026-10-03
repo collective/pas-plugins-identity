@@ -26,7 +26,7 @@ import '@plone/components/src/styles/basic/TextField.css';
 import { useIdentityUI } from '../IdentityUI/IdentityUI';
 import LoginOverlay, { useDismissibleError } from './LoginOverlay';
 
-import './MagicLinkForm.scss';
+import './MagicLinkForm.css';
 
 const messages = defineMessages({
   email: { id: 'Email address', defaultMessage: 'Email address' },

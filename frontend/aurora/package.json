@@ -1,0 +1,39 @@
+{
+  "name": "@plone-collective/aurora-identity-dev",
+  "version": "1.0.0",
+  "description": "Development harness running Plone Aurora with @plone-collective/aurora-identity",
+  "author": "Érico Andrei",
+  "license": "MIT",
+  "keywords": [
+    "plone",
+    "aurora"
+  ],
+  "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "dev": "REGISTRYCONFIG=$(pwd)/registry.config.ts pnpm --filter @plone/aurora dev",
+    "start": "REGISTRYCONFIG=$(pwd)/registry.config.ts pnpm --filter @plone/aurora dev",
+    "start:prod": "pnpm --filter @plone/aurora start:prod",
+    "build": "REGISTRYCONFIG=$(pwd)/registry.config.ts pnpm --filter @plone/aurora build",
+    "build:deps": "pnpm --filter @plone/registry --filter @plone/components build",
+    "i18n": "pnpm --filter @plone-collective/aurora-identity i18n",
+    "test": "pnpm --filter @plone-collective/aurora-identity exec vitest",
+    "typecheck": "pnpm --filter @plone-collective/aurora-identity typecheck",
+    "lint": "cd .. && REGISTRYCONFIG=$(pwd)/aurora/registry.config.ts aurora/node_modules/.bin/eslint --config aurora/eslint.config.mjs --max-warnings=0 'packages/aurora-identity/**/*.{js,jsx,ts,tsx}'",
+    "lint:fix": "cd .. && REGISTRYCONFIG=$(pwd)/aurora/registry.config.ts aurora/node_modules/.bin/eslint --config aurora/eslint.config.mjs --fix 'packages/aurora-identity/**/*.{js,jsx,ts,tsx}'",
+    "prettier": "prettier --check '../packages/aurora-identity/**/*.{js,jsx,ts,tsx}'",
+    "prettier:fix": "prettier --write '../packages/aurora-identity/**/*.{js,jsx,ts,tsx}'",
+    "stylelint": "stylelint '../packages/aurora-identity/**/*.{css,scss,less}' --allow-empty-input",
+    "stylelint:fix": "stylelint '../packages/aurora-identity/**/*.{css,scss,less}' --fix --allow-empty-input"
+  },
+  "dependencies": {
+    "@plone/registry": "workspace:*",
+    "@plone/aurora": "workspace:*",
+    "@plone-collective/aurora-identity": "workspace:*",
+    "aurora-identity-harness": "workspace:*"
+  },
+  "devDependencies": {
+    "mrs-developer": "^2.2.0"
+  },
+  "packageManager": "pnpm@11.20.0",
+  "private": true
+}

@@ -26,7 +26,7 @@ traps that are only discoverable by hitting them.
 | Directory | Holds |
 |---|---|
 | `backend/` | The Plone add-on `pas.plugins.identity`, its test suite, and the demo stack's own package. |
-| `frontend/` | The Volto add-on `@plone-collective/volto-identity` and its Storybook stories, and `@plone-collective/identity-core`, the framework-agnostic part a future Aurora add-on will share. |
+| `frontend/` | The Volto add-on `@plone-collective/volto-identity` and its Storybook stories, the Plone Aurora add-on `@plone-collective/aurora-identity`, and `@plone-collective/identity-core`, the part both share. `frontend/aurora/` is a harness running Aurora with its add-on. |
 | `docs/` | These pages, and the screenshot harness that illustrates them. |
 
 They are one repository on purpose. A change to a REST API payload and the
@@ -36,7 +36,7 @@ checkout.
 
 The two packages are released separately, under different licences:
 `pas.plugins.identity` is GPL-2.0-only on PyPI, `@plone-collective/volto-identity`
-is MIT on npm. `@plone-collective/identity-core` is MIT, and not published yet.
+is MIT on npm. `@plone-collective/identity-core` and `@plone-collective/aurora-identity` are MIT, and not published yet.
 
 ## Set up a checkout
 
@@ -73,6 +73,15 @@ Then, in a second shell:
 make frontend-start        # http://localhost:3000/
 ```
 
+To run Plone Aurora instead of Volto, install its harness once and start it in
+place of `make frontend-start`. It uses port 3000 as well, so stop the other
+first:
+
+```shell
+make aurora-install
+make aurora-start          # http://localhost:3000/
+```
+
 To see the whole package working at once instead, run the two-site federation
 in Docker: {doc}`tutorials/federation-demo`.
 
@@ -85,6 +94,7 @@ Run these before opening a pull request. CI runs the same ones.
 | `make check` | `make format` then `make lint`, across both halves |
 | `make test` | `make backend-test` and `make frontend-test` |
 | `make check-imports`, from `backend/` | That core never imports the `[server]` layer |
+| `make aurora-lint`, `make aurora-test` | The Aurora add-on, once `make aurora-install` has run. CI does not run these yet |
 | `make docs-build` | The documentation, with warnings as errors |
 | `make -C docs vale` | Prose style. **Errors must be zero**; warnings are advisory |
 
@@ -123,7 +133,7 @@ inside a function does not get past it. That is deliberate—see
 ### Changelog
 
 Every change carries a [towncrier](https://towncrier.readthedocs.io/) news
-fragment. There are four scopes, and a change adds one to each it touches:
+fragment. There are five scopes, and a change adds one to each it touches:
 
 | Scope | Folder |
 |---|---|
@@ -131,6 +141,7 @@ fragment. There are four scopes, and a change adds one to each it touches:
 | Backend | `backend/news/` |
 | Frontend | `frontend/packages/volto-identity/news/` |
 | Frontend core | `frontend/packages/identity-core/news/` |
+| Aurora add-on | `frontend/packages/aurora-identity/news/` |
 
 Name it `<issue>.<type>` when an issue exists, `+<slug>.<type>` when none does.
 The types are `breaking`, `feature`, `bugfix`, `documentation`, `internal` and

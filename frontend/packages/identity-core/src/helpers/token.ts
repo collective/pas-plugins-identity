@@ -46,26 +46,58 @@ function decodeSegment(segment: string): string {
 }
 
 /**
+ * Return the claims a JWT carries, without verifying it.
+ *
+ * Reading, not trusting: the backend verifies every token it is sent, and
+ * nothing here decides access.
+ *
+ * @param token The JWT.
+ * @returns The claims, or null when there is no usable token.
+ */
+function claimsFrom(
+  token: string | undefined | null,
+): Record<string, unknown> | null {
+  const segment = (token ?? '').split('.')[1];
+  if (!segment) {
+    return null;
+  }
+  const decoded = decodeSegment(segment);
+  if (!decoded) {
+    return null;
+  }
+  try {
+    const claims = JSON.parse(decoded);
+    return claims && typeof claims === 'object' ? claims : null;
+  } catch {
+    // A token that is not a JWT at all. Answering "nothing" is right: the
+    // alternative is throwing inside a component that renders on every page.
+    return null;
+  }
+}
+
+/**
  * Return the userid a session token was issued for.
  *
  * @param token The JWT from `state.userSession.token`, if there is one.
  * @returns The `sub` claim, or an empty string when there is no usable token.
  */
 export function useridFromToken(token: string | undefined | null): string {
-  const segment = (token ?? '').split('.')[1];
-  if (!segment) {
-    return '';
-  }
-  const decoded = decodeSegment(segment);
-  if (!decoded) {
-    return '';
-  }
-  try {
-    const claims = JSON.parse(decoded);
-    return typeof claims?.sub === 'string' ? claims.sub : '';
-  } catch {
-    // A token that is not a JWT at all. Answering "nobody" is right: the
-    // alternative is throwing inside a component that renders on every page.
-    return '';
-  }
+  const sub = claimsFrom(token)?.sub;
+  return typeof sub === 'string' ? sub : '';
+}
+
+/**
+ * Return when a session token stops being accepted.
+ *
+ * What a frontend storing the token in a cookie gives the cookie, so the
+ * browser drops it when the backend would start refusing it.
+ *
+ * @param token The JWT.
+ * @returns The `exp` claim as a date, or null when the token has none.
+ */
+export function expiryFromToken(token: string | undefined | null): Date | null {
+  const exp = claimsFrom(token)?.exp;
+  return typeof exp === 'number' && Number.isFinite(exp)
+    ? new Date(exp * 1000)
+    : null;
 }

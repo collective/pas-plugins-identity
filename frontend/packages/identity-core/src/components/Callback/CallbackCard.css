@@ -1,7 +1,7 @@
 /**
  * The page a provider redirects back to: one line, and rarely for long.
  *
- * It sits inside `LoginPanel`, so the card, its width and its centring come
+ * It sits inside `LoginCard`, so the card, its width and its centring come
  * from there. This only centres the line within it -- the way
  * `volto-authomatic` centres its logout message -- and colours a refusal.
  */

@@ -87,6 +87,29 @@ frontend-test:  ## Test frontend codebase
 	$(MAKE) -C "./frontend/" test
 
 ###########################################
+# Aurora
+###########################################
+.PHONY: aurora-install
+aurora-install:  ## Install the Aurora harness (frontend/aurora)
+	$(MAKE) -C "./frontend/aurora/" install
+
+.PHONY: aurora-start
+aurora-start:  ## Start Aurora with the add-on on http://localhost:3000
+	$(MAKE) -C "./frontend/aurora/" start
+
+.PHONY: aurora-build
+aurora-build:  ## Build Aurora with the add-on
+	$(MAKE) -C "./frontend/aurora/" build
+
+.PHONY: aurora-lint
+aurora-lint:  ## Lint and typecheck the Aurora add-on
+	$(MAKE) -C "./frontend/aurora/" lint
+
+.PHONY: aurora-test
+aurora-test:  ## Test the Aurora add-on
+	$(MAKE) -C "./frontend/aurora/" ci-test
+
+###########################################
 # Backend
 ###########################################
 .PHONY: backend-install

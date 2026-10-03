@@ -61,9 +61,12 @@ const defaultRazzleOptions = {
 };
 
 module.exports = {
+  // Each package's `src` only. `packages/**` also reaches every package's
+  // `node_modules`, and through `aurora-identity`'s symlinks the stories of
+  // Aurora's own packages, which do not build against Volto.
   stories: [
-    '../packages/**/*.mdx',
-    '../packages/**/*.stories.@(js|jsx|ts|tsx)',
+    '../packages/*/src/**/*.mdx',
+    '../packages/*/src/**/*.stories.@(js|jsx|ts|tsx)',
   ],
   addons: [
     '@storybook/addon-links',

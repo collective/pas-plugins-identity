@@ -7,14 +7,12 @@
  * lives here: a single field needs no divider above its action row, and the
  * confirmation that replaces the whole form is not a form at all.
  */
-.identity-magic-link {
-  &.PloneAuth .actions {
-    padding-top: 0;
-    /* `PasswordForm` rules a line above its two buttons to separate them from
-       two fields and a password-reset link. Above a single field it is a rule
-       under nothing. */
-    border-top: 0;
-  }
+.identity-magic-link.PloneAuth .actions {
+  padding-top: 0;
+  /* `PasswordForm` rules a line above its two buttons to separate them from
+     two fields and a password-reset link. Above a single field it is a rule
+     under nothing. */
+  border-top: 0;
 }
 
 .identity-magic-link--sent {
