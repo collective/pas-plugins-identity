@@ -22,7 +22,7 @@ import React, { useState } from 'react';
 import { defineMessages } from '#i18n';
 
 import { useIdentityUI } from '../IdentityUI/IdentityUI';
-import './LoginOverlay.scss';
+import './LoginOverlay.css';
 
 const messages = defineMessages({
   dismiss: { id: 'Close', defaultMessage: 'Close' },

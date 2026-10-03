@@ -1,0 +1,98 @@
+/**
+ * One provider button.
+ *
+ * The geometry and the per-provider colours are volto-authomatic's, keyed off
+ * the driver rather than the provider id: a site may call its Keycloak
+ * anything it likes, but it is still an OpenID Connect button.
+ */
+.identity-provider {
+  display: inline-flex;
+  width: var(--identity-provider-width);
+  max-width: 100%;
+  height: var(--identity-provider-height);
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  border: none;
+  border-radius: var(--identity-provider-radius);
+  background: var(--identity-provider-default-bg);
+  box-shadow: var(--identity-provider-shadow);
+  color: var(--identity-provider-default-color);
+  cursor: pointer;
+  font-size: 16px;
+  gap: 8px;
+  text-align: center;
+  /* `plone` is the local password form; `plone-identity` is the driver for
+     another Plone site, whose button wears the same colours. */
+  /* `keycloak` is built on `oidc-generic`, and a Keycloak provider wore these
+     colours before it had a driver of its own. */
+  /* An operator's own colours, set per provider in the control panel. The
+     rule carries no colours of its own: they arrive as an inline style, and
+     this only has to stop the driver rules above from winning. `revert`
+     rather than `unset`, so a provider styled with a background alone keeps
+     the stylesheet's text colour rather than falling back to the browser's
+     black on whatever they chose. */
+}
+.identity-provider:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.identity-provider.identity-provider--github {
+  background: var(--identity-provider-github-bg);
+  color: var(--identity-provider-github-color);
+}
+.identity-provider.identity-provider--github:hover:not(:disabled) {
+  background: var(--identity-provider-github-bg-hover);
+}
+.identity-provider.identity-provider--google {
+  background: var(--identity-provider-google-bg);
+  color: var(--identity-provider-google-color);
+}
+.identity-provider.identity-provider--google:hover:not(:disabled) {
+  background: var(--identity-provider-google-bg-hover);
+}
+.identity-provider.identity-provider--plone,
+.identity-provider.identity-provider--plone-identity {
+  background: var(--identity-provider-plone-bg);
+  color: var(--identity-provider-plone-color);
+}
+.identity-provider.identity-provider--plone:hover:not(:disabled),
+.identity-provider.identity-provider--plone-identity:hover:not(:disabled) {
+  background: var(--identity-provider-plone-bg-hover);
+}
+.identity-provider.identity-provider--oidc-generic,
+.identity-provider.identity-provider--keycloak {
+  background: var(--identity-provider-oidc-bg);
+  color: var(--identity-provider-oidc-color);
+}
+.identity-provider.identity-provider--oidc-generic:hover:not(:disabled),
+.identity-provider.identity-provider--keycloak:hover:not(:disabled) {
+  background: var(--identity-provider-oidc-bg-hover);
+}
+.identity-provider.identity-provider--styled {
+  background: revert;
+  color: revert;
+}
+.identity-provider.identity-provider--styled:hover:not(:disabled) {
+  background: revert;
+  /* The operator chose the colour; dimming it slightly is the only hover
+     this can offer without knowing what would contrast with it. */
+  filter: brightness(0.92);
+}
+.identity-provider .identity-provider__icon {
+  display: inline-flex;
+  width: 1.25em;
+  height: 1.25em;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  /* An uploaded icon is whatever size it was drawn at, and `currentColor`
+     is what makes a monochrome one take the button's text colour -- which
+     is the reason it is inlined rather than served as an image. A fill the
+     operator set on the path still wins over this. */
+}
+.identity-provider .identity-provider__icon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentcolor;
+}

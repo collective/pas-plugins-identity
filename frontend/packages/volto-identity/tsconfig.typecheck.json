@@ -1,0 +1,46 @@
+{
+  "//": "Typechecking only. Maps identity-core's peer dependencies to this package's own copies and includes identity-core's sources, so core is typechecked against this frontend's types. Not in tsconfig.json: Volto turns an add-on's tsconfig paths into webpack aliases, and these point at type declarations, which have no code to bundle.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@plone/volto/*": [
+        "../../core/packages/volto/src/*"
+      ],
+      "@plone-collective/volto-identity/*": [
+        "./src/*"
+      ],
+      "@plone-collective/identity-core/*": [
+        "../identity-core/src/*"
+      ],
+      "react": [
+        "./node_modules/@types/react"
+      ],
+      "react/*": [
+        "./node_modules/@types/react/*"
+      ],
+      "react-dom": [
+        "./node_modules/@types/react-dom"
+      ],
+      "react-dom/*": [
+        "./node_modules/@types/react-dom/*"
+      ],
+      "react-aria-components": [
+        "./node_modules/react-aria-components"
+      ],
+      "@plone/components": [
+        "./node_modules/@plone/components"
+      ],
+      "@plone/components/*": [
+        "./node_modules/@plone/components/*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.js",
+    "**/*.jsx",
+    "../identity-core/src/**/*.ts",
+    "../identity-core/src/**/*.tsx"
+  ]
+}

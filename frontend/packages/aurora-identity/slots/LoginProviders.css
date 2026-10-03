@@ -1,0 +1,10 @@
+/**
+ * The provider buttons under Aurora's password form: one per line, a little
+ * apart, and set off from the form above them.
+ */
+.identity-login-providers {
+  display: flex;
+  flex-direction: column;
+  margin-top: 1.5rem;
+  gap: 0.5rem;
+}

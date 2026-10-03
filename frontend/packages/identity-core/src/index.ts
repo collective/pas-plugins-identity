@@ -10,6 +10,11 @@
  * @module identity-core
  */
 
+export { default as CallbackCard } from './components/Callback/CallbackCard';
+export type {
+  CallbackCardProps,
+  CallbackFailure,
+} from './components/Callback/CallbackCard';
 export { default as LoginCard } from './components/Login/LoginCard';
 export type { LoginCardProps } from './components/Login/LoginCard';
 export { default as LoginForm } from './components/Login/LoginForm';

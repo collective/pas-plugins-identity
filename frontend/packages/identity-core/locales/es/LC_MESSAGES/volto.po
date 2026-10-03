@@ -19,6 +19,7 @@ msgstr ""
 "X-Generator: Poedit 2.2.1\n"
 
 #. Default: "Back to sign-in options"
+#: components/Callback/CallbackCard
 #: components/Login/LoginForm
 msgid "Back to sign-in options"
 msgstr "Volver a las opciones de inicio de sesión"
@@ -32,6 +33,11 @@ msgstr "Limpiar"
 #: components/Login/LoginOverlay
 msgid "Close"
 msgstr "Cerrar"
+
+#. Default: "Confirming your address…"
+#: components/Callback/CallbackCard
+msgid "Confirming your address"
+msgstr "Confirmando su dirección…"
 
 #. Default: "Email address"
 #: components/Login/MagicLinkForm
@@ -52,6 +58,11 @@ msgstr "If that address can sign in here, a link is on its way. It works once, a
 #: components/Login/LoginForm
 msgid "Loading sign-in options"
 msgstr "Cargando opciones de inicio de sesión…"
+
+#. Default: "Log in"
+#: components/Callback/CallbackCard
+msgid "Log in"
+msgstr "Iniciar sesión"
 
 #. Default: "Login name"
 #: components/Login/PasswordForm
@@ -83,6 +94,11 @@ msgstr "Inicie sesión con una contraseña"
 msgid "Signing in"
 msgstr "Iniciando sesión"
 
+#. Default: "Signing you in…"
+#: components/Callback/CallbackCard
+msgid "Signing you in"
+msgstr "Iniciando su sesión…"
+
 #. Default: "Taking you to {provider}…"
 #: components/Login/LoginForm
 msgid "Taking you to {provider}…"
@@ -98,10 +114,26 @@ msgstr "Eso no funcionó. Por favor, intente de nuevo en un momento."
 msgid "That login name and password did not match."
 msgstr "Ese nombre de usuario y contraseña no coincidieron."
 
+#. Default: "That sign-in link is no longer valid. Please start again."
+#: components/Callback/CallbackCard
+msgid "That sign-in link is no longer valid. Please start again."
+msgstr "Ese enlace de inicio de sesión ya no es válido. Por favor, comience de nuevo."
+
 #. Default: "That sign-in option is not available right now."
+#: components/Callback/CallbackCard
 #: components/Login/LoginForm
 msgid "That sign-in option is not available right now."
 msgstr "Esa opción de inicio de sesión no está disponible en este momento."
+
+#. Default: "The provider refused the sign-in."
+#: components/Callback/CallbackCard
+msgid "The provider refused the sign-in."
+msgstr "El proveedor rechazó el inicio de sesión."
+
+#. Default: "This sign-in link is incomplete."
+#: components/Callback/CallbackCard
+msgid "This sign-in link is incomplete."
+msgstr "Este enlace de inicio de sesión está incompleto."
 
 #. Default: "Forgot your password?"
 #: components/Login/PasswordForm

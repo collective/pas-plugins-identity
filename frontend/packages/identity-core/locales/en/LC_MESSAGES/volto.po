@@ -12,6 +12,7 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. Default: "Back to sign-in options"
+#: components/Callback/CallbackCard
 #: components/Login/LoginForm
 msgid "Back to sign-in options"
 msgstr ""
@@ -24,6 +25,11 @@ msgstr ""
 #. Default: "Close"
 #: components/Login/LoginOverlay
 msgid "Close"
+msgstr ""
+
+#. Default: "Confirming your address…"
+#: components/Callback/CallbackCard
+msgid "Confirming your address"
 msgstr ""
 
 #. Default: "Email address"
@@ -44,6 +50,11 @@ msgstr ""
 #. Default: "Loading sign-in options…"
 #: components/Login/LoginForm
 msgid "Loading sign-in options"
+msgstr ""
+
+#. Default: "Log in"
+#: components/Callback/CallbackCard
+msgid "Log in"
 msgstr ""
 
 #. Default: "Login name"
@@ -76,6 +87,11 @@ msgstr ""
 msgid "Signing in"
 msgstr ""
 
+#. Default: "Signing you in…"
+#: components/Callback/CallbackCard
+msgid "Signing you in"
+msgstr ""
+
 #. Default: "Taking you to {provider}…"
 #: components/Login/LoginForm
 msgid "Taking you to {provider}…"
@@ -91,9 +107,25 @@ msgstr ""
 msgid "That login name and password did not match."
 msgstr ""
 
+#. Default: "That sign-in link is no longer valid. Please start again."
+#: components/Callback/CallbackCard
+msgid "That sign-in link is no longer valid. Please start again."
+msgstr ""
+
 #. Default: "That sign-in option is not available right now."
+#: components/Callback/CallbackCard
 #: components/Login/LoginForm
 msgid "That sign-in option is not available right now."
+msgstr ""
+
+#. Default: "The provider refused the sign-in."
+#: components/Callback/CallbackCard
+msgid "The provider refused the sign-in."
+msgstr ""
+
+#. Default: "This sign-in link is incomplete."
+#: components/Callback/CallbackCard
+msgid "This sign-in link is incomplete."
 msgstr ""
 
 #. Default: "Forgot your password?"

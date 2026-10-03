@@ -17,7 +17,7 @@ import React from 'react';
 
 import type { ProviderStyle } from '../../types';
 
-import './ProviderButton.scss';
+import './ProviderButton.css';
 
 interface ProviderButtonProps extends ProviderStyle {
   /** Whose colours to wear. `plone` is the local password form. */

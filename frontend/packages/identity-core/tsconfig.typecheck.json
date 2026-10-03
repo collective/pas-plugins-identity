@@ -1,0 +1,29 @@
+{
+  "//": "Typechecking only. Maps identity-core's peer dependencies to this package's own copies and includes identity-core's sources, so core is typechecked against this frontend's types. Not in tsconfig.json: Volto turns an add-on's tsconfig paths into webpack aliases, and these point at type declarations, which have no code to bundle.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "react": [
+        "../volto-identity/node_modules/@types/react"
+      ],
+      "react/*": [
+        "../volto-identity/node_modules/@types/react/*"
+      ],
+      "react-dom": [
+        "../volto-identity/node_modules/@types/react-dom"
+      ],
+      "react-dom/*": [
+        "../volto-identity/node_modules/@types/react-dom/*"
+      ],
+      "react-aria-components": [
+        "../volto-identity/node_modules/react-aria-components"
+      ],
+      "@plone/components": [
+        "../volto-identity/node_modules/@plone/components"
+      ],
+      "@plone/components/*": [
+        "../volto-identity/node_modules/@plone/components/*"
+      ]
+    }
+  }
+}

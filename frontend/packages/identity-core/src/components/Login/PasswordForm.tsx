@@ -30,7 +30,7 @@ import '@plone/components/src/styles/basic/TextField.css';
 import { useIdentityUI } from '../IdentityUI/IdentityUI';
 import LoginOverlay, { useDismissibleError } from './LoginOverlay';
 
-import './PasswordForm.scss';
+import './PasswordForm.css';
 
 const messages = defineMessages({
   loginName: { id: 'Login name', defaultMessage: 'Login name' },

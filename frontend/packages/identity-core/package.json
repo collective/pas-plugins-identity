@@ -26,8 +26,8 @@
   },
   "scripts": {
     "test": "vitest",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
-    "i18n": "rm -rf build/messages && NODE_ENV=production i18n --addon"
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
+    "i18n": "rm -rf build/messages && NODE_ENV=production node ../../core/packages/scripts/i18n.cjs --addon"
   },
   "dependencies": {},
   "peerDependencies": {
@@ -37,14 +37,12 @@
     "react-dom": "^18.2.0 || ^19.0.0"
   },
   "devDependencies": {
-    "@plone/babel-preset-razzle": "workspace:*",
     "@plone/components": "workspace:*",
-    "@plone/scripts": "workspace:*",
     "@storybook/react": "^8.0.4",
     "@testing-library/react": "^16.2.0",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.1",
-    "jsdom": "catalog:",
+    "jsdom": "^28.1.0",
     "react": "18.2.0",
     "react-aria-components": "catalog:",
     "react-dom": "18.2.0",

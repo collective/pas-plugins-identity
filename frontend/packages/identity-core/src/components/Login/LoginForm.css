@@ -16,15 +16,14 @@
 .identity-password-toggle {
   padding: 10px;
   text-align: center;
-
-  > button {
-    padding: 0;
-    border: unset;
-    background: transparent;
-    color: var(--identity-accent);
-    cursor: pointer;
-    font-size: 14px;
-  }
+}
+.identity-password-toggle > button {
+  padding: 0;
+  border: unset;
+  background: transparent;
+  color: var(--identity-accent);
+  cursor: pointer;
+  font-size: 14px;
 }
 
 .identity-providers {
