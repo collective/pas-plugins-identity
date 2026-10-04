@@ -39,12 +39,23 @@ msgstr "Limpiar"
 msgid "Close"
 msgstr "Cerrar"
 
+#. Default: "Complete your profile"
+#: components/CompleteProfile/CompleteProfileCard
+msgid "Complete your profile"
+msgstr "Complete su perfil"
+
+#. Default: "Confirm your email address"
+#: components/ConfirmEmail/ConfirmEmailCard
+msgid "Confirm your email address"
+msgstr "Confirme su dirección de correo"
+
 #. Default: "Confirming your address…"
 #: components/Callback/CallbackCard
 msgid "Confirming your address"
 msgstr "Confirmando su dirección…"
 
 #. Default: "Edit your profile"
+#: components/CompleteProfile/CompleteProfileCard
 #: components/Identities/ProfileEmails
 msgid "Edit your profile"
 msgstr "Edite su perfil"
@@ -98,6 +109,11 @@ msgstr "Hacer preferido"
 #: components/Login/PasswordForm
 msgid "Password"
 msgstr "Contraseña"
+
+#. Default: "Please fill in {fields} before you can continue."
+#: components/CompleteProfile/CompleteProfileCard
+msgid "Please fill in {fields} before you can continue."
+msgstr "Complete {fields} antes de que pueda continuar."
 
 #. Default: "Preferred"
 #: components/Identities/ProfileEmails
@@ -205,10 +221,61 @@ msgstr "No tiene métodos de inicio de sesión externos vinculados aún."
 msgid "Your email addresses"
 msgstr "Sus direcciones de correo"
 
+#. Default: "Your profile needs a few more details before you can continue."
+#: components/CompleteProfile/CompleteProfileCard
+msgid "Your profile needs a few more details before you can continue."
+msgstr "Su perfil necesita algunos detalles más antes de que pueda continuar."
+
+#. Default: "Your verified addresses"
+#: components/ConfirmEmail/ConfirmEmailCard
+msgid "Your verified addresses"
+msgstr "Sus direcciones verificadas"
+
 #. Default: "Forgot your password?"
 #: components/Login/PasswordForm
 msgid "box_forgot_password_option"
 msgstr "¿Olvidó su contraseña?"
+
+#. Default: "Your profile is complete."
+#: components/CompleteProfile/CompleteProfileCard
+msgid "complete-profile-nothing"
+msgstr "Tu perfil está completo."
+
+#. Default: "Continue"
+#: components/CompleteProfile/CompleteProfileCard
+#: components/ConfirmEmail/ConfirmEmailCard
+msgid "confirm-email-continue"
+msgstr "Continuar"
+
+#. Default: "You have more than one verified email address. Choose the one this site should use for you."
+#: components/ConfirmEmail/ConfirmEmailCard
+msgid "confirm-email-description"
+msgstr "Tiene más de una dirección de correo verificada. Elija la que este sitio debe usar para usted."
+
+#. Default: "This site will use {address} for you."
+#: components/ConfirmEmail/ConfirmEmailCard
+msgid "confirm-email-done"
+msgstr "Este sitio usará {address} para usted."
+
+#. Default: "That address could not be confirmed. Reload the page and try again."
+#: components/ConfirmEmail/ConfirmEmailCard
+msgid "confirm-email-failed"
+msgstr "Esa dirección no pudo ser confirmada. Recargue la página e intente de nuevo."
+
+#. Default: "Loading…"
+#: components/ConfirmEmail/ConfirmEmailCard
+msgid "confirm-email-loading"
+msgstr "Cargando…"
+
+#. Default: "There is no email address waiting to be confirmed."
+#: components/ConfirmEmail/ConfirmEmailCard
+msgid "confirm-email-nothing"
+msgstr "No hay dirección de correo esperando ser confirmada."
+
+#. Default: "Confirm"
+#: components/ConfirmEmail/ConfirmEmailCard
+msgid "confirm-email-submit"
+msgstr "Confirmar"
 
 #. Default: "How you sign in"
 #: components/Identities/IdentitiesList

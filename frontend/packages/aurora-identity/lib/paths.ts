@@ -20,6 +20,13 @@ export const CALLBACK_PATH = '/login-identity';
  */
 export const IDENTITIES_PATH = '/identities';
 
+/**
+ * Where a user is asked which of their verified addresses stands for them.
+ *
+ * `CONFIRM_EMAIL_PATH` in `identity-core`, which the profile gate sends to.
+ */
+export { CONFIRM_EMAIL_PATH } from '@plone-collective/identity-core';
+
 /** The route a provider button sends the browser to, to start a sign-in. */
 export const START_PATH = `${CALLBACK_PATH}/start`;
 

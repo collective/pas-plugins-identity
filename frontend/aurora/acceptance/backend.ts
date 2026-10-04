@@ -137,3 +137,75 @@ export async function lastMagicLink(address: string): Promise<string | null> {
   }
   return message.match(/https?:\/\/\S*[?&]magic_link=[\w.-]+/)?.[0] ?? null;
 }
+
+/** The registry record naming the fields a profile must carry. */
+const REQUIRED_FIELDS = 'pas.plugins.identity.required_profile_fields';
+
+/**
+ * Name the fields a profile must carry to count as complete.
+ *
+ * The backend evaluates it at every sign-in and every edit of a profile, so
+ * a change reaches a profile at its owner's next sign-in.
+ *
+ * @param fields The field names; none to require only what the type does.
+ */
+export async function requireProfileFields(fields: string[]): Promise<void> {
+  const answer = await fetch(`${SITE}/++api++/@registry`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({ [REQUIRED_FIELDS]: fields }),
+  });
+  if (!answer.ok) {
+    throw new Error(
+      `Setting the required fields failed: ${answer.status} ${await answer.text()}`,
+    );
+  }
+}
+
+/**
+ * The path of the profile carrying an address, if there is one yet.
+ *
+ * @param address The address.
+ * @returns The profile's path below the site, or null.
+ */
+export async function profileOf(address: string): Promise<string | null> {
+  const search = await fetch(
+    `${SITE}/++api++/@search?portal_type=UserProfile&b_size=100`,
+    { headers },
+  );
+  const { items } = (await search.json()) as { items: { '@id': string }[] };
+  for (const item of items) {
+    const path = new URL(item['@id']).pathname.replace(
+      new URL(SITE).pathname,
+      '',
+    );
+    const profile = await fetch(`${SITE}/++api++${path}`, { headers });
+    const { emails } = (await profile.json()) as { emails?: string[] };
+    if (emails?.includes(address)) {
+      return path;
+    }
+  }
+  return null;
+}
+
+/**
+ * Edit a profile, as an administrator.
+ *
+ * @param path The profile's path below the site.
+ * @param fields The fields to set.
+ */
+export async function editProfile(
+  path: string,
+  fields: Record<string, unknown>,
+): Promise<void> {
+  const answer = await fetch(`${SITE}/++api++${path}`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify(fields),
+  });
+  if (!answer.ok) {
+    throw new Error(
+      `Editing ${path} failed: ${answer.status} ${await answer.text()}`,
+    );
+  }
+}

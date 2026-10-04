@@ -1,0 +1,20 @@
+/**
+ * The explanation the profile gate holds a user on, inside the login card,
+ * with the same gap on every side the address confirmation has.
+ */
+.identity-complete-profile {
+  display: flex;
+  flex-direction: column;
+  padding: var(--identity-gap);
+  gap: var(--identity-gap);
+}
+
+.identity-complete-profile p {
+  margin: 0;
+}
+
+/* The edit link is the page's one action, so it wears the primary button. */
+.identity-complete-profile a.identity-button {
+  display: inline-block;
+  text-decoration: none;
+}

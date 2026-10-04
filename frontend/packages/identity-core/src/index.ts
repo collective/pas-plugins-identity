@@ -18,6 +18,13 @@ export type {
   CallbackCardProps,
   CallbackFailure,
 } from './components/Callback/CallbackCard';
+export { default as CompleteProfileCard } from './components/CompleteProfile/CompleteProfileCard';
+export type { CompleteProfileCardProps } from './components/CompleteProfile/CompleteProfileCard';
+export { default as ConfirmEmailCard } from './components/ConfirmEmail/ConfirmEmailCard';
+export type {
+  ConfirmEmailCardProps,
+  ConfirmEmailStatus,
+} from './components/ConfirmEmail/ConfirmEmailCard';
 export { default as IdentitiesList } from './components/Identities/IdentitiesList';
 export { default as ProfileEmails } from './components/Identities/ProfileEmails';
 export { default as LoginCard } from './components/Login/LoginCard';

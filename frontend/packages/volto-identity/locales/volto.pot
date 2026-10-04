@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Plone\n"
-"POT-Creation-Date: 2026-10-04T16:18:33.264Z\n"
+"POT-Creation-Date: 2026-10-04T16:45:47.780Z\n"
 "Last-Translator: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Language-Team: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -922,11 +922,6 @@ msgstr ""
 msgid "Your profile needs a few more details before you can continue."
 msgstr ""
 
-#. Default: "Your verified addresses"
-#: components/ConfirmEmail/ConfirmEmail
-msgid "Your verified addresses"
-msgstr ""
-
 #. Default: "Permanent. It is what every token already issued is bound to, so it cannot be changed afterwards."
 #: helpers/clientSchema
 msgid "client-id-help"
@@ -935,41 +930,6 @@ msgstr ""
 #. Default: "A native or browser app, which cannot keep a secret. No secret is minted and PKCE becomes mandatory instead."
 #: helpers/clientSchema
 msgid "client-public-help"
-msgstr ""
-
-#. Default: "Continue"
-#: components/ConfirmEmail/ConfirmEmail
-msgid "confirm-email-continue"
-msgstr ""
-
-#. Default: "You have more than one verified email address. Choose the one this site should use for you."
-#: components/ConfirmEmail/ConfirmEmail
-msgid "confirm-email-description"
-msgstr ""
-
-#. Default: "This site will use {address} for you."
-#: components/ConfirmEmail/ConfirmEmail
-msgid "confirm-email-done"
-msgstr ""
-
-#. Default: "That address could not be confirmed. Reload the page and try again."
-#: components/ConfirmEmail/ConfirmEmail
-msgid "confirm-email-failed"
-msgstr ""
-
-#. Default: "Loading…"
-#: components/ConfirmEmail/ConfirmEmail
-msgid "confirm-email-loading"
-msgstr ""
-
-#. Default: "There is no email address waiting to be confirmed."
-#: components/ConfirmEmail/ConfirmEmail
-msgid "confirm-email-nothing"
-msgstr ""
-
-#. Default: "Confirm"
-#: components/ConfirmEmail/ConfirmEmail
-msgid "confirm-email-submit"
 msgstr ""
 
 #. Default: "directly"
