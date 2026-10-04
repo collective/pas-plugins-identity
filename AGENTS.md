@@ -115,7 +115,7 @@ Run these before proposing a commit. CI runs the same ones.
 | `make test` | root | `make backend-test` and `make frontend-test` |
 | `make check-imports` | `backend/` | The core/server layer boundary |
 | `make aurora-lint`, `make aurora-test`, `make aurora-build` | root | The Aurora add-on. Needs `make aurora-install`; CI runs them in `.github/workflows/aurora.yml` |
-| `make acceptance-test` | `frontend/aurora` | A real sign-in through Dex, with Playwright. Needs the services its `acceptance-*` targets start; CI runs it too |
+| `make acceptance-test` | `frontend/aurora` | A real sign-in through Dex and through a magic link, with Playwright. Needs the services its `acceptance-*` targets start; CI runs it too |
 | `make docs-build` | root | Sphinx with `-W`, warnings as errors |
 | `make vale` | `docs/` | Prose style. **Errors must be zero**; warnings are advisory |
 

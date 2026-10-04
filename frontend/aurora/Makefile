@@ -98,9 +98,9 @@ test: ## Run the add-on's unit tests
 ci-test: ## Run the add-on's unit tests once
 	CI=1 pnpm test --run
 
-# Acceptance: a real sign-in, through Dex, against the backend's acceptance
-# server. Start the three services, each in its own shell, register the
-# provider, then run the tests.
+# Acceptance: a real sign-in, through Dex and through a magic link, against
+# the backend's acceptance server. Start the four services, each in its own
+# shell, register the provider, then run the tests.
 
 ACCEPTANCE_API_PATH=http://localhost:55001/plone
 DEX_CONFIG=$(CURRENT_DIR)/../../backend/tests/_resources/dex/config.yaml
@@ -112,6 +112,10 @@ acceptance-backend-start: ## Start the backend's acceptance server on http://loc
 .PHONY: acceptance-dex-start
 acceptance-dex-start: ## Start Dex with the backend's test configuration on http://127.0.0.1:5556/dex
 	docker run --rm --name aurora-acceptance-dex -p 5556:5556 -v $(DEX_CONFIG):/etc/dex/config.yaml:ro ghcr.io/dexidp/dex:v2.44.0 dex serve /etc/dex/config.yaml
+
+.PHONY: acceptance-mail-start
+acceptance-mail-start: ## Start Mailpit, catching the site's mail: SMTP on 1025, messages on http://localhost:8025
+	docker run --rm --name aurora-acceptance-mail -p 1025:1025 -p 8025:8025 axllent/mailpit:v1.27
 
 .PHONY: acceptance-frontend-start
 acceptance-frontend-start: ## Build Aurora and serve it on http://localhost:3000 against the acceptance backend

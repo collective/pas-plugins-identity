@@ -76,7 +76,7 @@ jobs:
         run: make build
 
   acceptance:
-    name: "Aurora: Sign-in through Dex"
+    name: "Aurora: Sign-in through Dex and a magic link"
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -124,18 +124,21 @@ jobs:
       - name: Install Playwright's browser
         run: pnpm exec playwright install --with-deps chromium
 
-      # The three services, as `make acceptance-*-start` starts them, in the
+      # The four services, as `make acceptance-*-start` starts them, in the
       # background of this job.
-      - name: Start the backend, Dex and Aurora
+      - name: Start the backend, Dex, Mailpit and Aurora
         run: |
           nohup make acceptance-backend-start > backend.log 2>&1 &
           docker run -d --name aurora-acceptance-dex -p 5556:5556 \
             -v "$GITHUB_WORKSPACE/backend/tests/_resources/dex/config.yaml:/etc/dex/config.yaml:ro" \
             ghcr.io/dexidp/dex:v2.44.0 dex serve /etc/dex/config.yaml
+          docker run -d --name aurora-acceptance-mail -p 1025:1025 -p 8025:8025 \
+            axllent/mailpit:v1.27
           PLONE_API_PATH=http://localhost:55001/plone nohup pnpm start:prod > aurora.log 2>&1 &
           for url in \
             http://localhost:55001/plone/++api++/@login-providers \
             http://127.0.0.1:5556/dex/.well-known/openid-configuration \
+            http://localhost:8025/api/v1/messages \
             http://localhost:3000/; do
             timeout 300 bash -c "until curl -sf -o /dev/null $url; do sleep 2; done" \
               || { echo "$url never answered"; exit 1; }
@@ -152,6 +155,7 @@ jobs:
         run: |
           tail -n 100 backend.log aurora.log
           docker logs aurora-acceptance-dex | tail -n 100
+          docker logs aurora-acceptance-mail | tail -n 100
 
       - name: Upload the Playwright traces
         if: failure()
