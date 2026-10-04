@@ -17,7 +17,7 @@ const meta: Meta<typeof IdentitiesList> = {
     identities: IDENTITIES,
     available: PROVIDERS,
     emails: PROFILE_EMAILS,
-    profileUrl: '/identity-profiles/erico',
+    profileEditHref: '/identity-profiles/erico/edit',
     loading: false,
     busy: false,
     emailSent: false,

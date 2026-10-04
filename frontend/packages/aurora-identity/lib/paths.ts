@@ -13,6 +13,13 @@ import { returnUrl } from '@plone-collective/identity-core';
  */
 export const CALLBACK_PATH = '/login-identity';
 
+/**
+ * Where a signed-in user manages their own sign-in methods.
+ *
+ * `IDENTITIES_PATH` in the Volto add-on, so a link to it works on either.
+ */
+export const IDENTITIES_PATH = '/identities';
+
 /** The route a provider button sends the browser to, to start a sign-in. */
 export const START_PATH = `${CALLBACK_PATH}/start`;
 

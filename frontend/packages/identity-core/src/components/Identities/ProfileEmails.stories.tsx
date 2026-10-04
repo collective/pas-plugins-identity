@@ -8,7 +8,7 @@ const meta: Meta<typeof ProfileEmails> = {
   component: ProfileEmails,
   args: {
     emails: PROFILE_EMAILS,
-    profileUrl: '/identity-profiles/erico',
+    profileEditHref: '/identity-profiles/erico/edit',
     loading: false,
     busy: false,
     sent: false,

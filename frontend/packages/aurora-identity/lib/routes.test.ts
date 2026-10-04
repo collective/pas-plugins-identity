@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { ReactRouterRouteEntry } from '@plone/types';
 
-import { AURORA_LOGIN_FILE, replaceRouteFile } from './routes';
+import {
+  addRouteUnder,
+  AURORA_LOGIN_FILE,
+  PUBLIC_LAYOUT_FILE,
+  replaceRouteFile,
+} from './routes';
 
 const OURS = '@plone-collective/aurora-identity/routes/login.tsx';
 
@@ -64,6 +69,65 @@ describe('replaceRouteFile', () => {
     expect(replaceRouteFile(routes, '@plone/cmsui/routes/gone.tsx', OURS)).toBe(
       0,
     );
+    expect(routes).toEqual(cmsuiRoutes());
+  });
+});
+
+/**
+ * The routes as `@plone/publicui` registers them, beside cmsui's.
+ *
+ * @returns A fresh copy.
+ */
+function siteRoutes(): ReactRouterRouteEntry[] {
+  return [
+    ...cmsuiRoutes(),
+    {
+      type: 'layout',
+      file: PUBLIC_LAYOUT_FILE,
+      children: [
+        {
+          type: 'route',
+          path: 'search',
+          file: '@plone/publicui/routes/search.tsx',
+        },
+        {
+          type: 'route',
+          path: '*',
+          file: '@plone/publicui/routes/content.tsx',
+        },
+      ],
+    },
+  ];
+}
+
+const PAGE: ReactRouterRouteEntry = {
+  type: 'route',
+  path: 'identities',
+  file: '@plone-collective/aurora-identity/routes/identities.tsx',
+};
+
+describe('addRouteUnder', () => {
+  it("adds the page to the site's layout, beside its own pages", () => {
+    const routes = siteRoutes();
+
+    expect(addRouteUnder(routes, PUBLIC_LAYOUT_FILE, PAGE)).toBe(true);
+    const layout = routes[1] as { children: ReactRouterRouteEntry[] };
+    expect(layout.children).toContainEqual(PAGE);
+    expect(layout.children).toHaveLength(3);
+  });
+
+  it('leaves every other route alone', () => {
+    const routes = siteRoutes();
+
+    addRouteUnder(routes, PUBLIC_LAYOUT_FILE, PAGE);
+
+    expect(routes[0]).toEqual(cmsuiRoutes()[0]);
+  });
+
+  it('says so when the layout is not there', () => {
+    const routes = cmsuiRoutes();
+
+    expect(addRouteUnder(routes, PUBLIC_LAYOUT_FILE, PAGE)).toBe(false);
     expect(routes).toEqual(cmsuiRoutes());
   });
 });

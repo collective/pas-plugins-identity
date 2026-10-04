@@ -9,7 +9,7 @@ import React from 'react';
 import type { ReactNode } from 'react';
 
 import LoginCard from '../components/Login/LoginCard';
-import type { LoginProvider } from '../types';
+import type { Identity, LoginProvider, ProfileEmail } from '../types';
 
 /** A request that has finished with data. */
 export const LOADED = { loading: false, loaded: true, error: null };
@@ -49,6 +49,38 @@ export const EMAIL: LoginProvider = {
 };
 
 export const PROVIDERS = [GOOGLE, GITHUB, KEYCLOAK];
+
+/** A profile's addresses: one proved, one not. */
+export const PROFILE_EMAILS: ProfileEmail[] = [
+  { address: 'erico@plone.org', verified: true, preferred: true },
+  { address: 'erico@example.com', verified: false, preferred: false },
+];
+
+export const IDENTITIES: Identity[] = [
+  {
+    '@id': '/@identities/google:1234',
+    provider: 'google',
+    subject: '1234567890',
+    title: 'Google',
+    created: '2026-01-14T09:12:00+00:00',
+    last_login: '2026-08-21T18:03:00+00:00',
+    can_unlink: true,
+  },
+  {
+    '@id': '/@identities/github:99',
+    provider: 'github',
+    subject: '99',
+    title: 'GitHub',
+    created: '2026-03-02T11:40:00+00:00',
+    last_login: null,
+    can_unlink: true,
+  },
+];
+
+/** The last way in: unlinking it would lock the user out. */
+export const ONLY_IDENTITY: Identity[] = [
+  { ...IDENTITIES[0], can_unlink: false },
+];
 
 /**
  * A provider carrying the look an operator gave it.

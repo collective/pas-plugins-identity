@@ -22,14 +22,12 @@
  * @module components/Identities/ProfileEmails
  */
 import React from 'react';
-import { defineMessages, useIntl } from 'react-intl';
-import { Link } from 'react-router-dom';
-
-import { flattenToAppURL } from '@plone/volto/helpers/Url/Url';
+import { defineMessages } from '#i18n';
 
 import type { ProfileEmail } from '../../types';
+import { useIdentityUI } from '../IdentityUI/IdentityUI';
 
-import './ProfileEmails.scss';
+import './ProfileEmails.css';
 
 const messages = defineMessages({
   heading: {
@@ -83,8 +81,13 @@ const messages = defineMessages({
 
 interface ProfileEmailsProps {
   emails: ProfileEmail[];
-  /** Where the profile's own edit form is, when the user has a profile. */
-  profileUrl?: string | null;
+  /**
+   * Where the profile's own edit form is, when the user has a profile.
+   *
+   * A path inside this site, built by the frontend: Volto's edit form is the
+   * profile's path plus `/edit`, Aurora's is under `/@@edit`.
+   */
+  profileEditHref?: string | null;
   loading: boolean;
   busy: boolean;
   /** Whether a confirmation mail has just gone out. */
@@ -117,7 +120,7 @@ interface ProfileEmailsProps {
 
 const ProfileEmails: React.FC<ProfileEmailsProps> = ({
   emails,
-  profileUrl,
+  profileEditHref,
   loading,
   busy,
   sent,
@@ -125,7 +128,7 @@ const ProfileEmails: React.FC<ProfileEmailsProps> = ({
   onVerify,
   onPrefer,
 }) => {
-  const intl = useIntl();
+  const { t, Link } = useIdentityUI();
 
   if (loading) {
     return null;
@@ -133,14 +136,12 @@ const ProfileEmails: React.FC<ProfileEmailsProps> = ({
 
   return (
     <div className="identity-emails">
-      <h3>{intl.formatMessage(messages.heading)}</h3>
+      <h3>{t(messages.heading)}</h3>
       <p className="identity-note">
-        {intl.formatMessage(
-          canSignInWithLink ? messages.intro : messages.introNoSignIn,
-        )}
+        {t(canSignInWithLink ? messages.intro : messages.introNoSignIn)}
       </p>
       {onPrefer && emails.length > 1 ? (
-        <p className="identity-note">{intl.formatMessage(messages.choose)}</p>
+        <p className="identity-note">{t(messages.choose)}</p>
       ) : null}
 
       {emails.length ? (
@@ -153,7 +154,7 @@ const ProfileEmails: React.FC<ProfileEmailsProps> = ({
                   className="identity-emails__badge identity-emails__badge--verified"
                   data-state="verified"
                 >
-                  {intl.formatMessage(messages.verified)}
+                  {t(messages.verified)}
                 </span>
               ) : (
                 <button
@@ -163,16 +164,16 @@ const ProfileEmails: React.FC<ProfileEmailsProps> = ({
                   disabled={busy}
                   onClick={() => onVerify(entry.address)}
                 >
-                  {intl.formatMessage(messages.verify)}
+                  {t(messages.verify)}
                 </button>
               )}
               {entry.preferred ? (
                 <span
                   className="identity-emails__badge"
                   data-state="preferred"
-                  title={intl.formatMessage(messages.preferredHelp)}
+                  title={t(messages.preferredHelp)}
                 >
-                  {intl.formatMessage(messages.preferred)}
+                  {t(messages.preferred)}
                 </span>
               ) : null}
               {onPrefer && !entry.preferred ? (
@@ -183,31 +184,28 @@ const ProfileEmails: React.FC<ProfileEmailsProps> = ({
                   disabled={busy}
                   onClick={() => onPrefer(entry.address)}
                 >
-                  {intl.formatMessage(messages.makePreferred)}
+                  {t(messages.makePreferred)}
                 </button>
               ) : null}
             </li>
           ))}
         </ul>
       ) : (
-        <p className="identity-note">{intl.formatMessage(messages.empty)}</p>
+        <p className="identity-note">{t(messages.empty)}</p>
       )}
 
       {sent ? (
         <p className="identity-emails__sent" role="status">
-          {intl.formatMessage(messages.sent)}
+          {t(messages.sent)}
         </p>
       ) : null}
 
-      {profileUrl ? (
+      {profileEditHref ? (
         <p className="identity-emails__edit">
-          {/* A router link: the edit form is a Volto route, and a plain
-              anchor to it threw the whole application away to reach a page
-              this app was already running. `profileUrl` is the backend's
-              absolute URL, so it has to be flattened first. */}
-          <Link to={`${flattenToAppURL(profileUrl)}/edit`}>
-            {intl.formatMessage(messages.edit)}
-          </Link>
+          {/* The frontend's link: the edit form is one of its routes, and a
+              plain anchor to it would throw the whole application away to
+              reach a page it was already running. */}
+          <Link href={profileEditHref}>{t(messages.edit)}</Link>
         </p>
       ) : null}
     </div>

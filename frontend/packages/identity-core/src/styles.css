@@ -165,6 +165,65 @@
 }
 
 /**
+ * A page split into sections a reader picks between.
+ *
+ * Worn by the `Tabs` from `@plone/components`, whose own `Tabs.css` each page
+ * imports beside this -- the same split the fields use, and for the same
+ * reason written at `--identity-field-border` above. This adds only what
+ * makes the tabs look like the rest of the add-on: the surface's border under
+ * the strip, and the accent under whichever tab is current.
+ *
+ * Two pages wear it -- a user's account in the control panel, and the
+ * sign-in methods page a person manages their own with. They are the same
+ * question asked by an administrator and by the account's owner, so they are
+ * the same design, described once.
+ */
+.identity-tabs .react-aria-TabList {
+  display: flex;
+  flex-direction: row;
+  border-bottom: 1px solid var(--identity-surface-border);
+  gap: 4px;
+}
+
+.identity-tabs .react-aria-Tab {
+  padding: 10px 16px;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+  color: var(--identity-muted);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  outline: none;
+}
+
+.identity-tabs .react-aria-Tab[data-hovered] {
+  color: var(--identity-accent);
+}
+
+.identity-tabs .react-aria-Tab[data-selected] {
+  border-bottom-color: var(--identity-accent);
+  color: var(--identity-accent);
+}
+
+/* Keyboard focus has to be visible even on the tab already selected, where
+   the accent underline says nothing about where focus is. */
+.identity-tabs .react-aria-Tab[data-focus-visible] {
+  outline: 2px solid var(--identity-accent);
+  outline-offset: -2px;
+}
+
+.identity-tabs .react-aria-Tab[data-disabled] {
+  color: var(--identity-muted);
+  cursor: default;
+  opacity: 0.5;
+}
+
+.identity-tabs .react-aria-TabPanel {
+  padding-top: var(--identity-gap);
+  outline: none;
+}
+
+/**
  * A wait, drawn rather than described.
  *
  * Its own rule rather than `@plone/components`' `Spinner` for the reason the

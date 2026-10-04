@@ -1,15 +1,16 @@
 import { expect, test } from '@playwright/test';
 
 import {
-  addEmailProvider,
+  addProvider,
+  EMAIL_PROVIDER,
   lastMagicLink,
-  removeEmailProvider,
+  removeProvider,
 } from '../backend';
 
 // With the email provider beside Dex there are two ways in, which would
 // stop `/login` going straight to Dex in the other tests.
-test.beforeAll(addEmailProvider);
-test.afterAll(removeEmailProvider);
+test.beforeAll(() => addProvider(EMAIL_PROVIDER));
+test.afterAll(() => removeProvider(EMAIL_PROVIDER.id));
 
 test.describe('Signing in to Aurora with a magic link', () => {
   test('the link in the email signs the user in, once', async ({

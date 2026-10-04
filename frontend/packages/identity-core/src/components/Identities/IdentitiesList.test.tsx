@@ -209,10 +209,15 @@ describe('IdentitiesList and your own addresses', () => {
   });
 
   it('points at the profile when there is nothing to verify', () => {
-    renderList({ emails: [], profileUrl: '/identity-profiles/erico' });
+    renderList({
+      emails: [],
+      profileEditHref: '/identity-profiles/erico/edit',
+    });
     openTab('Email addresses');
 
     expect(screen.getByText(/carries no email address/i)).toBeTruthy();
-    expect(screen.getByText('Edit your profile')).toBeTruthy();
+    expect(
+      screen.getByText('Edit your profile').closest('a')?.getAttribute('href'),
+    ).toBe('/identity-profiles/erico/edit');
   });
 });

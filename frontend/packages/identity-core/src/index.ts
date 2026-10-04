@@ -18,6 +18,8 @@ export type {
   CallbackCardProps,
   CallbackFailure,
 } from './components/Callback/CallbackCard';
+export { default as IdentitiesList } from './components/Identities/IdentitiesList';
+export { default as ProfileEmails } from './components/Identities/ProfileEmails';
 export { default as LoginCard } from './components/Login/LoginCard';
 export type { LoginCardProps } from './components/Login/LoginCard';
 export { default as LoginForm } from './components/Login/LoginForm';
