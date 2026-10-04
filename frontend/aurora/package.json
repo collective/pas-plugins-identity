@@ -22,8 +22,8 @@
     "lint:fix": "cd .. && REGISTRYCONFIG=$(pwd)/aurora/registry.config.ts aurora/node_modules/.bin/eslint --config aurora/eslint.config.mjs --fix 'packages/aurora-identity/**/*.{js,jsx,ts,tsx}'",
     "prettier": "prettier --check '../packages/aurora-identity/**/*.{js,jsx,ts,tsx}'",
     "prettier:fix": "prettier --write '../packages/aurora-identity/**/*.{js,jsx,ts,tsx}'",
-    "stylelint": "stylelint '../packages/aurora-identity/**/*.{css,scss,less}' --allow-empty-input",
-    "stylelint:fix": "stylelint '../packages/aurora-identity/**/*.{css,scss,less}' --fix --allow-empty-input",
+    "stylelint": "stylelint '../packages/aurora-identity/**/*.{css,scss,less}' '!../packages/aurora-identity/node_modules/**' --allow-empty-input",
+    "stylelint:fix": "stylelint '../packages/aurora-identity/**/*.{css,scss,less}' '!../packages/aurora-identity/node_modules/**' --fix --allow-empty-input",
     "acceptance-test": "playwright test --config=acceptance/playwright.config.ts",
     "acceptance-provider": "node acceptance/provider.mjs"
   },
