@@ -65,6 +65,14 @@ doing so:
 - **Catalogues:** a package used by both workspaces may use `catalog:` only for
   entries both catalogues define, and `workspace:*` only for packages both
   workspaces have.
+- **React Aria:** both harnesses override `react-aria-components`,
+  `react-aria`, `react-stately`, `@react-aria/utils`, `@react-spectrum/utils`
+  and `@internationalized/date` to the ranges in
+  `frontend/aurora/core/catalog.json`: `pnpm.overrides` in
+  `frontend/package.json`, `overrides` in `frontend/aurora/pnpm-workspace.yaml`.
+  Keep the two lists the same, and both lockfiles resolving the same versions,
+  so core's components run on one React Aria in both frontends. They go once
+  Volto's `@plone/components` and Aurora's agree by themselves.
 
 The Aurora add-on renders Aurora's `/login` with its own page,
 `aurora-identity/routes/login.tsx`. Aurora's registry cannot replace a route,

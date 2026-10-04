@@ -45,7 +45,13 @@
   "pnpm": {
     "overrides": {
       "@pmmmwh/react-refresh-webpack-plugin": "^0.5.15",
-      "react-refresh": "^0.14.2"
+      "react-refresh": "^0.14.2",
+      "react-aria-components": "^1.17.0",
+      "react-aria": "^3.48.0",
+      "react-stately": "^3.46.0",
+      "@react-aria/utils": "^3.34.0",
+      "@react-spectrum/utils": "^3.13.0",
+      "@internationalized/date": "^3.12.1"
     },
     "ignoredBuiltDependencies": [
       "@parcel/watcher"

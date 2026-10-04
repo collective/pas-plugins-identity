@@ -21,6 +21,17 @@ overrides:
   react: ^19.2.0
   react-dom: ^19.2.0
   jotai: ^2.12.5
+  # React Aria, the same everywhere in both harnesses, at the ranges of
+  # core/catalog.json. The Volto harness (../package.json) overrides them to
+  # the same ranges, so identity-core's components run on one version of
+  # React Aria in both frontends. Until Volto's @plone/components and
+  # Aurora's agree on one by themselves (#132, phase 5).
+  react-aria-components: '^1.17.0'
+  react-aria: '^3.48.0'
+  react-stately: '^3.46.0'
+  '@react-aria/utils': '^3.34.0'
+  '@react-spectrum/utils': '^3.13.0'
+  '@internationalized/date': '^3.12.1'
 
 allowBuilds:
   '@swc/core': true
