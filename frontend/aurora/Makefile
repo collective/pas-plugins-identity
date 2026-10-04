@@ -98,16 +98,18 @@ test: ## Run the add-on's unit tests
 ci-test: ## Run the add-on's unit tests once
 	CI=1 pnpm test --run
 
-# Acceptance: a real sign-in, through Dex, against the backend's acceptance
-# server. Start the three services, each in its own shell, register the
-# provider, then run the tests.
+# Acceptance: a real sign-in, through Dex and through a magic link, against
+# the backend's acceptance server. Start the three services, each in its own
+# shell, register the provider, then run the tests.
 
 ACCEPTANCE_API_PATH=http://localhost:55001/plone
 DEX_CONFIG=$(CURRENT_DIR)/../../backend/tests/_resources/dex/config.yaml
 
+# The add-on's own acceptance layer, not Volto's: it installs
+# collective.MockMailHost, which keeps the magic links the tests read.
 .PHONY: acceptance-backend-start
 acceptance-backend-start: ## Start the backend's acceptance server on http://localhost:55001/plone
-	$(MAKE) -C ../../backend acceptance-backend-start
+	ZSERVER_HOST=0.0.0.0 ZSERVER_PORT=55001 ../../backend/.venv/bin/robot-server pas.plugins.identity.testing.ACCEPTANCE_TESTING
 
 .PHONY: acceptance-dex-start
 acceptance-dex-start: ## Start Dex with the backend's test configuration on http://127.0.0.1:5556/dex

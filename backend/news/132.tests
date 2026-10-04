@@ -1,0 +1,1 @@
+Installed the virtual host monster in the test layers' Zope root, as a real one has it. The Aurora add-on calls the backend through `VirtualHostBase` URLs, and its acceptance tests run against `ACCEPTANCE_TESTING`. @sneridagh

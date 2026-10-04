@@ -76,7 +76,7 @@ jobs:
         run: make build
 
   acceptance:
-    name: "Aurora: Sign-in through Dex"
+    name: "Aurora: Sign-in through Dex and a magic link"
     runs-on: ubuntu-latest
     defaults:
       run:

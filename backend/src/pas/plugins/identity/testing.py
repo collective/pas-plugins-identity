@@ -1,3 +1,4 @@
+from OFS.Application import AppInitializer
 from plone.app.contenttypes.testing import PLONE_APP_CONTENTTYPES_FIXTURE
 from plone.app.robotframework.testing import REMOTE_LIBRARY_BUNDLE_FIXTURE
 from plone.app.testing import applyProfile
@@ -15,6 +16,11 @@ class Layer(PloneSandboxLayer):
     defaultBases = (PLONE_APP_CONTENTTYPES_FIXTURE,)
 
     def setUpZope(self, app, configurationContext):
+        # The virtual host monster, which a real Zope root has and the test
+        # one does not. The Aurora add-on calls the backend through
+        # VirtualHostBase URLs, so its acceptance tests need it on the
+        # acceptance server; Volto's robot fixture installs it the same way.
+        AppInitializer(app).install_virtual_hosting()
         # Load any other ZCML that is required for your tests.
         # The z3c.autoinclude feature is disabled in the Plone fixture base
         # layer.

@@ -136,7 +136,8 @@ to see the options instead.
 
 ### Signing in to Aurora end to end
 
-The Aurora harness has Playwright tests that sign in through a real Dex.
+The Aurora harness has Playwright tests that sign in through a real Dex and
+through a magic link.
 They need three services, each started in its own shell from `frontend/aurora`:
 
 ```shell
@@ -144,6 +145,12 @@ make acceptance-backend-start   # the backend's acceptance server, port 55001
 make acceptance-dex-start       # Dex, with the backend's test configuration
 make acceptance-frontend-start  # a production build of Aurora, port 3000
 ```
+
+The acceptance server is the add-on's own
+`pas.plugins.identity.testing.ACCEPTANCE_TESTING` layer. Its
+`collective.MockMailHost` keeps every message the site sends instead of
+sending it, and the magic-link test reads the link back through the server's
+Robot Framework remote library.
 
 Then register Dex on the site and run the tests:
 
@@ -162,7 +169,7 @@ Run these before opening a pull request. CI runs the same ones.
 | `make test` | `make backend-test` and `make frontend-test` |
 | `make check-imports`, from `backend/` | That core never imports the `[server]` layer |
 | `make aurora-lint`, `make aurora-test`, `make aurora-build` | The Aurora add-on, once `make aurora-install` has run |
-| `make acceptance-test`, from `frontend/aurora` | A real sign-in to Aurora through Dex. See {ref}`contributing-aurora-acceptance` |
+| `make acceptance-test`, from `frontend/aurora` | A real sign-in to Aurora, through Dex and through a magic link. See {ref}`contributing-aurora-acceptance` |
 | `make docs-build` | The documentation, with warnings as errors |
 | `make -C docs vale` | Prose style. **Errors must be zero**; warnings are advisory |
 
