@@ -209,3 +209,26 @@ export async function editProfile(
     );
   }
 }
+
+/** The authorization server, the `[server]` layer's add-on. */
+const SERVER_ADDON = 'pas.plugins.identity.server';
+
+/**
+ * Install or uninstall the authorization server.
+ *
+ * The acceptance site starts without it, as most sites run.
+ *
+ * @param installed Whether it should be installed.
+ */
+export async function authorizationServer(installed: boolean): Promise<void> {
+  const answer = await fetch(
+    `${SITE}/++api++/@addons/${SERVER_ADDON}/${installed ? 'install' : 'uninstall'}`,
+    { method: 'POST', headers },
+  );
+  // Installing what is installed, or the reverse, is not a failure here.
+  if (!answer.ok && answer.status !== 400) {
+    throw new Error(
+      `${installed ? 'Installing' : 'Uninstalling'} ${SERVER_ADDON} failed: ${answer.status} ${await answer.text()}`,
+    );
+  }
+}

@@ -132,7 +132,7 @@ jobs:
           docker run -d --name aurora-acceptance-dex -p 5556:5556 \
             -v "$GITHUB_WORKSPACE/backend/tests/_resources/dex/config.yaml:/etc/dex/config.yaml:ro" \
             ghcr.io/dexidp/dex:v2.44.0 dex serve /etc/dex/config.yaml
-          PLONE_API_PATH=http://localhost:55001/plone nohup pnpm start:prod > aurora.log 2>&1 &
+          IDENTITY_FEATURE_TTL=0 PLONE_API_PATH=http://localhost:55001/plone nohup pnpm start:prod > aurora.log 2>&1 &
           for url in \
             http://localhost:55001/plone/++api++/@login-providers \
             http://127.0.0.1:5556/dex/.well-known/openid-configuration \

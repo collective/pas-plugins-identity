@@ -23,8 +23,9 @@ import Toast from '@plone/volto/components/manage/Toast/Toast';
 import { getBaseUrl } from '@plone/volto/helpers/Url/Url';
 import backSVG from '@plone/volto/icons/back.svg';
 
+import { ApplicationsPanel } from '@plone-collective/identity-core';
 import { listGrants, withdrawGrant } from '../../actions';
-import ApplicationsPanel from './ApplicationsPanel';
+import VoltoIdentityUI from '../IdentityUI/VoltoIdentityUI';
 import ConfirmModal from '../ControlPanel/ConfirmModal';
 
 const messages = defineMessages({
@@ -133,15 +134,17 @@ const Applications: React.FC = () => {
           {intl.formatMessage(messages.title)}
         </Segment>
         <Segment>
-          <ApplicationsPanel
-            grants={grants?.data ?? null}
-            loading={Boolean(grants?.loading)}
-            error={grants?.error}
-            selected={selected}
-            withdrawing={withdrawing}
-            onSelect={setSelected}
-            onWithdraw={onWithdraw}
-          />
+          <VoltoIdentityUI>
+            <ApplicationsPanel
+              grants={grants?.data ?? null}
+              loading={Boolean(grants?.loading)}
+              error={grants?.error}
+              selected={selected}
+              withdrawing={withdrawing}
+              onSelect={setSelected}
+              onWithdraw={onWithdraw}
+            />
+          </VoltoIdentityUI>
         </Segment>
       </Segment.Group>
       {isClient &&

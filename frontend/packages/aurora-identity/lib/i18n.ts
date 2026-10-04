@@ -37,9 +37,10 @@ type I18nextT = (
  * would look for `{{name}}` where the catalogues have `{name}`.
  *
  * @param t i18next's `t`, for the `common` namespace.
+ * @param locale The reader's language, for the plural forms.
  * @returns The translate function.
  */
-export function translateWith(t: I18nextT): Translate {
+export function translateWith(t: I18nextT, locale = 'en'): Translate {
   return (message, values) =>
     interpolate(
       t(`${CATALOGUE}${KEY_SEPARATOR}${message.id}`, {
@@ -48,5 +49,6 @@ export function translateWith(t: I18nextT): Translate {
         nsSeparator: false,
       }),
       values,
+      locale,
     );
 }

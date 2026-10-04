@@ -27,6 +27,19 @@ export const IDENTITIES_PATH = '/identities';
  */
 export { CONFIRM_EMAIL_PATH } from '@plone-collective/identity-core';
 
+/**
+ * Where a signed-in user sees the applications they have authorized.
+ *
+ * `APPLICATIONS_PATH` in the Volto add-on.
+ */
+export const APPLICATIONS_PATH = '/applications';
+
+/**
+ * The key the root loader says whether that page has anything to show
+ * under: whether the backend runs the authorization server.
+ */
+export const APPLICATIONS_KEY = 'identityApplications';
+
 /** The route a provider button sends the browser to, to start a sign-in. */
 export const START_PATH = `${CALLBACK_PATH}/start`;
 

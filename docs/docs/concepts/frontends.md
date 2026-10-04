@@ -26,7 +26,7 @@ The sign-in it offers is the same either way, because the package ships one add-
 `@plone-collective/aurora-identity`
 :   The Plone Aurora add-on.
     Sign-in: the login page, starting a sign-in with a provider, and finishing it.
-    For a signed-in user, the sign-in methods page, `/identities`, and its entry among the header's tools, the email confirmation page, and the profile gate.
+    For a signed-in user, the sign-in methods page, `/identities`, and its entry among the header's tools, the email confirmation page, the profile gate, and the applications page.
 
 <!-- frontend/packages/identity-core/src/index.ts, frontend/packages/aurora-identity/index.ts -->
 
@@ -61,6 +61,7 @@ So the core's components ask for them through `useIdentityUI()`, and each add-on
 | Linking within the site | Volto's router link | React Router's link |
 | Icons | Volto's icons | Quanta's icons, from `@plone/icons` |
 | The password-reset page | `/passwordreset` | `/reset-password` |
+| The reader's language, for dates and plural forms | `react-intl`'s locale | i18next's language |
 
 <!-- frontend/packages/identity-core/src/components/IdentityUI/IdentityUI.tsx, frontend/packages/volto-identity/src/components/IdentityUI/VoltoIdentityUI.tsx, frontend/packages/aurora-identity/components/IdentityUI/AuroraIdentityUI.tsx -->
 
@@ -153,10 +154,20 @@ A user who completes the profile through the edit form is let go on the profile'
 
 <!-- frontend/packages/aurora-identity/lib/gate.ts, frontend/packages/aurora-identity/slots/ProfileGate.tsx, frontend/packages/aurora-identity/config/server.ts, frontend/packages/volto-identity/src/components/ProfileGate/ProfileGate.tsx -->
 
+## The applications page
+
+The applications a user has authorized are listed by `@oauth-grants`, which only the `[server]` layer publishes.
+Both add-ons offer the page only where that endpoint answers, and neither can tell from anything else: the core may not depend on that layer.
+Volto asks once per session.
+Aurora asks from its server, and keeps the answer for five minutes per backend, since whether a site runs the authorization server does not change from one page to the next.
+`IDENTITY_FEATURE_TTL`, in seconds, sets how long; the acceptance tests set it to 0.
+
+<!-- frontend/packages/aurora-identity/lib/features.ts, frontend/packages/volto-identity/src/components/UserMenu/ApplicationsMenuItem.tsx -->
+
 ## What Aurora does not have yet
 
-The Aurora add-on covers signing in, the sign-in methods page, the email confirmation page and the profile gate.
-The applications page, the consent screen and the control panels exist in the Volto add-on only.
+The Aurora add-on covers signing in, the sign-in methods page, the email confirmation page, the profile gate and the applications page.
+The consent screen and the control panels exist in the Volto add-on only.
 Neither has the first-login route: Volto offers it to sites that route to it, and nothing in either add-on does.
 Neither the Aurora add-on nor the core is published to npm yet.
 

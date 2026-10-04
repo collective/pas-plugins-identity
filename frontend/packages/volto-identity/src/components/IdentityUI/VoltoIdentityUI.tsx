@@ -13,7 +13,10 @@ import { useIntl } from 'react-intl';
 import { Link as RouterLink } from 'react-router-dom';
 import Icon from '@plone/volto/components/theme/Icon/Icon';
 import aheadSVG from '@plone/volto/icons/ahead.svg';
+import backSVG from '@plone/volto/icons/back.svg';
 import clearSVG from '@plone/volto/icons/clear.svg';
+import deleteSVG from '@plone/volto/icons/delete.svg';
+import rightArrowSVG from '@plone/volto/icons/right-key.svg';
 import { IdentityUIProvider } from '@plone-collective/identity-core';
 import type {
   IdentityLinkProps,
@@ -35,6 +38,10 @@ const VoltoLink = ({ href, className, children }: IdentityLinkProps) => (
 const icons = {
   submit: <Icon className="circled" name={aheadSVG} size="30px" />,
   clear: <Icon className="circled" name={clearSVG} size="30px" />,
+  // The sizes the applications panel drew them at when it was Volto's.
+  back: <Icon name={backSVG} size="18px" />,
+  details: <Icon name={rightArrowSVG} size="20px" />,
+  remove: <Icon name={deleteSVG} size="20px" />,
 };
 
 /**
@@ -47,7 +54,12 @@ export default function VoltoIdentityUI({ children }: { children: ReactNode }) {
   const intl = useIntl();
   const t: Translate = (message, values) => intl.formatMessage(message, values);
   return (
-    <IdentityUIProvider t={t} Link={VoltoLink} icons={icons}>
+    <IdentityUIProvider
+      t={t}
+      Link={VoltoLink}
+      icons={icons}
+      locale={intl.locale}
+    >
       {children}
     </IdentityUIProvider>
   );

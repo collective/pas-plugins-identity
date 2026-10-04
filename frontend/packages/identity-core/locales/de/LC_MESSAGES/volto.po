@@ -11,16 +11,51 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+#. Default: "Access withdrawn"
+#: components/Applications/messages
+msgid "Access withdrawn"
+msgstr "Zugriff entzogen"
+
+#. Default: "Actions"
+#: components/Applications/ApplicationsPanel
+msgid "Actions"
+msgstr "Aktionen"
+
 #. Default: "Add another"
 #: components/Identities/IdentitiesList
 msgid "Add another"
 msgstr "Weiteres hinzufügen"
+
+#. Default: "Application"
+#: components/Applications/ApplicationsPanel
+msgid "Application"
+msgstr "Anwendung"
+
+#. Default: "Applications"
+#: components/Applications/messages
+msgid "Applications"
+msgstr "Anwendungen"
+
+#. Default: "Authorized"
+#: components/Applications/ApplicationsPanel
+msgid "Authorized"
+msgstr "Autorisiert"
 
 #. Default: "Back to sign-in options"
 #: components/Callback/CallbackCard
 #: components/Login/LoginForm
 msgid "Back to sign-in options"
 msgstr "Zurück zu Anmeldeoptionen"
+
+#. Default: "Back to the list"
+#: components/Applications/ApplicationsPanel
+msgid "Back to the list"
+msgstr "Zurück zur Liste"
+
+#. Default: "Cancel"
+#: components/ConfirmDialog/ConfirmDialog
+msgid "Cancel"
+msgstr "Abbrechen"
 
 #. Default: "Clear"
 #: components/Login/PasswordForm
@@ -46,6 +81,11 @@ msgstr "Bestätigen Sie Ihre E-Mail-Adresse"
 #: components/Callback/CallbackCard
 msgid "Confirming your address"
 msgstr "Adresse wird bestätigt…"
+
+#. Default: "Details"
+#: components/Applications/ApplicationsPanel
+msgid "Details"
+msgstr "Details"
 
 #. Default: "Edit your profile"
 #: components/CompleteProfile/CompleteProfileCard
@@ -73,10 +113,20 @@ msgstr "Senden Sie mir einen Link per E-Mail"
 msgid "If that address can sign in here"
 msgstr "Wenn sich diese Adresse hier anmelden kann, ist ein Link unterwegs. Es funktioniert einmal, und nur für ein paar Minuten."
 
+#. Default: "It can read:"
+#: components/Applications/ApplicationsPanel
+msgid "It can read:"
+msgstr "Es kann lesen:"
+
 #. Default: "Loading sign-in options…"
 #: components/Login/LoginForm
 msgid "Loading sign-in options"
 msgstr "Anmeldeoptionen werden geladen…"
+
+#. Default: "Loading the applications you have authorized…"
+#: components/Applications/ApplicationsPanel
+msgid "Loading the applications you have authorized"
+msgstr "Die von Ihnen autorisierten Anwendungen werden geladen…"
 
 #. Default: "Loading your sign-in methods…"
 #: components/Identities/IdentitiesList
@@ -98,6 +148,16 @@ msgstr "Anmeldungsname"
 msgid "Make preferred"
 msgstr "Als bevorzugt einstellen"
 
+#. Default: "Nothing"
+#: components/Applications/ApplicationsPanel
+msgid "Nothing"
+msgstr "Nichts"
+
+#. Default: "Nothing beyond the fact that you signed in."
+#: components/Applications/ApplicationsPanel
+msgid "Nothing beyond the fact that you signed in."
+msgstr "Nichts außer der Tatsache, dass Sie sich angemeldet haben."
+
 #. Default: "Password"
 #: components/Login/PasswordForm
 msgid "Password"
@@ -113,10 +173,20 @@ msgstr "Bitte füllen Sie {fields} aus, bevor Sie fortfahren können."
 msgid "Preferred"
 msgstr "Bevorzugt"
 
+#. Default: "Reads"
+#: components/Applications/ApplicationsPanel
+msgid "Reads"
+msgstr "Liest"
+
 #. Default: "Remove"
 #: components/Identities/IdentitiesList
 msgid "Remove"
 msgstr "Entfernen"
+
+#. Default: "Scopes agreed to"
+#: components/Applications/ApplicationsPanel
+msgid "Scopes agreed to"
+msgstr "Bereiche vereinbart"
 
 #. Default: "Sending"
 #: components/Login/MagicLinkForm
@@ -159,9 +229,15 @@ msgid "That did not work. Please try again in a little while."
 msgstr "Das funktionierte nicht. Bitte versuchen Sie es in einer Weile erneut."
 
 #. Default: "That did not work. Please try again."
+#: components/Applications/messages
 #: components/Identities/IdentitiesList
 msgid "That did not work. Please try again."
 msgstr "Das funktionierte nicht. Bitte versuchen Sie es erneut."
+
+#. Default: "That list could not be loaded."
+#: components/Applications/ApplicationsPanel
+msgid "That list could not be loaded."
+msgstr "Diese Liste konnte nicht geladen werden."
 
 #. Default: "That login name and password did not match."
 #: components/Login/PasswordForm
@@ -184,6 +260,16 @@ msgstr "Diese Anmeldeoption ist gerade nicht verfügbar."
 msgid "The provider refused the sign-in."
 msgstr "Der Anbieter lehnte die Anmeldung ab."
 
+#. Default: "This application is disabled and is being refused already."
+#: components/Applications/ApplicationsPanel
+msgid "This application is disabled and is being refused already."
+msgstr "Diese Anwendung ist deaktiviert und wird bereits abgelehnt."
+
+#. Default: "This application is no longer registered on this site. It cannot ask for anything, and you can remove the record."
+#: components/Applications/ApplicationsPanel
+msgid "This application is no longer registered on this site."
+msgstr "Diese Anwendung ist auf dieser Website nicht mehr registriert. Sie kann nichts fragen, und Sie können den Datensatz löschen."
+
 #. Default: "This is your only way to sign in. Add another first."
 #: components/Identities/IdentitiesList
 msgid "This is your only way to sign in. Add another first."
@@ -204,10 +290,36 @@ msgstr "Verifiziert"
 msgid "Verify"
 msgstr "Verifizieren"
 
+#. Default: "Withdraw access"
+#: components/Applications/ApplicationsPanel
+#: components/Applications/messages
+msgid "Withdraw access"
+msgstr "Zugriff zurückziehen"
+
+#. Default: "Withdraw access for {client}? It will be signed out everywhere and will have to ask you again next time."
+#: components/Applications/messages
+msgid "Withdraw access for {client}?"
+msgstr "Zugriff für {client} zurückziehen? Es wird überall abgemeldet und muss Sie beim nächsten Mal erneut fragen."
+
+#. Default: "Withdrawing signs an application out everywhere and makes it ask you again next time. An access token it already holds keeps working for up to {minutes, plural, one {# minute} other {# minutes}} — this site cannot recall one that was already issued."
+#: components/Applications/ApplicationsPanel
+msgid "Withdrawing signs it out and makes it ask again."
+msgstr "Das Zurückziehen meldet eine Anwendung überall ab und lässt sie Sie beim nächsten Mal erneut fragen. Ein Zugriffstoken, das es bereits hält, funktioniert weiterhin bis zu {minutes, plural, one {# Minute} other {# Minuten}} — Diese Website kann eines, das bereits ausgestellt wurde, nicht zurückrufen."
+
+#. Default: "You authorized this application on {date}."
+#: components/Applications/ApplicationsPanel
+msgid "You authorized this application on {date}."
+msgstr "Sie haben diese Anwendung am {date} autorisiert."
+
 #. Default: "You have no external sign-in methods linked yet."
 #: components/Identities/IdentitiesList
 msgid "You have no external sign-in methods linked yet."
 msgstr "Sie haben noch keine externen Anmeldemethoden verknüpft."
+
+#. Default: "You have not authorized any application. Anything you sign in to with this account will ask you first, and appear here afterwards."
+#: components/Applications/ApplicationsPanel
+msgid "You have not authorized any application."
+msgstr "Sie haben keine Anwendung autorisiert. Alles, bei dem Sie sich mit diesem Konto anmelden, wird Sie zuerst fragen und dann hier erscheinen."
 
 #. Default: "Your email addresses"
 #: components/Identities/ProfileEmails
@@ -304,3 +416,8 @@ msgstr "Die Adresse, die diese Website für Sie verwendet: die erste verifiziert
 #: components/Identities/ProfileEmails
 msgid "profile-emails-sent"
 msgstr "Überprüfen Sie dieses Postfach. Der Link bestätigt die Adresse; es meldet niemanden an."
+
+#. Default: "{count, plural, one {# field} other {# fields}}"
+#: components/Applications/ApplicationsPanel
+msgid "{count, plural, one {# field} other {# fields}}"
+msgstr "{count, plural, one {# Feld} other {# Felder}}"

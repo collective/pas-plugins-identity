@@ -9,7 +9,10 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link as RouterLink } from 'react-router';
+import ArrowLeftSVG from '@plone/icons/svg/arrow-left.svg?react';
 import ArrowRightSVG from '@plone/icons/svg/arrow-right.svg?react';
+import BinSVG from '@plone/icons/svg/bin.svg?react';
+import ChevronRightSVG from '@plone/icons/svg/chevron-right.svg?react';
 import CloseSVG from '@plone/icons/svg/close.svg?react';
 import { IdentityUIProvider } from '@plone-collective/identity-core';
 import type {
@@ -38,6 +41,9 @@ const AuroraLink = ({ href, className, children }: IdentityLinkProps) => (
 const icons: IdentityIcons = {
   submit: <ArrowRightSVG aria-hidden="true" focusable="false" />,
   clear: <CloseSVG aria-hidden="true" focusable="false" />,
+  back: <ArrowLeftSVG aria-hidden="true" focusable="false" />,
+  details: <ChevronRightSVG aria-hidden="true" focusable="false" />,
+  remove: <BinSVG aria-hidden="true" focusable="false" />,
 };
 
 /** Aurora's own pages, where they are not where Volto has them. */
@@ -56,10 +62,11 @@ export default function AuroraIdentityUI({
 }: {
   children: ReactNode;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   return (
     <IdentityUIProvider
-      t={translateWith(t)}
+      t={translateWith(t, i18n.language)}
+      locale={i18n.language}
       Link={AuroraLink}
       icons={icons}
       paths={paths}

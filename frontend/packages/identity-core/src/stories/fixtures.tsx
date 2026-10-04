@@ -9,7 +9,12 @@ import React from 'react';
 import type { ReactNode } from 'react';
 
 import LoginCard from '../components/Login/LoginCard';
-import type { Identity, LoginProvider, ProfileEmail } from '../types';
+import type {
+  Identity,
+  LoginProvider,
+  OAuthGrants,
+  ProfileEmail,
+} from '../types';
 
 /** A request that has finished with data. */
 export const LOADED = { loading: false, loaded: true, error: null };
@@ -81,6 +86,39 @@ export const IDENTITIES: Identity[] = [
 export const ONLY_IDENTITY: Identity[] = [
   { ...IDENTITIES[0], can_unlink: false },
 ];
+
+/** The applications a user has authorized, as `@oauth-grants` lists them. */
+export const GRANTS: OAuthGrants = {
+  '@id': 'http://id.localhost/@oauth-grants',
+  access_token_ttl: 900,
+  items: [
+    {
+      '@id': 'http://id.localhost/@oauth-grants/demo-rp',
+      client_id: 'demo-rp',
+      title: 'Plone Content Site',
+      registered: true,
+      enabled: true,
+      granted_at: '2026-08-24T09:15:00+00:00',
+      scopes: [
+        { id: 'openid', claims: [] },
+        {
+          id: 'profile',
+          claims: ['name', 'preferred_username', 'picture', 'description'],
+        },
+        { id: 'email', claims: ['email', 'email_verified'] },
+      ],
+    },
+    {
+      '@id': 'http://id.localhost/@oauth-grants/reporting',
+      client_id: 'reporting',
+      title: 'Nightly reporting job',
+      registered: true,
+      enabled: true,
+      granted_at: '2026-06-02T22:40:00+00:00',
+      scopes: [{ id: 'openid', claims: [] }],
+    },
+  ],
+};
 
 /**
  * A provider carrying the look an operator gave it.

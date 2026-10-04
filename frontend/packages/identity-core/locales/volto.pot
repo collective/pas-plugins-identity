@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Plone\n"
-"POT-Creation-Date: 2026-10-04T16:45:45.726Z\n"
+"POT-Creation-Date: 2026-10-04T17:40:38.769Z\n"
 "Last-Translator: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Language-Team: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -13,15 +13,50 @@ msgstr ""
 "Preferred-Encodings: utf-8\n"
 "Domain: volto\n"
 
+#. Default: "Access withdrawn"
+#: components/Applications/messages
+msgid "Access withdrawn"
+msgstr ""
+
+#. Default: "Actions"
+#: components/Applications/ApplicationsPanel
+msgid "Actions"
+msgstr ""
+
 #. Default: "Add another"
 #: components/Identities/IdentitiesList
 msgid "Add another"
+msgstr ""
+
+#. Default: "Application"
+#: components/Applications/ApplicationsPanel
+msgid "Application"
+msgstr ""
+
+#. Default: "Applications"
+#: components/Applications/messages
+msgid "Applications"
+msgstr ""
+
+#. Default: "Authorized"
+#: components/Applications/ApplicationsPanel
+msgid "Authorized"
 msgstr ""
 
 #. Default: "Back to sign-in options"
 #: components/Callback/CallbackCard
 #: components/Login/LoginForm
 msgid "Back to sign-in options"
+msgstr ""
+
+#. Default: "Back to the list"
+#: components/Applications/ApplicationsPanel
+msgid "Back to the list"
+msgstr ""
+
+#. Default: "Cancel"
+#: components/ConfirmDialog/ConfirmDialog
+msgid "Cancel"
 msgstr ""
 
 #. Default: "Clear"
@@ -47,6 +82,11 @@ msgstr ""
 #. Default: "Confirming your address…"
 #: components/Callback/CallbackCard
 msgid "Confirming your address"
+msgstr ""
+
+#. Default: "Details"
+#: components/Applications/ApplicationsPanel
+msgid "Details"
 msgstr ""
 
 #. Default: "Edit your profile"
@@ -75,9 +115,19 @@ msgstr ""
 msgid "If that address can sign in here"
 msgstr ""
 
+#. Default: "It can read:"
+#: components/Applications/ApplicationsPanel
+msgid "It can read:"
+msgstr ""
+
 #. Default: "Loading sign-in options…"
 #: components/Login/LoginForm
 msgid "Loading sign-in options"
+msgstr ""
+
+#. Default: "Loading the applications you have authorized…"
+#: components/Applications/ApplicationsPanel
+msgid "Loading the applications you have authorized"
 msgstr ""
 
 #. Default: "Loading your sign-in methods…"
@@ -100,6 +150,16 @@ msgstr ""
 msgid "Make preferred"
 msgstr ""
 
+#. Default: "Nothing"
+#: components/Applications/ApplicationsPanel
+msgid "Nothing"
+msgstr ""
+
+#. Default: "Nothing beyond the fact that you signed in."
+#: components/Applications/ApplicationsPanel
+msgid "Nothing beyond the fact that you signed in."
+msgstr ""
+
 #. Default: "Password"
 #: components/Login/PasswordForm
 msgid "Password"
@@ -115,9 +175,19 @@ msgstr ""
 msgid "Preferred"
 msgstr ""
 
+#. Default: "Reads"
+#: components/Applications/ApplicationsPanel
+msgid "Reads"
+msgstr ""
+
 #. Default: "Remove"
 #: components/Identities/IdentitiesList
 msgid "Remove"
+msgstr ""
+
+#. Default: "Scopes agreed to"
+#: components/Applications/ApplicationsPanel
+msgid "Scopes agreed to"
 msgstr ""
 
 #. Default: "Sending"
@@ -161,8 +231,14 @@ msgid "That did not work. Please try again in a little while."
 msgstr ""
 
 #. Default: "That did not work. Please try again."
+#: components/Applications/messages
 #: components/Identities/IdentitiesList
 msgid "That did not work. Please try again."
+msgstr ""
+
+#. Default: "That list could not be loaded."
+#: components/Applications/ApplicationsPanel
+msgid "That list could not be loaded."
 msgstr ""
 
 #. Default: "That login name and password did not match."
@@ -186,6 +262,16 @@ msgstr ""
 msgid "The provider refused the sign-in."
 msgstr ""
 
+#. Default: "This application is disabled and is being refused already."
+#: components/Applications/ApplicationsPanel
+msgid "This application is disabled and is being refused already."
+msgstr ""
+
+#. Default: "This application is no longer registered on this site. It cannot ask for anything, and you can remove the record."
+#: components/Applications/ApplicationsPanel
+msgid "This application is no longer registered on this site."
+msgstr ""
+
 #. Default: "This is your only way to sign in. Add another first."
 #: components/Identities/IdentitiesList
 msgid "This is your only way to sign in. Add another first."
@@ -206,9 +292,35 @@ msgstr ""
 msgid "Verify"
 msgstr ""
 
+#. Default: "Withdraw access"
+#: components/Applications/ApplicationsPanel
+#: components/Applications/messages
+msgid "Withdraw access"
+msgstr ""
+
+#. Default: "Withdraw access for {client}? It will be signed out everywhere and will have to ask you again next time."
+#: components/Applications/messages
+msgid "Withdraw access for {client}?"
+msgstr ""
+
+#. Default: "Withdrawing signs an application out everywhere and makes it ask you again next time. An access token it already holds keeps working for up to {minutes, plural, one {# minute} other {# minutes}} — this site cannot recall one that was already issued."
+#: components/Applications/ApplicationsPanel
+msgid "Withdrawing signs it out and makes it ask again."
+msgstr ""
+
+#. Default: "You authorized this application on {date}."
+#: components/Applications/ApplicationsPanel
+msgid "You authorized this application on {date}."
+msgstr ""
+
 #. Default: "You have no external sign-in methods linked yet."
 #: components/Identities/IdentitiesList
 msgid "You have no external sign-in methods linked yet."
+msgstr ""
+
+#. Default: "You have not authorized any application. Anything you sign in to with this account will ask you first, and appear here afterwards."
+#: components/Applications/ApplicationsPanel
+msgid "You have not authorized any application."
 msgstr ""
 
 #. Default: "Your email addresses"
@@ -305,4 +417,9 @@ msgstr ""
 #. Default: "Check that mailbox. The link confirms the address; it does not sign anybody in."
 #: components/Identities/ProfileEmails
 msgid "profile-emails-sent"
+msgstr ""
+
+#. Default: "{count, plural, one {# field} other {# fields}}"
+#: components/Applications/ApplicationsPanel
+msgid "{count, plural, one {# field} other {# fields}}"
 msgstr ""

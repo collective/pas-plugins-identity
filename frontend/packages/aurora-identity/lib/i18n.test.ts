@@ -18,6 +18,8 @@ async function germanT() {
             'That login name and password did not match.':
               'Anmeldename und Passwort passen nicht zusammen.',
             'Taking you to {provider}…': 'Sie werden zu {provider} geleitet…',
+            '{count, plural, one {# field} other {# fields}}':
+              '{count, plural, one {# Feld} other {# Felder}}',
           },
           // Aurora's own keys, nested the usual way, to show they are not
           // disturbed.
@@ -30,6 +32,17 @@ async function germanT() {
 }
 
 describe('translateWith', () => {
+  it('chooses the plural form of a translation', async () => {
+    const t = translateWith(await germanT(), 'de');
+    const fields = {
+      id: '{count, plural, one {# field} other {# fields}}',
+      defaultMessage: '{count, plural, one {# field} other {# fields}}',
+    };
+
+    expect(t(fields, { count: 1 })).toBe('1 Feld');
+    expect(t(fields, { count: 3 })).toBe('3 Felder');
+  });
+
   it("reads a translation from the add-on's catalogue", async () => {
     const t = translateWith(await germanT());
 

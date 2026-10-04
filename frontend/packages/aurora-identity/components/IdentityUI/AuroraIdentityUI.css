@@ -44,3 +44,57 @@ html:root {
 .identity-providers {
   align-items: stretch;
 }
+
+/* The applications listing is a table and two icon buttons wearing Semantic
+   UI's classes, which Volto's theme draws. Aurora has no such theme, so they
+   are drawn here, in Quanta's colours. */
+.identity-applications table.ui.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.identity-applications table.ui.table th,
+.identity-applications table.ui.table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: var(--identity-border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.identity-applications table.ui.table th {
+  color: var(--identity-muted);
+  font-weight: 500;
+}
+
+.identity-applications table.ui.table .right.aligned {
+  text-align: right;
+}
+
+.identity-applications table.ui.table tbody tr:hover {
+  background: var(--identity-surface-header-bg);
+}
+
+.identity-applications .ui.basic.icon.button {
+  display: inline-flex;
+  padding: 0.375rem;
+  border: 1px solid transparent;
+  border-radius: var(--identity-radius);
+  background: transparent;
+  color: var(--identity-muted);
+  cursor: pointer;
+}
+
+.identity-applications .ui.basic.icon.button:hover:not(:disabled) {
+  border-color: var(--identity-surface-border);
+  color: var(--identity-accent);
+}
+
+.identity-applications .ui.basic.icon.button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.identity-applications .ui.basic.icon.button svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
