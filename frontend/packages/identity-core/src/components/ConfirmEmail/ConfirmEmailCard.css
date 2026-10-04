@@ -20,11 +20,10 @@
   border: 0;
   margin: 0;
   gap: calc(var(--identity-gap) / 2);
-
-  legend {
-    margin-bottom: calc(var(--identity-gap) / 2);
-    color: var(--identity-muted);
-  }
+}
+.identity-confirm-email__choices legend {
+  margin-bottom: calc(var(--identity-gap) / 2);
+  color: var(--identity-muted);
 }
 
 .identity-confirm-email__choice {

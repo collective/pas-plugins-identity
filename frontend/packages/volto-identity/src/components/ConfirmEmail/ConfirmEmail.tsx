@@ -9,62 +9,37 @@
  * first-login route send a user here when that answer is the only thing their
  * Profile is waiting on.
  *
+ * The card itself is `identity-core`'s `ConfirmEmailCard`, which the Aurora
+ * add-on shows too; this is what Volto puts around it.
+ *
  * It navigates nowhere once answered. The answer is `@my-profile` as it is
  * afterwards, the `myProfile` slice takes it in, and `ProfileGate` sees the
  * Profile released and returns the user to where they were going. A site that
  * does not mount the gate gets the confirmation and a way on.
  * @module components/ConfirmEmail/ConfirmEmail
  */
-import React, { useEffect, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link } from 'react-router-dom';
 import { defineMessages, useIntl } from 'react-intl';
+import { Helmet } from '@plone/volto/helpers/Helmet/Helmet';
 
+import { ConfirmEmailCard } from '@plone-collective/identity-core';
+import type { ConfirmEmailStatus } from '@plone-collective/identity-core';
 import { confirmEmail, getMyProfile } from '../../actions';
 import type { ProfileEmail } from '../../types';
-import LoginPanel from '../Login/LoginPanel';
-
-import './ConfirmEmail.scss';
+import VoltoIdentityUI from '../IdentityUI/VoltoIdentityUI';
 
 const messages = defineMessages({
   title: {
     id: 'Confirm your email address',
     defaultMessage: 'Confirm your email address',
   },
-  description: {
-    id: 'confirm-email-description',
-    defaultMessage:
-      'You have more than one verified email address. Choose the one this ' +
-      'site should use for you.',
-  },
-  legend: {
-    id: 'Your verified addresses',
-    defaultMessage: 'Your verified addresses',
-  },
-  submit: { id: 'confirm-email-submit', defaultMessage: 'Confirm' },
-  loading: { id: 'confirm-email-loading', defaultMessage: 'Loading…' },
-  done: {
-    id: 'confirm-email-done',
-    defaultMessage: 'This site will use {address} for you.',
-  },
-  nothing: {
-    id: 'confirm-email-nothing',
-    defaultMessage: 'There is no email address waiting to be confirmed.',
-  },
-  failed: {
-    id: 'confirm-email-failed',
-    defaultMessage:
-      'That address could not be confirmed. Reload the page and try again.',
-  },
-  continue: { id: 'confirm-email-continue', defaultMessage: 'Continue' },
 });
 
 const ConfirmEmail: React.FC = () => {
   const intl = useIntl();
   const dispatch = useDispatch();
   const asked = useRef(false);
-  const [chosen, setChosen] = useState<string | null>(null);
 
   const token = useSelector((state: any) => state.userSession?.token);
   const profile = useSelector((state: any) => state.myProfile);
@@ -82,112 +57,38 @@ const ConfirmEmail: React.FC = () => {
     dispatch(getMyProfile());
   }, [dispatch, token, profile?.loaded, profile?.loading]);
 
-  // Verified only: the backend refuses anything else, and an unverified
-  // address would not stand for anybody even at the front of the list.
-  const verified: ProfileEmail[] = (profile?.data?.emails ?? []).filter(
-    (entry: ProfileEmail) => entry.verified,
-  );
-  const selected =
-    chosen ??
-    verified.find((entry) => entry.preferred)?.address ??
-    verified[0]?.address ??
-    null;
-
   const recorded: string | undefined = confirmation?.loaded
     ? confirmation.data?.emails?.find((entry: ProfileEmail) => entry.preferred)
         ?.address
     : undefined;
 
-  const onward = (
-    <p className="identity-confirm-email__actions">
-      <Link to="/">{intl.formatMessage(messages.continue)}</Link>
-    </p>
-  );
-
-  let body: ReactNode;
-  let asking = false;
+  let status: ConfirmEmailStatus;
   if (recorded) {
-    body = (
-      <>
-        <p className="identity-confirm-email__status" role="status">
-          {intl.formatMessage(messages.done, { address: recorded })}
-        </p>
-        {onward}
-      </>
-    );
+    status = 'done';
   } else if (token && !profile?.loaded && !profile?.error) {
-    body = (
-      <p className="identity-confirm-email__status" role="status">
-        {intl.formatMessage(messages.loading)}
-      </p>
-    );
-  } else if (!profile?.data?.confirm_email || !verified.length) {
-    body = (
-      <>
-        <p className="identity-confirm-email__status" role="status">
-          {intl.formatMessage(messages.nothing)}
-        </p>
-        {onward}
-      </>
-    );
+    status = 'loading';
+  } else if (profile?.data?.confirm_email) {
+    status = 'asking';
   } else {
-    asking = true;
-    body = (
-      <form
-        className="identity-confirm-email"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (selected) {
-            dispatch(confirmEmail(selected));
-          }
-        }}
-      >
-        <fieldset className="identity-confirm-email__choices">
-          <legend>{intl.formatMessage(messages.legend)}</legend>
-          {verified.map((entry) => (
-            <label
-              key={entry.address}
-              className="identity-confirm-email__choice"
-            >
-              <input
-                type="radio"
-                name="identity-confirm-email"
-                value={entry.address}
-                checked={entry.address === selected}
-                disabled={Boolean(confirmation?.loading)}
-                onChange={() => setChosen(entry.address)}
-              />
-              <span>{entry.address}</span>
-            </label>
-          ))}
-        </fieldset>
-        {confirmation?.error ? (
-          <p className="identity-confirm-email__error" role="alert">
-            {intl.formatMessage(messages.failed)}
-          </p>
-        ) : null}
-        <button
-          type="submit"
-          className="identity-button identity-button--primary"
-          disabled={!selected || Boolean(confirmation?.loading)}
-        >
-          {intl.formatMessage(messages.submit)}
-        </button>
-      </form>
-    );
+    status = 'nothing';
   }
 
   return (
-    // The card the first-login wait and the login page are: this is the last
+    // The page the first-login wait and the login page are: this is the last
     // step of the same flow.
-    <LoginPanel
-      title={intl.formatMessage(messages.title)}
-      description={
-        asking ? intl.formatMessage(messages.description) : undefined
-      }
-    >
-      {body}
-    </LoginPanel>
+    <div id="page-login">
+      <Helmet title={intl.formatMessage(messages.title)} />
+      <VoltoIdentityUI>
+        <ConfirmEmailCard
+          status={status}
+          emails={profile?.data?.emails ?? []}
+          recorded={recorded}
+          busy={Boolean(confirmation?.loading)}
+          failed={Boolean(confirmation?.error)}
+          onConfirm={(address) => dispatch(confirmEmail(address))}
+        />
+      </VoltoIdentityUI>
+    </div>
   );
 };
 

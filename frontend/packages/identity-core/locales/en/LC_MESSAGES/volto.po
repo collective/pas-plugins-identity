@@ -32,12 +32,23 @@ msgstr ""
 msgid "Close"
 msgstr ""
 
+#. Default: "Complete your profile"
+#: components/CompleteProfile/CompleteProfileCard
+msgid "Complete your profile"
+msgstr ""
+
+#. Default: "Confirm your email address"
+#: components/ConfirmEmail/ConfirmEmailCard
+msgid "Confirm your email address"
+msgstr ""
+
 #. Default: "Confirming your address…"
 #: components/Callback/CallbackCard
 msgid "Confirming your address"
 msgstr ""
 
 #. Default: "Edit your profile"
+#: components/CompleteProfile/CompleteProfileCard
 #: components/Identities/ProfileEmails
 msgid "Edit your profile"
 msgstr ""
@@ -90,6 +101,11 @@ msgstr ""
 #. Default: "Password"
 #: components/Login/PasswordForm
 msgid "Password"
+msgstr ""
+
+#. Default: "Please fill in {fields} before you can continue."
+#: components/CompleteProfile/CompleteProfileCard
+msgid "Please fill in {fields} before you can continue."
 msgstr ""
 
 #. Default: "Preferred"
@@ -198,9 +214,60 @@ msgstr ""
 msgid "Your email addresses"
 msgstr ""
 
+#. Default: "Your profile needs a few more details before you can continue."
+#: components/CompleteProfile/CompleteProfileCard
+msgid "Your profile needs a few more details before you can continue."
+msgstr ""
+
+#. Default: "Your verified addresses"
+#: components/ConfirmEmail/ConfirmEmailCard
+msgid "Your verified addresses"
+msgstr ""
+
 #. Default: "Forgot your password?"
 #: components/Login/PasswordForm
 msgid "box_forgot_password_option"
+msgstr ""
+
+#. Default: "Your profile is complete."
+#: components/CompleteProfile/CompleteProfileCard
+msgid "complete-profile-nothing"
+msgstr ""
+
+#. Default: "Continue"
+#: components/CompleteProfile/CompleteProfileCard
+#: components/ConfirmEmail/ConfirmEmailCard
+msgid "confirm-email-continue"
+msgstr ""
+
+#. Default: "You have more than one verified email address. Choose the one this site should use for you."
+#: components/ConfirmEmail/ConfirmEmailCard
+msgid "confirm-email-description"
+msgstr ""
+
+#. Default: "This site will use {address} for you."
+#: components/ConfirmEmail/ConfirmEmailCard
+msgid "confirm-email-done"
+msgstr ""
+
+#. Default: "That address could not be confirmed. Reload the page and try again."
+#: components/ConfirmEmail/ConfirmEmailCard
+msgid "confirm-email-failed"
+msgstr ""
+
+#. Default: "Loading…"
+#: components/ConfirmEmail/ConfirmEmailCard
+msgid "confirm-email-loading"
+msgstr ""
+
+#. Default: "There is no email address waiting to be confirmed."
+#: components/ConfirmEmail/ConfirmEmailCard
+msgid "confirm-email-nothing"
+msgstr ""
+
+#. Default: "Confirm"
+#: components/ConfirmEmail/ConfirmEmailCard
+msgid "confirm-email-submit"
 msgstr ""
 
 #. Default: "How you sign in"

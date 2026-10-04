@@ -26,7 +26,7 @@ The sign-in it offers is the same either way, because the package ships one add-
 `@plone-collective/aurora-identity`
 :   The Plone Aurora add-on.
     Sign-in: the login page, starting a sign-in with a provider, and finishing it.
-    For a signed-in user, the sign-in methods page, `/identities`, and its entry among the header's tools.
+    For a signed-in user, the sign-in methods page, `/identities`, and its entry among the header's tools, the email confirmation page, and the profile gate.
 
 <!-- frontend/packages/identity-core/src/index.ts, frontend/packages/aurora-identity/index.ts -->
 
@@ -134,10 +134,30 @@ They are signed-in pages: a visitor without a session is sent to `/login`.
 
 <!-- frontend/packages/aurora-identity/lib/routes.ts, frontend/packages/aurora-identity/routes/identities.tsx -->
 
+## The profile gate
+
+While a signed-in user's profile is missing required fields, both add-ons hold them until it is complete, then send them on to where they were going.
+They decide it the same way, with the core's helpers, and hold the user differently:
+
+| | Volto | Aurora |
+|---|---|---|
+| Sent to | The profile's edit form | `/complete-profile`, which names the missing fields and links to the edit form |
+| Told why | A toast, as it redirects | On that page |
+| The profile asked for | As an expansion of the content request Volto makes anyway | With a request of its own, on every page a signed-in user opens |
+
+Aurora shows no toast that every page carries, and its edit form belongs to `@plone/cmsui`, where the add-on cannot say anything, so the page is what explains the hold.
+Its content request expands a fixed list an add-on cannot add to, so the profile costs one more request.
+
+The gate runs on every page that has the site's header, from the header's tools.
+A user who completes the profile through the edit form is let go on the profile's own page, which the form saves to.
+
+<!-- frontend/packages/aurora-identity/lib/gate.ts, frontend/packages/aurora-identity/slots/ProfileGate.tsx, frontend/packages/aurora-identity/config/server.ts, frontend/packages/volto-identity/src/components/ProfileGate/ProfileGate.tsx -->
+
 ## What Aurora does not have yet
 
-The Aurora add-on covers signing in and the sign-in methods page.
-The first-login and email confirmation pages, the required-profile gate, the applications page, the consent screen and the control panels exist in the Volto add-on only.
+The Aurora add-on covers signing in, the sign-in methods page, the email confirmation page and the profile gate.
+The applications page, the consent screen and the control panels exist in the Volto add-on only.
+Neither has the first-login route: Volto offers it to sites that route to it, and nothing in either add-on does.
 Neither the Aurora add-on nor the core is published to npm yet.
 
 ## Related

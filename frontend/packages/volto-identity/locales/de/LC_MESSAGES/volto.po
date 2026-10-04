@@ -920,11 +920,6 @@ msgstr "Ihr Profil"
 msgid "Your profile needs a few more details before you can continue."
 msgstr "Ihr Profil benötigt ein paar weitere Details, bevor Sie fortfahren können."
 
-#. Default: "Your verified addresses"
-#: components/ConfirmEmail/ConfirmEmail
-msgid "Your verified addresses"
-msgstr "Ihre verifizierten Adressen"
-
 #. Default: "Permanent. It is what every token already issued is bound to, so it cannot be changed afterwards."
 #: helpers/clientSchema
 msgid "client-id-help"
@@ -934,41 +929,6 @@ msgstr "Dauerhaft. Es ist das, an das bereits jedes ausgegebene Token gebunden i
 #: helpers/clientSchema
 msgid "client-public-help"
 msgstr "Eine native oder Browser-App, die kein Geheimnis bewahren kann. Kein Geheimnis wird geprägt und PKCE wird stattdessen erforderlich."
-
-#. Default: "Continue"
-#: components/ConfirmEmail/ConfirmEmail
-msgid "confirm-email-continue"
-msgstr "Fortfahren"
-
-#. Default: "You have more than one verified email address. Choose the one this site should use for you."
-#: components/ConfirmEmail/ConfirmEmail
-msgid "confirm-email-description"
-msgstr "Sie haben mehr als eine verifizierte E-Mail-Adresse. Wählen Sie diejenige aus, die diese Website für Sie verwenden soll."
-
-#. Default: "This site will use {address} for you."
-#: components/ConfirmEmail/ConfirmEmail
-msgid "confirm-email-done"
-msgstr "Diese Website verwendet {address} für Sie."
-
-#. Default: "That address could not be confirmed. Reload the page and try again."
-#: components/ConfirmEmail/ConfirmEmail
-msgid "confirm-email-failed"
-msgstr "Diese Adresse konnte nicht bestätigt werden. Laden Sie die Seite neu und versuchen Sie es erneut."
-
-#. Default: "Loading…"
-#: components/ConfirmEmail/ConfirmEmail
-msgid "confirm-email-loading"
-msgstr "Wird geladen…"
-
-#. Default: "There is no email address waiting to be confirmed."
-#: components/ConfirmEmail/ConfirmEmail
-msgid "confirm-email-nothing"
-msgstr "Es gibt keine E-Mail-Adresse, die auf Bestätigung wartet."
-
-#. Default: "Confirm"
-#: components/ConfirmEmail/ConfirmEmail
-msgid "confirm-email-submit"
-msgstr "Bestätigen"
 
 #. Default: "directly"
 #: components/Views/GroupsView/MembersCount

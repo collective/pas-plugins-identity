@@ -927,11 +927,6 @@ msgstr "Su perfil"
 msgid "Your profile needs a few more details before you can continue."
 msgstr "Su perfil necesita algunos detalles más antes de que pueda continuar."
 
-#. Default: "Your verified addresses"
-#: components/ConfirmEmail/ConfirmEmail
-msgid "Your verified addresses"
-msgstr "Sus direcciones verificadas"
-
 #. Default: "Permanent. It is what every token already issued is bound to, so it cannot be changed afterwards."
 #: helpers/clientSchema
 msgid "client-id-help"
@@ -941,41 +936,6 @@ msgstr "Permanente. Es a qué está vinculado cada token ya emitido, por lo que 
 #: helpers/clientSchema
 msgid "client-public-help"
 msgstr "Una aplicación nativa o de navegador, que no puede guardar un secreto. Ningún secreto se acuña y PKCE se vuelve obligatorio."
-
-#. Default: "Continue"
-#: components/ConfirmEmail/ConfirmEmail
-msgid "confirm-email-continue"
-msgstr "Continuar"
-
-#. Default: "You have more than one verified email address. Choose the one this site should use for you."
-#: components/ConfirmEmail/ConfirmEmail
-msgid "confirm-email-description"
-msgstr "Tiene más de una dirección de correo verificada. Elija la que este sitio debe usar para usted."
-
-#. Default: "This site will use {address} for you."
-#: components/ConfirmEmail/ConfirmEmail
-msgid "confirm-email-done"
-msgstr "Este sitio usará {address} para usted."
-
-#. Default: "That address could not be confirmed. Reload the page and try again."
-#: components/ConfirmEmail/ConfirmEmail
-msgid "confirm-email-failed"
-msgstr "Esa dirección no pudo ser confirmada. Recargue la página e intente de nuevo."
-
-#. Default: "Loading…"
-#: components/ConfirmEmail/ConfirmEmail
-msgid "confirm-email-loading"
-msgstr "Cargando…"
-
-#. Default: "There is no email address waiting to be confirmed."
-#: components/ConfirmEmail/ConfirmEmail
-msgid "confirm-email-nothing"
-msgstr "No hay dirección de correo esperando ser confirmada."
-
-#. Default: "Confirm"
-#: components/ConfirmEmail/ConfirmEmail
-msgid "confirm-email-submit"
-msgstr "Confirmar"
 
 #. Default: "directly"
 #: components/Views/GroupsView/MembersCount
