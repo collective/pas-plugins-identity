@@ -5,27 +5,8 @@ import { DEFAULT_AVATAR_COLORS } from '../helpers/avatar';
 // `IdentitySettings`, the type of what `install` fills in below, is declared
 // in `types/settings`.
 
-/**
- * Read a boolean out of the environment.
- *
- * Only the words are accepted, and anything unset falls back to the default.
- * Deliberately not `Boolean(value)`: that reads the string `"false"` as true,
- * which turns an operator switching the password form *off* into a site that
- * still shows it.
- *
- * @param value The raw environment value.
- * @param fallback What an unset variable means.
- * @returns The decision.
- */
-export function asBoolean(
-  value: string | undefined,
-  fallback: boolean,
-): boolean {
-  if (value === undefined || value === '') {
-    return fallback;
-  }
-  return ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase());
-}
+// Moved to identity-core, which the Aurora add-on reads it from too.
+export { asBoolean } from '@plone-collective/identity-core';
 
 export default function install(config: ConfigType) {
   // Off by default: a site installing this add-on has external providers,

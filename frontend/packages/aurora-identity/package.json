@@ -33,6 +33,9 @@
   },
   "peerDependencies": {
     "@plone/components": "workspace:*",
+    "@plone/icons": "workspace:*",
+    "@plone/layout": "workspace:*",
+    "@plone/quanta": "workspace:*",
     "@plone/react-router": "workspace:*",
     "@plone/registry": "workspace:*",
     "i18next": "catalog:",
@@ -44,6 +47,9 @@
   },
   "devDependencies": {
     "@plone/components": "workspace:*",
+    "@plone/icons": "workspace:*",
+    "@plone/layout": "workspace:*",
+    "@plone/quanta": "workspace:*",
     "@plone/react-router": "workspace:*",
     "@plone/registry": "workspace:*",
     "@plone/types": "workspace:*",

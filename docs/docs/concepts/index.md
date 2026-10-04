@@ -23,6 +23,7 @@ Start with {doc}`mental-model`. It names everything the other pages assume.
 mental-model
 identities
 layers
+frontends
 email-verification
 users-as-content
 profiles-and-groups

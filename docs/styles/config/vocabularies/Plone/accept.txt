@@ -30,12 +30,14 @@ buildout
 cacheable
 CommonJS
 cookieplone
+Dex
 doctest
 ESLint
 fieldset
 folderish
 frontend's
 getter
+gettext
 GUIDs
 JavaScript
 jQuery
@@ -54,6 +56,7 @@ prerendered
 programatically
 psycopg2
 Pyroma
+Quanta
 Razzle
 reindex(es|ed|ing)?
 RelStorage

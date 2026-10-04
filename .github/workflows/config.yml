@@ -135,6 +135,7 @@ jobs:
             frontend:
               - 'frontend/**'
               - '.github/workflows/frontend*'
+              - '.github/workflows/aurora*'
             changelog-backend:
               - 'backend/**'
             changelog-frontend:

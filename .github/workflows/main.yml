@@ -66,6 +66,20 @@ jobs:
       contents: read
       packages: write
 
+  # The Aurora add-on. Gated on the same paths as the Volto frontend: both
+  # build on `frontend/packages/identity-core`.
+  aurora:
+    uses: ./.github/workflows/aurora.yml
+    needs:
+        - config
+    with:
+        node-version: ${{ needs.config.outputs.node-version }}
+        python-version: ${{ needs.config.outputs.python-version }}
+        plone-version: ${{ needs.config.outputs.plone-version }}
+    if: ${{ needs.config.outputs.frontend == 'true' }}
+    permissions:
+      contents: read
+
   storybook:
     name: "Storybook"
     uses: ./.github/workflows/tmp-frontend-storybook.yml
@@ -115,6 +129,7 @@ jobs:
       - backend
       - docs
       - frontend
+      - aurora
       - storybook
       - deploy-docs
     steps:
@@ -127,5 +142,6 @@ jobs:
           echo '| backend | ${{ needs.backend.result }} |' >> $GITHUB_STEP_SUMMARY
           echo '| docs | ${{ needs.docs.result }} |' >> $GITHUB_STEP_SUMMARY
           echo '| frontend | ${{ needs.frontend.result }} |' >> $GITHUB_STEP_SUMMARY
+          echo '| aurora | ${{ needs.aurora.result }} |' >> $GITHUB_STEP_SUMMARY
           echo '| storybook | ${{ needs.storybook.result }} |' >> $GITHUB_STEP_SUMMARY
           echo '| deploy-docs | ${{ needs.deploy-docs.result }} |' >> $GITHUB_STEP_SUMMARY

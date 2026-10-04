@@ -1,0 +1,72 @@
+/**
+ * Aurora's login frame, for the add-on's login page.
+ *
+ * The geometry of `@plone/cmsui/routes/auth/login.tsx`, written as CSS: that
+ * page is styled with Tailwind classes, which Aurora generates only for the
+ * sources it scans, and an add-on's are not among them. A form column, and
+ * beside it on a wide screen the hero slot.
+ */
+.identity-login-page {
+  display: grid;
+  min-height: 100vh;
+}
+
+@media (width >= 64rem) {
+  .identity-login-page:has(> .identity-login-page__hero:not(:empty)) {
+    grid-template-columns: minmax(50%, 1fr) auto;
+  }
+}
+
+.identity-login-page__main {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3.75rem;
+}
+
+.identity-login-page__close {
+  position: absolute;
+  top: 3.75rem;
+  right: 3.75rem;
+}
+
+.identity-login-page__header {
+  display: flex;
+  width: 100%;
+  max-width: 28rem;
+  flex-direction: column;
+  align-items: center;
+}
+
+.identity-login-page__header h2 {
+  margin-top: 1.5rem;
+  color: var(--quanta-space, #000);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  line-height: 2rem;
+  text-align: center;
+}
+
+/* The box a wait or a refusal is drawn over, the way core's login card is
+   in Volto: positioned, and never shorter than the card's own floor, so the
+   overlay covers the ways in and not the heading above them. */
+.identity-login-page__form {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  min-height: var(--identity-login-min-height);
+  margin-top: 2.75rem;
+}
+
+.identity-login-page__hero {
+  display: none;
+}
+
+@media (width >= 64rem) {
+  .identity-login-page__hero {
+    display: block;
+  }
+}

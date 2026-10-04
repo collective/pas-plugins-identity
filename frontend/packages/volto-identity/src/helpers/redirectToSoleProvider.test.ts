@@ -13,12 +13,9 @@ const { runtime } = vi.hoisted(() => ({
 vi.mock('@plone/volto/runtime_config', () => ({ runtimeConfig: runtime }));
 
 const { default: config } = await import('@plone/volto/registry');
-const {
-  asksToChoose,
-  CHOOSE_LOGIN_PATH,
-  redirectToSoleProvider,
-  REDIRECT_TO_SOLE_PROVIDER_ENV,
-} = await import('./redirectToSoleProvider');
+const { redirectToSoleProvider, REDIRECT_TO_SOLE_PROVIDER_ENV } = await import(
+  './redirectToSoleProvider'
+);
 
 /**
  * Configure the default the way a project does.
@@ -83,29 +80,5 @@ describe('redirectToSoleProvider', () => {
     expect(redirectToSoleProvider()).toBe(true);
     runtime[REDIRECT_TO_SOLE_PROVIDER_ENV] = 'false';
     expect(redirectToSoleProvider()).toBe(false);
-  });
-});
-
-describe('asksToChoose', () => {
-  it('is false for a plain login page', () => {
-    expect(asksToChoose('')).toBe(false);
-    expect(asksToChoose('?came_from=%2Fnews')).toBe(false);
-  });
-
-  it('is true when the parameter is there, beside others or alone', () => {
-    expect(asksToChoose('?choose=1')).toBe(true);
-    expect(asksToChoose('?came_from=%2Fnews&choose=1')).toBe(true);
-    expect(asksToChoose('?choose')).toBe(true);
-  });
-
-  it('does not match a parameter that only starts the same', () => {
-    expect(asksToChoose('?chooser=1')).toBe(false);
-  });
-
-  it('is what the path the callback links to asks for', () => {
-    const { pathname, search } = new URL(CHOOSE_LOGIN_PATH, 'http://site');
-
-    expect(pathname).toBe('/login');
-    expect(asksToChoose(search)).toBe(true);
   });
 });

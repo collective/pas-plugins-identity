@@ -48,6 +48,12 @@ build: ## Build a production bundle of Aurora with the add-on
 core/packages/registry/dist: $(shell find core/packages/registry/src -type f)
 	pnpm --filter @plone/registry build
 
+core/packages/icons/dist: $(shell find core/packages/icons/src -type f)
+	pnpm --filter @plone/icons build
+
+core/packages/quanta/dist: $(shell find core/packages/quanta/src -type f)
+	pnpm --filter @plone/quanta build
+
 core/packages/components/dist: $(shell find core/packages/components/src -type f)
 	pnpm --filter @plone/components build
 
@@ -61,7 +67,7 @@ core/packages/react-router/dist: $(shell find core/packages/react-router/src -ty
 	pnpm --filter @plone/react-router build
 
 .PHONY: build-deps
-build-deps: core/packages/registry/dist core/packages/components/dist core/packages/client/dist core/packages/react-router/dist core/packages/helpers/dist ## Build Aurora's library packages
+build-deps: core/packages/registry/dist core/packages/icons/dist core/packages/quanta/dist core/packages/components/dist core/packages/client/dist core/packages/react-router/dist core/packages/helpers/dist ## Build Aurora's library packages
 
 .PHONY: i18n
 i18n: ## Regenerate the add-on's catalogues from identity-core's
@@ -91,3 +97,31 @@ test: ## Run the add-on's unit tests
 .PHONY: ci-test
 ci-test: ## Run the add-on's unit tests once
 	CI=1 pnpm test --run
+
+# Acceptance: a real sign-in, through Dex, against the backend's acceptance
+# server. Start the three services, each in its own shell, register the
+# provider, then run the tests.
+
+ACCEPTANCE_API_PATH=http://localhost:55001/plone
+DEX_CONFIG=$(CURRENT_DIR)/../../backend/tests/_resources/dex/config.yaml
+
+.PHONY: acceptance-backend-start
+acceptance-backend-start: ## Start the backend's acceptance server on http://localhost:55001/plone
+	$(MAKE) -C ../../backend acceptance-backend-start
+
+.PHONY: acceptance-dex-start
+acceptance-dex-start: ## Start Dex with the backend's test configuration on http://127.0.0.1:5556/dex
+	docker run --rm --name aurora-acceptance-dex -p 5556:5556 -v $(DEX_CONFIG):/etc/dex/config.yaml:ro ghcr.io/dexidp/dex:v2.44.0 dex serve /etc/dex/config.yaml
+
+.PHONY: acceptance-frontend-start
+acceptance-frontend-start: ## Build Aurora and serve it on http://localhost:3000 against the acceptance backend
+	pnpm build
+	PLONE_API_PATH=$(ACCEPTANCE_API_PATH) pnpm start:prod
+
+.PHONY: acceptance-provider
+acceptance-provider: ## Register the Dex provider on the acceptance backend
+	PLONE_API_PATH=$(ACCEPTANCE_API_PATH) pnpm acceptance-provider
+
+.PHONY: acceptance-test
+acceptance-test: ## Run the acceptance tests
+	pnpm acceptance-test

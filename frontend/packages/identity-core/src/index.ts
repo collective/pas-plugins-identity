@@ -10,6 +10,9 @@
  * @module identity-core
  */
 
+// The tokens and base classes every component below reads.
+import './styles.css';
+
 export { default as CallbackCard } from './components/Callback/CallbackCard';
 export type {
   CallbackCardProps,
@@ -35,6 +38,7 @@ export * from './helpers/download';
 export * from './helpers/firstLogin';
 export * from './helpers/groupmap';
 export * from './helpers/identities';
+export * from './helpers/loginSettings';
 export * from './helpers/navigate';
 export * from './helpers/orderedList';
 export * from './helpers/profileGate';

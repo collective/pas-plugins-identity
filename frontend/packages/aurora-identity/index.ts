@@ -1,22 +1,37 @@
 /**
  * The Aurora add-on for `pas.plugins.identity`.
  *
- * Sign-in with external identity providers: their buttons on the login page,
- * the route that starts a sign-in with one of them, and the route they send
- * the browser back to.
+ * Sign-in with external identity providers: a login page offering them, the
+ * route that starts a sign-in with one of them, and the route they send the
+ * browser back to.
  * @module aurora-identity
  */
 import type { ConfigType } from '@plone/registry';
 
-import LoginProviders from './slots/LoginProviders';
 import { CALLBACK_PATH, START_PATH } from './lib/paths';
+import { AURORA_LOGIN_FILE, replaceRouteFile } from './lib/routes';
+import { DEFAULT_SETTINGS } from './lib/settings';
+import type { IdentitySettings } from './lib/settings';
+
+/** The add-on's login page, rendered at Aurora's `/login`. */
+const LOGIN_FILE = '@plone-collective/aurora-identity/routes/login.tsx';
 
 export default function install(config: ConfigType) {
-  config.registerSlotComponent({
-    name: 'IdentityLoginProviders',
-    slot: 'loginActions',
-    component: LoginProviders,
-  });
+  // Merged under whatever is already there: these are defaults, and an
+  // add-on configured before this one may have set either.
+  const settings = config.settings as { identity?: Partial<IdentitySettings> };
+  settings.identity = { ...DEFAULT_SETTINGS, ...settings.identity };
+
+  // `@plone/cmsui` registers `/login` before this add-on is configured, so
+  // its route is there to be given this add-on's page. Should Aurora move or
+  // rename that file, the site keeps Aurora's page, without the providers,
+  // rather than failing to start -- and says so while it is being built.
+  if (!replaceRouteFile(config.routes ?? [], AURORA_LOGIN_FILE, LOGIN_FILE)) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `@plone-collective/aurora-identity: no route renders ${AURORA_LOGIN_FILE}, so /login is left as it is, without the identity providers.`,
+    );
+  }
 
   // Path segments without their leading slash, the way Aurora's own routes
   // are registered.
