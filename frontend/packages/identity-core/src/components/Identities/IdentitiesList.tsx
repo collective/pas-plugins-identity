@@ -13,7 +13,7 @@
  * @module components/Identities/IdentitiesList
  */
 import React from 'react';
-import { defineMessages, useIntl } from 'react-intl';
+import { defineMessages } from '#i18n';
 import { Tabs } from '@plone/components';
 import { Tab, TabList, TabPanel } from 'react-aria-components';
 
@@ -22,10 +22,11 @@ import { Tab, TabList, TabPanel } from 'react-aria-components';
 import '@plone/components/src/styles/basic/Tabs.css';
 
 import type { Identity, LoginProvider, ProfileEmail } from '../../types';
-import { ProviderButton } from '@plone-collective/identity-core';
+import { useIdentityUI } from '../IdentityUI/IdentityUI';
+import ProviderButton from '../Login/ProviderButton';
 import ProfileEmails from './ProfileEmails';
 
-import './IdentitiesList.scss';
+import './IdentitiesList.css';
 
 const messages = defineMessages({
   loading: {
@@ -67,8 +68,13 @@ interface IdentitiesListProps {
   available: LoginProvider[];
   /** The caller's own addresses, and which of them are verified. */
   emails: ProfileEmail[];
-  /** Where the caller's profile is, when they have one. */
-  profileUrl?: string | null;
+  /**
+   * Where the caller edits their profile, when they have one.
+   *
+   * A path inside this site, built by the frontend: each frontend's edit
+   * form lives at a different place.
+   */
+  profileEditHref?: string | null;
   loading: boolean;
   busy: boolean;
   error?: unknown;
@@ -93,7 +99,7 @@ const IdentitiesList: React.FC<IdentitiesListProps> = ({
   available,
   canSignInWithLink,
   emails,
-  profileUrl,
+  profileEditHref,
   loading,
   busy,
   error,
@@ -103,12 +109,12 @@ const IdentitiesList: React.FC<IdentitiesListProps> = ({
   onPreferEmail,
   onUnlink,
 }) => {
-  const intl = useIntl();
+  const { t } = useIdentityUI();
 
   if (loading) {
     return (
       <div className="identity-identities" role="status">
-        {intl.formatMessage(messages.loading)}
+        {t(messages.loading)}
       </div>
     );
   }
@@ -116,9 +122,9 @@ const IdentitiesList: React.FC<IdentitiesListProps> = ({
   return (
     <div className="identity-identities">
       <Tabs className="identity-tabs">
-        <TabList aria-label={intl.formatMessage(messages.sections)}>
-          <Tab id="providers">{intl.formatMessage(messages.providers)}</Tab>
-          <Tab id="addresses">{intl.formatMessage(messages.addresses)}</Tab>
+        <TabList aria-label={t(messages.sections)}>
+          <Tab id="providers">{t(messages.providers)}</Tab>
+          <Tab id="addresses">{t(messages.addresses)}</Tab>
         </TabList>
 
         <TabPanel id="providers">
@@ -139,14 +145,12 @@ const IdentitiesList: React.FC<IdentitiesListProps> = ({
                   // and a button that only fails when pressed is worse than one
                   // that explains itself.
                   title={
-                    identity.can_unlink
-                      ? undefined
-                      : intl.formatMessage(messages.lastWayIn)
+                    identity.can_unlink ? undefined : t(messages.lastWayIn)
                   }
                   data-action="unlink"
                   onClick={() => onUnlink(identity)}
                 >
-                  {intl.formatMessage(messages.remove)}
+                  {t(messages.remove)}
                 </button>
               </li>
             ))}
@@ -154,13 +158,13 @@ const IdentitiesList: React.FC<IdentitiesListProps> = ({
 
           {identities.length === 0 ? (
             <p className="identity-identities__empty identity-note">
-              {intl.formatMessage(messages.empty)}
+              {t(messages.empty)}
             </p>
           ) : null}
 
           {available.length ? (
             <div className="identity-identities__add">
-              <h3>{intl.formatMessage(messages.addAnother)}</h3>
+              <h3>{t(messages.addAnother)}</h3>
               <ul>
                 {available.map((provider) => (
                   <li key={provider.id}>
@@ -184,7 +188,7 @@ const IdentitiesList: React.FC<IdentitiesListProps> = ({
         <TabPanel id="addresses">
           <ProfileEmails
             emails={emails}
-            profileUrl={profileUrl}
+            profileEditHref={profileEditHref}
             loading={loading}
             busy={busy}
             sent={emailSent}
@@ -197,7 +201,7 @@ const IdentitiesList: React.FC<IdentitiesListProps> = ({
 
       {error ? (
         <p className="identity-error" role="alert">
-          {intl.formatMessage(messages.failed)}
+          {t(messages.failed)}
         </p>
       ) : null}
     </div>

@@ -24,9 +24,13 @@ import {
   startLinking,
   unlinkIdentity,
 } from '../../actions';
-import { EMAIL_DRIVER, goTo } from '@plone-collective/identity-core';
+import {
+  EMAIL_DRIVER,
+  goTo,
+  IdentitiesList,
+} from '@plone-collective/identity-core';
 import type { Identity, LoginProvider, ProfileEmail } from '../../types';
-import IdentitiesList from './IdentitiesList';
+import VoltoIdentityUI from '../IdentityUI/VoltoIdentityUI';
 
 const messages = defineMessages({
   title: { id: 'Sign-in methods', defaultMessage: 'Sign-in methods' },
@@ -177,26 +181,34 @@ const Identities: React.FC = () => {
           {intl.formatMessage(messages.title)}
         </Segment>
         <Segment>
-          <IdentitiesList
-            identities={mine?.data ?? []}
-            available={linkableProviders?.data ?? []}
-            emails={myProfile?.data?.emails ?? []}
-            canSignInWithLink={canSignInWithLink}
-            profileUrl={myProfile?.data?.profile ?? null}
-            loading={Boolean(mine?.loading)}
-            busy={
-              redirecting ||
-              Boolean(removing?.loading) ||
-              Boolean(preferring?.loading) ||
-              Boolean(linking?.loading)
-            }
-            error={linking?.error ?? removing?.error}
-            emailSent={emailSent}
-            onLink={onLink}
-            onVerifyEmail={onVerifyEmail}
-            onPreferEmail={onPreferEmail}
-            onUnlink={onUnlink}
-          />
+          <VoltoIdentityUI>
+            <IdentitiesList
+              identities={mine?.data ?? []}
+              available={linkableProviders?.data ?? []}
+              emails={myProfile?.data?.emails ?? []}
+              canSignInWithLink={canSignInWithLink}
+              // Volto's edit form for the profile. The backend's URL is
+              // absolute, so it is flattened to this app's path first.
+              profileEditHref={
+                myProfile?.data?.profile
+                  ? `${flattenToAppURL(myProfile.data.profile)}/edit`
+                  : null
+              }
+              loading={Boolean(mine?.loading)}
+              busy={
+                redirecting ||
+                Boolean(removing?.loading) ||
+                Boolean(preferring?.loading) ||
+                Boolean(linking?.loading)
+              }
+              error={linking?.error ?? removing?.error}
+              emailSent={emailSent}
+              onLink={onLink}
+              onVerifyEmail={onVerifyEmail}
+              onPreferEmail={onPreferEmail}
+              onUnlink={onUnlink}
+            />
+          </VoltoIdentityUI>
         </Segment>
       </Segment.Group>
       {isClient &&

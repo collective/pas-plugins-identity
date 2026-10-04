@@ -17,7 +17,7 @@ const headers = {
 };
 
 /** The email "provider", which sends magic links. */
-const EMAIL_PROVIDER = {
+export const EMAIL_PROVIDER = {
   id: 'email',
   driver: 'email',
   title: 'Email',
@@ -26,26 +26,59 @@ const EMAIL_PROVIDER = {
   config: {},
 };
 
-/** Stop offering magic links, so the other tests see Dex alone. */
-export async function removeEmailProvider(): Promise<void> {
-  await fetch(`${SITE}/++api++/@identity-providers/${EMAIL_PROVIDER.id}`, {
+/**
+ * A second provider, served by the same Dex through its second client.
+ *
+ * `plone-second` in `backend/tests/_resources/dex/config.yaml`, the one the
+ * backend's own linking tests use: one Dex user, two providers, so linking a
+ * second identity to an account needs no second identity provider.
+ */
+export const SECOND_DEX = {
+  id: 'dex-second',
+  driver: 'oidc-generic',
+  title: 'Dex (second)',
+  enabled: true,
+  show_in_login: true,
+  config: {
+    issuer: process.env.DEX_ISSUER ?? 'http://127.0.0.1:5556/dex',
+    client_id: 'plone-second',
+    // Dex's static test client, not a secret: see the Dex configuration.
+    client_secret: 'plone-second-secret',
+    scope: ['openid', 'email', 'profile'],
+  },
+};
+
+/**
+ * Stop offering a provider.
+ *
+ * @param id The provider.
+ */
+export async function removeProvider(id: string): Promise<void> {
+  await fetch(`${SITE}/++api++/@identity-providers/${id}`, {
     method: 'DELETE',
     headers,
   });
 }
 
-/** Offer magic links on the login page. */
-export async function addEmailProvider(): Promise<void> {
+/**
+ * Offer a provider, for one test file's run.
+ *
+ * Every other test sees Dex alone, so a test adding one removes it after
+ * itself, with `removeProvider`.
+ *
+ * @param provider The provider's record.
+ */
+export async function addProvider(provider: { id: string }): Promise<void> {
   // One left behind by a run that stopped before its cleanup.
-  await removeEmailProvider();
+  await removeProvider(provider.id);
   const answer = await fetch(`${SITE}/++api++/@identity-providers`, {
     method: 'POST',
     headers,
-    body: JSON.stringify(EMAIL_PROVIDER),
+    body: JSON.stringify(provider),
   });
   if (!answer.ok) {
     throw new Error(
-      `Adding the email provider failed: ${answer.status} ${await answer.text()}`,
+      `Adding the ${provider.id} provider failed: ${answer.status} ${await answer.text()}`,
     );
   }
 }

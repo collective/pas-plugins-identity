@@ -53,7 +53,9 @@ doing so:
 
 - **Bundling:** `volto-identity/razzle.extend.js` aliases core's peer
   dependencies to Volto's copies, and `frontend/aurora/harness/vite.extend.js`
-  deduplicates them in Aurora. Without them a page bundles two Reacts.
+  deduplicates them in Aurora. Without them a page bundles two Reacts. Volto's
+  tests need the same: `volto-identity/vitest.config.mjs` deduplicates core's
+  peers, or a core component using React Aria renders on Aurora's React.
 - **Typechecking:** each package's `typecheck` uses a `tsconfig.typecheck.json`
   that maps core's peers to that package's own copies and, in the add-ons,
   includes core's sources, so core is typechecked against both frontends'

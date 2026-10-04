@@ -35,11 +35,6 @@ msgstr "Aktionen"
 msgid "Add"
 msgstr "Hinzufügen"
 
-#. Default: "Add another"
-#: components/Identities/IdentitiesList
-msgid "Add another"
-msgstr "Weiteres hinzufügen"
-
 #. Default: "Add provider"
 #: components/ControlPanel/ProvidersControlPanel
 msgid "Add provider"
@@ -255,11 +250,6 @@ msgstr "Treiber"
 msgid "Edit"
 msgstr "Bearbeiten"
 
-#. Default: "Edit your profile"
-#: components/Identities/ProfileEmails
-msgid "Edit your profile"
-msgstr "Bearbeiten Sie Ihr Profil"
-
 #. Default: "Edit {item}"
 #: components/Widgets/OrderedListTable/OrderedListTable
 msgid "Edit {item}"
@@ -272,7 +262,6 @@ msgstr "Bearbeitung"
 
 #. Default: "Email addresses"
 #: components/ControlPanel/UserAccountPanel
-#: components/Identities/IdentitiesList
 msgid "Email addresses"
 msgstr "E-Mail-Adressen"
 
@@ -424,11 +413,6 @@ msgstr "Die von Ihnen autorisierten Anwendungen werden geladen…"
 msgid "Loading the request"
 msgstr "Die Anfrage wird geladen…"
 
-#. Default: "Loading your sign-in methods…"
-#: components/Identities/IdentitiesList
-msgid "Loading your sign-in methods"
-msgstr "Ihre Anmeldemethoden werden geladen…"
-
 #. Default: "Local group"
 #: helpers/providerSchema
 msgid "Local group"
@@ -450,11 +434,6 @@ msgstr "Anmeldungsbildschirm"
 #: components/Toolbar/PersonalTools
 msgid "Logout"
 msgstr "Abmelden"
-
-#. Default: "Make preferred"
-#: components/Identities/ProfileEmails
-msgid "Make preferred"
-msgstr "Als bevorzugt einstellen"
 
 #. Default: "Mapping"
 #: helpers/providerSchema
@@ -599,11 +578,6 @@ msgstr "Bitte füllen Sie {fields} aus, bevor Sie fortfahren können."
 msgid "Preferences"
 msgstr "Voreinstellungen"
 
-#. Default: "Preferred"
-#: components/Identities/ProfileEmails
-msgid "Preferred"
-msgstr "Bevorzugt"
-
 #. Default: "Preferred email"
 #: components/Welcome/WelcomeCard
 msgid "Preferred email"
@@ -692,7 +666,6 @@ msgid "Registration"
 msgstr "Registrierung"
 
 #. Default: "Remove"
-#: components/Identities/IdentitiesList
 #: components/Widgets/ProviderIconWidget
 msgid "Remove"
 msgstr "Entfernen"
@@ -763,7 +736,6 @@ msgstr "Anmeldung"
 #. Default: "Sign-in methods"
 #: components/ControlPanel/UserAccountPanel
 #: components/Identities/Identities
-#: components/Identities/IdentitiesList
 #: components/UserMenu/IdentitiesMenuItem
 msgid "Sign-in methods"
 msgstr "Anmeldemethoden"
@@ -794,11 +766,6 @@ msgstr "Website-Einrichtung"
 #: components/ControlPanel/ProvidersTable
 msgid "Test connection"
 msgstr "Testverbindung"
-
-#. Default: "That did not work. Please try again."
-#: components/Identities/IdentitiesList
-msgid "That did not work. Please try again."
-msgstr "Das funktionierte nicht. Bitte versuchen Sie es erneut."
 
 #. Default: "That list could not be loaded."
 #: components/Applications/ApplicationsPanel
@@ -850,11 +817,6 @@ msgstr "Diese Autorisierungsanfrage kann nicht angezeigt werden. Sie könnte von
 msgid "This is the only time this secret is shown."
 msgstr "Dies ist das einzige Mal, dass dieses Geheimnis angezeigt wird. Es wird gehashed gespeichert und kann nicht zurückgelesen werden; wenn es verloren geht, drehen Sie es."
 
-#. Default: "This is your only way to sign in. Add another first."
-#: components/Identities/IdentitiesList
-msgid "This is your only way to sign in. Add another first."
-msgstr "Dies ist Ihre einzige Möglichkeit, sich anzumelden. Fügen Sie zuerst einen anderen hinzu."
-
 #. Default: "Title"
 #: components/ControlPanel/ClientsPanel
 #: components/ControlPanel/ProvidersTable
@@ -883,14 +845,8 @@ msgstr "Diesen Client nicht registrieren? Jedes bereits geprägte Token wird sof
 
 #. Default: "Verified"
 #: components/ControlPanel/UserAccountPanel
-#: components/Identities/ProfileEmails
 msgid "Verified"
 msgstr "Verifiziert"
-
-#. Default: "Verify"
-#: components/Identities/ProfileEmails
-msgid "Verify"
-msgstr "Verifizieren"
 
 #. Default: "Welcome"
 #: components/Welcome/WelcomeCard
@@ -949,20 +905,10 @@ msgstr "Sie sind angemeldet als {user}."
 msgid "You authorized this application on {date}."
 msgstr "Sie haben diese Anwendung am {date} autorisiert."
 
-#. Default: "You have no external sign-in methods linked yet."
-#: components/Identities/IdentitiesList
-msgid "You have no external sign-in methods linked yet."
-msgstr "Sie haben noch keine externen Anmeldemethoden verknüpft."
-
 #. Default: "You have not authorized any application. Anything you sign in to with this account will ask you first, and appear here afterwards."
 #: components/Applications/ApplicationsPanel
 msgid "You have not authorized any application."
 msgstr "Sie haben keine Anwendung autorisiert. Alles, bei dem Sie sich mit diesem Konto anmelden, wird Sie zuerst fragen und dann hier erscheinen."
-
-#. Default: "Your email addresses"
-#: components/Identities/ProfileEmails
-msgid "Your email addresses"
-msgstr "Ihre E-Mail-Adressen"
 
 #. Default: "Your profile"
 #: components/Welcome/WelcomeCard
@@ -1094,11 +1040,6 @@ msgstr "Suche läuft…"
 msgid "group-view-through"
 msgstr "durch {groups}"
 
-#. Default: "How you sign in"
-#: components/Identities/IdentitiesList
-msgid "identities-sections"
-msgstr "Wie Sie sich anmelden"
-
 #. Default: "not verified"
 #: components/Welcome/WelcomeCard
 msgid "not verified"
@@ -1123,36 +1064,6 @@ msgstr "{value} ist bereits in der Liste."
 #: components/Widgets/OrderedListTable/OrderedListTable
 msgid "ordered-list-empty"
 msgstr "Es wurde noch nichts hinzugefügt."
-
-#. Default: "Move an address to the top to make it the one this site uses for you."
-#: components/Identities/ProfileEmails
-msgid "profile-emails-choose"
-msgstr "Verschieben Sie eine Adresse nach oben, um sie zu der Adresse zu machen, die diese Website für Sie verwendet."
-
-#. Default: "Your profile carries no email address yet."
-#: components/Identities/ProfileEmails
-msgid "profile-emails-empty"
-msgstr "Ihr Profil trägt noch keine E-Mail-Adresse."
-
-#. Default: "A verified address can be used to sign in with a link, and to recognise you when you add another provider. Add an address on your profile first, then verify it here."
-#: components/Identities/ProfileEmails
-msgid "profile-emails-intro"
-msgstr "Eine verifizierte Adresse kann zum Anmelden mit einem Link und zum Erkennen verwendet werden, wenn Sie einen anderen Anbieter hinzufügen. Fügen Sie zunächst eine Adresse zu Ihrem Profil hinzu, und überprüfen Sie sie dann hier."
-
-#. Default: "A verified address is how this site recognises you when you add another provider. Add an address on your profile first, then verify it here."
-#: components/Identities/ProfileEmails
-msgid "profile-emails-intro-no-sign-in"
-msgstr "Eine verifizierte Adresse ist, wie diese Website Sie erkennt, wenn Sie einen anderen Anbieter hinzufügen. Fügen Sie zunächst eine Adresse zu Ihrem Profil hinzu, und überprüfen Sie sie dann hier."
-
-#. Default: "The address this site uses for you: the first verified one, or the first on your profile when none is verified."
-#: components/Identities/ProfileEmails
-msgid "profile-emails-preferred-help"
-msgstr "Die Adresse, die diese Website für Sie verwendet: die erste verifizierte, oder die erste in Ihrem Profil, wenn keine verifiziert ist."
-
-#. Default: "Check that mailbox. The link confirms the address; it does not sign anybody in."
-#: components/Identities/ProfileEmails
-msgid "profile-emails-sent"
-msgstr "Überprüfen Sie dieses Postfach. Der Link bestätigt die Adresse; es meldet niemanden an."
 
 #. Default: "You have more than one verified email address. Choose the one this site should use for you before you continue."
 #: components/ProfileGate/ProfileGate

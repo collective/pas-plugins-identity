@@ -28,7 +28,7 @@ import {
   flowCookieHeaders,
   relayFlowCookie,
 } from '../lib/backend';
-import { afterSignIn } from '../lib/paths';
+import { afterSignIn, IDENTITIES_PATH } from '../lib/paths';
 
 import './callback.css';
 
@@ -114,9 +114,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
   if (result.linked) {
-    // The identity is linked to the account already signed in. Aurora has
-    // no page listing them yet, so back to where the user came from.
-    return relayFlowCookie(answer, redirect(afterSignIn(result.came_from)));
+    // The identity is linked to the account already signed in. The answer
+    // names no `came_from`, so back to the page linking is done from, which
+    // lists the new identity: where the Volto add-on goes too.
+    return relayFlowCookie(answer, redirect(IDENTITIES_PATH));
   }
   return failed('invalid', answer);
 }

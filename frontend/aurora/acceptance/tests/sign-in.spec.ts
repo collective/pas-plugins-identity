@@ -1,11 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-/**
- * Dex's static user: `DEX_USER` in `backend/tests/conftest.py`, whose
- * password hash is in `backend/tests/_resources/dex/config.yaml`. A fixture
- * of an in-memory Dex that exists only for tests.
- */
-const DEX_USER = { email: 'erico@plone.org', password: 'plone-test-password' };
+import { logInAtDex } from '../dex';
 
 test.describe('Signing in to Aurora with an identity provider', () => {
   test('the login page offers the provider, and Dex signs the user in', async ({
@@ -16,10 +11,7 @@ test.describe('Signing in to Aurora with an identity provider', () => {
     await page.getByRole('button', { name: 'Dex' }).click();
 
     // Dex's own login form, on Dex's own origin.
-    await page.waitForURL(/\/dex\/auth/);
-    await page.locator('input[name="login"]').fill(DEX_USER.email);
-    await page.locator('input[name="password"]').fill(DEX_USER.password);
-    await page.locator('button[type="submit"]').click();
+    await logInAtDex(page);
 
     // Back through `/login-identity`, home, and signed in.
     await page.waitForURL((url) => url.pathname === '/');

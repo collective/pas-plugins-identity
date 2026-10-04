@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitest/config';
 import voltoVitestConfig from '@plone/volto/vitest.config.mjs';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -21,6 +22,24 @@ const IDENTITY_CORE_SUBPATHS = {
   find: /^@plone-collective\/identity-core\/(.+)$/,
   replacement: path.resolve(__dirname, '../identity-core/src/$1'),
 };
+
+/**
+ * `identity-core`'s peer dependencies, resolved to this harness's copies.
+ *
+ * The test counterpart of `razzle.extend.js`. Both harnesses install
+ * `identity-core`, so its `node_modules` points at whichever installed last;
+ * after an Aurora install that is React 19's React Aria, and a core
+ * component rendered here would run on a second React. Deduplicating makes
+ * Vite resolve each of these from this package instead.
+ */
+const CORE_PEERS = Object.keys(
+  JSON.parse(
+    fs.readFileSync(
+      path.resolve(__dirname, '../identity-core/package.json'),
+      'utf-8',
+    ),
+  ).peerDependencies ?? {},
+);
 
 /**
  * Turn aliases into Vite's array form, which is the only one a regular
@@ -51,6 +70,7 @@ const withComponentsSrc = (project) => ({
   ...project,
   resolve: {
     ...project.resolve,
+    dedupe: [...new Set([...(project.resolve?.dedupe ?? []), ...CORE_PEERS])],
     alias: [
       IDENTITY_CORE_SUBPATHS,
       ...asArray({ '@plone/components/src': COMPONENTS_SRC }),

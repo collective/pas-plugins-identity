@@ -28,7 +28,6 @@ import type {
   ConsentRequest,
   Driver,
   GroupContent,
-  Identity,
   JsonSchema,
   OAuthClient,
   OAuthGrants,
@@ -37,7 +36,6 @@ import type {
   SigningKeyRing,
   UserAccount,
   UserProfile,
-  ProfileEmail,
 } from '../types';
 import { LOADED } from '@plone-collective/identity-core/stories/fixtures';
 
@@ -48,16 +46,13 @@ export {
   GOOGLE,
   KEYCLOAK,
   LOADED,
+  IDENTITIES,
   LOADING,
+  ONLY_IDENTITY,
+  PROFILE_EMAILS,
   PROVIDERS,
   STYLED,
 } from '@plone-collective/identity-core/stories/fixtures';
-
-/** A profile's addresses: one proved, one not. */
-export const PROFILE_EMAILS: ProfileEmail[] = [
-  { address: 'erico@plone.org', verified: true, preferred: true },
-  { address: 'erico@example.com', verified: false, preferred: false },
-];
 
 /**
  * The value type of a Profile's `emails`, as `plone.restapi` serializes an
@@ -126,32 +121,6 @@ export const SOCIAL_LINKS = [
       },
     ],
   },
-];
-
-export const IDENTITIES: Identity[] = [
-  {
-    '@id': '/@identities/google:1234',
-    provider: 'google',
-    subject: '1234567890',
-    title: 'Google',
-    created: '2026-01-14T09:12:00+00:00',
-    last_login: '2026-08-21T18:03:00+00:00',
-    can_unlink: true,
-  },
-  {
-    '@id': '/@identities/github:99',
-    provider: 'github',
-    subject: '99',
-    title: 'GitHub',
-    created: '2026-03-02T11:40:00+00:00',
-    last_login: null,
-    can_unlink: true,
-  },
-];
-
-/** The last way in: unlinking it would lock the user out. */
-export const ONLY_IDENTITY: Identity[] = [
-  { ...IDENTITIES[0], can_unlink: false },
 ];
 
 /**

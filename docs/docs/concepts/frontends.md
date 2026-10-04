@@ -26,6 +26,7 @@ The sign-in it offers is the same either way, because the package ships one add-
 `@plone-collective/aurora-identity`
 :   The Plone Aurora add-on.
     Sign-in: the login page, starting a sign-in with a provider, and finishing it.
+    For a signed-in user, the sign-in methods page, `/identities`, and its entry among the header's tools.
 
 <!-- frontend/packages/identity-core/src/index.ts, frontend/packages/aurora-identity/index.ts -->
 
@@ -125,10 +126,18 @@ Each reads them where its frontend reads settings at run time.
 The environment variable wins over `config.settings.identity` in both.
 A login page visited with `?choose` shows the options, whatever the second setting says.
 
+## Where Aurora's other pages go
+
+A page registered at the top of Aurora's route tree renders without the site's header, and so without the user's tools that lead to it and back.
+The add-on's other pages are added under `@plone/publicui`'s layout instead, beside its search page.
+They are signed-in pages: a visitor without a session is sent to `/login`.
+
+<!-- frontend/packages/aurora-identity/lib/routes.ts, frontend/packages/aurora-identity/routes/identities.tsx -->
+
 ## What Aurora does not have yet
 
-The Aurora add-on covers signing in.
-The identities page, the profile, the consent screen and the control panels exist in the Volto add-on only.
+The Aurora add-on covers signing in and the sign-in methods page.
+The first-login and email confirmation pages, the required-profile gate, the applications page, the consent screen and the control panels exist in the Volto add-on only.
 Neither the Aurora add-on nor the core is published to npm yet.
 
 ## Related
