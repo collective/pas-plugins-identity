@@ -16,16 +16,51 @@ msgstr ""
 "Language-Name: Português do Brasil\n"
 "Preferred-Encodings: utf-8\n"
 
+#. Default: "Access withdrawn"
+#: components/Applications/messages
+msgid "Access withdrawn"
+msgstr "Acesso retirado"
+
+#. Default: "Actions"
+#: components/Applications/ApplicationsPanel
+msgid "Actions"
+msgstr "Ações"
+
 #. Default: "Add another"
 #: components/Identities/IdentitiesList
 msgid "Add another"
 msgstr "Adicionar outro"
+
+#. Default: "Application"
+#: components/Applications/ApplicationsPanel
+msgid "Application"
+msgstr "Aplicação"
+
+#. Default: "Applications"
+#: components/Applications/messages
+msgid "Applications"
+msgstr "Aplicações"
+
+#. Default: "Authorized"
+#: components/Applications/ApplicationsPanel
+msgid "Authorized"
+msgstr "Autorizado"
 
 #. Default: "Back to sign-in options"
 #: components/Callback/CallbackCard
 #: components/Login/LoginForm
 msgid "Back to sign-in options"
 msgstr "Voltar para opções de acesso"
+
+#. Default: "Back to the list"
+#: components/Applications/ApplicationsPanel
+msgid "Back to the list"
+msgstr "Voltar para a lista"
+
+#. Default: "Cancel"
+#: components/ConfirmDialog/ConfirmDialog
+msgid "Cancel"
+msgstr "Cancelar"
 
 #. Default: "Clear"
 #: components/Login/PasswordForm
@@ -51,6 +86,11 @@ msgstr "Confirme seu endereço de email"
 #: components/Callback/CallbackCard
 msgid "Confirming your address"
 msgstr "Confirmando seu endereço"
+
+#. Default: "Details"
+#: components/Applications/ApplicationsPanel
+msgid "Details"
+msgstr "Detalhes"
 
 #. Default: "Edit your profile"
 #: components/CompleteProfile/CompleteProfileCard
@@ -78,10 +118,20 @@ msgstr "Enviar um link por email"
 msgid "If that address can sign in here"
 msgstr "Se esse endereço pode entrar aqui"
 
+#. Default: "It can read:"
+#: components/Applications/ApplicationsPanel
+msgid "It can read:"
+msgstr "Pode ler:"
+
 #. Default: "Loading sign-in options…"
 #: components/Login/LoginForm
 msgid "Loading sign-in options"
 msgstr "Carregando opções de acesso"
+
+#. Default: "Loading the applications you have authorized…"
+#: components/Applications/ApplicationsPanel
+msgid "Loading the applications you have authorized"
+msgstr "Carregando os aplicativos que você autorizou"
 
 #. Default: "Loading your sign-in methods…"
 #: components/Identities/IdentitiesList
@@ -103,6 +153,16 @@ msgstr "Nome de login"
 msgid "Make preferred"
 msgstr "Tornar preferido"
 
+#. Default: "Nothing"
+#: components/Applications/ApplicationsPanel
+msgid "Nothing"
+msgstr "Nada"
+
+#. Default: "Nothing beyond the fact that you signed in."
+#: components/Applications/ApplicationsPanel
+msgid "Nothing beyond the fact that you signed in."
+msgstr "Nada além do fato de você ter entrado."
+
 #. Default: "Password"
 #: components/Login/PasswordForm
 msgid "Password"
@@ -118,10 +178,20 @@ msgstr "Preencha {fields} antes de continuar."
 msgid "Preferred"
 msgstr "Preferido"
 
+#. Default: "Reads"
+#: components/Applications/ApplicationsPanel
+msgid "Reads"
+msgstr "Lê"
+
 #. Default: "Remove"
 #: components/Identities/IdentitiesList
 msgid "Remove"
 msgstr "Remover"
+
+#. Default: "Scopes agreed to"
+#: components/Applications/ApplicationsPanel
+msgid "Scopes agreed to"
+msgstr "Escopos concordados"
 
 #. Default: "Sending"
 #: components/Login/MagicLinkForm
@@ -164,9 +234,15 @@ msgid "That did not work. Please try again in a little while."
 msgstr "Isso não funcionou. Tente novamente em um momento."
 
 #. Default: "That did not work. Please try again."
+#: components/Applications/messages
 #: components/Identities/IdentitiesList
 msgid "That did not work. Please try again."
 msgstr "Isso não funcionou. Tente novamente."
+
+#. Default: "That list could not be loaded."
+#: components/Applications/ApplicationsPanel
+msgid "That list could not be loaded."
+msgstr "Essa lista não pôde ser carregada."
 
 #. Default: "That login name and password did not match."
 #: components/Login/PasswordForm
@@ -189,6 +265,16 @@ msgstr "Essa opção de acesso não está disponível no momento."
 msgid "The provider refused the sign-in."
 msgstr "O provedor recusou o acesso."
 
+#. Default: "This application is disabled and is being refused already."
+#: components/Applications/ApplicationsPanel
+msgid "This application is disabled and is being refused already."
+msgstr "Este aplicativo está desativado e já está sendo recusado."
+
+#. Default: "This application is no longer registered on this site. It cannot ask for anything, and you can remove the record."
+#: components/Applications/ApplicationsPanel
+msgid "This application is no longer registered on this site."
+msgstr "Este aplicativo não está mais registrado neste site."
+
 #. Default: "This is your only way to sign in. Add another first."
 #: components/Identities/IdentitiesList
 msgid "This is your only way to sign in. Add another first."
@@ -209,10 +295,36 @@ msgstr "Verificado"
 msgid "Verify"
 msgstr "Verificar"
 
+#. Default: "Withdraw access"
+#: components/Applications/ApplicationsPanel
+#: components/Applications/messages
+msgid "Withdraw access"
+msgstr "Retirar acesso"
+
+#. Default: "Withdraw access for {client}? It will be signed out everywhere and will have to ask you again next time."
+#: components/Applications/messages
+msgid "Withdraw access for {client}?"
+msgstr "Retirar acesso para {client}?"
+
+#. Default: "Withdrawing signs an application out everywhere and makes it ask you again next time. An access token it already holds keeps working for up to {minutes, plural, one {# minute} other {# minutes}} — this site cannot recall one that was already issued."
+#: components/Applications/ApplicationsPanel
+msgid "Withdrawing signs it out and makes it ask again."
+msgstr "Retirar o acesso desconecta um aplicativo em todos os lugares e o faz pedir novamente da próxima vez. Um token de acesso que já possui continua funcionando por até {minutes, plural, one {# minuto} other {# minutos}} -- este site não pode recuperar um que já foi emitido."
+
+#. Default: "You authorized this application on {date}."
+#: components/Applications/ApplicationsPanel
+msgid "You authorized this application on {date}."
+msgstr "Você autorizou este aplicativo em {date}."
+
 #. Default: "You have no external sign-in methods linked yet."
 #: components/Identities/IdentitiesList
 msgid "You have no external sign-in methods linked yet."
 msgstr "Você não tem métodos de acesso externos vinculados ainda."
+
+#. Default: "You have not authorized any application. Anything you sign in to with this account will ask you first, and appear here afterwards."
+#: components/Applications/ApplicationsPanel
+msgid "You have not authorized any application."
+msgstr "Você não autorizou nenhum aplicativo."
 
 #. Default: "Your email addresses"
 #: components/Identities/ProfileEmails
@@ -309,3 +421,8 @@ msgstr "O endereço que este site usa para você: o primeiro verificado, ou o pr
 #: components/Identities/ProfileEmails
 msgid "profile-emails-sent"
 msgstr "Verifique essa caixa de correio. O link confirma o endereço; não entra em ninguém."
+
+#. Default: "{count, plural, one {# field} other {# fields}}"
+#: components/Applications/ApplicationsPanel
+msgid "{count, plural, one {# field} other {# fields}}"
+msgstr "{count, plural, one {# campo} other {# campos}}"

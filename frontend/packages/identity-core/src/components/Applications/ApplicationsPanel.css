@@ -5,23 +5,19 @@
  * container, and the table is Volto's own. What is left is the detail view,
  * which is the part this page draws for itself.
  */
-.identity-applications {
-  .identity-note {
-    margin: 0;
-    font-size: 0.875rem;
-  }
-
-  h2 {
-    margin: 0 0 0.25rem;
-    font-size: 18px;
-    font-weight: 500;
-  }
-
-  h3 {
-    margin: 1.5rem 0 0.5rem;
-    font-size: 14px;
-    font-weight: 500;
-  }
+.identity-applications .identity-note {
+  margin: 0;
+  font-size: 0.875rem;
+}
+.identity-applications h2 {
+  margin: 0 0 0.25rem;
+  font-size: 18px;
+  font-weight: 500;
+}
+.identity-applications h3 {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 /** The way back, above the details it leaves. */
@@ -41,10 +37,9 @@
 .identity-applications__claims {
   padding-left: 1.25rem;
   margin: 0 0 0.5rem;
-
-  li {
-    margin-bottom: 0.25rem;
-  }
+}
+.identity-applications__claims li {
+  margin-bottom: 0.25rem;
 }
 
 /**

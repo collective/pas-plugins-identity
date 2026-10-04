@@ -22,17 +22,13 @@
  * @module components/Applications/ApplicationsPanel
  */
 import React from 'react';
-import { FormattedMessage, defineMessages, useIntl } from 'react-intl';
-import { Button, Table } from 'semantic-ui-react';
 
-import Icon from '@plone/volto/components/theme/Icon/Icon';
-import backSVG from '@plone/volto/icons/back.svg';
-import deleteSVG from '@plone/volto/icons/delete.svg';
-import rightArrowSVG from '@plone/volto/icons/right-key.svg';
+import { defineMessages } from '#i18n';
 
 import type { OAuthGrant, OAuthGrants } from '../../types';
+import { useIdentityUI } from '../IdentityUI/IdentityUI';
 
-import './ApplicationsPanel.scss';
+import './ApplicationsPanel.css';
 
 const messages = defineMessages({
   loading: {
@@ -118,6 +114,29 @@ function claimsOf(grant: OAuthGrant): string[] {
   return Array.from(new Set(grant.scopes.flatMap((scope) => scope.claims)));
 }
 
+/**
+ * A date, in the reader's language.
+ *
+ * The date only. The hour somebody clicked Allow is not something they
+ * remember, and printing it invites them to try.
+ *
+ * @param value An ISO 8601 date.
+ * @param locale The reader's language.
+ * @returns The date, written out.
+ */
+function formatDate(value: string, locale: string): string {
+  const options: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  };
+  try {
+    return new Intl.DateTimeFormat(locale, options).format(new Date(value));
+  } catch {
+    return new Intl.DateTimeFormat('en', options).format(new Date(value));
+  }
+}
+
 const ApplicationsPanel: React.FC<ApplicationsPanelProps> = ({
   grants,
   loading,
@@ -127,12 +146,12 @@ const ApplicationsPanel: React.FC<ApplicationsPanelProps> = ({
   onSelect,
   onWithdraw,
 }) => {
-  const intl = useIntl();
+  const { t, icons, locale } = useIdentityUI();
 
   if (loading || (!grants && !error)) {
     return (
       <div className="identity-applications" role="status">
-        {intl.formatMessage(messages.loading)}
+        {t(messages.loading)}
       </div>
     );
   }
@@ -141,7 +160,7 @@ const ApplicationsPanel: React.FC<ApplicationsPanelProps> = ({
     return (
       <div className="identity-applications">
         <p className="identity-error" role="alert">
-          {intl.formatMessage(messages.unavailable)}
+          {t(messages.unavailable)}
         </p>
       </div>
     );
@@ -150,14 +169,11 @@ const ApplicationsPanel: React.FC<ApplicationsPanelProps> = ({
   /** How long access already granted can outlive a withdrawal. */
   const lingering = (
     <p className="identity-applications__lingering identity-note">
-      <FormattedMessage
-        {...messages.lingering}
-        values={{
-          // Rounded up: saying "up to 1 minute" for 90 seconds would
-          // understate it.
-          minutes: Math.max(1, Math.ceil(grants.access_token_ttl / 60)),
-        }}
-      />
+      {t(messages.lingering, {
+        // Rounded up: saying "up to 1 minute" for 90 seconds would
+        // understate it.
+        minutes: Math.max(1, Math.ceil(grants.access_token_ttl / 60)),
+      })}
     </p>
   );
 
@@ -175,8 +191,8 @@ const ApplicationsPanel: React.FC<ApplicationsPanelProps> = ({
           className="identity-applications__back"
           onClick={() => onSelect(null)}
         >
-          <Icon name={backSVG} size="18px" />
-          {intl.formatMessage(messages.back)}
+          {icons.back}
+          {t(messages.back)}
         </button>
 
         <h2>
@@ -186,28 +202,22 @@ const ApplicationsPanel: React.FC<ApplicationsPanelProps> = ({
           </small>
         </h2>
         <p className="identity-note">
-          {intl.formatMessage(messages.granted, {
-            // The date only. The hour somebody clicked Allow is not
-            // something they remember, and printing it invites them to try.
-            date: intl.formatDate(current.granted_at, {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            }),
+          {t(messages.granted, {
+            date: formatDate(current.granted_at, locale),
           })}
         </p>
 
         {!current.registered ? (
           <p className="identity-note" role="status">
-            {intl.formatMessage(messages.unregistered)}
+            {t(messages.unregistered)}
           </p>
         ) : !current.enabled ? (
           <p className="identity-note" role="status">
-            {intl.formatMessage(messages.disabled)}
+            {t(messages.disabled)}
           </p>
         ) : null}
 
-        <h3>{intl.formatMessage(messages.canRead)}</h3>
+        <h3>{t(messages.canRead)}</h3>
         {claims.length ? (
           <ul className="identity-applications__claims">
             {claims.map((claim) => (
@@ -217,16 +227,14 @@ const ApplicationsPanel: React.FC<ApplicationsPanelProps> = ({
             ))}
           </ul>
         ) : (
-          <p className="identity-note">
-            {intl.formatMessage(messages.readsNothing)}
-          </p>
+          <p className="identity-note">{t(messages.readsNothing)}</p>
         )}
 
         {/* The scopes as well as the claims, on the detail view only. They
             are what the client asked for and what a support conversation
             will be about; the claims are what the person actually cares
             about, which is why the list above leads. */}
-        <h3>{intl.formatMessage(messages.scopes)}</h3>
+        <h3>{t(messages.scopes)}</h3>
         <p>
           <code>{current.scopes.map((scope) => scope.id).join(' ')}</code>
         </p>
@@ -238,7 +246,7 @@ const ApplicationsPanel: React.FC<ApplicationsPanelProps> = ({
           disabled={busy}
           onClick={() => onWithdraw(current.client_id)}
         >
-          {intl.formatMessage(messages.withdraw)}
+          {t(messages.withdraw)}
         </button>
 
         {lingering}
@@ -250,7 +258,7 @@ const ApplicationsPanel: React.FC<ApplicationsPanelProps> = ({
     return (
       <div className="identity-applications">
         <p className="identity-applications__empty identity-note">
-          {intl.formatMessage(messages.empty)}
+          {t(messages.empty)}
         </p>
       </div>
     );
@@ -258,81 +266,67 @@ const ApplicationsPanel: React.FC<ApplicationsPanelProps> = ({
 
   return (
     <div className="identity-applications">
-      <Table selectable compact>
-        <Table.Header>
-          <Table.Row>
-            <Table.HeaderCell>
-              {intl.formatMessage(messages.columnApplication)}
-            </Table.HeaderCell>
-            <Table.HeaderCell>
-              {intl.formatMessage(messages.columnAuthorized)}
-            </Table.HeaderCell>
-            <Table.HeaderCell>
-              {intl.formatMessage(messages.columnReads)}
-            </Table.HeaderCell>
-            <Table.HeaderCell textAlign="right">
-              {intl.formatMessage(messages.columnActions)}
-            </Table.HeaderCell>
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
+      {/* Semantic UI's own classes, which Volto's theme styles and the
+          stylesheet beside this styles where there is no such theme. */}
+      <table className="ui selectable compact table">
+        <thead>
+          <tr>
+            <th>{t(messages.columnApplication)}</th>
+            <th>{t(messages.columnAuthorized)}</th>
+            <th>{t(messages.columnReads)}</th>
+            <th className="right aligned">{t(messages.columnActions)}</th>
+          </tr>
+        </thead>
+        <tbody>
           {grants.items.map((grant) => {
             const count = claimsOf(grant).length;
             return (
-              <Table.Row key={grant.client_id} data-client={grant.client_id}>
-                <Table.Cell>
+              <tr key={grant.client_id} data-client={grant.client_id}>
+                <td>
                   {grant.title}
                   {!grant.registered || !grant.enabled ? (
                     <p className="identity-note" role="status">
-                      {intl.formatMessage(
+                      {t(
                         grant.registered
                           ? messages.disabled
                           : messages.unregistered,
                       )}
                     </p>
                   ) : null}
-                </Table.Cell>
-                <Table.Cell>
-                  {intl.formatDate(grant.granted_at, {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </Table.Cell>
-                <Table.Cell>
+                </td>
+                <td>{formatDate(grant.granted_at, locale)}</td>
+                <td>
                   {/* A count in the row, the names on the detail view: four
                       rows of claim lists is a wall nobody reads. */}
-                  {count
-                    ? intl.formatMessage(messages.fields, { count })
-                    : intl.formatMessage(messages.nothing)}
-                </Table.Cell>
-                <Table.Cell textAlign="right">
-                  <Button
-                    basic
-                    icon
-                    aria-label={intl.formatMessage(messages.details)}
-                    title={intl.formatMessage(messages.details)}
+                  {count ? t(messages.fields, { count }) : t(messages.nothing)}
+                </td>
+                <td className="right aligned">
+                  <button
+                    type="button"
+                    className="ui basic icon button"
+                    aria-label={t(messages.details)}
+                    title={t(messages.details)}
                     onClick={() => onSelect(grant.client_id)}
                   >
-                    <Icon name={rightArrowSVG} size="20px" />
-                  </Button>
-                  <Button
-                    basic
-                    icon
+                    {icons.details}
+                  </button>
+                  <button
+                    type="button"
+                    className="ui basic icon button"
                     data-action="withdraw"
                     disabled={withdrawing === grant.client_id}
-                    aria-label={intl.formatMessage(messages.withdraw)}
-                    title={intl.formatMessage(messages.withdraw)}
+                    aria-label={t(messages.withdraw)}
+                    title={t(messages.withdraw)}
                     onClick={() => onWithdraw(grant.client_id)}
                   >
-                    <Icon name={deleteSVG} size="20px" />
-                  </Button>
-                </Table.Cell>
-              </Table.Row>
+                    {icons.remove}
+                  </button>
+                </td>
+              </tr>
             );
           })}
-        </Table.Body>
-      </Table>
+        </tbody>
+      </table>
 
       {lingering}
     </div>

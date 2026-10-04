@@ -30,7 +30,6 @@ import type {
   GroupContent,
   JsonSchema,
   OAuthClient,
-  OAuthGrants,
   ProfileUserContent,
   ServerSettingsPanel,
   SigningKeyRing,
@@ -46,6 +45,7 @@ export {
   GOOGLE,
   KEYCLOAK,
   LOADED,
+  GRANTS,
   IDENTITIES,
   LOADING,
   ONLY_IDENTITY,
@@ -604,39 +604,6 @@ export const MINTED_CLIENT: OAuthClient = {
   secret: 'Yb3nT7qk-2sV1pE0xR8wL4mZ6aQ9cJ5dN0gH2fK1uS',
   notice:
     'This secret is shown once and is not recoverable. Store it before leaving this page.',
-};
-
-/** The applications a user has authorized, as `@oauth-grants` lists them. */
-export const GRANTS: OAuthGrants = {
-  '@id': 'http://id.localhost/@oauth-grants',
-  access_token_ttl: 900,
-  items: [
-    {
-      '@id': 'http://id.localhost/@oauth-grants/demo-rp',
-      client_id: 'demo-rp',
-      title: 'Plone Content Site',
-      registered: true,
-      enabled: true,
-      granted_at: '2026-08-24T09:15:00+00:00',
-      scopes: [
-        { id: 'openid', claims: [] },
-        {
-          id: 'profile',
-          claims: ['name', 'preferred_username', 'picture', 'description'],
-        },
-        { id: 'email', claims: ['email', 'email_verified'] },
-      ],
-    },
-    {
-      '@id': 'http://id.localhost/@oauth-grants/reporting',
-      client_id: 'reporting',
-      title: 'Nightly reporting job',
-      registered: true,
-      enabled: true,
-      granted_at: '2026-06-02T22:40:00+00:00',
-      scopes: [{ id: 'openid', claims: [] }],
-    },
-  ],
 };
 
 /** A pending authorization request, as `@oauth-consent` describes one. */

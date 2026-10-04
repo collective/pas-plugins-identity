@@ -14,6 +14,7 @@ import IdentityTools from './slots/IdentityTools';
 import ProfileGate from './slots/ProfileGate';
 import { COMPLETE_PROFILE_PATH } from './lib/gate';
 import {
+  APPLICATIONS_PATH,
   CALLBACK_PATH,
   CONFIRM_EMAIL_PATH,
   IDENTITIES_PATH,
@@ -44,6 +45,12 @@ const USER_ROUTES = [
     path: CONFIRM_EMAIL_PATH.slice(1),
     file: '@plone-collective/aurora-identity/routes/confirm-email.tsx',
     options: { id: 'identity-confirm-email' },
+  },
+  {
+    type: 'route' as const,
+    path: APPLICATIONS_PATH.slice(1),
+    file: '@plone-collective/aurora-identity/routes/applications.tsx',
+    options: { id: 'identity-applications' },
   },
   {
     type: 'route' as const,

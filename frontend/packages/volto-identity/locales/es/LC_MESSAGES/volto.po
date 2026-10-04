@@ -30,7 +30,6 @@ msgid "Account"
 msgstr "Cuenta"
 
 #. Default: "Actions"
-#: components/Applications/ApplicationsPanel
 #: components/ControlPanel/ClientsPanel
 #: components/ControlPanel/ProvidersTable
 #: components/Widgets/OrderedListTable/OrderedListTable
@@ -72,11 +71,6 @@ msgstr "Grupos permitidos"
 msgid "An export carries every client secret in the clear."
 msgstr "Una exportación lleva cada secreto de cliente en claro."
 
-#. Default: "Application"
-#: components/Applications/ApplicationsPanel
-msgid "Application"
-msgstr "Aplicación"
-
 #. Default: "Applications"
 #: components/Applications/Applications
 #: components/UserMenu/ApplicationsMenuItem
@@ -93,11 +87,6 @@ msgstr "Autenticado con"
 msgid "Authorize"
 msgstr "Autorizar"
 
-#. Default: "Authorized"
-#: components/Applications/ApplicationsPanel
-msgid "Authorized"
-msgstr "Autorizado"
-
 #. Default: "Back"
 #: components/Applications/Applications
 #: components/ControlPanel/ClientsControlPanel
@@ -108,11 +97,6 @@ msgstr "Autorizado"
 #: components/Toolbar/Toolbar
 msgid "Back"
 msgstr "Atrás"
-
-#. Default: "Back to the list"
-#: components/Applications/ApplicationsPanel
-msgid "Back to the list"
-msgstr "Volver a la lista"
 
 #. Default: "Back to the providers"
 #: components/ControlPanel/ProvidersControlPanel
@@ -226,11 +210,6 @@ msgstr "¿Eliminar este proveedor?"
 #: components/Consent/ConsentPanel
 msgid "Deny"
 msgstr "Denegar"
-
-#. Default: "Details"
-#: components/Applications/ApplicationsPanel
-msgid "Details"
-msgstr "Detalles"
 
 #. Default: "Disabled"
 #: components/ControlPanel/UserAccountPanel
@@ -360,11 +339,6 @@ msgstr "Identidad"
 msgid "Identity providers"
 msgstr "Proveedores de identidad"
 
-#. Default: "It can read:"
-#: components/Applications/ApplicationsPanel
-msgid "It can read:"
-msgstr "Puede leer:"
-
 #. Default: "It will be able to read:"
 #: components/Consent/ConsentPanel
 msgid "It will be able to read:"
@@ -409,11 +383,6 @@ msgstr "Cargando claves…"
 #: components/ControlPanel/ClientsPanel
 msgid "Loading settings"
 msgstr "Cargando la configuración…"
-
-#. Default: "Loading the applications you have authorized…"
-#: components/Applications/ApplicationsPanel
-msgid "Loading the applications you have authorized"
-msgstr "Cargando las aplicaciones que ha autorizado…"
 
 #. Default: "Loading the request…"
 #: components/Consent/ConsentPanel
@@ -518,16 +487,6 @@ msgstr "Ningún proveedor está configurado aún."
 #: components/ControlPanel/UserAccountPanel
 msgid "Not configured"
 msgstr "No configurado"
-
-#. Default: "Nothing"
-#: components/Applications/ApplicationsPanel
-msgid "Nothing"
-msgstr "Nada"
-
-#. Default: "Nothing beyond the fact that you signed in."
-#: components/Applications/ApplicationsPanel
-msgid "Nothing beyond the fact that you signed in."
-msgstr "Nada más allá del hecho de que inició sesión."
 
 #. Default: "OAuth clients"
 #: components/ControlPanel/ClientsControlPanel
@@ -646,11 +605,6 @@ msgstr "Se llegó a {endpoint}"
 msgid "Reached {endpoint} (no key set published)"
 msgstr "Se llegó a {endpoint} (no se publicó el conjunto de claves)"
 
-#. Default: "Reads"
-#: components/Applications/ApplicationsPanel
-msgid "Reads"
-msgstr "Lee"
-
 #. Default: "Recent activity"
 #: components/ControlPanel/UserAccountPanel
 msgid "Recent activity"
@@ -702,11 +656,6 @@ msgstr "Guardar"
 #: components/ControlPanel/ClientsPanel
 msgid "Scope"
 msgstr "Alcance"
-
-#. Default: "Scopes agreed to"
-#: components/Applications/ApplicationsPanel
-msgid "Scopes agreed to"
-msgstr "Alcances acordados"
 
 #. Default: "Secret for {clientId}"
 #: components/ControlPanel/SecretReveal
@@ -774,11 +723,6 @@ msgstr "Configuración del sitio"
 msgid "Test connection"
 msgstr "Conexión de prueba"
 
-#. Default: "That list could not be loaded."
-#: components/Applications/ApplicationsPanel
-msgid "That list could not be loaded."
-msgstr "Esa lista no pudo ser cargada."
-
 #. Default: "The new order could not be saved"
 #: components/ControlPanel/ProvidersControlPanel
 msgid "The new order could not be saved"
@@ -803,16 +747,6 @@ msgstr "La configuración del sitio no pudo ser leída"
 #: components/Blocks/SignIn/schema
 msgid "Their preferred email"
 msgstr "Su correo preferido"
-
-#. Default: "This application is disabled and is being refused already."
-#: components/Applications/ApplicationsPanel
-msgid "This application is disabled and is being refused already."
-msgstr "Esta aplicación está deshabilitada y ya se está rechazando."
-
-#. Default: "This application is no longer registered on this site. It cannot ask for anything, and you can remove the record."
-#: components/Applications/ApplicationsPanel
-msgid "This application is no longer registered on this site."
-msgstr "Esta aplicación ya no está registrada en este sitio."
 
 #. Default: "This authorization request cannot be shown. It may have been sent by an application this site does not know, or it may have expired — start again from the application you were signing in to."
 #: components/Consent/ConsentPanel
@@ -882,7 +816,6 @@ msgstr "Solo al editar: mostrar lo que ve un visitante que no ha iniciado sesió
 
 #. Default: "Withdraw access"
 #: components/Applications/Applications
-#: components/Applications/ApplicationsPanel
 msgid "Withdraw access"
 msgstr "Retirar acceso"
 
@@ -890,11 +823,6 @@ msgstr "Retirar acceso"
 #: components/Applications/Applications
 msgid "Withdraw access for {client}?"
 msgstr "¿Retirar acceso para {client}?"
-
-#. Default: "Withdrawing signs an application out everywhere and makes it ask you again next time. An access token it already holds keeps working for up to {minutes, plural, one {# minute} other {# minutes}} — this site cannot recall one that was already issued."
-#: components/Applications/ApplicationsPanel
-msgid "Withdrawing signs it out and makes it ask again."
-msgstr "Retirar lo desconecta en todas partes y hace que pregunte de nuevo la próxima vez. Un token de acceso que ya tiene sigue funcionando hasta {minutes, plural, one {# minuto} other {# minutos}} — este sitio no puede recordar uno que ya fue emitido."
 
 #. Default: "Yes"
 #: components/ControlPanel/ClientsPanel
@@ -906,16 +834,6 @@ msgstr "Sí"
 #: components/Consent/ConsentPanel
 msgid "You are signed in as {user}."
 msgstr "Está iniciado sesión como {user}."
-
-#. Default: "You authorized this application on {date}."
-#: components/Applications/ApplicationsPanel
-msgid "You authorized this application on {date}."
-msgstr "Autorizó esta aplicación en {date}."
-
-#. Default: "You have not authorized any application. Anything you sign in to with this account will ask you first, and appear here afterwards."
-#: components/Applications/ApplicationsPanel
-msgid "You have not authorized any application."
-msgstr "No ha autorizado ninguna aplicación."
 
 #. Default: "Your profile"
 #: components/Welcome/WelcomeCard
@@ -1146,11 +1064,6 @@ msgstr "verificado"
 #: components/ControlPanel/ClientsPanel
 msgid "verifying only"
 msgstr "solo verificación"
-
-#. Default: "{count, plural, one {# field} other {# fields}}"
-#: components/Applications/ApplicationsPanel
-msgid "{count, plural, one {# field} other {# fields}}"
-msgstr "{count, plural, one {# campo} other {# campos}}"
 
 #. Default: "{total} of {size} in the ring, signing with {algorithm}. Public keys are published at {jwks}."
 #: components/ControlPanel/ClientsPanel

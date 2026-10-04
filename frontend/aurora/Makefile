@@ -115,10 +115,12 @@ acceptance-backend-start: ## Start the backend's acceptance server on http://loc
 acceptance-dex-start: ## Start Dex with the backend's test configuration on http://127.0.0.1:5556/dex
 	docker run --rm --name aurora-acceptance-dex -p 5556:5556 -v $(DEX_CONFIG):/etc/dex/config.yaml:ro ghcr.io/dexidp/dex:v2.44.0 dex serve /etc/dex/config.yaml
 
+# The tests install the authorization server half way through, so whether it
+# is there is asked on every page rather than kept for minutes.
 .PHONY: acceptance-frontend-start
 acceptance-frontend-start: ## Build Aurora and serve it on http://localhost:3000 against the acceptance backend
 	pnpm build
-	PLONE_API_PATH=$(ACCEPTANCE_API_PATH) pnpm start:prod
+	IDENTITY_FEATURE_TTL=0 PLONE_API_PATH=$(ACCEPTANCE_API_PATH) pnpm start:prod
 
 .PHONY: acceptance-provider
 acceptance-provider: ## Register the Dex provider on the acceptance backend

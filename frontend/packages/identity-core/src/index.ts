@@ -13,6 +13,8 @@
 // The tokens and base classes every component below reads.
 import './styles.css';
 
+export { default as ApplicationsPanel } from './components/Applications/ApplicationsPanel';
+export { applicationsMessages } from './components/Applications/messages';
 export { default as CallbackCard } from './components/Callback/CallbackCard';
 export type {
   CallbackCardProps,
@@ -20,6 +22,8 @@ export type {
 } from './components/Callback/CallbackCard';
 export { default as CompleteProfileCard } from './components/CompleteProfile/CompleteProfileCard';
 export type { CompleteProfileCardProps } from './components/CompleteProfile/CompleteProfileCard';
+export { default as ConfirmDialog } from './components/ConfirmDialog/ConfirmDialog';
+export type { ConfirmDialogProps } from './components/ConfirmDialog/ConfirmDialog';
 export { default as ConfirmEmailCard } from './components/ConfirmEmail/ConfirmEmailCard';
 export type {
   ConfirmEmailCardProps,

@@ -10,6 +10,8 @@ import { getAuthFromRequest } from '@plone/react-router';
 import { endpoints } from '@plone-collective/identity-core';
 
 import { callBackend } from '../lib/api';
+import { APPLICATIONS_KEY } from '../lib/paths';
+import { applicationsAvailable } from '../lib/features';
 import { PROFILE_KEY } from '../lib/gate';
 
 export default function install(config: ConfigType) {
@@ -39,6 +41,26 @@ export default function install(config: ConfigType) {
       } catch {
         return { status: 502, data: {} };
       }
+    },
+  });
+
+  // Whether to offer the applications page among the user's tools: only
+  // where the authorization server is installed. Asked once per backend for
+  // a few minutes, not on every page; see `lib/features`.
+  config.registerUtility({
+    name: 'IdentityApplications',
+    type: 'rootLoaderData',
+    method: async ({ request }: { request: Request }) => {
+      const token = await getAuthFromRequest(request);
+      if (!token) {
+        return { status: 200, data: {} };
+      }
+      const available = await applicationsAvailable(
+        request,
+        token,
+        config.settings.apiPath,
+      );
+      return { status: 200, data: { [APPLICATIONS_KEY]: available } };
     },
   });
   return config;
