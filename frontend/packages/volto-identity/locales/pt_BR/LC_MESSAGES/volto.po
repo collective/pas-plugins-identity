@@ -49,16 +49,6 @@ msgstr "Adicionar provedor"
 msgid "Add {item}"
 msgstr "Adicionar {item}"
 
-#. Default: "Allow"
-#: components/Consent/ConsentPanel
-msgid "Allow"
-msgstr "Permitir"
-
-#. Default: "Allow {client} to use your account?"
-#: components/Consent/ConsentPanel
-msgid "Allow {client} to use your account?"
-msgstr "Permitir que {client} use sua conta?"
-
 #. Default: "Allowed groups"
 #: components/ControlPanel/ClientsPanel
 msgid "Allowed groups"
@@ -204,11 +194,6 @@ msgstr "Excluir"
 msgid "Delete this provider?"
 msgstr "Excluir este provedor?"
 
-#. Default: "Deny"
-#: components/Consent/ConsentPanel
-msgid "Deny"
-msgstr "Recusar"
-
 #. Default: "Disabled"
 #: components/ControlPanel/UserAccountPanel
 msgid "Disabled"
@@ -337,11 +322,6 @@ msgstr "Identidade"
 msgid "Identity providers"
 msgstr "Provedores de identidade"
 
-#. Default: "It will be able to read:"
-#: components/Consent/ConsentPanel
-msgid "It will be able to read:"
-msgstr "Será capaz de ler:"
-
 #. Default: "Last login"
 #: components/Welcome/WelcomeCard
 msgid "Last login"
@@ -381,11 +361,6 @@ msgstr "Carregando chaves"
 #: components/ControlPanel/ClientsPanel
 msgid "Loading settings"
 msgstr "Carregando configurações…"
-
-#. Default: "Loading the request…"
-#: components/Consent/ConsentPanel
-msgid "Loading the request"
-msgstr "Carregando a solicitação"
 
 #. Default: "Local group"
 #: helpers/providerSchema
@@ -746,11 +721,6 @@ msgstr "As configurações do site não puderam ser lidas"
 msgid "Their preferred email"
 msgstr "Seu email preferido"
 
-#. Default: "This authorization request cannot be shown. It may have been sent by an application this site does not know, or it may have expired — start again from the application you were signing in to."
-#: components/Consent/ConsentPanel
-msgid "This authorization request cannot be shown."
-msgstr "Esta solicitação de autorização não pode ser mostrada."
-
 #. Default: "This is the only time this secret is shown. It is stored hashed and cannot be read back; if it is lost, rotate it."
 #: components/ControlPanel/SecretReveal
 msgid "This is the only time this secret is shown."
@@ -827,11 +797,6 @@ msgstr "Retirar acesso para {client}?"
 #: components/ControlPanel/ProvidersTable
 msgid "Yes"
 msgstr "Sim"
-
-#. Default: "You are signed in as {user}."
-#: components/Consent/ConsentPanel
-msgid "You are signed in as {user}."
-msgstr "Você está conectado como {user}."
 
 #. Default: "Your profile"
 #: components/Welcome/WelcomeCard
@@ -927,11 +892,6 @@ msgstr "através de {groups}"
 #: components/Welcome/WelcomeCard
 msgid "not verified"
 msgstr "não verificado"
-
-#. Default: "nothing beyond the fact that you signed in"
-#: components/Consent/ConsentPanel
-msgid "nothing beyond the fact that you signed in"
-msgstr "nada além do fato de você ter entrado"
 
 #. Default: "Remove this entry from the list? It is gone once the form is saved."
 #: components/Widgets/OrderedListTable/OrderedListTable

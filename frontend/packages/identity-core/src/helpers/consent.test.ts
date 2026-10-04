@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { answerUrl } from './Consent';
-import type { ConsentRequest } from '../../types';
+import { answerUrl } from './consent';
+import type { ConsentRequest } from '../types';
 
 const REQUEST: ConsentRequest = {
   '@id': 'http://id.example.org/@oauth-consent',

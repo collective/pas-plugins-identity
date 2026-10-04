@@ -26,7 +26,7 @@ The sign-in it offers is the same either way, because the package ships one add-
 `@plone-collective/aurora-identity`
 :   The Plone Aurora add-on.
     Sign-in: the login page, starting a sign-in with a provider, and finishing it.
-    For a signed-in user, the sign-in methods page, `/identities`, and its entry among the header's tools, the email confirmation page, the profile gate, and the applications page.
+    For a signed-in user, the sign-in methods page, `/identities`, and its entry among the header's tools, the email confirmation page, the profile gate, the applications page, and the consent screen of an authorization server.
 
 <!-- frontend/packages/identity-core/src/index.ts, frontend/packages/aurora-identity/index.ts -->
 
@@ -164,10 +164,29 @@ Aurora asks from its server, and keeps the answer for five minutes per backend, 
 
 <!-- frontend/packages/aurora-identity/lib/features.ts, frontend/packages/volto-identity/src/components/UserMenu/ApplicationsMenuItem.tsx -->
 
+## In front of an authorization server
+
+A site running the `[server]` layer is an OpenID Connect provider, and its endpoints, `@@oauth-authorize` and its siblings, are browser views on the backend rather than REST services.
+In front of Volto, a reverse proxy sends them to the backend by a rule written for them: {doc}`federation`.
+Aurora serves them itself, by passing each request on to the backend, for two reasons:
+
+- **The issuer is the site's public address**, which is Aurora's, so a relying party asks Aurora for the discovery document, the keys, the tokens and the user's claims.
+  Passing them on works without the proxy rule.
+- **The authorization endpoint has to know who the browser is.**
+  The backend recognises the user there by a bearer token, or by Volto's `auth_token` cookie.
+  Aurora keeps its session in a cookie of its own, which the backend cannot read, so Aurora sends the session's token as a bearer token, on that endpoint only.
+
+A signed-out visitor reaching the authorization endpoint is sent to Plone's login challenge, which Aurora answers with its own login page, keeping the authorization request to come back to.
+The consent screen is `/oauth-consent`, in both add-ons: set `server_consent_url` to it, at the site's address.
+
+<!-- frontend/packages/aurora-identity/lib/oauth.ts, frontend/packages/aurora-identity/routes/oauth-consent.tsx, frontend/packages/aurora-identity/routes/require-login.ts -->
+
+Every request Aurora passes on also goes through Aurora's own request handling first, which fetches the site root's content for it.
+
 ## What Aurora does not have yet
 
-The Aurora add-on covers signing in, the sign-in methods page, the email confirmation page, the profile gate and the applications page.
-The consent screen and the control panels exist in the Volto add-on only.
+The Aurora add-on covers everything a user meets: signing in, the sign-in methods page, the email confirmation page, the profile gate, the applications page and the consent screen.
+The control panels exist in the Volto add-on only.
 Neither has the first-login route: Volto offers it to sites that route to it, and nothing in either add-on does.
 Neither the Aurora add-on nor the core is published to npm yet.
 

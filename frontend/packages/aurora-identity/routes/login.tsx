@@ -27,6 +27,7 @@ import {
   asksToChoose,
   endpoints,
   expiryFromToken,
+  isBackendView,
   LoginForm,
   returnUrl,
 } from '@plone-collective/identity-core';
@@ -35,6 +36,7 @@ import type { GetSlotArgs } from '@plone/types';
 import { useTranslation } from 'react-i18next';
 import {
   redirect,
+  redirectDocument,
   useFetcher,
   useLoaderData,
   useLocation,
@@ -159,8 +161,12 @@ export async function action({ request }: ActionFunctionArgs) {
     if (!token) {
       return { intent, error: answer.status } satisfies ActionResult;
     }
+    const target = afterSignIn(String(form.get('came_from') ?? ''));
+    // A backend view -- the authorization endpoint resuming the request it
+    // sent this visitor to sign in for -- is no route of this application,
+    // so the browser loads it rather than the router navigating to it.
     return setAuthOnResponse(
-      redirect(afterSignIn(String(form.get('came_from') ?? ''))),
+      isBackendView(target) ? redirectDocument(target) : redirect(target),
       token,
       { expires: expiryFromToken(token) ?? undefined },
     );

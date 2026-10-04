@@ -21,11 +21,12 @@
  */
 import React from 'react';
 import { Container } from '@plone/components';
-import { defineMessages, useIntl } from 'react-intl';
+import { defineMessages } from '#i18n';
 
 import type { ConsentRequest } from '../../types';
+import { useIdentityUI } from '../IdentityUI/IdentityUI';
 
-import './ConsentPanel.scss';
+import './ConsentPanel.css';
 
 const messages = defineMessages({
   loading: {
@@ -77,12 +78,12 @@ const ConsentPanel: React.FC<ConsentPanelProps> = ({
   answering,
   onAnswer,
 }) => {
-  const intl = useIntl();
+  const { t } = useIdentityUI();
 
   if (loading || (!request && !error)) {
     return (
       <Container className="identity-consent" role="status">
-        {intl.formatMessage(messages.loading)}
+        {t(messages.loading)}
       </Container>
     );
   }
@@ -93,7 +94,7 @@ const ConsentPanel: React.FC<ConsentPanelProps> = ({
     return (
       <Container className="identity-consent">
         <p className="identity-error" role="alert">
-          {intl.formatMessage(messages.unavailable)}
+          {t(messages.unavailable)}
         </p>
       </Container>
     );
@@ -109,17 +110,17 @@ const ConsentPanel: React.FC<ConsentPanelProps> = ({
   return (
     <Container className="identity-consent">
       <h1>
-        {intl.formatMessage(messages.heading, {
+        {t(messages.heading, {
           client: request.client.title,
         })}
       </h1>
       <p className="identity-consent__who identity-note">
-        {intl.formatMessage(messages.signedInAs, {
+        {t(messages.signedInAs, {
           user: request.user.label,
         })}
       </p>
 
-      <p>{intl.formatMessage(messages.willBeAbleTo)}</p>
+      <p>{t(messages.willBeAbleTo)}</p>
       {claims.length ? (
         <ul className="identity-consent__claims">
           {claims.map((claim) => (
@@ -129,9 +130,7 @@ const ConsentPanel: React.FC<ConsentPanelProps> = ({
           ))}
         </ul>
       ) : (
-        <p className="identity-note">
-          {intl.formatMessage(messages.nothingInParticular)}
-        </p>
+        <p className="identity-note">{t(messages.nothingInParticular)}</p>
       )}
 
       <div className="identity-consent__actions">
@@ -144,7 +143,7 @@ const ConsentPanel: React.FC<ConsentPanelProps> = ({
           disabled={answering}
           onClick={() => onAnswer(true)}
         >
-          {intl.formatMessage(messages.allow)}
+          {t(messages.allow)}
         </button>
         <button
           type="button"
@@ -152,7 +151,7 @@ const ConsentPanel: React.FC<ConsentPanelProps> = ({
           disabled={answering}
           onClick={() => onAnswer(false)}
         >
-          {intl.formatMessage(messages.deny)}
+          {t(messages.deny)}
         </button>
       </div>
     </Container>

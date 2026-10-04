@@ -26,6 +26,16 @@ msgstr "Aktionen"
 msgid "Add another"
 msgstr "Weiteres hinzufügen"
 
+#. Default: "Allow"
+#: components/Consent/ConsentPanel
+msgid "Allow"
+msgstr "Erlauben"
+
+#. Default: "Allow {client} to use your account?"
+#: components/Consent/ConsentPanel
+msgid "Allow {client} to use your account?"
+msgstr "Erlauben Sie {client}, Ihr Konto zu verwenden?"
+
 #. Default: "Application"
 #: components/Applications/ApplicationsPanel
 msgid "Application"
@@ -82,6 +92,11 @@ msgstr "Bestätigen Sie Ihre E-Mail-Adresse"
 msgid "Confirming your address"
 msgstr "Adresse wird bestätigt…"
 
+#. Default: "Deny"
+#: components/Consent/ConsentPanel
+msgid "Deny"
+msgstr "Ablehnen"
+
 #. Default: "Details"
 #: components/Applications/ApplicationsPanel
 msgid "Details"
@@ -118,6 +133,11 @@ msgstr "Wenn sich diese Adresse hier anmelden kann, ist ein Link unterwegs. Es f
 msgid "It can read:"
 msgstr "Es kann lesen:"
 
+#. Default: "It will be able to read:"
+#: components/Consent/ConsentPanel
+msgid "It will be able to read:"
+msgstr "Es wird lesen können:"
+
 #. Default: "Loading sign-in options…"
 #: components/Login/LoginForm
 msgid "Loading sign-in options"
@@ -127,6 +147,11 @@ msgstr "Anmeldeoptionen werden geladen…"
 #: components/Applications/ApplicationsPanel
 msgid "Loading the applications you have authorized"
 msgstr "Die von Ihnen autorisierten Anwendungen werden geladen…"
+
+#. Default: "Loading the request…"
+#: components/Consent/ConsentPanel
+msgid "Loading the request"
+msgstr "Die Anfrage wird geladen…"
 
 #. Default: "Loading your sign-in methods…"
 #: components/Identities/IdentitiesList
@@ -270,6 +295,11 @@ msgstr "Diese Anwendung ist deaktiviert und wird bereits abgelehnt."
 msgid "This application is no longer registered on this site."
 msgstr "Diese Anwendung ist auf dieser Website nicht mehr registriert. Sie kann nichts fragen, und Sie können den Datensatz löschen."
 
+#. Default: "This authorization request cannot be shown. It may have been sent by an application this site does not know, or it may have expired — start again from the application you were signing in to."
+#: components/Consent/ConsentPanel
+msgid "This authorization request cannot be shown."
+msgstr "Diese Autorisierungsanfrage kann nicht angezeigt werden. Sie könnte von einer Anwendung gesendet worden sein, die diese Website nicht kennt, oder sie könnte abgelaufen sein -- Beginnen Sie erneut von der Anwendung, von der Sie angemeldet wurden."
+
 #. Default: "This is your only way to sign in. Add another first."
 #: components/Identities/IdentitiesList
 msgid "This is your only way to sign in. Add another first."
@@ -305,6 +335,11 @@ msgstr "Zugriff für {client} zurückziehen? Es wird überall abgemeldet und mus
 #: components/Applications/ApplicationsPanel
 msgid "Withdrawing signs it out and makes it ask again."
 msgstr "Das Zurückziehen meldet eine Anwendung überall ab und lässt sie Sie beim nächsten Mal erneut fragen. Ein Zugriffstoken, das es bereits hält, funktioniert weiterhin bis zu {minutes, plural, one {# Minute} other {# Minuten}} — Diese Website kann eines, das bereits ausgestellt wurde, nicht zurückrufen."
+
+#. Default: "You are signed in as {user}."
+#: components/Consent/ConsentPanel
+msgid "You are signed in as {user}."
+msgstr "Sie sind angemeldet als {user}."
 
 #. Default: "You authorized this application on {date}."
 #: components/Applications/ApplicationsPanel
@@ -386,6 +421,11 @@ msgstr "Bestätigen"
 #: components/Identities/IdentitiesList
 msgid "identities-sections"
 msgstr "Wie Sie sich anmelden"
+
+#. Default: "nothing beyond the fact that you signed in"
+#: components/Consent/ConsentPanel
+msgid "nothing beyond the fact that you signed in"
+msgstr "nichts außer der Tatsache, dass Sie sich anmeldeten"
 
 #. Default: "Move an address to the top to make it the one this site uses for you."
 #: components/Identities/ProfileEmails

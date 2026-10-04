@@ -31,15 +31,21 @@ export const FLOW_COOKIE = '__pas_identity_flow';
  * public protocol, host and port, and the site's own path stays out of every
  * URL it answers with.
  *
+ * A REST service is reached through `++api++`. A browser view, such as the
+ * authorization server's `@@oauth-authorize`, is not a service, and is
+ * reached without it: `{ api: false }`.
+ *
  * @param apiPath The backend site's URL, `PLONE_API_PATH`.
  * @param publicUrl The URL the browser asked Aurora for.
- * @param path The service path, from `endpoints`.
+ * @param path The service or view path, query string included.
+ * @param options Whether the path is a REST service.
  * @returns The URL to fetch.
  */
 export function backendUrl(
   apiPath: string,
   publicUrl: string,
   path: string,
+  { api = true }: { api?: boolean } = {},
 ): string {
   const backend = new URL(apiPath);
   const site = backend.pathname.replace(/\/+$/, '');
@@ -48,7 +54,7 @@ export function backendUrl(
   const port = visible.port || (protocol === 'https' ? '443' : '80');
   return (
     `${backend.origin}/VirtualHostBase/${protocol}/${visible.hostname}:${port}` +
-    `${site}/++api++/VirtualHostRoot${path}`
+    `${site}${api ? '/++api++' : ''}/VirtualHostRoot${path}`
   );
 }
 
