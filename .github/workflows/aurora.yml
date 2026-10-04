@@ -1,0 +1,162 @@
+name: Aurora CI
+
+# The Aurora add-on, checked in its development harness, `frontend/aurora`.
+# Two jobs: the checks, in one job rather than one per check, since each would
+# install Aurora and build its library packages first, which is most of the
+# run; and a real sign-in through Dex, which also needs the backend.
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        required: true
+        type: string
+      python-version:
+        required: true
+        type: string
+      plone-version:
+        required: true
+        type: string
+      working-directory:
+        required: false
+        type: string
+        default: frontend/aurora
+
+jobs:
+  aurora:
+    name: "Aurora: Lint, i18n, unit tests and build"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # The steps of Aurora's own `.github/actions/node_env_setup`: pnpm comes
+      # from the harness's `packageManager`, through Corepack.
+      - name: Use Node.js ${{ inputs.node-version }}
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Install and enable Corepack
+        run: |
+          npm install --global corepack@latest
+          corepack enable
+
+      - name: Get pnpm store directory
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-aurora-pnpm-store-${{ hashFiles(format('{0}/pnpm-lock.yaml', inputs.working-directory)) }}
+          restore-keys: |
+            ${{ runner.os }}-aurora-pnpm-store-
+
+      # Checks Aurora out at the tag in `mrs.developer.json`, installs, and
+      # builds Aurora's library packages.
+      - name: Install
+        run: make install
+
+      - name: Lint and typecheck
+        run: make lint
+
+      - name: Catalogues match identity-core's
+        run: make ci-i18n
+
+      - name: Unit tests
+        run: make ci-test
+
+      - name: Build
+        run: make build
+
+  acceptance:
+    name: "Aurora: Sign-in through Dex"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup the backend
+        uses: plone/meta/.github/actions/setup_backend_uv@2.x
+        with:
+          python-version: ${{ inputs.python-version }}
+          plone-version: ${{ inputs.plone-version }}
+          working-directory: backend
+
+      - name: Use Node.js ${{ inputs.node-version }}
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Install and enable Corepack
+        run: |
+          npm install --global corepack@latest
+          corepack enable
+
+      - name: Get pnpm store directory
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-aurora-pnpm-store-${{ hashFiles(format('{0}/pnpm-lock.yaml', inputs.working-directory)) }}
+          restore-keys: |
+            ${{ runner.os }}-aurora-pnpm-store-
+
+      - name: Install
+        run: make install
+
+      - name: Build Aurora
+        run: pnpm build
+
+      - name: Install Playwright's browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      # The three services, as `make acceptance-*-start` starts them, in the
+      # background of this job.
+      - name: Start the backend, Dex and Aurora
+        run: |
+          nohup make acceptance-backend-start > backend.log 2>&1 &
+          docker run -d --name aurora-acceptance-dex -p 5556:5556 \
+            -v "$GITHUB_WORKSPACE/backend/tests/_resources/dex/config.yaml:/etc/dex/config.yaml:ro" \
+            ghcr.io/dexidp/dex:v2.44.0 dex serve /etc/dex/config.yaml
+          PLONE_API_PATH=http://localhost:55001/plone nohup pnpm start:prod > aurora.log 2>&1 &
+          for url in \
+            http://localhost:55001/plone/++api++/@login-providers \
+            http://127.0.0.1:5556/dex/.well-known/openid-configuration \
+            http://localhost:3000/; do
+            timeout 300 bash -c "until curl -sf -o /dev/null $url; do sleep 2; done" \
+              || { echo "$url never answered"; exit 1; }
+          done
+
+      - name: Register the Dex provider
+        run: make acceptance-provider
+
+      - name: Acceptance tests
+        run: make acceptance-test
+
+      - name: Service logs
+        if: failure()
+        run: |
+          tail -n 100 backend.log aurora.log
+          docker logs aurora-acceptance-dex | tail -n 100
+
+      - name: Upload the Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: aurora-acceptance-results
+          path: ${{ inputs.working-directory }}/acceptance/results
+          retention-days: 7

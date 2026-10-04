@@ -116,6 +116,14 @@ export const endpoints = {
     return `${KEYS}/rotate`;
   },
 
+  /**
+   * Signing in with a login name and password, through plone.restapi's own
+   * `@login`.
+   */
+  login(): string {
+    return '/@login';
+  },
+
   /** The providers offered on the login form. */
   loginProviders(): string {
     return '/@login-providers';

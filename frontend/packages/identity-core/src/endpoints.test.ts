@@ -32,6 +32,7 @@ describe('endpoints', () => {
       endpoints.loginProvider('github', '/a page'),
       '/@login-providers/github?came_from=%2Fa%20page',
     ],
+    [endpoints.login(), '/@login'],
     [endpoints.callback(), '/@identity-callback'],
     [endpoints.magicLink(), '/@magic-link'],
     [endpoints.magicLinkConfirm(), '/@magic-link-confirm'],

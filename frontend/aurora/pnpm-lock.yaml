@@ -124,6 +124,9 @@ importers:
         specifier: workspace:*
         version: link:harness
     devDependencies:
+      '@playwright/test':
+        specifier: 'catalog:'
+        version: 1.63.0
       mrs-developer:
         specifier: ^2.2.0
         version: 2.3.2(supports-color@7.2.0)
@@ -137,6 +140,15 @@ importers:
       '@plone/components':
         specifier: workspace:*
         version: link:../../aurora/core/packages/components
+      '@plone/icons':
+        specifier: workspace:*
+        version: link:../../aurora/core/packages/icons
+      '@plone/layout':
+        specifier: workspace:*
+        version: link:../../aurora/core/packages/layout
+      '@plone/quanta':
+        specifier: workspace:*
+        version: link:../../aurora/core/packages/quanta
       '@plone/react-router':
         specifier: workspace:*
         version: link:../../aurora/core/packages/react-router
@@ -245,6 +257,9 @@ importers:
       '@plone/helpers':
         specifier: workspace:*
         version: link:../../packages/helpers
+      '@plone/icons':
+        specifier: workspace:*
+        version: link:../../packages/icons
       '@plone/layout':
         specifier: workspace:*
         version: link:../../packages/layout
@@ -254,6 +269,9 @@ importers:
       '@plone/publicui':
         specifier: workspace:*
         version: link:../../packages/publicui
+      '@plone/quanta':
+        specifier: workspace:*
+        version: link:../../packages/quanta
       '@plone/react-router':
         specifier: workspace:*
         version: link:../../packages/react-router
@@ -418,6 +436,9 @@ importers:
       '@plone/components':
         specifier: workspace:*
         version: link:../components
+      '@plone/icons':
+        specifier: workspace:*
+        version: link:../icons
       '@plone/registry':
         specifier: workspace:*
         version: link:../registry
@@ -573,12 +594,18 @@ importers:
       '@plone/helpers':
         specifier: workspace:*
         version: link:../helpers
+      '@plone/icons':
+        specifier: workspace:*
+        version: link:../icons
       '@plone/layout':
         specifier: workspace:*
         version: link:../layout
       '@plone/plate':
         specifier: workspace:*
         version: link:../plate
+      '@plone/quanta':
+        specifier: workspace:*
+        version: link:../quanta
       '@plone/react-router':
         specifier: workspace:*
         version: link:../react-router
@@ -724,21 +751,9 @@ importers:
 
   core/packages/components:
     dependencies:
-      '@internationalized/date':
-        specifier: 'catalog:'
-        version: 3.12.4
-      '@react-aria/utils':
-        specifier: 'catalog:'
-        version: 3.34.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@react-spectrum/utils':
-        specifier: 'catalog:'
-        version: 3.13.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      '@svgr/plugin-jsx':
-        specifier: ^8.1.0
-        version: 8.1.0(@svgr/core@8.1.0(supports-color@7.2.0)(typescript@5.9.3))(supports-color@7.2.0)
-      '@svgr/plugin-svgo':
-        specifier: ^8.1.0
-        version: 8.1.0(@svgr/core@8.1.0(supports-color@7.2.0)(typescript@5.9.3))(typescript@5.9.3)
+      '@plone/icons':
+        specifier: workspace:*
+        version: link:../icons
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -754,34 +769,10 @@ importers:
       react-dom:
         specifier: ^19.2.0
         version: 19.3.0(react@19.3.0)
-      react-stately:
-        specifier: 'catalog:'
-        version: 3.50.0(react@19.3.0)
-      tailwind-merge:
-        specifier: 'catalog:'
-        version: 3.7.0
-      tailwind-variants:
-        specifier: 'catalog:'
-        version: 3.3.1(tailwind-merge@3.7.0)(tailwindcss@4.3.3)
-      tailwindcss:
-        specifier: 'catalog:'
-        version: 4.3.3
-      tailwindcss-animate:
-        specifier: ^1.0.7
-        version: 1.0.7(tailwindcss@4.3.3)
-      vite-plugin-svgr:
-        specifier: ^4.3.0
-        version: 4.5.0(rollup@4.63.6)(supports-color@7.2.0)(typescript@5.9.3)(vite@8.3.2(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
     devDependencies:
       '@arethetypeswrong/cli':
         specifier: ^0.16.4
         version: 0.16.4
-      '@plone/types':
-        specifier: 'workspace: *'
-        version: link:../types
-      '@react-types/shared':
-        specifier: ^3.32.1
-        version: 3.36.1(react@19.3.0)
       '@storybook/addon-docs':
         specifier: ^10.4.0
         version: 10.6.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(storybook@10.6.1(@types/react@19.3.0)(prettier@3.9.9)(react@19.3.0))
@@ -791,9 +782,6 @@ importers:
       '@storybook/react-vite':
         specifier: ^10.4.0
         version: 10.6.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rollup@4.63.6)(storybook@10.6.1(@types/react@19.3.0)(prettier@3.9.9)(react@19.3.0))(supports-color@7.2.0)(typescript@5.9.3)(vite@8.3.2(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
-      '@tailwindcss/vite':
-        specifier: 'catalog:'
-        version: 4.3.3(vite@8.3.2(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
       '@testing-library/jest-dom':
         specifier: 'catalog:'
         version: 6.10.0(@testing-library/dom@10.4.2)
@@ -869,9 +857,15 @@ importers:
       '@plone/helpers':
         specifier: workspace:*
         version: link:../helpers
+      '@plone/icons':
+        specifier: workspace:*
+        version: link:../icons
       '@plone/layout':
         specifier: workspace:*
         version: link:../layout
+      '@plone/quanta':
+        specifier: workspace:*
+        version: link:../quanta
       '@plone/react-router':
         specifier: workspace:*
         version: link:../react-router
@@ -1019,6 +1013,88 @@ importers:
         specifier: 'catalog:'
         version: 4.1.11(@types/node@24.19.1)(@vitest/coverage-v8@4.1.11)(jsdom@28.1.0(supports-color@7.2.0))(vite@8.3.2(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
 
+  core/packages/icons:
+    dependencies:
+      '@react-aria/utils':
+        specifier: 'catalog:'
+        version: 3.34.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@react-spectrum/utils':
+        specifier: 'catalog:'
+        version: 3.13.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@svgr/plugin-jsx':
+        specifier: ^8.1.0
+        version: 8.1.0(@svgr/core@8.1.0(supports-color@7.2.0)(typescript@5.9.3))(supports-color@7.2.0)
+      '@svgr/plugin-svgo':
+        specifier: ^8.1.0
+        version: 8.1.0(@svgr/core@8.1.0(supports-color@7.2.0)(typescript@5.9.3))(typescript@5.9.3)
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      react:
+        specifier: ^19.2.0
+        version: 19.3.0
+      react-dom:
+        specifier: ^19.2.0
+        version: 19.3.0(react@19.3.0)
+      tailwind-variants:
+        specifier: 'catalog:'
+        version: 3.3.1(tailwind-merge@3.7.0)(tailwindcss@4.3.3)
+      vite-plugin-svgr:
+        specifier: ^4.3.0
+        version: 4.5.0(rollup@4.63.6)(supports-color@7.2.0)(typescript@5.9.3)(vite@8.3.2(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+    devDependencies:
+      '@arethetypeswrong/cli':
+        specifier: ^0.16.4
+        version: 0.16.4
+      '@react-types/shared':
+        specifier: ^3.32.1
+        version: 3.36.1(react@19.3.0)
+      '@testing-library/jest-dom':
+        specifier: 'catalog:'
+        version: 6.10.0(@testing-library/dom@10.4.2)
+      '@testing-library/react':
+        specifier: 'catalog:'
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@types/jest-axe':
+        specifier: ^3.5.7
+        version: 3.5.9
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitejs/plugin-react':
+        specifier: 'catalog:'
+        version: 6.1.1(babel-plugin-react-compiler@1.0.0)(vite@8.3.2(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+      '@vitest/coverage-v8':
+        specifier: 'catalog:'
+        version: 4.1.11(vitest@4.1.11)
+      jest-axe:
+        specifier: ^8.0.0
+        version: 8.0.0
+      jsdom:
+        specifier: ^28.1.0
+        version: 28.1.0(supports-color@7.2.0)
+      release-it:
+        specifier: 'catalog:'
+        version: 19.2.4(@types/node@24.19.1)(magicast@0.5.5)(supports-color@7.2.0)
+      tsconfig:
+        specifier: workspace:*
+        version: link:../tsconfig
+      tsup:
+        specifier: 'catalog:'
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.28)(supports-color@7.2.0)(typescript@5.9.3)(yaml@2.9.1)
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vite:
+        specifier: 'catalog:'
+        version: 8.3.2(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.11(@types/node@24.19.1)(@vitest/coverage-v8@4.1.11)(jsdom@28.1.0(supports-color@7.2.0))(vite@8.3.2(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+
   core/packages/layout:
     dependencies:
       '@plone/components':
@@ -1027,9 +1103,15 @@ importers:
       '@plone/helpers':
         specifier: workspace:*
         version: link:../helpers
+      '@plone/icons':
+        specifier: workspace:*
+        version: link:../icons
       '@plone/plate':
         specifier: workspace:*
         version: link:../plate
+      '@plone/quanta':
+        specifier: workspace:*
+        version: link:../quanta
       '@plone/registry':
         specifier: workspace:*
         version: link:../registry
@@ -1350,6 +1432,12 @@ importers:
       '@plone/components':
         specifier: workspace:*
         version: link:../components
+      '@plone/icons':
+        specifier: workspace:*
+        version: link:../icons
+      '@plone/quanta':
+        specifier: workspace:*
+        version: link:../quanta
       '@plone/registry':
         specifier: workspace:*
         version: link:../registry
@@ -1437,9 +1525,15 @@ importers:
       '@plone/helpers':
         specifier: workspace:*
         version: link:../helpers
+      '@plone/icons':
+        specifier: workspace:*
+        version: link:../icons
       '@plone/layout':
         specifier: workspace:*
         version: link:../layout
+      '@plone/quanta':
+        specifier: workspace:*
+        version: link:../quanta
       '@plone/registry':
         specifier: workspace:*
         version: link:../registry
@@ -1513,6 +1607,127 @@ importers:
       vitest-axe:
         specifier: ^0.1.0
         version: 0.1.0(vitest@4.1.11)
+
+  core/packages/quanta:
+    dependencies:
+      '@internationalized/date':
+        specifier: 'catalog:'
+        version: 3.12.4
+      '@plone/icons':
+        specifier: workspace:*
+        version: link:../icons
+      '@react-aria/utils':
+        specifier: 'catalog:'
+        version: 3.34.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      react:
+        specifier: ^19.2.0
+        version: 19.3.0
+      react-aria:
+        specifier: 'catalog:'
+        version: 3.52.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      react-aria-components:
+        specifier: 'catalog:'
+        version: 1.21.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      react-dom:
+        specifier: ^19.2.0
+        version: 19.3.0(react@19.3.0)
+      react-stately:
+        specifier: 'catalog:'
+        version: 3.50.0(react@19.3.0)
+      tailwind-merge:
+        specifier: 'catalog:'
+        version: 3.7.0
+      tailwind-variants:
+        specifier: 'catalog:'
+        version: 3.3.1(tailwind-merge@3.7.0)(tailwindcss@4.3.3)
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.3.3
+      tailwindcss-animate:
+        specifier: ^1.0.7
+        version: 1.0.7(tailwindcss@4.3.3)
+    devDependencies:
+      '@arethetypeswrong/cli':
+        specifier: ^0.16.4
+        version: 0.16.4
+      '@react-types/shared':
+        specifier: ^3.32.1
+        version: 3.36.1(react@19.3.0)
+      '@storybook/addon-docs':
+        specifier: ^10.4.0
+        version: 10.6.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(storybook@10.6.1(@types/react@19.3.0)(prettier@3.9.9)(react@19.3.0))
+      '@storybook/addon-links':
+        specifier: ^10.4.0
+        version: 10.6.1(@types/react@19.3.0)(react@19.3.0)(storybook@10.6.1(@types/react@19.3.0)(prettier@3.9.9)(react@19.3.0))
+      '@storybook/react-vite':
+        specifier: ^10.4.0
+        version: 10.6.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rollup@4.63.6)(storybook@10.6.1(@types/react@19.3.0)(prettier@3.9.9)(react@19.3.0))(supports-color@7.2.0)(typescript@5.9.3)(vite@8.3.2(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+      '@tailwindcss/vite':
+        specifier: 'catalog:'
+        version: 4.3.3(vite@8.3.2(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+      '@testing-library/jest-dom':
+        specifier: 'catalog:'
+        version: 6.10.0(@testing-library/dom@10.4.2)
+      '@testing-library/react':
+        specifier: 'catalog:'
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@types/jest-axe':
+        specifier: ^3.5.7
+        version: 3.5.9
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: 'catalog:'
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitejs/plugin-react':
+        specifier: 'catalog:'
+        version: 6.1.1(babel-plugin-react-compiler@1.0.0)(vite@8.3.2(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+      '@vitest/coverage-v8':
+        specifier: 'catalog:'
+        version: 4.1.11(vitest@4.1.11)
+      browserslist:
+        specifier: ^4.28.2
+        version: 4.29.3
+      eslint-plugin-storybook:
+        specifier: ^10.4.0
+        version: 10.6.1(eslint@9.39.5(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@5.9.3)
+      jest-axe:
+        specifier: ^8.0.0
+        version: 8.0.0
+      jsdom:
+        specifier: ^28.1.0
+        version: 28.1.0(supports-color@7.2.0)
+      lightningcss:
+        specifier: ^1.29.0
+        version: 1.33.0
+      lightningcss-cli:
+        specifier: ^1.29.1
+        version: 1.33.0
+      release-it:
+        specifier: 'catalog:'
+        version: 19.2.4(@types/node@24.19.1)(magicast@0.5.5)(supports-color@7.2.0)
+      storybook:
+        specifier: ^10.4.0
+        version: 10.6.1(@types/react@19.3.0)(prettier@3.9.9)(react@19.3.0)
+      tsconfig:
+        specifier: workspace:*
+        version: link:../tsconfig
+      tsup:
+        specifier: 'catalog:'
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.28)(supports-color@7.2.0)(typescript@5.9.3)(yaml@2.9.1)
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vite:
+        specifier: 'catalog:'
+        version: 8.3.2(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.11(@types/node@24.19.1)(@vitest/coverage-v8@4.1.11)(jsdom@28.1.0(supports-color@7.2.0))(vite@8.3.2(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
 
   core/packages/react-router:
     dependencies:
@@ -1669,6 +1884,12 @@ importers:
       '@plone/components':
         specifier: workspace:*
         version: link:../components
+      '@plone/icons':
+        specifier: workspace:*
+        version: link:../icons
+      '@plone/quanta':
+        specifier: workspace:*
+        version: link:../quanta
       '@plone/registry':
         specifier: workspace:*
         version: link:../registry

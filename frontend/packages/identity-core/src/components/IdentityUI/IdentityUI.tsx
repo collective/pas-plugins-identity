@@ -3,7 +3,8 @@
  *
  * The components here know what to draw, but not how this frontend
  * translates, links or draws an icon. Each frontend's add-on wraps them in an
- * `IdentityUIProvider` that answers those three questions. Without one, the
+ * `IdentityUIProvider` that answers those questions, and names the
+ * frontend's own pages the components link to. Without one, the
  * components still work: in English, with plain links and plain icons.
  * @module components/IdentityUI
  */
@@ -29,6 +30,12 @@ export interface IdentityIcons {
   clear: ReactNode;
 }
 
+/** The frontend's own pages the components link to. */
+export interface IdentityPaths {
+  /** Where a visitor who forgot their password asks for a new one. */
+  passwordReset: string;
+}
+
 /** What a frontend lends the components. */
 export interface IdentityUI {
   /** Turn a message into text in the reader's language. */
@@ -40,6 +47,7 @@ export interface IdentityUI {
    */
   Link: ComponentType<IdentityLinkProps>;
   icons: IdentityIcons;
+  paths: IdentityPaths;
 }
 
 /**
@@ -90,6 +98,10 @@ export const defaultIdentityUI: IdentityUI = {
     submit: strokeIcon('M5 12h14M13 6l6 6-6 6'),
     clear: strokeIcon('M6 6l12 12M18 6L6 18'),
   },
+  // Volto's, which was the only frontend when these were written.
+  paths: {
+    passwordReset: '/passwordreset',
+  },
 };
 
 const IdentityUIContext = createContext<IdentityUI>(defaultIdentityUI);
@@ -98,7 +110,7 @@ const IdentityUIContext = createContext<IdentityUI>(defaultIdentityUI);
  * Lend the components inside what this frontend provides.
  *
  * Anything left out keeps its default, so a frontend overrides only what it
- * has: `icons` may be given in part, too.
+ * has: `icons` and `paths` may be given in part, too.
  *
  * @param props What to lend, and the components to lend it to.
  * @returns The provider.
@@ -107,15 +119,18 @@ export function IdentityUIProvider({
   t,
   Link,
   icons,
+  paths,
   children,
-}: Partial<Omit<IdentityUI, 'icons'>> & {
+}: Partial<Omit<IdentityUI, 'icons' | 'paths'>> & {
   icons?: Partial<IdentityIcons>;
+  paths?: Partial<IdentityPaths>;
   children?: ReactNode;
 }) {
   const value: IdentityUI = {
     t: t ?? defaultIdentityUI.t,
     Link: Link ?? defaultIdentityUI.Link,
     icons: { ...defaultIdentityUI.icons, ...icons },
+    paths: { ...defaultIdentityUI.paths, ...paths },
   };
   return (
     <IdentityUIContext.Provider value={value}>
@@ -127,7 +142,8 @@ export function IdentityUIProvider({
 /**
  * Read what the frontend lent.
  *
- * @returns The translate function, the link component and the icons.
+ * @returns The translate function, the link component, the icons and the
+ *   paths.
  */
 export function useIdentityUI(): IdentityUI {
   return useContext(IdentityUIContext);

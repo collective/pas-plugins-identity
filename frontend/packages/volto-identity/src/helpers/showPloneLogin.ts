@@ -5,7 +5,7 @@
 import { runtimeConfig } from '@plone/volto/runtime_config';
 import config from '@plone/volto/registry';
 
-import { asBoolean } from '../config/settings';
+import { asBoolean } from '@plone-collective/identity-core';
 
 /**
  * The environment variable a deployment answers this with.

@@ -62,7 +62,7 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
   error,
   onSubmit,
 }) => {
-  const { t, Link, icons } = useIdentityUI();
+  const { t, Link, icons, paths } = useIdentityUI();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showError, dismissError] = useDismissibleError(error);
@@ -105,7 +105,7 @@ const PasswordForm: React.FC<PasswordFormProps> = ({
 
       <Container className="forgotPassword">
         <p className="help">
-          <Link href="/passwordreset">{t(messages.forgotPassword)}</Link>
+          <Link href={paths.passwordReset}>{t(messages.forgotPassword)}</Link>
         </p>
       </Container>
 

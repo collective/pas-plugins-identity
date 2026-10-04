@@ -14,7 +14,7 @@
     "start": "REGISTRYCONFIG=$(pwd)/registry.config.ts pnpm --filter @plone/aurora dev",
     "start:prod": "pnpm --filter @plone/aurora start:prod",
     "build": "REGISTRYCONFIG=$(pwd)/registry.config.ts pnpm --filter @plone/aurora build",
-    "build:deps": "pnpm --filter @plone/registry --filter @plone/components build",
+    "build:deps": "pnpm --filter @plone/registry --filter @plone/icons --filter @plone/quanta --filter @plone/components build",
     "i18n": "pnpm --filter @plone-collective/aurora-identity i18n",
     "test": "pnpm --filter @plone-collective/aurora-identity exec vitest",
     "typecheck": "pnpm --filter @plone-collective/aurora-identity typecheck",
@@ -23,7 +23,9 @@
     "prettier": "prettier --check '../packages/aurora-identity/**/*.{js,jsx,ts,tsx}'",
     "prettier:fix": "prettier --write '../packages/aurora-identity/**/*.{js,jsx,ts,tsx}'",
     "stylelint": "stylelint '../packages/aurora-identity/**/*.{css,scss,less}' --allow-empty-input",
-    "stylelint:fix": "stylelint '../packages/aurora-identity/**/*.{css,scss,less}' --fix --allow-empty-input"
+    "stylelint:fix": "stylelint '../packages/aurora-identity/**/*.{css,scss,less}' --fix --allow-empty-input",
+    "acceptance-test": "playwright test --config=acceptance/playwright.config.ts",
+    "acceptance-provider": "node acceptance/provider.mjs"
   },
   "dependencies": {
     "@plone/registry": "workspace:*",
@@ -32,6 +34,7 @@
     "aurora-identity-harness": "workspace:*"
   },
   "devDependencies": {
+    "@playwright/test": "catalog:",
     "mrs-developer": "^2.2.0"
   },
   "packageManager": "pnpm@11.20.0",

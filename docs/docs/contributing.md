@@ -85,6 +85,26 @@ make aurora-start          # http://localhost:3000/
 To see the whole package working at once instead, run the two-site federation
 in Docker: {doc}`tutorials/federation-demo`.
 
+(contributing-aurora-acceptance)=
+
+### Signing in to Aurora end to end
+
+The Aurora harness has Playwright tests that sign in through a real Dex.
+They need three services, each started in its own shell from `frontend/aurora`:
+
+```shell
+make acceptance-backend-start   # the backend's acceptance server, port 55001
+make acceptance-dex-start       # Dex, with the backend's test configuration
+make acceptance-frontend-start  # a production build of Aurora, port 3000
+```
+
+Then register Dex on the site and run the tests:
+
+```shell
+make acceptance-provider
+make acceptance-test
+```
+
 ## What a change has to satisfy
 
 Run these before opening a pull request. CI runs the same ones.
@@ -94,7 +114,8 @@ Run these before opening a pull request. CI runs the same ones.
 | `make check` | `make format` then `make lint`, across both halves |
 | `make test` | `make backend-test` and `make frontend-test` |
 | `make check-imports`, from `backend/` | That core never imports the `[server]` layer |
-| `make aurora-lint`, `make aurora-test` | The Aurora add-on, once `make aurora-install` has run. CI does not run these yet |
+| `make aurora-lint`, `make aurora-test`, `make aurora-build` | The Aurora add-on, once `make aurora-install` has run |
+| `make acceptance-test`, from `frontend/aurora` | A real sign-in to Aurora through Dex. See {ref}`contributing-aurora-acceptance` |
 | `make docs-build` | The documentation, with warnings as errors |
 | `make -C docs vale` | Prose style. **Errors must be zero**; warnings are advisory |
 

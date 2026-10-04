@@ -66,6 +66,18 @@ doing so:
   entries both catalogues define, and `workspace:*` only for packages both
   workspaces have.
 
+The Aurora add-on renders Aurora's `/login` with its own page,
+`aurora-identity/routes/login.tsx`. Aurora's registry cannot replace a route,
+and the `loginActions` slot it offers sits inside its password `<Form>`, where
+the add-on's forms cannot go. So `aurora-identity/index.ts` swaps the file
+`@plone/cmsui` registered for `/login` (`lib/routes.ts`), and warns at build
+time when that file is no longer there. Upgrading Aurora means checking that
+`AURORA_LOGIN_FILE` still names it.
+
+The Aurora version is pinned by `frontend/aurora/mrs.developer.json`. Aurora's
+upgrade guides live in its checkout, at
+`frontend/aurora/core/docs/upgrade-guide/`.
+
 `frontend/core` and `frontend/aurora/core` are **not ours**. They are
 `mrs.developer` checkouts of Volto and Aurora, excluded by their harness's
 `.gitignore`. Never edit them, never cite them as this project's convention,
@@ -94,7 +106,8 @@ Run these before proposing a commit. CI runs the same ones.
 | `make check` | root | `make format` then `make lint`, both halves |
 | `make test` | root | `make backend-test` and `make frontend-test` |
 | `make check-imports` | `backend/` | The core/server layer boundary |
-| `make aurora-lint`, `make aurora-test` | root | The Aurora add-on. Needs `make aurora-install`; **not run by CI yet** |
+| `make aurora-lint`, `make aurora-test`, `make aurora-build` | root | The Aurora add-on. Needs `make aurora-install`; CI runs them in `.github/workflows/aurora.yml` |
+| `make acceptance-test` | `frontend/aurora` | A real sign-in through Dex, with Playwright. Needs the services its `acceptance-*` targets start; CI runs it too |
 | `make docs-build` | root | Sphinx with `-W`, warnings as errors |
 | `make vale` | `docs/` | Prose style. **Errors must be zero**; warnings are advisory |
 

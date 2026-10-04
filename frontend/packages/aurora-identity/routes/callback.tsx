@@ -12,6 +12,7 @@ import config from '@plone/registry';
 import { getAuthFromRequest, setAuthOnResponse } from '@plone/react-router';
 import {
   CallbackCard,
+  CHOOSE_LOGIN_PATH,
   endpoints,
   expiryFromToken,
   readCallback,
@@ -125,7 +126,9 @@ export default function Callback() {
   return (
     <AuroraIdentityUI>
       <main className="identity-callback-page">
-        <CallbackCard failure={failure} retryHref="/login" />
+        {/* The options, not the plain login page: with one provider that would
+            start the same sign-in again, and fail the same way. */}
+        <CallbackCard failure={failure} retryHref={CHOOSE_LOGIN_PATH} />
       </main>
     </AuroraIdentityUI>
   );

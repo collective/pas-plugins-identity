@@ -1,0 +1,46 @@
+/**
+ * identity-core's tokens, in Quanta's colours.
+ *
+ * Core defines every token in `identity-core/src/styles.css`, with the values
+ * Volto's theme suits. These redefine the ones a Quanta page would show the
+ * difference in: the accent, the state colours, the surfaces, and the
+ * geometry of a provider button, which fills the login column the way
+ * Aurora's own fields do. Each Quanta colour carries its value as a fallback,
+ * for a page that has not loaded the palette.
+ *
+ * `html:root` rather than `:root`: the same specificity plus one, so these
+ * win whichever stylesheet the bundler happens to put first.
+ */
+html:root {
+  --identity-radius: 0.375rem;
+  --identity-border: 1px solid var(--quanta-silver, #c3cdd5);
+
+  --identity-accent: var(--quanta-sapphire, #0b78d0);
+  --identity-danger: var(--quanta-candy, #d0220b);
+  --identity-muted: var(--quanta-iron, #4a5b68);
+  --identity-error: var(--quanta-wine, #a91c09);
+  --identity-ok: var(--quanta-emerald, #318722);
+
+  --identity-field-border: var(--quanta-silver, #c3cdd5);
+
+  --identity-surface-bg: var(--quanta-air, #fff);
+  --identity-surface-border: var(--quanta-smoke, #e4e8ec);
+  --identity-surface-header-bg: var(--quanta-snow, #f3f5f7);
+  --identity-surface-shadow: none;
+
+  --identity-overlay-veil: rgb(255 255 255 / 96%);
+
+  --identity-provider-width: 100%;
+  --identity-provider-height: 2.75rem;
+  --identity-provider-radius: 0.375rem;
+  --identity-provider-shadow: none;
+
+  --identity-provider-plone-bg: var(--quanta-sapphire, #0b78d0);
+  --identity-provider-plone-bg-hover: var(--quanta-royal, #085696);
+}
+
+/* Aurora's login column is as wide as its fields, and the buttons fill it
+   the way the fields do, rather than shrinking to their labels. */
+.identity-providers {
+  align-items: stretch;
+}
