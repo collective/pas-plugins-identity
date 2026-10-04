@@ -85,6 +85,53 @@ make aurora-start          # http://localhost:3000/
 To see the whole package working at once instead, run the two-site federation
 in Docker: {doc}`tutorials/federation-demo`.
 
+(contributing-both-frontends)=
+
+### Testing both frontends
+
+<!-- Ports: frontend/Makefile and frontend/aurora/Makefile; cookies: Volto's
+helpers/AuthToken and @plone/react-router; redirect URIs:
+profiles/initial/registry/ and backend/tests/_resources/dex/config.yaml;
+switches: volto-identity/src/helpers/showPloneLogin.ts and
+aurora-identity/lib/settings.ts -->
+
+Both frontends talk to the same backend, at `http://localhost:8080/Plone`, and
+both use the callback path `/login-identity`. Switching between them needs no
+reinstall: each harness corrects the `node_modules` the other one installed.
+
+One at a time, each takes port 3000:
+
+```shell
+make frontend-start        # Volto
+make aurora-start          # or Aurora, once the other is stopped
+```
+
+Side by side, Aurora needs a port Volto does not use. Volto's development
+server takes two: the site on 3000, and its `webpack` assets on 3001. So run
+Aurora on 3002, from `frontend/aurora`:
+
+```shell
+pnpm start --port 3002
+```
+
+The two sessions do not collide: Volto keeps its session in the `auth_token`
+cookie and Aurora in `auth_seven`.
+
+What works where:
+
+| Way in | On port 3000 | On any other port |
+|---|---|---|
+| A provider: the `initial` profile's GitHub and Google, or the Dex of the acceptance tests | Works | Refused by the provider, whose registered redirect URI is `http://localhost:3000/login-identity` |
+| The password form | Works, when switched on | Works, when switched on |
+
+The password form is off by default, and a site with no provider shows it
+anyway. To switch it on, set `RAZZLE_IDENTITY_SHOW_PLONE_LOGIN=true` for
+Volto, or `IDENTITY_SHOW_PLONE_LOGIN=true` for Aurora, before starting the
+frontend.
+
+With a single provider, `/login` goes straight to it. Open `/login?choose=1`
+to see the options instead.
+
 (contributing-aurora-acceptance)=
 
 ### Signing in to Aurora end to end
