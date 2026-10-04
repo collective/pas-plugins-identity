@@ -17,7 +17,10 @@ import {
   APPLICATIONS_PATH,
   CALLBACK_PATH,
   CONFIRM_EMAIL_PATH,
+  CONSENT_PATH,
   IDENTITIES_PATH,
+  OAUTH_ROUTES,
+  REQUIRE_LOGIN_PATH,
   START_PATH,
 } from './lib/paths';
 import {
@@ -51,6 +54,12 @@ const USER_ROUTES = [
     path: APPLICATIONS_PATH.slice(1),
     file: '@plone-collective/aurora-identity/routes/applications.tsx',
     options: { id: 'identity-applications' },
+  },
+  {
+    type: 'route' as const,
+    path: CONSENT_PATH.slice(1),
+    file: '@plone-collective/aurora-identity/routes/oauth-consent.tsx',
+    options: { id: 'identity-oauth-consent' },
   },
   {
     type: 'route' as const,
@@ -95,6 +104,24 @@ export default function install(config: ConfigType) {
     name: 'IdentityProfileGate',
     slot: 'authenticatedTools',
     component: ProfileGate,
+  });
+
+  // The authorization server's endpoints, passed on to the backend; see
+  // `lib/oauth`. At the top of the tree: they draw nothing.
+  for (const path of OAUTH_ROUTES) {
+    config.registerRoute({
+      type: 'route',
+      path,
+      file: '@plone-collective/aurora-identity/routes/oauth.ts',
+      options: { id: `identity-oauth-${path.replace(/[^a-z]+/g, '-')}` },
+    });
+  }
+
+  config.registerRoute({
+    type: 'route',
+    path: REQUIRE_LOGIN_PATH.slice(1),
+    file: '@plone-collective/aurora-identity/routes/require-login.ts',
+    options: { id: 'identity-require-login' },
   });
 
   // Path segments without their leading slash, the way Aurora's own routes

@@ -52,6 +52,7 @@ An internal alias that differed would be a second issuer, and the comparison abo
 
 They are not `plone.restapi` services, so a routing rule that sends `/++api++` to the backend does not carry them.
 Without a router of their own, they reach the Volto frontend instead, which knows nothing about them.
+The Plone Aurora add-on passes them on to the backend itself, so in front of Aurora no such router is needed: {doc}`frontends`.
 
 This is what makes configuring the issuer load-bearing rather than fussy.
 The issuer determines the URLs in the discovery document, and those URLs have to be routed to the backend by a rule that was written for them specifically.

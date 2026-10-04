@@ -232,3 +232,59 @@ export async function authorizationServer(installed: boolean): Promise<void> {
     );
   }
 }
+
+/** An application signing in through this site, for the consent tests. */
+export const TEST_APP = {
+  client_id: 'test-app',
+  title: 'Test App',
+  // Nothing listens there: the tests catch the browser on its way in.
+  redirect_uris: ['http://localhost:4000/callback'],
+  scope: ['openid', 'profile', 'email'],
+};
+
+/**
+ * Make the site an authorization server whose consent screen is Aurora's.
+ *
+ * @param aurora Aurora's address: the issuer, and where the consent page is.
+ * @returns The test application's client secret.
+ */
+export async function serveAuthorization(aurora: string): Promise<string> {
+  await authorizationServer(true);
+  const settings = await fetch(`${SITE}/++api++/@registry`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({
+      'pas.plugins.identity.server_issuer': aurora,
+      'pas.plugins.identity.server_consent_url': `${aurora}/oauth-consent`,
+    }),
+  });
+  if (!settings.ok) {
+    throw new Error(
+      `Configuring the authorization server failed: ${settings.status} ${await settings.text()}`,
+    );
+  }
+  await fetch(`${SITE}/++api++/@identity-clients/${TEST_APP.client_id}`, {
+    method: 'DELETE',
+    headers,
+  });
+  const client = await fetch(`${SITE}/++api++/@identity-clients`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(TEST_APP),
+  });
+  if (!client.ok) {
+    throw new Error(
+      `Registering ${TEST_APP.client_id} failed: ${client.status} ${await client.text()}`,
+    );
+  }
+  return ((await client.json()) as { secret: string }).secret;
+}
+
+/** Undo `serveAuthorization`. */
+export async function stopServingAuthorization(): Promise<void> {
+  await fetch(`${SITE}/++api++/@identity-clients/${TEST_APP.client_id}`, {
+    method: 'DELETE',
+    headers,
+  });
+  await authorizationServer(false);
+}

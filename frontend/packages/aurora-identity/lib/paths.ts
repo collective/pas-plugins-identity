@@ -40,6 +40,42 @@ export const APPLICATIONS_PATH = '/applications';
  */
 export const APPLICATIONS_KEY = 'identityApplications';
 
+/**
+ * Where the authorization server asks a user whether an application may use
+ * their account: what `server_consent_url` names. `CONSENT_PATH` in the
+ * Volto add-on.
+ */
+export const CONSENT_PATH = '/oauth-consent';
+
+/**
+ * The authorization server's authorization endpoint: the one a user's
+ * browser reaches. See `lib/oauth`.
+ */
+export const AUTHORIZE_PATH = '/@@oauth-authorize';
+
+/**
+ * The paths passed on, without their leading slash, the way routes are
+ * registered: the server layer's browser views.
+ */
+export const OAUTH_ROUTES = [
+  '@@oauth-authorize',
+  '@@oauth-token',
+  '@@oauth-jwks',
+  '@@oauth-userinfo',
+  // The one document the backend publishes there, by its full path: a
+  // splat would reach Aurora's content middleware as a page to fetch.
+  '.well-known/openid-configuration',
+];
+
+/**
+ * Where Plone's challenge sends somebody the backend needs signed in.
+ *
+ * Reached at Aurora's address when the authorization endpoint meets a
+ * signed-out visitor; see `routes/require-login`.
+ */
+export const REQUIRE_LOGIN_PATH =
+  '/acl_users/credentials_cookie_auth/require_login';
+
 /** The route a provider button sends the browser to, to start a sign-in. */
 export const START_PATH = `${CALLBACK_PATH}/start`;
 

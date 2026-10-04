@@ -26,6 +26,16 @@ msgstr ""
 msgid "Add another"
 msgstr ""
 
+#. Default: "Allow"
+#: components/Consent/ConsentPanel
+msgid "Allow"
+msgstr ""
+
+#. Default: "Allow {client} to use your account?"
+#: components/Consent/ConsentPanel
+msgid "Allow {client} to use your account?"
+msgstr ""
+
 #. Default: "Application"
 #: components/Applications/ApplicationsPanel
 msgid "Application"
@@ -82,6 +92,11 @@ msgstr ""
 msgid "Confirming your address"
 msgstr ""
 
+#. Default: "Deny"
+#: components/Consent/ConsentPanel
+msgid "Deny"
+msgstr ""
+
 #. Default: "Details"
 #: components/Applications/ApplicationsPanel
 msgid "Details"
@@ -118,6 +133,11 @@ msgstr ""
 msgid "It can read:"
 msgstr ""
 
+#. Default: "It will be able to read:"
+#: components/Consent/ConsentPanel
+msgid "It will be able to read:"
+msgstr ""
+
 #. Default: "Loading sign-in options…"
 #: components/Login/LoginForm
 msgid "Loading sign-in options"
@@ -126,6 +146,11 @@ msgstr ""
 #. Default: "Loading the applications you have authorized…"
 #: components/Applications/ApplicationsPanel
 msgid "Loading the applications you have authorized"
+msgstr ""
+
+#. Default: "Loading the request…"
+#: components/Consent/ConsentPanel
+msgid "Loading the request"
 msgstr ""
 
 #. Default: "Loading your sign-in methods…"
@@ -270,6 +295,11 @@ msgstr ""
 msgid "This application is no longer registered on this site."
 msgstr ""
 
+#. Default: "This authorization request cannot be shown. It may have been sent by an application this site does not know, or it may have expired — start again from the application you were signing in to."
+#: components/Consent/ConsentPanel
+msgid "This authorization request cannot be shown."
+msgstr ""
+
 #. Default: "This is your only way to sign in. Add another first."
 #: components/Identities/IdentitiesList
 msgid "This is your only way to sign in. Add another first."
@@ -304,6 +334,11 @@ msgstr ""
 #. Default: "Withdrawing signs an application out everywhere and makes it ask you again next time. An access token it already holds keeps working for up to {minutes, plural, one {# minute} other {# minutes}} — this site cannot recall one that was already issued."
 #: components/Applications/ApplicationsPanel
 msgid "Withdrawing signs it out and makes it ask again."
+msgstr ""
+
+#. Default: "You are signed in as {user}."
+#: components/Consent/ConsentPanel
+msgid "You are signed in as {user}."
 msgstr ""
 
 #. Default: "You authorized this application on {date}."
@@ -385,6 +420,11 @@ msgstr ""
 #. Default: "How you sign in"
 #: components/Identities/IdentitiesList
 msgid "identities-sections"
+msgstr ""
+
+#. Default: "nothing beyond the fact that you signed in"
+#: components/Consent/ConsentPanel
+msgid "nothing beyond the fact that you signed in"
 msgstr ""
 
 #. Default: "Move an address to the top to make it the one this site uses for you."

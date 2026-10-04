@@ -10,6 +10,7 @@ import type { ReactNode } from 'react';
 
 import LoginCard from '../components/Login/LoginCard';
 import type {
+  ConsentRequest,
   Identity,
   LoginProvider,
   OAuthGrants,
@@ -118,6 +119,27 @@ export const GRANTS: OAuthGrants = {
       scopes: [{ id: 'openid', claims: [] }],
     },
   ],
+};
+
+/** A pending authorization request, as `@oauth-consent` describes one. */
+export const CONSENT_REQUEST: ConsentRequest = {
+  '@id': 'http://id.localhost/@oauth-consent',
+  client: { id: 'demo-rp', title: 'Plone Content Site' },
+  user: { id: 'alice', label: 'Alice Liddell' },
+  scopes: [
+    { id: 'openid', claims: [] },
+    { id: 'profile', claims: ['name', 'preferred_username', 'picture'] },
+    { id: 'email', claims: ['email', 'email_verified'] },
+  ],
+  authorize_url: 'http://id.localhost/@@oauth-authorize',
+  params: {
+    response_type: 'code',
+    client_id: 'demo-rp',
+    redirect_uri: 'http://plone.localhost/login-identity',
+    scope: 'openid profile email',
+    state: 'a1b2c3',
+  },
+  authenticator: 'a-plone-protect-token',
 };
 
 /**

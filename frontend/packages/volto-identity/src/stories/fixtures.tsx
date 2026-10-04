@@ -25,7 +25,6 @@ import type { ItemSchema } from '@plone-collective/identity-core';
 
 import type {
   ConfiguredProvider,
-  ConsentRequest,
   Driver,
   GroupContent,
   JsonSchema,
@@ -45,6 +44,7 @@ export {
   GOOGLE,
   KEYCLOAK,
   LOADED,
+  CONSENT_REQUEST,
   GRANTS,
   IDENTITIES,
   LOADING,
@@ -604,27 +604,6 @@ export const MINTED_CLIENT: OAuthClient = {
   secret: 'Yb3nT7qk-2sV1pE0xR8wL4mZ6aQ9cJ5dN0gH2fK1uS',
   notice:
     'This secret is shown once and is not recoverable. Store it before leaving this page.',
-};
-
-/** A pending authorization request, as `@oauth-consent` describes one. */
-export const CONSENT_REQUEST: ConsentRequest = {
-  '@id': 'http://id.localhost/@oauth-consent',
-  client: { id: 'demo-rp', title: 'Plone Content Site' },
-  user: { id: 'alice', label: 'Alice Liddell' },
-  scopes: [
-    { id: 'openid', claims: [] },
-    { id: 'profile', claims: ['name', 'preferred_username', 'picture'] },
-    { id: 'email', claims: ['email', 'email_verified'] },
-  ],
-  authorize_url: 'http://id.localhost/@@oauth-authorize',
-  params: {
-    response_type: 'code',
-    client_id: 'demo-rp',
-    redirect_uri: 'http://plone.localhost/login-identity',
-    scope: 'openid profile email',
-    state: 'a1b2c3',
-  },
-  authenticator: 'a-plone-protect-token',
 };
 
 export const KEYRING: SigningKeyRing = {

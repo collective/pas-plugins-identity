@@ -32,6 +32,19 @@ describe('backendUrl', () => {
     );
   });
 
+  it('reaches a browser view without the REST API traverser', () => {
+    expect(
+      backendUrl(
+        'http://localhost:8080/Plone',
+        'http://localhost:3000/@@oauth-authorize?client_id=app',
+        '/@@oauth-authorize?client_id=app',
+        { api: false },
+      ),
+    ).toBe(
+      'http://localhost:8080/VirtualHostBase/http/localhost:3000/Plone/VirtualHostRoot/@@oauth-authorize?client_id=app',
+    );
+  });
+
   it('copes with a site at the backend root', () => {
     expect(
       backendUrl('http://backend:8080', 'http://site.test/', '/@my-profile'),

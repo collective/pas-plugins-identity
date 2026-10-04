@@ -44,16 +44,6 @@ msgstr ""
 msgid "Add {item}"
 msgstr ""
 
-#. Default: "Allow"
-#: components/Consent/ConsentPanel
-msgid "Allow"
-msgstr ""
-
-#. Default: "Allow {client} to use your account?"
-#: components/Consent/ConsentPanel
-msgid "Allow {client} to use your account?"
-msgstr ""
-
 #. Default: "Allowed groups"
 #: components/ControlPanel/ClientsPanel
 msgid "Allowed groups"
@@ -199,11 +189,6 @@ msgstr ""
 msgid "Delete this provider?"
 msgstr ""
 
-#. Default: "Deny"
-#: components/Consent/ConsentPanel
-msgid "Deny"
-msgstr ""
-
 #. Default: "Disabled"
 #: components/ControlPanel/UserAccountPanel
 msgid "Disabled"
@@ -332,11 +317,6 @@ msgstr ""
 msgid "Identity providers"
 msgstr ""
 
-#. Default: "It will be able to read:"
-#: components/Consent/ConsentPanel
-msgid "It will be able to read:"
-msgstr ""
-
 #. Default: "Last login"
 #: components/Welcome/WelcomeCard
 msgid "Last login"
@@ -375,11 +355,6 @@ msgstr ""
 #. Default: "Loading settings…"
 #: components/ControlPanel/ClientsPanel
 msgid "Loading settings"
-msgstr ""
-
-#. Default: "Loading the request…"
-#: components/Consent/ConsentPanel
-msgid "Loading the request"
 msgstr ""
 
 #. Default: "Local group"
@@ -741,11 +716,6 @@ msgstr ""
 msgid "Their preferred email"
 msgstr ""
 
-#. Default: "This authorization request cannot be shown. It may have been sent by an application this site does not know, or it may have expired — start again from the application you were signing in to."
-#: components/Consent/ConsentPanel
-msgid "This authorization request cannot be shown."
-msgstr ""
-
 #. Default: "This is the only time this secret is shown. It is stored hashed and cannot be read back; if it is lost, rotate it."
 #: components/ControlPanel/SecretReveal
 msgid "This is the only time this secret is shown."
@@ -821,11 +791,6 @@ msgstr ""
 #: components/ControlPanel/ClientsPanel
 #: components/ControlPanel/ProvidersTable
 msgid "Yes"
-msgstr ""
-
-#. Default: "You are signed in as {user}."
-#: components/Consent/ConsentPanel
-msgid "You are signed in as {user}."
 msgstr ""
 
 #. Default: "Your profile"
@@ -921,11 +886,6 @@ msgstr ""
 #. Default: "not verified"
 #: components/Welcome/WelcomeCard
 msgid "not verified"
-msgstr ""
-
-#. Default: "nothing beyond the fact that you signed in"
-#: components/Consent/ConsentPanel
-msgid "nothing beyond the fact that you signed in"
 msgstr ""
 
 #. Default: "Remove this entry from the list? It is gone once the form is saved."

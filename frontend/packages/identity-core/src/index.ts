@@ -24,6 +24,7 @@ export { default as CompleteProfileCard } from './components/CompleteProfile/Com
 export type { CompleteProfileCardProps } from './components/CompleteProfile/CompleteProfileCard';
 export { default as ConfirmDialog } from './components/ConfirmDialog/ConfirmDialog';
 export type { ConfirmDialogProps } from './components/ConfirmDialog/ConfirmDialog';
+export { default as ConsentPanel } from './components/Consent/ConsentPanel';
 export { default as ConfirmEmailCard } from './components/ConfirmEmail/ConfirmEmailCard';
 export type {
   ConfirmEmailCardProps,
@@ -47,6 +48,7 @@ export * from './constants/vocabularies';
 export * from './endpoints';
 export * from './helpers/avatar';
 export * from './helpers/callback';
+export * from './helpers/consent';
 export * from './helpers/download';
 export * from './helpers/firstLogin';
 export * from './helpers/groupmap';
