@@ -138,17 +138,19 @@ to see the options instead.
 
 The Aurora harness has Playwright tests that sign in through a real Dex and
 through a magic link.
-They need four services, each started in its own shell from `frontend/aurora`:
+They need three services, each started in its own shell from `frontend/aurora`:
 
 ```shell
 make acceptance-backend-start   # the backend's acceptance server, port 55001
 make acceptance-dex-start       # Dex, with the backend's test configuration
-make acceptance-mail-start      # Mailpit, catching the site's mail
 make acceptance-frontend-start  # a production build of Aurora, port 3000
 ```
 
-The magic-link test points the site's mail at Mailpit and reads the link from
-it. Mailpit shows what the site sent at `http://localhost:8025`.
+The acceptance server is the add-on's own
+`pas.plugins.identity.testing.ACCEPTANCE_TESTING` layer. Its
+`collective.MockMailHost` keeps every message the site sends instead of
+sending it, and the magic-link test reads the link back through the server's
+Robot Framework remote library.
 
 Then register Dex on the site and run the tests:
 

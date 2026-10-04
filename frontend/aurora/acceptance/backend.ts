@@ -1,15 +1,14 @@
 /**
- * What the acceptance tests ask of the backend, and of its mailbox, directly.
+ * What the acceptance tests ask of the backend directly.
  *
- * The backend's acceptance server: a site at `PLONE_API_PATH` and a Manager
- * at `PLONE_ADMIN`. Its mail goes to Mailpit, which `make acceptance-mail-start`
- * starts: SMTP on `MAILPIT_SMTP_PORT`, and the messages over HTTP at
- * `MAILPIT_URL`.
+ * The backend's acceptance server, `pas.plugins.identity.testing.
+ * ACCEPTANCE_TESTING`: a site at `PLONE_API_PATH`, a Manager at
+ * `PLONE_ADMIN`, and `collective.MockMailHost`, which keeps every message
+ * the site sends instead of sending it. The server's Robot Framework remote
+ * library reads them back.
  */
 const SITE = process.env.PLONE_API_PATH ?? 'http://localhost:55001/plone';
 const ADMIN = process.env.PLONE_ADMIN ?? 'admin:secret';
-const MAILPIT_URL = process.env.MAILPIT_URL ?? 'http://localhost:8025';
-const MAILPIT_SMTP_PORT = Number(process.env.MAILPIT_SMTP_PORT ?? 1025);
 
 const headers = {
   Accept: 'application/json',
@@ -27,29 +26,16 @@ const EMAIL_PROVIDER = {
   config: {},
 };
 
-/**
- * Offer magic links on the login page.
- *
- * The acceptance site has no sender address, without which Plone refuses to
- * send any mail at all, and no mail server. This gives it both first: an
- * address, and Mailpit.
- */
-export async function addEmailProvider(): Promise<void> {
-  const registry = await fetch(`${SITE}/++api++/@registry`, {
-    method: 'PATCH',
+/** Stop offering magic links, so the other tests see Dex alone. */
+export async function removeEmailProvider(): Promise<void> {
+  await fetch(`${SITE}/++api++/@identity-providers/${EMAIL_PROVIDER.id}`, {
+    method: 'DELETE',
     headers,
-    body: JSON.stringify({
-      'plone.email_from_address': 'noreply@example.com',
-      'plone.email_from_name': 'Acceptance tests',
-      'plone.smtp_host': 'localhost',
-      'plone.smtp_port': MAILPIT_SMTP_PORT,
-    }),
   });
-  if (!registry.ok) {
-    throw new Error(
-      `Configuring mail failed: ${registry.status} ${await registry.text()}`,
-    );
-  }
+}
+
+/** Offer magic links on the login page. */
+export async function addEmailProvider(): Promise<void> {
   // One left behind by a run that stopped before its cleanup.
   await removeEmailProvider();
   const answer = await fetch(`${SITE}/++api++/@identity-providers`, {
@@ -64,33 +50,57 @@ export async function addEmailProvider(): Promise<void> {
   }
 }
 
-/** Stop offering them, so the other tests see Dex alone. */
-export async function removeEmailProvider(): Promise<void> {
-  await fetch(`${SITE}/++api++/@identity-providers/${EMAIL_PROVIDER.id}`, {
-    method: 'DELETE',
-    headers,
+/**
+ * The last message the site sent, as MockMailHost kept it.
+ *
+ * Robot Framework's remote protocol is XML-RPC, which answers with the
+ * message base64-encoded; inside it, the body is quoted-printable.
+ *
+ * @returns The message, decoded, or `''` when none was sent.
+ */
+async function lastSentEmail(): Promise<string> {
+  const answer = await fetch(`${SITE}/RobotRemote`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/xml' },
+    body:
+      '<?xml version="1.0"?><methodCall><methodName>run_keyword</methodName>' +
+      '<params><param><value><string>get_the_last_sent_email</string>' +
+      '</value></param><param><value><array><data/></array></value></param>' +
+      '</params></methodCall>',
   });
+  const xml = await answer.text();
+  const encoded = xml.match(
+    /<name>return<\/name>\s*<value><base64>([^<]*)<\/base64>/,
+  )?.[1];
+  if (!encoded) {
+    return '';
+  }
+  const message = Buffer.from(encoded, 'base64').toString('utf-8');
+  // Only the body is quoted-printable. Decoding the headers too would read
+  // the `?=` closing an encoded subject as a soft line break.
+  const split = message.search(/\r?\n\r?\n/);
+  const [head, body] =
+    split < 0 ? [message, ''] : [message.slice(0, split), message.slice(split)];
+  return (
+    head +
+    body
+      .replace(/=\r?\n/g, '')
+      .replace(/=([0-9A-F]{2})/g, (_, hex: string) =>
+        String.fromCharCode(parseInt(hex, 16)),
+      )
+  );
 }
 
 /**
- * The magic link in the last message sent to an address.
+ * The magic link in the last message the site sent, if it went to `address`.
  *
- * @param address The address.
- * @returns The link, or `null` when no message to it has one.
+ * @param address The address the link was asked for.
+ * @returns The link, or `null` when the last message is not one for it.
  */
 export async function lastMagicLink(address: string): Promise<string | null> {
-  const search = await fetch(
-    `${MAILPIT_URL}/api/v1/search?query=${encodeURIComponent(`to:${address}`)}&limit=1`,
-  );
-  const { messages } = (await search.json()) as {
-    messages: { ID: string }[];
-  };
-  if (!messages.length) {
+  const message = await lastSentEmail();
+  if (!new RegExp(`^To: ${address}\\r?$`, 'm').test(message)) {
     return null;
   }
-  const message = await fetch(
-    `${MAILPIT_URL}/api/v1/message/${messages[0].ID}`,
-  );
-  const { Text } = (await message.json()) as { Text: string };
-  return Text.match(/https?:\/\/\S*[?&]magic_link=[\w.-]+/)?.[0] ?? null;
+  return message.match(/https?:\/\/\S*[?&]magic_link=[\w.-]+/)?.[0] ?? null;
 }

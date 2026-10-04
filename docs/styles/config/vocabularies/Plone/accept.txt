@@ -43,7 +43,6 @@ JavaScript
 jQuery
 libxslt
 loopback
-Mailpit
 Matomo
 Mockup
 npm
