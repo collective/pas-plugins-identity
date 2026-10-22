@@ -148,8 +148,9 @@ describe('avatarColors', () => {
   it.each([...DEFAULT_AVATAR_COLORS])(
     'ships %s, which clears WCAG AA against the white initials',
     (hex) => {
-      // 4.5:1, the ratio for normal text: the initials are well under the
-      // size WCAG counts as large at the 30px the toolbar draws them.
+      // 4.5:1, the ratio for normal text, so the palette holds whatever
+      // `--identity-toolbar-avatar-size` a site sets: at 30px the initials
+      // are well under the size WCAG counts as large.
       const ratio = (luminance('#ffffff') + 0.05) / (luminance(hex) + 0.05);
 
       expect(ratio).toBeGreaterThanOrEqual(4.5);

@@ -86,8 +86,8 @@ claim names rather than any one provider's.
 | `plone-identity` | that first row, plus `website` → `home_page`, `description` → `description`, `address.formatted` → `location` |
 | `email` | empty |
 
-A map may only write the four fields in {doc}`/reference/settings`, so no driver
-seeds a row for an address or a portrait. Both arrive on a login regardless: an
+A map never writes an address or a portrait, see {doc}`/reference/settings`, so no driver
+seeds a row for either. Both arrive on a login regardless: an
 address is appended to the profile's own list, and a portrait is fetched from
 the `picture_url` claim when `sync_portraits` is on.
 

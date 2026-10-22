@@ -17,7 +17,7 @@ against is entirely in the XML.
 from identitydemo import settings
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.controlpanel import get_providers
-from pas.plugins.identity.core.utils.propertymap import MAPPABLE_FIELDS
+from pas.plugins.identity.core.utils.propertymap import mappable_fields
 from pas.plugins.identity.server.claims import scope_claims
 from pas.plugins.identity.server.controlpanel.clients import get_client
 from pas.plugins.identity.server.controlpanel.clients import verify_secret
@@ -75,7 +75,9 @@ class TestDemoIdPRegistry:
         Neither was ever applied: an address is appended by ``sync_addresses``
         and a portrait is synced from the claim itself, so both rows were
         stored, exported, and dropped on every login."""
-        assert set(get_provider("github").propertymap.values()) <= set(MAPPABLE_FIELDS)
+        assert set(get_provider("github").propertymap.values()) <= set(
+            mappable_fields()
+        )
 
     def test_the_magic_link_needs_no_map_at_all(self):
         """Its one claim is the address, which is not mapped."""
@@ -168,7 +170,7 @@ class TestDemoRPRegistry:
     def test_the_relying_party_writes_only_fields_a_login_writes(self):
         """The other half of the demo, and the same rule."""
         assert set(get_provider("demo-idp").propertymap.values()) <= set(
-            MAPPABLE_FIELDS
+            mappable_fields()
         )
 
 

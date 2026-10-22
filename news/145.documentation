@@ -1,0 +1,1 @@
+Documented the View Account Details permission, which guards a profile's login and group memberships, and upgrade step 1011 that maps it onto existing profiles. @ericof

@@ -34,7 +34,8 @@ as `realm_access.roles`.
 ## 2. Map the groups you want
 
 Fill in the group map: one row per provider-side group name, each pointing at a
-local group id.
+local group, picked from the site's groups. Create the local group first; the
+form offers only groups that exist, and the API refuses any other.
 
 Three rules make this safe to leave running:
 
@@ -43,6 +44,8 @@ Three rules make this safe to leave running:
   local groups from it would let anyone who can name a group at the far end
   create one here.
 - **A row pointing at a group this site does not have is skipped and logged.**
+  Only a profile's `registry.xml` can store one, so that a profile can ship the
+  map before the step that creates the group; the import logs it too.
 - **Every login reconciles**, so a membership revoked at the provider stops
   granting anything here without anyone editing the site.
 

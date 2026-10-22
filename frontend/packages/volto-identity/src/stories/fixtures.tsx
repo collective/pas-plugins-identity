@@ -418,8 +418,12 @@ export const PROVIDER_SCHEMA = {
         additional: {},
       },
       value_type: {
-        schema: { type: 'string', title: 'Local group' },
-        additional: {},
+        schema: { type: 'string', title: 'Local group', factory: 'Choice' },
+        additional: {
+          vocabulary: {
+            '@id': `http://localhost:8080/Plone/@vocabularies/${GROUPS_VOCABULARY}`,
+          },
+        },
       },
     },
     title: { type: 'string', title: 'Title' },
@@ -498,10 +502,10 @@ export const CONFIGURED: ConfiguredProvider[] = [
 /**
  * The vocabulary the property-map editor reads, already loaded.
  *
- * Four terms, and that is the whole of it: a login writes four Profile
- * fields, so those are the four the picker offers. It used to be the site's
- * live member schema, which also offered `email`, `portrait` and a username
- * -- rows that were stored and then dropped on every login.
+ * The four terms of the shipped user type. A site whose type has behaviors
+ * gets their fields too. It used to be the site's live member schema, which
+ * also offered `email`, `portrait` and a username -- rows that were stored
+ * and then dropped on every login.
  */
 export const USER_FIELDS_STATE = {
   [USER_FIELDS_VOCABULARY]: {

@@ -104,6 +104,16 @@
       <role name="Site Administrator" />
     </permission>
 
+    <!-- The login and group membership of a Profile, apart from its public
+         fields. The site-wide floor only: the workflow decides who holds it
+         on a Profile in each state. -->
+    <permission acquire="False"
+                name="pas.plugins.identity: View Account Details"
+    >
+      <role name="Manager" />
+      <role name="Site Administrator" />
+    </permission>
+
     <!-- An export carries every client secret in the clear. Manager alone,
          and apart from ``Manage portal``: a site that lets another role
          manage the providers has not let it read every secret, which

@@ -153,7 +153,7 @@ administrators every account with a matching address. See
 On the **Groups** tab:
 
 1. Leave **Groups arrive in the claim** as `groups`.
-2. Add one row per Keycloak group you want to honour, pointing at a local group id.
+2. Add one row per Keycloak group you want to honour, and pick the local group it grants.
 
 An unmapped Keycloak group grants nothing here and is never created. See
 {doc}`/how-to-guides/accounts/map-provider-groups`.

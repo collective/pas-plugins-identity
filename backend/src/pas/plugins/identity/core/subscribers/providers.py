@@ -23,7 +23,9 @@ provider imported from XML and a provider created in the control panel end up
 as the same bytes.
 """
 
+from pas.plugins.identity import logger
 from pas.plugins.identity.core.controlpanel import PROVIDERS_PREFIX
+from pas.plugins.identity.core.controlpanel import unknown_groups
 from pas.plugins.identity.core.utils.svg import decode_upload
 from pas.plugins.identity.core.utils.svg import encode_upload
 from pas.plugins.identity.core.utils.svg import InvalidSVG
@@ -33,22 +35,36 @@ from pas.plugins.identity.core.utils.svg import sanitize
 #: The last segment of the record holding a provider's icon.
 ICON_LEAF = "icon"
 
+#: The last segment of the record holding a provider's group map.
+GROUPMAP_LEAF = "groupmap"
+
+
+def _provider_of(name: str, leaf: str) -> str | None:
+    """Return the provider a record belongs to, when it is the named field.
+
+    A provider id cannot contain a dot, so everything after the first dot
+    below the prefix is the field. A driver setting is ``config.<key>``
+    there, so one named like a provider field is never mistaken for it.
+
+    :param name: A registry record name.
+    :param leaf: The provider field wanted.
+    :returns: The provider id, or ``None`` when the record is not that field
+        of a provider.
+    """
+    if not name.startswith(PROVIDERS_PREFIX):
+        return None
+    provider_id, _, found = name[len(PROVIDERS_PREFIX) :].partition(".")
+    return provider_id if found == leaf else None
+
 
 def icon_provider(name: str) -> str | None:
     """Return the provider an icon record belongs to.
-
-    A provider id cannot contain a dot, so everything after the first dot
-    below the prefix is the field. A driver setting named ``icon`` is
-    ``config.icon`` there, and is not this record.
 
     :param name: A registry record name.
     :returns: The provider id, or ``None`` when the record is not a
         provider's icon.
     """
-    if not name.startswith(PROVIDERS_PREFIX):
-        return None
-    provider_id, _, leaf = name[len(PROVIDERS_PREFIX) :].partition(".")
-    return provider_id if leaf == ICON_LEAF else None
+    return _provider_of(name, ICON_LEAF)
 
 
 def sanitize_icon_record(event) -> None:
@@ -82,8 +98,34 @@ def sanitize_icon_record(event) -> None:
         record.value = stored
 
 
+def warn_unknown_groups(event) -> None:
+    """Log a group map naming a local group this site does not have.
+
+    Logged rather than refused, unlike the control panel and the API: a
+    profile may ship a provider's map before the step that creates the group
+    it names, and refusing would make that profile uninstallable. The login
+    skips such a row and logs it again, so the warning here is the one an
+    operator sees at install time rather than at somebody's first sign-in.
+
+    :param event: A ``plone.registry`` record added or modified event.
+    """
+    record = event.record
+    provider_id = _provider_of(getattr(record, "__name__", None) or "", GROUPMAP_LEAF)
+    if provider_id is None:
+        return
+    for group_id in unknown_groups(record.value or {}):
+        logger.warning(
+            "Provider %r maps a group to %r, which this site does not have "
+            "yet; the map grants nothing for it until the group exists",
+            provider_id,
+            group_id,
+        )
+
+
 __all__ = [
+    "GROUPMAP_LEAF",
     "ICON_LEAF",
     "icon_provider",
     "sanitize_icon_record",
+    "warn_unknown_groups",
 ]

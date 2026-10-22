@@ -103,7 +103,7 @@ class IUserProfileSchema(model.Schema, IUserContent):
         description="pas.plugins.identity.content.edit",
     )
     read_permission(
-        login="pas.plugins.identity.content.view",
+        login="pas.plugins.identity.content.viewaccount",
         fullname="pas.plugins.identity.content.view",
         description="pas.plugins.identity.content.view",
     )

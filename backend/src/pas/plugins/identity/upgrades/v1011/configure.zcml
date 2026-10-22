@@ -1,0 +1,21 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    >
+
+  <!-- The login and group membership of a Profile moved behind a permission
+       of their own. The permission map on every Profile that already exists
+       was written before that permission existed. See the module docstring. -->
+  <genericsetup:upgradeSteps
+      profile="pas.plugins.identity:default"
+      source="1010"
+      destination="1011"
+      >
+    <genericsetup:upgradeStep
+        title="Guard login and group membership of profiles"
+        description="Adds the View Account Details permission to the rolemap and the user profile workflow, and applies it to every profile already in the site."
+        handler=".guard_account_details"
+        />
+  </genericsetup:upgradeSteps>
+
+</configure>

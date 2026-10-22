@@ -32,6 +32,7 @@ from pas.plugins.identity.server.grants.tokens import ISSUER_RECORD
 from plone import api
 from plone.app.testing import setRoles
 from plone.app.testing import TEST_USER_ID
+from plone.dexterity.schema import SCHEMA_CACHE
 
 import pytest
 
@@ -172,6 +173,10 @@ class TestTheDemoUserIsContent:
         demo_registry("idp")
         fti = portal.portal_types[PROFILE_PORTAL_TYPE]
         fti.behaviors = (*fti.behaviors, self.BEHAVIOR)
+        # Assigning the attribute fires no event, so the schema cache keeps
+        # the behaviors it read before -- and storing the demo's providers has
+        # read them, to validate the property map's targets.
+        SCHEMA_CACHE.invalidate(PROFILE_PORTAL_TYPE)
         install_idp(self.setup_tool)
 
     def test_the_demo_user_has_a_profile(self):

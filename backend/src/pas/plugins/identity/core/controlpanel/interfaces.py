@@ -11,6 +11,7 @@ a record the site knows about everywhere.
 from copy import copy
 from pas.plugins.identity import _
 from pas.plugins.identity.core.utils.svg import is_svg_upload
+from pas.plugins.identity.core.vocabularies.groups import GROUPS_VOCABULARY
 from pas.plugins.identity.core.vocabularies.userfields import USER_FIELDS_VOCABULARY
 from plone.autoform import directives
 from plone.restapi.controlpanels.interfaces import IControlpanel
@@ -387,14 +388,16 @@ class IProviderRecords(Interface):
         ),
         key_type=schema.TextLine(title=_("Claim")),
         # A ``Choice`` rather than the ``TextLine`` this was, because a login
-        # writes four fields and nothing else. The free-text box accepted
-        # ``email`` and ``portrait`` -- both reasonable guesses, both things
-        # this package does handle, elsewhere -- stored them, exported them,
-        # and dropped them on every login without a word. The vocabulary is
-        # built from
-        # :data:`~pas.plugins.identity.core.utils.propertymap.MAPPABLE_FIELDS`,
+        # writes only the fields of the user type it may write. The free-text
+        # box accepted ``email`` and ``portrait`` -- both reasonable guesses,
+        # both things this package does handle, elsewhere -- stored them,
+        # exported them, and dropped them on every login without a word. The
+        # vocabulary is built from
+        # :func:`~pas.plugins.identity.core.utils.propertymap.mappable_fields`,
         # so the form offers a picker, a profile stating a dead row is refused
-        # at import, and the API answers 400 rather than storing it.
+        # at import, and the API answers 400 rather than storing it. The
+        # choices follow the site's user type: a profile that maps a
+        # behavior's field must enable the behavior first.
         value_type=schema.Choice(
             title=_("Profile field"),
             vocabulary=USER_FIELDS_VOCABULARY,
@@ -414,7 +417,36 @@ class IProviderRecords(Interface):
             "so a group given to somebody by hand survives."
         ),
         key_type=schema.TextLine(title=_("Provider group")),
+        # Text here, and a ``Choice`` on the form's schema below. A profile
+        # may ship a map before the group it names exists -- its own
+        # ``groups`` step, or a setup handler, creates it later in the same
+        # install -- and a ``Choice`` on the record would refuse that import.
+        # A record naming a missing group is logged as it is written instead.
         value_type=schema.TextLine(title=_("Local group")),
+        required=False,
+        default={},
+    )
+
+
+class IProviderForm(IProviderRecords):
+    """The provider fields as the control panel edits them.
+
+    The records' own interface, with one field narrowed: the local side of a
+    group map is a group this site has, picked rather than typed. A typed id
+    with a typo, or a group's title where its id belongs, used to save without
+    complaint and grant nothing at every login. The API refuses the same
+    rows, so a form and a script are held to one rule; only a profile's
+    import is not, for the reason on :attr:`IProviderRecords.groupmap`.
+    """
+
+    groupmap = schema.Dict(
+        title=IProviderRecords["groupmap"].title,
+        description=IProviderRecords["groupmap"].description,
+        key_type=schema.TextLine(title=_("Provider group")),
+        value_type=schema.Choice(
+            title=_("Local group"),
+            vocabulary=GROUPS_VOCABULARY,
+        ),
         required=False,
         default={},
     )

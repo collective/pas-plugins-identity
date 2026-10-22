@@ -47,10 +47,11 @@ from pas.plugins.identity.core.drivers import get_driver
 from pas.plugins.identity.core.drivers.base import BaseDriver
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.interfaces import ProviderUnusable
-from pas.plugins.identity.core.utils.propertymap import MAPPABLE_FIELDS
+from pas.plugins.identity.core.utils.propertymap import mappable_fields
 from pas.plugins.identity.core.utils.svg import decode_upload
 from pas.plugins.identity.core.utils.svg import encode_upload
 from pas.plugins.identity.core.utils.svg import sanitize as sanitize_svg
+from pas.plugins.identity.core.vocabularies.groups import GroupsVocabularyFactory
 from plone import api
 from plone.registry import field as registry_field
 from plone.registry.interfaces import IRegistry
@@ -139,17 +140,62 @@ def check_propertymap(propertymap: dict[str, str]) -> None:
     :param propertymap: Claim path to Profile field, as supplied.
     :raises InvalidPropertyMap: When any target is not a mappable field.
     """
+    mappable = mappable_fields()
     unusable = sorted({
-        field for field in (propertymap or {}).values() if field not in MAPPABLE_FIELDS
+        field for field in (propertymap or {}).values() if field not in mappable
     })
     if not unusable:
         return
     raise InvalidPropertyMap(
         f"{', '.join(repr(name) for name in unusable)} cannot be written by a "
-        f"property map. A login writes {', '.join(MAPPABLE_FIELDS)}; an "
+        f"property map. A login writes {', '.join(mappable)}; an "
         "address arrives through the addresses of the profile and a portrait "
         "through the picture claim, neither of which is mapped."
     )
+
+
+class InvalidGroupMap(ValueError):
+    """Raised when a group map names a local group this site does not have."""
+
+
+def unknown_groups(groupmap: dict[str, str]) -> list[str]:
+    """Return the local groups a map names that a map cannot grant.
+
+    The terms of the groups vocabulary the form's picker offers, so the
+    picker and this check are one rule: every group PAS knows, except the
+    virtual ``AuthenticatedUsers`` nobody can be added to. A row mapped to an
+    empty string is how the control panel represents one an operator cleared
+    without deleting, and grants nothing; it is not a group to look for.
+
+    :param groupmap: Provider group to local group id.
+    :returns: The group ids not in the vocabulary, sorted.
+    """
+    named = {(local or "").strip() for local in (groupmap or {}).values()} - {""}
+    if not named:
+        return []
+    grantable = {term.value for term in GroupsVocabularyFactory(None)}
+    return sorted(named - grantable)
+
+
+def check_groupmap(groupmap: dict[str, str]) -> None:
+    """Refuse a group map naming a local group this site does not have.
+
+    Asked of what an operator submits, through the control panel or the API.
+    Not of :func:`set_providers`, which every other write goes through too:
+    deleting one provider rewrites the rest, and a group removed since one of
+    them was saved must not make that impossible.
+
+    :param groupmap: Provider group to local group id, as supplied.
+    :raises InvalidGroupMap: When any local group does not exist.
+    """
+    missing = unknown_groups(groupmap)
+    if missing:
+        raise InvalidGroupMap(
+            f"{', '.join(repr(group_id) for group_id in missing)}: no group on "
+            "this site a map can grant has that id. A group map names a local "
+            "group by its id; create the group first, or pick one that "
+            "exists."
+        )
 
 
 class InvalidSignInPolicy(ValueError):

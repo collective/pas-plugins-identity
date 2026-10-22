@@ -6,7 +6,7 @@ from pas.plugins.identity.core.controlpanel.export import document_filename
 from pas.plugins.identity.core.controlpanel.export import fragment_filename
 from pas.plugins.identity.core.controlpanel.export import provider_fragment
 from pas.plugins.identity.core.controlpanel.export import providers_document
-from pas.plugins.identity.core.controlpanel.interfaces import IProviderRecords
+from pas.plugins.identity.core.controlpanel.interfaces import IProviderForm
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.services.providers import EXPORT_ACTION
 from pas.plugins.identity.core.services.providers import EXPORT_ALL
@@ -40,12 +40,12 @@ class ProvidersGet(ProvidersService):
             return {
                 "@id": self._base(),
                 "items": [self._render(p) for p in get_providers()],
-                # The provider's own fields, serialized from
-                # `IProviderRecords` -- the same interface its registry
-                # records are bound to, so the form and the storage cannot
-                # describe different things. The driver's half comes from
-                # `@identity-drivers`, and the panel renders the two together.
-                "schema": jsonschema_for(IProviderRecords, self.context, self.request),
+                # The provider's own fields, serialized from `IProviderForm`
+                # -- the interface its registry records are bound to, with the
+                # group map's local side narrowed to a pick from this site's
+                # groups. The driver's half comes from `@identity-drivers`,
+                # and the panel renders the two together.
+                "schema": jsonschema_for(IProviderForm, self.context, self.request),
                 # Whether the caller may take an export. Said here so the panel
                 # offers its export actions only to somebody they would work
                 # for, rather than a button that can only be refused.

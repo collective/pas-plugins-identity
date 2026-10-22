@@ -716,7 +716,7 @@ class Toolbar extends Component {
                     tabIndex={0}
                     id="toolbar-personal"
                   >
-                    <UserAvatar size="30px" />
+                    <UserAvatar size="var(--identity-toolbar-avatar-size)" />
                   </button>
                 )}
               </div>

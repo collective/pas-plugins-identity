@@ -127,21 +127,30 @@ to one field on the person's profile, on every login.
 1. Open the provider and go to **Mapping**.
 2. Add a row. Type the **claim path** on the left—`name`, `blog`, or a dotted
    path such as `address.formatted` to read into an object the provider sent.
-3. Pick the **profile field** on the right. There are four:
+3. Pick the **profile field** on the right. The picker offers every field of
+   the site's user type and of the behaviors it enables. On the shipped type
+   that is four:
 
 | Field | Shown as |
 |---|---|
 | `fullname` | Full name |
-| `home_page` | Home page |
 | `description` | Biography |
+| `home_page` | Home page |
 | `location` | Location |
 
 4. Save.
 
 The claim path is text because only the provider knows what it publishes; the
-target is a picker because these four are the only fields a login writes. A row
+target is a picker because a login writes only the fields it offers. A row
 naming anything else is refused, with a 400 from the API and an error from
 GenericSetup on import.
+
+A behavior added to the user type is a target as soon as it is enabled. A claim
+that already has the field's shape, such as a list of links for a list field,
+is written as the provider sent it. The field validates the value first: a
+value it refuses is logged and skipped, and the rest of the login goes on. A
+profile that ships such a row enables the behavior before it declares the
+provider.
 
 ```{note}
 Two things a login writes are deliberately **not** in that list, and neither

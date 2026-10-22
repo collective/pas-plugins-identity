@@ -1,11 +1,13 @@
 """``PATCH @identity-providers`` -- reorder them all, or update one in place."""
 
 from pas.plugins.identity.core.controlpanel import check_address_preference
+from pas.plugins.identity.core.controlpanel import check_groupmap
 from pas.plugins.identity.core.controlpanel import check_propertymap
 from pas.plugins.identity.core.controlpanel import check_signin_policy
 from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.controlpanel import InvalidAddressPreference
 from pas.plugins.identity.core.controlpanel import InvalidColor
+from pas.plugins.identity.core.controlpanel import InvalidGroupMap
 from pas.plugins.identity.core.controlpanel import InvalidPropertyMap
 from pas.plugins.identity.core.controlpanel import InvalidSignInPolicy
 from pas.plugins.identity.core.controlpanel import set_providers
@@ -119,6 +121,10 @@ class ProvidersPatch(ProvidersService):
                 return self._error(400, "Invalid property map", str(error))
             target.propertymap = dict(data["propertymap"] or {})
         if "groupmap" in data:
+            try:
+                check_groupmap(data["groupmap"] or {})
+            except InvalidGroupMap as error:
+                return self._error(400, "Invalid group map", str(error))
             target.groupmap = dict(data["groupmap"] or {})
         if "config" in data:
             return self._apply_config(target, data["config"])

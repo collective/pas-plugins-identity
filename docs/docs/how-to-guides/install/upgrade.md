@@ -17,7 +17,7 @@ Take a new release into a site that already has this add-on.
 <!-- source: backend/src/pas/plugins/identity/server/profiles/default/metadata.xml -->
 <!-- source: backend/src/pas/plugins/identity/server/upgrades/ -->
 
-`pas.plugins.identity:default` is at profile version **1010** and declares
+`pas.plugins.identity:default` is at profile version **1011** and declares
 upgrade steps, so `portal_setup` offers them to a site installed against an
 earlier release.
 
@@ -33,6 +33,7 @@ earlier release.
 | 1008 | Adds the `missing_fields` column to the identity catalog and reindexes every profile into it, so a profile gate explains a hold with the same list the profile itself counted. |
 | 1009 | Adds Plone's `image_scales` column to the identity catalog and reindexes every profile into it, so `@users` builds a profile's picture URL without loading the profile. |
 | 1010 | Activates `identity_profile` for `IUserIntrospection`, so `api.user.get_users()` and `listMembers()` include users who have a profile and no `source_users` account. |
+| 1011 | Guards the login and group memberships of a profile with View Account Details, and maps it onto every profile already in the site. |
 
 `pas.plugins.identity.server:default` is at profile version **1001**.
 

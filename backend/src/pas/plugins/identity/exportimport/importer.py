@@ -59,10 +59,12 @@ from pas.plugins.identity.core.principal_types import user_portal_type
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from pas.plugins.identity.core.verification import record_verified_addresses
+from pas.plugins.identity.exportimport.fields import import_extra_fields
 from pas.plugins.identity.exportimport.schema import ExportImportError
 from pas.plugins.identity.exportimport.schema import GROUP_FIELDS
 from pas.plugins.identity.exportimport.schema import GROUP_ROLES_FIELD
 from pas.plugins.identity.exportimport.schema import Result
+from pas.plugins.identity.exportimport.schema import USER_EXTRA_FIELDS
 from pas.plugins.identity.exportimport.schema import USER_FIELDS
 from pas.plugins.identity.exportimport.schema import validate
 from plone import api
@@ -199,6 +201,7 @@ def _import_user(
         return
 
     fields = {name: user.get(name) or "" for name in USER_FIELDS}
+    extra = user.get(USER_EXTRA_FIELDS) or {}
     login = user.get("login") or userid
 
     if existing is not None:
@@ -208,10 +211,12 @@ def _import_user(
             existing.login = login
             existing.emails = tuple(emails)
             touched[(user_portal_type(), "userid", userid)] = None
+        result.skipped.extend(import_extra_fields(existing, userid, extra, dry_run))
         result.users.append(userid)
         return
 
     if dry_run:
+        result.skipped.extend(import_extra_fields(None, userid, extra, dry_run))
         result.users.append(userid)
         return
 
@@ -219,7 +224,7 @@ def _import_user(
     if container is None:  # pragma: no cover - refused upstream
         result.skipped.append(f"user {userid}: no container to file it in")
         return
-    api.content.create(
+    created = api.content.create(
         container=container,
         type=user_portal_type(),
         id=userid,
@@ -228,6 +233,9 @@ def _import_user(
         emails=tuple(emails),
         **fields,
     )
+    # After creation rather than as keywords: a behavior's field is written
+    # through its own interface, which needs the object to exist.
+    result.skipped.extend(import_extra_fields(created, userid, extra, dry_run))
     result.users.append(userid)
 
 

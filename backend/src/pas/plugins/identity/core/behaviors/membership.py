@@ -98,7 +98,7 @@ class IGroupMembership(model.Schema):
     # Not ``.edit``: see permissions.zcml. The owner of a profile holds the
     # edit permission on it, and this field is what grants roles.
     write_permission(group_ids="pas.plugins.identity.content.editgroups")
-    read_permission(group_ids="pas.plugins.identity.content.view")
+    read_permission(group_ids="pas.plugins.identity.content.viewaccount")
 
 
 __all__ = ["FIELDSET", "IGroupMembership"]

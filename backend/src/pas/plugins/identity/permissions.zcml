@@ -98,6 +98,19 @@
       title="pas.plugins.identity: View Personal Identifiable Information"
       />
 
+  <!-- The login and the groups a user is in are account data, not profile
+       data. Anybody who may read a public Profile would otherwise read the
+       login that signs the account in, and who holds Site Administrator.
+       Kept apart from ``View Profile`` so a site can publish the name, the
+       biography and the picture without publishing either.
+
+       The workflow maps it in every state, with the roles ``View Profile``
+       holds today, so a site that does not opt in sees no change. -->
+  <permission
+      id="pas.plugins.identity.content.viewaccount"
+      title="pas.plugins.identity: View Account Details"
+      />
+
   <!-- Exporting the providers is not managing them.
 
        An export is a backup of the provider records, and a backup that left

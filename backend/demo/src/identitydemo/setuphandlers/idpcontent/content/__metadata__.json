@@ -63,6 +63,13 @@
           "Site Administrator"
         ]
       },
+      "pas.plugins.identity: View Account Details": {
+        "acquire": false,
+        "roles": [
+          "Manager",
+          "Site Administrator"
+        ]
+      },
       "pas.plugins.identity: View Personal Identifiable Information": {
         "acquire": false,
         "roles": [

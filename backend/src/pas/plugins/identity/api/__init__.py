@@ -100,7 +100,7 @@ from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.interfaces import ProviderEmail
 from pas.plugins.identity.core.interfaces import ProviderUnusable
 from pas.plugins.identity.core.store import IdentityRecord
-from pas.plugins.identity.core.utils.propertymap import MAPPABLE_FIELDS
+from pas.plugins.identity.core.utils.propertymap import UNMAPPABLE_FIELDS
 from pas.plugins.identity.server.events import ClientAuthorized
 from pas.plugins.identity.server.events import IClientAuthorized
 
@@ -109,8 +109,8 @@ from pas.plugins.identity.server.events import IClientAuthorized
 # The docstring above is where the four kinds are named.
 __all__ = [
     "GROUP",
-    "MAPPABLE_FIELDS",
     "PROFILE",
+    "UNMAPPABLE_FIELDS",
     "USERID_SOURCES",
     "BaseDriver",
     "Claims",

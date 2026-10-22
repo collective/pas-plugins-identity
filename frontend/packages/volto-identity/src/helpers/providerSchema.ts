@@ -265,9 +265,9 @@ export function providerSchema(
         // A picker over the fields a login writes, not a text box. The two
         // sides of this row are asymmetric for the same reason the group
         // map's are: a claim path is whatever the far end publishes and
-        // nothing here can enumerate it, while the target is four fields
-        // this package knows by name.
-        vocabulary: targetVocabulary(served),
+        // nothing here can enumerate it, while the target is a field of
+        // the site's user type, which the backend serves.
+        vocabulary: targetVocabulary(served, 'propertymap'),
       },
     ),
   };
@@ -285,7 +285,13 @@ export function providerSchema(
       schema: rowSchema(
         intl.formatMessage(messages.groupmapRow),
         { name: 'group', title: intl.formatMessage(messages.providerGroup) },
-        { name: 'local', title: intl.formatMessage(messages.localGroup) },
+        {
+          name: 'local',
+          title: intl.formatMessage(messages.localGroup),
+          // A pick from this site's groups, for the reason the property
+          // map's target is one: a typed id with a typo granted nothing.
+          vocabulary: targetVocabulary(served, 'groupmap'),
+        },
       ),
     };
   }
@@ -351,21 +357,24 @@ interface VocabularyRef {
 }
 
 /**
- * Read the vocabulary the backend serves for a property map's target.
+ * Read the vocabulary the backend serves for one mapping's values.
  *
- * `IProviderRecords.propertymap` is a `Dict` whose values are a `Choice` over
- * `pas.plugins.identity.UserFields`, and `plone.restapi` serializes a named
- * vocabulary as the URL that enumerates it. Lifted from the served schema
- * rather than assembled here: the name of the vocabulary, and whether there
- * is one at all, are the backend's to say.
+ * Both mappings are a `Dict` whose values are a `Choice` on the served
+ * schema: the property map's over `pas.plugins.identity.UserFields`, the
+ * group map's over `pas.plugins.identity.Groups`. `plone.restapi`
+ * serializes a named vocabulary as the URL that enumerates it. Lifted from
+ * the served schema rather than assembled here: the name of the vocabulary,
+ * and whether there is one at all, are the backend's to say.
  *
  * @param served The provider schema from `@identity-providers`.
+ * @param mapping Which mapping, `propertymap` or `groupmap`.
  * @returns The vocabulary reference, or undefined when none is served.
  */
 function targetVocabulary(
   served: JsonSchema | undefined,
+  mapping: 'propertymap' | 'groupmap',
 ): VocabularyRef | undefined {
-  const value = (served?.properties?.propertymap as any)?.value_type;
+  const value = (served?.properties?.[mapping] as any)?.value_type;
   const reference = value?.additional?.vocabulary;
   return reference?.['@id'] ? reference : undefined;
 }

@@ -1,0 +1,1 @@
+Documented that a group map's local group is picked from the site's groups and checked by the API, and what a profile import does with a group that does not exist yet. @ericof

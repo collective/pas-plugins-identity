@@ -13,12 +13,13 @@ wrong.
 """
 
 from pas.plugins.identity.core.controlpanel import check_propertymap
+from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.controlpanel import InvalidPropertyMap
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.controlpanel.interfaces import IProviderRecords
 from pas.plugins.identity.core.services.schema import jsonschema_for
-from pas.plugins.identity.core.utils.propertymap import MAPPABLE_FIELDS
+from pas.plugins.identity.core.utils.propertymap import mappable_fields
 from pas.plugins.identity.core.vocabularies.userfields import USER_FIELDS_VOCABULARY
 from zope.schema.interfaces import IChoice
 
@@ -83,8 +84,40 @@ class TestTheRegistryRefusesADeadRow:
 
         message = str(caught.value)
         assert "portrait" in message
-        for name in MAPPABLE_FIELDS:
+        for name in mappable_fields():
             assert name in message
+
+
+class TestARowNamingABehaviorField:
+    """#143: the registry follows the user type, behaviors included."""
+
+    def _store(self, propertymap: dict) -> None:
+        """Store one provider carrying this map.
+
+        :param propertymap: The map to store.
+        """
+        set_providers([
+            ProviderConfig(
+                provider_id="plone-org",
+                driver_id="plone-identity",
+                title="Plone",
+                propertymap=propertymap,
+            )
+        ])
+
+    def test_is_stored_when_the_behavior_is_enabled(self, extra_profile_fields):
+        self._store({"social_links": "social_links"})
+
+        assert get_provider("plone-org").propertymap == {"social_links": "social_links"}
+
+    def test_is_refused_when_it_is_not(self, portal):
+        """A profile that maps a behavior's field enables the behavior first."""
+        with pytest.raises(InvalidPropertyMap):
+            self._store({"social_links": "social_links"})
+
+    def test_a_readonly_field_is_refused(self, extra_profile_fields):
+        with pytest.raises(InvalidPropertyMap):
+            self._store({"badge": "badge"})
 
 
 class TestWhatTheEndpointServes:

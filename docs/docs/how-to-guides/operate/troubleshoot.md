@@ -144,8 +144,9 @@ In order:
 2. {guilabel}`Groups arrive in the claim` matches the claim name the provider uses.
 3. The group map has a row for that provider-side name. An unmapped name grants
    nothing, by design.
-4. The local group named on the right actually exists. A row pointing at a
-   missing group is skipped and logged.
+4. The local group named on the right actually exists. The control panel
+   offers only groups that exist, but a profile's import can store a row
+   naming one that does not; such a row is skipped and logged at every login.
 5. {guilabel}`Let this provider set group membership` is on.
 
 ## A group restriction refuses everybody

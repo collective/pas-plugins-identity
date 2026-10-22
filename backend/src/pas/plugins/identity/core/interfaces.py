@@ -254,16 +254,13 @@ class IProfileEnricher(Interface):
     installed, not a destination it configured, and a site that does not want
     one does not install it.
 
-    **Why this exists.** The claim-to-field property map carries a scalar from
-    a provider document to one of four Profile fields, and that is all it can
-    do. It cannot transform a value, and it cannot write a field it does not
-    already know about --
-    :data:`~pas.plugins.identity.core.profiles.WRITABLE_FIELDS` is a closed
-    set, and
-    :func:`~pas.plugins.identity.core.profiles._scalar` reads a list or a
+    **Why this exists.** The claim-to-field property map carries a claim from
+    a provider document to a field of the user type, as the provider sent it,
+    and that is all it can do. It cannot transform a value: a claim whose
+    shape the field refuses is skipped, and a text field reads a list or a
     mapping as an absent claim rather than writing a repr into somebody's
-    location. An add-on whose behavior adds a *list* field to the Profile can
-    therefore express nothing through the map, however the payload is shaped.
+    location. Whatever needs reshaping, combining several claims, or a lookup
+    elsewhere is an enricher's job.
 
     **Where it runs.** After the package's own writes and after the addresses
     have been recorded, so the Profile an enricher sees is the one the login
