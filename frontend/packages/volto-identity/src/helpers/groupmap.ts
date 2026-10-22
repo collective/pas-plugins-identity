@@ -5,14 +5,11 @@
  * {@link module:helpers/rowmap}; what belongs here is only the names this
  * mapping's two halves go by.
  *
- * Both halves are free text, and only one of them has to be. The provider
- * side is whatever the far end's directory happens to call a group, which
- * this site cannot enumerate. The local side names a group here, and a row
- * naming one that does not exist grants nothing -- the backend skips it and
- * logs -- but a profile may legitimately ship a map before the group it
- * points at, so the field stays text rather than a `Choice` that would refuse
- * the import. Compare the property map, whose target is a field of the
- * site's user type and is a picker.
+ * The provider side is free text: it is whatever the far end's directory
+ * happens to call a group, which this site cannot enumerate. The local side
+ * is a pick from this site's groups, served by the backend, and the API
+ * refuses a group that does not exist. Only a profile's import may name one,
+ * because it may ship a map before the group it points at.
  * @module helpers/groupmap
  */
 

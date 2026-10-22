@@ -2,12 +2,14 @@
 
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.controlpanel import check_address_preference
+from pas.plugins.identity.core.controlpanel import check_groupmap
 from pas.plugins.identity.core.controlpanel import check_propertymap
 from pas.plugins.identity.core.controlpanel import check_signin_policy
 from pas.plugins.identity.core.controlpanel import get_provider
 from pas.plugins.identity.core.controlpanel import get_providers
 from pas.plugins.identity.core.controlpanel import InvalidAddressPreference
 from pas.plugins.identity.core.controlpanel import InvalidColor
+from pas.plugins.identity.core.controlpanel import InvalidGroupMap
 from pas.plugins.identity.core.controlpanel import InvalidPropertyMap
 from pas.plugins.identity.core.controlpanel import InvalidProviderId
 from pas.plugins.identity.core.controlpanel import InvalidSignInPolicy
@@ -113,6 +115,11 @@ class ProvidersPost(ProvidersService):
             check_propertymap(data.get("propertymap", {}) or {})
         except InvalidPropertyMap as error:
             return self._error(400, "Invalid property map", str(error))
+
+        try:
+            check_groupmap(data.get("groupmap", {}) or {})
+        except InvalidGroupMap as error:
+            return self._error(400, "Invalid group map", str(error))
         return None
 
     def _test_connection(self, provider_id: str) -> JSONDict:

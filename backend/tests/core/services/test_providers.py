@@ -950,6 +950,66 @@ class TestPropertyMapThroughTheAPI(ControlPanelCase):
         assert rendered["error"]["type"] == "Invalid provider id"
 
 
+class TestGroupMapThroughTheAPI(ControlPanelCase):
+    """#144: the local side names a group the site has, or is refused."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_, manager, configured) -> None:
+        self.portal = portal
+        self.request = request_
+
+    def test_created_with_a_group_the_site_has(self):
+        self.call(
+            ProvidersPost,
+            payload={
+                "id": "keycloak",
+                "driver": "keycloak",
+                "groupmap": {"editors": "Site Administrators"},
+            },
+        )
+
+        assert get_provider("keycloak").groupmap == {"editors": "Site Administrators"}
+
+    def test_a_group_it_does_not_have_is_refused(self):
+        rendered = self.call(
+            ProvidersPost,
+            payload={
+                "id": "keycloak",
+                "driver": "keycloak",
+                "groupmap": {"editors": "Site Admins"},
+            },
+        )
+
+        assert self.status() == 400
+        assert rendered["error"]["type"] == "Invalid group map"
+        assert "Site Admins" in rendered["error"]["message"]
+        assert get_provider("keycloak") is None
+
+    def test_patched_in_place(self):
+        self.call(ProvidersPatch, "dex", payload={"groupmap": {"staff": "Reviewers"}})
+
+        assert get_provider("dex").groupmap == {"staff": "Reviewers"}
+
+    def test_a_patch_naming_a_missing_group_is_refused(self):
+        """And the provider keeps the map it had."""
+        before = get_provider("dex").groupmap
+
+        rendered = self.call(
+            ProvidersPatch, "dex", payload={"groupmap": {"staff": "Nope"}}
+        )
+
+        assert rendered["error"]["type"] == "Invalid group map"
+        assert get_provider("dex").groupmap == before
+
+    def test_the_listing_serves_the_picker(self):
+        rendered = self.call(ProvidersGet)
+        value_type = rendered["schema"]["properties"]["groupmap"]["value_type"]
+
+        assert value_type["additional"]["vocabulary"]["@id"].endswith(
+            "/@vocabularies/pas.plugins.identity.Groups"
+        )
+
+
 class TestGenericSetupRoundTrip(ControlPanelCase):
     """The registry records are the single source of truth, and GenericSetup
     carries them."""

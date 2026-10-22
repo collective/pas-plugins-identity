@@ -131,4 +131,18 @@
       handler=".providers.sanitize_icon_record"
       />
 
+  <!-- A group map naming a group this site does not have. The control panel
+       and the API refuse one; a profile's import may legitimately ship the
+       map before the group, so it is logged as it is written rather than
+       refused. Same two events, for the same reason. See .providers. -->
+  <subscriber
+      for="plone.registry.interfaces.IRecordAddedEvent"
+      handler=".providers.warn_unknown_groups"
+      />
+
+  <subscriber
+      for="plone.registry.interfaces.IRecordModifiedEvent"
+      handler=".providers.warn_unknown_groups"
+      />
+
 </configure>

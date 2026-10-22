@@ -20,7 +20,10 @@ import {
   suggestedProviderId,
   toFormData,
 } from './providerSchema';
-import { USER_FIELDS_VOCABULARY } from '../constants/vocabularies';
+import {
+  GROUPS_VOCABULARY,
+  USER_FIELDS_VOCABULARY,
+} from '../constants/vocabularies';
 import type { Driver, VoltoSchema } from '../types';
 
 const intl = {
@@ -28,7 +31,7 @@ const intl = {
 } as any;
 
 /**
- * What `@identity-providers` sends: `IProviderRecords`, serialized.
+ * What `@identity-providers` sends: `IProviderForm`, serialized.
  *
  * Including `driver`, `propertymap` and `groupmap`, which it really does
  * send -- they are fields of a provider's storage. Leaving them out of this
@@ -61,9 +64,13 @@ const SERVED = {
         schema: { title: 'Provider group', type: 'string' },
         additional: {},
       },
+      // The local side is a `Choice` over the site's groups on the served
+      // schema, though not on the records it is stored in.
       value_type: {
-        schema: { title: 'Local group', type: 'string' },
-        additional: {},
+        schema: { title: 'Local group', type: 'string', factory: 'Choice' },
+        additional: {
+          vocabulary: { '@id': `/@vocabularies/${GROUPS_VOCABULARY}` },
+        },
       },
     },
     icon: { title: 'Icon', type: 'string', widget: 'provider_icon' },
@@ -280,15 +287,23 @@ describe('providerSchema', () => {
     expect(property.properties.claim).not.toHaveProperty('vocabulary');
   });
 
-  it('leaves both halves of the group map free text', () => {
-    // The local side names a group that may not exist yet: a profile can
-    // ship a map before the group it points at, and the login skips a row it
-    // cannot resolve rather than refusing the map.
+  it("makes the group map's local side a picker over the served groups", () => {
+    // A typed id with a typo, or a title where the id belongs, saved without
+    // complaint and granted nothing at every login.
+    const schema = providerSchema(SERVED, DRIVERS, 'oidc', false, intl);
+    const group = schema.properties.groupmap?.schema as VoltoSchema;
+
+    expect((group.properties.local as any).vocabulary['@id']).toBe(
+      `/@vocabularies/${GROUPS_VOCABULARY}`,
+    );
+  });
+
+  it("leaves the group map's provider side a text box", () => {
+    // The far end's own group names, which nothing here enumerates.
     const schema = providerSchema(SERVED, DRIVERS, 'oidc', false, intl);
     const group = schema.properties.groupmap?.schema as VoltoSchema;
 
     expect(group.properties.group).not.toHaveProperty('vocabulary');
-    expect(group.properties.local).not.toHaveProperty('vocabulary');
   });
 
   it('falls back to a text box when no vocabulary is served', () => {
@@ -299,14 +314,17 @@ describe('providerSchema', () => {
       properties: {
         ...SERVED.properties,
         propertymap: { title: 'Property map', type: 'object' },
+        groupmap: { title: 'Group map', type: 'object' },
       },
     };
 
     const schema = providerSchema(older, DRIVERS, 'oidc', false, intl);
     const property = schema.properties.propertymap?.schema as VoltoSchema;
+    const group = schema.properties.groupmap?.schema as VoltoSchema;
 
     expect(property.properties.field).not.toHaveProperty('vocabulary');
     expect(property.properties.field.type).toBe('string');
+    expect(group.properties.local).not.toHaveProperty('vocabulary');
   });
 
   it('drops the served driver field rather than merging it', () => {

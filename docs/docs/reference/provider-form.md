@@ -86,24 +86,29 @@ the **Icon** field shows it. See {doc}`shipped-drivers`.
 | Field | Registry key | Type | Default |
 |---|---|---|---|
 | Property map | `propertymap` | `Dict` of claim path → `Choice` | `{}` |
-| Group map | `groupmap` | `Dict` | `{}` |
+| Group map | `groupmap` | `Dict` of provider group → `Choice` on the form, text in the registry | `{}` |
+
+<!-- source: backend/src/pas/plugins/identity/core/controlpanel/interfaces.py (IProviderForm) -->
 
 Composed in the frontend rather than served as a fieldset. The group map appears
 only for a driver that has a group claim.
 
-Three of the four columns are text and one is a picker, which is the asymmetry
-worth knowing:
+The two columns that name something on the far end are text, and the two that
+name something on this site are pickers, which is the asymmetry worth knowing:
 
 | Column | Widget | Why |
 |---|---|---|
 | Claim path | Text | Whatever the provider publishes; nothing here can enumerate it. |
 | Profile field | Picker | The fields of the site's user type and its behaviors that a login writes, served as `pas.plugins.identity.UserFields`. |
 | Provider group | Text | The far end's own group names. |
-| Local group | Text | A profile may ship a map before the group it names exists. |
+| Local group | Picker | The site's groups, served as `pas.plugins.identity.Groups`. `AuthenticatedUsers` is not offered: nobody can be added to it. |
 
-A row whose target is anything else is refused—by the API with a 400, and by
-GenericSetup on import. See {doc}`/concepts/profiles-and-groups` for what a
-login does with the four.
+A property map row whose target is anything else is refused—by the API with a
+400, and by GenericSetup on import. A group map row naming a group the site does
+not have is refused by the API with a 400, and stored by GenericSetup with a
+warning in the log: a profile may ship a map before the step that creates its
+group. See {doc}`/concepts/profiles-and-groups` for what a
+login does with both maps.
 
 ## Settings tab
 
