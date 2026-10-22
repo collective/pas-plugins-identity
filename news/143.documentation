@@ -1,1 +1,0 @@
-Documented that a property map can write any field of the site's user type and its behaviors, including list and mapping fields, in the provider guide, the profile enricher guide and the settings, provider form, driver and Python API references, and the `fields` key of a principal document. @ericof

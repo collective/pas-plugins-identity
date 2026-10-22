@@ -9,6 +9,20 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0a14 (2026-10-22)
+
+
+### Breaking
+
+- Removed `MAPPABLE_FIELDS` from `pas.plugins.identity.api` and `pas.plugins.identity.core.utils.propertymap`, and `WRITABLE_FIELDS` from `pas.plugins.identity.core.profiles`, because the fields a property map may write now depend on the site's user type. Use `mappable_fields()` from `pas.plugins.identity.core.utils.propertymap` for the fields a map may write, or `api.UNMAPPABLE_FIELDS` for the ones it never may. @ericof [#143](https://github.com/collective/pas-plugins-identity/issues/143)
+
+
+### Feature
+
+- Let a provider's property map write any field of the site's user type, including the fields of the behaviors it enables, instead of only `fullname`, `home_page`, `description` and `location`. A claim that already has the field's shape, such as a list of links for a list field, is written as the provider sent it, after the field validates it; a value the field refuses is logged and skipped. The control panel's picker, the registry and a profile's `registry.xml` accept the same fields, so a profile that maps a behavior's field enables the behavior first. The login, the userid, membership, roles, addresses and the portrait are still never written by a map. A principal document now also carries every field a map may write beyond those four, under an optional `fields` key in the JSON shape `plone.restapi` uses, so an export and import between sites keeps them; a field the importing site's user type lacks is reported and skipped. @ericof [#143](https://github.com/collective/pas-plugins-identity/issues/143)
+- Let the control panel pick a group map's local group from the site's groups, instead of taking a group id typed by hand. The `@identity-providers` API now refuses a group map naming a group the site does not have, with a 400 that names it, so a typo or a group's title in place of its id no longer saves and then grants nothing at every login. A profile's `registry.xml` may still name a group that does not exist yet, because a later step may create it; the import stores the row and logs a warning. @ericof [#144](https://github.com/collective/pas-plugins-identity/issues/144)
+- Added the View Account Details permission, which guards a profile's login and group memberships separately from its public fields. A site can now show the name, biography and picture of a profile to Anonymous without showing the login or the groups. Existing sites see no change until they grant it differently, and upgrade step 1011 maps it onto profiles already in the site. @ericof [#145](https://github.com/collective/pas-plugins-identity/issues/145)
+
 ## 1.0.0a13 (2026-09-30)
 
 

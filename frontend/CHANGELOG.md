@@ -8,6 +8,19 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0-alpha.14 (2026-10-22)
+
+
+### Feature
+
+- Made the local group in a provider's group map a picker over the site's groups, served by the backend. @ericof [#144](https://github.com/collective/pas-plugins-identity/issues/144)
+- Drew the avatar on the toolbar's personal-tools button at 50px instead of 30px, and made the size a CSS variable, `--identity-toolbar-avatar-size`. A site that already sets `--toolbar-avatar-size` keeps its size, and no longer needs its own rule with `!important` to override the avatar's inline width and height. @ericof 
+
+
+### Internal
+
+- Updated code comments that described the property map's target as four fixed fields. @ericof [#143](https://github.com/collective/pas-plugins-identity/issues/143)
+
 ## 1.0.0-alpha.13 (2026-09-30)
 
 No significant changes.

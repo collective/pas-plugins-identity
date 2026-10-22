@@ -1,1 +1,0 @@
-Drew the avatar on the toolbar's personal-tools button at 50px instead of 30px, and made the size a CSS variable, `--identity-toolbar-avatar-size`. A site that already sets `--toolbar-avatar-size` keeps its size, and no longer needs its own rule with `!important` to override the avatar's inline width and height. @ericof
