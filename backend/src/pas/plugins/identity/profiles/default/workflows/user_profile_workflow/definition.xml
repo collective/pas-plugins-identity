@@ -23,6 +23,7 @@
   <permission>pas.plugins.identity: Edit Profile Login</permission>
   <permission>pas.plugins.identity: View Profile</permission>
   <permission>pas.plugins.identity: View Personal Identifiable Information</permission>
+  <permission>pas.plugins.identity: View Account Details</permission>
 
   <!-- Everything stock Plone grants ``Owner`` site-wide with acquisition on.
        Managing a permission here is the only way to stop it reaching the user
@@ -142,6 +143,13 @@
       <permission-role>Owner</permission-role>
     </permission-map>
     <permission-map acquired="False"
+                    name="pas.plugins.identity: View Account Details"
+    >
+      <permission-role>Manager</permission-role>
+      <permission-role>Site Administrator</permission-role>
+      <permission-role>Owner</permission-role>
+    </permission-map>
+    <permission-map acquired="False"
                     name="pas.plugins.identity: View Personal Identifiable Information"
     >
       <permission-role>Manager</permission-role>
@@ -255,6 +263,14 @@
       <permission-role>Member</permission-role>
     </permission-map>
     <permission-map acquired="False"
+                    name="pas.plugins.identity: View Account Details"
+    >
+      <permission-role>Manager</permission-role>
+      <permission-role>Site Administrator</permission-role>
+      <permission-role>Owner</permission-role>
+      <permission-role>Member</permission-role>
+    </permission-map>
+    <permission-map acquired="False"
                     name="pas.plugins.identity: View Personal Identifiable Information"
     >
       <permission-role>Manager</permission-role>
@@ -354,6 +370,12 @@
     </permission-map>
     <permission-map acquired="False"
                     name="pas.plugins.identity: View Profile"
+    >
+      <permission-role>Manager</permission-role>
+      <permission-role>Site Administrator</permission-role>
+    </permission-map>
+    <permission-map acquired="False"
+                    name="pas.plugins.identity: View Account Details"
     >
       <permission-role>Manager</permission-role>
       <permission-role>Site Administrator</permission-role>

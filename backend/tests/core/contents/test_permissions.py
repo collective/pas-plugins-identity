@@ -31,6 +31,7 @@ import pytest
 EDIT = "pas.plugins.identity: Edit Profile"
 VIEW = "pas.plugins.identity: View Profile"
 VIEW_PII = "pas.plugins.identity: View Personal Identifiable Information"
+VIEW_ACCOUNT = "pas.plugins.identity: View Account Details"
 
 
 @pytest.fixture
@@ -180,3 +181,65 @@ class TestDeactivated:
     def test_an_administrator_keeps_it(self):
         """The data is kept, and somebody has to be able to look at it."""
         assert _may("admin", VIEW, self.profiles["alice"])
+
+
+class TestAccountDetailsDefaultToViewProfile:
+    """Until a site changes its workflow, ``login`` and ``group_ids`` are read
+    by exactly the roles that read the rest of the Profile.
+
+    The split is something a site opts into, by changing the workflow. Shipping
+    it must not change who reads a login today, so the mapping copies
+    ``View Profile`` state by state. One consequence is written down rather
+    than hidden: ``Member`` reads the login of a complete Profile by default,
+    as it reads the name. A site that does not want that removes ``Member``
+    from the workflow.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, profiles) -> None:
+        self.profiles = profiles
+
+    @pytest.mark.parametrize("transition", [None, "complete", "deactivate"])
+    @pytest.mark.parametrize("userid", ["alice", "bob"])
+    def test_the_same_answer_as_view_profile(self, transition, userid):
+        """Owner and Member, in each state the workflow has."""
+        profile = self.profiles["alice"]
+        if transition:
+            api.content.transition(obj=profile, transition=transition)
+
+        assert _may(userid, VIEW_ACCOUNT, profile) == _may(userid, VIEW, profile)
+
+    def test_a_member_reads_the_login_of_a_complete_profile(self):
+        """The default, written down. See the class docstring."""
+        api.content.transition(obj=self.profiles["alice"], transition="complete")
+
+        assert _may("bob", VIEW_ACCOUNT, self.profiles["alice"])
+
+
+class TestAccountDetailsOnAGroup:
+    """A UserGroup shares the membership behavior, so its ``group_ids`` is
+    declared with the same permission. The group workflow does not map
+    ``View Profile``, so the new permission falls to the site rolemap, which
+    names the same roles. Nothing about a group changes."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, acl_users, make_group) -> None:
+        acl_users.source_users.addUser("bob", "bob", "placeholder-password")
+        api.user.grant_roles(username="bob", roles=["Member"])
+        api.user.create(
+            email="boss@example.com",
+            username="boss",
+            password="boss-placeholder-password",
+            roles=("Site Administrator",),
+        )
+        self.group = make_group("staff")
+
+    @pytest.mark.parametrize("userid", ["bob", "boss"])
+    def test_the_same_answer_as_view_profile(self, userid):
+        assert _may(userid, VIEW_ACCOUNT, self.group) == _may(userid, VIEW, self.group)
+
+    def test_a_site_administrator_reads_it(self):
+        assert _may("boss", VIEW_ACCOUNT, self.group)
+
+    def test_a_member_does_not(self):
+        assert not _may("bob", VIEW_ACCOUNT, self.group)

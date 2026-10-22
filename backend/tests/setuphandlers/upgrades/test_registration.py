@@ -11,7 +11,7 @@ from . import PROFILE
 
 
 #: The version a site ends at once every step has run.
-LATEST = "1010"
+LATEST = "1011"
 
 
 class TestTheStepsAreRegistered:

@@ -10,7 +10,7 @@ myst:
 
 # Permissions
 
-The ten permissions the package declares, and who holds them after a default
+The eleven permissions the package declares, and who holds them after a default
 install.
 
 <!-- source: backend/src/pas/plugins/identity/permissions.zcml -->
@@ -27,6 +27,7 @@ install.
 | `pas.plugins.identity.content.editroles` | Edit Group Global Roles | **Manager** |
 | `pas.plugins.identity.content.view` | View Profile | Manager, Site Administrator |
 | `pas.plugins.identity.content.viewpii` | View Personal Identifiable Information | Manager, Site Administrator |
+| `pas.plugins.identity.content.viewaccount` | View Account Details | Manager, Site Administrator |
 | `pas.plugins.identity.providers.export` | Export Identity Providers | **Manager** |
 
 Every one is declared with `acquire="False"`.
@@ -53,8 +54,8 @@ happens to be. Stating the permission with no roles pins it.
 
 ## The field permissions
 
-`content.edit`, `content.editgroups`, `content.editlogin`, `content.view` and
-`content.viewpii` are field permissions declared on the Profile schema and on
+`content.edit`, `content.editgroups`, `content.editlogin`, `content.view`,
+`content.viewaccount` and `content.viewpii` are field permissions declared on the Profile schema and on
 its behaviors. Each is also managed by `user_profile_workflow`, which decides
 who may read and write a Profile in each of its states.
 
@@ -112,6 +113,29 @@ consult a field permission at all.
 
 `content.viewpii` is separate from `content.view` so a site can let members find
 each other without publishing everybody's email address.
+
+### Account details are their own permission
+
+<!-- source: backend/src/pas/plugins/identity/core/contents/profile.py -->
+<!-- source: backend/src/pas/plugins/identity/core/behaviors/membership.py -->
+
+`content.viewaccount`, titled **View Account Details**, guards `login` and
+`group_ids` on a Profile. `content.view` guards the public fields. A site that
+opens those to Anonymous would otherwise open the login that signs the account
+in, and the groups that decide which roles it holds, along with them.
+
+`user_profile_workflow` maps it in every state, with the roles `View Profile`
+holds in that state. A site that does not change its workflow sees no change.
+
+One consequence is stated here rather than left implicit: `Member` reads the
+login and the groups of a `complete` Profile by default, as it reads the name.
+To take that away, remove `Member` from the View Account Details map in the
+`complete` state.
+
+A group's `group_ids` carries the same permission, because a group and a user
+share the membership behavior. The group workflow does not map `View Profile`,
+so the permission falls to the site rolemap, which names Manager and Site
+Administrator, as `View Profile` did.
 
 The workflow never grants it to `Member`, in any state.
 

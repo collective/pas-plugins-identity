@@ -47,7 +47,7 @@ member.
 
 | Field | Type | Required | Declared in | Read permission | Write permission |
 |---|---|---|---|---|---|
-| `login` | `TextLine` | yes | the type | View Profile | **Edit Profile Login** |
+| `login` | `TextLine` | yes | the type | View Account Details | **Edit Profile Login** |
 | `fullname` | `TextLine` | yes | the type | View Profile | Edit Profile |
 | `description` | `Text` | no | the type | View Profile | Edit Profile |
 | `home_page` | `TextLine` | no | `profile_details` | View Profile | Edit Profile |
@@ -55,7 +55,7 @@ member.
 | `image` | `NamedBlobImage` | no | `profile_details` | View Profile | Edit Profile |
 | `emails` | `Tuple` of `Email` | yes | `email_addresses` | View PII | Edit Profile |
 | `email` | `Email` | no, **read-only** | `email_addresses` | View PII | — |
-| `group_ids` | from the behavior | no | `group_membership` | View Profile | **Edit Profile Group Membership** |
+| `group_ids` | from the behavior | no | `group_membership` | View Account Details | **Edit Profile Group Membership** |
 
 Permission titles are shortened here; see {doc}`permissions` for the ids.
 
@@ -173,6 +173,7 @@ Every permission is mapped with `acquired="False"` in every state.
 | Edit Profile | Manager, Site Administrator, Owner | same | Manager, Site Administrator |
 | View Profile | Manager, Site Administrator, Owner | + **Member** | Manager, Site Administrator |
 | View PII | Manager, Site Administrator, Owner | same | Manager, Site Administrator |
+| View Account Details | Manager, Site Administrator, Owner | + **Member** | Manager, Site Administrator |
 | Edit Profile Group Membership | Manager, Site Administrator | same | same |
 | `Delete objects` | Manager, Site Administrator | same | same |
 | `Add portal content` | Manager, Site Administrator | same | same |
