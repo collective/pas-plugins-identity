@@ -2,14 +2,22 @@
 
 from pas.plugins.identity.core.behaviors.details import IProfileDetails
 from pas.plugins.identity.core.contents.profile import IUserProfileSchema
-from pas.plugins.identity.core.profiles import WRITABLE_FIELDS
-from pas.plugins.identity.core.utils.propertymap import MAPPABLE_FIELDS
+from pas.plugins.identity.core.utils.propertymap import mappable_fields
 from pas.plugins.identity.core.vocabularies.userfields import USER_FIELDS_VOCABULARY
-from pas.plugins.identity.exportimport.schema import USER_FIELDS
 from zope.component import getUtility
 from zope.schema.interfaces import IVocabularyFactory
 
 import pytest
+
+
+def vocabulary_tokens(portal) -> list[str]:
+    """Return every token the vocabulary offers, built afresh.
+
+    :param portal: The Plone site.
+    :returns: The field names.
+    """
+    factory = getUtility(IVocabularyFactory, name=USER_FIELDS_VOCABULARY)
+    return [term.token for term in factory(portal)]
 
 
 class TestUserFieldsVocabulary:
@@ -31,10 +39,14 @@ class TestUserFieldsVocabulary:
         """The frontend asks for it by name through @vocabularies."""
         assert self.vocabulary is not None
 
+    def test_offers_the_text_fields_of_the_shipped_type(self):
+        """The type's own schema first, then its behaviors, in that order."""
+        assert self.tokens() == ["fullname", "description", "home_page", "location"]
+
     def test_offers_exactly_the_fields_a_login_writes(self):
-        """Not a list kept in step by hand: the same tuple the sync filters
+        """Not a list kept in step by hand: the same function the sync filters
         on, so the picker cannot offer a row the login would drop."""
-        assert self.tokens() == list(MAPPABLE_FIELDS)
+        assert self.tokens() == list(mappable_fields())
 
     def test_offers_nothing_handled_somewhere_else(self):
         """``email`` and ``portrait`` are the two guesses that read as
@@ -44,6 +56,7 @@ class TestUserFieldsVocabulary:
         tokens = self.tokens()
 
         assert "email" not in tokens
+        assert "emails" not in tokens
         assert "portrait" not in tokens
 
     def test_offers_nothing_a_provider_may_never_write(self):
@@ -54,6 +67,15 @@ class TestUserFieldsVocabulary:
         assert "login" not in tokens
         assert "group_ids" not in tokens
         assert "userid" not in tokens
+
+    def test_offers_nothing_that_describes_the_object(self):
+        """``plone.shortname`` and ``plone.versioning`` are on the shipped
+        type, and their fields say nothing about the person."""
+        tokens = self.tokens()
+
+        assert "id" not in tokens
+        assert "changeNote" not in tokens
+        assert "versioning_enabled" not in tokens
 
     def test_terms_carry_the_label_the_profile_form_uses(self):
         """Read off the schema rather than restated here, so a field renamed
@@ -72,22 +94,39 @@ class TestUserFieldsVocabulary:
         form calls it and what an operator is looking for."""
         assert self.vocabulary.getTerm("description").title == "Biography"
 
-    def test_in_the_order_the_fields_are_declared(self):
-        """Four terms, so a sort by title would only hide which of them the
-        form considers the important one."""
-        assert self.tokens()[0] == "fullname"
+
+class TestABehaviorTheSiteAdds:
+    """#143: a behavior on the user type is a destination once enabled."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, extra_profile_fields) -> None:
+        self.portal = extra_profile_fields
+
+    def test_its_fields_are_offered(self):
+        tokens = vocabulary_tokens(self.portal)
+
+        assert {"social_links", "tags", "age"} <= set(tokens)
+
+    def test_after_the_type_s_own_fields(self):
+        assert vocabulary_tokens(self.portal)[:4] == [
+            "fullname",
+            "description",
+            "home_page",
+            "location",
+        ]
+
+    def test_a_readonly_field_is_not_offered(self):
+        """Nothing may write it, a login included."""
+        assert "badge" not in vocabulary_tokens(self.portal)
+
+    def test_titled_by_the_behavior(self):
+        factory = getUtility(IVocabularyFactory, name=USER_FIELDS_VOCABULARY)
+
+        assert factory(self.portal).getTerm("social_links").title == "Social links"
 
 
-class TestTheThreeAnswersAgree:
-    """One definition, and the two filters that used to be their own.
+class TestABehaviorTheSiteHasNotEnabled:
+    """Read when asked for, so nothing lingers from a type it is not on."""
 
-    A login filtered on ``WRITABLE_FIELDS``, a principal document on
-    ``USER_FIELDS``, and the control panel on nothing at all. The first two
-    happened to hold the same four names; nothing made them.
-    """
-
-    def test_a_login_filters_on_the_definition(self):
-        assert frozenset(MAPPABLE_FIELDS) == WRITABLE_FIELDS
-
-    def test_a_principal_document_carries_the_definition(self):
-        assert USER_FIELDS is MAPPABLE_FIELDS
+    def test_its_fields_are_not_offered(self, portal):
+        assert "social_links" not in vocabulary_tokens(portal)

@@ -42,6 +42,11 @@ For the commands that produce and consume it, see {doc}`/how-to-guides/operate/e
       "home_page": "",
       "description": "",
       "location": "Berlin",
+      "fields": {
+        "social_links": [
+          {"id": "github", "title": "GitHub", "href": [{"@id": "https://github.com/ericof", "title": "GitHub"}]}
+        ]
+      },
       "group_ids": ["site-editors"],
       "identities": [
         {
@@ -63,6 +68,7 @@ For the commands that produce and consume it, see {doc}`/how-to-guides/operate/e
 | `version` | yes | The format version, an integer. A document from a **later** version than the reader understands is refused rather than read optimistically: guessing at a newer format leaves a site with half its accounts. |
 | `userid` | yes | Carried across **verbatim**. Every local role, ownership and sharing entry in the target site is written against it, so an import that minted new ids would produce a site full of content belonging to nobody. |
 | `group_ids` | no | On a user, the groups they are in. On a group, the groups that group is nested inside. |
+| `fields` | no | Users only. Every other field a property map may write: the site's own schema and its behaviors' fields, in the JSON shape `plone.restapi` serves and reads for each field. A field holding nothing is left out, and the key is absent when nothing is left. |
 | `container_group` | no | Groups only. The group this one is *filed inside*, empty when it is not filed inside a group. Restored by moving the object, so a hierarchy survives a round trip rather than coming back flat. |
 | `identities` | no | The `(provider, subject)` pairs that reach this account. Both are required on each entry; either alone identifies nobody. `created` and `last_login` may be `null`. |
 
@@ -105,7 +111,7 @@ The flag means *believe what the dump claims*, never *call everything verified*.
 The importer makes four passes, and the order is not incidental.
 
 1. **Groups**, because a user's `group_ids` names them. Every group is created in the configured container, flat.
-2. **Users**, each with the fields the Profile schema declares.
+2. **Users**, each with the fields the Profile schema declares, then the fields under `fields`, written through each field's own interface.
 3. **Containment**, filing each group named by a `container_group` inside it.
    It comes after step 1 because a parent may appear later in the list than its child, and each group is resolved by id at the moment it is moved, so the order within the pass does not matter either.
 4. **Membership, then the identity join**, once every principal exists.
@@ -125,6 +131,8 @@ A skip drops one record and keeps going, because one bad row must not stop the o
 | Skipped | Why |
 | --- | --- |
 | A user with no address | `emails` is required on a Profile and `email` is derived from it. Inventing one produces an account whose owner cannot be reached and cannot be told why. |
+| A field under `fields` that this site's user type lacks, or one no property map may write | The importing site's user type decides what a Profile has. The rest of the user is imported. |
+| A value under `fields` that its field refuses | Read back and validated the way the REST API reads it. The rest of the user is imported. |
 | An identity already linked to somebody else | Two people cannot both be the same identity, and moving it quietly is one of them taking the other's account. |
 
 Every skip is listed in the result, so a large import reports what did not land instead of raising on the first surprise.

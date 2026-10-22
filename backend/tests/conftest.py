@@ -110,6 +110,61 @@ def initial_registry(portal):
 
 
 @pytest.fixture
+def extra_profile_fields(portal):
+    """Enable two behaviors a site might add on the shipped user type.
+
+    :class:`IExtraProfileFields`, which stores on the object, and
+    :class:`IAnnotatedProfileFields`, whose factory stores in an annotation.
+
+    :param portal: The Plone site.
+    :returns: The Plone site.
+    """
+    from pas.plugins.identity.core.catalog import PROFILE_PORTAL_TYPE
+    from plone.behavior.interfaces import IBehavior
+    from plone.behavior.registration import BehaviorRegistration
+    from plone.dexterity.schema import SCHEMA_CACHE
+    from tests.extra_profile_fields import ANNOTATED_BEHAVIOR
+    from tests.extra_profile_fields import AnnotatedProfileFields
+    from tests.extra_profile_fields import EXTRA_BEHAVIOR
+    from tests.extra_profile_fields import IAnnotatedProfileFields
+    from tests.extra_profile_fields import IExtraProfileFields
+    from zope.component import getGlobalSiteManager
+
+    registrations = {
+        EXTRA_BEHAVIOR: BehaviorRegistration(
+            title="Extra profile fields",
+            description="",
+            interface=IExtraProfileFields,
+            marker=IExtraProfileFields,
+            factory=None,
+            name=EXTRA_BEHAVIOR,
+        ),
+        ANNOTATED_BEHAVIOR: BehaviorRegistration(
+            title="Annotated profile fields",
+            description="",
+            interface=IAnnotatedProfileFields,
+            marker=None,
+            factory=AnnotatedProfileFields,
+            name=ANNOTATED_BEHAVIOR,
+        ),
+    }
+    registry = getGlobalSiteManager()
+    for name, registration in registrations.items():
+        registry.registerUtility(registration, IBehavior, name=name)
+    registry.registerAdapter(AnnotatedProfileFields)
+    fti = portal.portal_types[PROFILE_PORTAL_TYPE]
+    behaviors = fti.behaviors
+    fti.behaviors = (*behaviors, *registrations)
+    SCHEMA_CACHE.clear()
+    yield portal
+    fti.behaviors = behaviors
+    registry.unregisterAdapter(AnnotatedProfileFields)
+    for name, registration in registrations.items():
+        registry.unregisterUtility(registration, IBehavior, name=name)
+    SCHEMA_CACHE.clear()
+
+
+@pytest.fixture
 def store_legacy_propertymap(portal):
     """Return a writer that plants a property map the schema now refuses.
 

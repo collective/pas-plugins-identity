@@ -97,7 +97,7 @@ worth knowing:
 | Column | Widget | Why |
 |---|---|---|
 | Claim path | Text | Whatever the provider publishes; nothing here can enumerate it. |
-| Profile field | Picker | The four fields a login writes, served as `pas.plugins.identity.UserFields`. |
+| Profile field | Picker | The fields of the site's user type and its behaviors that a login writes, served as `pas.plugins.identity.UserFields`. |
 | Provider group | Text | The far end's own group names. |
 | Local group | Text | A profile may ship a map before the group it names exists. |
 

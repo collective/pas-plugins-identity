@@ -1,12 +1,10 @@
 """Running the enrichers a deployment has installed.
 
 The extension point for everything the claim-to-field property map cannot
-express. The map moves a scalar from a provider document to one of four
-Profile fields; an enricher runs code against the whole payload and writes
-whatever the Profile's behaviors actually carry. The case it was built for is
-an add-on whose behavior adds a **list** field, which the map cannot reach at
-all: ``_scalar`` reads a list as an absent claim, deliberately, so that an
-OIDC ``address`` object is never written into somebody's location as a repr.
+express. The map moves a claim from a provider document to a field of the
+user type, as the provider sent it, once the field has validated it; an
+enricher runs code against the whole payload, so it can reshape a value, combine
+several claims, or look something up first.
 
 The contract is :class:`~pas.plugins.identity.core.interfaces.IProfileEnricher`
 and the reasoning behind its shape is there. This module is the plumbing:

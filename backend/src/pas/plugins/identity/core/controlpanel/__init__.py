@@ -47,7 +47,7 @@ from pas.plugins.identity.core.drivers import get_driver
 from pas.plugins.identity.core.drivers.base import BaseDriver
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.interfaces import ProviderUnusable
-from pas.plugins.identity.core.utils.propertymap import MAPPABLE_FIELDS
+from pas.plugins.identity.core.utils.propertymap import mappable_fields
 from pas.plugins.identity.core.utils.svg import decode_upload
 from pas.plugins.identity.core.utils.svg import encode_upload
 from pas.plugins.identity.core.utils.svg import sanitize as sanitize_svg
@@ -139,14 +139,15 @@ def check_propertymap(propertymap: dict[str, str]) -> None:
     :param propertymap: Claim path to Profile field, as supplied.
     :raises InvalidPropertyMap: When any target is not a mappable field.
     """
+    mappable = mappable_fields()
     unusable = sorted({
-        field for field in (propertymap or {}).values() if field not in MAPPABLE_FIELDS
+        field for field in (propertymap or {}).values() if field not in mappable
     })
     if not unusable:
         return
     raise InvalidPropertyMap(
         f"{', '.join(repr(name) for name in unusable)} cannot be written by a "
-        f"property map. A login writes {', '.join(MAPPABLE_FIELDS)}; an "
+        f"property map. A login writes {', '.join(mappable)}; an "
         "address arrives through the addresses of the profile and a portrait "
         "through the picture claim, neither of which is mapped."
     )

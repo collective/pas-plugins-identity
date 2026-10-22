@@ -11,8 +11,8 @@
  * naming one that does not exist grants nothing -- the backend skips it and
  * logs -- but a profile may legitimately ship a map before the group it
  * points at, so the field stays text rather than a `Choice` that would refuse
- * the import. Compare the property map, whose target is four fields this
- * package knows by name and is a picker.
+ * the import. Compare the property map, whose target is a field of the
+ * site's user type and is a picker.
  * @module helpers/groupmap
  */
 

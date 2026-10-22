@@ -18,7 +18,11 @@ import pytest
 
 
 class TestUsable:
-    """The filter itself, without a site."""
+    """The filter itself, against the site's user type."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
 
     def test_keeps_a_row_a_login_writes(self):
         assert usable({"bio": "description"}) == {"bio": "description"}

@@ -25,20 +25,24 @@ a Profile field with no code at all, it is edited in the control panel, and
 {doc}`/how-to-guides/providers/configure-a-provider` covers it. It reads dotted paths into the provider's
 own payload, so `address.formatted` and `raw` sub-keys are already within reach.
 
-<!-- The three limits below are MAPPABLE_FIELDS in
-     backend/src/pas/plugins/identity/core/utils/propertymap.py and _scalar in
-     backend/src/pas/plugins/identity/core/subscribers/__init__.py. -->
+<!-- The limits below are mappable_fields and UNMAPPABLE_FIELDS in
+     backend/src/pas/plugins/identity/core/utils/propertymap.py, and
+     _field_value and sync_claims in
+     backend/src/pas/plugins/identity/core/profiles.py. -->
 
-The map stops at three walls, and an enricher is the way past all three.
+The map writes any field of the site's user type, behaviors included, and it
+carries a list or a mapping to a field that accepts one. A claim that already
+has the field's shape needs a row, not code. The map stops at three walls, and
+an enricher is the way past them.
 
 | The map cannot | Why |
 |---|---|
-| Write anything but a scalar | A claim resolving to a list or a mapping is read as *absent*, so an OIDC `address` object is never written into a location field as its Python representation |
-| Write a field it does not know | The target must be `fullname`, `home_page`, `description` or `location`; the form offers those four and the registry refuses any other |
 | Transform a value | It is a copy. Building a URL from a handle, or a list from three keys, is code |
+| Write a value the field refuses | The field validates the claim first; a claim it refuses is logged and skipped, and a text field reads a list or a mapping as *absent* |
+| Write the login, the userid, membership, addresses or the portrait | Those fields are never offered, and the registry refuses a row naming one |
 
-A behavior that adds a **list** field to the Profile hits the first and second
-walls at once. That is the case this hook exists for.
+A provider whose payload has the right data in the wrong shape hits the first
+wall. That is the case this hook exists for.
 
 ## Write the utility
 

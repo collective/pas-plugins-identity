@@ -387,14 +387,16 @@ class IProviderRecords(Interface):
         ),
         key_type=schema.TextLine(title=_("Claim")),
         # A ``Choice`` rather than the ``TextLine`` this was, because a login
-        # writes four fields and nothing else. The free-text box accepted
-        # ``email`` and ``portrait`` -- both reasonable guesses, both things
-        # this package does handle, elsewhere -- stored them, exported them,
-        # and dropped them on every login without a word. The vocabulary is
-        # built from
-        # :data:`~pas.plugins.identity.core.utils.propertymap.MAPPABLE_FIELDS`,
+        # writes only the fields of the user type it may write. The free-text
+        # box accepted ``email`` and ``portrait`` -- both reasonable guesses,
+        # both things this package does handle, elsewhere -- stored them,
+        # exported them, and dropped them on every login without a word. The
+        # vocabulary is built from
+        # :func:`~pas.plugins.identity.core.utils.propertymap.mappable_fields`,
         # so the form offers a picker, a profile stating a dead row is refused
-        # at import, and the API answers 400 rather than storing it.
+        # at import, and the API answers 400 rather than storing it. The
+        # choices follow the site's user type: a profile that maps a
+        # behavior's field must enable the behavior first.
         value_type=schema.Choice(
             title=_("Profile field"),
             vocabulary=USER_FIELDS_VOCABULARY,

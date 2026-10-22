@@ -26,11 +26,13 @@ from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.principal_types import group_portal_type
 from pas.plugins.identity.core.principal_types import user_portal_type
 from pas.plugins.identity.core.utils.plugins import get as get_plugin
+from pas.plugins.identity.exportimport.fields import export_extra_fields
 from pas.plugins.identity.exportimport.schema import DOCUMENT_VERSION
 from pas.plugins.identity.exportimport.schema import ExportImportError
 from pas.plugins.identity.exportimport.schema import GENERATOR
 from pas.plugins.identity.exportimport.schema import GROUP_FIELDS
 from pas.plugins.identity.exportimport.schema import GROUP_ROLES_FIELD
+from pas.plugins.identity.exportimport.schema import USER_EXTRA_FIELDS
 from pas.plugins.identity.exportimport.schema import USER_FIELDS
 from plone import api
 from typing import Any
@@ -145,6 +147,9 @@ def export_user(profile, store) -> dict[str, Any]:
     }
     for name in USER_FIELDS:
         exported[name] = _text(getattr(profile, name, ""))
+    extra = export_extra_fields(profile)
+    if extra:
+        exported[USER_EXTRA_FIELDS] = extra
     exported["group_ids"] = list(getattr(profile, "group_ids", None) or ())
     exported["identities"] = [
         {

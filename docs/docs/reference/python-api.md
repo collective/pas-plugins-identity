@@ -67,7 +67,7 @@ These are the same objects the layer defines, not copies, so an adapter register
 | Driver authoring | `BaseDriver`, `IDriverSettings`, `IOAuth2Settings`, `IOIDCSettings`, `IGitHubSettings`, `IEmailSettings`, `IPloneIdentitySettings`, `USERID_SOURCES` |
 | Records and types | `IdentityRecord`, `Claims`, `ProviderEmail`, `JSONDict` |
 | Exceptions | `IdentityCollision`, `ClaimsError`, `ProviderUnusable` |
-| Constants | `PROFILE`, `GROUP`, `MAPPABLE_FIELDS` |
+| Constants | `PROFILE`, `GROUP`, `UNMAPPABLE_FIELDS` |
 
 Subscribe to an **event interface**, not to an event class—that is what a
 ZCML `<subscriber>` registration and `@adapter` both take.

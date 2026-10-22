@@ -22,7 +22,7 @@ import { providerSchema, toFormData } from '../../helpers/providerSchema';
  *
  * Both mappings are `object_list` widgets, and one sub-field of one of them
  * reads a vocabulary over the API: the property map's target, which is a
- * picker over the four Profile fields a login writes. Every story carries the
+ * picker over the Profile fields a login writes. Every story carries the
  * loaded vocabularies in its store, so that picker renders its terms rather
  * than empty -- which is also exactly how it looks when the backend refuses
  * `@vocabularies`, and is worth recognising.
@@ -59,7 +59,7 @@ const form = (provider: (typeof CONFIGURED)[number], driverId: string) => ({
  * The **Attribute mapping** fieldset carries both editors, and the asymmetry
  * between them is the thing to look at. A claim path and a provider-side
  * group are text, because neither can be enumerated from here. A property
- * map's target is a picker over the four Profile fields a login writes. A
+ * map's target is a picker over the Profile fields a login writes. A
  * local group is text as well, though this site does know its own groups: a
  * profile may ship a map before the group it points at, and the login skips a
  * row it cannot resolve rather than the import refusing the map.

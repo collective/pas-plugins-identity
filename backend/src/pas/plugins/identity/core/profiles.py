@@ -36,15 +36,18 @@ Profile minted for a login that then fails should not outlive it.
 edits and :mod:`pas.plugins.identity.core.utils.propertymap` applies to the Plone
 user, so a site states the mapping once and both the user and the Profile
 follow it. Claims are addressed by dotted path there, which is how
-``address.formatted`` reaches into a provider's own document; a path landing
-on an object rather than a scalar is treated as absent rather than written
-as a repr.
+``address.formatted`` reaches into a provider's own document. A map may target
+any field of the user type
+:func:`~pas.plugins.identity.core.utils.propertymap.mappable_fields` offers,
+behaviors included, and what a claim resolves to is validated by that field
+before it is written. A text field takes a scalar only, so a path landing on
+an object is treated as absent rather than written as a repr; a list or a
+mapping reaches a field that accepts one -- a behavior's ``List`` or
+``JSONField`` -- as it is.
 
-``login`` is deliberately not in :data:`WRITABLE_FIELDS`, whatever a map says.
-It is half of the case-folded index the enumeration plugin queries and it is
-what the identity join is displayed against; a provider renaming somebody
-should not silently move their account. Neither is ``group_ids``: a provider
-that could edit it could grant itself roles.
+``login`` and ``group_ids`` are never a destination, whatever a map says:
+:data:`~pas.plugins.identity.core.utils.propertymap.UNMAPPABLE_FIELDS` says
+why.
 
 **Addresses do not go through any of that**, and :func:`sync_addresses` is why
 they are their own step. The rule above is for a field with one value, where
@@ -69,29 +72,26 @@ from pas.plugins.identity.core.principal_types import type_provides
 from pas.plugins.identity.core.principal_types import user_portal_type
 from pas.plugins.identity.core.txn import note_profile_created
 from pas.plugins.identity.core.utils.emails import normalize
-from pas.plugins.identity.core.utils.propertymap import MAPPABLE_FIELDS
+from pas.plugins.identity.core.utils.propertymap import mappable_fields
 from pas.plugins.identity.core.utils.propertymap import resolve_claim
 from persistent.mapping import PersistentMapping
 from plone import api
 from plone.base.utils import safe_text
 from Products.ZCatalog.CatalogBrains import AbstractCatalogBrain
+from typing import Any
 from zope.annotation.interfaces import IAnnotations
 from zope.lifecycleevent import modified
+from zope.schema.interfaces import IField
+from zope.schema.interfaces import IText
+from zope.schema.interfaces import ValidationError
+
+import copy
 
 
 #: Annotation key holding what the provider last wrote, per field. Also the
 #: record of *whether* it ever wrote: a field absent from here has never been
 #: touched by a provider.
 PROVIDER_VALUES_KEY = "pas.plugins.identity.provider_values"
-
-#: UserProfile fields a provider may ever write, whatever its property map says.
-#:
-#: :data:`~pas.plugins.identity.core.utils.propertymap.MAPPABLE_FIELDS` is the
-#: definition and carries the reasons; this is the membership test the sync
-#: does. It stays a filter rather than becoming an assertion: the field is a
-#: ``Choice`` now, so nothing new can be written, but a site that stored a row
-#: before it was must still be able to log somebody in.
-WRITABLE_FIELDS = frozenset(MAPPABLE_FIELDS)
 
 #: Applied when a provider has no property map of its own.
 #:
@@ -120,8 +120,9 @@ PICTURE_FIELD = "picture"
 #: provider may add an address once. Without it, "append what is not already
 #: there" reads a *deleted* address as a missing one and puts it back on the
 #: next login -- a value that reappears having been removed, which is the
-#: failure this whole annotation exists to avoid. ``emails`` is not in
-#: :data:`WRITABLE_FIELDS`, so nothing else ever reads this key.
+#: failure this whole annotation exists to avoid. ``emails`` is in
+#: :data:`~pas.plugins.identity.core.utils.propertymap.UNMAPPABLE_FIELDS`, so
+#: nothing else ever reads this key.
 ADDRESSES_FIELD = "emails"
 
 
@@ -271,18 +272,20 @@ def claim_fields(provider_id: str) -> dict[str, str]:
     it. A provider that has no map gets :data:`DEFAULT_CLAIM_FIELDS`.
 
     :param provider_id: Provider the claims came from.
-    :returns: Claim path to Profile field, restricted to
-        :data:`WRITABLE_FIELDS`.
+    :returns: Claim path to Profile field, restricted to the fields
+        :func:`~pas.plugins.identity.core.utils.propertymap.mappable_fields`
+        offers. A filter rather than an assertion: the registry field refuses
+        anything else, but a site whose user type lost a behavior after a row
+        was stored must still be able to log somebody in.
     """
     from pas.plugins.identity.core.controlpanel import get_provider
 
     config = get_provider(provider_id)
     if config is None or not config.propertymap:
         return dict(DEFAULT_CLAIM_FIELDS)
+    writable = mappable_fields()
     return {
-        path: field
-        for path, field in config.propertymap.items()
-        if field in WRITABLE_FIELDS
+        path: field for path, field in config.propertymap.items() if field in writable
     }
 
 
@@ -290,7 +293,7 @@ def _scalar(value: object) -> str:
     """Render a resolved claim as text, or as nothing.
 
     A claim path may land on a list or a mapping -- ``address`` is an object
-    at every OIDC provider -- and a Profile field is a line of text. Rather
+    at every OIDC provider -- and a text field is a line of text. Rather
     than write ``{'formatted': ...}`` into somebody's location, anything that
     is not a scalar is treated as an absent claim, which the caller already
     knows not to write.
@@ -303,6 +306,28 @@ def _scalar(value: object) -> str:
     if isinstance(value, bool):
         return ""
     return str(value)
+
+
+def _field_value(field: IField, value: object) -> Any:
+    """Shape a resolved claim for the field it is written to.
+
+    A text field gets :func:`_scalar`, which is what every field a map could
+    write used to be. Anything else gets the claim as the provider sent it,
+    with one conversion: JSON has no tuple or set, so a list arriving for a
+    ``Tuple`` or ``Set`` field is turned into one, or the field would refuse
+    a value whose content is right.
+
+    :param field: The field, bound to the Profile.
+    :param value: Whatever the claim path resolved to.
+    :returns: The value to validate, or ``None`` when there is nothing to
+        write.
+    """
+    if IText.providedBy(field):
+        return safe_text(_scalar(value)) or None
+    expected = getattr(field, "_type", None)
+    if isinstance(value, list) and expected in (tuple, set, frozenset):
+        return expected(value)
+    return value
 
 
 def _remembered(profile: UserProfile) -> PersistentMapping:
@@ -318,17 +343,34 @@ def _remembered(profile: UserProfile) -> PersistentMapping:
 
 
 def _provider_may_write(
-    profile: UserProfile, field: str, remembered: PersistentMapping
+    storage: object, field: str, remembered: PersistentMapping
 ) -> bool:
     """Decide whether the provider still owns a field.
 
-    :param profile: The Profile.
+    :param storage: What holds the field -- see :func:`_storage`.
     :param field: Field name.
     :param remembered: What the provider last wrote, per field.
     :returns: Whether the current value is still the provider's own.
     """
-    current = getattr(profile, field, None) or ""
+    current = getattr(storage, field, None) or ""
     return current == (remembered.get(field) or "")
+
+
+def _storage(field: IField, profile: UserProfile) -> object:
+    """Return what a field is read from and written to on a Profile.
+
+    The field's own interface, adapted, which is the Profile itself for a
+    schema field or a behavior storing on the object, and the behavior's
+    adapter for one storing elsewhere -- in an annotation, say. A text field
+    the type does not declare at all is the Profile's attribute, as it always
+    was: a ``fullname`` computed from two name fields is a property.
+
+    :param field: The field, bound to the Profile.
+    :param profile: The Profile.
+    :returns: The object to ``getattr`` and ``setattr`` on.
+    """
+    storage = field.interface(profile, None)
+    return profile if storage is None else storage
 
 
 def remembered_picture_url(profile: UserProfile) -> str:
@@ -369,20 +411,41 @@ def sync_claims(
     :returns: The fields that actually changed.
     """
     remembered = _remembered(profile)
+    schema_fields = mappable_fields()
     changed = []
     for claim, field in claim_fields(provider_id).items():
-        value = safe_text(_scalar(resolve_claim(claim, claims)))
-        if not value:
+        bound = schema_fields[field].bind(profile)
+        value = _field_value(bound, resolve_claim(claim, claims))
+        if value in (None, "", [], (), {}):
             # An absent claim is not an instruction to clear the field. A
             # provider that stops sending a name has not told us the user no
             # longer has one.
             continue
-        if not _provider_may_write(profile, field, remembered):
+        try:
+            bound.validate(value)
+        except ValidationError as exc:
+            # Logged and skipped, never written: a provider whose claim does
+            # not fit the field has not told us anything the field can hold,
+            # and one bad row must not cost the person their login.
+            logger.warning(
+                "Not writing claim %r to %r for %s: %r",
+                claim,
+                field,
+                profile.getId(),
+                exc,
+            )
             continue
-        if (getattr(profile, field, None) or "") != value:
-            setattr(profile, field, value)
+        storage = _storage(bound, profile)
+        if not _provider_may_write(storage, field, remembered):
+            continue
+        if (getattr(storage, field, None) or "") != value:
+            # Copies, here and below, when the field holds a list or a
+            # mapping: one shared with the claims -- whose ``raw`` the
+            # identity record keeps -- or with the remembered value would
+            # change whenever the other did.
+            setattr(storage, field, copy.deepcopy(value))
             changed.append(field)
-        remembered[field] = value
+        remembered[field] = copy.deepcopy(value)
 
     if changed:
         modified(profile)
@@ -449,7 +512,6 @@ __all__ = [
     "DEFAULT_CLAIM_FIELDS",
     "PICTURE_FIELD",
     "PROVIDER_VALUES_KEY",
-    "WRITABLE_FIELDS",
     "claim_fields",
     "ensure_profile",
     "get_profile",

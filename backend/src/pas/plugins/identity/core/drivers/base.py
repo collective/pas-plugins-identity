@@ -181,11 +181,11 @@ class BaseDriver:
     #: ``fullname`` reaches GitHub's ``login`` fallback and an OIDC
     #: ``preferred_username`` alike without either being named here.
     #:
-    #: One claim, because a map may only write
-    #: :data:`~pas.plugins.identity.core.utils.propertymap.MAPPABLE_FIELDS`
-    #: and only one of those is a claim every provider offers. Two of the
-    #: other three -- ``home_page`` and ``location`` -- are a fact about the
-    #: provider, so a driver that knows adds them.
+    #: One claim, because ``fullname`` is the only field of the shipped user
+    #: type that every provider has a claim for. ``home_page`` and
+    #: ``location`` are a fact about the provider, so a driver that knows adds
+    #: them. A field a site's own behaviors add is the site's to map: a driver
+    #: cannot know it exists.
     #:
     #: ``email`` was seeded here and is not any more. It is not that the
     #: address does not arrive: it arrives on every login, through

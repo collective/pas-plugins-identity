@@ -23,7 +23,7 @@ from pas.plugins.identity.core.drivers.oidc import GenericOIDCDriver
 from pas.plugins.identity.core.drivers.settings import IDriverSettings
 from pas.plugins.identity.core.interfaces import ClaimsError
 from pas.plugins.identity.core.interfaces import IDriver
-from pas.plugins.identity.core.utils.propertymap import MAPPABLE_FIELDS
+from pas.plugins.identity.core.utils.propertymap import mappable_fields
 from plone.app.users.browser.schemaeditor import getFromBaseSchema
 from plone.app.users.schema import IUserDataSchema
 from urllib.parse import urlparse
@@ -200,8 +200,9 @@ class TestDefaultPropertyMap:
         ``username`` is the other trap, and this still catches it: providers
         publish it and nothing here has such a field at all.
         """
+        mappable = mappable_fields()
         for claim, field in factory().default_propertymap.items():
-            assert field in MAPPABLE_FIELDS, f"{claim} -> {field}"
+            assert field in mappable, f"{claim} -> {field}"
 
     def test_a_seeded_map_is_one_the_registry_would_store(self):
         """The consequence of the test above, and the reason it matters: a
@@ -214,7 +215,7 @@ class TestDefaultPropertyMap:
         """The premise of the older form of the test above, kept because a
         driver naming ``username`` is the mistake most worth catching."""
         assert "username" not in set(getFromBaseSchema(IUserDataSchema))
-        assert "username" not in MAPPABLE_FIELDS
+        assert "username" not in mappable_fields()
 
     @pytest.mark.parametrize("factory", ALL_DRIVERS)
     def test_claims_are_paths(self, factory: type[BaseDriver]):

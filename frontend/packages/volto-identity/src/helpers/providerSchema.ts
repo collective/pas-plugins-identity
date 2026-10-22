@@ -265,8 +265,8 @@ export function providerSchema(
         // A picker over the fields a login writes, not a text box. The two
         // sides of this row are asymmetric for the same reason the group
         // map's are: a claim path is whatever the far end publishes and
-        // nothing here can enumerate it, while the target is four fields
-        // this package knows by name.
+        // nothing here can enumerate it, while the target is a field of
+        // the site's user type, which the backend serves.
         vocabulary: targetVocabulary(served),
       },
     ),

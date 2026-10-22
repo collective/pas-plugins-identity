@@ -65,7 +65,7 @@ exists, because nesting can name a group that comes later in the list.
 
 from dataclasses import dataclass
 from dataclasses import field
-from pas.plugins.identity.core.utils.propertymap import MAPPABLE_FIELDS
+from pas.plugins.identity.core.utils.propertymap import PROFILE_TEXT_FIELDS
 from typing import Any
 
 
@@ -83,11 +83,22 @@ GENERATOR = "pas.plugins.identity"
 #: separately: they are required, and they are the two that must not be
 #: treated as optional text.
 #:
-#: The same tuple a property map may write to, and deliberately the same
-#: object rather than a copy that agrees today: a document carries what a
-#: login can fill, and the two drifting apart is how an import comes to write
-#: a field no provider could have set.
-USER_FIELDS = MAPPABLE_FIELDS
+#: The text fields every user type has, and deliberately the same object a
+#: property map may always write rather than a copy that agrees today. Every
+#: other field a map may write travels under :data:`USER_EXTRA_FIELDS`.
+USER_FIELDS = PROFILE_TEXT_FIELDS
+
+#: The key under which a user carries the rest of the fields a property map
+#: may write -- the site's own schema and its behaviors' fields.
+#:
+#: A mapping of field name to value, serialized and deserialized by
+#: ``plone.restapi``'s field adapters, because a behavior field need not hold
+#: JSON: a date, a rich text or a list of mappings each has its own shape on
+#: the wire, and the REST API already defines it. Optional, so the document
+#: stays version 1: a reader from before it ignores the key, and a document
+#: from before it imports exactly as it did. A field the importing site's user
+#: type does not have is reported and skipped, never invented.
+USER_EXTRA_FIELDS = "fields"
 
 #: Group fields carried for each group, beside the required ``group_id``.
 #:
@@ -239,6 +250,10 @@ def validate(document: Any) -> dict[str, Any]:
             f"every local role and ownership in the target site is written "
             f"against it",
         )
+        _require(
+            isinstance(user.get(USER_EXTRA_FIELDS, {}), dict),
+            f"users[{index}][{USER_EXTRA_FIELDS!r}] is not an object",
+        )
         identities = user.get("identities", [])
         _require(
             isinstance(identities, list),
@@ -267,6 +282,7 @@ __all__ = [
     "GENERATOR",
     "GROUP_FIELDS",
     "GROUP_ROLES_FIELD",
+    "USER_EXTRA_FIELDS",
     "USER_FIELDS",
     "ExportImportError",
     "Result",

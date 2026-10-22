@@ -5,11 +5,15 @@ not agree on names: GitHub says ``login`` where an OIDC provider says
 ``preferred_username``, and a Keycloak realm may publish anything its
 administrator configured.
 
-The *target* side of a map is a closed set -- :data:`MAPPABLE_FIELDS` -- for
-the reasons written against it. A row naming anything else used to be stored
-and then dropped on every login without a word; the field is now a ``Choice``
-over the vocabulary built from that tuple, so such a row is refused where it
-is written rather than ignored where it is read.
+The *target* side of a map is any field of the site's user type --
+:func:`mappable_fields` -- except the ones :data:`UNMAPPABLE_FIELDS` names, for
+the reasons written against it. A behavior a site adds to its user type is
+therefore a destination as soon as it is enabled: a claim that already has
+the field's shape needs a row in the map, not an
+:class:`~pas.plugins.identity.core.interfaces.IProfileEnricher`. The registry
+field is a ``Choice`` over the vocabulary built from the same function, so a
+row naming anything else is refused where it is written rather than ignored
+where it is read.
 
 A claim is addressed by a **dotted path**. Lookup tries the normalized claims
 first and then the raw payload, so ``fullname`` reaches the value this
@@ -20,40 +24,100 @@ provider's own document. This is where the shape differs from
 what lets it be stored as a single typed registry record.
 """
 
+from pas.plugins.identity.core.behaviors.details import IProfileDetails
+from pas.plugins.identity.core.contents.profile import IUserProfileSchema
 from pas.plugins.identity.core.interfaces import Claims
+from pas.plugins.identity.core.principal_types import user_portal_type
+from plone.dexterity.utils import iterSchemataForType
 from typing import Any
+from zope.schema import getFieldsInOrder
+from zope.schema.interfaces import IField
 
 
-#: The Profile fields a property map may write, in the order a form shows them.
+#: Fields of the user type a property map may never write, whatever the type
+#: declares.
 #:
-#: **The one definition.** Three things ask this question and used to answer it
-#: separately: a login, through
-#: :data:`~pas.plugins.identity.core.profiles.WRITABLE_FIELDS`; a principal
-#: document, through
-#: :data:`~pas.plugins.identity.exportimport.schema.USER_FIELDS`; and the
-#: control panel, which asked nothing at all and took free text. Both of the
-#: first two are now this tuple, and the third is a ``Choice`` over the
-#: vocabulary built from it, so a map cannot express a row that does nothing.
+#: **The one definition.** Two things ask which fields a map may write: a
+#: login, through :func:`~pas.plugins.identity.core.profiles.claim_fields`,
+#: and the control panel, through the ``Choice`` over the vocabulary built
+#: from :func:`mappable_fields`. Both read this set, so a map cannot express a
+#: row that does nothing.
 #:
-#: **What is not here, and why.** ``userid`` is the join to the identity store
-#: and is permanent. ``login`` is half of the case-folded index the enumeration
+#: **Why each is here.** ``userid`` is the join to the identity store and is
+#: permanent. ``login`` is half of the case-folded index the enumeration
 #: plugin queries, and a provider renaming somebody would move their account.
-#: ``group_ids`` is membership, and a provider that could edit it could grant
-#: itself roles. ``email`` and the portrait are excluded for a different
-#: reason: they are handled, just not here --
+#: ``group_ids`` and ``global_roles`` are membership and roles, and a provider
+#: that could edit them could grant itself both. ``email``, ``emails`` and the
+#: portrait (``image``, or ``portrait`` on a site's own type) are excluded for
+#: a different reason: they are handled, just not here --
 #: :func:`~pas.plugins.identity.core.profiles.sync_addresses` appends
 #: addresses without taking any away, and a portrait is synced from the
-#: normalized ``picture_url`` claim with no map entry at all.
+#: normalized ``picture_url`` claim with no map entry at all. ``id``,
+#: ``changeNote`` and ``versioning_enabled`` belong to the ``plone.shortname``
+#: and ``plone.versioning`` behaviors: they describe the object, not the
+#: person.
+UNMAPPABLE_FIELDS: frozenset[str] = frozenset({
+    "changeNote",
+    "email",
+    "emails",
+    "global_roles",
+    "group_ids",
+    "id",
+    "image",
+    "login",
+    "portrait",
+    "userid",
+    "versioning_enabled",
+})
+
+
+#: The text fields of the shipped user type, which a map may always write.
 #:
-#: Anything else a deployment wants written is a
-#: :class:`~pas.plugins.identity.core.interfaces.IProfileEnricher`. A map
-#: carries one scalar to one field; that is the whole of what it can do.
-MAPPABLE_FIELDS: tuple[str, ...] = (
+#: Always, because a site's own user type need not declare them as schema
+#: fields to have them: a ``fullname`` computed from two name fields is a
+#: property with a setter, and every provider's default map writes it. A type
+#: that does declare one is validated against its own declaration.
+PROFILE_TEXT_FIELDS: tuple[str, ...] = (
     "fullname",
     "home_page",
     "description",
     "location",
 )
+
+
+def _shipped_field(name: str) -> IField:
+    """Return the shipped declaration of one of :data:`PROFILE_TEXT_FIELDS`.
+
+    :param name: The field name.
+    :returns: The field, from the Profile schema or the details behavior.
+    """
+    return IUserProfileSchema.get(name) or IProfileDetails[name]
+
+
+def mappable_fields(portal_type: str = "") -> dict[str, IField]:
+    """Return the fields of the user type a property map may write.
+
+    Read from the *type* rather than from an object, so the control panel can
+    answer before anybody has signed in: ``iterSchemataForType`` yields the
+    FTI's own schema and then the schemata of every behavior it enables. A
+    readonly field is left out, and so is every name in
+    :data:`UNMAPPABLE_FIELDS`. :data:`PROFILE_TEXT_FIELDS` the type does not
+    declare come last, with their shipped declaration.
+
+    :param portal_type: The type to read. Empty means the site's user type.
+    :returns: Field name to unbound field, in schema order. The first schema
+        declaring a name wins, as it does on the object.
+    """
+    fields: dict[str, IField] = {}
+    for schema in iterSchemataForType(portal_type or user_portal_type()):
+        for name, field in getFieldsInOrder(schema):
+            if name in fields or name in UNMAPPABLE_FIELDS or field.readonly:
+                continue
+            fields[name] = field
+    for name in PROFILE_TEXT_FIELDS:
+        if name not in fields:
+            fields[name] = _shipped_field(name)
+    return fields
 
 
 def resolve_claim(path: str, claims: Claims) -> Any:

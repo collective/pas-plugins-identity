@@ -19,7 +19,7 @@ lost, because nothing was ever applied.
 
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.controlpanel import PROVIDERS_PREFIX
-from pas.plugins.identity.core.utils.propertymap import MAPPABLE_FIELDS
+from pas.plugins.identity.core.utils.propertymap import mappable_fields
 from plone.registry.interfaces import IRegistry
 from Products.GenericSetup.tool import SetupTool
 from zope.component import getUtility
@@ -35,10 +35,9 @@ def usable(propertymap: dict) -> dict:
     :param propertymap: The stored map.
     :returns: The same map without the rows naming an unwritable field.
     """
+    mappable = mappable_fields()
     return {
-        path: field
-        for path, field in (propertymap or {}).items()
-        if field in MAPPABLE_FIELDS
+        path: field for path, field in (propertymap or {}).items() if field in mappable
     }
 
 
