@@ -126,4 +126,19 @@ describe('UserAvatar', () => {
       container.querySelector('.identity-avatar')?.getAttribute('style'),
     ).toContain('96px');
   });
+
+  it('takes a CSS variable as its size, as the toolbar passes one', () => {
+    const { container } = renderAvatar(
+      { id: 'alice' },
+      { size: 'var(--identity-toolbar-avatar-size)' },
+    );
+
+    const style = container
+      .querySelector('.identity-avatar')
+      ?.getAttribute('style');
+    expect(style).toContain('width: var(--identity-toolbar-avatar-size)');
+    expect(style).toContain(
+      'font-size: calc(var(--identity-toolbar-avatar-size) / 2.4)',
+    );
+  });
 });

@@ -89,6 +89,12 @@
   --identity-provider-oidc-bg-hover: #555;
   --identity-provider-oidc-color: #fff;
 
+  /* The avatar on the toolbar's personal-tools button, picture and initials
+     alike. Passed to `<UserAvatar>` as its size, so it is the inline width
+     and height and needs no `!important` to win. `--toolbar-avatar-size` is
+     the name sites already set to enlarge it, and it still does. */
+  --identity-toolbar-avatar-size: var(--toolbar-avatar-size, 50px);
+
   /* Stats boxes: a figure over what it counts, as on a group page's
      `42 members · 12 directly`. A box is at least this wide and grows for a
      long label rather than breaking it -- a translated label is often longer
