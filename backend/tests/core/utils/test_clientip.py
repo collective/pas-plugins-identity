@@ -48,14 +48,19 @@ class TestClientIp:
         """
         api.portal.set_registry_record(HEADERS_RECORD, headers)
 
-    def test_no_header_is_believed_by_default(self):
-        """The reason the setting exists: left alone, a client's headers
-        decide nothing."""
-        request = make_request(
-            HTTP_X_FORWARDED_FOR=FORGED, HTTP_CF_CONNECTING_IP=FORGED
-        )
+    def test_x_forwarded_for_is_the_default(self):
+        assert client_ip(make_request(HTTP_X_FORWARDED_FOR=VISITOR)) == VISITOR
 
-        assert client_ip(request) == PROXY
+    def test_the_default_takes_the_last_entry(self):
+        request = make_request(HTTP_X_FORWARDED_FOR=f"{FORGED}, {VISITOR}")
+
+        assert client_ip(request) == VISITOR
+
+    def test_the_default_is_the_only_header_believed_unnamed(self):
+        assert client_ip(make_request(HTTP_CF_CONNECTING_IP=FORGED)) == PROXY
+
+    def test_without_the_default_header_the_socket_answers(self):
+        assert client_ip(make_request()) == PROXY
 
     def test_a_named_header_is_believed(self):
         self.configure("CF-Connecting-IP")
@@ -108,6 +113,22 @@ class TestClientIp:
         monkeypatch.setattr(publisher, "trusted_proxies", [PROXY])
 
         assert client_ip(make_request(HTTP_X_FORWARDED_FOR=VISITOR)) == VISITOR
+
+    def test_trusted_proxy_replaces_the_default(self, monkeypatch):
+        """Zope skips every proxy it knows of, where the default would stop
+        at the last entry, which here is the inner proxy."""
+        inner = "10.0.0.2"
+        monkeypatch.setattr(publisher, "trusted_proxies", [PROXY, inner])
+        request = make_request(HTTP_X_FORWARDED_FOR=f"{VISITOR}, {inner}")
+
+        assert client_ip(request) == VISITOR
+
+    def test_trusted_proxy_ignores_an_untrusted_peer(self, monkeypatch):
+        """Setting it stops the default for a request that came around the
+        proxy too, which is how a site reachable directly opts out."""
+        monkeypatch.setattr(publisher, "trusted_proxies", ["10.0.0.2"])
+
+        assert client_ip(make_request(HTTP_X_FORWARDED_FOR=FORGED)) == PROXY
 
     def test_no_address_at_all(self):
         request = make_request()

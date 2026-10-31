@@ -60,7 +60,12 @@ Behind a proxy, Zope sees the proxy's address, and on Docker Swarm that is a
 container network address. The audit log records it, and the magic-link rate
 limit counts every visitor as one caller.
 
-Name the header your proxy sets:
+With no header listed, the address comes from the last entry of
+`X-Forwarded-For`, which suits a single proxy that appends to that header. If
+Zope's `trusted-proxy` setting is set, `X-Forwarded-For` is not read this way,
+and the address is the one Zope reports.
+
+For any other proxy, name the header it sets:
 
 1. Open the **Identity providers** control panel, and go to the **Audit log**
    tab of its settings.
@@ -68,22 +73,21 @@ Name the header your proxy sets:
    `client_ip_headers` registry setting.
 
 The first header a request has is used. When a header lists several addresses,
-the last one is used.
+the last one is used. A request with none of the listed headers uses the address
+Zope reports.
 
 | In front of the site | List |
 |---|---|
 | Cloudflare | `CF-Connecting-IPv6`, then `CF-Connecting-IP` |
-| One proxy that appends to `X-Forwarded-For` | `X-Forwarded-For` |
+| One proxy that appends to `X-Forwarded-For` | Nothing, or `X-Forwarded-For` |
 
 ```{warning}
-A client can send any header it likes. Name a header only when your proxy
-overwrites it and nobody can reach the site around that proxy. On a site where
-somebody can, the header lets them write any address into the audit log and
-escape the magic-link rate limit per IP.
+A client can send any header it likes, and that includes `X-Forwarded-For` on a
+site with an empty list. On a site that somebody can reach without going through
+your proxy, the header lets them write any address into the audit log and escape
+the magic-link rate limit per IP. Such a site has to set `trusted-proxy`, or list
+a header its proxy overwrites.
 ```
-
-With no header listed, the address is the one Zope reports, which honors Zope's
-own `trusted-proxy` setting.
 
 ## Change how much is kept
 

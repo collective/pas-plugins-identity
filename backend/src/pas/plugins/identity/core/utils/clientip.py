@@ -7,16 +7,24 @@ that they cannot disagree.
 **A request header is client input until something vouches for it.** Anybody
 can send ``CF-Connecting-IP`` or ``X-Forwarded-For`` to a site that sits behind
 no proxy at all, or directly to the origin of one that does. Believing such a
-header because it is present lets a caller write any address into the audit
-log, and take a fresh rate-limit bucket on every request. So no header is read
-unless the site names it in ``client_ip_headers``, which is an operator saying
-that their proxy sets it and that nobody reaches the site around that proxy.
+header lets that caller write any address into the audit log, and take a fresh
+rate-limit bucket on every request. So the headers read are the ones the site
+names in ``client_ip_headers``, which is an operator saying that their proxy
+sets them and that nobody reaches the site around that proxy.
 
-Without one, the answer is :meth:`HTTPRequest.getClientAddr`: the socket's
-address, or what Zope's own ``trusted-proxy`` setting resolves it to.
+A site that names none gets ``X-Forwarded-For``, since most sites run behind a
+proxy that appends to it and would otherwise see every visitor as that proxy.
+That default is the one place a header is believed unvouched for, and a site
+reachable without a proxy has to name a header or set ``trusted-proxy``.
+
+Zope's ``trusted-proxy`` setting takes the default's place when it is set: it
+reads the same header, and skips every proxy it knows of rather than taking the
+last entry. The answer is then :meth:`HTTPRequest.getClientAddr`, which is also
+the answer when a request has none of the headers read.
 """
 
 from plone import api
+from ZPublisher import HTTPRequest as publisher
 from ZPublisher.HTTPRequest import HTTPRequest
 
 import re
@@ -24,6 +32,9 @@ import re
 
 #: The registry record naming the headers to believe.
 HEADERS_RECORD = "pas.plugins.identity.client_ip_headers"
+
+#: What a site that names no headers gets.
+DEFAULT_HEADERS = ("X-Forwarded-For",)
 
 #: Letters, digits and hyphens. An underscore is a legal header character and
 #: is refused anyway: WSGI folds ``-`` and ``_`` into the same environ key, so
@@ -61,11 +72,13 @@ def client_ip(request: HTTPRequest) -> str:
     out, and the leftmost is whatever the client chose to send.
 
     :param request: The current request.
-    :returns: The value of the first configured header that has one, failing
-        that :meth:`HTTPRequest.getClientAddr`, or an empty string when there
-        is none.
+    :returns: The value of the first header read that has one, failing that
+        :meth:`HTTPRequest.getClientAddr`, or an empty string when there is
+        none.
     """
     headers = api.portal.get_registry_record(HEADERS_RECORD, default=()) or ()
+    if not headers and not publisher.trusted_proxies:
+        headers = DEFAULT_HEADERS
     for header in headers:
         if not is_header_name(header):
             continue

@@ -228,7 +228,8 @@ class IIdentitySettings(Interface):
             "the magic link rate limit both use this. Clients can send any "
             "header they like, so name one only if your proxy overwrites it "
             "and nobody can reach this site around that proxy. Leave empty "
-            "to use the address Zope reports."
+            "to use X-Forwarded-For, or the address Zope reports when "
+            "trusted-proxy is set."
         ),
         value_type=schema.TextLine(constraint=is_header_name),
         required=False,

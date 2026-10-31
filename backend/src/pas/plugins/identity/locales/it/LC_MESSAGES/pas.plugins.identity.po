@@ -674,7 +674,7 @@ msgid "Reopen"
 msgstr ""
 
 #: pas/plugins/identity/core/controlpanel/interfaces.py:223
-msgid "Request headers your proxy sets to the visitor's address, in order: the first one a request has is used, and when a header lists several addresses, the last one. For Cloudflare, list CF-Connecting-IPv6 and then CF-Connecting-IP. The audit log and the magic link rate limit both use this. Clients can send any header they like, so name one only if your proxy overwrites it and nobody can reach this site around that proxy. Leave empty to use the address Zope reports."
+msgid "Request headers your proxy sets to the visitor's address, in order: the first one a request has is used, and when a header lists several addresses, the last one. For Cloudflare, list CF-Connecting-IPv6 and then CF-Connecting-IP. The audit log and the magic link rate limit both use this. Clients can send any header they like, so name one only if your proxy overwrites it and nobody can reach this site around that proxy. Leave empty to use X-Forwarded-For, or the address Zope reports when trusted-proxy is set."
 msgstr ""
 
 #: pas/plugins/identity/core/controlpanel/interfaces.py:626

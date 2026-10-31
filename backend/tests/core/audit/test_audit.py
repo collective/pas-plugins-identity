@@ -309,8 +309,16 @@ class TestTheRecordedAddress:
 
         assert request_detail(self.request)["ip"] == "203.0.113.7"
 
+    def test_x_forwarded_for_is_used_when_the_site_names_none(self):
+        self.monkeypatch.setitem(
+            self.request.environ, "HTTP_X_FORWARDED_FOR", "203.0.113.7"
+        )
+
+        assert request_detail(self.request)["ip"] == "203.0.113.7"
+
     def test_a_header_the_site_does_not_name_is_ignored(self):
         """Otherwise a client writes what it likes into the log."""
+        api.portal.set_registry_record(HEADERS_RECORD, ("CF-Connecting-IP",))
         self.monkeypatch.setitem(
             self.request.environ, "HTTP_X_FORWARDED_FOR", "203.0.113.7"
         )

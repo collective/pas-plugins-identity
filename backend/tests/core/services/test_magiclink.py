@@ -24,6 +24,7 @@ from pas.plugins.identity.core.flows import magiclink
 from pas.plugins.identity.core.services.magiclink.confirm import MagicLinkConfirm
 from pas.plugins.identity.core.services.magiclink.post import MagicLinkSend
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
+from pas.plugins.identity.core.utils.clientip import HEADERS_RECORD
 from plone import api
 
 import pytest
@@ -165,6 +166,7 @@ class TestRateLimiting(MagicLinkCase):
     def test_a_forged_header_does_not_escape_the_ip_limit(self):
         """A new address in a header the site never named is no new caller."""
         self.request._client_addr = "203.0.113.7"
+        api.portal.set_registry_record(HEADERS_RECORD, ("CF-Connecting-IPv6",))
 
         for index in range(magiclink.DEFAULT_IP_RATE_LIMIT):
             self.request.environ["HTTP_X_FORWARDED_FOR"] = f"198.51.100.{index}"

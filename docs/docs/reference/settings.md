@@ -58,7 +58,7 @@ one second.
 | `audit_max_days` | `Int` | `180` | Days the built-in log keeps. |
 | `audit_record_pii` | `Bool` | `False` | Record personally identifying detail in audit entries. |
 | `audit_sinks` | `Tuple` | `('plugin',)` | Which audit sinks to write to, in order. See {doc}`audit-log`. |
-| `client_ip_headers` | `Tuple` | `()` | Request headers carrying the visitor's address, in order. Used by the audit log and the magic-link rate limit. See {doc}`/how-to-guides/operate/read-the-audit-log`. |
+| `client_ip_headers` | `Tuple` | `()` | Request headers carrying the visitor's address, in order. Empty reads `X-Forwarded-For`, unless Zope's `trusted-proxy` is set. Used by the audit log and the magic-link rate limit. See {doc}`/how-to-guides/operate/read-the-audit-log`. |
 
 ## Profiles and groups
 

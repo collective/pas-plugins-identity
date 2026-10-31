@@ -97,7 +97,7 @@ unattributed key and is visible only under `scope=site`.
 | `audit_max_entries` | `500` | Entries kept per user. |
 | `audit_max_days` | `180` | Age at which an entry is discarded. |
 | `audit_sinks` | `('plugin',)` | Destinations, in order. |
-| `client_ip_headers` | `()` | Headers carrying the visitor's address, in order. |
+| `client_ip_headers` | `()` | Headers carrying the visitor's address, in order. Empty reads `X-Forwarded-For`, unless Zope's `trusted-proxy` is set. |
 
 The log is bounded per user and purged on write, so it cannot grow without limit
 and there is no cron job to forget to install.
