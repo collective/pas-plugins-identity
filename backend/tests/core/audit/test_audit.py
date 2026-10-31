@@ -32,6 +32,7 @@ from pas.plugins.identity.core.events import UserClaimsRefreshed
 from pas.plugins.identity.core.interfaces import IAuditSink
 from pas.plugins.identity.core.interfaces import IAuditSource
 from pas.plugins.identity.core.pas import PLUGIN_ID
+from pas.plugins.identity.core.utils.clientip import HEADERS_RECORD
 from plone import api
 from zope.component import getGlobalSiteManager
 from zope.component import getUtility
@@ -270,7 +271,7 @@ class TestPrivacy:
     def test_request_context_when_opted_in(self):
         """With it on, the operator gets what they asked for."""
         api.portal.set_registry_record(RECORD_PII_RECORD, True)
-        self.request.environ["REMOTE_ADDR"] = "203.0.113.7"
+        self.request._client_addr = "203.0.113.7"
         self.request.environ["HTTP_USER_AGENT"] = "test-agent"
 
         detail = request_detail(self.request)
@@ -278,19 +279,43 @@ class TestPrivacy:
         assert detail["ip"] == "203.0.113.7"
         assert detail["user_agent"] == "test-agent"
 
-    def test_forwarded_for_wins(self):
-        """Behind a proxy the socket address is the proxy's."""
-        api.portal.set_registry_record(RECORD_PII_RECORD, True)
-        self.request.environ["REMOTE_ADDR"] = "10.0.0.1"
-        self.request.environ["HTTP_X_FORWARDED_FOR"] = "203.0.113.7"
-
-        assert request_detail(self.request)["ip"] == "203.0.113.7"
-
     def test_no_request_yields_nothing(self):
         """Not every caller has a request."""
         api.portal.set_registry_record(RECORD_PII_RECORD, True)
 
         assert request_detail(None) == {}
+
+
+class TestTheRecordedAddress:
+    """These change a setting and the request the class shares, so each
+    test puts them back."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, http_request_class, monkeypatch):
+        self.portal = portal
+        self.request = http_request_class
+        self.monkeypatch = monkeypatch
+        api.portal.set_registry_record(RECORD_PII_RECORD, True)
+        self.request._client_addr = "10.0.0.1"
+        yield
+        api.portal.set_registry_record(HEADERS_RECORD, ())
+
+    def test_a_header_the_site_names_is_used(self):
+        """Behind a proxy the socket address is the proxy's."""
+        api.portal.set_registry_record(HEADERS_RECORD, ("CF-Connecting-IP",))
+        self.monkeypatch.setitem(
+            self.request.environ, "HTTP_CF_CONNECTING_IP", "203.0.113.7"
+        )
+
+        assert request_detail(self.request)["ip"] == "203.0.113.7"
+
+    def test_a_header_the_site_does_not_name_is_ignored(self):
+        """Otherwise a client writes what it likes into the log."""
+        self.monkeypatch.setitem(
+            self.request.environ, "HTTP_X_FORWARDED_FOR", "203.0.113.7"
+        )
+
+        assert request_detail(self.request)["ip"] == "10.0.0.1"
 
 
 class TestSubscribers:

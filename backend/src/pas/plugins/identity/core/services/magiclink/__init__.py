@@ -31,6 +31,7 @@ from pas.plugins.identity.core.flows import magiclink
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
+from pas.plugins.identity.core.utils.clientip import client_ip
 from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from plone import api
 from urllib.parse import urlencode
@@ -85,22 +86,6 @@ def get_provider_config() -> ProviderConfig | None:
     return None
 
 
-def client_ip(request: HTTPRequest) -> str:
-    """Return the caller's address for rate-limiting purposes.
-
-    Not stored anywhere: this is a bucket key, and the bucket is swept an
-    hour later. Recording it in the audit log is a separate, opt-in decision.
-
-    :param request: The current request.
-    :returns: The client IP, or an empty string when there is none.
-    """
-    return (
-        (request.get("HTTP_X_FORWARDED_FOR") or request.get("REMOTE_ADDR") or "")
-        .split(",")[0]
-        .strip()
-    )
-
-
 def check_rate_limits(config: JSONDict, address: str, request: HTTPRequest) -> None:
     """Count one send against both buckets, refusing over either limit.
 
@@ -114,6 +99,8 @@ def check_rate_limits(config: JSONDict, address: str, request: HTTPRequest) -> N
         f"address:{address}",
         int(config.get("rate_limit_per_hour") or magiclink.DEFAULT_RATE_LIMIT),
     )
+    # The IP is a bucket key and goes no further: the bucket is swept an hour
+    # later. Recording it in the audit log is a separate, opt-in decision.
     store.check_and_record(
         f"ip:{client_ip(request)}",
         int(config.get("ip_rate_limit_per_hour") or magiclink.DEFAULT_IP_RATE_LIMIT),

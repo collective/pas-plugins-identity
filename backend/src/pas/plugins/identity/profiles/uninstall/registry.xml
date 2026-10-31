@@ -18,6 +18,9 @@
   <record name="pas.plugins.identity.audit_sinks"
           remove="true"
   />
+  <record name="pas.plugins.identity.client_ip_headers"
+          remove="true"
+  />
 
   <record name="pas.plugins.identity.sync_portraits"
           remove="true"

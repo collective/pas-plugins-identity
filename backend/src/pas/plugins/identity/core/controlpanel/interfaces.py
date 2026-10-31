@@ -10,6 +10,7 @@ a record the site knows about everywhere.
 
 from copy import copy
 from pas.plugins.identity import _
+from pas.plugins.identity.core.utils.clientip import is_header_name
 from pas.plugins.identity.core.utils.svg import is_svg_upload
 from pas.plugins.identity.core.vocabularies.groups import GROUPS_VOCABULARY
 from pas.plugins.identity.core.vocabularies.userfields import USER_FIELDS_VOCABULARY
@@ -217,6 +218,24 @@ class IIdentitySettings(Interface):
         default=("plugin",),
     )
 
+    client_ip_headers = schema.Tuple(
+        title=_("Headers carrying the client's address"),
+        description=_(
+            "Request headers your proxy sets to the visitor's address, in "
+            "order: the first one a request has is used, and when a header "
+            "lists several addresses, the last one. For Cloudflare, list "
+            "CF-Connecting-IPv6 and then CF-Connecting-IP. The audit log and "
+            "the magic link rate limit both use this. Clients can send any "
+            "header they like, so name one only if your proxy overwrites it "
+            "and nobody can reach this site around that proxy. Leave empty "
+            "to use the address Zope reports."
+        ),
+        value_type=schema.TextLine(constraint=is_header_name),
+        required=False,
+        missing_value=(),
+        default=(),
+    )
+
     # The form's tabs, grouped by what an operator is doing rather than by
     # what a field is. ``discovery_timeout`` sits with the callback and not
     # with the other timeout because it fails the same way the callback does:
@@ -245,6 +264,7 @@ class IIdentitySettings(Interface):
             "audit_max_days",
             "audit_record_pii",
             "audit_sinks",
+            "client_ip_headers",
         ],
     )
 

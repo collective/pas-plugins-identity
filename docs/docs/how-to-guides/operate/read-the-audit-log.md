@@ -54,6 +54,37 @@ access request. The default is off so that the decision is one you make rather
 than one you inherit.
 ```
 
+## Record the visitor's address behind a proxy
+
+Behind a proxy, Zope sees the proxy's address, and on Docker Swarm that is a
+container network address. The audit log records it, and the magic-link rate
+limit counts every visitor as one caller.
+
+Name the header your proxy sets:
+
+1. Open the **Identity providers** control panel, and go to the **Audit log**
+   tab of its settings.
+2. List the headers in {guilabel}`Headers carrying the client's address`, the
+   `client_ip_headers` registry setting.
+
+The first header a request has is used. When a header lists several addresses,
+the last one is used.
+
+| In front of the site | List |
+|---|---|
+| Cloudflare | `CF-Connecting-IPv6`, then `CF-Connecting-IP` |
+| One proxy that appends to `X-Forwarded-For` | `X-Forwarded-For` |
+
+```{warning}
+A client can send any header it likes. Name a header only when your proxy
+overwrites it and nobody can reach the site around that proxy. On a site where
+somebody can, the header lets them write any address into the audit log and
+escape the magic-link rate limit per IP.
+```
+
+With no header listed, the address is the one Zope reports, which honors Zope's
+own `trusted-proxy` setting.
+
 ## Change how much is kept
 
 Two registry settings bound the log:

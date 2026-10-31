@@ -23,6 +23,7 @@ from pas.plugins.identity import logger
 from pas.plugins.identity.core.interfaces import IAuditSink
 from pas.plugins.identity.core.interfaces import IAuditSource
 from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity.core.utils.clientip import client_ip
 from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from persistent import Persistent
 from persistent.list import PersistentList
@@ -237,7 +238,7 @@ def request_detail(request: HTTPRequest | None) -> JSONDict:
     if request is None or not record_pii():
         return {}
     return {
-        "ip": request.get("HTTP_X_FORWARDED_FOR") or request.get("REMOTE_ADDR", ""),
+        "ip": client_ip(request),
         "user_agent": request.get("HTTP_USER_AGENT", ""),
     }
 

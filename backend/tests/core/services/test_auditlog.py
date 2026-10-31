@@ -246,7 +246,7 @@ class TestPrivacyDefault:
     def test_opt_in_surfaces_it(self):
         """And with it on, the operator gets what they asked for."""
         api.portal.set_registry_record(RECORD_PII_RECORD, True)
-        self.request.environ["REMOTE_ADDR"] = "203.0.113.7"
+        self.request._client_addr = "203.0.113.7"
 
         record(self.member, AUTHENTICATED, "dex", True, request=self.request)
 
