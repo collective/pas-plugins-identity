@@ -18,10 +18,12 @@ from pas.plugins.identity.core.controlpanel.controlpanel import IdentityConfigle
 from pas.plugins.identity.core.controlpanel.interfaces import IIdentityPanelSchema
 from pas.plugins.identity.core.controlpanel.interfaces import IIdentitySettings
 from pas.plugins.identity.core.controlpanel.interfaces import IProfileSettings
+from pas.plugins.identity.core.utils.clientip import HEADERS_RECORD
 from plone import api
 from plone.registry.interfaces import IRegistry
 from plone.restapi.deserializer.controlpanels import ControlpanelDeserializeFromJson
 from plone.restapi.serializer.controlpanels import ControlpanelSerializeToJson
+from zExceptions import BadRequest
 from zope.component import getUtility
 from zope.schema import getFieldNames
 
@@ -43,7 +45,13 @@ TABS = [
     (
         "audit",
         "Audit log",
-        ["audit_max_entries", "audit_max_days", "audit_record_pii", "audit_sinks"],
+        [
+            "audit_max_entries",
+            "audit_max_days",
+            "audit_record_pii",
+            "audit_sinks",
+            "client_ip_headers",
+        ],
     ),
     (
         "containers",
@@ -127,8 +135,8 @@ class TestTheFormIsGrouped:
         assert on_a_tab == declared
 
     def test_the_panel_serves_both_schemas(self):
-        """The point of serving a derived schema at all: twenty-two
-        properties, which is all twenty-six fields but the four derived
+        """The point of serving a derived schema at all: twenty-three
+        properties, which is all twenty-seven fields but the four derived
         records."""
         properties = self.payload()["schema"]["properties"]
 
@@ -155,7 +163,7 @@ class TestTheCombinedSchemaAddressesRealRecords:
     """The derived interface is not a new set of records.
 
     Both bases register under the same ``pas.plugins.identity`` prefix and
-    share no field name, so ``forInterface`` resolves all twenty-six against
+    share no field name, so ``forInterface`` resolves all twenty-seven against
     records the profile already created. Nothing about that is obvious from
     reading the class, hence these.
     """
@@ -244,6 +252,17 @@ class TestTheDerivedRecordsAreNotEditedHere:
             api.portal.get_registry_record("pas.plugins.identity.user_container_path")
             == "people"
         )
+
+    def test_saving_the_client_address_headers(self):
+        """The control panel is how an operator names them."""
+        self.save({"client_ip_headers": ["CF-Connecting-IP"]})
+
+        assert api.portal.get_registry_record(HEADERS_RECORD) == ("CF-Connecting-IP",)
+
+    def test_a_save_refuses_what_cannot_be_a_header(self):
+        """A value the resolver would only ever skip must not look saved."""
+        with pytest.raises(BadRequest):
+            self.save({"client_ip_headers": ["X_Forwarded_For"]})
 
     def test_a_save_naming_one_writes_nothing(self):
         """Not only our frontend: any client may send the field."""
