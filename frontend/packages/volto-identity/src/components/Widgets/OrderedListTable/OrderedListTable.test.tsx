@@ -7,7 +7,14 @@ import {
   it,
   vi,
 } from 'vitest';
-import { fireEvent, render, screen, within } from '../../../testing';
+import {
+  dragByKeyboard,
+  dragHandles,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from '../../../testing';
 import React from 'react';
 
 import config from '@plone/volto/registry';
@@ -320,6 +327,24 @@ describe('OrderedListTable', () => {
       expect(handles).toHaveLength(2);
       expect(handles[0].getAttribute('aria-label')).toMatch(/GitHub/);
       expect(handles[1].getAttribute('aria-label')).toMatch(/Mastodon/);
+    });
+  });
+
+  describe('reordering', () => {
+    it('moves a row from the keyboard and reports every entry', async () => {
+      const { onChangeRows } = renderTable();
+
+      await dragByKeyboard(dragHandles()[1], ['ArrowUp']);
+
+      expect(onChangeRows).toHaveBeenCalledWith([ROWS[1], ROWS[0]]);
+    });
+
+    it('reports nothing for a row dropped where it started', async () => {
+      const { onChangeRows } = renderTable();
+
+      await dragByKeyboard(dragHandles()[1], ['ArrowUp', 'ArrowDown']);
+
+      expect(onChangeRows).not.toHaveBeenCalled();
     });
   });
 

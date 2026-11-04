@@ -231,7 +231,6 @@ msgstr "Standard"
 
 #. Default: "Delete"
 #: components/ControlPanel/ConfirmModal
-#: components/ControlPanel/ProvidersTable
 #: components/ControlPanel/RenderUsers
 msgid "Delete"
 msgstr "Löschen"
@@ -269,7 +268,6 @@ msgstr "Treiber"
 
 #. Default: "Edit"
 #: components/ControlPanel/ClientsPanel
-#: components/ControlPanel/ProvidersTable
 #: components/ControlPanel/RenderUsers
 #: components/Toolbar/Toolbar
 msgid "Edit"
@@ -329,11 +327,6 @@ msgstr "Alle"
 #: components/Toolbar/Toolbar
 msgid "Expand toolbar"
 msgstr "Symbolleiste erweitern"
-
-#. Default: "Export"
-#: components/ControlPanel/ProvidersTable
-msgid "Export"
-msgstr "Exportieren"
 
 #. Default: "Export every provider"
 #: components/ControlPanel/ProvidersControlPanel
@@ -527,11 +520,6 @@ msgstr "Menü geöffnet"
 msgid "More"
 msgstr "Mehr"
 
-#. Default: "Move {title}"
-#: components/ControlPanel/ProvidersTable
-msgid "Move {title}"
-msgstr "Verschieben {title}"
-
 #. Default: "News Item"
 #: components/Toolbar/Toolbar
 msgid "News Item"
@@ -597,11 +585,6 @@ msgstr "OAuth-Clients"
 #: components/ControlPanel/ClientsPanel
 msgid "Older keys stay in the ring so tokens already issued keep verifying."
 msgstr "Ältere Schlüssel bleiben im Ring, damit bereits ausgegebene Tokens die Verifizierung weiterhin durchführen. Der Ring hält {size}; Das Drehen von mehr als diesem innerhalb einer Zugriffstoken-Lebensdauer invalidiert noch immer Tokens."
-
-#. Default: "Order"
-#: components/ControlPanel/ProvidersTable
-msgid "Order"
-msgstr "Reihenfolge"
 
 #. Default: "Page"
 #: components/Toolbar/Toolbar
@@ -693,6 +676,11 @@ msgstr "Anbieter-Gruppe"
 #: helpers/providerSchema
 msgid "Provider id"
 msgstr "Anbieter-ID"
+
+#. Default: "Providers"
+#: components/ControlPanel/ProvidersTable
+msgid "Providers"
+msgstr "Anbieter"
 
 #. Default: "Public (PKCE required)"
 #: components/ControlPanel/ClientsPanel
@@ -866,7 +854,6 @@ msgstr "Sie werden zu {provider} geleitet…"
 
 #. Default: "Test connection"
 #: components/ControlPanel/ProvidersControlPanel
-#: components/ControlPanel/ProvidersTable
 msgid "Test connection"
 msgstr "Testverbindung"
 
@@ -1398,6 +1385,26 @@ msgstr "Das gewählte Symbol, wie hochgeladen angezeigt, bis gespeichert wird"
 #: helpers/providerSchema
 msgid "provider-id-help"
 msgstr "In URLs verwendet und mit jeder Identität gespeichert, die über diesen Anbieter verknüpft ist, daher ist es dauerhaft."
+
+#. Default: "Delete {title}"
+#: components/ControlPanel/ProvidersTable
+msgid "provider-row-delete"
+msgstr "{title} löschen"
+
+#. Default: "Edit {title}"
+#: components/ControlPanel/ProvidersTable
+msgid "provider-row-edit"
+msgstr "{title} bearbeiten"
+
+#. Default: "Export {title}"
+#: components/ControlPanel/ProvidersTable
+msgid "provider-row-export"
+msgstr "{title} exportieren"
+
+#. Default: "Test connection to {title}"
+#: components/ControlPanel/ProvidersTable
+msgid "provider-row-test"
+msgstr "Verbindung zu {title} testen"
 
 #. Default: "signing"
 #: components/ControlPanel/ClientsPanel

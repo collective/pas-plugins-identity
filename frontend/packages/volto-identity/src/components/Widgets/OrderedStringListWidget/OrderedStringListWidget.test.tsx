@@ -50,7 +50,7 @@ const ADDRESSES = ['erico@plone.org', 'erico@example.com'];
  */
 function renderWidget(props: Record<string, unknown> = {}) {
   const onChange = vi.fn();
-  const state = { lazyLibraries: {} };
+  const state = {};
   const store = {
     getState: () => state,
     dispatch: (action: unknown) => action,

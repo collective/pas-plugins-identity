@@ -61,8 +61,3 @@ export const Disabled: Story = {
   args: { isDisabled: true },
   decorators: [withAStore],
 };
-
-/** Before the drag library has loaded: on the server, and for a moment after. */
-export const BeforeTheDragLibrary: Story = {
-  decorators: [withStore({})],
-};

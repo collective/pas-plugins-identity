@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Plone\n"
-"POT-Creation-Date: 2026-11-04T16:47:16.542Z\n"
+"POT-Creation-Date: 2026-11-04T17:46:50.677Z\n"
 "Last-Translator: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Language-Team: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -233,7 +233,6 @@ msgstr ""
 
 #. Default: "Delete"
 #: components/ControlPanel/ConfirmModal
-#: components/ControlPanel/ProvidersTable
 #: components/ControlPanel/RenderUsers
 msgid "Delete"
 msgstr ""
@@ -271,7 +270,6 @@ msgstr ""
 
 #. Default: "Edit"
 #: components/ControlPanel/ClientsPanel
-#: components/ControlPanel/ProvidersTable
 #: components/ControlPanel/RenderUsers
 #: components/Toolbar/Toolbar
 msgid "Edit"
@@ -330,11 +328,6 @@ msgstr ""
 #. Default: "Expand toolbar"
 #: components/Toolbar/Toolbar
 msgid "Expand toolbar"
-msgstr ""
-
-#. Default: "Export"
-#: components/ControlPanel/ProvidersTable
-msgid "Export"
 msgstr ""
 
 #. Default: "Export every provider"
@@ -529,11 +522,6 @@ msgstr ""
 msgid "More"
 msgstr ""
 
-#. Default: "Move {title}"
-#: components/ControlPanel/ProvidersTable
-msgid "Move {title}"
-msgstr ""
-
 #. Default: "News Item"
 #: components/Toolbar/Toolbar
 msgid "News Item"
@@ -598,11 +586,6 @@ msgstr ""
 #. Default: "Older keys stay in the ring so tokens already issued keep verifying. The ring holds {size}; rotating more than that within one access-token lifetime will invalidate tokens still in flight."
 #: components/ControlPanel/ClientsPanel
 msgid "Older keys stay in the ring so tokens already issued keep verifying."
-msgstr ""
-
-#. Default: "Order"
-#: components/ControlPanel/ProvidersTable
-msgid "Order"
 msgstr ""
 
 #. Default: "Page"
@@ -694,6 +677,11 @@ msgstr ""
 #. Default: "Provider id"
 #: helpers/providerSchema
 msgid "Provider id"
+msgstr ""
+
+#. Default: "Providers"
+#: components/ControlPanel/ProvidersTable
+msgid "Providers"
 msgstr ""
 
 #. Default: "Public (PKCE required)"
@@ -868,7 +856,6 @@ msgstr ""
 
 #. Default: "Test connection"
 #: components/ControlPanel/ProvidersControlPanel
-#: components/ControlPanel/ProvidersTable
 msgid "Test connection"
 msgstr ""
 
@@ -1399,6 +1386,26 @@ msgstr ""
 #. Default: "Used in URLs and stored with every identity linked through this provider, so it is permanent."
 #: helpers/providerSchema
 msgid "provider-id-help"
+msgstr ""
+
+#. Default: "Delete {title}"
+#: components/ControlPanel/ProvidersTable
+msgid "provider-row-delete"
+msgstr ""
+
+#. Default: "Edit {title}"
+#: components/ControlPanel/ProvidersTable
+msgid "provider-row-edit"
+msgstr ""
+
+#. Default: "Export {title}"
+#: components/ControlPanel/ProvidersTable
+msgid "provider-row-export"
+msgstr ""
+
+#. Default: "Test connection to {title}"
+#: components/ControlPanel/ProvidersTable
+msgid "provider-row-test"
 msgstr ""
 
 #. Default: "signing"

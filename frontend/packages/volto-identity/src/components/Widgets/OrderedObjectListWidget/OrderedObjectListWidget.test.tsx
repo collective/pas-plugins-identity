@@ -31,7 +31,7 @@ afterAll(() => {
 });
 
 /**
- * Render a widget over a store with no drag library loaded.
+ * Render a widget over an empty store.
  *
  * @param props Props to replace.
  * @param Widget The widget to render.
@@ -42,7 +42,7 @@ function renderWidget(
   Widget: React.FC<any> = OrderedObjectListWidget,
 ) {
   const onChange = vi.fn();
-  const state = { lazyLibraries: {} };
+  const state = {};
   const store = {
     getState: () => state,
     dispatch: (action: unknown) => action,

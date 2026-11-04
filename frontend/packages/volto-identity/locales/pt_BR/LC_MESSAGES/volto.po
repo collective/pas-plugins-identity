@@ -236,7 +236,6 @@ msgstr "Padrão"
 
 #. Default: "Delete"
 #: components/ControlPanel/ConfirmModal
-#: components/ControlPanel/ProvidersTable
 #: components/ControlPanel/RenderUsers
 msgid "Delete"
 msgstr "Excluir"
@@ -274,7 +273,6 @@ msgstr "Driver"
 
 #. Default: "Edit"
 #: components/ControlPanel/ClientsPanel
-#: components/ControlPanel/ProvidersTable
 #: components/ControlPanel/RenderUsers
 #: components/Toolbar/Toolbar
 msgid "Edit"
@@ -334,11 +332,6 @@ msgstr "Todos"
 #: components/Toolbar/Toolbar
 msgid "Expand toolbar"
 msgstr "Expandir barra de ferramentas"
-
-#. Default: "Export"
-#: components/ControlPanel/ProvidersTable
-msgid "Export"
-msgstr "Exportar"
 
 #. Default: "Export every provider"
 #: components/ControlPanel/ProvidersControlPanel
@@ -532,11 +525,6 @@ msgstr "Menu aberto"
 msgid "More"
 msgstr "Mais"
 
-#. Default: "Move {title}"
-#: components/ControlPanel/ProvidersTable
-msgid "Move {title}"
-msgstr "Mover {title}"
-
 #. Default: "News Item"
 #: components/Toolbar/Toolbar
 msgid "News Item"
@@ -602,11 +590,6 @@ msgstr "Clientes OAuth"
 #: components/ControlPanel/ClientsPanel
 msgid "Older keys stay in the ring so tokens already issued keep verifying."
 msgstr "Chaves mais antigas permanecem no anel para que os tokens já emitidos continuem verificando. O anel contém {size}; rotacionar mais que isso em uma vida de token de acesso invalidará tokens ainda em voo."
-
-#. Default: "Order"
-#: components/ControlPanel/ProvidersTable
-msgid "Order"
-msgstr "Ordem"
 
 #. Default: "Page"
 #: components/Toolbar/Toolbar
@@ -698,6 +681,11 @@ msgstr "Grupo de provedor"
 #: helpers/providerSchema
 msgid "Provider id"
 msgstr "Id do provedor"
+
+#. Default: "Providers"
+#: components/ControlPanel/ProvidersTable
+msgid "Providers"
+msgstr "Provedores"
 
 #. Default: "Public (PKCE required)"
 #: components/ControlPanel/ClientsPanel
@@ -871,7 +859,6 @@ msgstr "Levando você para {provider}…"
 
 #. Default: "Test connection"
 #: components/ControlPanel/ProvidersControlPanel
-#: components/ControlPanel/ProvidersTable
 msgid "Test connection"
 msgstr "Testar conexão"
 
@@ -1403,6 +1390,26 @@ msgstr "O ícone escolhido, mostrado como foi carregado até ser salvo"
 #: helpers/providerSchema
 msgid "provider-id-help"
 msgstr "Usado em URLs e armazenado com cada identidade vinculada através deste provedor, portanto é permanente."
+
+#. Default: "Delete {title}"
+#: components/ControlPanel/ProvidersTable
+msgid "provider-row-delete"
+msgstr "Excluir {title}"
+
+#. Default: "Edit {title}"
+#: components/ControlPanel/ProvidersTable
+msgid "provider-row-edit"
+msgstr "Editar {title}"
+
+#. Default: "Export {title}"
+#: components/ControlPanel/ProvidersTable
+msgid "provider-row-export"
+msgstr "Exportar {title}"
+
+#. Default: "Test connection to {title}"
+#: components/ControlPanel/ProvidersTable
+msgid "provider-row-test"
+msgstr "Testar conexão com {title}"
 
 #. Default: "signing"
 #: components/ControlPanel/ClientsPanel

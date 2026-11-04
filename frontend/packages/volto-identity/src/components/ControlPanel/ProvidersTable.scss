@@ -1,0 +1,60 @@
+/**
+ * The providers control panel's table.
+ *
+ * `@plone/components`' basic table styles do the layout; what is here makes
+ * it span the panel, puts the actions to the right, and draws the buttons as
+ * bare icons, as the list widgets do.
+ */
+.identity-providers__table {
+  width: 100%;
+  min-height: 0;
+}
+
+/** The actions, to the right of everything else. */
+.identity-providers__actions-header {
+  text-align: right;
+}
+
+.identity-providers__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+/** A row's buttons and its edit link: the icon, without a button's chrome. */
+.identity-providers__action {
+  display: inline-flex;
+  padding: 4px;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+
+  &[data-focus-visible],
+  &:focus-visible {
+    outline: 2px solid var(--identity-accent);
+    outline-offset: 1px;
+  }
+}
+
+/** The drag handle react-aria's row puts first. */
+.identity-providers__table [slot='drag'] {
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: grab;
+  /* Without it a touch screen scrolls the page instead of dragging. */
+  touch-action: none;
+}
+
+/** The row being dragged. */
+.identity-providers__table .react-aria-Row[data-dragging] {
+  opacity: 0.6;
+}
+
+/** Where a dragged row will land. */
+.identity-providers__table .react-aria-DropIndicator[data-drop-target] {
+  outline: 1px solid var(--identity-accent);
+}
