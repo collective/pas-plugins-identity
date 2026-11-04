@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import install from './widgets';
 import OrderedObjectListWidget from '../components/Widgets/OrderedObjectListWidget/OrderedObjectListWidget';
 import OrderedStringListWidget from '../components/Widgets/OrderedStringListWidget/OrderedStringListWidget';
-import ProviderIconWidget from '../components/Widgets/ProviderIconWidget';
+import ProviderIconWidget from '../components/Widgets/ProviderIconWidget/ProviderIconWidget';
 
 /**
  * Install the widgets into a configuration holding only some widgets.

@@ -1,7 +1,7 @@
 import type { ConfigType } from '@plone/registry';
 import OrderedObjectListWidget from '../components/Widgets/OrderedObjectListWidget/OrderedObjectListWidget';
 import OrderedStringListWidget from '../components/Widgets/OrderedStringListWidget/OrderedStringListWidget';
-import ProviderIconWidget from '../components/Widgets/ProviderIconWidget';
+import ProviderIconWidget from '../components/Widgets/ProviderIconWidget/ProviderIconWidget';
 
 /**
  * The widgets this add-on supplies, and who decides which field uses them.

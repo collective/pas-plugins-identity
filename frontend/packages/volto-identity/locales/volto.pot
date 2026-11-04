@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Plone\n"
-"POT-Creation-Date: 2026-11-04T15:13:58.285Z\n"
+"POT-Creation-Date: 2026-11-04T16:47:16.542Z\n"
 "Last-Translator: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Language-Team: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -140,7 +140,7 @@ msgid "Changes saved"
 msgstr ""
 
 #. Default: "Choose a file"
-#: components/Widgets/ProviderIconWidget
+#: components/Widgets/ProviderIconWidget/ProviderIconWidget
 msgid "Choose a file"
 msgstr ""
 
@@ -235,7 +235,6 @@ msgstr ""
 #: components/ControlPanel/ConfirmModal
 #: components/ControlPanel/ProvidersTable
 #: components/ControlPanel/RenderUsers
-#: components/Widgets/OrderedListTable/OrderedListTable
 msgid "Delete"
 msgstr ""
 
@@ -275,7 +274,6 @@ msgstr ""
 #: components/ControlPanel/ProvidersTable
 #: components/ControlPanel/RenderUsers
 #: components/Toolbar/Toolbar
-#: components/Widgets/OrderedListTable/OrderedListTable
 msgid "Edit"
 msgstr ""
 
@@ -533,7 +531,6 @@ msgstr ""
 
 #. Default: "Move {title}"
 #: components/ControlPanel/ProvidersTable
-#: components/Widgets/OrderedListTable/OrderedListTable
 msgid "Move {title}"
 msgstr ""
 
@@ -605,7 +602,6 @@ msgstr ""
 
 #. Default: "Order"
 #: components/ControlPanel/ProvidersTable
-#: components/Widgets/OrderedListTable/OrderedListTable
 msgid "Order"
 msgstr ""
 
@@ -748,12 +744,12 @@ msgstr ""
 
 #. Default: "Remove"
 #: components/Identities/IdentitiesList
-#: components/Widgets/ProviderIconWidget
+#: components/Widgets/ProviderIconWidget/ProviderIconWidget
 msgid "Remove"
 msgstr ""
 
 #. Default: "Replace existing file"
-#: components/Widgets/ProviderIconWidget
+#: components/Widgets/ProviderIconWidget/ProviderIconWidget
 msgid "Replace existing file"
 msgstr ""
 
@@ -1320,9 +1316,19 @@ msgstr ""
 msgid "ordered-list-confirm-delete"
 msgstr ""
 
+#. Default: "Delete {title}"
+#: components/Widgets/OrderedListTable/OrderedListTable
+msgid "ordered-list-delete-row"
+msgstr ""
+
 #. Default: "{value} is already on the list."
 #: components/Widgets/OrderedStringListWidget/OrderedStringListWidget
 msgid "ordered-list-duplicate"
+msgstr ""
+
+#. Default: "Edit {title}"
+#: components/Widgets/OrderedListTable/OrderedListTable
+msgid "ordered-list-edit-row"
 msgstr ""
 
 #. Default: "Nothing has been added yet."
@@ -1376,13 +1382,18 @@ msgid "provider-driver-help"
 msgstr ""
 
 #. Default: "The driver's icon, used until one is uploaded."
-#: components/Widgets/ProviderIconWidget
+#: components/Widgets/ProviderIconWidget/ProviderIconWidget
 msgid "provider-icon-default"
 msgstr ""
 
 #. Default: "An SVG file. It is drawn in the button, so it takes the button colours; anything else is refused."
-#: components/Widgets/ProviderIconWidget
+#: components/Widgets/ProviderIconWidget/ProviderIconWidget
 msgid "provider-icon-hint"
+msgstr ""
+
+#. Default: "The chosen icon, shown as it was uploaded until saved"
+#: components/Widgets/ProviderIconWidget/ProviderIconWidget
+msgid "provider-icon-preview"
 msgstr ""
 
 #. Default: "Used in URLs and stored with every identity linked through this provider, so it is permanent."

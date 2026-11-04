@@ -11,7 +11,11 @@
  * so the dialog asks for an address with Volto's email widget, and validates
  * it, because the value type is `Email`. The column header is that field's
  * title. A list the backend declares `uniqueItems` -- every `Tuple` and `Set`
- * is one -- refuses an entry already on it.
+ * is one -- refuses an entry already on it, compared the way the backend
+ * compares: trimmed, and for an `Email` without regard to case, since the
+ * backend stores every address lowercased.
+ *
+ * An entry is stored trimmed, and an empty one is not stored at all.
  *
  * The backend asks for it by name:
  * `frontendOptions={"widget": "identity_string_list"}`.
@@ -46,6 +50,40 @@ type Props = {
 };
 
 /**
+ * Whether the list's value type is an email address.
+ *
+ * @param items The list's value type, as `plone.restapi` serializes it.
+ * @returns True for a `schema.Email` value type.
+ */
+export function isEmailType(items: Record<string, any> = {}): boolean {
+  return items.widget === 'email' || items.factory === 'Email';
+}
+
+/**
+ * The form an entry is compared in, to find a duplicate.
+ *
+ * @param entry The entry.
+ * @param email Whether entries are email addresses.
+ * @returns The entry trimmed, and lowercased for an address.
+ */
+export function comparable(entry: unknown, email: boolean): string {
+  const text = String(entry ?? '').trim();
+  return email ? text.toLowerCase() : text;
+}
+
+/**
+ * The value to store from the table's entries.
+ *
+ * @param rows The entries, as the table edits them.
+ * @returns Each entry's text, trimmed, with empty ones left out.
+ */
+export function storedValues(rows: Row[]): string[] {
+  return rows
+    .map((row) => String(row[FIELD] ?? '').trim())
+    .filter((entry) => entry !== '');
+}
+
+/**
  * The schema one entry is edited with.
  *
  * @param title The list field's title, used when the value type has none.
@@ -71,13 +109,18 @@ const OrderedStringListWidget: React.FC<Props> = (props) => {
   const schema = useMemo(() => stringItemSchema(title, items), [title, items]);
   const entries = value ?? [];
 
+  const email = isEmailType(items);
+
   const validate = (row: Row, index: number | null) => {
-    const candidate = row[FIELD];
+    const candidate = comparable(row[FIELD], email);
     const taken = entries.some(
-      (entry, position) => position !== index && entry === candidate,
+      (entry, position) =>
+        position !== index && comparable(entry, email) === candidate,
     );
     return taken
-      ? intl.formatMessage(messages.duplicate, { value: String(candidate) })
+      ? intl.formatMessage(messages.duplicate, {
+          value: String(row[FIELD] ?? '').trim(),
+        })
       : undefined;
   };
 
@@ -87,12 +130,7 @@ const OrderedStringListWidget: React.FC<Props> = (props) => {
       rows={entries.map((entry) => ({ [FIELD]: entry }))}
       schema={schema}
       columns={[FIELD]}
-      onChangeRows={(rows) =>
-        onChange(
-          id,
-          rows.map((row) => String(row[FIELD])),
-        )
-      }
+      onChangeRows={(rows) => onChange(id, storedValues(rows))}
       validate={uniqueItems ? validate : undefined}
     />
   );

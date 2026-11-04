@@ -6,6 +6,9 @@ import React from 'react';
 import config from '@plone/volto/registry';
 
 import OrderedStringListWidget, {
+  comparable,
+  isEmailType,
+  storedValues,
   stringItemSchema,
 } from './OrderedStringListWidget';
 import { EMAIL_ITEMS } from '../../../stories/fixtures';
@@ -40,7 +43,7 @@ const ITEMS = EMAIL_ITEMS;
 const ADDRESSES = ['erico@plone.org', 'erico@example.com'];
 
 /**
- * Render the widget over a store with no drag library loaded.
+ * Render the widget over an empty store.
  *
  * @param props Props to replace.
  * @returns What the widget reported.
@@ -110,8 +113,8 @@ describe('OrderedStringListWidget', () => {
     renderWidget();
 
     expect(
-      [...document.querySelectorAll('tr[data-row]')].map(
-        (row) => (row as HTMLTableRowElement).cells[1].textContent,
+      [...document.querySelectorAll('[data-row]')].map(
+        (row) => row.querySelectorAll('td, th')[1].textContent,
       ),
     ).toEqual(ADDRESSES);
   });
@@ -157,13 +160,28 @@ describe('OrderedStringListWidget', () => {
     const onChange = renderWidget();
 
     fireEvent.click(
-      within(
-        document.querySelector('tr[data-row="#1"]') as HTMLElement,
-      ).getByRole('button', { name: 'Edit' }),
+      screen.getByRole('button', { name: 'Edit erico@example.com' }),
     );
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(onChange).toHaveBeenCalledWith('emails', ADDRESSES);
+  });
+
+  it('refuses an address that differs only in case', async () => {
+    // The backend stores every address trimmed and lowercased, and would
+    // fold this one into the existing entry without a word.
+    const onChange = renderWidget();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add Email' }));
+    fireEvent.change(await address(), {
+      target: { value: 'Erico@Example.COM' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(
+      screen.getByText('Erico@Example.COM is already on the list.'),
+    ).toBeTruthy();
   });
 
   it('accepts a repeated entry on a list that allows one', async () => {
@@ -179,5 +197,37 @@ describe('OrderedStringListWidget', () => {
       ...ADDRESSES,
       'erico@example.com',
     ]);
+  });
+});
+
+describe('comparable', () => {
+  it('folds case for an address', () => {
+    expect(comparable(' Erico@Plone.ORG ', true)).toBe('erico@plone.org');
+  });
+
+  it('keeps case for any other text', () => {
+    expect(comparable(' Plone ', false)).toBe('Plone');
+  });
+});
+
+describe('isEmailType', () => {
+  it('knows an Email value type by its widget or its factory', () => {
+    expect(isEmailType(EMAIL_ITEMS)).toBe(true);
+    expect(isEmailType({ factory: 'Email' })).toBe(true);
+    expect(isEmailType({ type: 'string' })).toBe(false);
+    expect(isEmailType()).toBe(false);
+  });
+});
+
+describe('storedValues', () => {
+  it('trims every entry', () => {
+    expect(storedValues([{ value: ' a ' }, { value: 'b' }])).toEqual([
+      'a',
+      'b',
+    ]);
+  });
+
+  it('leaves out an empty entry rather than storing "undefined"', () => {
+    expect(storedValues([{}, { value: '' }, { value: 'b' }])).toEqual(['b']);
   });
 });

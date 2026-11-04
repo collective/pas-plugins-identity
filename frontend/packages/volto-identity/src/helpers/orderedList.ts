@@ -4,11 +4,10 @@
  * The table drags rows by key, and a key has to survive a drag. An object
  * list's entries carry an `@id` for that -- the contract Volto's own
  * `object_list` widget writes -- and a string list's entries carry nothing, so
- * those are keyed by position. None of this knows about the drag library or
- * about React.
+ * those are keyed by what they hold. None of this knows about the drag
+ * library or about React.
  * @module helpers/orderedList
  */
-import { movedIds } from './providerOrder';
 
 /** One entry, as the table edits it: a record of the item schema's fields. */
 export type Row = Record<string, unknown>;
@@ -29,40 +28,73 @@ export type ItemSchema = {
 /**
  * The key each row drags by.
  *
+ * A key has to follow its entry when the entries are reordered: the table
+ * keeps focus and selection by key, and a screen reader is told which entry
+ * moved by it. A position does not follow anything, so an entry without an
+ * `@id` is keyed by what it holds instead.
+ *
  * @param rows The entries, in order.
  * @returns One key per entry: its `@id` when it has one no earlier entry
- *   already used, and its position otherwise. A position key starts with `#`,
- *   which no `@id` this package writes does.
+ *   already used; otherwise `#` and the entry as JSON, with `~2`, `~3`… for a
+ *   repeat of an entry already keyed. No `@id` this package writes starts
+ *   with `#`.
  */
 export function rowKeys(rows: Row[]): string[] {
   const seen = new Set<string>();
-  return rows.map((row, index) => {
+  const repeats = new Map<string, number>();
+  return rows.map((row) => {
     const id = row['@id'];
     if (typeof id === 'string' && id && !seen.has(id)) {
       seen.add(id);
       return id;
     }
-    return `#${index}`;
+    const content = `#${JSON.stringify(row)}`;
+    const count = (repeats.get(content) ?? 0) + 1;
+    repeats.set(content, count);
+    return count === 1 ? content : `${content}~${count}`;
   });
 }
 
+/** Where a dragged entry is dropped, relative to the entry it is dropped on. */
+export type DropPosition = 'before' | 'after' | 'on';
+
 /**
- * The entries after one has been dropped in another's place.
+ * The entries after some have been dropped next to another.
+ *
+ * Shaped like the reorder event of react-aria's `useDragAndDrop`: the keys
+ * dragged, the key they were dropped on, and which side of it.
  *
  * @param rows The entries, in order.
- * @param moved The key that was dragged.
- * @param target The key whose place it was dropped in, or `null` when it was
- *   dropped outside the list.
- * @returns The new order, or `null` when the drop changes nothing.
+ * @param moved The keys dragged, in any order; they keep their order.
+ * @param target The key they were dropped next to.
+ * @param position Which side of the target. `on` is read as `before`.
+ * @returns The new order, or `null` when the drop changes nothing or names
+ *   a key the list does not have.
  */
-export function movedRows(
+export function reorderedRows(
   rows: Row[],
-  moved: string,
-  target: string | null,
+  moved: string[],
+  target: string,
+  position: DropPosition,
 ): Row[] | null {
   const keys = rowKeys(rows);
-  const order = movedIds(keys, moved, target);
-  return order ? order.map((key) => rows[keys.indexOf(key)]) : null;
+  const dragged = new Set(moved);
+  if (dragged.has(target) || !keys.includes(target)) {
+    return null;
+  }
+  const movedRows = rows.filter((_, index) => dragged.has(keys[index]));
+  if (!movedRows.length) {
+    return null;
+  }
+  const remaining = rows.filter((_, index) => !dragged.has(keys[index]));
+  const remainingKeys = keys.filter((key) => !dragged.has(key));
+  const at = remainingKeys.indexOf(target) + (position === 'after' ? 1 : 0);
+  const next = [
+    ...remaining.slice(0, at),
+    ...movedRows,
+    ...remaining.slice(at),
+  ];
+  return next.every((row, index) => row === rows[index]) ? null : next;
 }
 
 /**
