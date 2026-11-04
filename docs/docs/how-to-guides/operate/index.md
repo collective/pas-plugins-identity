@@ -15,6 +15,7 @@ Keep a running site healthy, and find out what happened when it was not.
 | {doc}`troubleshoot` | Finds the cause of a failed sign-in, by symptom |
 | {doc}`read-the-audit-log` | Queries the audit log, tunes its retention, and sends entries to a SIEM |
 | {doc}`review-a-user-account` | Shows which providers a user signs in with, when they last authenticated, and which of their addresses are verified |
+| {doc}`manage-group-members` | Adds people and groups to a group, and takes them out, from the group's page |
 | {doc}`enable-back-channel-logout` | Lets a provider end somebody's sessions here when they sign out there |
 | {doc}`export-and-import-principals` | Moves users, groups, and identities between sites, as JSON |
 
@@ -30,6 +31,7 @@ Keep a running site healthy, and find out what happened when it was not.
 troubleshoot
 read-the-audit-log
 review-a-user-account
+manage-group-members
 enable-back-channel-logout
 export-and-import-principals
 ```

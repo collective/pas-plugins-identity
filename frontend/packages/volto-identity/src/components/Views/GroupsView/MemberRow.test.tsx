@@ -12,6 +12,7 @@ const ALICE: GroupMember = {
   login: 'alice@example.com',
   profile_url: '/identity-profiles/alice',
   through: ['developers'],
+  type: 'user',
 };
 
 /**

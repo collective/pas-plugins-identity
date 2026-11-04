@@ -22,7 +22,13 @@ export {
 } from './clients';
 export { getConsentRequest, listGrants, withdrawGrant } from './consent';
 export { listDrivers } from './drivers';
-export { listGroupMembers, searchGroupMembers } from './groups';
+export {
+  listDirectGroupMembers,
+  listGroupMembers,
+  MEMBERS_PAGE_SIZE,
+  searchGroupMembers,
+  unnestGroup,
+} from './groups';
 export { listIdentities, startLinking, unlinkIdentity } from './identities';
 export { listKeys, rotateKey } from './keys';
 export {

@@ -42,6 +42,11 @@ from Products.ZCatalog.CatalogBrains import AbstractCatalogBrain
 #: What a caller needs to read a group's membership without being in it.
 MANAGE_PERMISSION = ManageUsers
 
+#: What plone.restapi's ``PATCH @groups/<id>`` asks for, by title: the only
+#: way in to change a group's members, so it is also what decides whether a
+#: page offers to.
+CHANGE_MEMBERS_PERMISSION = "Plone Site Setup: Users and Groups"
+
 
 def get_profile_plugin():
     """Return the profile PAS plugin, or ``None``.
@@ -132,8 +137,40 @@ def direct_members(
     ]
 
 
+def direct_member_groups(
+    group_id: str, plugin, search: str = ""
+) -> list[AbstractCatalogBrain]:
+    """Return the groups nested directly in a group through their own field.
+
+    Only the ``group_ids`` edge counts. A group *filed inside* another is
+    nested too, but no membership write can undo that -- it is undone by
+    moving the group -- so it is not a member anybody can remove.
+
+    :param group_id: The outer group.
+    :param plugin: The profile PAS plugin.
+    :param search: Case-insensitive substring matched against the title and
+        the id. Empty matches every group.
+    :returns: Group brains, ordered by title.
+    """
+    term = search.strip().lower()
+    groups = [
+        brain
+        for brain in plugin.active_group_brains()
+        if brain.group_id != group_id
+        and group_id in (getattr(brain, "group_ids", None) or ())
+        and (
+            not term
+            or term in (brain.Title or "").lower()
+            or term in brain.group_id.lower()
+        )
+    ]
+    return sorted(groups, key=lambda brain: (brain.Title or brain.group_id).lower())
+
+
 __all__ = [
+    "CHANGE_MEMBERS_PERMISSION",
     "MANAGE_PERMISSION",
+    "direct_member_groups",
     "direct_members",
     "get_profile_plugin",
     "member_brains",

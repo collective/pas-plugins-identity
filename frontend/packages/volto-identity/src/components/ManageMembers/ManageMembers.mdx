@@ -1,0 +1,101 @@
+import { Canvas, Meta } from '@storybook/blocks';
+
+import * as GroupViewStories from '../Views/GroupsView/GroupView.stories';
+import * as PaginationStories from '../Views/GroupsView/MembersPagination.stories';
+import * as PageStories from './ManageMembers.stories';
+import * as PanelStories from './ManageMembersPanel.stories';
+import * as AddStories from './AddMembers.stories';
+
+<Meta title="Identity/ManageMembers/Overview" />
+
+# Managing a group's members
+
+A group's page lists its members. Somebody who may change them also gets a
+**Manage members** button, which opens a page at `<group>/manage-members`.
+On that page they can add people and groups and remove members.
+
+This page explains how the parts fit together. The stories next to it show
+each part in every state it can be in.
+
+## The group page
+
+The page lists ten members at a time. A search narrows the list, and Volto's own
+`Pagination` (the one its Contents view and its users and groups control panels
+use) pages through the rest.
+The search and the page are kept in the URL as `?q=` and `?page=`, counted from 1,
+so a page can be linked to and the back button returns to the one before.
+
+<Canvas of={GroupViewStories.Manageable} />
+
+The pagination on its own. Clicking a page writes `?page=` and keeps the search:
+
+<Canvas of={PaginationStories.WithinASearch} />
+
+## Who may manage the members
+
+The page needs whatever plone.restapi's `PATCH @groups/<id>` needs:
+
+| Caller | May |
+|---|---|
+| Manager | Yes, any group |
+| Site Administrator | Yes, except a group holding the `Manager` role |
+| Anybody else, members of the group included | No |
+
+`GET @group-members/<id>` answers this as `can_manage`, so the group page knows
+whether to show the button. The members page checks it as well, so going to the
+URL directly is refused rather than offering changes that would fail.
+
+<Canvas of={PanelStories.Refused} />
+
+## The members page
+
+What a change acts on, a page at a time: the groups nested here, then the people
+in this group itself. It reads `@group-members/<id>?direct=1`.
+
+<Canvas of={PageStories.Default} />
+
+Two kinds of member are **not** listed, because no change of this group's
+members can take them out:
+
+- **People who are in it through a nested group.** They are removed from that group, on its own page.
+- **A group filed inside this one in the site tree.** That nesting is undone by moving the group.
+
+## Adding
+
+Search for people and groups, tick any number of them, and add them all with one
+request. What is ticked is kept across searches, so three people found by three
+names go in together.
+
+<Canvas of={AddStories.Found} />
+
+Adding a group nests it: everybody in it is then in this group too, at any depth.
+
+## Every request goes to an existing endpoint
+
+This add-on adds no endpoint for writing a membership.
+
+| Action | Request |
+|---|---|
+| Read the members | `GET @group-members/<id>?direct=1&b_size=10&b_start=…` |
+| Find people | `GET @users?search=…`, through Volto's `listUsers` |
+| Find groups | `GET @groups?query=…`, through Volto's `listGroups` |
+| Add people and groups | `PATCH @groups/<id>` with `{"users": {"<id>": true}}`, through Volto's `updateGroup` |
+| Remove a person | `PATCH @groups/<id>` with `{"users": {"<id>": false}}` |
+| Remove a nested group | `PATCH <nested group>` with its `group_ids` minus this group |
+
+### Why a nested group is removed differently
+
+`PATCH @groups/<id>` removes only the principals PlonePAS lists as the group's
+members, and that list holds userids. A nested group is never in it, so asking
+plone.restapi to remove one changes nothing and still answers success.
+
+The nesting is stored on the inner group, as its own `group_ids`, so the page
+writes that field on the inner group. It sends the same request as that group's
+edit form.
+
+<Canvas of={PanelStories.Removing} />
+
+## Related
+
+- The **Manage a group's members** how-to in the documentation.
+- `@group-members` in the documentation's endpoints reference.

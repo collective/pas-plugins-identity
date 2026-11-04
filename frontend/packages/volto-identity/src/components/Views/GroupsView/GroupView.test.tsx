@@ -32,6 +32,7 @@ const ALICE: GroupMember = {
   login: 'alice@example.com',
   profile_url: '/identity-profiles/alice',
   through: ['developers'],
+  type: 'user',
 };
 
 /** What the page loads on its own: the group's size and its nesting. */
@@ -58,6 +59,7 @@ const SUMMARY: GroupMembers = {
       group_url: '/identity-groups/everyone',
     },
   ],
+  can_manage: false,
 };
 
 const LOADED = { loading: false, loaded: true, error: null };
@@ -186,13 +188,26 @@ describe('GroupView', () => {
     expect(list.request.path).toBe('/@group-members/staff');
   });
 
-  it('does not list the members until somebody searches', () => {
-    // The summary carries a first page of rows; a group everybody is in is
-    // exactly the group whose list nobody wants drawn.
-    const dispatched = renderView({ ...LOADED, data: SUMMARY });
+  it('loads the first page of members without a search', () => {
+    // The middle ground: ten people, not nobody and not everybody.
+    const dispatched = renderView({ ...LOADED, data: SUMMARY }, found([ALICE]));
 
-    expect(screen.queryByText('Alice Liddell')).toBeNull();
-    expect(dispatched.some((a) => a.type === SEARCH_GROUP_MEMBERS)).toBe(false);
+    const page = dispatched.find((a) => a.type === SEARCH_GROUP_MEMBERS);
+    expect(page.request.path).toBe('/@group-members/staff?b_size=10');
+    expect(screen.getByText('Alice Liddell')).toBeTruthy();
+  });
+
+  it('loads the page in the URL', () => {
+    const dispatched = renderView(
+      { ...LOADED, data: SUMMARY },
+      found([ALICE]),
+      '/identity-groups/staff?page=3',
+    );
+
+    const page = dispatched.find((a) => a.type === SEARCH_GROUP_MEMBERS);
+    expect(page.request.path).toBe(
+      '/@group-members/staff?b_size=10&b_start=20',
+    );
   });
 
   it('searches for the query in the URL', () => {
@@ -203,7 +218,24 @@ describe('GroupView', () => {
     );
 
     const search = dispatched.find((a) => a.type === SEARCH_GROUP_MEMBERS);
-    expect(search.request.path).toBe('/@group-members/staff?query=ali');
+    expect(search.request.path).toBe(
+      '/@group-members/staff?query=ali&b_size=10',
+    );
+  });
+
+  it('offers to manage the members to somebody who may', () => {
+    renderView({ ...LOADED, data: { ...SUMMARY, can_manage: true } });
+
+    const link = screen.getByRole('link', { name: 'Manage members' });
+    expect(link.getAttribute('href')).toBe(
+      '/identity-profiles/staff/manage-members',
+    );
+  });
+
+  it('offers nothing to manage to somebody who may not', () => {
+    renderView({ ...LOADED, data: SUMMARY });
+
+    expect(screen.queryByRole('link', { name: 'Manage members' })).toBeNull();
   });
 
   it('shows what the search found beside the counts', () => {

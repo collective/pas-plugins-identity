@@ -163,6 +163,7 @@ not give that role every client secret along with it.
 |---|---|
 | `Manage portal` | the provider and client control panels, except the provider exports; the audit log, driver listing, key rotation |
 | `Manage users` | `@user-account`, and `@group-members` unless the caller is in the group |
+| `Plone Site Setup: Users and Groups` | reading `@group-members` without being in the group, and its `can_manage`; the members page changes members through `plone.restapi`'s `PATCH @groups/<id>`, which asks for it |
 
 See {doc}`endpoints` for which endpoint enforces which.
 

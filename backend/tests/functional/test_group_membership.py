@@ -9,11 +9,16 @@ question.
 So this drives ``PATCH @users``-style traffic the way Volto does: a real
 request, as the user, against the field. If the binding is wrong the write
 succeeds and alice is in a group she granted herself.
+
+The second half is the legitimate way in: the requests a group's members page
+sends, as somebody allowed to send them.
 """
 
 from pas.plugins.identity.core.catalog import GROUP_PORTAL_TYPE
 from pas.plugins.identity.core.container import get_container
 from plone import api
+from plone.app.testing import SITE_OWNER_NAME
+from plone.app.testing import SITE_OWNER_PASSWORD
 
 import pytest
 import requests
@@ -93,6 +98,15 @@ class TestWritingYourOwnGroups:
 
         assert self.groups() == ()
 
+    def test_she_cannot_add_herself_through_groups_either(self):
+        """The other way in, which asks for a site-wide permission."""
+        response = patch(
+            f"{self.url}/@groups/site-editors", self.user, {"users": {USERID: True}}
+        )
+
+        assert response.status_code == 401
+        assert self.groups() == ()
+
     def test_she_can_still_edit_her_own_name(self):
         """The control. A fix that took self-service with it would pass the
         test above and fail this one."""
@@ -101,3 +115,92 @@ class TestWritingYourOwnGroups:
         assert response.status_code in (200, 204)
         self.portal._p_jar.sync()
         assert self.portal["identity-profiles"][USERID].fullname == "Alice L."
+
+
+class TestChangingMembersThroughGroups:
+    """plone.restapi's ``PATCH @groups/<id>`` is how a group's members change.
+
+    The members page sends it and nothing else, so it has to reach the field
+    this package stores membership in -- for a person and for a nested group.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, site) -> None:
+        self.portal, self.url = site
+        self.owner = (SITE_OWNER_NAME, SITE_OWNER_PASSWORD)
+        with api.env.adopt_roles(["Manager"]):
+            api.content.create(
+                container=self.portal["identity-profiles"],
+                type=GROUP_PORTAL_TYPE,
+                id="developers",
+                group_id="developers",
+                title="Developers",
+            )
+        transaction.commit()
+
+    def stored(self, principal: str) -> tuple:
+        """Return the group ids stored on a principal's content object.
+
+        :param principal: A userid or a group id.
+        :returns: The stored value.
+        """
+        self.portal._p_jar.sync()
+        return tuple(self.portal["identity-profiles"][principal].group_ids or ())
+
+    def change(self, members: dict) -> requests.Response:
+        """Change the members of site-editors as the site owner.
+
+        :param members: The ``users`` map: id to add (``True``) or remove.
+        :returns: The response.
+        """
+        return patch(f"{self.url}/@groups/site-editors", self.owner, {"users": members})
+
+    def test_a_person_is_added(self):
+        response = self.change({USERID: True})
+
+        assert response.status_code == 204
+        assert self.stored(USERID) == ("site-editors",)
+
+    def test_a_group_is_nested(self):
+        self.change({"developers": True})
+
+        assert self.stored("developers") == ("site-editors",)
+
+    def test_several_are_added_at_once(self):
+        self.change({USERID: True, "developers": True})
+
+        assert (self.stored(USERID), self.stored("developers")) == (
+            ("site-editors",),
+            ("site-editors",),
+        )
+
+    def test_a_person_is_removed(self):
+        self.change({USERID: True})
+
+        self.change({USERID: False})
+
+        assert self.stored(USERID) == ()
+
+    def test_a_group_is_not_removed_through_groups(self):
+        """plone.restapi removes only what ``getGroupMemberIds`` lists, and
+        that is userids: a nested group is not among them, by design. The
+        members page therefore un-nests a group the other way, below."""
+        self.change({"developers": True})
+
+        self.change({"developers": False})
+
+        assert self.stored("developers") == ("site-editors",)
+
+    def test_a_group_is_removed_through_its_own_field(self):
+        """What the members page sends to un-nest a group: the nested group's
+        own ``group_ids``, without this one."""
+        self.change({"developers": True})
+
+        response = patch(
+            f"{self.url}/identity-profiles/developers",
+            self.owner,
+            {"group_ids": []},
+        )
+
+        assert response.status_code == 204
+        assert self.stored("developers") == ()

@@ -27,6 +27,8 @@ import type {
   ConsentRequest,
   Driver,
   GroupContent,
+  GroupMember,
+  GroupMembers,
   Identity,
   JsonSchema,
   LoginProvider,
@@ -1111,6 +1113,58 @@ export function groupContent(
     id: 'staff',
     title: 'Staff',
     review_state: 'active',
+    ...overrides,
+  };
+}
+
+/**
+ * Build one row of `@group-members`.
+ *
+ * @param id The userid, or the group id when `type` is `group`.
+ * @param fullname The name the row is shown under.
+ * @param overrides What this fixture is actually about.
+ * @returns A complete row.
+ */
+export function groupMember(
+  id: string,
+  fullname: string,
+  overrides: Partial<GroupMember> = {},
+): GroupMember {
+  const group = overrides.type === 'group';
+  const url = `/identity-profiles/${id}`;
+  return {
+    '@id': url,
+    id,
+    fullname,
+    login: group ? null : `${id}@example.com`,
+    profile_url: url,
+    through: ['staff'],
+    type: 'user',
+    ...overrides,
+  };
+}
+
+/**
+ * Build a page of `@group-members/staff`.
+ *
+ * @param items The rows on this page.
+ * @param overrides What this fixture is actually about.
+ * @returns A complete listing.
+ */
+export function groupMembersPage(
+  items: GroupMember[],
+  overrides: Partial<GroupMembers> = {},
+): GroupMembers {
+  return {
+    '@id': '/@group-members/staff',
+    group: 'staff',
+    items,
+    items_total: items.length,
+    members_total: 42,
+    direct_members_total: 12,
+    nested_groups: [],
+    parent_groups: [],
+    can_manage: false,
     ...overrides,
   };
 }

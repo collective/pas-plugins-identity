@@ -3,6 +3,8 @@
 from pas.plugins.identity.core.interfaces import IGroupMemberSerializer
 from pas.plugins.identity.core.interfaces import JSONDict
 from pas.plugins.identity.core.services.base import IdentityService
+from pas.plugins.identity.core.services.groups import CHANGE_MEMBERS_PERMISSION
+from pas.plugins.identity.core.services.groups import direct_member_groups
 from pas.plugins.identity.core.services.groups import direct_members
 from pas.plugins.identity.core.services.groups import get_profile_plugin
 from pas.plugins.identity.core.services.groups import MANAGE_PERMISSION
@@ -10,6 +12,7 @@ from pas.plugins.identity.core.services.groups import member_brains
 from pas.plugins.identity.core.services.groups import search_members
 from plone import api
 from plone.restapi.batching import HypermediaBatch
+from Products.CMFCore.permissions import ManagePortal
 from Products.CMFPlone.Portal import PloneSite
 from zope.component import getMultiAdapter
 from zope.interface import implementer
@@ -43,10 +46,15 @@ class GroupMembersGet(IdentityService):
     def reply(self) -> JSONDict:
         """List a group's members.
 
-        Who may read it: a manager, or somebody who is in the group. A
-        membership list is personal data about other people, and the two
-        callers that legitimately want it are an administrator and a member
-        looking at their own team.
+        Who may read it: a manager, somebody who may change the group's
+        members, or somebody who is in the group. A membership list is
+        personal data about other people, and the callers that legitimately
+        want it are an administrator and a member looking at their own team.
+
+        ``direct=1`` lists what a change of members acts on instead: the
+        groups nested here through their own field, then the people in this
+        group itself. ``b_size`` and ``b_start`` page either listing, as
+        plone.restapi pages everything else.
 
         :returns: The listing, or an error body.
         """
@@ -67,18 +75,29 @@ class GroupMembersGet(IdentityService):
             return refusal
 
         everybody = member_brains(group_id, plugin)
-        brains = search_members(everybody, self.request.form.get("query", "") or "")
-        batch = HypermediaBatch(self.request, brains)
+        query = self.request.form.get("query", "") or ""
         # Once, not once per row: the adapter is stateless and the lookup is
         # the only part of rendering a row that is not a dictionary literal.
         serialize = getMultiAdapter(
             (self.context, self.request), IGroupMemberSerializer
         )
+        if self._direct():
+            # The members somebody can remove: the groups nested here through
+            # their own field, then the people in this group itself. Groups
+            # first, because there are few of them and each stands for many.
+            groups = direct_member_groups(group_id, plugin, query)
+            people = search_members(direct_members(group_id, everybody), query)
+            rows = [(self._render_group_row, b) for b in groups] + [
+                (serialize, b) for b in people
+            ]
+        else:
+            rows = [(serialize, b) for b in search_members(everybody, query)]
+        batch = HypermediaBatch(self.request, rows)
         result = {
             "@id": batch.canonical_url,
             "group": group_id,
             "items_total": batch.items_total,
-            "items": [serialize(brain) for brain in batch],
+            "items": [render(brain) for render, brain in batch],
             # The size of the group whatever was searched for, so a page can
             # say how many people are in it without listing them. Counted from
             # the membership the search narrowed, so it costs no second query.
@@ -92,10 +111,60 @@ class GroupMembersGet(IdentityService):
             "parent_groups": self._render_groups(
                 plugin.getGroupParentIds(group_id), plugin
             ),
+            # Whether plone.restapi's ``PATCH @groups/<id>`` would accept a
+            # change of members from this caller, so a page knows whether to
+            # offer one without trying it.
+            "can_manage": self._can_manage(group_id),
         }
         if batch.links:
             result["batching"] = batch.links
         return result
+
+    def _direct(self) -> bool:
+        """Say whether the caller asked for direct members only.
+
+        :returns: ``True`` for ``direct=1`` (or ``true``), ``False`` otherwise.
+        """
+        value = str(self.request.form.get("direct", "") or "").strip().lower()
+        return value in ("1", "true", "yes", "on")
+
+    def _can_manage(self, group_id: str) -> bool:
+        """Say whether the caller may change this group's members.
+
+        The same two questions plone.restapi's ``PATCH @groups/<id>`` asks:
+        the site-wide permission, and -- for somebody who does not manage the
+        portal -- that the group does not hold the ``Manager`` role, because
+        adding a person to it would be granting that role.
+
+        :param group_id: The group being read.
+        :returns: Whether a change of members would be accepted.
+        """
+        if not api.user.has_permission(CHANGE_MEMBERS_PERMISSION):
+            return False
+        if api.user.has_permission(ManagePortal):
+            return True
+        group = api.group.get(groupname=group_id)
+        return group is None or "Manager" not in group.getRoles()
+
+    def _render_group_row(self, brain) -> JSONDict:
+        """Render a directly nested group as a row of a direct listing.
+
+        The keys a person's row has, so a list of members can draw both
+        without asking which is which until it has to.
+
+        :param brain: A Group brain.
+        :returns: JSON-ready mapping.
+        """
+        url = brain.getURL()
+        return {
+            "@id": url,
+            "id": brain.group_id,
+            "fullname": brain.Title or brain.group_id,
+            "login": None,
+            "profile_url": url,
+            "through": sorted(getattr(brain, "group_ids", None) or ()),
+            "type": "group",
+        }
 
     def _refuse_unless_allowed(self, group_id: str) -> JSONDict | None:
         """Return an error body unless the caller may read this membership.
@@ -104,6 +173,11 @@ class GroupMembersGet(IdentityService):
         :returns: The error body, or ``None`` when the caller is allowed.
         """
         if api.user.has_permission(MANAGE_PERMISSION):
+            return None
+        # Somebody who may change the members may see them. A Site
+        # Administrator holds this and not ``Manage users``, and could
+        # otherwise edit a membership through ``@groups`` they cannot read.
+        if api.user.has_permission(CHANGE_MEMBERS_PERMISSION):
             return None
         caller = api.user.get_current().getId()
         # The closed answer, so somebody in an inner group may read the outer
@@ -114,7 +188,8 @@ class GroupMembersGet(IdentityService):
             403,
             "Not allowed",
             "Reading a group's members needs the "
-            f"{MANAGE_PERMISSION!r} permission, or membership of it.",
+            f"{MANAGE_PERMISSION!r} or {CHANGE_MEMBERS_PERMISSION!r} "
+            "permission, or membership of it.",
         )
 
     def _render_groups(self, group_ids: tuple[str, ...], plugin) -> list[JSONDict]:

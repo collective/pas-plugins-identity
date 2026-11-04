@@ -1,12 +1,12 @@
 /**
- * What a search of a group's members found.
+ * A page of a group's members, searched or not.
  *
- * Every state under the search box: a hint before anybody has searched, a
- * status while the search is on its way, a note when nobody matched, and
- * the people found otherwise -- with a line saying so when there are more of
- * them than one page holds.
+ * Every state under the search box: a status while the page is on its way,
+ * a note when a search matched nobody, and the people otherwise -- a page of
+ * them at a time, with Volto's pagination under the list when there is more
+ * than one page.
  *
- * Given the search rather than reading it from the store, so every one of
+ * Given the page rather than reading it from the store, so every one of
  * those states is a set of props. Deciding which answer belongs to which
  * query is the page's job.
  * @module components/Views/GroupsView/MemberResults
@@ -15,33 +15,26 @@ import React from 'react';
 import { defineMessages, useIntl } from 'react-intl';
 
 import MemberRow from './MemberRow';
+import MembersPagination from './MembersPagination';
 import type { GroupMembers } from '../../../types';
 
 import './MemberResults.scss';
 
 const messages = defineMessages({
-  hint: {
-    id: 'group-view-search-hint',
-    defaultMessage: 'Search by name or login to find somebody in this group.',
-  },
+  loading: { id: 'group-view-loading', defaultMessage: 'Loading members…' },
   searching: { id: 'group-view-searching', defaultMessage: 'Searching…' },
   noMatch: {
     id: 'group-view-no-match',
     defaultMessage: 'Nobody in this group matches “{query}”.',
-  },
-  partial: {
-    id: 'group-view-partial',
-    defaultMessage:
-      'Showing {shown} of {total} matches. Narrow the search to see the rest.',
   },
 });
 
 export interface MemberResultsProps {
   /** The group whose page this is. */
   groupId: string;
-  /** What was searched for. Empty before anybody has searched. */
+  /** What was searched for. Empty when nobody has searched. */
   query: string;
-  /** The answer to `query`, or null while there is none yet. */
+  /** The page of members for `query`, or null while there is none yet. */
   result: GroupMembers | null;
 }
 
@@ -52,17 +45,16 @@ const MemberResults: React.FC<MemberResultsProps> = ({
 }) => {
   const intl = useIntl();
 
-  if (!query) {
-    return <p className="identity-note">{intl.formatMessage(messages.hint)}</p>;
-  }
   if (!result) {
     return (
       <p className="identity-note" role="status">
-        {intl.formatMessage(messages.searching)}
+        {intl.formatMessage(query ? messages.searching : messages.loading)}
       </p>
     );
   }
   if (!result.items.length) {
+    // Only a search can come back empty: a group with nobody in it says so
+    // before there is anything to list.
     return (
       <p className="identity-note">
         {intl.formatMessage(messages.noMatch, { query })}
@@ -76,14 +68,7 @@ const MemberResults: React.FC<MemberResultsProps> = ({
           <MemberRow key={member.id} member={member} groupId={groupId} />
         ))}
       </ul>
-      {result.items_total > result.items.length ? (
-        <p className="identity-note">
-          {intl.formatMessage(messages.partial, {
-            shown: result.items.length,
-            total: result.items_total,
-          })}
-        </p>
-      ) : null}
+      <MembersPagination total={result.items_total} />
     </div>
   );
 };

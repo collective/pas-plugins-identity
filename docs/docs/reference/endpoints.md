@@ -41,7 +41,7 @@ Present in every installation.
 | GET | `@types` | authenticated | The profile content types. |
 | PATCH | `@users` | see source | Update profile fields. |
 | GET | `@portrait/<userid>` | anonymous | A user's picture: the Profile's when it has one, the member portrait otherwise. The `[server]` layer publishes this URL as the OIDC `picture` claim. |
-| GET | `@group-members/<group id>` | `Manage users`, or membership of the group | Members of a group. |
+| GET | `@group-members/<group id>` | `Manage users`, `Plone Site Setup: Users and Groups`, or membership of the group | Members of a group. |
 | GET | `@user-account/<userid>` | `Manage users` | One user's sign-in methods, for administrators. |
 | GET | `@identity-drivers` | `Manage portal` | Drivers available to configure, each with its settings schema and default icon. |
 | GET | `@identity-providers` | `Manage portal` | Configured providers, or one with `/<id>`. Secrets are masked. A bare `GET` also carries the form schema, and `can_export`: whether the caller may take an export. |
@@ -55,7 +55,11 @@ Present in every installation.
 | GET | `@audit-log` | `Manage portal` | Authentication events. |
 
 `@group-members` is the one with a compound rule: `Manage users`, **or**
-membership of the group being asked about.
+`Plone Site Setup: Users and Groups`, **or** membership of the group being
+asked about.
+The second is what `plone.restapi`'s `PATCH @groups/<id>` asks for, so a Site
+Administrator, who holds it without `Manage users`, can read the members they
+can change.
 
 ### Three answers worth knowing
 
@@ -109,8 +113,13 @@ with nothing keeps a public site's payload exactly as it was.
 
 <!-- source: backend/src/pas/plugins/identity/core/services/groups/get.py -->
 
-What `GET @group-members/<group id>` answers with. `?query=` narrows the rows
-to the members whose full name or login contains it, ignoring case.
+What `GET @group-members/<group id>` answers with.
+
+| Parameter | Effect |
+|---|---|
+| `query` | Narrows the rows to the members whose full name or login contains it, ignoring case. With `direct`, a group's title or id as well. |
+| `direct` | `1` or `true`: only what a change of members acts on. The groups nested here through their own `group_ids`, by title, then the people in this group itself. People who are in it through a nested group are left out. A group filed inside this one is left out too, because no membership change undoes that. |
+| `b_size`, `b_start` | The `plone.restapi` batch parameters. |
 
 | Key | What it holds |
 |---|---|
@@ -122,6 +131,7 @@ to the members whose full name or login contains it, ignoring case.
 | `direct_members_total` | The members in the group itself rather than through a nested group. The same whatever `query` is. |
 | `nested_groups` | The groups nested inside this one, at any depth. |
 | `parent_groups` | The groups this one is directly nested inside. |
+| `can_manage` | Whether `PATCH @groups/<id>` would accept a change of members from the caller: `Plone Site Setup: Users and Groups`, and for a group holding the `Manager` role, `Manage portal` as well. |
 | `batching` | The `plone.restapi` batch links, present when there is more than one page. |
 
 ### A membership row
@@ -138,6 +148,18 @@ Each entry in the `items` of `@group-members`:
 | `login` | The login name. |
 | `profile_url` | The same URL as `@id`. Kept for clients written against the earlier `@id`, which pointed at the listing's own URL with the userid appended and answered `400`. |
 | `through` | The groups this person is directly in, so a page listing an outer group can say where each of them came from. |
+| `type` | `user`. |
+
+With `direct`, a nested group is a row as well, with the same keys:
+
+| Key | What it holds |
+|---|---|
+| `@id`, `profile_url` | The group's own page. |
+| `id` | The group id. |
+| `fullname` | The group's title, falling back to its id. |
+| `login` | `null`. |
+| `through` | The groups this group is directly in. |
+| `type` | `group`. |
 
 No address. A membership listing is personal data about other people, and it is
 not a directory of contact details.
