@@ -340,6 +340,15 @@ class TestAccess(GroupMembersCase):
 
         assert self.status() == 200
 
+    def test_a_site_administrator_may_read_any_group(self):
+        """They hold the permission ``PATCH @groups`` asks for, not
+        ``Manage users``, and must see the members they may change."""
+        setRoles(self.portal, TEST_USER_ID, ["Site Administrator"])
+
+        self.listing("secret")
+
+        assert self.status() == 200
+
 
 class TestTheRow(GroupMembersCase):
     """What one member looks like, and what rendering one costs."""
@@ -452,3 +461,135 @@ class TestTheRowIsAnAdapter(GroupMembersCase):
         row = self.listing("staff")["items"][0]
 
         assert "badge" not in row
+
+
+class TestDirect(GroupMembersCase):
+    """``direct=1``: the members somebody managing the group can remove."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_, acl_users, make_group) -> None:
+        self.portal = portal
+        self.request = request_
+        self.acl_users = acl_users
+        setRoles(portal, TEST_USER_ID, ["Manager"])
+        login(portal, TEST_USER_NAME)
+        self.staff = make_group("staff", title="Staff")
+        make_group("developers", title="Developers")
+        make_group("contractors", title="Contractors")
+        self.nest("developers", "staff")
+        self.nest("contractors", "staff")
+        self.member("alice", "developers", fullname="Alice Liddell")
+        self.member("bob", "staff", fullname="Bob Cratchit")
+
+    def ids(self, **form) -> list[str]:
+        """Return the ids of a direct listing of staff, in order.
+
+        :param form: More query-string parameters.
+        :returns: Row ids.
+        """
+        return [i["id"] for i in self.listing("staff", direct="1", **form)["items"]]
+
+    def test_lists_nested_groups_then_people(self):
+        """Groups first, by title; then the people in the group itself."""
+        assert self.ids() == ["contractors", "developers", "bob"]
+
+    def test_leaves_out_people_who_arrive_through_a_nested_group(self):
+        """Alice is removed from developers, not from staff."""
+        assert "alice" not in self.ids()
+
+    def test_without_the_flag_people_only(self):
+        """The group page lists people; nested groups have their own list."""
+        ids = [i["id"] for i in self.listing("staff")["items"]]
+
+        assert ids == ["alice", "bob"]
+
+    @pytest.mark.parametrize("flag", ["0", "", "no"])
+    def test_anything_else_is_not_the_flag(self, flag: str):
+        ids = [i["id"] for i in self.listing("staff", direct=flag)["items"]]
+
+        assert ids == ["alice", "bob"]
+
+    def test_every_row_says_what_it_is(self):
+        rows = self.listing("staff", direct="1")["items"]
+
+        assert [r["type"] for r in rows] == ["group", "group", "user"]
+
+    def test_a_group_row_names_and_links_the_group(self):
+        row = self.listing("staff", direct="1")["items"][1]
+
+        assert row["id"] == "developers"
+        assert row["fullname"] == "Developers"
+        assert row["login"] is None
+        assert row["profile_url"].endswith("/identity-profiles/developers")
+
+    def test_the_search_narrows_groups_and_people(self):
+        assert self.ids(query="dev") == ["developers"]
+        assert self.ids(query="cratchit") == ["bob"]
+
+    def test_a_group_filed_inside_is_not_a_removable_member(self, make_group):
+        """Containment nests it too, but only moving it undoes that."""
+        make_group("interns", title="Interns", container=self.staff)
+
+        assert "interns" not in self.ids()
+
+    def test_it_is_batched(self):
+        for index in range(12):
+            self.member(f"member-{index:02d}", "staff")
+
+        result = self.listing("staff", direct="1", b_size="10")
+
+        assert result["items_total"] == 15
+        assert len(result["items"]) == 10
+        assert "batching" in result
+
+    def test_the_totals_do_not_change(self):
+        """The summary is the group's, whatever the listing shows."""
+        result = self.listing("staff", direct="1")
+
+        assert (result["members_total"], result["direct_members_total"]) == (2, 1)
+
+
+class TestCanManage(GroupMembersCase):
+    """Whether plone.restapi's ``PATCH @groups/<id>`` would take a change."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, request_, acl_users, make_group) -> None:
+        self.portal = portal
+        self.request = request_
+        self.acl_users = acl_users
+        login(portal, TEST_USER_NAME)
+        make_group("staff", title="Staff")
+        make_group("admins", title="Admins")
+        api.group.grant_roles(groupname="admins", roles=["Manager"])
+        self.member("alice", "staff", fullname="Alice Liddell")
+
+    def can_manage(self, group_id: str, *roles: str) -> bool:
+        """Read ``can_manage`` with the test user holding some roles.
+
+        :param group_id: The group to read.
+        :param roles: The test user's roles.
+        :returns: The flag.
+        """
+        setRoles(self.portal, TEST_USER_ID, list(roles))
+        return self.listing(group_id)["can_manage"]
+
+    def test_a_manager_may(self):
+        assert self.can_manage("staff", "Manager") is True
+
+    def test_a_site_administrator_may(self):
+        assert self.can_manage("staff", "Site Administrator") is True
+
+    def test_a_manager_may_change_a_manager_group(self):
+        assert self.can_manage("admins", "Manager") is True
+
+    def test_a_site_administrator_may_not_change_a_manager_group(self):
+        """Adding somebody to it would be granting them Manager, which
+        plone.restapi refuses a Site Administrator."""
+        assert self.can_manage("admins", "Site Administrator") is False
+
+    def test_a_member_reading_their_own_group_may_not(self):
+        """Being able to read a group is not being able to change it."""
+        setRoles(self.portal, TEST_USER_ID, ["Member"])
+        login(self.portal, "alice")
+
+        assert self.listing("staff")["can_manage"] is False

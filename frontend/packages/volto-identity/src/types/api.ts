@@ -306,17 +306,24 @@ export interface UserProfile {
 export interface GroupMember {
   '@id': string;
   id: string;
+  /** The person's name, or the group's title. */
   fullname: string;
-  login: string;
+  /** Null for a group. */
+  login: string | null;
   profile_url: string | null;
   /**
    * The groups this person is actually in.
    *
    * Which is how a listing can account for somebody being on it: a member of
    * an inner group appears in the outer group's list, and this says through
-   * which.
+   * which. On a group's row, the groups that group is a member of.
    */
   through: string[];
+  /**
+   * A person, or a group nested here. Only a listing of direct members
+   * (`direct=1`) carries groups.
+   */
+  type: 'user' | 'group';
 }
 
 /** A group named in a nesting, with enough to render a link. */
@@ -353,6 +360,11 @@ export interface GroupMembers {
   nested_groups: NestedGroup[];
   /** Groups this one is nested inside, as stored rather than as closed. */
   parent_groups: NestedGroup[];
+  /**
+   * Whether `PATCH @groups/<id>` would accept a change of members from the
+   * caller, so a page knows whether to offer one.
+   */
+  can_manage: boolean;
   batching?: Record<string, string>;
 }
 

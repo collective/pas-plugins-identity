@@ -11,6 +11,9 @@ import ProvidersControlPanel from '../components/ControlPanel/ProvidersControlPa
 import UserAccount from '../components/ControlPanel/UserAccount';
 import Identities from '../components/Identities/Identities';
 import Login from '../components/Login/Login';
+import ManageMembers, {
+  MANAGE_MEMBERS_VIEW,
+} from '../components/ManageMembers/ManageMembers';
 import VoltoLogin from '@plone/volto/components/theme/Login/Login';
 import { CONFIRM_EMAIL_PATH } from '../helpers/profileGate';
 
@@ -131,6 +134,13 @@ export function providerEditUrl(providerId: string): string {
 /** Where a Manager configures the OAuth clients this site issues tokens to. */
 export const CLIENTS_CONTROLPANEL_PATH = '/controlpanel/identity-clients';
 
+/**
+ * A group's members page, below the group's own URL as Volto's sharing page
+ * is below an item's. The group is the content Volto loads for the URL
+ * without this last segment.
+ */
+export const MANAGE_MEMBERS_PATH = `/**/${MANAGE_MEMBERS_VIEW}`;
+
 export default function install(config: ConfigType) {
   config.settings.nonContentRoutes = [
     ...(config.settings.nonContentRoutes ?? []),
@@ -144,6 +154,9 @@ export default function install(config: ConfigType) {
     // strings are tested as unanchored regexes, and `/login` does not
     // occur in `/fallback_login`.
     new RegExp(`^${FALLBACK_LOGIN_PATH}$`),
+    // A suffix, as Volto's own `/sharing` is: `getBaseUrl` strips it to find
+    // the group, and the content view does not draw over the page.
+    new RegExp(`/${MANAGE_MEMBERS_VIEW}$`),
   ];
   config.addonRoutes = [
     ...(config.addonRoutes ?? []),
@@ -170,6 +183,7 @@ export default function install(config: ConfigType) {
       exact: true,
       component: ClientsControlPanel,
     },
+    { path: MANAGE_MEMBERS_PATH, exact: true, component: ManageMembers },
   ];
 
   // Keyed by configlet id, which is the last segment of each panel's route

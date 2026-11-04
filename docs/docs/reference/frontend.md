@@ -50,6 +50,7 @@ Storybook is built from this repository and published beside these pages.
 | `/controlpanel/identity-providers/add` | `PROVIDER_ADD_PATH` | `ProvidersControlPanel` | core |
 | `/controlpanel/identity-providers/:providerId/edit` | `PROVIDER_EDIT_PATH` | `ProvidersControlPanel` | core |
 | `/controlpanel/users/:userid/account` | `USER_ACCOUNT_PATH` | `UserAccount` | core |
+| `/**/manage-members` | `MANAGE_MEMBERS_PATH` | `ManageMembers` | core |
 | `/oauth-consent` | `CONSENT_PATH` | `Consent` | server |
 | `/applications` | `APPLICATIONS_PATH` | `Applications` | server |
 | `/controlpanel/identity-clients` | `CLIENTS_CONTROLPANEL_PATH` | `ClientsControlPanel` | server |
@@ -68,6 +69,21 @@ A profile that is also missing fields goes to the edit form first. See
 `ProfileGate` says why each time it redirects, as a toast: the fields the profile
 is waiting for, under the labels `missing_titles` gives them. A redirect on its
 own tells a user only that something is wrong.
+
+`/**/manage-members` is below a group's own URL, as Volto's `/sharing` is below
+an item's, and is in `nonContentRoutes` so Volto loads the group beneath it.
+It changes members through endpoints that already exist:
+
+| Change | Request |
+|---|---|
+| Add people and groups | `PATCH @groups/<id>` with `{"users": {"<id>": true}}`, through Volto's `updateGroup` |
+| Remove a person | `PATCH @groups/<id>` with `{"users": {"<id>": false}}` |
+| Remove a nested group | `PATCH` on that group's own content, with its `group_ids` minus this group |
+| Find people to add | `@users?search=`, through Volto's `listUsers` |
+| Find groups to add | `@groups?query=`, through Volto's `listGroups` |
+
+`PATCH @groups/<id>` removes only what PlonePAS lists as the group's members,
+and that list holds userids, so it cannot take a nested group out.
 
 ## Environment variables
 
@@ -209,6 +225,11 @@ page never carries somebody's welcome.
 | `config.views.contentTypesViews` | `UserGroup` |
 
 Each is a title and a body, because neither type has rich text.
+
+The `UserGroup` view lists the group's members ten at a time, with a search
+that narrows them. It pages with Volto's own `Pagination`, and the search and
+the page are kept in the URL as `?q=` and `?page=`, counted from 1.
+A caller whose `can_manage` is true also gets a link to `manage-members`.
 
 ## Widgets
 

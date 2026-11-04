@@ -16,6 +16,7 @@ const meta: Meta<typeof MemberRow> = {
       login: 'charlie@example.com',
       profile_url: '/identity-profiles/charlie',
       through: ['staff'],
+      type: 'user',
     },
   },
   // A row is a list item, and only renders as one inside a list.
@@ -42,6 +43,7 @@ export const Inherited: Story = {
       login: 'alice@example.com',
       profile_url: '/identity-profiles/alice',
       through: ['developers', 'contractors'],
+      type: 'user',
     },
   },
 };
@@ -56,6 +58,7 @@ export const WithoutAProfile: Story = {
       login: 'emilia@example.com',
       profile_url: null,
       through: ['staff'],
+      type: 'user',
     },
   },
 };

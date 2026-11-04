@@ -8,6 +8,7 @@ import install, {
   CONSENT_PATH,
   CONTROLPANEL_PATH,
   FALLBACK_LOGIN_PATH,
+  MANAGE_MEMBERS_PATH,
   PROVIDER_ADD_PATH,
   PROVIDER_EDIT_PATH,
   PROVIDERS_SETTINGS_PATH,
@@ -244,5 +245,38 @@ describe('the routes install step', () => {
 
     expect(config.addonRoutes[0].path).toBe('/other');
     expect(config.settings.controlPanelsIcons.other).toBe('svg');
+  });
+});
+
+describe('the members page of a group', () => {
+  it('is a route below any group', () => {
+    const config = emptyConfig();
+
+    install(config);
+
+    const route = config.addonRoutes.find(
+      (r: any) => r.path === MANAGE_MEMBERS_PATH,
+    );
+    expect(
+      matchPath('/identity-profiles/staff/manage-members', {
+        path: route.path,
+        exact: true,
+      }),
+    ).toBeTruthy();
+  });
+
+  it('is not content, so Volto loads the group beneath it', () => {
+    // As Volto's own `/sharing`: `getBaseUrl` strips what matches, and what
+    // is left is the group.
+    const config = emptyConfig();
+
+    install(config);
+
+    const pattern = config.settings.nonContentRoutes.find((route: RegExp) =>
+      route.test('/identity-profiles/staff/manage-members'),
+    );
+    expect('/identity-profiles/staff/manage-members'.replace(pattern, '')).toBe(
+      '/identity-profiles/staff',
+    );
   });
 });

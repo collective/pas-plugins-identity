@@ -64,4 +64,7 @@ class GroupMemberSerializer:
             # group's people can then say where each of them came from, rather
             # than presenting one flat list nobody can account for.
             "through": sorted(getattr(brain, "group_ids", None) or ()),
+            # A listing of direct members carries nested groups as rows too,
+            # so every row says which kind it is.
+            "type": "user",
         }

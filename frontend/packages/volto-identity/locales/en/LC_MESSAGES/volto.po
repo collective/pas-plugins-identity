@@ -102,6 +102,7 @@ msgstr ""
 #: components/ControlPanel/ProvidersControlPanel
 #: components/ControlPanel/UserAccount
 #: components/Identities/Identities
+#: components/ManageMembers/ManageMembers
 #: components/Toolbar/PersonalTools
 #: components/Toolbar/Toolbar
 msgid "Back"
@@ -317,6 +318,7 @@ msgstr ""
 #: components/Applications/Applications
 #: components/ControlPanel/ClientsControlPanel
 #: components/ControlPanel/ProvidersControlPanel
+#: components/ManageMembers/ManageMembers
 msgid "Error"
 msgstr ""
 
@@ -1147,8 +1149,15 @@ msgid "group-view-inherited-total"
 msgstr ""
 
 #. Default: "Loading members…"
+#: components/ManageMembers/ManageMembersPanel
 #: components/Views/GroupsView/GroupView
+#: components/Views/GroupsView/MemberResults
 msgid "group-view-loading"
+msgstr ""
+
+#. Default: "Manage members"
+#: components/Views/GroupsView/GroupView
+msgid "group-view-manage"
 msgstr ""
 
 #. Default: "{count, plural, one {member} other {members}}"
@@ -1162,6 +1171,7 @@ msgid "group-view-nested-help"
 msgstr ""
 
 #. Default: "Nobody in this group matches “{query}”."
+#: components/ManageMembers/ManageMembersPanel
 #: components/Views/GroupsView/MemberResults
 msgid "group-view-no-match"
 msgstr ""
@@ -1171,9 +1181,9 @@ msgstr ""
 msgid "group-view-no-members"
 msgstr ""
 
-#. Default: "Showing {shown} of {total} matches. Narrow the search to see the rest."
-#: components/Views/GroupsView/MemberResults
-msgid "group-view-partial"
+#. Default: "Pages of members"
+#: components/Views/GroupsView/MembersPagination
+msgid "group-view-pages"
 msgstr ""
 
 #. Default: "You can see this group but not who is in it. A membership list is visible to its own members and to somebody who manages users."
@@ -1186,17 +1196,13 @@ msgstr ""
 msgid "group-view-search"
 msgstr ""
 
-#. Default: "Search by name or login to find somebody in this group."
-#: components/Views/GroupsView/MemberResults
-msgid "group-view-search-hint"
-msgstr ""
-
 #. Default: "Name or login"
 #: components/Views/GroupsView/MemberSearch
 msgid "group-view-search-placeholder"
 msgstr ""
 
 #. Default: "Searching…"
+#: components/ManageMembers/AddMembers
 #: components/Views/GroupsView/MemberResults
 msgid "group-view-searching"
 msgstr ""
@@ -1209,6 +1215,92 @@ msgstr ""
 #. Default: "How you sign in"
 #: components/Identities/IdentitiesList
 msgid "identities-sections"
+msgstr ""
+
+#. Default: "Add members"
+#: components/ManageMembers/AddMembers
+msgid "manage-members-add"
+msgstr ""
+
+#. Default: "{count, plural, =0 {Add} one {Add # member} other {Add # members}}"
+#: components/ManageMembers/AddMembers
+msgid "manage-members-add-button"
+msgstr ""
+
+#. Default: "Nobody matches “{query}”."
+#: components/ManageMembers/AddMembers
+msgid "manage-members-add-nothing"
+msgstr ""
+
+#. Default: "Name, login or group"
+#: components/ManageMembers/AddMembers
+msgid "manage-members-add-placeholder"
+msgstr ""
+
+#. Default: "Find people or groups"
+#: components/ManageMembers/AddMembers
+msgid "manage-members-add-search"
+msgstr ""
+
+#. Default: "To add"
+#: components/ManageMembers/AddMembers
+msgid "manage-members-add-selected"
+msgstr ""
+
+#. Default: "Do not add {name}"
+#: components/ManageMembers/AddMembers
+msgid "manage-members-add-unselect"
+msgstr ""
+
+#. Default: "Members added"
+#: components/ManageMembers/ManageMembers
+msgid "manage-members-added"
+msgstr ""
+
+#. Default: "Back to the group"
+#: components/ManageMembers/ManageMembersPanel
+msgid "manage-members-back"
+msgstr ""
+
+#. Default: "Direct members"
+#: components/ManageMembers/ManageMembersPanel
+msgid "manage-members-direct"
+msgstr ""
+
+#. Default: "People who are in this group through a nested group are removed from that group."
+#: components/ManageMembers/ManageMembersPanel
+msgid "manage-members-direct-help"
+msgstr ""
+
+#. Default: "Nobody is in this group itself yet."
+#: components/ManageMembers/ManageMembersPanel
+msgid "manage-members-empty"
+msgstr ""
+
+#. Default: "Group"
+#: components/ManageMembers/AddMembers
+#: components/ManageMembers/ManageMembersPanel
+msgid "manage-members-group"
+msgstr ""
+
+#. Default: "You cannot change who is in this group. That needs permission to manage users and groups."
+#: components/ManageMembers/ManageMembersPanel
+msgid "manage-members-refused"
+msgstr ""
+
+#. Default: "Remove {name} from this group"
+#: components/ManageMembers/ManageMembersPanel
+msgid "manage-members-remove-label"
+msgstr ""
+
+#. Default: "Member removed"
+#: components/ManageMembers/ManageMembers
+msgid "manage-members-removed"
+msgstr ""
+
+#. Default: "Members of {group}"
+#: components/ManageMembers/ManageMembersPanel
+msgid "manage-members-title"
 msgstr ""
 
 #. Default: "not verified"

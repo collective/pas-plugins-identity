@@ -11,17 +11,23 @@
  * group, directly and in all, the groups nested inside this one, and the
  * groups this one is nested inside.
  *
- * ## Members are searched, not listed
+ * ## Members are listed a page at a time
  *
- * The page says how big the group is and offers a search; it does not list
- * everybody. A group everybody is in is exactly the group whose list is
- * useless and expensive to draw, and what somebody opening a group page
- * usually wants to know is whether a particular person is in it.
+ * The page says how big the group is, lists ten of its members and offers a
+ * search to narrow them. A group everybody is in is exactly the group whose
+ * full list is useless and expensive to draw, and a page of it with Volto's
+ * pagination under it costs one page however big the group is.
  *
- * The search is answered into a store slot of its own: a request clears its
- * slot while it is pending, and the counts and the nesting stay on screen
- * while somebody types. The query itself is kept in the URL -- see
- * `MemberSearch`.
+ * The page of members is answered into a store slot of its own: a request
+ * clears its slot while it is pending, and the counts and the nesting stay
+ * on screen while somebody types or pages. The query and the page are kept
+ * in the URL -- see `MemberSearch` and `MembersPagination`.
+ *
+ * ## Managing the members
+ *
+ * Somebody who may change the group's members -- `can_manage`, which the
+ * summary carries -- is offered a link to the page that does, at
+ * `<group>/manage-members`.
  *
  * It may refuse. Reading a group's membership needs `Manage users` or
  * membership of the group itself -- a member list is personal data about
@@ -41,9 +47,11 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { defineMessages, useIntl } from 'react-intl';
+import { Link } from 'react-router-dom';
 import { Container } from 'semantic-ui-react';
 
 import { Helmet } from '@plone/volto/helpers/Helmet/Helmet';
+import { flattenToAppURL } from '@plone/volto/helpers/Url/Url';
 
 import { listGroupMembers, searchGroupMembers } from '../../../actions';
 import BelowTitleSlot from '../BelowTitleSlot';
@@ -51,6 +59,8 @@ import GroupLinks from './GroupLinks';
 import MemberResults from './MemberResults';
 import MemberSearch, { useMemberQuery } from './MemberSearch';
 import MembersCount from './MembersCount';
+import { useMemberPage } from './MembersPagination';
+import { MANAGE_MEMBERS_VIEW } from '../../ManageMembers/ManageMembers';
 import type { GroupContent, GroupMembers } from '../../../types';
 
 import './GroupView.scss';
@@ -78,6 +88,7 @@ const messages = defineMessages({
       'visible to its own members and to somebody who manages users.',
   },
   loading: { id: 'group-view-loading', defaultMessage: 'Loading members…' },
+  manage: { id: 'group-view-manage', defaultMessage: 'Manage members' },
 });
 
 interface GroupViewProps {
@@ -91,6 +102,7 @@ const GroupView: React.FC<GroupViewProps> = ({ content }) => {
   const searchState = useSelector((store: any) => store.groupMemberSearch);
   const groupId = content.id;
   const query = useMemberQuery();
+  const page = useMemberPage();
 
   useEffect(() => {
     if (groupId) {
@@ -99,10 +111,10 @@ const GroupView: React.FC<GroupViewProps> = ({ content }) => {
   }, [dispatch, groupId]);
 
   useEffect(() => {
-    if (groupId && query) {
-      dispatch(searchGroupMembers(groupId, query));
+    if (groupId) {
+      dispatch(searchGroupMembers(groupId, query, page));
     }
-  }, [dispatch, groupId, query]);
+  }, [dispatch, groupId, query, page]);
 
   const summary: GroupMembers | null = summaryState?.data ?? null;
   // The membership only, not the group itself: a group that is loading and a
@@ -110,7 +122,7 @@ const GroupView: React.FC<GroupViewProps> = ({ content }) => {
   // has anything to wait for.
   const refused = Boolean(summaryState?.error);
   // A result for another group, or one still on its way, is not an answer to
-  // what is in the box.
+  // what the URL asks for.
   const result: GroupMembers | null =
     !searchState?.loading && searchState?.data?.group === groupId
       ? searchState.data
@@ -166,7 +178,17 @@ const GroupView: React.FC<GroupViewProps> = ({ content }) => {
       />
 
       <section className="identity-group-view__members">
-        <h2>{intl.formatMessage(messages.members)}</h2>
+        <div className="identity-group-view__members-header">
+          <h2>{intl.formatMessage(messages.members)}</h2>
+          {summary?.can_manage ? (
+            <Link
+              className="ui button identity-group-view__manage"
+              to={`${flattenToAppURL(content['@id'])}/${MANAGE_MEMBERS_VIEW}`}
+            >
+              {intl.formatMessage(messages.manage)}
+            </Link>
+          ) : null}
+        </div>
         {members}
       </section>
     </Container>

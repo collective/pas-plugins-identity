@@ -1,0 +1,37 @@
+.identity-add-members {
+  margin-bottom: var(--identity-gap, 1.5rem);
+
+  .identity-add-members__candidates {
+    padding: 0;
+    margin: 8px 0;
+    list-style: none;
+
+    li {
+      padding: 4px 0;
+    }
+
+    label {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      cursor: pointer;
+      gap: 8px;
+    }
+  }
+
+  .identity-add-members__selected {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 8px 0;
+    gap: 4px;
+  }
+
+  .identity-add-members__unselect {
+    padding: 0;
+    border: 0;
+    margin-left: 6px;
+    background: none;
+    cursor: pointer;
+  }
+}

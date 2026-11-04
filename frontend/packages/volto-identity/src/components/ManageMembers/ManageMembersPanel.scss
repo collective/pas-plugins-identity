@@ -1,0 +1,40 @@
+.identity-manage-members {
+  h2 {
+    margin-bottom: 4px;
+    font-size: 1.15em;
+  }
+
+  .identity-manage-members__list {
+    padding: 0;
+    margin: 8px 0;
+    list-style: none;
+  }
+
+  .identity-manage-members__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #eee;
+    gap: 8px;
+  }
+
+  /* The trash icon on its own: no border, which Semantic's `basic` button
+     draws as a box-shadow, and red, the package's colour for removing. */
+  .ui.basic.button.identity-manage-members__remove,
+  .ui.basic.button.identity-manage-members__remove:hover,
+  .ui.basic.button.identity-manage-members__remove:focus {
+    padding: 4px;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--identity-danger) !important;
+  }
+
+  .identity-manage-members__name {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+}
