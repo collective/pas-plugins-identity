@@ -8,6 +8,18 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0-alpha.15 (2026-11-04)
+
+
+### Feature
+
+- Listed a group's members on its page ten at a time, with Volto's own pagination, instead of showing only a search box. The search narrows the list, and the search and the page are kept in the URL. Somebody who may change the members gets a **Manage members** button, which opens a page at `<group>/manage-members` to add several people and groups at once and to remove members. Every change goes through `plone.restapi`'s existing endpoints. @ericof [#149](https://github.com/collective/pas-plugins-identity/issues/149)
+
+
+### Bugfix
+
+- Rebuilt the list widgets, the providers control panel's table and the provider icon upload on react-aria-components, as `@plone/components` is, and dropped Volto's lazily loaded drag library. Rows now reorder from the keyboard as well as by dragging, with the moves announced in the site's language, and each row's actions are named for its entry, as in "Delete GitHub". A freshly chosen icon is previewed as an image instead of inlined, so a script in the file no longer runs in the editor's session before the backend sanitizes it. The same file can be chosen again after removing it, and a file name outside Latin-1 no longer drops the upload. The email list refuses an address that differs from one already listed only in case, and stores entries trimmed. Delete removes the entry it asked about even if the list changed meanwhile. @ericof [#151](https://github.com/collective/pas-plugins-identity/issues/151)
+
 ## 1.0.0-alpha.14 (2026-10-22)
 
 

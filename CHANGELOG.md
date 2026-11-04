@@ -7,6 +7,48 @@
 -->
 
 <!-- towncrier release notes start -->
+## 1.0.0a15 (2026-11-04)
+
+### Backend
+
+
+#### Breaking
+
+- Changed how a visitor's address is read from `X-Forwarded-For`: the audit log and the magic-link rate limit now take its last entry, because the leftmost is whatever the client sent, and that let a client forge the logged address and take a fresh rate-limit bucket on every request. The header is read when `client_ip_headers` is empty and Zope's `trusted-proxy` is not set; with `trusted-proxy` set, the address is the one `request.getClientAddr()` reports. A site reachable without its proxy has to set `trusted-proxy` or name a header its proxy overwrites. Upgrade step 1012 creates the setting, empty. `client_ip` moved from `pas.plugins.identity.core.services.magiclink` to `pas.plugins.identity.core.utils.clientip`. @ericof [#147](https://github.com/collective/pas-plugins-identity/issues/147)
+
+
+#### Feature
+
+- Added the `client_ip_headers` setting to the Audit log tab of the Identity providers control panel, naming the request headers that carry a visitor's real address, in order. It covers sites behind Cloudflare (`CF-Connecting-IPv6`, then `CF-Connecting-IP`); left empty, `X-Forwarded-For` is used, as for a proxy on Docker Swarm, where the audit log otherwise records a container network address. The magic-link rate limit uses the same address. @ericof [#147](https://github.com/collective/pas-plugins-identity/issues/147)
+- Added `direct`, `can_manage` and a per-row `type` to `@group-members`. `direct=1` lists what a change of members acts on: the groups nested in the group through their own `group_ids`, then the people in the group itself. `can_manage` says whether `plone.restapi`'s `PATCH @groups/<id>` would accept a change of members from the caller. Somebody with `Plone Site Setup: Users and Groups`, such as a Site Administrator, may now read any group's members, as they could already change them. @ericof [#149](https://github.com/collective/pas-plugins-identity/issues/149)
+
+
+
+### Frontend
+
+
+#### Feature
+
+- Listed a group's members on its page ten at a time, with Volto's own pagination, instead of showing only a search box. The search narrows the list, and the search and the page are kept in the URL. Somebody who may change the members gets a **Manage members** button, which opens a page at `<group>/manage-members` to add several people and groups at once and to remove members. Every change goes through `plone.restapi`'s existing endpoints. @ericof [#149](https://github.com/collective/pas-plugins-identity/issues/149)
+
+
+#### Bugfix
+
+- Rebuilt the list widgets, the providers control panel's table and the provider icon upload on react-aria-components, as `@plone/components` is, and dropped Volto's lazily loaded drag library. Rows now reorder from the keyboard as well as by dragging, with the moves announced in the site's language, and each row's actions are named for its entry, as in "Delete GitHub". A freshly chosen icon is previewed as an image instead of inlined, so a script in the file no longer runs in the editor's session before the backend sanitizes it. The same file can be chosen again after removing it, and a file name outside Latin-1 no longer drops the upload. The email list refuses an address that differs from one already listed only in case, and stores entries trimmed. Delete removes the entry it asked about even if the list changed meanwhile. @ericof [#151](https://github.com/collective/pas-plugins-identity/issues/151)
+
+
+
+### Project
+
+
+#### Documentation
+
+- Documented how to record a visitor's address behind a proxy, including Cloudflare, with the `client_ip_headers` setting. @ericof [#147](https://github.com/collective/pas-plugins-identity/issues/147)
+- Added a how-to for managing a group's members from its page, and documented the `direct` parameter, `can_manage`, the row `type` and the `manage-members` route. @ericof [#149](https://github.com/collective/pas-plugins-identity/issues/149)
+- Described keyboard reordering, per-entry button names, duplicate comparison and the icon preview in the frontend widgets reference, and corrected the keys that move a provider row from the keyboard. @ericof [#151](https://github.com/collective/pas-plugins-identity/issues/151)
+
+
+
 ## 1.0.0a14 (2026-10-22)
 
 ### Backend

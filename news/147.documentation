@@ -1,1 +1,0 @@
-Documented how to record a visitor's address behind a proxy, including Cloudflare, with the `client_ip_headers` setting. @ericof

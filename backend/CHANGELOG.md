@@ -9,6 +9,19 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0a15 (2026-11-04)
+
+
+### Breaking
+
+- Changed how a visitor's address is read from `X-Forwarded-For`: the audit log and the magic-link rate limit now take its last entry, because the leftmost is whatever the client sent, and that let a client forge the logged address and take a fresh rate-limit bucket on every request. The header is read when `client_ip_headers` is empty and Zope's `trusted-proxy` is not set; with `trusted-proxy` set, the address is the one `request.getClientAddr()` reports. A site reachable without its proxy has to set `trusted-proxy` or name a header its proxy overwrites. Upgrade step 1012 creates the setting, empty. `client_ip` moved from `pas.plugins.identity.core.services.magiclink` to `pas.plugins.identity.core.utils.clientip`. @ericof [#147](https://github.com/collective/pas-plugins-identity/issues/147)
+
+
+### Feature
+
+- Added the `client_ip_headers` setting to the Audit log tab of the Identity providers control panel, naming the request headers that carry a visitor's real address, in order. It covers sites behind Cloudflare (`CF-Connecting-IPv6`, then `CF-Connecting-IP`); left empty, `X-Forwarded-For` is used, as for a proxy on Docker Swarm, where the audit log otherwise records a container network address. The magic-link rate limit uses the same address. @ericof [#147](https://github.com/collective/pas-plugins-identity/issues/147)
+- Added `direct`, `can_manage` and a per-row `type` to `@group-members`. `direct=1` lists what a change of members acts on: the groups nested in the group through their own `group_ids`, then the people in the group itself. `can_manage` says whether `plone.restapi`'s `PATCH @groups/<id>` would accept a change of members from the caller. Somebody with `Plone Site Setup: Users and Groups`, such as a Site Administrator, may now read any group's members, as they could already change them. @ericof [#149](https://github.com/collective/pas-plugins-identity/issues/149)
+
 ## 1.0.0a14 (2026-10-22)
 
 
