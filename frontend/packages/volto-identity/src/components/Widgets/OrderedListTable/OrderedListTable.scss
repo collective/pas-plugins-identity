@@ -1,16 +1,54 @@
 /**
  * The ordered list widgets' table.
  *
- * The providers list's handle and dragged-row rules, restated for a page
- * that does not load that panel's stylesheet: these widgets render on a
- * content edit form, where only what they import themselves is there.
+ * `@plone/components`' basic table styles do the layout; what is here makes
+ * it sit in a Volto form: full width, the actions to the right, and the
+ * buttons as bare icons. These widgets render on a content edit form, where
+ * only what they import themselves is there.
  */
 .identity-ordered-list {
   margin-bottom: var(--identity-gap);
 }
 
-/** A row's drag handle: the grip, without a button's chrome. */
-.identity-ordered-list__handle {
+.identity-ordered-list .identity-ordered-list__table {
+  width: 100%;
+  min-height: 0;
+}
+
+/** The actions, to the right of everything else. */
+.identity-ordered-list__actions-header {
+  text-align: right;
+}
+
+.identity-ordered-list__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+/** A row's buttons and the add button: the icon, without a button's chrome. */
+.identity-ordered-list__action,
+.identity-ordered-list__add {
+  display: inline-flex;
+  padding: 4px;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+
+  &[data-disabled] {
+    cursor: default;
+    opacity: 0.45;
+  }
+
+  &[data-focus-visible] {
+    outline: 2px solid var(--identity-accent);
+    outline-offset: 1px;
+  }
+}
+
+/** The drag handle react-aria's row puts first. */
+.identity-ordered-list__table [slot='drag'] {
   display: inline-flex;
   padding: 0;
   border: 0;
@@ -21,11 +59,14 @@
   touch-action: none;
 }
 
-/** The row being dragged, lifted over the rows it passes. */
-.identity-ordered-list__dragging {
-  position: relative;
-  z-index: 1;
-  background: var(--identity-surface-header-bg);
+/** The row being dragged. */
+.identity-ordered-list__table .react-aria-Row[data-dragging] {
+  opacity: 0.6;
+}
+
+/** Where a dragged row will land. */
+.identity-ordered-list__table .react-aria-DropIndicator[data-drop-target] {
+  outline: 1px solid var(--identity-accent);
 }
 
 /** The one row an empty list has. */

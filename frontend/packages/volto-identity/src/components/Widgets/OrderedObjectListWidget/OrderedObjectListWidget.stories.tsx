@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
-import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 
 import OrderedObjectListWidget from './OrderedObjectListWidget';
 import type { OrderedObjectListWidgetProps } from './OrderedObjectListWidget';
-import { DND_LIBRARIES } from '../../ControlPanel/ProvidersTable';
 import {
-  loadLazyLibraries,
   SOCIAL_LINK_SCHEMA,
   SOCIAL_LINKS,
   withStore,
@@ -27,15 +24,11 @@ export default meta;
 
 type Story = StoryObj<typeof OrderedObjectListWidget>;
 
-/** Put the loaded drag library in the store; see `ProvidersTable.stories`. */
-const withDragging = (
-  Story: () => ReactNode,
-  { loaded }: { loaded: Record<string, any> },
-) => withStore({ lazyLibraries: loaded.lazyLibraries })(Story);
-
-const loadDragging = async () => ({
-  lazyLibraries: await loadLazyLibraries(DND_LIBRARIES),
-});
+/**
+ * Give the story a store: Volto's dialog and widgets read from one. Dragging
+ * needs nothing loaded, since react-aria ships with the add-on.
+ */
+const withAStore = withStore({});
 
 /**
  * Render a widget that keeps the value it reports.
@@ -57,8 +50,7 @@ const keeping = (Widget: React.FC<OrderedObjectListWidgetProps>) =>
 
 /** Every field of the entry as a column, which is the default. */
 export const Default: Story = {
-  loaders: [loadDragging],
-  decorators: [withDragging],
+  decorators: [withAStore],
   render: keeping(OrderedObjectListWidget),
 };
 

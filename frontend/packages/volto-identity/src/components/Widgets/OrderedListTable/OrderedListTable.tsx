@@ -1,60 +1,80 @@
 /**
  * An ordered list, edited as a table.
  *
- * The providers control panel's list, for a field: one row per entry in the
- * order the value keeps them, a handle to drag a row by, an Edit and a Delete
- * on every row, and a button to add one more. What an entry *is* comes from a
- * schema, and Volto's own `ModalForm` renders it, so nothing here lays out an
- * input: an address gets Volto's email widget because its field is an
- * `Email`, not because this component knows.
+ * One row per entry in the order the value keeps them, a handle to drag a row
+ * by, an Edit and a Delete on every row, and a button to add one more. What
+ * an entry *is* comes from a schema, and Volto's own `ModalForm` renders it,
+ * so nothing here lays out an input: an address gets Volto's email widget
+ * because its field is an `Email`, not because this component knows.
  *
  * Two widgets are built on it, and they differ only in what an entry is: a
  * string (`OrderedStringListWidget`) or an object
  * (`OrderedObjectListWidget`).
  *
+ * **The table is react-aria's,** through `@plone/components` where it wraps
+ * one: its `TableHeader`, `Row` and `Column` add the drag column and the drag
+ * handle, and `useDragAndDrop` reorders with a pointer, the keyboard or a
+ * screen reader alike. react-aria names the handle ("Drag …") and announces a
+ * move in the page's language, which is why the table sits in an
+ * `I18nProvider` set to the locale `react-intl` already has. Each row tells it
+ * what to call the entry, through `textValue`.
+ *
  * **Nothing is saved here.** Every action changes the field's value, and the
  * content form saves it or does not. Deleting still asks first: a row removed
  * by mistake can otherwise only be recovered by cancelling every other change
- * on the form with it.
+ * on the form with it. The question is asked about an entry's key, not its
+ * position, so a list that changes while it is open cannot make it delete a
+ * different entry.
  *
  * **The dialog's submit stops at this component.** `ModalForm` renders into a
  * portal, and React delivers a portal's events to its React ancestors, so
  * pressing Enter in a dialog field would also submit the content form this
  * widget sits in.
- *
- * The drag library is one of Volto's lazy libraries. Until it has loaded the
- * table renders without handles, exactly as `ProvidersTable` does.
  * @module components/Widgets/OrderedListTable
  */
 import React, { useState } from 'react';
-import type { CSSProperties, ReactNode, Ref } from 'react';
-import { Button, Table } from 'semantic-ui-react';
+import type { ReactNode } from 'react';
 import { defineMessages, useIntl } from 'react-intl';
+import {
+  Cell,
+  I18nProvider,
+  Table,
+  TableBody,
+  useDragAndDrop,
+} from 'react-aria-components';
+import { Button, Column, Row, TableHeader } from '@plone/components';
 
 import FormFieldWrapper from '@plone/volto/components/manage/Widgets/FormFieldWrapper';
 import ModalForm from '@plone/volto/components/manage/Form/ModalForm';
 import Icon from '@plone/volto/components/theme/Icon/Icon';
 import { applySchemaDefaults } from '@plone/volto/helpers/Blocks/Blocks';
-import { useLazyLibs } from '@plone/volto/helpers/Loadable/Loadable';
 
 import addSVG from '@plone/volto/icons/add.svg';
 import deleteSVG from '@plone/volto/icons/delete.svg';
-import dragSVG from '@plone/volto/icons/drag.svg';
 import pencilSVG from '@plone/volto/icons/pencil.svg';
 
 import ConfirmModal from '../../ControlPanel/ConfirmModal';
-import { DND_LIBRARIES } from '../../ControlPanel/ProvidersTable';
-import { cellText, movedRows, rowKeys } from '../../../helpers/orderedList';
-import type { ItemSchema, Row } from '../../../helpers/orderedList';
+import { cellText, reorderedRows, rowKeys } from '../../../helpers/orderedList';
+import type {
+  DropPosition,
+  ItemSchema,
+  Row as Entry,
+} from '../../../helpers/orderedList';
 
+// `@plone/components` ships its CSS apart from its components.
+import '@plone/components/src/styles/basic/Table.css';
 import './OrderedListTable.scss';
 
 const messages = defineMessages({
-  columnOrder: { id: 'Order', defaultMessage: 'Order' },
   columnActions: { id: 'Actions', defaultMessage: 'Actions' },
-  move: { id: 'Move {title}', defaultMessage: 'Move {title}' },
-  edit: { id: 'Edit', defaultMessage: 'Edit' },
-  delete: { id: 'Delete', defaultMessage: 'Delete' },
+  editRow: {
+    id: 'ordered-list-edit-row',
+    defaultMessage: 'Edit {title}',
+  },
+  deleteRow: {
+    id: 'ordered-list-delete-row',
+    defaultMessage: 'Delete {title}',
+  },
   add: { id: 'Add {item}', defaultMessage: 'Add {item}' },
   editItem: { id: 'Edit {item}', defaultMessage: 'Edit {item}' },
   empty: {
@@ -68,6 +88,9 @@ const messages = defineMessages({
   },
 });
 
+/** The id of the column the actions sit in, which no schema field can take. */
+const ACTIONS = '@actions';
+
 export type OrderedListTableProps = {
   /** The field's id, as `Field` hands it to a widget. */
   id: string;
@@ -75,43 +98,36 @@ export type OrderedListTableProps = {
   title?: string;
   isDisabled?: boolean;
   /** The entries, in order. */
-  rows: Row[];
+  rows: Entry[];
   /** What one entry is. The dialog is built from it. */
   schema: ItemSchema;
   /** The schema fields shown as columns, in order. */
   columns: string[];
   /** Given every entry, in order, after any change. */
-  onChangeRows: (rows: Row[]) => void;
+  onChangeRows: (rows: Entry[]) => void;
   /**
    * An objection to an entry about to be stored, shown in the dialog, or
    * nothing. `index` is the entry being edited, or `null` for a new one.
    */
-  validate?: (row: Row, index: number | null) => string | undefined;
+  validate?: (row: Entry, index: number | null) => string | undefined;
   /** Everything else `Field` passes, for the label, help and errors. */
   [key: string]: unknown;
 };
 
-/** The loaded libraries, keyed as `config.settings.loadables` names them. */
-type Libraries = Record<string, any>;
+/** A column of the table: a schema field, or the actions. */
+type TableColumn = { id: string; name: string; isRowHeader?: boolean };
 
-/** What every row needs from the table around it. */
-type Shared = {
-  schema: ItemSchema;
-  columns: string[];
-  disabled: boolean;
-  edit: (index: number) => void;
-  remove: (index: number) => void;
-};
-
-type RowProps = {
-  row: Row;
+/** A row of the table, as react-aria's collection takes it. */
+type TableItem = {
+  id: string;
   index: number;
-  rowKey: string;
-  shared: Shared;
+  label: string;
+  entry: Entry;
 };
 
 /**
- * How an entry is named to a screen reader and in the delete question.
+ * How an entry is named: to a screen reader, on its buttons and in the
+ * delete question.
  *
  * @param schema What an entry is.
  * @param columns The fields shown as columns.
@@ -120,10 +136,10 @@ type RowProps = {
  * @returns Its first column's text, or the item title and its position when
  *   that is empty.
  */
-function labelOf(
+export function labelOf(
   schema: ItemSchema,
   columns: string[],
-  row: Row,
+  row: Entry,
   index: number,
 ): string {
   const first = columns[0];
@@ -131,214 +147,19 @@ function labelOf(
   return text || `${schema.title ?? ''} #${index + 1}`.trim();
 }
 
-/** The table around the rows, which is the same whether or not they drag. */
-const Frame = ({
-  schema,
-  columns,
-  children,
-}: {
-  schema: ItemSchema;
-  columns: string[];
-  children: ReactNode;
-}) => {
-  const intl = useIntl();
-  return (
-    <Table compact className="identity-ordered-list__table">
-      <Table.Header>
-        <Table.Row>
-          <Table.HeaderCell
-            collapsing
-            aria-label={intl.formatMessage(messages.columnOrder)}
-          />
-          {columns.map((name) => (
-            <Table.HeaderCell key={name}>
-              {schema.properties[name]?.title ?? name}
-            </Table.HeaderCell>
-          ))}
-          <Table.HeaderCell textAlign="right">
-            {intl.formatMessage(messages.columnActions)}
-          </Table.HeaderCell>
-        </Table.Row>
-      </Table.Header>
-      <Table.Body>{children}</Table.Body>
-    </Table>
-  );
-};
-
 /**
- * One entry's row.
+ * The locale react-aria should speak, from the one `react-intl` has.
  *
- * A plain `tr` rather than Semantic's `Table.Row`, which does not pass a ref
- * on: the drag library measures the row's own node.
+ * Volto's locales are written `pt_BR` or `pt-br`; react-aria wants a BCP 47
+ * tag.
+ *
+ * @param locale The `react-intl` locale.
+ * @returns The same locale as a BCP 47 tag.
  */
-const EntryRow = ({
-  row,
-  index,
-  rowKey,
-  shared,
-  handle = null,
-  rowRef,
-  style,
-  dragging = false,
-}: RowProps & {
-  handle?: ReactNode;
-  rowRef?: Ref<HTMLTableRowElement>;
-  style?: CSSProperties;
-  dragging?: boolean;
-}) => {
-  const intl = useIntl();
-  const { schema, columns, disabled, edit, remove } = shared;
-  return (
-    <tr
-      ref={rowRef}
-      style={style}
-      data-row={rowKey}
-      className={dragging ? 'identity-ordered-list__dragging' : undefined}
-    >
-      <td className="collapsing">{handle}</td>
-      {columns.map((name) => (
-        <td key={name}>{cellText(schema.properties[name], row[name])}</td>
-      ))}
-      <td className="right aligned collapsing">
-        {/* `type="button"` on both: a button's default type is submit, and
-            this one sits inside the content form. */}
-        <Button
-          type="button"
-          basic
-          icon
-          disabled={disabled}
-          aria-label={intl.formatMessage(messages.edit)}
-          title={intl.formatMessage(messages.edit)}
-          onClick={() => edit(index)}
-        >
-          <Icon name={pencilSVG} size="20px" />
-        </Button>
-        <Button
-          type="button"
-          basic
-          icon
-          disabled={disabled}
-          data-action="delete"
-          aria-label={intl.formatMessage(messages.delete)}
-          title={intl.formatMessage(messages.delete)}
-          onClick={() => remove(index)}
-        >
-          <Icon name={deleteSVG} size="20px" />
-        </Button>
-      </td>
-    </tr>
-  );
-};
-
-/** A row that drags by its handle. */
-const SortableRow = ({
-  libraries,
-  ...props
-}: RowProps & { libraries: Libraries }) => {
-  const intl = useIntl();
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    setActivatorNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = libraries.dndKitSortable.useSortable({ id: props.rowKey });
-  const label = intl.formatMessage(messages.move, {
-    title: labelOf(
-      props.shared.schema,
-      props.shared.columns,
-      props.row,
-      props.index,
-    ),
-  });
-  return (
-    <EntryRow
-      {...props}
-      rowRef={setNodeRef}
-      // Translate rather than Transform: a row stretched to the height of
-      // the one it passes over reads as a glitch.
-      style={{
-        transform: libraries.dndKitUtilities.CSS.Translate.toString(transform),
-        transition,
-      }}
-      dragging={isDragging}
-      handle={
-        <button
-          type="button"
-          ref={setActivatorNodeRef}
-          {...attributes}
-          {...listeners}
-          className="identity-ordered-list__handle"
-          aria-label={label}
-          title={label}
-        >
-          <Icon name={dragSVG} size="20px" />
-        </button>
-      }
-    />
-  );
-};
-
-/** The rows, once the drag library has loaded. */
-const SortableRows = ({
-  libraries,
-  rows,
-  keys,
-  shared,
-  onMove,
-}: {
-  libraries: Libraries;
-  rows: Row[];
-  keys: string[];
-  shared: Shared;
-  onMove: (moved: string, target: string | null) => void;
-}) => {
-  const {
-    DndContext,
-    KeyboardSensor,
-    PointerSensor,
-    closestCenter,
-    useSensor,
-    useSensors,
-  } = libraries.dndKitCore;
-  const {
-    SortableContext,
-    sortableKeyboardCoordinates,
-    verticalListSortingStrategy,
-  } = libraries.dndKitSortable;
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
-  return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={({ active, over }: { active: any; over: any }) =>
-        onMove(String(active.id), over ? String(over.id) : null)
-      }
-    >
-      <SortableContext items={keys} strategy={verticalListSortingStrategy}>
-        <Frame schema={shared.schema} columns={shared.columns}>
-          {rows.map((row, index) => (
-            <SortableRow
-              key={keys[index]}
-              libraries={libraries}
-              row={row}
-              index={index}
-              rowKey={keys[index]}
-              shared={shared}
-            />
-          ))}
-        </Frame>
-      </SortableContext>
-    </DndContext>
-  );
-};
+export function ariaLocale(locale: string): string {
+  const [language, region] = locale.replace('_', '-').split('-');
+  return region ? `${language}-${region.toUpperCase()}` : language;
+}
 
 const OrderedListTable: React.FC<OrderedListTableProps> = (props) => {
   // What is not the table's goes to `FormFieldWrapper`. `columns` in
@@ -347,26 +168,58 @@ const OrderedListTable: React.FC<OrderedListTableProps> = (props) => {
   const { rows, schema, columns, onChangeRows, validate, ...field } = props;
   const { isDisabled } = props;
   const intl = useIntl();
-  const libraries: Libraries = useLazyLibs(DND_LIBRARIES);
-  const ready = DND_LIBRARIES.every((name) => libraries[name]);
 
   // Which entry the dialog is open on: its position, `'new'` for one being
   // added, or null when the dialog is closed.
   const [editing, setEditing] = useState<number | 'new' | null>(null);
-  // Which entry the delete question is being asked about, or null.
-  const [deleting, setDeleting] = useState<number | null>(null);
+  // Which entry the delete question is being asked about, by key, or null.
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [objection, setObjection] = useState<string | undefined>(undefined);
 
   const disabled = Boolean(isDisabled);
   const keys = rowKeys(rows);
   const item = schema.title || props.title || '';
 
+  const items: TableItem[] = rows.map((entry, index) => ({
+    id: keys[index],
+    index,
+    label: labelOf(schema, columns, entry, index),
+    entry,
+  }));
+  const tableColumns: TableColumn[] = [
+    ...columns.map((name, position) => ({
+      id: name,
+      name: schema.properties[name]?.title ?? name,
+      isRowHeader: position === 0,
+    })),
+    { id: ACTIONS, name: intl.formatMessage(messages.columnActions) },
+  ];
+
+  const { dragAndDropHooks } = useDragAndDrop({
+    getItems: (dragged) =>
+      [...dragged].map((key) => ({
+        'text/plain': items.find((row) => row.id === key)?.label ?? '',
+      })),
+    onReorder: (event) => {
+      const next = reorderedRows(
+        rows,
+        [...event.keys].map(String),
+        String(event.target.key),
+        event.target.dropPosition as DropPosition,
+      );
+      // A drop that changes nothing changes nothing.
+      if (next) {
+        onChangeRows(next);
+      }
+    },
+  });
+
   const close = () => {
     setEditing(null);
     setObjection(undefined);
   };
 
-  const onSubmit = (data: Row) => {
+  const onSubmit = (data: Entry) => {
     const index = editing === 'new' ? null : editing;
     const problem = validate?.(data, index);
     if (problem) {
@@ -381,67 +234,47 @@ const OrderedListTable: React.FC<OrderedListTableProps> = (props) => {
     close();
   };
 
+  const deletingItem = items.find((row) => row.id === deleting);
+
   const onConfirmDelete = () => {
-    const index = deleting;
     setDeleting(null);
-    if (index !== null) {
-      onChangeRows(rows.filter((_, position) => position !== index));
+    // Gone already, by some other change while the question was open: there
+    // is nothing left to delete, and certainly not whatever took its place.
+    if (deletingItem) {
+      onChangeRows(
+        rows.filter((_, position) => position !== deletingItem.index),
+      );
     }
   };
 
-  const shared: Shared = {
-    schema,
-    columns,
-    disabled,
-    edit: setEditing,
-    remove: setDeleting,
+  const renderCell = (row: TableItem, column: TableColumn): ReactNode => {
+    if (column.id !== ACTIONS) {
+      return cellText(schema.properties[column.id], row.entry[column.id]);
+    }
+    const edit = intl.formatMessage(messages.editRow, { title: row.label });
+    const remove = intl.formatMessage(messages.deleteRow, { title: row.label });
+    return (
+      <div className="identity-ordered-list__actions">
+        <Button
+          className="identity-ordered-list__action"
+          isDisabled={disabled}
+          aria-label={edit}
+          onPress={() => setEditing(row.index)}
+        >
+          <Icon name={pencilSVG} size="20px" title={edit} />
+        </Button>
+        <Button
+          className="identity-ordered-list__action"
+          data-action="delete"
+          isDisabled={disabled}
+          aria-label={remove}
+          onPress={() => setDeleting(row.id)}
+        >
+          <Icon name={deleteSVG} size="20px" title={remove} />
+        </Button>
+      </div>
+    );
   };
-
-  let table: ReactNode;
-  if (!rows.length) {
-    table = (
-      <Frame schema={schema} columns={columns}>
-        <tr>
-          <td
-            colSpan={columns.length + 2}
-            className="identity-ordered-list__empty"
-          >
-            {intl.formatMessage(messages.empty)}
-          </td>
-        </tr>
-      </Frame>
-    );
-  } else if (ready && !disabled) {
-    table = (
-      <SortableRows
-        libraries={libraries}
-        rows={rows}
-        keys={keys}
-        shared={shared}
-        onMove={(moved, target) => {
-          const next = movedRows(rows, moved, target);
-          // A drop that changes nothing changes nothing.
-          if (next) {
-            onChangeRows(next);
-          }
-        }}
-      />
-    );
-  } else {
-    table = (
-      <Frame schema={schema} columns={columns}>
-        {rows.map((row, index) => (
-          <EntryRow
-            key={keys[index]}
-            row={row}
-            index={index}
-            rowKey={keys[index]}
-            shared={shared}
-          />
-        ))}
-      </Frame>
-    );
-  }
 
   const addLabel = intl.formatMessage(messages.add, { item });
 
@@ -449,19 +282,59 @@ const OrderedListTable: React.FC<OrderedListTableProps> = (props) => {
     <div className="identity-ordered-list">
       <FormFieldWrapper {...field} noForInFieldLabel>
         <Button
-          type="button"
-          basic
-          icon
-          disabled={disabled}
           className="identity-ordered-list__add"
+          isDisabled={disabled}
           aria-label={addLabel}
-          title={addLabel}
-          onClick={() => setEditing('new')}
+          onPress={() => setEditing('new')}
         >
-          <Icon name={addSVG} size="20px" />
+          <Icon name={addSVG} size="20px" title={addLabel} />
         </Button>
       </FormFieldWrapper>
-      {table}
+      <I18nProvider locale={ariaLocale(intl.locale)}>
+        <Table
+          aria-label={String(props.title || item)}
+          className="react-aria-Table identity-ordered-list__table"
+          // No reordering a list nobody may change.
+          dragAndDropHooks={disabled ? undefined : dragAndDropHooks}
+        >
+          <TableHeader columns={tableColumns}>
+            {(column: TableColumn) => (
+              <Column
+                id={column.id}
+                isRowHeader={column.isRowHeader}
+                className={
+                  column.id === ACTIONS
+                    ? 'react-aria-Column identity-ordered-list__actions-header'
+                    : undefined
+                }
+              >
+                {column.name}
+              </Column>
+            )}
+          </TableHeader>
+          <TableBody
+            items={items}
+            renderEmptyState={() => (
+              <span className="identity-ordered-list__empty">
+                {intl.formatMessage(messages.empty)}
+              </span>
+            )}
+          >
+            {(row: TableItem) => (
+              <Row
+                id={row.id}
+                columns={tableColumns}
+                textValue={row.label}
+                data-row={row.id}
+              >
+                {(column: TableColumn) => (
+                  <Cell>{renderCell(row, column)}</Cell>
+                )}
+              </Row>
+            )}
+          </TableBody>
+        </Table>
+      </I18nProvider>
       {/* See the module docstring: the dialog's submit must not reach the
           content form. */}
       <div onSubmit={(event) => event.stopPropagation()}>
@@ -491,11 +364,7 @@ const OrderedListTable: React.FC<OrderedListTableProps> = (props) => {
       </div>
       <ConfirmModal
         open={deleting !== null}
-        header={
-          deleting !== null && rows[deleting]
-            ? labelOf(schema, columns, rows[deleting], deleting)
-            : ''
-        }
+        header={deletingItem?.label ?? ''}
         content={intl.formatMessage(messages.confirmDelete)}
         onCancel={() => setDeleting(null)}
         onConfirm={onConfirmDelete}

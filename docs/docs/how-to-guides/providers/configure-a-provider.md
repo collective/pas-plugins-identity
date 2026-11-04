@@ -73,8 +73,10 @@ The login page offers its buttons in the order of the provider list.
 The new order is saved as soon as the row is dropped. If the save fails, the row
 goes back where it was and the panel says why.
 
-To move a row from the keyboard, focus its handle, press {kbd}`Space` to pick the
-row up, move it with the arrow keys, and press {kbd}`Space` again to drop it.
+To move a row from the keyboard, focus its handle, press {kbd}`Enter` to pick the
+row up, move it with the arrow keys, and press {kbd}`Enter` again to drop it.
+{kbd}`Escape` puts it back. A screen reader announces each step in the site's
+language.
 
 The {guilabel}`Login screen` column shows which providers the login page offers
 at all.

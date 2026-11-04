@@ -1,20 +1,18 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
-import { act, fireEvent, render, screen } from '../../testing';
+  act,
+  dragByKeyboard,
+  dragHandles,
+  fireEvent,
+  render,
+  screen,
+} from '../../testing';
 import { MemoryRouter, Route, Switch } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { toast } from 'react-toastify';
 import React from 'react';
 
 import ProvidersControlPanel from './ProvidersControlPanel';
-import { DND_LIBRARIES } from './ProvidersTable';
 import {
   EXPORT_PROVIDERS,
   REORDER_PROVIDERS,
@@ -31,7 +29,6 @@ import {
   DRIVERS,
   LOADED,
   LOADING,
-  loadLazyLibraries,
   PROVIDER_SCHEMA,
 } from '../../stories/fixtures';
 
@@ -235,8 +232,7 @@ describe('ProvidersControlPanel', () => {
     it("links each row to that provider's edit form", () => {
       const router = renderAt(CONTROLPANEL_PATH);
 
-      const row = document.querySelector('tr[data-provider="github"]');
-      fireEvent.click(row!.querySelector('a[aria-label="Edit"]')!);
+      fireEvent.click(screen.getByRole('link', { name: 'Edit GitHub' }));
 
       expect(router.location.pathname).toBe(providerEditUrl('github'));
     });
@@ -279,48 +275,20 @@ describe('ProvidersControlPanel', () => {
   });
 
   describe('reordering the providers', () => {
-    let libraries: Record<string, any>;
-
-    beforeAll(async () => {
-      libraries = await loadLazyLibraries(DND_LIBRARIES);
-    });
-
     beforeEach(() => {
       vi.mocked(toast.error).mockClear();
     });
 
-    /**
-     * The drag library, keeping the drop handler the list gives it.
-     *
-     * @returns The `lazyLibraries` slice, and where the handler is kept.
-     */
-    function keepingTheDrop() {
-      const drop: { end?: (event: unknown) => void } = {};
-      const Real = libraries.dndKitCore.DndContext;
-      const DndContext = (props: any) => {
-        drop.end = props.onDragEnd;
-        return <Real {...props} />;
-      };
-      return {
-        drop,
-        lazyLibraries: {
-          ...libraries,
-          dndKitCore: { ...libraries.dndKitCore, DndContext },
-        },
-      };
-    }
-
     /** The provider ids, in the order the rows are on the page. */
     function shown(): string[] {
-      return [
-        ...document.querySelectorAll<HTMLElement>('tr[data-provider]'),
-      ].map((row) => row.dataset.provider as string);
+      return [...document.querySelectorAll<HTMLElement>('[data-provider]')].map(
+        (row) => row.dataset.provider as string,
+      );
     }
 
-    it('moves the row when it is dropped and saves every position', () => {
-      const { drop, lazyLibraries } = keepingTheDrop();
+    it('moves the row when it is dropped and saves every position', async () => {
       const sent: any[] = [];
-      renderAt(CONTROLPANEL_PATH, { lazyLibraries }, (action) => {
+      renderAt(CONTROLPANEL_PATH, {}, (action) => {
         sent.push(action);
         // Never answered: the row has moved before the backend says a word.
         return action.type === REORDER_PROVIDERS
@@ -328,9 +296,7 @@ describe('ProvidersControlPanel', () => {
           : action;
       });
 
-      act(() =>
-        drop.end!({ active: { id: 'github' }, over: { id: 'keycloak' } }),
-      );
+      await dragByKeyboard(dragHandles()[1], ['ArrowUp']);
 
       expect(shown()).toEqual(['github', 'keycloak']);
       expect(
@@ -339,16 +305,14 @@ describe('ProvidersControlPanel', () => {
     });
 
     it('puts the row back and says so when the order cannot be saved', async () => {
-      const { drop, lazyLibraries } = keepingTheDrop();
-      renderAt(CONTROLPANEL_PATH, { lazyLibraries }, (action) =>
+      renderAt(CONTROLPANEL_PATH, {}, (action) =>
         action.type === REORDER_PROVIDERS
           ? Promise.reject(new Error('refused'))
           : action,
       );
 
-      await act(async () =>
-        drop.end!({ active: { id: 'github' }, over: { id: 'keycloak' } }),
-      );
+      await dragByKeyboard(dragHandles()[1], ['ArrowUp']);
+      await act(async () => {});
 
       expect(shown()).toEqual(['keycloak', 'github']);
       expect(toast.error).toHaveBeenCalledTimes(1);
@@ -414,12 +378,9 @@ describe('ProvidersControlPanel', () => {
         xml: '<registry/>',
       });
       renderAt(CONTROLPANEL_PATH, MAY_EXPORT, dispatch);
-      const row = document.querySelector(
-        'tr[data-provider="github"]',
-      ) as HTMLElement;
 
       await act(async () => {
-        fireEvent.click(row.querySelector('button[aria-label="Export"]')!);
+        fireEvent.click(screen.getByRole('button', { name: 'Export GitHub' }));
       });
 
       expect(sent.find(exported)?.request.path).toBe(
@@ -448,7 +409,7 @@ describe('ProvidersControlPanel', () => {
       expect(
         screen.queryByRole('button', { name: 'Export every provider' }),
       ).toBeNull();
-      expect(document.querySelector('button[aria-label="Export"]')).toBeNull();
+      expect(screen.queryByRole('button', { name: /^Export / })).toBeNull();
       expect(screen.queryByRole('note')).toBeNull();
     });
 

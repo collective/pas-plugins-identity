@@ -7,18 +7,21 @@ import {
   it,
   vi,
 } from 'vitest';
-import { act, fireEvent, render, screen, within } from '../../../testing';
-import { Provider } from 'react-redux';
+import {
+  dragByKeyboard,
+  dragHandles,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from '../../../testing';
 import React from 'react';
 
 import config from '@plone/volto/registry';
 
-import OrderedListTable from './OrderedListTable';
-import { DND_LIBRARIES } from '../../ControlPanel/ProvidersTable';
-import { loadLazyLibraries } from '../../../stories/fixtures';
+import OrderedListTable, { ariaLocale } from './OrderedListTable';
 import type { ItemSchema, Row } from '../../../helpers/orderedList';
 
-let libraries: Record<string, any>;
 let widgets: any;
 
 /**
@@ -37,8 +40,7 @@ const TextWidget = ({ id, title, value, onChange }: any) => (
   </label>
 );
 
-beforeAll(async () => {
-  libraries = await loadLazyLibraries(DND_LIBRARIES);
+beforeAll(() => {
   widgets = config.widgets;
   config.set('widgets', { ...widgets, default: TextWidget });
 });
@@ -86,80 +88,52 @@ const ROWS: Row[] = [
 ];
 
 /**
- * Render the table inside a form, over a store holding the lazy libraries.
+ * Render the table inside a form.
  *
  * @param props Props to replace.
- * @param lazyLibraries The `lazyLibraries` slice; empty is the state before
- *   the drag library has loaded.
  * @returns The handlers: what the table reports, and what the enclosing
  *   content form would have been asked to save.
  */
-function renderTable(
-  props: Record<string, unknown> = {},
-  lazyLibraries: Record<string, unknown> = libraries,
-) {
+function renderTable(props: Record<string, unknown> = {}) {
   const onChangeRows = vi.fn();
   const submitted = vi.fn((event: React.FormEvent) => event.preventDefault());
-  const state = { lazyLibraries };
-  const store = {
-    getState: () => state,
-    dispatch: (action: unknown) => action,
-    subscribe: () => () => {},
-  };
-  render(
-    <Provider store={store as any}>
-      <form aria-label="Content" onSubmit={submitted}>
-        <OrderedListTable
-          id="social_links"
-          title="Profiles"
-          rows={ROWS}
-          schema={SCHEMA}
-          columns={['id', 'title', 'href']}
-          onChangeRows={onChangeRows}
-          {...props}
-        />
-      </form>
-    </Provider>,
+  const element = (extra: Record<string, unknown> = {}) => (
+    <form aria-label="Content" onSubmit={submitted}>
+      <OrderedListTable
+        id="social_links"
+        title="Profiles"
+        rows={ROWS}
+        schema={SCHEMA}
+        columns={['id', 'title', 'href']}
+        onChangeRows={onChangeRows}
+        {...props}
+        {...extra}
+      />
+    </form>
   );
-  return { onChangeRows, submitted };
+  const { rerender } = render(element());
+  return {
+    onChangeRows,
+    submitted,
+    rerender: (extra: Record<string, unknown>) => rerender(element(extra)),
+  };
 }
 
 /** The row keys, in the order the rows are on the page. */
 function shown(): string[] {
-  return [...document.querySelectorAll<HTMLElement>('tr[data-row]')].map(
+  return [...document.querySelectorAll<HTMLElement>('[data-row]')].map(
     (row) => row.dataset.row as string,
   );
 }
 
 /** One row, by key. */
 function row(key: string): HTMLElement {
-  return document.querySelector(`tr[data-row="${key}"]`) as HTMLElement;
+  return document.querySelector(`[data-row="${key}"]`) as HTMLElement;
 }
 
 /** The open dialog's form. */
 function dialog(): HTMLElement {
   return document.querySelector('.ui.modal form') as HTMLElement;
-}
-
-/**
- * The drag library, keeping the drop handler the table gives it.
- *
- * @returns The libraries, and where the handler is kept.
- */
-function keepingTheDrop() {
-  const drop: { end?: (event: unknown) => void } = {};
-  const Real = libraries.dndKitCore.DndContext;
-  const DndContext = (props: any) => {
-    drop.end = props.onDragEnd;
-    return <Real {...props} />;
-  };
-  return {
-    drop,
-    lazyLibraries: {
-      ...libraries,
-      dndKitCore: { ...libraries.dndKitCore, DndContext },
-    },
-  };
 }
 
 describe('OrderedListTable', () => {
@@ -195,10 +169,15 @@ describe('OrderedListTable', () => {
 
     expect(shown()).toEqual(['a', 'b']);
     expect(
-      [...(row('a') as HTMLTableRowElement).cells].map(
-        (cell) => cell.textContent,
-      ),
-    ).toEqual(['', 'GitHub', 'Code', 'github.com/ericof', '']);
+      [...row('a').querySelectorAll('td, th')].map((cell) => cell.textContent),
+    ).toEqual([
+      '',
+      'GitHub',
+      'Code',
+      'github.com/ericof',
+      // The action icons' titles.
+      'Edit GitHubDelete GitHub',
+    ]);
   });
 
   it('says so when there is nothing on the list', () => {
@@ -226,7 +205,7 @@ describe('OrderedListTable', () => {
   it('edits an entry in place', async () => {
     const { onChangeRows } = renderTable();
 
-    fireEvent.click(within(row('b')).getByRole('button', { name: 'Edit' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Mastodon' }));
     const title = (await within(dialog()).findByLabelText(
       'Title',
     )) as HTMLInputElement;
@@ -245,7 +224,7 @@ describe('OrderedListTable', () => {
     // across entries would carry the last one's fields into the next.
     renderTable();
 
-    fireEvent.click(within(row('b')).getByRole('button', { name: 'Edit' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Mastodon' }));
     await within(dialog()).findByLabelText('Title');
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     fireEvent.click(screen.getByRole('button', { name: 'Add Link' }));
@@ -259,7 +238,7 @@ describe('OrderedListTable', () => {
   it('stores nothing and says why when the entry is refused', () => {
     const { onChangeRows } = renderTable({ validate: () => 'Not that one.' });
 
-    fireEvent.click(within(row('a')).getByRole('button', { name: 'Edit' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit GitHub' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(onChangeRows).not.toHaveBeenCalled();
@@ -269,7 +248,7 @@ describe('OrderedListTable', () => {
   it('asks before deleting, naming the entry, and deletes on confirm', () => {
     const { onChangeRows } = renderTable();
 
-    fireEvent.click(within(row('a')).getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete GitHub' }));
 
     expect(onChangeRows).not.toHaveBeenCalled();
     expect(document.querySelector('.ui.modal .header')?.textContent).toBe(
@@ -285,7 +264,7 @@ describe('OrderedListTable', () => {
   it('keeps the entry when the question is cancelled', () => {
     const { onChangeRows } = renderTable();
 
-    fireEvent.click(within(row('a')).getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete GitHub' }));
     fireEvent.click(
       document.querySelector('[data-action="cancel"]') as HTMLElement,
     );
@@ -298,9 +277,9 @@ describe('OrderedListTable', () => {
       // A button's default type is submit, and these sit inside the form.
       const { submitted } = renderTable();
 
-      fireEvent.click(within(row('a')).getByRole('button', { name: 'Edit' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Edit GitHub' }));
       fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-      fireEvent.click(within(row('a')).getByRole('button', { name: 'Delete' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Delete GitHub' }));
       fireEvent.click(
         document.querySelector('[data-action="cancel"]') as HTMLElement,
       );
@@ -314,7 +293,7 @@ describe('OrderedListTable', () => {
       // a portal, and React hands a portal's submit to its React ancestors.
       const { onChangeRows, submitted } = renderTable();
 
-      fireEvent.click(within(row('a')).getByRole('button', { name: 'Edit' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Edit GitHub' }));
       fireEvent.submit(dialog());
 
       expect(onChangeRows).toHaveBeenCalled();
@@ -322,40 +301,76 @@ describe('OrderedListTable', () => {
     });
   });
 
-  describe('before the drag library has loaded', () => {
-    it('lists the entries without handles', () => {
-      renderTable({}, {});
+  describe('naming its rows', () => {
+    it('names every button for the entry it acts on', () => {
+      // One "Edit" per row tells a screen reader nothing about which.
+      renderTable();
 
-      expect(shown()).toEqual(['a', 'b']);
-      expect(screen.queryByRole('button', { name: /^Move / })).toBeNull();
+      for (const name of [
+        'Edit GitHub',
+        'Delete GitHub',
+        'Edit Mastodon',
+        'Delete Mastodon',
+      ]) {
+        expect(screen.getByRole('button', { name })).toBeTruthy();
+      }
+    });
+
+    it('gives every row a drag handle named for its entry', () => {
+      // react-aria names the handle, in the page's language, from the row's
+      // `textValue`.
+      renderTable();
+
+      const handles = screen
+        .getAllByRole('button')
+        .filter((button) => button.getAttribute('slot') === 'drag');
+      expect(handles).toHaveLength(2);
+      expect(handles[0].getAttribute('aria-label')).toMatch(/GitHub/);
+      expect(handles[1].getAttribute('aria-label')).toMatch(/Mastodon/);
     });
   });
 
-  describe('once the drag library has loaded', () => {
-    it('gives every row a handle named for its entry', () => {
-      renderTable();
+  describe('reordering', () => {
+    it('moves a row from the keyboard and reports every entry', async () => {
+      const { onChangeRows } = renderTable();
 
-      expect(screen.getByRole('button', { name: 'Move GitHub' })).toBeTruthy();
-      expect(
-        screen.getByRole('button', { name: 'Move Mastodon' }),
-      ).toBeTruthy();
-    });
-
-    it("reports the new order when a row is dropped in another's place", () => {
-      const { drop, lazyLibraries } = keepingTheDrop();
-      const { onChangeRows } = renderTable({}, lazyLibraries);
-
-      act(() => drop.end!({ active: { id: 'b' }, over: { id: 'a' } }));
+      await dragByKeyboard(dragHandles()[1], ['ArrowUp']);
 
       expect(onChangeRows).toHaveBeenCalledWith([ROWS[1], ROWS[0]]);
     });
 
-    it('reports nothing for a row dropped where it started', () => {
-      const { drop, lazyLibraries } = keepingTheDrop();
-      const { onChangeRows } = renderTable({}, lazyLibraries);
+    it('reports nothing for a row dropped where it started', async () => {
+      const { onChangeRows } = renderTable();
 
-      act(() => drop.end!({ active: { id: 'b' }, over: { id: 'b' } }));
-      act(() => drop.end!({ active: { id: 'b' }, over: null }));
+      await dragByKeyboard(dragHandles()[1], ['ArrowUp', 'ArrowDown']);
+
+      expect(onChangeRows).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('deleting', () => {
+    it('deletes the entry it asked about, wherever it has moved to', () => {
+      // The question used to hold a position: a list that changed while it
+      // was open had a different entry there.
+      const { onChangeRows, rerender } = renderTable();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Delete GitHub' }));
+      rerender({ rows: [ROWS[1], ROWS[0]] });
+      fireEvent.click(
+        document.querySelector('[data-action="confirm"]') as HTMLElement,
+      );
+
+      expect(onChangeRows).toHaveBeenCalledWith([ROWS[1]]);
+    });
+
+    it('deletes nothing when the entry is gone already', () => {
+      const { onChangeRows, rerender } = renderTable();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Delete GitHub' }));
+      rerender({ rows: [ROWS[1]] });
+      fireEvent.click(
+        document.querySelector('[data-action="confirm"]') as HTMLElement,
+      );
 
       expect(onChangeRows).not.toHaveBeenCalled();
     });
@@ -365,10 +380,21 @@ describe('OrderedListTable', () => {
     it('offers no handle and no action', () => {
       renderTable({ isDisabled: true });
 
-      expect(screen.queryByRole('button', { name: /^Move / })).toBeNull();
+      expect(document.querySelector('[slot="drag"]')).toBeNull();
       for (const button of screen.getAllByRole('button')) {
         expect((button as HTMLButtonElement).disabled).toBe(true);
       }
     });
+  });
+});
+
+describe('ariaLocale', () => {
+  it.each([
+    ['pt_BR', 'pt-BR'],
+    ['pt-br', 'pt-BR'],
+    ['de', 'de'],
+    ['en-US', 'en-US'],
+  ])('reads %s as %s', (locale, tag) => {
+    expect(ariaLocale(locale)).toBe(tag);
   });
 });

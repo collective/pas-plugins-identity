@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
-import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 
 import OrderedStringListWidget from './OrderedStringListWidget';
-import { DND_LIBRARIES } from '../../ControlPanel/ProvidersTable';
 import {
   EMAIL_ITEMS,
-  loadLazyLibraries,
   PROFILE_EMAILS,
   withStore,
 } from '../../../stories/fixtures';
@@ -28,23 +25,18 @@ export default meta;
 
 type Story = StoryObj<typeof OrderedStringListWidget>;
 
-/** Put the loaded drag library in the store; see `ProvidersTable.stories`. */
-const withDragging = (
-  Story: () => ReactNode,
-  { loaded }: { loaded: Record<string, any> },
-) => withStore({ lazyLibraries: loaded.lazyLibraries })(Story);
-
-const loadDragging = async () => ({
-  lazyLibraries: await loadLazyLibraries(DND_LIBRARIES),
-});
+/**
+ * Give the story a store: Volto's dialog and widgets read from one. Dragging
+ * needs nothing loaded, since react-aria ships with the add-on.
+ */
+const withAStore = withStore({});
 
 /**
  * A Profile's addresses. The dialog asks with Volto's email widget, because
  * the value type is an `Email`, and refuses an address already listed.
  */
 export const Default: Story = {
-  loaders: [loadDragging],
-  decorators: [withDragging],
+  decorators: [withAStore],
   render: function Render(args) {
     const [value, setValue] = useState(args.value);
     return (

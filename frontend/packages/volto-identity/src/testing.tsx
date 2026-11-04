@@ -14,6 +14,8 @@ import type { ReactElement, ReactNode } from 'react';
 import { createIntl, IntlProvider as BareIntlProvider } from 'react-intl';
 import { MemoryRouter } from 'react-router-dom';
 import {
+  act,
+  fireEvent,
   render as renderBare,
   type RenderOptions,
   type RenderResult,
@@ -82,5 +84,59 @@ export const testIntl = createIntl({
   messages: {},
   onError: () => {},
 });
+
+/**
+ * Press a key, down and up.
+ *
+ * @param key The key, as `KeyboardEvent.key` names it.
+ * @param target Where; whatever has the focus when not given.
+ */
+function press(key: string, target?: HTMLElement) {
+  // Taken once: the key down can move the focus, and its key up belongs to
+  // the element that saw it go down.
+  target = target ?? (document.activeElement as HTMLElement) ?? document.body;
+  fireEvent.keyDown(target, { key });
+  fireEvent.keyUp(target, { key });
+}
+
+/**
+ * Move a row of a react-aria table with the keyboard, as a keyboard user does.
+ *
+ * react-aria's keyboard drag needs no layout, so it runs in jsdom where a
+ * pointer drag cannot: Enter on the handle picks the row up, each arrow moves
+ * the drop position one step, and Enter drops it there.
+ *
+ * @param handle The row's drag handle, `[slot="drag"]`.
+ * @param moves The arrow keys to press between picking up and dropping, such
+ *   as `['ArrowUp']`. None drops the row where it was picked up.
+ */
+export async function dragByKeyboard(
+  handle: HTMLElement,
+  moves: string[] = [],
+): Promise<void> {
+  // The drag manager starts, moves and drops on timers of its own.
+  const tick = () =>
+    act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+  // On the handle itself: react-aria's grid moves the focus to the row as
+  // soon as anything in it is focused.
+  act(() => handle.focus());
+  press('Enter', handle);
+  await tick();
+  for (const key of moves) {
+    press(key);
+    await tick();
+  }
+  press('Enter');
+  await tick();
+}
+
+/**
+ * The drag handles of a react-aria table, in row order.
+ *
+ * @returns Every `[slot="drag"]` button on the page.
+ */
+export function dragHandles(): HTMLElement[] {
+  return [...document.querySelectorAll<HTMLElement>('[slot="drag"]')];
+}
 
 export * from '@testing-library/react';

@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
-import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
 
 import OrderedListTable from './OrderedListTable';
-import { DND_LIBRARIES } from '../../ControlPanel/ProvidersTable';
 import {
-  loadLazyLibraries,
   SOCIAL_LINK_SCHEMA,
   SOCIAL_LINKS,
   withStore,
@@ -29,19 +26,10 @@ export default meta;
 type Story = StoryObj<typeof OrderedListTable>;
 
 /**
- * Put the loaded drag library in the store.
- *
- * The stories' stores are static and ignore the dispatch that would otherwise
- * deliver it, so the story loads it first.
+ * Give the story a store: Volto's dialog and widgets read from one. Dragging
+ * needs nothing loaded, since react-aria ships with the add-on.
  */
-const withDragging = (
-  Story: () => ReactNode,
-  { loaded }: { loaded: Record<string, any> },
-) => withStore({ lazyLibraries: loaded.lazyLibraries })(Story);
-
-const loadDragging = async () => ({
-  lazyLibraries: await loadLazyLibraries(DND_LIBRARIES),
-});
+const withAStore = withStore({});
 
 /**
  * The table as an editor uses it: drag a row by its handle, edit or delete
@@ -49,8 +37,7 @@ const loadDragging = async () => ({
  * is given, where a form would keep it until saved.
  */
 export const Default: Story = {
-  loaders: [loadDragging],
-  decorators: [withDragging],
+  decorators: [withAStore],
   render: function Render(args) {
     const [rows, setRows] = useState(args.rows);
     return <OrderedListTable {...args} rows={rows} onChangeRows={setRows} />;
@@ -72,11 +59,5 @@ export const Empty: Story = {
 /** While the form cannot be edited. */
 export const Disabled: Story = {
   args: { isDisabled: true },
-  loaders: [loadDragging],
-  decorators: [withDragging],
-};
-
-/** Before the drag library has loaded: on the server, and for a moment after. */
-export const BeforeTheDragLibrary: Story = {
-  decorators: [withStore({})],
+  decorators: [withAStore],
 };

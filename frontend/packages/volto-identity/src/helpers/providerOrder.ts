@@ -3,35 +3,43 @@
  *
  * Dragging a row changes where every provider sits, and the list shows the new
  * order before the backend has stored it. Both halves are plain functions over
- * ids, so neither depends on the drag library that calls them.
+ * ids, so neither depends on the drag code that calls them.
  * @module helpers/providerOrder
  */
+import type { DropPosition } from './orderedList';
 
 /**
- * The provider ids after one has been dropped in another's place.
+ * The provider ids after some have been dropped next to another.
+ *
+ * Shaped like the reorder event of react-aria's `useDragAndDrop`: the ids
+ * dragged, the id they were dropped next to, and which side of it.
  *
  * @param ids Every provider's id, in the order the list shows them.
- * @param moved The id that was dragged.
- * @param target The id whose place it was dropped in, or `null` when it was
- *   dropped outside the list.
+ * @param moved The ids dragged, in any order; they keep the list's order.
+ * @param target The id they were dropped next to.
+ * @param position Which side of the target. `on` is read as `before`.
  * @returns The new order, or `null` when the drop changes nothing: dropped
- *   where it started, dropped outside the list, or naming an id the list does
- *   not have.
+ *   where it started, dropped on itself, or naming an id the list does not
+ *   have.
  */
-export function movedIds(
+export function reorderedIds(
   ids: string[],
-  moved: string,
-  target: string | null,
+  moved: string[],
+  target: string,
+  position: DropPosition,
 ): string[] | null {
-  const from = ids.indexOf(moved);
-  const to = target === null ? -1 : ids.indexOf(target);
-  if (from < 0 || to < 0 || from === to) {
+  const dragged = new Set(moved);
+  if (dragged.has(target) || !ids.includes(target)) {
     return null;
   }
-  const next = [...ids];
-  next.splice(from, 1);
-  next.splice(to, 0, moved);
-  return next;
+  const movedIds = ids.filter((id) => dragged.has(id));
+  if (!movedIds.length) {
+    return null;
+  }
+  const remaining = ids.filter((id) => !dragged.has(id));
+  const at = remaining.indexOf(target) + (position === 'after' ? 1 : 0);
+  const next = [...remaining.slice(0, at), ...movedIds, ...remaining.slice(at)];
+  return next.every((id, index) => id === ids[index]) ? null : next;
 }
 
 /**

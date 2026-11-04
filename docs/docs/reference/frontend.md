@@ -237,7 +237,7 @@ A caller whose `can_manage` is true also gets a link to `manage-members`.
 
 | Name | Used for |
 |---|---|
-| `provider_icon` | The SVG icon field on the provider form. Shows the driver's default icon until one is uploaded. |
+| `provider_icon` | The SVG icon field on the provider form. Shows the driver's default icon until one is uploaded. A file just chosen is previewed as an image, which runs none of its scripts, until the form is saved. |
 | `identity_string_list` | An ordered list of strings, edited as a table. A Profile's email addresses use it. The dialog renders the widget of the list's value type. |
 | `identity_object_list` | An ordered list of objects an item schema describes, edited as a table. The `columns` prop picks the fields shown; without it every field is a column. |
 
@@ -255,9 +255,9 @@ Asking for a list widget is {doc}`/how-to-guides/extend/edit-a-list-as-a-table`.
 
 | Action | What it does |
 |---|---|
-| Drag a row by its handle | Moves the entry. Handles appear once Volto's drag library has loaded |
-| {guilabel}`Edit` | Opens the entry in a dialog built from the item schema |
-| {guilabel}`Delete` | Asks, then removes the entry |
+| Drag a row by its handle | Moves the entry. From the keyboard, focus the handle, press {kbd}`Enter`, and choose a drop position with the arrow keys. The moves are announced in the site's language |
+| {guilabel}`Edit` | Opens the entry in a dialog built from the item schema. The button's accessible name includes the entry, as in "Edit GitHub" |
+| {guilabel}`Delete` | Asks, then removes the entry it asked about, even if the list changed while the question was open |
 | The button beside the label | Opens an empty dialog, seeded with the item schema's defaults |
 
 Every action changes the field's value only. Nothing is stored until the form is
@@ -266,7 +266,7 @@ saved.
 | Prop | Widget | Set by | What it does |
 |---|---|---|---|
 | `items` | `identity_string_list` | `plone.restapi`, from the field's `value_type` | The one field in the dialog, and the column header |
-| `uniqueItems` | `identity_string_list` | `plone.restapi`, `true` for a `Tuple`, a `Set`, and a `List` of `Choice` | Refuses an entry already on the list |
+| `uniqueItems` | `identity_string_list` | `plone.restapi`, `true` for a `Tuple`, a `Set`, and a `List` of `Choice` | Refuses an entry already on the list, compared trimmed, and without regard to case for an `Email` value type |
 | `schemaName` | `identity_object_list` | `widgetProps` | Names a registered `schema` utility that builds the item schema. Wins over `schema` |
 | `schema` | `identity_object_list` | A form schema built in the frontend | The item schema, or a function returning it. Ignored when it has no `fieldsets` |
 | `columns` | `identity_object_list` | `widgetProps` | The item schema's fields shown as columns, in order. Every field when absent |
@@ -274,7 +274,7 @@ saved.
 
 | Widget | Value |
 |---|---|
-| `identity_string_list` | A list of strings, in order |
+| `identity_string_list` | A list of strings, in order, each trimmed. An empty entry is left out |
 | `identity_object_list` | A list of objects, in order. Any change gives an `@id` to each entry without one, as Volto's `object_list` does |
 
 A cell shows a choice by its label, a list as its entries joined by commas, and

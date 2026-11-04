@@ -1,28 +1,36 @@
 import { describe, expect, it } from 'vitest';
 
-import { inOrder, movedIds } from './providerOrder';
+import { inOrder, reorderedIds } from './providerOrder';
 
-describe('movedIds', () => {
+describe('reorderedIds', () => {
   const ids = ['email', 'github', 'google'];
 
-  it('moves a provider down into the place it was dropped in', () => {
-    expect(movedIds(ids, 'email', 'google')).toEqual([
+  it('moves a provider down, after the one it was dropped on', () => {
+    expect(reorderedIds(ids, ['email'], 'google', 'after')).toEqual([
       'github',
       'google',
       'email',
     ]);
   });
 
-  it('moves a provider up into the place it was dropped in', () => {
-    expect(movedIds(ids, 'google', 'email')).toEqual([
+  it('moves a provider up, before the one it was dropped on', () => {
+    expect(reorderedIds(ids, ['google'], 'email', 'before')).toEqual([
       'google',
       'email',
       'github',
     ]);
   });
 
-  it('swaps neighbours', () => {
-    expect(movedIds(ids, 'github', 'email')).toEqual([
+  it('reads a drop on a row as a drop before it', () => {
+    expect(reorderedIds(ids, ['github'], 'email', 'on')).toEqual([
+      'github',
+      'email',
+      'google',
+    ]);
+  });
+
+  it('moves several, keeping the order they had', () => {
+    expect(reorderedIds(ids, ['google', 'email'], 'github', 'after')).toEqual([
       'github',
       'email',
       'google',
@@ -31,22 +39,19 @@ describe('movedIds', () => {
 
   it('changes nothing for a provider dropped where it started', () => {
     // Nothing to save, so the caller sends no request.
-    expect(movedIds(ids, 'github', 'github')).toBeNull();
-  });
-
-  it('changes nothing for a provider dropped outside the list', () => {
-    expect(movedIds(ids, 'github', null)).toBeNull();
+    expect(reorderedIds(ids, ['github'], 'email', 'after')).toBeNull();
+    expect(reorderedIds(ids, ['github'], 'github', 'before')).toBeNull();
   });
 
   it('changes nothing for an id the list does not have', () => {
-    expect(movedIds(ids, 'nobody', 'email')).toBeNull();
-    expect(movedIds(ids, 'email', 'nobody')).toBeNull();
+    expect(reorderedIds(ids, ['nobody'], 'email', 'before')).toBeNull();
+    expect(reorderedIds(ids, ['email'], 'nobody', 'before')).toBeNull();
   });
 
   it('leaves the list it was given alone', () => {
     const given = [...ids];
 
-    movedIds(given, 'email', 'google');
+    reorderedIds(given, ['email'], 'google', 'after');
 
     expect(given).toEqual(ids);
   });

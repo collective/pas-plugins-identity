@@ -138,7 +138,7 @@ msgid "Changes saved"
 msgstr "Änderungen gespeichert"
 
 #. Default: "Choose a file"
-#: components/Widgets/ProviderIconWidget
+#: components/Widgets/ProviderIconWidget/ProviderIconWidget
 msgid "Choose a file"
 msgstr "Wählen Sie eine Datei"
 
@@ -231,9 +231,7 @@ msgstr "Standard"
 
 #. Default: "Delete"
 #: components/ControlPanel/ConfirmModal
-#: components/ControlPanel/ProvidersTable
 #: components/ControlPanel/RenderUsers
-#: components/Widgets/OrderedListTable/OrderedListTable
 msgid "Delete"
 msgstr "Löschen"
 
@@ -270,10 +268,8 @@ msgstr "Treiber"
 
 #. Default: "Edit"
 #: components/ControlPanel/ClientsPanel
-#: components/ControlPanel/ProvidersTable
 #: components/ControlPanel/RenderUsers
 #: components/Toolbar/Toolbar
-#: components/Widgets/OrderedListTable/OrderedListTable
 msgid "Edit"
 msgstr "Bearbeiten"
 
@@ -331,11 +327,6 @@ msgstr "Alle"
 #: components/Toolbar/Toolbar
 msgid "Expand toolbar"
 msgstr "Symbolleiste erweitern"
-
-#. Default: "Export"
-#: components/ControlPanel/ProvidersTable
-msgid "Export"
-msgstr "Exportieren"
 
 #. Default: "Export every provider"
 #: components/ControlPanel/ProvidersControlPanel
@@ -529,12 +520,6 @@ msgstr "Menü geöffnet"
 msgid "More"
 msgstr "Mehr"
 
-#. Default: "Move {title}"
-#: components/ControlPanel/ProvidersTable
-#: components/Widgets/OrderedListTable/OrderedListTable
-msgid "Move {title}"
-msgstr "Verschieben {title}"
-
 #. Default: "News Item"
 #: components/Toolbar/Toolbar
 msgid "News Item"
@@ -600,12 +585,6 @@ msgstr "OAuth-Clients"
 #: components/ControlPanel/ClientsPanel
 msgid "Older keys stay in the ring so tokens already issued keep verifying."
 msgstr "Ältere Schlüssel bleiben im Ring, damit bereits ausgegebene Tokens die Verifizierung weiterhin durchführen. Der Ring hält {size}; Das Drehen von mehr als diesem innerhalb einer Zugriffstoken-Lebensdauer invalidiert noch immer Tokens."
-
-#. Default: "Order"
-#: components/ControlPanel/ProvidersTable
-#: components/Widgets/OrderedListTable/OrderedListTable
-msgid "Order"
-msgstr "Reihenfolge"
 
 #. Default: "Page"
 #: components/Toolbar/Toolbar
@@ -698,6 +677,11 @@ msgstr "Anbieter-Gruppe"
 msgid "Provider id"
 msgstr "Anbieter-ID"
 
+#. Default: "Providers"
+#: components/ControlPanel/ProvidersTable
+msgid "Providers"
+msgstr "Anbieter"
+
 #. Default: "Public (PKCE required)"
 #: components/ControlPanel/ClientsPanel
 msgid "Public (PKCE required)"
@@ -746,12 +730,12 @@ msgstr "Registrierung"
 
 #. Default: "Remove"
 #: components/Identities/IdentitiesList
-#: components/Widgets/ProviderIconWidget
+#: components/Widgets/ProviderIconWidget/ProviderIconWidget
 msgid "Remove"
 msgstr "Entfernen"
 
 #. Default: "Replace existing file"
-#: components/Widgets/ProviderIconWidget
+#: components/Widgets/ProviderIconWidget/ProviderIconWidget
 msgid "Replace existing file"
 msgstr "Ersetzen Sie die vorhandene Datei"
 
@@ -870,7 +854,6 @@ msgstr "Sie werden zu {provider} geleitet…"
 
 #. Default: "Test connection"
 #: components/ControlPanel/ProvidersControlPanel
-#: components/ControlPanel/ProvidersTable
 msgid "Test connection"
 msgstr "Testverbindung"
 
@@ -1318,10 +1301,20 @@ msgstr "nichts außer der Tatsache, dass Sie sich anmeldeten"
 msgid "ordered-list-confirm-delete"
 msgstr "Diesen Eintrag aus der Liste entfernen? Es ist weg, sobald das Formular gespeichert wird."
 
+#. Default: "Delete {title}"
+#: components/Widgets/OrderedListTable/OrderedListTable
+msgid "ordered-list-delete-row"
+msgstr "{title} löschen"
+
 #. Default: "{value} is already on the list."
 #: components/Widgets/OrderedStringListWidget/OrderedStringListWidget
 msgid "ordered-list-duplicate"
 msgstr "{value} ist bereits in der Liste."
+
+#. Default: "Edit {title}"
+#: components/Widgets/OrderedListTable/OrderedListTable
+msgid "ordered-list-edit-row"
+msgstr "{title} bearbeiten"
 
 #. Default: "Nothing has been added yet."
 #: components/Widgets/OrderedListTable/OrderedListTable
@@ -1374,19 +1367,44 @@ msgid "provider-driver-help"
 msgstr "Mit welchem Service dieser Anbieter spricht. Es entscheidet über den Rest des Formulars und kann danach nicht geändert werden."
 
 #. Default: "The driver's icon, used until one is uploaded."
-#: components/Widgets/ProviderIconWidget
+#: components/Widgets/ProviderIconWidget/ProviderIconWidget
 msgid "provider-icon-default"
 msgstr "Das Symbol des Treibers, das bis zur Hochladung eines verwendet wird."
 
 #. Default: "An SVG file. It is drawn in the button, so it takes the button colours; anything else is refused."
-#: components/Widgets/ProviderIconWidget
+#: components/Widgets/ProviderIconWidget/ProviderIconWidget
 msgid "provider-icon-hint"
 msgstr "Eine SVG-Datei. Sie wird in der Schaltfläche gezeichnet, daher werden die Schaltflächenfarben verwendet; alles andere wird abgelehnt."
+
+#. Default: "The chosen icon, shown as it was uploaded until saved"
+#: components/Widgets/ProviderIconWidget/ProviderIconWidget
+msgid "provider-icon-preview"
+msgstr "Das gewählte Symbol, wie hochgeladen angezeigt, bis gespeichert wird"
 
 #. Default: "Used in URLs and stored with every identity linked through this provider, so it is permanent."
 #: helpers/providerSchema
 msgid "provider-id-help"
 msgstr "In URLs verwendet und mit jeder Identität gespeichert, die über diesen Anbieter verknüpft ist, daher ist es dauerhaft."
+
+#. Default: "Delete {title}"
+#: components/ControlPanel/ProvidersTable
+msgid "provider-row-delete"
+msgstr "{title} löschen"
+
+#. Default: "Edit {title}"
+#: components/ControlPanel/ProvidersTable
+msgid "provider-row-edit"
+msgstr "{title} bearbeiten"
+
+#. Default: "Export {title}"
+#: components/ControlPanel/ProvidersTable
+msgid "provider-row-export"
+msgstr "{title} exportieren"
+
+#. Default: "Test connection to {title}"
+#: components/ControlPanel/ProvidersTable
+msgid "provider-row-test"
+msgstr "Verbindung zu {title} testen"
 
 #. Default: "signing"
 #: components/ControlPanel/ClientsPanel
