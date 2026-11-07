@@ -1,0 +1,1 @@
+Added Playwright acceptance tests for the Volto add-on, in `frontend/acceptance/`, run in CI against a production build. The development install deliberately gives the add-on a different `react-aria-components` from `@plone/components`, and the tests refuse to run when the two copies merge, so a regression of #153 fails them. They replace the unused Cypress scaffold. @ericof

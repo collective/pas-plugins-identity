@@ -20,10 +20,19 @@ Everything `@plone-collective/volto-identity` adds to a Volto project.
 |---|---|
 | Name | `@plone-collective/volto-identity` |
 | Developed against Volto | 19.3.0 |
-| Peer dependencies | React 18, `react-redux` ^8.1.2, `react-router-dom` ^5.2.0, `@plone/components` |
+| Peer dependencies | React 18, `react-redux` ^8.1.2, `react-router-dom` ^5.2.0, `@plone/components` ^4.2.1 |
+| Optional peer dependencies | `react-aria-components` |
 
 `peerDependencies` does not name `@plone/volto` itself. The Volto version above
 is what the monorepo builds against (`frontend/mrs.developer.json`).
+
+<!-- source: frontend/packages/volto-identity/razzle.extend.js -->
+
+The package ships a `razzle.extend.js`. In the browser build, it resolves every
+`react-aria-components` import in the package from the directory of
+`@plone/components`, so both use the same copy even when the project's install
+holds two. The server build leaves `react-aria-components` external, so it
+already loads one copy.
 
 Installing it is {doc}`/how-to-guides/install/frontend`.
 

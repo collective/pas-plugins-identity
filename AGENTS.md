@@ -53,6 +53,13 @@ A change that adds uncovered lines fails the suite rather than warning.
 `make backend-test` runs `pytest -m "not docker"`. Tests that drive real
 containers are marked `docker` and run with `make -C backend test-docker`.
 
+The Volto add-on's Playwright acceptance tests need a running backend and
+frontend, so they are not in the table; CI runs them against a production
+build. To run them locally, see "Run the acceptance tests" in
+`frontend/README.md`. When you touch a react-aria widget, run them: the
+development install deliberately holds two copies of `react-aria-components`
+(#153), and only a real build shows what that does to a page.
+
 ## Rules that are easy to get wrong
 
 ### Run `make format` before staging
