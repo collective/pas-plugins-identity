@@ -1,0 +1,1 @@
+Upgraded the development frontend to Volto 19.7.0. pnpm now resolves webpack to Volto's catalogue version, so the lockfile holds a single webpack and Storybook builds with the same one as the app. The add-on's development copy of `react-aria-components` is pinned below Volto's, so the acceptance tests keep running against two copies. @ericof
