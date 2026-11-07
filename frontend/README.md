@@ -71,7 +71,7 @@ Every component this add-on ships is in [Storybook](https://collective.github.io
 ## Installation
 
 This add-on requires Volto 19 and `pas.plugins.identity` installed on the Plone site.
-It is developed against Volto 19.3.0; see [the frontend install guide](https://collective.github.io/pas-plugins-identity/how-to-guides/install/frontend.html) for the full requirement table.
+It is developed against Volto 19.7.0; see [the frontend install guide](https://collective.github.io/pas-plugins-identity/how-to-guides/install/frontend.html) for the full requirement table.
 
 Add `@plone-collective/volto-identity` to your `package.json`.
 
@@ -233,10 +233,10 @@ make acceptance-install
 make acceptance-test
 ```
 
-The development install gives this package its own `react-aria-components`, pinned to a different version from the one `@plone/components` uses.
+The development install gives this package its own `react-aria-components`, pinned below the version `@plone/components` uses.
 That is deliberate: a project's install can split them the same way, and the tests check that the add-on still works when it does.
 They refuse to run if the two copies have merged.
-When Volto's catalogue reaches the pinned version, pin `react-aria-components` in `packages/volto-identity/package.json` to another version.
+Keep the pin in `packages/volto-identity/package.json` below Volto's catalogue: Volto only moves up, so the copies stay apart, and the type check runs against the older release.
 
 ## License
 

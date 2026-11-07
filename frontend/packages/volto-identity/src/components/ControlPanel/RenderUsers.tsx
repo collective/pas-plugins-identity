@@ -6,7 +6,7 @@
  * which is where the reason for shadowing it is written down.
  *
  * Not a verbatim copy of `@plone/volto/components/manage/Controlpanels/Users/RenderUsers`
- * (Volto 19.3.0) with a patch: it keeps the markup, the class names, the
+ * (Volto 19.7.0) with a patch: it keeps the markup, the class names, the
  * element ids and the behaviour Volto's stylesheet and tests expect, and
  * changes the one thing worth changing. On a Volto upgrade, read upstream's
  * diff for *behavioural* changes and port those.

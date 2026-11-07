@@ -1,7 +1,7 @@
 /**
  * Volto's toolbar, replaced by this add-on's.
  *
- * Shadows `@plone/volto/components/manage/Toolbar/Toolbar` (Volto 19.3.0).
+ * Shadows `@plone/volto/components/manage/Toolbar/Toolbar` (Volto 19.7.0).
  *
  * WHY IT IS SHADOWED. Volto has no extension point for the toolbar's user
  * button. `toolbar-personal` is a DOM id on a button in this component, not a

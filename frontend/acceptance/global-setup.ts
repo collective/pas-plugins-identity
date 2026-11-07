@@ -7,11 +7,10 @@
  * two land on different versions, a react-aria widget built from both
  * copies loses its context and the page fails to render (#153).
  *
- * So `packages/volto-identity` pins a `react-aria-components` that differs
- * from Volto's catalogue, and these tests run against that split. Once
- * Volto's catalogue reaches the same version, the copies would merge and
- * every test here would pass whether or not the add-on handles a split.
- * This check stops that from happening silently.
+ * So `packages/volto-identity` pins a `react-aria-components` below the one
+ * in Volto's catalogue, and these tests run against that split. Were the
+ * copies to merge, every test here would pass whether or not the add-on
+ * handles a split. This check stops that from happening silently.
  */
 import path from 'node:path';
 
@@ -42,7 +41,7 @@ export default function globalSetup(): void {
   if (ours.root === theirs.root) {
     throw new Error(
       `The add-on and @plone/components share react-aria-components ` +
-        `${ours.version}. These tests need two copies: pin a different ` +
+        `${ours.version}. These tests need two copies: pin an older ` +
         `version in packages/volto-identity/package.json.`,
     );
   }

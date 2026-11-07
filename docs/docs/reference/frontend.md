@@ -19,7 +19,7 @@ Everything `@plone-collective/volto-identity` adds to a Volto project.
 | | |
 |---|---|
 | Name | `@plone-collective/volto-identity` |
-| Developed against Volto | 19.3.0 |
+| Developed against Volto | 19.7.0 |
 | Peer dependencies | React 18, `react-redux` ^8.1.2, `react-router-dom` ^5.2.0, `@plone/components` ^4.2.1 |
 | Optional peer dependencies | `react-aria-components` |
 

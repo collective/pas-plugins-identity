@@ -6,7 +6,7 @@
     "email": "ericof@plone.org",
     "use_prerelease_versions": false,
     "plone_version": "6.2.1",
-    "volto_version": "19.3.0",
+    "volto_version": "19.7.0",
     "python_package_name": "pas.plugins.identity",
     "npm_package_name": "@plone-collective/volto-identity",
     "github_organization": "collective",
