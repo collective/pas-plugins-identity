@@ -1,0 +1,77 @@
+name: Acceptance
+
+# The Volto add-on in a real browser, against a production build.
+#
+# The backend runs from its acceptance image. The frontend is built and served
+# from this runner's own install rather than from the frontend image: the tests
+# need the install's two copies of react-aria-components (#153), and
+# `acceptance/global-setup.ts` can only check an install it can see.
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        type: string
+        required: true
+
+jobs:
+  acceptance:
+    name: "Acceptance: Playwright"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Main checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup uv
+        uses: plone/meta/.github/actions/setup_uv@2.x
+        with:
+          working-directory: frontend
+
+      - name: Setup codebase
+        uses: plone/meta/.github/actions/setup_frontend@2.x
+        with:
+          node-version: ${{ inputs.node-version }}
+          working-directory: frontend
+
+      - name: Start the backend
+        shell: bash
+        run: |
+          make acceptance-backend-image-build
+          make acceptance-backend-container-start
+
+      - name: Build and start the frontend
+        shell: bash
+        working-directory: frontend
+        run: |
+          nohup make acceptance-frontend-prod-start > frontend.log 2>&1 &
+
+      - name: Install the browser
+        shell: bash
+        working-directory: frontend
+        run: |
+          pnpm exec playwright install --with-deps chromium
+
+      - name: Wait for both servers
+        shell: bash
+        working-directory: frontend
+        run: |
+          pnpm dlx wait-on --timeout 600000 --httpTimeout 20000 \
+            http-get://127.0.0.1:55001/plone http://127.0.0.1:3000
+
+      - name: Run the acceptance tests
+        shell: bash
+        working-directory: frontend
+        run: |
+          make ci-acceptance-test
+
+      - name: Keep the traces and the frontend log
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: acceptance-results
+          path: |
+            frontend/acceptance/results
+            frontend/frontend.log
+          if-no-files-found: ignore

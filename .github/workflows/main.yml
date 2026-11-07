@@ -66,6 +66,17 @@ jobs:
       contents: read
       packages: write
 
+  acceptance:
+    name: "Acceptance"
+    uses: ./.github/workflows/acceptance.yml
+    needs:
+      - config
+    if: ${{ needs.config.outputs.acceptance == 'true' }}
+    permissions:
+      contents: read
+    with:
+      node-version: ${{ needs.config.outputs.node-version }}
+
   storybook:
     name: "Storybook"
     uses: ./.github/workflows/tmp-frontend-storybook.yml
@@ -115,6 +126,7 @@ jobs:
       - backend
       - docs
       - frontend
+      - acceptance
       - storybook
       - deploy-docs
     steps:
@@ -127,5 +139,6 @@ jobs:
           echo '| backend | ${{ needs.backend.result }} |' >> $GITHUB_STEP_SUMMARY
           echo '| docs | ${{ needs.docs.result }} |' >> $GITHUB_STEP_SUMMARY
           echo '| frontend | ${{ needs.frontend.result }} |' >> $GITHUB_STEP_SUMMARY
+          echo '| acceptance | ${{ needs.acceptance.result }} |' >> $GITHUB_STEP_SUMMARY
           echo '| storybook | ${{ needs.storybook.result }} |' >> $GITHUB_STEP_SUMMARY
           echo '| deploy-docs | ${{ needs.deploy-docs.result }} |' >> $GITHUB_STEP_SUMMARY

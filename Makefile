@@ -280,15 +280,20 @@ acceptance-images-build: ## Build Acceptance frontend/backend images
 	$(MAKE) acceptance-backend-image-build
 	$(MAKE) acceptance-frontend-image-build
 
+# Container names take no slashes, so they cannot carry the image prefix
+# (`ghcr.io/...`) the images are tagged with.
+ACCEPTANCE_BACKEND_CONTAINER := $(PROJECT_NAME)-backend-acceptance
+ACCEPTANCE_FRONTEND_CONTAINER := $(PROJECT_NAME)-frontend-acceptance
+
 .PHONY: acceptance-frontend-container-start
 acceptance-frontend-container-start:
 	@echo "Start acceptance frontend"
-	@docker run --rm -p 3000:3000 --name $(IMAGE_NAME_PREFIX_WITH_SEPARATOR)frontend-acceptance --link $(IMAGE_NAME_PREFIX_WITH_SEPARATOR)backend-acceptance:backend -e RAZZLE_API_PATH=http://localhost:55001/plone -e RAZZLE_INTERNAL_API_PATH=http://backend:55001/plone -d $(IMAGE_NAME_PREFIX_WITH_SEPARATOR)frontend:acceptance
+	@docker run --rm -p 3000:3000 --name $(ACCEPTANCE_FRONTEND_CONTAINER) --link $(ACCEPTANCE_BACKEND_CONTAINER):backend -e RAZZLE_API_PATH=http://localhost:55001/plone -e RAZZLE_INTERNAL_API_PATH=http://backend:55001/plone -d $(IMAGE_NAME_PREFIX_WITH_SEPARATOR)frontend:acceptance
 
 .PHONY: acceptance-backend-container-start
 acceptance-backend-container-start:
 	@echo "Start acceptance backend"
-	@docker run --rm -p 55001:55001 --name $(IMAGE_NAME_PREFIX_WITH_SEPARATOR)backend-acceptance -d $(IMAGE_NAME_PREFIX_WITH_SEPARATOR)backend:acceptance
+	@docker run --rm -p 55001:55001 --name $(ACCEPTANCE_BACKEND_CONTAINER) -d $(IMAGE_NAME_PREFIX_WITH_SEPARATOR)backend:acceptance
 
 .PHONY: acceptance-containers-start
 acceptance-containers-start: ## Start Acceptance containers
@@ -298,8 +303,8 @@ acceptance-containers-start: ## Start Acceptance containers
 .PHONY: acceptance-containers-stop
 acceptance-containers-stop: ## Stop Acceptance containers
 	@echo "Stop acceptance containers"
-	@docker stop $(IMAGE_NAME_PREFIX_WITH_SEPARATOR)frontend-acceptance
-	@docker stop $(IMAGE_NAME_PREFIX_WITH_SEPARATOR)backend-acceptance
+	@docker stop $(ACCEPTANCE_FRONTEND_CONTAINER)
+	@docker stop $(ACCEPTANCE_BACKEND_CONTAINER)
 
 .PHONY: ci-acceptance-test
 ci-acceptance-test:

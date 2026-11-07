@@ -206,27 +206,37 @@ Two decorators in `src/stories/`, beside the fixtures, cover what these componen
 - `withPage` supplies the router and store a page-level component reads.
 - `withUserMenu` puts a component in the chrome it actually appears in, which is the only way to see a menu entry rendered where a user meets it.
 
-### Run Cypress tests
+### Run the acceptance tests
+
+The acceptance tests drive the add-on in a real browser with Playwright.
+They live in `acceptance/`.
 
 Run each of these steps in separate terminal sessions.
 
-In the first session, start the frontend in development mode.
-
-```shell
-make acceptance-frontend-dev-start
-```
-
-In the second session, start the backend acceptance server.
+In the first session, from the repository root, start the backend acceptance server, which has this add-on installed.
 
 ```shell
 make acceptance-backend-start
 ```
 
-In the third session, start the Cypress interactive test runner.
+In the second session, start the frontend in development mode.
 
 ```shell
+make acceptance-frontend-dev-start
+```
+
+In the third session, install the browser once, then start the Playwright interactive runner.
+`make ci-acceptance-test` runs the same tests headless.
+
+```shell
+make acceptance-install
 make acceptance-test
 ```
+
+The development install gives this package its own `react-aria-components`, pinned to a different version from the one `@plone/components` uses.
+That is deliberate: a project's install can split them the same way, and the tests check that the add-on still works when it does.
+They refuse to run if the two copies have merged.
+When Volto's catalogue reaches the pinned version, pin `react-aria-components` in `packages/volto-identity/package.json` to another version.
 
 ## License
 
