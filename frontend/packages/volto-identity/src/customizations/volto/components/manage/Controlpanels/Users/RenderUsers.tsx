@@ -2,7 +2,7 @@
  * Volto's users-control-panel row, replaced by this add-on's.
  *
  * Shadows `@plone/volto/components/manage/Controlpanels/Users/RenderUsers`
- * (Volto 19.3.0).
+ * (Volto 19.7.0).
  *
  * WHY IT IS SHADOWED. The row's {guilabel}`Edit` action is built inline and
  * Volto has no extension point in it, so where that action leads cannot be

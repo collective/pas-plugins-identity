@@ -1,5 +1,5 @@
 /**
- * COPIED FROM VOLTO 19.3.0.
+ * COPIED FROM VOLTO 19.7.0.
  *
  * Takes Volto's place through
  * `customizations/volto/components/manage/Toolbar/Toolbar`, which is where
@@ -14,10 +14,10 @@
  * make the upgrade tractable.
  *
  * WHAT CHANGED:
- * - the `#toolbar-personal` button renders `<UserAvatar>` instead of
- *   the generic `user.svg` icon, so the button shows *who* is signed
- *   in rather than that somebody is;
- * - the now-unused `userSVG` import is replaced by that component's.
+ * - the `#toolbar-personal` button renders this add-on's `<UserAvatar>`
+ *   instead of Volto's, which draws the generic `user.svg` icon, so the
+ *   button shows *who* is signed in rather than that somebody is;
+ * - the import of Volto's `UserAvatar` is replaced by this add-on's.
  */
 /**
  * Toolbar component.
@@ -60,9 +60,20 @@ import unlockSVG from '@plone/volto/icons/unlock.svg';
 import folderSVG from '@plone/volto/icons/folder.svg';
 import addSVG from '@plone/volto/icons/add-document.svg';
 import moreSVG from '@plone/volto/icons/more.svg';
-import UserAvatar from '@plone-collective/volto-identity/components/UserMenu/UserAvatar';
 import backSVG from '@plone/volto/icons/back.svg';
 import clearSVG from '@plone/volto/icons/clear.svg';
+import UserAvatar from '@plone-collective/volto-identity/components/UserMenu/UserAvatar';
+
+/**
+ * Tell whether a pathname is a site setup (control panel) page, with or
+ * without a language prefix, such as ``/controlpanel`` or ``/en/controlpanel``.
+ * @param {string} pathname Current pathname.
+ * @returns {boolean} True for control panel pages.
+ */
+const isControlPanelPath = (pathname) => {
+  const [first = '', second = ''] = (pathname || '').split('/').filter(Boolean);
+  return first === 'controlpanel' || second === 'controlpanel';
+};
 
 const messages = defineMessages({
   edit: {
@@ -706,7 +717,8 @@ class Toolbar extends Component {
                   name="main.toolbar.bottom"
                   params={{ onClickHandler: this.toggleMenu }}
                 />
-                {!this.props.hideDefaultViewButtons && (
+                {(!this.props.hideDefaultViewButtons ||
+                  isControlPanelPath(this.props.pathname)) && (
                   <button
                     className="user"
                     aria-label={this.props.intl.formatMessage(

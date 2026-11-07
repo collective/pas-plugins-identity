@@ -142,7 +142,7 @@ Read {doc}`concepts/layers` for what each layer buys you and what it costs.
 |---|---|
 | Plone | 6.2 |
 | Python | 3.12, 3.13, or 3.14 |
-| Frontend | Volto, developed against 19.3.0 |
+| Frontend | Volto, developed against 19.7.0 |
 
 Sign-in requires the Volto frontend.
 Classic UI is not supported for sign-in yet; support for it is intended.

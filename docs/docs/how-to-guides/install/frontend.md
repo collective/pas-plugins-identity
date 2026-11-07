@@ -20,7 +20,7 @@ Do {doc}`/how-to-guides/install/backend` first.
 
 | | |
 |---|---|
-| Volto | developed against 19.3.0 |
+| Volto | developed against 19.7.0 |
 | React | 18 |
 | Also needs | `react-redux` 8, `react-router-dom` 5, `@plone/components` |
 
