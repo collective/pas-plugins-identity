@@ -82,6 +82,12 @@ class TestPostUninstall:
 
         assert CONFIGLET_ID not in [a.getId() for a in tool.listActions()]
 
+    def test_the_applications_entry_is_removed(self):
+        """It leads to a page whose endpoint has gone with the layer."""
+        category = api.portal.get_tool("portal_actions")["personal_tools"]
+
+        assert "applications" not in category.objectIds()
+
     @pytest.mark.parametrize("name", getFieldNames(IServerSettings))
     def test_records_removed(self, name):
         """Driven off the schema rather than a hand-kept list, so a field

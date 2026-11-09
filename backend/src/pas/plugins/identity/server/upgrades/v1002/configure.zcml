@@ -1,0 +1,20 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    >
+
+  <!-- Applications, in the personal_tools category. Run the core profile's
+       1013 step first: this one places the entry before Site Setup, which
+       that step creates. -->
+  <genericsetup:upgradeSteps
+      profile="pas.plugins.identity.server:default"
+      source="1001"
+      destination="1002"
+      >
+    <genericsetup:upgradeDepends
+        title="Add Applications to Volto's user menu"
+        import_steps="actions"
+        />
+  </genericsetup:upgradeSteps>
+
+</configure>

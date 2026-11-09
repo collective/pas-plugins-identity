@@ -1,0 +1,25 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    >
+
+  <!-- The personal_tools actions Volto 19.7's toolbar builds its user menu
+       from. Actions are persistent objects written into portal_actions at
+       install, so a site installed before them has none, and Volto falls back
+       to its own three entries.
+
+       The actions import step rather than a handler of our own, because the
+       wanted state is exactly what actions.xml declares. It merges: actions
+       the site already has in other categories are left alone. -->
+  <genericsetup:upgradeSteps
+      profile="pas.plugins.identity:default"
+      source="1012"
+      destination="1013"
+      >
+    <genericsetup:upgradeDepends
+        title="Add the personal_tools actions for Volto's user menu"
+        import_steps="actions"
+        />
+  </genericsetup:upgradeSteps>
+
+</configure>

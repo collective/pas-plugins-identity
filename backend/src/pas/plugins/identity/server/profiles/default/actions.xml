@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Applications, in the personal_tools category the core profile declares:
+     the clients a user has authorized, which only a site running the
+     authorization server has. Placed before Site Setup, which stays last
+     because it is about the site rather than the person. -->
+<object xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+        meta_type="Plone Actions Tool"
+        name="portal_actions"
+>
+  <object meta_type="CMF Action Category"
+          name="personal_tools"
+  >
+    <object insert-before="plone_setup"
+            meta_type="CMF Action"
+            name="applications"
+            i18n:domain="pas.plugins.identity"
+    >
+      <property name="title"
+                i18n:translate=""
+      >Applications</property>
+      <property name="description"
+                i18n:translate=""
+      />
+      <property name="url_expr">string:/applications</property>
+      <property name="link_target" />
+      <property name="icon_expr">string:plug</property>
+      <property name="available_expr">python:member is not None</property>
+      <property name="permissions">
+        <element value="View" />
+      </property>
+      <property name="visible">True</property>
+    </object>
+  </object>
+</object>

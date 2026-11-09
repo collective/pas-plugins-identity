@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: Plone\n"
-"POT-Creation-Date: 2026-11-04T17:46:50.677Z\n"
+"POT-Creation-Date: 2026-11-08T14:22:27.778Z\n"
 "Last-Translator: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Language-Team: Plone i18n <plone-i18n@lists.sourceforge.net>\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -79,7 +79,6 @@ msgstr ""
 
 #. Default: "Applications"
 #: components/Applications/Applications
-#: components/UserMenu/ApplicationsMenuItem
 msgid "Applications"
 msgstr ""
 
@@ -628,11 +627,6 @@ msgstr ""
 msgid "Please fill in {fields} before you can continue."
 msgstr ""
 
-#. Default: "Preferences"
-#: components/UserMenu/UserMenuPlugs
-msgid "Preferences"
-msgstr ""
-
 #. Default: "Preferred"
 #: components/Identities/ProfileEmails
 msgid "Preferred"
@@ -646,12 +640,6 @@ msgstr ""
 #. Default: "Preview the sign-in options"
 #: components/Blocks/SignIn/schema
 msgid "Preview the sign-in options"
-msgstr ""
-
-#. Default: "Profile"
-#: components/UserMenu/ProfileMenuItem
-#: components/UserMenu/UserMenuPlugs
-msgid "Profile"
 msgstr ""
 
 #. Default: "Profile field"
@@ -818,7 +806,6 @@ msgstr ""
 #: components/ControlPanel/UserAccountPanel
 #: components/Identities/Identities
 #: components/Identities/IdentitiesList
-#: components/UserMenu/IdentitiesMenuItem
 msgid "Sign-in methods"
 msgstr ""
 
@@ -842,11 +829,6 @@ msgstr ""
 #: components/Callback/Callback
 #: components/FirstLogin/FirstLogin
 msgid "Signing you in"
-msgstr ""
-
-#. Default: "Site Setup"
-#: components/UserMenu/UserMenuPlugs
-msgid "Site Setup"
 msgstr ""
 
 #. Default: "Taking you to {provider}…"

@@ -145,6 +145,20 @@ class TestRegistrationsRemoved:
         for info in plugins.listPluginTypeInfo():
             assert plugin_id not in plugins.listPluginIds(info["interface"])
 
+    @pytest.mark.parametrize("action_id", ["identity_profile", "identities"])
+    def test_personal_tools_entry_removed(self, action_id: str):
+        """This package's own entries go; the ones plone.volto shares stay."""
+        category = api.portal.get_tool("portal_actions")["personal_tools"]
+
+        assert action_id not in category.objectIds()
+        assert "profile" in category.objectIds()
+
+    def test_the_profile_entry_no_longer_asks_this_package(self):
+        """Its condition called a view the site is about to stop offering."""
+        action = api.portal.get_tool("portal_actions")["personal_tools"]["profile"]
+
+        assert action.getProperty("available_expr") == "python:member is not None"
+
     def test_properties_fall_back_to_the_seeded_sheet(self):
         """The site still works, on the stock plugins alone."""
         acl_users = api.portal.get_tool("acl_users")

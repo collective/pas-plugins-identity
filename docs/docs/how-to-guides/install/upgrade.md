@@ -17,7 +17,7 @@ Take a new release into a site that already has this add-on.
 <!-- source: backend/src/pas/plugins/identity/server/profiles/default/metadata.xml -->
 <!-- source: backend/src/pas/plugins/identity/server/upgrades/ -->
 
-`pas.plugins.identity:default` is at profile version **1012** and declares
+`pas.plugins.identity:default` is at profile version **1013** and declares
 upgrade steps, so `portal_setup` offers them to a site installed against an
 earlier release.
 
@@ -35,12 +35,14 @@ earlier release.
 | 1010 | Activates `identity_profile` for `IUserIntrospection`, so `api.user.get_users()` and `listMembers()` include users who have a profile and no `source_users` account. |
 | 1011 | Guards the login and group memberships of a profile with View Account Details, and maps it onto every profile already in the site. |
 | 1012 | Creates the `client_ip_headers` setting, empty, keeping every existing setting's value. |
+| 1013 | Adds the `personal_tools` actions that Volto's user menu is built from: Profile, Preferences, Sign-in methods and Site Setup. |
 
-`pas.plugins.identity.server:default` is at profile version **1001**.
+`pas.plugins.identity.server:default` is at profile version **1002**.
 
 | To | Does |
 |---|---|
 | 1001 | Adds an empty `allowed_groups` to every registered OAuth client, so each one keeps admitting everybody until an operator restricts it. A registration that already has the key keeps its value. |
+| 1002 | Adds Applications to the `personal_tools` actions, before Site Setup. Run it after the core profile's 1013. |
 
 ```{warning}
 An upgrade step covers what a profile cannot carry on its own—a persistent

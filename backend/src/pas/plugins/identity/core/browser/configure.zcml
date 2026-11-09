@@ -15,4 +15,14 @@
       permission="zope2.Public"
       />
 
+  <!-- Public because the personal_tools actions evaluate it for every
+       visitor, anonymous included, on sites that deny anonymous View. It
+       only ever answers the caller's own Profile URL. -->
+  <browser:page
+      name="identity-profile-url"
+      for="plone.base.interfaces.IPloneSiteRoot"
+      class=".personal_tools.IdentityProfileUrl"
+      permission="zope2.Public"
+      />
+
 </configure>
