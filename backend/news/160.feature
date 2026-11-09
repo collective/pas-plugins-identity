@@ -1,0 +1,1 @@
+Added the `personal_tools` actions that Volto 19.7's toolbar builds its user menu from: Profile, Preferences, Sign-in methods and Site Setup, plus Applications when the authorization server is installed. A user who has a Profile is offered it in place of Volto's profile form. Upgrade steps 1013, and 1002 for the server profile, add them to an existing site. @ericof

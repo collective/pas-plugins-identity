@@ -1,10 +1,11 @@
 /**
  * The shadowed personal-tools menu.
  *
- * Upstream ships no test for this component, and once it is rewritten rather
- * than patched it is this package's code: the things that differ from Volto
- * are the things worth pinning, so a future upgrade that quietly reverts one
- * of them fails here instead of in somebody's browser.
+ * Once it is rewritten rather than patched it is this package's code: the
+ * things that differ from Volto are the things worth pinning, so a future
+ * upgrade that quietly reverts one of them fails here instead of in
+ * somebody's browser. The list itself is upstream's behaviour, pinned too
+ * because the backend's actions are what the whole menu now rests on.
  */
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '../../testing';
@@ -24,16 +25,23 @@ const ALICE = {
   fullname: 'Alice Liddell',
 };
 
+/** What this package's profile lists for a member with a Profile. */
+const MEMBER_TOOLS = [
+  { id: 'identity_profile', title: 'Profile', url: '/identity-profiles/alice' },
+  { id: 'preferences', title: 'Preferences', url: 'preferences' },
+  { id: 'identities', title: 'Sign-in methods', url: '/identities' },
+];
+
 function renderMenu(
   user: unknown = ALICE,
   props: Record<string, unknown> = {},
-  actions: unknown[] = [],
+  personalTools: unknown[] | undefined = MEMBER_TOOLS,
   plugs: React.ReactNode = null,
 ) {
   const store = {
     getState: () => ({
       userProfile: { loading: false, loaded: true, error: null, data: user },
-      actions: { actions: { user: actions } },
+      actions: { actions: { personal_tools: personalTools, user: [] } },
     }),
     dispatch: vi.fn(),
     subscribe: () => () => {},
@@ -56,53 +64,61 @@ function renderMenu(
   return { ...result, store };
 }
 
+function entries(container: HTMLElement): string[] {
+  return Array.from(container.querySelectorAll('.pastanaga-menu-list li')).map(
+    (li) => li.textContent ?? '',
+  );
+}
+
 describe('PersonalTools', () => {
-  it('writes no entry of its own into the list', () => {
-    // Upstream writes three and puts the pluggable after them, so an add-on
-    // can only append. Every entry is a plug now -- what they are and what
-    // order they come in is `UserMenuPlugs`' test -- and this component's
-    // share of it is an empty list waiting for them.
+  it('lists the personal_tools actions, in the order the site gives', () => {
     const { container } = renderMenu();
 
-    expect(container.querySelector('.pastanaga-menu-list ul')).toBeTruthy();
-    expect(container.querySelectorAll('.pastanaga-menu-list li')).toHaveLength(
-      0,
-    );
+    expect(entries(container)).toEqual([
+      'Profile',
+      'Preferences',
+      'Sign-in methods',
+    ]);
   });
 
-  it('renders whatever plugged into the user menu', () => {
+  it('links an action whose URL is a path', () => {
+    renderMenu();
+
+    expect(
+      screen
+        .getByRole('link', { name: 'Sign-in methods' })
+        .getAttribute('href'),
+    ).toBe('/identities');
+  });
+
+  it('opens a panel for an action whose URL is a bare name', () => {
+    const loadComponent = vi.fn();
+    renderMenu(ALICE, { loadComponent });
+
+    screen.getByRole('button', { name: 'Preferences' }).click();
+
+    expect(loadComponent).toHaveBeenCalledWith('preferences');
+  });
+
+  it("falls back to Volto's entries on a site without the actions", () => {
+    const { container } = renderMenu(ALICE, {}, []);
+
+    expect(entries(container)).toEqual(['Profile', 'Preferences']);
+  });
+
+  it('renders nothing plugged into toolbar-user-menu', () => {
+    // An entry is an action the site manages; a plug would be a second way
+    // to add one, invisible to the first.
     renderMenu(
       ALICE,
       {},
-      [],
+      MEMBER_TOOLS,
       <Plug pluggable="toolbar-user-menu" id="probe">
         <li id="probe-entry">Probe</li>
       </Plug>,
     );
 
-    expect(document.querySelector('#probe-entry')).toBeTruthy();
-  });
-
-  it('hands the plugs the prop only it has', () => {
-    // `loadComponent` belongs to this component; the Preferences entry is a
-    // plug and would otherwise have no way to reach it.
-    const loadComponent = vi.fn();
-    renderMenu(
-      ALICE,
-      { loadComponent },
-      [],
-      <Plug pluggable="toolbar-user-menu" id="probe">
-        {({ loadComponent: given }: { loadComponent: () => void }) => (
-          <li>
-            <button onClick={() => given()}>Probe</button>
-          </li>
-        )}
-      </Plug>,
-    );
-
-    screen.getByRole('button', { name: 'Probe' }).click();
-
-    expect(loadComponent).toHaveBeenCalled();
+    expect(document.querySelector('#probe-entry')).toBeNull();
   });
 
   it('names the user from the store this package fills', () => {

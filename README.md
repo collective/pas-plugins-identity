@@ -79,7 +79,7 @@ Then install **pas.plugins.identity** from the add-ons control panel, and config
 
 ### Frontend
 
-Requires Volto 19. The add-on is developed against 19.7.0.
+Requires Volto 19.7.0 or later. The add-on is developed against 19.7.0.
 
 Add `@plone-collective/volto-identity` to your `package.json`.
 

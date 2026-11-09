@@ -53,7 +53,7 @@ Three of Volto's own components are shadowed, in each case because Volto offers 
 | Shadowed | Why Volto could not be extended instead |
 | --- | --- |
 | `Toolbar` | `toolbar-personal` is a DOM id on a button, not a pluggable, so the icon it draws cannot be replaced from outside. That icon is the generic `user.svg`, which says somebody is signed in rather than who. |
-| `PersonalTools` | The only pluggable is `toolbar-user-menu`, at the end of the menu *list*. The avatar block above it cannot be touched, and the entries themselves cannot be reordered or removed at all. |
+| `PersonalTools` | The entries are the backend's `personal_tools` actions, which this package's profile declares, but the header has no extension point: its avatar block cannot be touched. Volto also still renders a `toolbar-user-menu` pluggable the actions know nothing about. |
 | `Controlpanels/Users/RenderUsers` | The row's Edit action is built inline with no extension point, and led to the wrong form on the wrong store for every user whose fields live in a Profile, which is most of them. |
 
 None of those files holds an implementation.
@@ -70,7 +70,7 @@ Every component this add-on ships is in [Storybook](https://collective.github.io
 
 ## Installation
 
-This add-on requires Volto 19 and `pas.plugins.identity` installed on the Plone site.
+This add-on requires Volto 19.7.0 or later, and `pas.plugins.identity` installed on the Plone site.
 It is developed against Volto 19.7.0; see [the frontend install guide](https://collective.github.io/pas-plugins-identity/how-to-guides/install/frontend.html) for the full requirement table.
 
 Add `@plone-collective/volto-identity` to your `package.json`.

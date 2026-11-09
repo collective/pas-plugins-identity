@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The personal_tools category Volto's toolbar builds its user menu from,
+     since Volto 19.7.
+
+     profile, preferences and plone_setup are the entries plone.volto
+     declares upstream, under the same ids, so a site that installs both ends
+     with one set. This package changes one thing about them: Volto's profile
+     form is only offered to a user who has no Profile. A user who has one
+     gets identity_profile instead, in the same place, because the Profile is
+     where that user's fields are held.
+
+     Applications is not here: it needs the authorization server, so the
+     server profile adds it. -->
+<object xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+        meta_type="Plone Actions Tool"
+        name="portal_actions"
+>
+  <object meta_type="CMF Action Category"
+          name="personal_tools"
+  >
+    <property name="title"
+              i18n:translate=""
+    >Personal tools</property>
+    <object meta_type="CMF Action"
+            name="profile"
+            i18n:domain="plone"
+    >
+      <property name="title"
+                i18n:translate=""
+      >Profile</property>
+      <property name="description"
+                i18n:translate=""
+      />
+      <property name="url_expr">string:/personal-information</property>
+      <property name="link_target" />
+      <property name="icon_expr">string:plone-user</property>
+      <property name="available_expr">python:member is not None and not path('portal/@@identity-profile-url')</property>
+      <property name="permissions">
+        <element value="View" />
+      </property>
+      <property name="visible">True</property>
+    </object>
+    <object meta_type="CMF Action"
+            name="identity_profile"
+            i18n:domain="pas.plugins.identity"
+    >
+      <property name="title"
+                i18n:translate=""
+      >Profile</property>
+      <property name="description"
+                i18n:translate=""
+      />
+      <property name="url_expr">portal/@@identity-profile-url</property>
+      <property name="link_target" />
+      <property name="icon_expr">string:plone-user</property>
+      <property name="available_expr">portal/@@identity-profile-url</property>
+      <property name="permissions">
+        <element value="View" />
+      </property>
+      <property name="visible">True</property>
+    </object>
+    <object meta_type="CMF Action"
+            name="preferences"
+            i18n:domain="plone"
+    >
+      <property name="title"
+                i18n:translate=""
+      >Preferences</property>
+      <property name="description"
+                i18n:translate=""
+      />
+      <property name="url_expr">string:preferences</property>
+      <property name="link_target">component</property>
+      <property name="icon_expr">string:plone-user</property>
+      <property name="available_expr">python:member is not None</property>
+      <property name="permissions">
+        <element value="View" />
+      </property>
+      <property name="visible">True</property>
+    </object>
+    <object meta_type="CMF Action"
+            name="identities"
+            i18n:domain="pas.plugins.identity"
+    >
+      <property name="title"
+                i18n:translate=""
+      >Sign-in methods</property>
+      <property name="description"
+                i18n:translate=""
+      />
+      <property name="url_expr">string:/identities</property>
+      <property name="link_target" />
+      <property name="icon_expr">string:plone-login</property>
+      <property name="available_expr">python:member is not None</property>
+      <property name="permissions">
+        <element value="View" />
+      </property>
+      <property name="visible">True</property>
+    </object>
+    <object meta_type="CMF Action"
+            name="plone_setup"
+            i18n:domain="plone"
+    >
+      <property name="title"
+                i18n:translate=""
+      >Site Setup</property>
+      <property name="description"
+                i18n:translate=""
+      />
+      <property name="url_expr">string:/controlpanel</property>
+      <property name="link_target" />
+      <property name="icon_expr">string:plone-controlpanel</property>
+      <property name="available_expr" />
+      <property name="permissions">
+        <element value="Plone Site Setup: Overview" />
+      </property>
+      <property name="visible">True</property>
+    </object>
+  </object>
+</object>

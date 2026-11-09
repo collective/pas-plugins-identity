@@ -19,6 +19,7 @@ Everything `@plone-collective/volto-identity` adds to a Volto project.
 | | |
 |---|---|
 | Name | `@plone-collective/volto-identity` |
+| Requires Volto | 19.7.0 or later |
 | Developed against Volto | 19.7.0 |
 | Peer dependencies | React 18, `react-redux` ^8.1.2, `react-router-dom` ^5.2.0, `@plone/components` ^4.2.1 |
 | Optional peer dependencies | `react-aria-components` |
@@ -300,7 +301,7 @@ what each needs.
 | Shadowed | Why |
 |---|---|
 | `manage/Toolbar/Toolbar.jsx` | to reach the personal tools panel |
-| `manage/Toolbar/PersonalTools.tsx` | to add the sign-in methods entry |
+| `manage/Toolbar/PersonalTools/PersonalTools.tsx` | to drop the avatar block and the `toolbar-user-menu` pluggable |
 | `manage/Controlpanels/Users/RenderUsers.tsx` | to link a user row to their account page |
 
 A shadowed file here is a docstring and a re-export; the component itself lives
@@ -323,9 +324,30 @@ The two outer slots come with registering a view in
 `config.views.contentTypesViews`. `belowTitle` is rendered by each view itself.
 Registering into any of them is {doc}`/how-to-guides/extend/extend-a-profile-page`.
 
+## Personal tools
+
+<!-- source: backend/src/pas/plugins/identity/profiles/default/actions.xml -->
+<!-- source: backend/src/pas/plugins/identity/server/profiles/default/actions.xml -->
+
+The toolbar's personal tools menu lists the backend's `personal_tools` actions.
+The add-on registers no menu entry in the frontend.
+
+| Action | Entry | Leads to | Offered when |
+|---|---|---|---|
+| `profile` | Profile | `/personal-information` | signed in, without a Profile |
+| `identity_profile` | Profile | The user's Profile | signed in, with a Profile |
+| `preferences` | Preferences | The preferences panel | signed in |
+| `identities` | Sign-in methods | `/identities` | signed in |
+| `applications` | Applications | `/applications` | signed in, `server` layer |
+| `plone_setup` | Site Setup | `/controlpanel` | the user has Plone Site Setup: Overview |
+
+`profile`, `preferences` and `plone_setup` share their ids with the
+`personal_tools` actions on `plone.volto`'s default branch, which no release
+of `plone.volto` carries yet.
+
 ## Other registrations
 
-Reducers, a menu entry, and `appExtras`.
+Reducers and `appExtras`.
 
 ## Related
 

@@ -2,41 +2,34 @@
  * The personal-tools menu, rewritten.
  *
  * Takes Volto's place through
- * `customizations/volto/components/manage/Toolbar/PersonalTools`, which is
+ * `customizations/volto/components/manage/Toolbar/PersonalTools/PersonalTools`, which is
  * where the reason for shadowing it is written down.
  *
  * **Not** a verbatim copy of `@plone/volto/components/manage/Toolbar/PersonalTools`
- * (Volto 19.3.0) with a patch: it is a rewrite in TypeScript that keeps the
+ * (Volto 19.7.0) with a patch: it is a rewrite in TypeScript that keeps the
  * markup, the class names and the behaviour Volto's stylesheet and tests
  * expect, and changes what was worth changing. On a Volto upgrade, read
  * upstream's diff for *behavioural* changes and port those -- a literal file
  * diff will not be meaningful.
  *
+ * WHAT IS UPSTREAM'S: the list. As in Volto, it is the `personal_tools`
+ * actions category when the site provides one, rendered by Volto's own
+ * `ActionsMenuItems`, and Volto's `DefaultMenuItems` otherwise. Which entries
+ * a user gets, and in what order, is the backend's to say: this package's
+ * profile declares them, conditions included, in `actions.xml`.
+ *
  * WHAT DIFFERS FROM UPSTREAM, and why:
  *
- * - **The menu list is nothing but the pluggable.** Upstream writes Profile,
- *   Preferences and Site Setup into the list and puts `toolbar-user-menu`
- *   after them, so an add-on can only append: wanting an entry *between* two
- *   of Volto's, or wanting one of them gone, meant shadowing this component
- *   again. All three are plugs now -- see
- *   `components/UserMenu/UserMenuPlugs` -- so the menu is one ordered list a
- *   site composes. `loadComponent` reaches the Preferences entry through the
- *   pluggable's `params`, which is what that mechanism is for.
+ * - **No `toolbar-user-menu` pluggable.** Volto still renders it after the
+ *   list. With the entries coming from the backend, a plug would be a second
+ *   way to add one, invisible to the site that manages the first -- so an
+ *   entry is an action, and there is nowhere else to put it.
  *
  * - **The avatar block is gone.** It drew a 96px portrait, or a camera icon
  *   for the many users who have never uploaded one -- the same picture for
  *   everybody, saying "no image here" rather than "this is you". Who is
  *   signed in is shown by `<UserAvatar>` on the toolbar button that opens
  *   this menu, where it is visible without opening anything.
- *
- * - **The Profile link has a stable id.** Upstream sets
- *   `id={intl.formatMessage(messages.profile)}`, so the DOM id is the
- *   *translated* label: `id="Profile"` in English, `id="Perfil"` in
- *   Portuguese. Anything keying on it -- a test, a stylesheet, an
- *   integration -- works in one language and silently not in the next. It is
- *   `id="toolbar-profile"` in the plug that now renders it, matching the
- *   `toolbar-logout` in the header here, which upstream already spells that
- *   way.
  *
  * - **It does not fetch the user.** Upstream decodes the JWT and dispatches
  *   `getUser` on mount. This add-on already holds the signed-in user, loaded
@@ -47,8 +40,8 @@
  * - **The back button and the logout link have accessible names.** Both were
  *   an `<Icon>` with a `title` inside an element with no label of its own, so
  *   a screen reader announced them as an unnamed button and an unnamed link.
- *   The Preferences button beside them already carried an `aria-label`; these
- *   two now do too.
+ *   The panel buttons in the list already carry an `aria-label`; these two
+ *   now do too.
  *
  * - **No `classnames`.** Upstream uses it for one conditional class. It is
  *   Volto's dependency rather than this package's, and this add-on declares
@@ -68,7 +61,10 @@ import { Link, useLocation } from 'react-router-dom';
 import { useIntl, defineMessages } from 'react-intl';
 
 import Icon from '@plone/volto/components/theme/Icon/Icon';
-import { Pluggable } from '@plone/volto/components/manage/Pluggable';
+import ActionsMenuItems, {
+  type PersonalToolsAction,
+} from '@plone/volto/components/manage/Toolbar/PersonalTools/ActionsMenuItems';
+import DefaultMenuItems from '@plone/volto/components/manage/Toolbar/PersonalTools/DefaultMenuItems';
 import { getBaseUrl } from '@plone/volto/helpers/Url/Url';
 import logoutSVG from '@plone/volto/icons/log-out.svg';
 import backSVG from '@plone/volto/icons/back.svg';
@@ -115,11 +111,8 @@ const PersonalTools: React.FC<PersonalToolsProps> = ({
   const intl = useIntl();
   const { pathname } = useLocation();
   const user = useSelector((state: any) => state.userProfile?.data) ?? {};
-  // Memoized because `Pluggable` memoizes its render on the params object: a
-  // fresh one every render would rebuild every entry on every render.
-  const pluggableParams = React.useMemo(
-    () => ({ loadComponent }),
-    [loadComponent],
+  const personalTools: PersonalToolsAction[] | undefined = useSelector(
+    (state: any) => state.actions?.actions?.personal_tools,
   );
 
   return (
@@ -167,7 +160,14 @@ const PersonalTools: React.FC<PersonalToolsProps> = ({
       </header>
       <div className="pastanaga-menu-list">
         <ul>
-          <Pluggable name="toolbar-user-menu" params={pluggableParams} />
+          {personalTools?.length ? (
+            <ActionsMenuItems
+              actions={personalTools}
+              loadComponent={loadComponent}
+            />
+          ) : (
+            <DefaultMenuItems loadComponent={loadComponent} />
+          )}
         </ul>
       </div>
     </div>

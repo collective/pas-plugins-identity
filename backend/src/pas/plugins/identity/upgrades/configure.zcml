@@ -24,5 +24,6 @@
   <include package=".v1010" />
   <include package=".v1011" />
   <include package=".v1012" />
+  <include package=".v1013" />
 
 </configure>

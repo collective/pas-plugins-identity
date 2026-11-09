@@ -19,7 +19,7 @@ pytestmark = pytest.mark.portal(profiles=[PROFILE_ID])
 
 
 #: The version a site ends at once every step has run.
-LATEST = "1001"
+LATEST = "1002"
 
 #: Registrations as a site at 1000 stored them: no ``allowed_groups`` key.
 #: The second one carries a redirect URI the model refuses today (a

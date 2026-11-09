@@ -77,7 +77,6 @@ msgstr "Anwendung"
 
 #. Default: "Applications"
 #: components/Applications/Applications
-#: components/UserMenu/ApplicationsMenuItem
 msgid "Applications"
 msgstr "Anwendungen"
 
@@ -626,11 +625,6 @@ msgstr "Nur Text. {username} ist der Name, mit dem sich der Benutzer anmeldet, u
 msgid "Please fill in {fields} before you can continue."
 msgstr "Bitte füllen Sie {fields} aus, bevor Sie fortfahren können."
 
-#. Default: "Preferences"
-#: components/UserMenu/UserMenuPlugs
-msgid "Preferences"
-msgstr "Voreinstellungen"
-
 #. Default: "Preferred"
 #: components/Identities/ProfileEmails
 msgid "Preferred"
@@ -645,12 +639,6 @@ msgstr "Bevorzugte E-Mail"
 #: components/Blocks/SignIn/schema
 msgid "Preview the sign-in options"
 msgstr "Vorschau der Anmeldeoptionen"
-
-#. Default: "Profile"
-#: components/UserMenu/ProfileMenuItem
-#: components/UserMenu/UserMenuPlugs
-msgid "Profile"
-msgstr "Profil"
 
 #. Default: "Profile field"
 #: helpers/providerSchema
@@ -816,7 +804,6 @@ msgstr "Anmeldung"
 #: components/ControlPanel/UserAccountPanel
 #: components/Identities/Identities
 #: components/Identities/IdentitiesList
-#: components/UserMenu/IdentitiesMenuItem
 msgid "Sign-in methods"
 msgstr "Anmeldemethoden"
 
@@ -841,11 +828,6 @@ msgstr "Signaturschlüssel"
 #: components/FirstLogin/FirstLogin
 msgid "Signing you in"
 msgstr "Sie werden angemeldet…"
-
-#. Default: "Site Setup"
-#: components/UserMenu/UserMenuPlugs
-msgid "Site Setup"
-msgstr "Website-Einrichtung"
 
 #. Default: "Taking you to {provider}…"
 #: components/Login/LoginForm
