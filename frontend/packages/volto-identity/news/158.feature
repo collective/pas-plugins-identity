@@ -1,1 +1,0 @@
-Kept the toolbar's user button on control panel pages, as Volto 19.7 does, so site setup still leads to the user's own menu. The add-on's copy of the toolbar is now based on Volto 19.7.0, and the add-on is developed against that version. @ericof

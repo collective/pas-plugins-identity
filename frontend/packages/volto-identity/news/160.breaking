@@ -1,1 +1,0 @@
-Built the toolbar's personal tools menu from the backend's `personal_tools` actions, as Volto 19.7 does, falling back to Volto's own entries on a backend without them. This requires Volto 19.7.0 or later. The menu no longer renders the `toolbar-user-menu` pluggable: an add-on that plugged an entry into it should declare a `personal_tools` action in its profile instead. @ericof

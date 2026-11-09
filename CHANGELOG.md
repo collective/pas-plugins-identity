@@ -7,6 +7,55 @@
 -->
 
 <!-- towncrier release notes start -->
+## 1.0.0a16 (2026-11-08)
+
+### Backend
+
+
+#### Feature
+
+- Added the `personal_tools` actions that Volto 19.7's toolbar builds its user menu from: Profile, Preferences, Sign-in methods and Site Setup, plus Applications when the authorization server is installed. A user who has a Profile is offered it in place of Volto's profile form. Upgrade steps 1013, and 1002 for the server profile, add them to an existing site. @ericof [#160](https://github.com/collective/pas-plugins-identity/issues/160)
+
+
+
+### Frontend
+
+
+#### Breaking
+
+- Built the toolbar's personal tools menu from the backend's `personal_tools` actions, as Volto 19.7 does, falling back to Volto's own entries on a backend without them. This requires Volto 19.7.0 or later. The menu no longer renders the `toolbar-user-menu` pluggable: an add-on that plugged an entry into it should declare a `personal_tools` action in its profile instead. @ericof [#160](https://github.com/collective/pas-plugins-identity/issues/160)
+
+
+#### Feature
+
+- Kept the toolbar's user button on control panel pages, as Volto 19.7 does, so site setup still leads to the user's own menu. The add-on's copy of the toolbar is now based on Volto 19.7.0, and the add-on is developed against that version. @ericof [#158](https://github.com/collective/pas-plugins-identity/issues/158)
+
+
+#### Bugfix
+
+- Fixed the email list, the providers control panel, a user's account panel, the sign-in methods page and the provider icon upload in projects whose install gives `@plone/components` a different copy of `react-aria-components` from the add-on's. The pages failed with "Cannot destructure property 'selectionBehavior'", and the icon's "Choose a file" button did nothing. The add-on's `razzle.extend.js` now resolves `react-aria-components` the way `@plone/components` resolves it, so both always use one copy, whatever the project's lockfile holds. `react-aria-components` is now an optional peer dependency, and `@plone/components` is accepted from 4.2.1 onwards instead of only at that exact version. @ericof [#153](https://github.com/collective/pas-plugins-identity/issues/153)
+
+
+
+### Project
+
+
+#### Internal
+
+- Upgraded the development frontend to Volto 19.7.0. pnpm now resolves webpack to Volto's catalogue version, so the lockfile holds a single webpack and Storybook builds with the same one as the app. The add-on's development copy of `react-aria-components` is pinned below Volto's, so the acceptance tests keep running against two copies. @ericof [#158](https://github.com/collective/pas-plugins-identity/issues/158)
+
+
+#### Documentation
+
+- Documented the personal tools menu's entries, and the conditions each is offered under, in the frontend reference. The requirements now state that the frontend add-on needs Volto 19.7.0 or later, and the upgrade guide lists the 1013 and server 1002 upgrade steps. @ericof [#160](https://github.com/collective/pas-plugins-identity/issues/160)
+
+
+#### Tests
+
+- Added Playwright acceptance tests for the Volto add-on, in `frontend/acceptance/`, run in CI against a production build. The development install deliberately gives the add-on a different `react-aria-components` from `@plone/components`, and the tests refuse to run when the two copies merge, so a regression of #153 fails them. They replace the unused Cypress scaffold. @ericof [#153](https://github.com/collective/pas-plugins-identity/issues/153)
+
+
+
 ## 1.0.0a15 (2026-11-04)
 
 ### Backend
