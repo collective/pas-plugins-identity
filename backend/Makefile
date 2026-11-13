@@ -301,9 +301,12 @@ demo-start: ## Start the two-site federation demo
 demo-stop: ## Stop the federation demo
 	@docker compose -f $(DEMO_COMPOSE_FILE) down
 
+# The add-on's own layer states what it loads and applies. `APPLY_PROFILES`
+# and `CONFIGURE_PACKAGES` are read only by Volto's robot layer, so they are
+# not passed here: they would look like configuration and change nothing.
 .PHONY: acceptance-backend-start
 acceptance-backend-start: ## Start backend acceptance server
-	ZSERVER_HOST=0.0.0.0 ZSERVER_PORT=55001 LISTEN_PORT=55001 APPLY_PROFILES="$(PACKAGE_NAME):default" CONFIGURE_PACKAGES="plone.restapi,plone.volto,plone.volto.cors,$(PACKAGE_NAME)" $(BIN_FOLDER)/robot-server plone.app.robotframework.testing.VOLTO_ROBOT_TESTING
+	ZSERVER_HOST=0.0.0.0 ZSERVER_PORT=55001 LISTEN_PORT=55001 $(BIN_FOLDER)/robot-server $(PACKAGE_NAME).testing.ACCEPTANCE_TESTING
 
 .PHONY: acceptance-image-build
 acceptance-image-build:  ## Build Docker Images

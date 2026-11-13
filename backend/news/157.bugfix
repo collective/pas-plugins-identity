@@ -1,0 +1,1 @@
+Fixed the consent screen sending its answer to the frontend's address when the site is reached through Volto's proxy. `@oauth-consent` now returns the authorization endpoint under the configured issuer, the one discovery names, and falls back to the site's address only when no issuer is set. @ericof

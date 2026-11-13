@@ -213,7 +213,16 @@ They live in `acceptance/`.
 
 Run each of these steps in separate terminal sessions.
 
-In the first session, from the repository root, start the backend acceptance server, which has this add-on installed.
+First, from the repository root, start Dex, the OpenID Connect provider the federated sign-in tests go through.
+It runs in Docker, on port 5556, and keeps running in the background.
+
+```shell
+make acceptance-dex-start
+```
+
+In the first session, from the repository root, start the backend acceptance server.
+It runs the add-on's own acceptance layer: the add-on and its authorization server installed, Volto's CORS policy, and outgoing mail kept for the tests to read.
+The tests reset the site before and after each test, so restart the server if you change its content by hand.
 
 ```shell
 make acceptance-backend-start
@@ -231,6 +240,12 @@ In the third session, install the browser once, then start the Playwright intera
 ```shell
 make acceptance-install
 make acceptance-test
+```
+
+Stop Dex when you are done, from the repository root.
+
+```shell
+make acceptance-dex-stop
 ```
 
 The development install gives this package its own `react-aria-components`, pinned below the version `@plone/components` uses.

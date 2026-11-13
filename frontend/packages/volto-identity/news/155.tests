@@ -1,0 +1,1 @@
+Added acceptance tests for the login screen, the sign-in block, the providers and groups pages, a user's account, every route's accessibility and hydration, and the Portuguese interface. They run against the add-on's own backend test layer, which resets the site between tests and captures mail. @ericof

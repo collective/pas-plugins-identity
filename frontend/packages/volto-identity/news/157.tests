@@ -1,0 +1,1 @@
+Added acceptance tests for the authorization server's screens: registering a client and seeing its secret once, allowing and denying a request on the consent screen, and withdrawing an application's access. @ericof

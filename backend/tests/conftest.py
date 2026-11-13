@@ -1,4 +1,3 @@
-from pas.plugins.identity.testing import ACCEPTANCE_TESTING
 from pas.plugins.identity.testing import FUNCTIONAL_TESTING
 from pas.plugins.identity.testing import INTEGRATION_TESTING
 from pathlib import Path
@@ -202,9 +201,12 @@ def acl_users(portal):
     return portal.acl_users
 
 
+# The acceptance layer is not listed: the browser tests reach it through the
+# robot server, and no test here uses it. Listed, it would be set up for every
+# session, and the settings it writes for the browser reach the sites these
+# tests run in.
 globals().update(
     fixtures_factory((
-        (ACCEPTANCE_TESTING, "acceptance"),
         (FUNCTIONAL_TESTING, "functional"),
         (INTEGRATION_TESTING, "integration"),
     ))

@@ -1,4 +1,4 @@
-import { addProviders, PROVIDERS, removeProviders, signIn } from '../backend';
+import { addProviders, PROVIDERS, signIn } from '../backend';
 import { expect, moveRowAfter, test } from '../fixtures';
 
 const CONTROLPANEL = '/controlpanel/identity-providers';
@@ -9,8 +9,7 @@ const ICON = Buffer.from(
     '<circle cx="5" cy="5" r="4"/></svg>',
 );
 
-test.beforeAll(addProviders);
-test.afterAll(removeProviders);
+test.beforeEach(addProviders);
 
 test.describe('The identity providers control panel', () => {
   test('lists the providers', async ({ page, context }) => {

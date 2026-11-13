@@ -1,0 +1,1 @@
+Fixed the profile gate and the first sign-in sending a user to `/plone/identity-profiles/...`, a page that does not exist, when Volto reaches the backend directly rather than through a proxy. Both now strip Volto's configured API path from the profile's address. @ericof

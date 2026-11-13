@@ -227,6 +227,22 @@ class TestDescribingTheRequest:
         assert body["params"] == self.params
         assert body["authorize_url"].endswith("/@@oauth-authorize")
 
+    def test_the_answer_goes_to_the_endpoint_discovery_names(self, issuer):
+        """Asked through a frontend's proxy, the site's own URL is the
+        frontend's, which serves no authorization endpoint unless the
+        deployment routes one there. The issuer's is the endpoint the
+        relying party sent the browser to in the first place."""
+        body = describe(self.portal, **self.params)
+
+        assert body["authorize_url"] == f"{issuer}/@@oauth-authorize"
+
+    def test_without_an_issuer_the_answer_goes_to_the_site(self):
+        body = describe(self.portal, **self.params)
+
+        assert body["authorize_url"] == (
+            f"{self.portal.absolute_url()}/@@oauth-authorize"
+        )
+
     def test_it_carries_a_token_the_answer_will_be_checked_against(self):
         """A forged consent POST is an attempt to authorize a client on
         somebody else's behalf."""

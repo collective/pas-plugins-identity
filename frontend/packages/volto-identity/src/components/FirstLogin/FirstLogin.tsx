@@ -27,6 +27,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useHistory, useLocation } from 'react-router-dom';
 import { defineMessages, useIntl } from 'react-intl';
 
+import config from '@plone/volto/registry';
+
 import { getMyProfile } from '../../actions';
 import { afterLogin } from '../../helpers/firstLogin';
 import { returnUrl } from '../../helpers/returnUrl';
@@ -40,11 +42,16 @@ const messages = defineMessages({
 });
 
 interface FirstLoginProps {
-  /** Backend base URL, when it differs from the frontend's. */
+  /**
+   * Backend base URL, stripped from the profile URL the backend reports.
+   * Defaults to Volto's `apiPath`, for the reason `ProfileGate` gives.
+   */
   apiPath?: string;
 }
 
-const FirstLogin: React.FC<FirstLoginProps> = ({ apiPath = '' }) => {
+const FirstLogin: React.FC<FirstLoginProps> = ({
+  apiPath = config.settings.apiPath ?? '',
+}) => {
   const intl = useIntl();
   const dispatch = useDispatch();
   const history = useHistory();

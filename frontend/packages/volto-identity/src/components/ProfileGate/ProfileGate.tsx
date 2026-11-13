@@ -46,6 +46,7 @@ import { useHistory, useLocation } from 'react-router-dom';
 import { defineMessages, useIntl } from 'react-intl';
 import { toast } from 'react-toastify';
 import Toast from '@plone/volto/components/manage/Toast/Toast';
+import config from '@plone/volto/registry';
 
 import { getMyProfile } from '../../actions';
 import {
@@ -86,11 +87,18 @@ const messages = defineMessages({
 });
 
 interface ProfileGateProps {
-  /** Backend base URL, when it differs from the frontend's. */
+  /**
+   * Backend base URL, stripped from the profile URL the backend reports.
+   * Defaults to Volto's `apiPath`: without a proxy rewriting URLs, the
+   * backend reports the profile under its own site path, which the app's
+   * routes do not carry.
+   */
   apiPath?: string;
 }
 
-const ProfileGate: React.FC<ProfileGateProps> = ({ apiPath = '' }) => {
+const ProfileGate: React.FC<ProfileGateProps> = ({
+  apiPath = config.settings.apiPath ?? '',
+}) => {
   const dispatch = useDispatch();
   const history = useHistory();
   const location = useLocation();
@@ -185,7 +193,17 @@ const ProfileGate: React.FC<ProfileGateProps> = ({ apiPath = '' }) => {
 
     const target = gateTarget(profile.data, location.pathname, apiPath);
 
-    if (target && target !== location.pathname) {
+    // `location` is where the routes are drawn, which is not always where
+    // the router is: Volto keeps drawing the page it is leaving until the
+    // next one's data has arrived. Mid-way through the gate's own redirect a
+    // late answer would otherwise send the user to the form a second time,
+    // and that second navigation makes Volto mount the edit form before its
+    // content, with the schema of the page the user came from.
+    if (
+      target &&
+      target !== location.pathname &&
+      target !== history.location.pathname
+    ) {
       // Not from anywhere the hold itself sends people. Saving the form lands
       // on the profile's view, and when a confirmation is still waiting that
       // is where the user is sent on from -- remembering it would replace

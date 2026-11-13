@@ -1,0 +1,1 @@
+Fixed the profile edit form showing the site's fields instead of the profile's when the profile gate held a user right after signing in. The gate redirected a second time while Volto was still loading the first redirect, and Volto then built the form before the profile had arrived. @ericof

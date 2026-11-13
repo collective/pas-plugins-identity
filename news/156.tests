@@ -1,0 +1,1 @@
+Started Dex beside the acceptance backend, locally with `make acceptance-dex-start` and in CI, so the browser tests can sign in through a real OpenID Connect provider. @ericof

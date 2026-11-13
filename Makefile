@@ -288,12 +288,33 @@ ACCEPTANCE_FRONTEND_CONTAINER := $(PROJECT_NAME)-frontend-acceptance
 .PHONY: acceptance-frontend-container-start
 acceptance-frontend-container-start:
 	@echo "Start acceptance frontend"
-	@docker run --rm -p 3000:3000 --name $(ACCEPTANCE_FRONTEND_CONTAINER) --link $(ACCEPTANCE_BACKEND_CONTAINER):backend -e RAZZLE_API_PATH=http://localhost:55001/plone -e RAZZLE_INTERNAL_API_PATH=http://backend:55001/plone -d $(IMAGE_NAME_PREFIX_WITH_SEPARATOR)frontend:acceptance
+	@docker run --rm -p 3000:3000 --name $(ACCEPTANCE_FRONTEND_CONTAINER) --link $(ACCEPTANCE_BACKEND_CONTAINER):backend -e RAZZLE_DEV_PROXY_API_PATH=http://backend:55001/plone -e RAZZLE_IDENTITY_SHOW_PLONE_LOGIN=true -d $(IMAGE_NAME_PREFIX_WITH_SEPARATOR)frontend:acceptance
+
+# How the backend container is reached. The default publishes its port. CI
+# runs it with `--network host` instead, so that inside the container
+# 127.0.0.1:5556 is Dex, at the same issuer URL the browser uses: an OpenID
+# Connect client refuses a discovery document naming another issuer.
+ACCEPTANCE_BACKEND_NETWORK ?= -p 55001:55001
 
 .PHONY: acceptance-backend-container-start
 acceptance-backend-container-start:
 	@echo "Start acceptance backend"
-	@docker run --rm -p 55001:55001 --name $(ACCEPTANCE_BACKEND_CONTAINER) -d $(IMAGE_NAME_PREFIX_WITH_SEPARATOR)backend:acceptance
+	@docker run --rm $(ACCEPTANCE_BACKEND_NETWORK) --name $(ACCEPTANCE_BACKEND_CONTAINER) -d $(IMAGE_NAME_PREFIX_WITH_SEPARATOR)backend:acceptance
+
+# Dex, the OpenID Connect provider the federated sign-in tests go through.
+# The configuration is the backend flow tests' own: its static client
+# redirects to the acceptance frontend's callback.
+ACCEPTANCE_DEX_CONTAINER := $(PROJECT_NAME)-dex-acceptance
+DEX_IMAGE := ghcr.io/dexidp/dex:v2.44.0
+
+.PHONY: acceptance-dex-start
+acceptance-dex-start: ## Start Dex for the federated sign-in acceptance tests
+	@echo "Start Dex"
+	@docker run --rm -d -p 5556:5556 --name $(ACCEPTANCE_DEX_CONTAINER) -v "$(CURDIR)/backend/tests/_resources/dex/config.yaml:/etc/dex/config.yaml:ro" $(DEX_IMAGE) dex serve /etc/dex/config.yaml
+
+.PHONY: acceptance-dex-stop
+acceptance-dex-stop: ## Stop Dex
+	@docker stop $(ACCEPTANCE_DEX_CONTAINER)
 
 .PHONY: acceptance-containers-start
 acceptance-containers-start: ## Start Acceptance containers

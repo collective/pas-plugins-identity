@@ -14,6 +14,7 @@ import React from 'react';
 import { MemoryRouter, Route, useLocation } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { ToastContainer } from 'react-toastify';
+import config from '@plone/volto/registry';
 import { IntlProvider } from '../../testing';
 
 import ProfileGate from './ProfileGate';
@@ -119,6 +120,62 @@ describe('ProfileGate', () => {
     });
 
     expect(seen.path).toBe('/identity-profiles/alice/edit');
+  });
+
+  it("strips the backend's site path when Volto talks to it directly", () => {
+    // Without a proxy rewriting URLs, the backend reports the profile under
+    // its own site path, which the app's routes do not carry.
+    const seen = mountAt('/news', {
+      userSession: { token: 'a-token' },
+      myProfile: profileState({
+        data: {
+          ...profileState().data,
+          profile: `${config.settings.apiPath}/identity-profiles/alice`,
+        },
+      }),
+    });
+
+    expect(config.settings.apiPath).toMatch(/\/[^/]+$/);
+    expect(seen.path).toBe('/identity-profiles/alice/edit');
+  });
+
+  it('does not send the user again while the first redirect loads', () => {
+    // Volto renders the routes at the location it is leaving until the next
+    // route's data has arrived, so mid-load the gate is told it is still on
+    // `/` while the router already sits on the form. A second redirect there
+    // makes Volto mount the edit form before its content, with the schema of
+    // the page the user came from.
+    const navigations: string[] = [];
+    render(
+      <Provider
+        store={
+          store({
+            userSession: { token: 'a-token' },
+            myProfile: profileState(),
+          }) as any
+        }
+      >
+        <IntlProvider locale="en">
+          <MemoryRouter initialEntries={['/identity-profiles/alice/edit']}>
+            <Route
+              render={({ history }) => {
+                if (!navigations.length) {
+                  navigations.push('listening');
+                  history.listen((where) => navigations.push(where.pathname));
+                }
+                return null;
+              }}
+            />
+            <Route
+              location={{ pathname: '/', search: '', hash: '', state: null }}
+              render={() => <ProfileGate />}
+            />
+          </MemoryRouter>
+        </IntlProvider>
+      </Provider>,
+    );
+
+    expect(navigations).toEqual(['listening']);
   });
 
   it('leaves a finished profile where it was going', () => {

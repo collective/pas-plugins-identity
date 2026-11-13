@@ -1,12 +1,11 @@
-import { addMember, MEMBER, removeMember, signIn } from '../backend';
+import { addMember, MEMBER, signIn } from '../backend';
 import { expect, moveRowAfter, test } from '../fixtures';
 
 let profile: string;
 
-test.beforeAll(async () => {
+test.beforeEach(async () => {
   profile = await addMember();
 });
-test.afterAll(removeMember);
 
 test.describe("A Profile's email addresses", () => {
   test('are listed on the Email tab', async ({ page, context }) => {
