@@ -9,7 +9,22 @@
 import { expect, test as base } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 
+import { startSite, stopSite } from './backend';
+
 export const test = base.extend({
+  // Every test begins in the layer's state and leaves nothing behind for the
+  // next one. It is automatic, so no spec has to ask for it.
+  site: [
+    async ({}, use) => {
+      await startSite();
+      try {
+        await use();
+      } finally {
+        await stopSite();
+      }
+    },
+    { auto: true },
+  ],
   page: async ({ page }, use) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));

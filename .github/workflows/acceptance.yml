@@ -35,11 +35,20 @@ jobs:
           node-version: ${{ inputs.node-version }}
           working-directory: frontend
 
+      # Dex is the OpenID Connect provider the federated sign-in tests go
+      # through. The backend shares the runner's network with it, so both the
+      # browser and the backend reach Dex at the issuer its discovery
+      # document names, http://127.0.0.1:5556/dex.
+      - name: Start Dex
+        shell: bash
+        run: |
+          make acceptance-dex-start
+
       - name: Start the backend
         shell: bash
         run: |
           make acceptance-backend-image-build
-          make acceptance-backend-container-start
+          make acceptance-backend-container-start ACCEPTANCE_BACKEND_NETWORK="--network host"
 
       - name: Build and start the frontend
         shell: bash
@@ -57,14 +66,26 @@ jobs:
         shell: bash
         working-directory: frontend
         run: |
+          # The frontend is probed as `localhost`, the host the tests browse.
+          # Volto's proxy fixes the address it hands the backend on the first
+          # request it serves, so a first request to 127.0.0.1 would make
+          # every URL the backend writes name a host the browser is not on.
           pnpm dlx wait-on --timeout 600000 --httpTimeout 20000 \
-            http-get://127.0.0.1:55001/plone http://127.0.0.1:3000
+            http-get://127.0.0.1:55001/plone http://localhost:3000 \
+            http-get://127.0.0.1:5556/dex/.well-known/openid-configuration
 
       - name: Run the acceptance tests
         shell: bash
         working-directory: frontend
         run: |
           make ci-acceptance-test
+
+      - name: Backend and Dex logs
+        if: ${{ failure() }}
+        shell: bash
+        run: |
+          docker logs pas-plugins-identity-backend-acceptance 2>&1 | tail -n 100 || true
+          docker logs pas-plugins-identity-dex-acceptance 2>&1 | tail -n 100 || true
 
       - name: Keep the traces and the frontend log
         if: ${{ failure() }}

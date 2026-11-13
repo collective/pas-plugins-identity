@@ -1,0 +1,1 @@
+Added `pas.plugins.identity.testing.ACCEPTANCE_TESTING`, the layer the Volto add-on's browser tests run against. It installs `plone.volto` and the authorization server, adds a virtual host monster so Volto can proxy to it, and points the sign-in callback, the issuer and the consent screen at the test servers. @ericof

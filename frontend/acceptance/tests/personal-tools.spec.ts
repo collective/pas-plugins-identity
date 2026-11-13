@@ -1,14 +1,13 @@
 import type { Page } from '@playwright/test';
 
-import { addMember, MEMBER, removeMember, signIn } from '../backend';
+import { addMember, MEMBER, signIn } from '../backend';
 import { expect, test } from '../fixtures';
 
 let profilePath: string;
 
-test.beforeAll(async () => {
+test.beforeEach(async () => {
   profilePath = await addMember();
 });
-test.afterAll(removeMember);
 
 /**
  * Open the personal tools menu and read its entries.

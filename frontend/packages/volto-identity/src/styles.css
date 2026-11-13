@@ -78,10 +78,13 @@
   --identity-provider-google-bg-hover: #eff0ee;
   --identity-provider-google-color: #000;
 
-  /* The local password form is offered as one of these. The colours are
+  /* The local password form is offered as one of these. The colours follow
      volto-authomatic's `plone` provider, so the button a visitor presses to
-     sign in with a site account looks the same in both add-ons. */
-  --identity-provider-plone-bg: #0083be;
+     sign in with a site account looks the same in both add-ons, except that
+     its blue is a shade darker: white on its #0083be is 4.21:1, under the
+     4.5:1 WCAG AA asks of text. #007db6 is 4.56:1, the same correction the
+     avatar palette received. */
+  --identity-provider-plone-bg: #007db6;
   --identity-provider-plone-bg-hover: #006c9e;
   --identity-provider-plone-color: #fff;
 

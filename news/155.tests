@@ -1,0 +1,1 @@
+Ran the Volto add-on's acceptance tests against the add-on's own backend test layer, with the frontend proxying to the backend as in production. @ericof

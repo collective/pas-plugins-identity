@@ -134,13 +134,21 @@ storybook-build: ## Build Storybook
 	pnpm run storybook-build -o $(CURRENT_DIR)/.storybook-build
 
 ## Acceptance
+# Seamless mode, as a production site runs: no `RAZZLE_API_PATH`, so the
+# browser calls the frontend's own origin and Volto's server proxies to the
+# backend. A federated sign-in keeps its state in a cookie the backend sets,
+# and a browser keeps no cookie from a cross-origin request made without
+# credentials, which is how Volto calls its API. Pointing the browser at the
+# backend directly would refuse every provider callback.
+ACCEPTANCE_PROXY_TO := http://localhost:55001/plone
+
 .PHONY: acceptance-frontend-dev-start
 acceptance-frontend-dev-start: ## Start acceptance frontend in development mode
-	RAZZLE_API_PATH=http://127.0.0.1:55001/plone pnpm start
+	RAZZLE_DEV_PROXY_API_PATH=$(ACCEPTANCE_PROXY_TO) RAZZLE_IDENTITY_SHOW_PLONE_LOGIN=true pnpm start
 
 .PHONY: acceptance-frontend-prod-start
 acceptance-frontend-prod-start: ## Start acceptance frontend in production mode
-	RAZZLE_API_PATH=http://127.0.0.1:55001/plone pnpm build && pnpm start:prod
+	pnpm build && RAZZLE_DEV_PROXY_API_PATH=$(ACCEPTANCE_PROXY_TO) RAZZLE_IDENTITY_SHOW_PLONE_LOGIN=true pnpm start:prod
 
 .PHONY: acceptance-backend-start
 acceptance-backend-start: ## Start backend acceptance server

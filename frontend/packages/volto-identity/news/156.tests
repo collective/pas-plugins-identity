@@ -1,0 +1,1 @@
+Added acceptance tests that sign in through a real OpenID Connect provider (Dex): the round trip, the profile gate on a first sign-in, linking and removing a second sign-in method, verifying an address through its mailed link, the provider connection test, and the user menu. @ericof

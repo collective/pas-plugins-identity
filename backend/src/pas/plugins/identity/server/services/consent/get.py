@@ -5,6 +5,9 @@ from pas.plugins.identity.core.services.base import IdentityService
 from pas.plugins.identity.server.browser.authorize import CARRIED_PARAMS
 from pas.plugins.identity.server.claims import scope_claims
 from pas.plugins.identity.server.controlpanel.clients import get_client
+from pas.plugins.identity.server.discovery import AUTHORIZE_VIEW
+from pas.plugins.identity.server.grants.tokens import get_issuer
+from pas.plugins.identity.server.grants.tokens import TokenError
 from plone import api
 from plone.protect.authenticator import createToken
 
@@ -65,7 +68,7 @@ class ConsentGet(IdentityService):
             # Where the answer goes. The screen navigates the browser here
             # with `consent=allow` or anything else, and this server decides
             # again from scratch.
-            "authorize_url": f"{self.context.absolute_url()}/@@oauth-authorize",
+            "authorize_url": self._authorize_url(),
             # Carried so the screen can hand the request back unchanged. An
             # absent parameter stays absent: an empty `code_challenge` is not
             # the same request as no `code_challenge`, and PKCE turns on that
@@ -79,6 +82,23 @@ class ConsentGet(IdentityService):
             # else's behalf.
             "authenticator": createToken(),
         }
+
+    def _authorize_url(self) -> str:
+        """Return the authorization endpoint the answer is sent to.
+
+        The issuer's, which is the endpoint discovery names and the one the
+        relying party sent the browser to. Asked through a frontend's proxy,
+        the site's own URL is the frontend's, and that serves no
+        authorization endpoint unless the deployment routes one there.
+
+        :returns: The endpoint under the issuer, or under the site's URL
+            when no issuer is configured.
+        """
+        try:
+            base = get_issuer()
+        except TokenError:
+            base = self.context.absolute_url()
+        return f"{base}/{AUTHORIZE_VIEW}"
 
     def _param(self, name: str) -> str:
         """Return a query parameter as a stripped string.

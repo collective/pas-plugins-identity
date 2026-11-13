@@ -9,11 +9,37 @@
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
 import React from 'react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, useLocation } from 'react-router-dom';
 import { Provider } from 'react-redux';
+import config from '@plone/volto/registry';
 import { IntlProvider } from '../../testing';
 
 import FirstLogin from './FirstLogin';
+
+/** Render the route and report where the router ended up. */
+function landing(state: any): { path: string } {
+  const seen = { path: '/first-login' };
+  const Spy = () => {
+    seen.path = useLocation().pathname;
+    return null;
+  };
+  const store = {
+    getState: () => state,
+    subscribe: () => () => {},
+    dispatch: (action: any) => action,
+  };
+  render(
+    <Provider store={store as any}>
+      <IntlProvider locale="en">
+        <MemoryRouter initialEntries={['/first-login']}>
+          <FirstLogin />
+          <Route path="*" component={Spy} />
+        </MemoryRouter>
+      </IntlProvider>
+    </Provider>,
+  );
+  return seen;
+}
 
 function mount(state: any) {
   const dispatched: any[] = [];
@@ -56,5 +82,27 @@ describe('FirstLogin', () => {
     mount({ userSession: {}, myProfile: PENDING });
 
     expect(document.querySelector('[role="status"]')).not.toBeNull();
+  });
+
+  it("strips the backend's site path when Volto talks to it directly", () => {
+    // Without a proxy rewriting URLs, the backend reports the profile under
+    // its own site path, which the app's routes do not carry.
+    const seen = landing({
+      userSession: { token: 'a-token' },
+      myProfile: {
+        loading: false,
+        loaded: true,
+        error: null,
+        data: {
+          '@id': '/@my-profile',
+          userid: 'alice',
+          profile: `${config.settings.apiPath}/identity-profiles/alice`,
+          review_state: 'incomplete',
+        },
+      },
+    });
+
+    expect(config.settings.apiPath).toMatch(/\/[^/]+$/);
+    expect(seen.path).toBe('/identity-profiles/alice/edit');
   });
 });
