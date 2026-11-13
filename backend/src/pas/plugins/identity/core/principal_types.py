@@ -21,11 +21,19 @@ A type the Profile layer manages has to provide
 registered for. :func:`type_provides` answers that from the FTI, before
 anything is created.
 
-A leaf module, importing nothing from this package, because both the catalog
-and the PAS plugin need it and the plugin already imports the catalog.
+Whether this site keeps its users as content at all is a different question
+again, and :func:`users_as_content` answers it from the marker the
+``contenttypes`` profile puts on the site.
+
+Close to a leaf: it imports nothing from this package but
+:mod:`~pas.plugins.identity.core.interfaces`, which imports nothing from it
+either. Both the catalog and the PAS plugin need it, and the plugin already
+imports the catalog.
 """
 
+from pas.plugins.identity.core.interfaces import IUsersAsContent
 from plone import api
+from plone.api.exc import CannotGetPortalError
 from plone.dexterity.interfaces import IDexterityFTI
 from plone.dexterity.schema import SCHEMA_CACHE
 from plone.dexterity.utils import resolveDottedName
@@ -50,6 +58,22 @@ USER_CONTENT_TYPE_RECORD = "pas.plugins.identity.user_content_type"
 #: Portal type created for a new group, ``UserGroup`` unless a site says
 #: otherwise.
 GROUP_CONTENT_TYPE_RECORD = "pas.plugins.identity.group_content_type"
+
+
+def users_as_content() -> bool:
+    """Report whether this site keeps its users and groups as content.
+
+    True while the ``contenttypes`` profile is installed, which is what marks
+    the site; see :class:`~pas.plugins.identity.core.interfaces.IUsersAsContent`.
+
+    :returns: Whether the site root provides the marker. ``False`` outside a
+        site, which is where nothing could be created anyway.
+    """
+    try:
+        portal = api.portal.get()
+    except CannotGetPortalError:
+        return False
+    return IUsersAsContent.providedBy(portal)
 
 
 def _configured(record: str, default: str) -> str:
@@ -133,4 +157,5 @@ __all__ = [
     "group_portal_type",
     "type_provides",
     "user_portal_type",
+    "users_as_content",
 ]

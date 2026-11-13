@@ -29,7 +29,7 @@ from Products.GenericSetup.tool import SetupTool
 
 
 #: The profile this step re-imports from.
-PROFILE = "profile-pas.plugins.identity:default"
+PROFILE = "profile-pas.plugins.identity:contenttypes"
 
 #: The index this upgrade exists to create and fill.
 INDEX = "sortable_title"

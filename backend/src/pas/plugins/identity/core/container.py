@@ -308,7 +308,7 @@ def grant_add_permissions() -> list[str]:
     container: after an install, and after somebody points the settings at a
     different folder. A container that does not exist yet is skipped rather
     than created -- see
-    :func:`~pas.plugins.identity.setuphandlers.post_install` for why
+    :func:`~pas.plugins.identity.setuphandlers.post_install_contenttypes` for why
     creating one eagerly is the mistake this package already made once.
 
     The two kinds resolve to the same folder on a site that has not separated

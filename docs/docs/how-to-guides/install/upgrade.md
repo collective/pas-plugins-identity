@@ -13,11 +13,13 @@ myst:
 Take a new release into a site that already has this add-on.
 
 <!-- source: backend/src/pas/plugins/identity/profiles/default/metadata.xml -->
+<!-- source: backend/src/pas/plugins/identity/profiles/core/metadata.xml -->
+<!-- source: backend/src/pas/plugins/identity/profiles/contenttypes/metadata.xml -->
 <!-- source: backend/src/pas/plugins/identity/upgrades/ -->
 <!-- source: backend/src/pas/plugins/identity/server/profiles/default/metadata.xml -->
 <!-- source: backend/src/pas/plugins/identity/server/upgrades/ -->
 
-`pas.plugins.identity:default` is at profile version **1013** and declares
+`pas.plugins.identity:default` is at profile version **1014** and declares
 upgrade steps, so `portal_setup` offers them to a site installed against an
 earlier release.
 
@@ -36,6 +38,10 @@ earlier release.
 | 1011 | Guards the login and group memberships of a profile with View Account Details, and maps it onto every profile already in the site. |
 | 1012 | Creates the `client_ip_headers` setting, empty, keeping every existing setting's value. |
 | 1013 | Adds the `personal_tools` actions that Volto's user menu is built from: Profile, Preferences, Sign-in methods and Site Setup. |
+| 1014 | Records `pas.plugins.identity:core` and `pas.plugins.identity:contenttypes` as installed, and marks the site as keeping its users as content. Imports nothing: a site installed before the split already has everything both profiles install. |
+
+`pas.plugins.identity:core` and `pas.plugins.identity:contenttypes` are at
+profile version **1000**, and have no upgrade steps yet.
 
 `pas.plugins.identity.server:default` is at profile version **1002**.
 
@@ -47,7 +53,7 @@ earlier release.
 ```{warning}
 An upgrade step covers what a profile cannot carry on its own—a persistent
 object written at install, or a value only a walk of the site can compute.
-Everything else reaches a site by **reapplying the profile**, which is step 3
+Everything else reaches a site by **reapplying the profiles**, which is step 4
 below and is not optional.
 
 This is what alpha means here. See {doc}`/reference/stability`.
@@ -64,22 +70,30 @@ This is what alpha means here. See {doc}`/reference/stability`.
 
 1. Update the requirement and reinstall the distribution.
 2. Restart the Plone instance. ZCML changes do not take effect until it restarts.
-3. Reapply the profile:
+3. Run the upgrade steps the add-ons control panel offers for the add-on.
+
+4. Reapply the two profiles that hold the add-on's files, in this order:
 
    ```text
-   pas.plugins.identity:default
+   pas.plugins.identity:core
+   pas.plugins.identity:contenttypes
    ```
 
    Either from `portal_setup`, or by uninstalling and installing the add-on in
-   the add-ons control panel.
+   the add-ons control panel. A site installed with `core` alone reapplies
+   `core` only.
 
-4. If the site runs the authorization server, reapply its profile too:
+   Reapplying `pas.plugins.identity:default` is not the same thing. It holds no
+   files of its own, and GenericSetup upgrades a dependency that is already
+   installed rather than applying it again.
+
+5. If the site runs the authorization server, reapply its profile too:
 
    ```text
    pas.plugins.identity.server:default
    ```
 
-5. Check the four items under "Verify" in {doc}`/how-to-guides/install/backend`.
+6. Check the four items under "Verify" in {doc}`/how-to-guides/install/backend`.
 
 Reapplying a profile is safe for your data: it rewrites configuration, and leaves
 every `UserProfile` and `UserGroup` object where it is.
@@ -102,7 +116,8 @@ enumeration or group membership returns stale answers after an upgrade.
 
 - The add-ons control panel lists the add-on, and the server layer separately if
   you use it.
-- `acl_users` has both `identity` and `identity_profile`.
+- `acl_users` has both `identity` and `identity_profile`, or only `identity`
+  on a site installed with `core` alone.
 - The **Identity providers** control panel lists your providers, with their
   secrets intact.
 - A sign-in through each provider still works, and the audit log records it.

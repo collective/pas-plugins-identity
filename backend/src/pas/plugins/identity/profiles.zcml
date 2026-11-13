@@ -4,13 +4,44 @@
     i18n_domain="pas.plugins.identity"
     >
 
+  <!-- What the add-ons control panel installs, and what a policy package
+       normally depends on. It holds no files of its own: it is the two
+       profiles below, named as its dependencies, so that installing it is
+       installing both. -->
   <genericsetup:registerProfile
       name="default"
       title="pas.plugins.identity: Install"
       description="Multi-provider external authentication for Plone, with users and groups as content."
       provides="Products.GenericSetup.interfaces.EXTENSION"
       directory="profiles/default"
-      post_handler=".setuphandlers.post_install"
+      />
+
+  <!-- Authentication on its own: the identity plugin, the providers, their
+       control panel and the sign-in flow. A site that installs only this
+       keeps its users where Plone keeps them, in source_users and
+       mutable_properties, and the identity plugin writes them there.
+
+       Hidden from the add-ons control panel, as is the next one. A site asks
+       for this one alone by naming it in its own metadata.xml, which is a
+       decision about the whole site rather than a button to press. -->
+  <genericsetup:registerProfile
+      name="core"
+      title="pas.plugins.identity: Authentication"
+      description="External authentication with identity linking, keeping users in Plone's own user folder."
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      directory="profiles/core"
+      post_handler=".setuphandlers.post_install_core"
+      />
+
+  <!-- Users and groups as content: the types, their workflows, the catalog
+       they are filed in and the plugin that serves them. Depends on core. -->
+  <genericsetup:registerProfile
+      name="contenttypes"
+      title="pas.plugins.identity: Users and groups as content"
+      description="Content-backed users and groups, with a dedicated catalog."
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      directory="profiles/contenttypes"
+      post_handler=".setuphandlers.post_install_contenttypes"
       />
 
   <!-- A profile rather than a site-wide import step. An import step is
@@ -37,7 +68,7 @@
       post_handler=".setuphandlers.post_uninstall"
       />
 
-  <!-- Hide the uninstall profiles of both layers. One utility is enough: the
+  <!-- Hide the helper profiles of both layers. One utility is enough: the
        add-ons control panel collects every INonInstallable it can find and
        merges what they hide, so the name this is registered under has nothing
        to do with which package a hidden profile is in. -->

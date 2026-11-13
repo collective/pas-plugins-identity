@@ -102,6 +102,47 @@ class TestSetupUninstall:
             if name.startswith("pas.plugins.identity.profile_")
         ] == []
 
+    @pytest.mark.parametrize("profile", ["core", "contenttypes"])
+    def test_layer_profile_forgotten(self, profile: str):
+        """The panel unmarks ``default`` and nothing else. A layer left marked
+        is one GenericSetup upgrades instead of applying on the next install,
+        and that install would bring back neither the types nor the plugins."""
+        from Products.GenericSetup.tool import UNKNOWN
+
+        setup = api.portal.get_tool("portal_setup")
+
+        assert setup.getLastVersionForProfile(f"{PACKAGE_NAME}:{profile}") == UNKNOWN
+
+    def test_site_is_unmarked(self):
+        """The site no longer keeps its users as content, whatever is left of
+        its Profiles."""
+        from pas.plugins.identity.core.interfaces import IUsersAsContent
+
+        assert not IUsersAsContent.providedBy(self.portal)
+
+
+class TestReinstall:
+    """Install, uninstall, install: the second install is a real one."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, installer) -> None:
+        self.portal = portal
+        installer.install_product(PACKAGE_NAME)
+
+    def test_types_come_back(self):
+        types = api.portal.get_tool("portal_types")
+
+        assert PROFILE_PORTAL_TYPE in types.objectIds()
+
+    @pytest.mark.parametrize("plugin_id", [PLUGIN_ID, PROFILE_PLUGIN_ID])
+    def test_plugins_come_back(self, plugin_id: str):
+        assert plugin_id in api.portal.get_tool("acl_users").objectIds()
+
+    def test_site_is_marked_again(self):
+        from pas.plugins.identity.core.interfaces import IUsersAsContent
+
+        assert IUsersAsContent.providedBy(self.portal)
+
 
 class TestRegistrationsRemoved:
     @pytest.fixture(autouse=True)

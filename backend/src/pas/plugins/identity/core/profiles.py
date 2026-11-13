@@ -72,6 +72,7 @@ from pas.plugins.identity.core.principal_types import type_provides
 from pas.plugins.identity.core.principal_types import user_portal_type
 from pas.plugins.identity.core.txn import note_profile_created
 from pas.plugins.identity.core.utils.emails import normalize
+from pas.plugins.identity.core.utils.propertymap import claim_text
 from pas.plugins.identity.core.utils.propertymap import mappable_fields
 from pas.plugins.identity.core.utils.propertymap import resolve_claim
 from persistent.mapping import PersistentMapping
@@ -292,20 +293,14 @@ def claim_fields(provider_id: str) -> dict[str, str]:
 def _scalar(value: object) -> str:
     """Render a resolved claim as text, or as nothing.
 
-    A claim path may land on a list or a mapping -- ``address`` is an object
-    at every OIDC provider -- and a text field is a line of text. Rather
-    than write ``{'formatted': ...}`` into somebody's location, anything that
-    is not a scalar is treated as an absent claim, which the caller already
-    knows not to write.
+    :func:`~pas.plugins.identity.core.utils.propertymap.claim_text`, which a
+    site without Profiles shapes its member properties with as well: one rule
+    for what counts as text, whichever store the login writes to.
 
     :param value: Whatever the claim path resolved to.
     :returns: The value as text, or an empty string.
     """
-    if value is None or isinstance(value, (dict, list, tuple, set)):
-        return ""
-    if isinstance(value, bool):
-        return ""
-    return str(value)
+    return claim_text(value)
 
 
 def _field_value(field: IField, value: object) -> Any:

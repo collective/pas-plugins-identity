@@ -70,6 +70,15 @@ class TestMintUserid:
 
         assert mint_userid("username", CLAIMS) == "ericof-2"
 
+    def test_never_hands_out_somebodys_login(self):
+        """A userid that is another account's login makes the two ambiguous
+        wherever a login is resolved, and ``source_users`` refuses it
+        outright on a site that keeps its accounts there."""
+        acl_users = api.portal.get_tool("acl_users")
+        acl_users.source_users.addUser("a1b2c3", "ericof", "secret-secret")
+
+        assert mint_userid("username", CLAIMS) == "ericof-2"
+
     def test_suffixes_until_it_finds_a_free_one(self):
         api.user.create(email="a@example.org", username="ericof")
         api.user.create(email="b@example.org", username="ericof-2")

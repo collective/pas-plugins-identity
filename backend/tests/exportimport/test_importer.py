@@ -10,12 +10,16 @@ from . import ADDRESS
 from . import PROVIDER
 from . import SUBJECT
 from . import USERID
+from pas.plugins.identity.core.catalog import CATALOG_ID
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
+from pas.plugins.identity.core.interfaces import IUsersAsContent
 from pas.plugins.identity.core.profiles import get_profile
 from pas.plugins.identity.exportimport import import_site
 from pas.plugins.identity.exportimport.schema import DOCUMENT_VERSION
+from pas.plugins.identity.exportimport.schema import NOT_CONTENT
 from plone import api
+from zope.interface import noLongerProvides
 
 import pytest
 
@@ -209,6 +213,23 @@ class TestWhatItRefuses:
 
         assert result.refused
         assert "subject" in " ".join(result.refusals)
+
+    def test_a_site_without_users_as_content_is_refused(self):
+        """A site installed with ``core`` alone has nowhere to put Profiles."""
+        noLongerProvides(self.portal, IUsersAsContent)
+
+        result = import_site(document())
+
+        assert result.refusals == [NOT_CONTENT]
+
+    def test_a_site_that_lost_its_catalog_is_refused(self):
+        """Marked, and the catalog gone: imported principals would be
+        invisible to enumeration."""
+        self.portal._delObject(CATALOG_ID)
+
+        result = import_site(document())
+
+        assert "no identity catalog" in " ".join(result.refusals)
 
 
 class TestWhatItSkips:

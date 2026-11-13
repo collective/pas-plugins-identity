@@ -22,7 +22,7 @@ def declared_catalog() -> tuple[dict[str, str], set[str]]:
     path = (
         Path(pas.plugins.identity.__file__).parent
         / "profiles"
-        / "default"
+        / "contenttypes"
         / "identity-catalog.xml"
     )
     # S314: the input is a file shipped inside the package under test,

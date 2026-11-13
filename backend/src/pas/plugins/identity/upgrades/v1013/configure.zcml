@@ -18,6 +18,7 @@
       >
     <genericsetup:upgradeDepends
         title="Add the personal_tools actions for Volto's user menu"
+        import_profile="pas.plugins.identity:core"
         import_steps="actions"
         />
   </genericsetup:upgradeSteps>

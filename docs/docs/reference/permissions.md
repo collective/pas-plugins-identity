@@ -14,7 +14,8 @@ The eleven permissions the package declares, and who holds them after a default
 install.
 
 <!-- source: backend/src/pas/plugins/identity/permissions.zcml -->
-<!-- source: backend/src/pas/plugins/identity/profiles/default/rolemap.xml -->
+<!-- source: backend/src/pas/plugins/identity/profiles/core/rolemap.xml -->
+<!-- source: backend/src/pas/plugins/identity/profiles/contenttypes/rolemap.xml -->
 
 | Permission id | Title | Roles site-wide |
 |---|---|---|

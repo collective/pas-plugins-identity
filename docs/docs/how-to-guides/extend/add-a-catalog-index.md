@@ -11,11 +11,11 @@ myst:
 
 # Add an index to the user catalog
 
-<!-- source: backend/src/pas/plugins/identity/profiles/default/identity-catalog.xml -->
+<!-- source: backend/src/pas/plugins/identity/profiles/contenttypes/identity-catalog.xml -->
 <!-- source: backend/src/pas/plugins/identity/setuphandlers/catalogxml.py -->
 <!-- source: backend/src/pas/plugins/identity/core/indexers/profile.py -->
 
-The user catalog is declared in `profiles/default/identity-catalog.xml` and
+The user catalog is declared in `profiles/contenttypes/identity-catalog.xml` and
 applied by the `identity-catalog` GenericSetup step. Adding an index is an edit
 to that file.
 
@@ -70,7 +70,7 @@ A field a site added through its own behavior gets neither by default.
    ```shell
    # in the add-ons control panel, or from a script
    portal_setup.runImportStepFromProfile(
-       "pas.plugins.identity:default", "identity-catalog"
+       "pas.plugins.identity:contenttypes", "identity-catalog"
    )
    ```
 

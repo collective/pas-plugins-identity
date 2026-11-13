@@ -326,7 +326,7 @@ Registering into any of them is {doc}`/how-to-guides/extend/extend-a-profile-pag
 
 ## Personal tools
 
-<!-- source: backend/src/pas/plugins/identity/profiles/default/actions.xml -->
+<!-- source: backend/src/pas/plugins/identity/profiles/core/actions.xml -->
 <!-- source: backend/src/pas/plugins/identity/server/profiles/default/actions.xml -->
 
 The toolbar's personal tools menu lists the backend's `personal_tools` actions.

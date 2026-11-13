@@ -98,11 +98,15 @@ package under `src/`.
    </dependencies>
    ```
 
-   `pas.plugins.identity:default` installs everything the core layer needs: the
-   control panel, both PAS plugins, the `UserProfile` and `UserGroup` content
-   types with their workflows, and the catalog they are filed in. It also sets
-   the registry records described in {doc}`/reference/user-content` and points
-   them at this package's own types.
+   `pas.plugins.identity:default` installs the whole add-on, as two profiles:
+   `core`, with the control panel and the `identity` PAS plugin, and
+   `contenttypes`, with the `UserProfile` and `UserGroup` content types, their
+   workflows, the catalog they are filed in, and the `identity_profile` PAS
+   plugin. It also sets the registry records described in
+   {doc}`/reference/user-content` and points them at this package's own types.
+
+   To keep users in Plone's own user folder instead, follow
+   {doc}`/how-to-guides/install/authentication-only`.
 
 4. Ship your settings as configuration, in
    `src/<yourpackage>/profiles/default/registry/pas.plugins.identity.xml`:
@@ -174,7 +178,7 @@ A working install has all four of these:
 Every profile has a matching uninstall profile, and uninstalling is tested: the test installs, uninstalls, and asserts that the site still works with no plugin, registry key, or tool left behind.
 
 ```{note}
-Uninstalling removes the catalog, the content types, and the workflows.
+Uninstalling removes the catalog, the content types, and the workflows, whichever of the two profiles installed them.
 It leaves every `UserProfile` object and its data exactly where it is.
 Uninstalling an add-on is a configuration change, not an instruction to delete everyone's account data.
 ```

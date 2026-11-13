@@ -129,6 +129,17 @@ class ExportImportError(Exception):
     """A document could not be read, or a site could not be written."""
 
 
+#: Why a site that does not keep its users as content is refused, in both
+#: directions. A document is a set of Profiles and Groups: on such a site
+#: there is nothing to read one from, and nothing to write one into that the
+#: site would then use.
+NOT_CONTENT = (
+    "This site does not keep its users and groups as content, so it has no "
+    "Profiles or Groups to export or import. Install the "
+    "pas.plugins.identity:contenttypes profile first."
+)
+
+
 @dataclass
 class Result:
     """What an export or an import did, or would do.
@@ -210,6 +221,73 @@ def _require(condition: bool, message: str) -> None:
         raise ExportImportError(message)
 
 
+def _is_name(value: Any) -> bool:
+    """Report whether a value can be an id: text, and not empty.
+
+    :param value: The value from the document.
+    :returns: Whether it is a non-empty string.
+    """
+    return isinstance(value, str) and bool(value)
+
+
+def _is_text(value: Any) -> bool:
+    """Report whether a value can be written to a text field.
+
+    ``null`` is accepted and written as the empty string, as the importer
+    always has.
+
+    :param value: The value from the document.
+    :returns: Whether it is a string or ``None``.
+    """
+    return value is None or isinstance(value, str)
+
+
+def _is_names(value: Any) -> bool:
+    """Report whether a value is a list of text, or absent.
+
+    A tuple is accepted beside a list: a document read from JSON has lists,
+    and one handed over by :func:`export_site` in the same process may have
+    the tuples a Profile stores.
+
+    :param value: The value from the document.
+    :returns: Whether it is ``None`` or a sequence of strings.
+    """
+    if value is None:
+        return True
+    return isinstance(value, (list, tuple)) and all(isinstance(v, str) for v in value)
+
+
+def _check_fields(record: dict[str, Any], names: tuple[str, ...], where: str) -> None:
+    """Refuse a record whose text fields are not text.
+
+    :param record: The user or group record.
+    :param names: The fields that hold text.
+    :param where: The record's place in the document, for the message.
+    :raises ExportImportError: On the first field that is not text.
+    """
+    for name in names:
+        value = record.get(name)
+        _require(
+            _is_text(value),
+            f"{where}[{name!r}] is not text, but {type(value).__name__}",
+        )
+
+
+def _check_names(record: dict[str, Any], names: tuple[str, ...], where: str) -> None:
+    """Refuse a record whose lists of names are not lists of text.
+
+    :param record: The user, group or identity record.
+    :param names: The fields that hold lists of names.
+    :param where: The record's place in the document, for the message.
+    :raises ExportImportError: On the first field that is not one.
+    """
+    for name in names:
+        _require(
+            _is_names(record.get(name)),
+            f"{where}[{name!r}] is not a list of text",
+        )
+
+
 def validate(document: Any) -> dict[str, Any]:
     """Check a document and return it, or refuse.
 
@@ -218,6 +296,13 @@ def validate(document: Any) -> dict[str, Any]:
     whether an identity is already linked to somebody else -- those are
     questions about a site and the importer asks them there, one record at a
     time, so that a single bad row is a skip rather than a refusal.
+
+    **Types are structure.** A userid that is a number, a name that is a
+    list, a role list holding an object: none of those is a question about the
+    site, and none of them can be written. Found here, they refuse the
+    document with the record's path in the message, before anything is
+    written and identically in a dry run. Found later, each one raised in the
+    middle of the write, after the dry run had reported the document fine.
 
     :param document: The parsed JSON.
     :returns: The same document, once it is known to be one.
@@ -243,36 +328,51 @@ def validate(document: Any) -> dict[str, Any]:
     _require(isinstance(groups, list), "'groups' is not a list")
 
     for index, user in enumerate(users):
-        _require(isinstance(user, dict), f"users[{index}] is not an object")
+        where = f"users[{index}]"
+        _require(isinstance(user, dict), f"{where} is not an object")
         _require(
             bool(user.get("userid")),
-            f"users[{index}] has no userid, and a userid cannot be invented: "
+            f"{where} has no userid, and a userid cannot be invented: "
             f"every local role and ownership in the target site is written "
             f"against it",
         )
+        _require(_is_name(user["userid"]), f"{where}['userid'] is not text")
+        _check_fields(user, ("login", *USER_FIELDS), where)
+        _check_names(user, ("emails", "group_ids"), where)
         _require(
             isinstance(user.get(USER_EXTRA_FIELDS, {}), dict),
-            f"users[{index}][{USER_EXTRA_FIELDS!r}] is not an object",
+            f"{where}[{USER_EXTRA_FIELDS!r}] is not an object",
         )
         identities = user.get("identities", [])
         _require(
             isinstance(identities, list),
-            f"users[{index}]['identities'] is not a list",
+            f"{where}['identities'] is not a list",
         )
         for position, identity in enumerate(identities):
-            _require(
-                isinstance(identity, dict),
-                f"users[{index}]['identities'][{position}] is not an object",
-            )
+            place = f"{where}['identities'][{position}]"
+            _require(isinstance(identity, dict), f"{place} is not an object")
             _require(
                 bool(identity.get("provider")) and bool(identity.get("subject")),
-                f"users[{index}]['identities'][{position}] needs both a "
-                f"provider and a subject; either alone identifies nobody",
+                f"{place} needs both a provider and a subject; either alone "
+                f"identifies nobody",
             )
+            _require(
+                _is_name(identity["provider"]) and _is_name(identity["subject"]),
+                f"{place} has a provider or a subject that is not text",
+            )
+            _require(
+                isinstance(identity.get("claims") or {}, dict),
+                f"{place}['claims'] is not an object",
+            )
+            _check_names(identity, ("groups",), place)
 
     for index, group in enumerate(groups):
-        _require(isinstance(group, dict), f"groups[{index}] is not an object")
-        _require(bool(group.get("group_id")), f"groups[{index}] has no group_id")
+        where = f"groups[{index}]"
+        _require(isinstance(group, dict), f"{where} is not an object")
+        _require(bool(group.get("group_id")), f"{where} has no group_id")
+        _require(_is_name(group["group_id"]), f"{where}['group_id'] is not text")
+        _check_fields(group, ("container_group", *GROUP_FIELDS), where)
+        _check_names(group, ("group_ids", GROUP_ROLES_FIELD), where)
 
     return document
 
@@ -282,6 +382,7 @@ __all__ = [
     "GENERATOR",
     "GROUP_FIELDS",
     "GROUP_ROLES_FIELD",
+    "NOT_CONTENT",
     "USER_EXTRA_FIELDS",
     "USER_FIELDS",
     "ExportImportError",

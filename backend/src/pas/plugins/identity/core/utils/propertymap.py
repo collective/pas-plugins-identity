@@ -148,6 +148,28 @@ def resolve_claim(path: str, claims: Claims) -> Any:
     return None
 
 
+def claim_text(value: object) -> str:
+    """Render a resolved claim as text, or as nothing.
+
+    A claim path may land on a list or a mapping -- ``address`` is an object
+    at every OIDC provider -- and a text field is a line of text. Rather
+    than write ``{'formatted': ...}`` into somebody's location, anything that
+    is not a scalar is treated as an absent claim, which every caller already
+    knows not to write. A boolean is not text either, while a number is: a
+    provider sending ``42`` for a field meant ``"42"``.
+
+    Both places a login writes text go through this: a Profile's fields, and
+    on a site without Profiles the member's properties, which store whatever
+    they are handed of the right type and refuse the rest by raising.
+
+    :param value: Whatever the claim path resolved to.
+    :returns: The value as text, or an empty string.
+    """
+    if value is None or isinstance(value, (dict, list, tuple, set, bool)):
+        return ""
+    return str(value)
+
+
 def apply_property_map(propertymap: dict[str, str], claims: Claims) -> dict[str, Any]:
     """Resolve a whole map against one set of claims.
 

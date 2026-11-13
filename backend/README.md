@@ -44,7 +44,9 @@ The package installs as a core, with one optional layer beside it.
 
 | Profile | What it adds |
 | --- | --- |
-| `pas.plugins.identity:default` | Sign in with external providers, identity linking, the audit log, the control panel, and the content types users and groups are. |
+| `pas.plugins.identity:default` | Everything below that is not the server: `core` and `contenttypes` together. The profile the add-ons control panel installs. |
+| `pas.plugins.identity:core` | Sign in with external providers, identity linking, the audit log and the control panel. On its own, users stay in Plone's `source_users`. |
+| `pas.plugins.identity:contenttypes` | The content types users and groups are, with their workflows and catalog. Depends on `core`. |
 | `pas.plugins.identity.server:default` | An OAuth 2.1 and OpenID Connect authorization server, so the site can *be* a provider for others. |
 
 | Extra | Adds | Profile |

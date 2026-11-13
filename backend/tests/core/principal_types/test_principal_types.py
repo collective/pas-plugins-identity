@@ -14,12 +14,14 @@ from ..pas.stubs import add_type
 from ..pas.stubs import IStubDocumentSchema
 from pas.plugins.identity.core.interfaces import IUserContent
 from pas.plugins.identity.core.interfaces import IUserProfile
+from pas.plugins.identity.core.interfaces import IUsersAsContent
 from pas.plugins.identity.core.principal_types import catalogued_types
 from pas.plugins.identity.core.principal_types import GROUP_CONTENT_TYPE_RECORD
 from pas.plugins.identity.core.principal_types import group_portal_type
 from pas.plugins.identity.core.principal_types import type_provides
 from pas.plugins.identity.core.principal_types import USER_CONTENT_TYPE_RECORD
 from pas.plugins.identity.core.principal_types import user_portal_type
+from pas.plugins.identity.core.principal_types import users_as_content
 from plone import api
 from plone.behavior.interfaces import IBehavior
 from plone.behavior.registration import BehaviorRegistration
@@ -27,7 +29,10 @@ from plone.dexterity.schema import SCHEMA_CACHE
 from plone.registry.interfaces import IRegistry
 from zope.component import getGlobalSiteManager
 from zope.component import getUtility
+from zope.component.hooks import getSite
+from zope.component.hooks import setSite
 from zope.interface import Interface
+from zope.interface import noLongerProvides
 
 import pytest
 
@@ -140,6 +145,29 @@ class TestTheReaders:
         api.portal.set_registry_record(USER_CONTENT_TYPE_RECORD, "Person")
 
         assert catalogued_types() == ("Person", "UserGroup")
+
+
+class TestUsersAsContent:
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal) -> None:
+        self.portal = portal
+
+    def test_an_installed_site_keeps_users_as_content(self):
+        assert users_as_content() is True
+
+    def test_an_unmarked_site_does_not(self):
+        noLongerProvides(self.portal, IUsersAsContent)
+
+        assert users_as_content() is False
+
+    def test_outside_a_site_the_answer_is_no(self):
+        """Nothing could be created there anyway, and asking must not raise."""
+        previous = getSite()
+        setSite(None)
+        try:
+            assert users_as_content() is False
+        finally:
+            setSite(previous)
 
 
 class TestTypeProvides:

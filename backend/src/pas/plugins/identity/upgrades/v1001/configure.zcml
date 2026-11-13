@@ -21,6 +21,7 @@
       >
     <genericsetup:upgradeDepends
         title="Allow a UserGroup to be added inside a UserGroup"
+        import_profile="pas.plugins.identity:contenttypes"
         import_steps="typeinfo"
         />
   </genericsetup:upgradeSteps>

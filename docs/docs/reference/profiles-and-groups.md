@@ -19,7 +19,7 @@ For the contract a site's own types must meet instead, read {doc}`user-content`.
 
 <!-- source: backend/src/pas/plugins/identity/core/contents/profile.py -->
 <!-- source: backend/src/pas/plugins/identity/core/contents/group.py -->
-<!-- source: backend/src/pas/plugins/identity/profiles/default/types/ -->
+<!-- source: backend/src/pas/plugins/identity/profiles/contenttypes/types/ -->
 
 | | `UserProfile` | `UserGroup` |
 |---|---|---|
@@ -43,7 +43,7 @@ member.
 <!-- The type declares login, fullname and description in
      core/contents/profile.py; the rest come from the behaviors in
      core/behaviors/, and the FTI enables them in
-     profiles/default/types/UserProfile.xml. -->
+     profiles/contenttypes/types/UserProfile.xml. -->
 
 | Field | Type | Required | Declared in | Read permission | Write permission |
 |---|---|---|---|---|---|
@@ -124,7 +124,7 @@ unverified one above it, because that is what `email` is derived from.
 
 ## Workflow
 
-<!-- source: backend/src/pas/plugins/identity/profiles/default/workflows/ -->
+<!-- source: backend/src/pas/plugins/identity/profiles/contenttypes/workflows/ -->
 
 ### Profile states
 
@@ -230,7 +230,7 @@ site filing principals together sets none of them. See {doc}`settings`.
 ### The container type
 
 <!-- source: backend/src/pas/plugins/identity/core/contents/principals.py -->
-<!-- source: backend/src/pas/plugins/identity/profiles/default/types/PrincipalsContainer.xml -->
+<!-- source: backend/src/pas/plugins/identity/profiles/contenttypes/types/PrincipalsContainer.xml -->
 
 Unless a type record names another, the package creates a `PrincipalsContainer`.
 

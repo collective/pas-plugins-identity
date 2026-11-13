@@ -26,7 +26,7 @@ down.
 
 <!-- source: backend/src/pas/plugins/identity/core/controlpanel/interfaces.py, IIdentitySettings -->
 
-Set by the `pas.plugins.identity:default` profile.
+Set by the `pas.plugins.identity:core` profile.
 
 ### Login
 
@@ -66,6 +66,10 @@ one second.
 
 Where principals are filed, which of their workflow states count, and what a
 profile must carry before its owner is let past the gate.
+
+Set by the `pas.plugins.identity:contenttypes` profile. A site installed with
+`core` alone has none of these records, and the **Settings** form does not show
+them there.
 
 ### Where principals are filed
 
@@ -122,9 +126,10 @@ control panel never writes them.
 
 All four are empty by default. A subscriber sets the two paths at install and
 again whenever a record under **Where principals are filed** changes: set the
-container records, not these. The install handler fills the two types with
-`UserProfile` and `UserGroup` only when they are empty, so a site's own profile
-may name its own. See {doc}`user-content`.
+container records, not these. The `contenttypes` install handler fills the two
+types with `UserProfile` and `UserGroup` only when they are empty, so a site's
+own profile may name its own. On a site installed with `core` alone all four
+stay empty. See {doc}`user-content`.
 
 ## Server layer
 

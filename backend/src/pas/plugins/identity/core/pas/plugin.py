@@ -1,10 +1,19 @@
 """The PAS plugin.
 
 Implements extraction, authentication, credentials reset and -- off by default
--- challenge. It deliberately does **not** implement properties, enumeration,
-groups, roles or user adding: on first login it *decorates* the stock
-``source_users`` and ``mutable_properties`` plugins instead, which is what lets
-core install and work with no extras.
+-- challenge, and the adding of users and groups. It deliberately does **not**
+implement properties, enumeration or roles. Where a user lives depends on the
+site:
+
+* On a site that keeps its users as content -- one carrying
+  :class:`~pas.plugins.identity.core.interfaces.IUsersAsContent` -- the
+  Profile *is* the account. It is minted by a subscriber to the event this
+  plugin fires, and served by the ``identity_profile`` plugin.
+* On any other site this plugin *decorates* the stock ``source_users`` and
+  ``mutable_properties`` plugins: a first login writes a ``source_users`` row
+  with a placeholder password, and every login writes the provider's mapped
+  claims into the member's properties. That is what lets the ``core`` profile
+  work on its own.
 
 Extraction and authentication only ever run at callback time. An ordinary
 request rides the ``plone.session`` ticket or the ``jwt_auth`` token that this
@@ -12,6 +21,7 @@ plugin handed out, and never reaches the network.
 """
 
 from AccessControl.class_init import InitializeClass
+from BTrees.OOBTree import OOTreeSet
 from pas.plugins.identity import logger
 from pas.plugins.identity.core.audit import AuditLog
 from pas.plugins.identity.core.catalog import query_catalog
@@ -34,6 +44,7 @@ from pas.plugins.identity.core.pas import PLUGIN_TITLE
 from pas.plugins.identity.core.principal_types import GROUP_CONTENT_TYPE_RECORD
 from pas.plugins.identity.core.principal_types import type_provides
 from pas.plugins.identity.core.principal_types import USER_CONTENT_TYPE_RECORD
+from pas.plugins.identity.core.principal_types import users_as_content
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from pas.plugins.identity.core.store import IdentityRecord
 from pas.plugins.identity.core.store import IdentityStore
@@ -54,6 +65,8 @@ from zope.event import notify
 from zope.interface import implementer
 from ZPublisher.HTTPRequest import HTTPRequest
 from ZPublisher.HTTPResponse import HTTPResponse
+
+import secrets
 
 
 #: Where the provider picker lives, for the optional challenge plugin.
@@ -94,12 +107,22 @@ def _available(userid: str) -> bool:
     site's ``admin`` userid and inherit its roles, and the only way to know
     is to ask Plone rather than this plugin's own records.
 
+    As a login, too. A login is a name somebody signs in with, so a userid
+    that is somebody else's login makes the two ambiguous wherever a login is
+    resolved. On a site without users as content it is worse than ambiguous:
+    the new account is a ``source_users`` row whose login is its userid, and
+    ``source_users`` refuses a login it already holds -- which failed the
+    sign-in, and every later one, for the person whose provider username
+    happened to be a local account's login.
+
     :param userid: The candidate.
-    :returns: Whether no user already has it.
+    :returns: Whether no user already has it, as a userid or as a login.
     """
     from plone import api
 
-    return api.user.get(userid=userid) is None
+    if api.user.get(userid=userid) is not None:
+        return False
+    return api.portal.get_tool("acl_users").getUser(userid) is None
 
 
 def mint_userid(
@@ -214,6 +237,23 @@ class IdentityPlugin(BasePlugin):
         self._audit = AuditLog()
         self._magic_links = MagicLinkStore()
         self._logout_jtis = LogoutJTIStore()
+        self._placeholder_passwords = OOTreeSet()
+
+    @property
+    def placeholder_passwords(self) -> OOTreeSet:
+        """Return the userids whose ``source_users`` password is a placeholder.
+
+        Only a site that does not keep its users as content writes here; see
+        :meth:`_create_plone_user`. Created on demand as well as in the
+        constructor, for the same reason as :attr:`audit`: every plugin
+        installed before this existed has none.
+
+        :returns: The set persisted inside this plugin.
+        """
+        placeholders = getattr(self, "_placeholder_passwords", None)
+        if placeholders is None:
+            placeholders = self._placeholder_passwords = OOTreeSet()
+        return placeholders
 
     @property
     def store(self) -> IdentityStore:
@@ -301,12 +341,18 @@ class IdentityPlugin(BasePlugin):
     def authenticateCredentials(self, credentials: JSONDict) -> tuple[str, str] | None:
         """Resolve external credentials to a Plone principal.
 
-        On first sight of an identity a userid is minted, and the Profile that
-        *is* that user is created for it by a subscriber to the event fired
-        below -- so the rest of Plone sees an ordinary user. Nothing is
-        written to ``source_users``: the content object is the account, this
-        plugin enumerates it, and a second record of the same person is the
-        thing that then outlives the object it shadows.
+        On first sight of an identity a userid is minted, and the rest of
+        Plone is given an ordinary user for it. Which kind depends on the
+        site:
+
+        * Keeping users as content, the Profile that *is* that user is created
+          by a subscriber to the event fired below. Nothing is written to
+          ``source_users``: the content object is the account, and a second
+          record of the same person is the thing that then outlives the
+          object it shadows.
+        * Otherwise this plugin writes the account itself, before the event,
+          as a ``source_users`` row -- see :meth:`_create_plone_user` -- and
+          applies the provider's property map after it.
 
         Two site policies can turn a sign-in away here even though the
         provider authenticated it: ``allowed_groups``, checked on every login,
@@ -336,6 +382,8 @@ class IdentityPlugin(BasePlugin):
         # only when the provider changed it, and that is the one part of
         # signing in that makes a network request.
         previous_picture = self._remembered_picture(provider, subject)
+        # Asked once: nothing below changes the answer.
+        as_content = users_as_content()
         is_new_user = False
         if is_new_identity:
             userid = self._adopt_by_verified_email(provider, claims)
@@ -353,10 +401,15 @@ class IdentityPlugin(BasePlugin):
                     claims=claims,
                     subject=subject,
                 )
+                if not as_content:
+                    self._create_plone_user(userid, claims)
             self._store.add(provider, subject, userid, claims)
         else:
             self._store.touch(provider, subject, claims)
-            self._warn_if_orphaned(userid)
+            if as_content:
+                self._warn_if_orphaned(userid)
+            else:
+                is_new_user = self._restore_missing_account(userid, claims)
 
         note_login(
             userid,
@@ -376,7 +429,7 @@ class IdentityPlugin(BasePlugin):
             )
         )
 
-        if is_new_user:
+        if is_new_user and as_content:
             self._warn_if_unclaimed(userid)
 
         # After the event, and that ordering is load-bearing.
@@ -394,9 +447,10 @@ class IdentityPlugin(BasePlugin):
         #
         # Every login, not just the first: an avatar changed at the provider
         # should reach Plone without the user being recreated. The provider's
-        # mapped claims used to be written here too and no longer are -- the
-        # subscriber applies the map to the Profile, and every authenticated
-        # user has one.
+        # mapped claims are written here only on a site without Profiles; on
+        # one with them, the subscriber applies the map to the Profile.
+        if not as_content:
+            self._apply_property_map(userid, provider, claims)
         self._sync_portrait(userid, provider, claims, previous_picture)
         self._sync_federated_groups(userid, provider, subject, claims)
         return (userid, userid)
@@ -1365,20 +1419,30 @@ class IdentityPlugin(BasePlugin):
     def _has_local_password(self, userid: str) -> bool:
         """Report whether the user has a password they can actually log in with.
 
-        An externally authenticated user has no ``source_users`` row at all --
-        their Profile is the account, and nothing ever wrote them a
-        credential -- so the absence of a row is the honest answer to "could
-        you still get in without this identity?". A row exists only where
-        somebody set a password: through ``api.user.create``, or through the
-        stock forms.
+        On a site that keeps its users as content, an externally authenticated
+        user has no ``source_users`` row at all -- their Profile is the
+        account, and nothing ever wrote them a credential -- so the absence of
+        a row is the honest answer to "could you still get in without this
+        identity?". A row exists only where somebody set a password: through
+        ``api.user.create``, or through the stock forms.
 
-        A password kept on the Profile itself, by a site that enabled the
-        password behaviour, is not counted here. That errs toward refusing an
-        unlink, which is the safe direction.
+        On a site that does not, every account this plugin created has a row,
+        holding a placeholder nobody knows -- see :meth:`_create_plone_user`.
+        A placeholder is not a way in, and counting it would defeat the
+        lockout guard entirely: it would report "you still have a password"
+        for every externally created user and unlink their last identity.
+
+        Two things are not counted, and both err toward refusing an unlink,
+        which is the safe direction. A password kept on the Profile itself, by
+        a site that enabled the password behaviour. And a real password a
+        Manager later set for a placeholder account through the stock forms:
+        this plugin is not told, so the account stays a placeholder here.
 
         :param userid: Canonical Plone userid.
         :returns: Whether a usable local password exists.
         """
+        if userid in self.placeholder_passwords:
+            return False
         passwords = getattr(self._source_users(), "_user_passwords", {})
         return userid in passwords
 
@@ -1396,6 +1460,148 @@ class IdentityPlugin(BasePlugin):
         :returns: The ZODBUserManager instance.
         """
         return self._getPAS()["source_users"]
+
+    def _create_plone_user(self, userid: str, claims: Claims) -> None:
+        """Create the ``source_users`` account behind a new identity.
+
+        Only on a site that does not keep its users as content, where this row
+        is the account: without it the login returns a userid nothing can
+        enumerate, and the token the callback mints for it is refused.
+
+        The password is a random placeholder, so the stock plugin holds a
+        complete record. Nobody is shown it and it is not a way in: the userid
+        goes into :attr:`placeholder_passwords`, which is what tells the
+        lockout guard so. The login name is the userid, because it is the one
+        value that is unique, stable and already chosen.
+
+        :param userid: The freshly minted userid.
+        :param claims: Normalized claims, to seed the property sheet with.
+        """
+        self._source_users().addUser(userid, userid, secrets.token_urlsafe(32))
+        self.placeholder_passwords.insert(userid)
+        self._seed_properties(userid, claims)
+
+    def _seed_properties(self, userid: str, claims: Claims) -> None:
+        """Write the name and the address a provider sent onto a new account.
+
+        The address is ``email``, which a driver fills with the first address
+        it offers. A site with Profiles holds every offered address and lets
+        the person choose; this one has a single ``email`` property and
+        nowhere to ask, so the first offer is the answer.
+
+        :param userid: Canonical Plone userid.
+        :param claims: Normalized claims.
+        """
+        self._write_properties(
+            userid,
+            {"fullname": claims.get("fullname"), "email": claims.get("email")},
+        )
+
+    def _write_properties(self, userid: str, values: dict[str, object]) -> None:
+        """Write claim values onto a member's properties, one at a time.
+
+        Through ``plone.api``, which hands back the ``MemberData`` wrapper:
+        the bare ``PloneUser`` PAS returns has no ``setMemberProperties``.
+        ``setMemberProperties`` routes to whichever mutable property provider
+        the site has, so this keeps working on a site that replaced
+        ``mutable_properties``, and it skips a name no sheet declares.
+
+        Every value is a claim, and a claim is whatever the provider sent. A
+        property sheet stores text and refuses anything else by raising, in
+        the middle of a login. So each value is shaped by
+        :func:`~pas.plugins.identity.core.utils.propertymap.claim_text`
+        first -- the rule a Profile's fields follow -- and nothing is written
+        for a value that is not text. A value a sheet still refuses, because a
+        site declared that property with another type, is logged and skipped:
+        one bad claim must not cost the person their login, nor the
+        properties after it.
+
+        :param userid: Canonical Plone userid.
+        :param values: Property name to resolved claim.
+        """
+        from pas.plugins.identity.core.utils.propertymap import claim_text
+        from plone import api
+
+        member = api.user.get(userid=userid)
+        if member is None:  # pragma: no cover - can't-happen: just created
+            logger.warning("User %s is not retrievable", userid)
+            return
+        for name, value in values.items():
+            text = claim_text(value)
+            if not text:
+                continue
+            try:
+                member.setMemberProperties({name: text})
+            except ValueError as exc:
+                logger.warning(
+                    "Not writing a claim to property %r for %s: %s", name, userid, exc
+                )
+
+    def _restore_missing_account(self, userid: str, claims: Claims) -> bool:
+        """Recreate the account behind a known identity that has lost it.
+
+        The counterpart of :meth:`_warn_if_orphaned` on a site that does not
+        keep its users as content. There no subscriber recreates the account,
+        so without this every later login through the identity would resolve
+        to a userid nothing serves, and fail the same way for good.
+
+        The **same** userid is restored, for the reasons
+        :meth:`_warn_if_orphaned` gives. Said at warning level, because an
+        account reappearing is not what an operator who deleted one expects;
+        removing the identity as well is what makes a deletion stick.
+
+        :param userid: The userid the identity resolved to.
+        :param claims: Normalized claims, to seed the restored account with.
+        :returns: Whether an account was created, so the login is treated as a
+            first one for everything that follows.
+        """
+        if self._getPAS().getUserById(userid) is not None:
+            return False
+        logger.warning(
+            "Identity resolved to %s, which has no account: restoring it. "
+            "Remove the identity as well if the deletion was deliberate.",
+            userid,
+        )
+        self._create_plone_user(userid, claims)
+        return True
+
+    def _apply_property_map(
+        self, userid: str, provider_id: str, claims: Claims
+    ) -> None:
+        """Write a provider's mapped claims onto the member's properties.
+
+        Only on a site that does not keep its users as content; on one that
+        does, the map is applied to the Profile, which remembers which fields
+        it wrote.
+
+        Nothing here remembers that, so a property already holding a value is
+        left alone. The provider is the source of truth for a field nobody has
+        touched, but an edit made in Plone must not be undone by the next
+        login. The fields a map may never write are skipped here as well, so a
+        map imported with one of them in it does nothing with it.
+
+        :param userid: Canonical Plone userid.
+        :param provider_id: Provider the claims came from.
+        :param claims: Normalized claims.
+        """
+        from pas.plugins.identity.core.controlpanel import get_provider
+        from pas.plugins.identity.core.utils.propertymap import apply_property_map
+        from pas.plugins.identity.core.utils.propertymap import UNMAPPABLE_FIELDS
+        from plone import api
+
+        config = get_provider(provider_id)
+        if config is None or not config.propertymap:
+            return
+        member = api.user.get(userid=userid)
+        if member is None:  # pragma: no cover - can't-happen: just authenticated
+            logger.warning("Authenticated user %s is not retrievable", userid)
+            return
+        updates = {
+            field: value
+            for field, value in apply_property_map(config.propertymap, claims).items()
+            if field not in UNMAPPABLE_FIELDS and not member.getProperty(field, None)
+        }
+        self._write_properties(userid, updates)
 
     def _warn_if_orphaned(self, userid: str) -> None:
         """Say so when a known identity resolves to an account that is gone.

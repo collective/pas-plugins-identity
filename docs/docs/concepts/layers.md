@@ -30,6 +30,30 @@ pas.plugins.identity.server:default
 The add-ons control panel lists both, so the server layer is installed and uninstalled where every other add-on is.
 It shows no version beside that entry, because it is named after a package rather than a distribution and there is no package metadata to read.
 
+## Users as content is a profile, not a layer
+
+<!-- source: backend/src/pas/plugins/identity/profiles.zcml -->
+<!-- source: backend/src/pas/plugins/identity/core/pas/plugin.py -->
+
+`pas.plugins.identity:default` is two profiles, and installs both.
+
+```text
+pas.plugins.identity:core          authentication, providers, the control panel
+pas.plugins.identity:contenttypes  users and groups as content
+```
+
+The split is in what a site installs, not in what Python imports.
+Both halves are one package with one set of dependencies, and every module is loaded on every site.
+What differs is the site: the `contenttypes` profile marks the site root with `IUsersAsContent`, and the code that has to decide where a user lives reads that marker.
+
+A site that installs `core` alone keeps its users where Plone keeps them without this add-on.
+The identity plugin writes a federated user into `source_users`, with a password nobody knows, and writes the provider's claims into the member's properties.
+
+That second configuration is a seam of exactly the kind the next section warns about, and it existed once before.
+It earns its place this time because nobody pays for it by accident.
+The add-ons control panel offers only `default`, which installs both halves, so a site gets the second configuration only by naming `core` in its own `metadata.xml`.
+A test module, `tests/core/test_core_only_site.py`, drives that configuration through a real login, so the seam has tests of its own.
+
 ## What earns a boundary
 
 Two, and not more, because a layer has to earn its boundary twice over.
@@ -90,6 +114,9 @@ So the same call returns Profile-backed values where a Profile exists and stock 
 
 That is what the contract buys.
 Not just a cleaner dependency graph, but a server layer with no configuration branch in it at all.
+
+The same call serves a site with no Profiles at all.
+On a site that installed `core` alone, every user's properties come from `mutable_properties`, and the server layer asks exactly the same question.
 
 ## Where to go next
 

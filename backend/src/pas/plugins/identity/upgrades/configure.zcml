@@ -10,7 +10,16 @@
 
        The include is what registers them. This package's ZCML is pulled in
        by profiles.zcml, and a version left out below is a step nobody runs
-       and nothing reports. -->
+       and nothing reports.
+
+       Every step up to 1014 belongs to default, which was the whole add-on
+       until then. Since 1014 default is core plus contenttypes, and holds no
+       files: a change to what either installs is an upgrade step of that
+       profile, with its own version. The add-ons control panel upgrades
+       default and nothing else, so the release that adds such a step also
+       gives default one that runs upgradeProfile on both. Steps importing
+       files name the profile that holds them with import_profile, or in
+       their PROFILE constant. -->
 
   <include package=".v1001" />
   <include package=".v1002" />
@@ -25,5 +34,6 @@
   <include package=".v1011" />
   <include package=".v1012" />
   <include package=".v1013" />
+  <include package=".v1014" />
 
 </configure>

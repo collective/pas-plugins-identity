@@ -26,7 +26,7 @@ from Products.GenericSetup.tool import SetupTool
 
 
 #: The profile the step re-imports from.
-PROFILE = "profile-pas.plugins.identity:default"
+PROFILE = "profile-pas.plugins.identity:contenttypes"
 
 
 def add_email_confirmation(context: SetupTool) -> None:

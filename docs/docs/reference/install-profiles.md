@@ -16,28 +16,56 @@ myst:
 
 ## Profiles
 
-| Profile id | Title | Version |
-|---|---|---|
-| `pas.plugins.identity:default` | Install | 1010 |
-| `pas.plugins.identity:rebuild-catalog` | Rebuild the user catalog |—|
-| `pas.plugins.identity:uninstall` | Uninstall |—|
-| `pas.plugins.identity.server:default` | Authorization server | 1001 |
-| `pas.plugins.identity.server:uninstall` | Uninstall the authorization server |—|
+| Profile id | Title | Version | Depends on | In the add-ons control panel |
+|---|---|---|---|---|
+| `pas.plugins.identity:default` | Install | 1014 | `core`, `contenttypes` | Yes |
+| `pas.plugins.identity:core` | Authentication | 1000 | `plone.restapi:default` | No |
+| `pas.plugins.identity:contenttypes` | Users and groups as content | 1000 | `core`, `plone.app.dexterity:default` | No |
+| `pas.plugins.identity:rebuild-catalog` | Rebuild the user catalog |—| `contenttypes` | No |
+| `pas.plugins.identity:initial` | Example content |—| `contenttypes` | No |
+| `pas.plugins.identity:uninstall` | Uninstall |—|—| No |
+| `pas.plugins.identity.server:default` | Authorization server | 1002 | `default` | Yes |
+| `pas.plugins.identity.server:uninstall` | Uninstall the authorization server |—|—| No |
 
 All are `EXTENSION` profiles.
 
 ### `pas.plugins.identity:default`
 
-One profile installs everything the core layer needs:
+Holds no files of its own.
+Its `metadata.xml` names `core` and `contenttypes` as dependencies, so applying it applies both, in that order.
+It is the profile the add-ons control panel installs, and the one a policy package normally depends on.
+
+### `pas.plugins.identity:core`
+
+<!-- source: backend/src/pas/plugins/identity/profiles/core/ -->
+
+Authentication, without users as content:
 
 - the **Identity providers** control panel
-- the `identity` PAS plugin, for extraction, authentication and credentials reset
-- the `identity_profile` PAS plugin, at the top of `IPropertiesPlugin`
+- the `identity` PAS plugin, for extraction, authentication, credentials reset, and adding users and groups
+- the browser layer
+- the `personal_tools` actions in the user menu
+- the records of `IIdentitySettings` in {doc}`settings`
+- the `pas.plugins.identity: Export Identity Providers` permission in {doc}`permissions`
+
+A site with this profile alone keeps its users in `source_users` and `mutable_properties`.
+See {doc}`user-content` for what the identity plugin writes there.
+
+### `pas.plugins.identity:contenttypes`
+
+<!-- source: backend/src/pas/plugins/identity/profiles/contenttypes/ -->
+<!-- source: backend/src/pas/plugins/identity/setuphandlers/__init__.py -->
+
+Users and groups as content:
+
 - the `UserProfile`, `UserGroup` and `PrincipalsContainer` content types
-- `user_profile_workflow` and the group workflow
+- `user_profile_workflow` and `user_group_workflow`
+- the versioning policies for the two principal types
 - the user catalog the two types are filed in
-- the registry records in {doc}`settings`, pointed at this package's own types
-- the permissions and rolemap in {doc}`permissions`
+- the `identity_profile` PAS plugin, at the top of `IPropertiesPlugin`
+- the records of `IProfileSettings` in {doc}`settings`, and the type records pointed at this package's own types
+- every other permission in {doc}`permissions`
+- the `IUsersAsContent` marker on the site root
 
 #### Import and export steps
 
@@ -80,20 +108,36 @@ Every installable profile has a matching uninstall profile, and uninstalling is
 tested: the test installs, uninstalls, and asserts the site still works with no
 plugin, registry key, or tool left behind.
 
-Uninstalling removes the catalog, the content types and the workflows. It leaves
-every `UserProfile` object and its data exactly where it is.
+`pas.plugins.identity:uninstall` removes both halves, whichever of them the site
+has. Uninstalling removes the catalog, the content types and the workflows,
+removes the `IUsersAsContent` marker, and forgets the `core` and `contenttypes`
+profiles, so the next install applies them again. It leaves every `UserProfile`
+object and its data exactly where it is.
 
 ## Upgrades
 
 <!-- source: backend/src/pas/plugins/identity/upgrades/configure.zcml -->
 <!-- source: backend/src/pas/plugins/identity/server/upgrades/configure.zcml -->
 
-`pas.plugins.identity:default` is at version 1010. `upgrades/` holds one package
+`pas.plugins.identity:default` is at version 1014. `upgrades/` holds one package
 per version, each registering the steps that take a site to it, and
 `portal_setup` offers them to a site installed against an earlier release.
-`pas.plugins.identity.server:default` is at 1001, with its steps laid out the
+`pas.plugins.identity.server:default` is at 1002, with its steps laid out the
 same way in `server/upgrades/`.
 {doc}`/how-to-guides/install/upgrade` lists what each step does.
+
+Every step up to 1014 belongs to `default`. `core` and `contenttypes` start at
+1000 and have no steps yet.
+
+| Profile | Where its upgrades are offered |
+|---|---|
+| `default` | The add-ons control panel, and the {guilabel}`Upgrades` tab of `portal_setup` |
+| `core`, `contenttypes` | The {guilabel}`Upgrades` tab of `portal_setup` |
+
+The add-ons control panel upgrades a product's `default` profile and no other.
+A release that adds a step to `core` or `contenttypes` therefore also adds a
+step to `default` that upgrades both, so a site with the whole add-on keeps
+upgrading from the control panel.
 
 An upgrade step is for what a reapplied profile cannot carry. Everything else—a
 registry record, a content type, a workflow, a plugin—reaches an existing site
@@ -106,5 +150,7 @@ that implies, and {doc}`/how-to-guides/install/upgrade` for the procedure.
 
 - {doc}`/how-to-guides/install/backend`—applying these
 - {doc}`/how-to-guides/install/upgrade`—reapplying them
-- {doc}`settings`—the records the install profile writes
-- {doc}`permissions`—the rolemap it installs
+- {doc}`settings`—the records the install profiles write
+- {doc}`permissions`—the role map each of them installs
+- {doc}`user-content`—where users live with and without `contenttypes`
+- {doc}`/concepts/layers`—why users as content is a profile of its own

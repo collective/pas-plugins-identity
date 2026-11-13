@@ -119,7 +119,20 @@ The importer makes four passes, and the order is not incidental.
 
 ## What is refused, and what is skipped
 
+<!-- source: backend/src/pas/plugins/identity/exportimport/schema.py -->
+<!-- source: backend/src/pas/plugins/identity/exportimport/importer.py -->
+
 A refusal stops the whole run and writes nothing: a malformed document, a document from a newer version, a user with no `userid`, an identity missing its provider or its subject, or a site with no identity plugin.
+
+A value of the wrong type is a malformed document, and the refusal names where it is, such as `users[3]['fullname'] is not text`:
+
+| Key | Must be |
+| --- | --- |
+| `userid`, `group_id`, an identity's `provider` and `subject` | Text, not empty |
+| `login`, `fullname`, `home_page`, `description`, `location`, a group's `title`, `description` and `container_group` | Text or `null` |
+| `emails`, `group_ids`, a group's `global_roles`, an identity's `groups` | A list of text, or `null` |
+| An identity's `claims` | An object, or `null` |
+| A user's `fields` | An object, when present |
 
 An identity naming a provider this site does not have is a refusal too, and it is the one worth knowing about.
 The provider id is half of every identity key, so importing against a site that spells it differently produces a set of accounts no login will ever reach.
@@ -134,8 +147,12 @@ A skip drops one record and keeps going, because one bad row must not stop the o
 | A field under `fields` that this site's user type lacks, or one no property map may write | The importing site's user type decides what a Profile has. The rest of the user is imported. |
 | A value under `fields` that its field refuses | Read back and validated the way the REST API reads it. The rest of the user is imported. |
 | An identity already linked to somebody else | Two people cannot both be the same identity, and moving it quietly is one of them taking the other's account. |
+| A new user or group whose id the container refuses, such as `../x`, `__init__` or `@@view` | The container's own check, asked before the write. |
+| A role in `global_roles` that this site does not define | The group is imported with the roles the site has. Granted, an undefined role would be stored and do nothing. |
+| A group filed inside a `container_group` that neither the document nor the site has | The group stays where it was created. |
 
 Every skip is listed in the result, so a large import reports what did not land instead of raising on the first surprise.
+A dry run reports the same refusals and the same skips as the run that writes, including an identity that two users in the same document both claim.
 
 Membership naming a group the document does not carry is applied without that group: it is logged, and the group is not created.
 A group nobody has stated the members and nesting of is a grant nobody decided on.
