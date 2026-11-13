@@ -508,6 +508,15 @@ class TestLocalPassword:
         """A userid ``source_users`` has never heard of has no password."""
         assert self.plugin.can_unlink("never-existed", *GITHUB_IDENTITY) is False
 
+    def test_a_plugin_predating_placeholders_gets_the_set(self):
+        """Installed before the set existed: asked, it makes one rather than
+        raising, and a real password still counts."""
+        del self.plugin._placeholder_passwords
+        self.plugin.link(self.member, *DEX_IDENTITY, CLAIMS)
+
+        assert self.plugin.can_unlink(self.member, *DEX_IDENTITY) is True
+        assert len(self.plugin.placeholder_passwords) == 0
+
 
 class TestCredentialsReset:
     @pytest.fixture(autouse=True)

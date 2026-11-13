@@ -21,7 +21,7 @@ from Products.GenericSetup.tool import SetupTool
 
 
 #: The profile these steps re-import from.
-PROFILE = "profile-pas.plugins.identity:default"
+PROFILE = "profile-pas.plugins.identity:contenttypes"
 
 
 def guard_account_details(context: SetupTool) -> None:

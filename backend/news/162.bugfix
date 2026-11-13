@@ -1,0 +1,1 @@
+Fixed a userid minted from a provider's username or address being handed out when it was already another account's login name. A site keeping its users in `source_users` refused the account, so the person's first sign-in, and every later one, failed. The name now gets a numeric suffix, as a taken userid already did. @ericof

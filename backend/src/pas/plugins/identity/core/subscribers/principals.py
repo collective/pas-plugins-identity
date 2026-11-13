@@ -9,7 +9,7 @@ come from. The types are then the site's to change; the paths never are.
 
 **Why a subscriber and not a value in ``registry.xml``.** Where Profiles live
 is itself configurable, and
-:func:`~pas.plugins.identity.setuphandlers.post_install` explains why
+:func:`~pas.plugins.identity.setuphandlers.post_install_contenttypes` explains why
 this package must not decide it at install time: a profile layered on top of
 this one -- a policy package, a demo, anything with its own ``registry.xml``
 -- sets the container's parent and id *after* this layer's handler has run.

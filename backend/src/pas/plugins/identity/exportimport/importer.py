@@ -56,6 +56,7 @@ from pas.plugins.identity.core.interfaces import IdentityCollision
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.principal_types import group_portal_type
 from pas.plugins.identity.core.principal_types import user_portal_type
+from pas.plugins.identity.core.principal_types import users_as_content
 from pas.plugins.identity.core.store import EMAIL_PROVIDER
 from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from pas.plugins.identity.core.verification import record_verified_addresses
@@ -63,6 +64,7 @@ from pas.plugins.identity.exportimport.fields import import_extra_fields
 from pas.plugins.identity.exportimport.schema import ExportImportError
 from pas.plugins.identity.exportimport.schema import GROUP_FIELDS
 from pas.plugins.identity.exportimport.schema import GROUP_ROLES_FIELD
+from pas.plugins.identity.exportimport.schema import NOT_CONTENT
 from pas.plugins.identity.exportimport.schema import Result
 from pas.plugins.identity.exportimport.schema import USER_EXTRA_FIELDS
 from pas.plugins.identity.exportimport.schema import USER_FIELDS
@@ -112,6 +114,39 @@ def _existing(portal_type: str, index: str, value: str):
     return brains[0]._unrestrictedGetObject() if brains else None
 
 
+def _unusable_id(kind: str, value: str) -> str:
+    """Say why a new principal cannot be filed under an id, if it cannot.
+
+    The id comes from the document, which says it is text and nothing more:
+    ``../x`` and ``__init__`` are both text. Asked of the container the object
+    would go into, by the container's own check, so the answer is the one
+    ``api.content.create`` would give -- before the write rather than in the
+    middle of it, and identically in a dry run.
+
+    A dry run may find no container yet, since a real run creates it on
+    first use. The id's syntax is then checked by Zope's own rules, which are
+    the first thing the container's check applies.
+
+    :param kind: :data:`~pas.plugins.identity.core.container.PROFILE` or
+        :data:`~pas.plugins.identity.core.container.GROUP`.
+    :param value: The id the principal would be filed under.
+    :returns: Why it cannot be, or the empty string when it can.
+    """
+    from OFS.ObjectManager import checkValidId
+    from zExceptions import BadRequest
+
+    container = get_container(kind=kind)
+    try:
+        if container is None:
+            # ``allow_dup`` skips the one check that reads the container.
+            checkValidId(None, value, allow_dup=True)
+        else:
+            container._checkId(value)
+    except BadRequest as error:
+        return str(error)
+    return ""
+
+
 def _apply_roles(obj, group: dict[str, Any]) -> None:
     """Grant the group the global roles the document names.
 
@@ -128,7 +163,25 @@ def _apply_roles(obj, group: dict[str, Any]) -> None:
     roles = IGlobalRoles(obj, None)
     if roles is None:  # pragma: no cover - the behavior is on the shipped type
         return
-    roles.global_roles = tuple(group.get(GROUP_ROLES_FIELD) or ())
+    undefined = set(_undefined_roles(group))
+    roles.global_roles = tuple(
+        role for role in group.get(GROUP_ROLES_FIELD) or () if role not in undefined
+    )
+
+
+def _undefined_roles(group: dict[str, Any]) -> list[str]:
+    """Return the roles a group record names that this site does not define.
+
+    Granted, an undefined role is stored and does nothing: no permission is
+    mapped to it, and nobody reading the group's roles can tell it apart from
+    one that matters. So it is reported and left out, as a group the document
+    names but the site lacks is -- in a dry run as well as a real one.
+
+    :param group: The group record.
+    :returns: The undefined roles, in the order named.
+    """
+    defined = set(api.portal.get().validRoles())
+    return [role for role in group.get(GROUP_ROLES_FIELD) or () if role not in defined]
 
 
 def _import_group(
@@ -145,6 +198,20 @@ def _import_group(
     group_id = group["group_id"]
     existing = _existing(group_portal_type(), "group_id", group_id)
     fields = {name: group.get(name) or "" for name in GROUP_FIELDS}
+
+    if existing is None:
+        problem = _unusable_id(GROUP, group_id)
+        if problem:
+            result.skipped.append(f"group {group_id}: {problem}")
+            return
+
+    # Only for a group that is written: one skipped above has no roles.
+    undefined = _undefined_roles(group)
+    if undefined:
+        result.skipped.append(
+            f"group {group_id}: roles this site does not define, not granted: "
+            f"{', '.join(undefined)}"
+        )
 
     if existing is not None:
         if not dry_run:
@@ -215,6 +282,11 @@ def _import_user(
         result.users.append(userid)
         return
 
+    problem = _unusable_id(PROFILE, userid)
+    if problem:
+        result.skipped.append(f"user {userid}: {problem}")
+        return
+
     if dry_run:
         result.skipped.extend(import_extra_fields(None, userid, extra, dry_run))
         result.users.append(userid)
@@ -255,14 +327,27 @@ def _apply_containment(group: dict[str, Any], result: Result, dry_run: bool) -> 
     invented, matching :func:`_apply_membership`: a group nobody stated is a
     piece of structure nobody decided on.
 
+    A dry run reports the same missing container a real run would. The groups
+    it would have written are in ``result.groups`` already, because this pass
+    runs after every group was considered.
+
     :param group: The group record.
     :param result: The result to record skips into.
     :param dry_run: Whether to write.
     """
     container_id = group.get("container_group") or ""
-    if not container_id or dry_run:
+    if not container_id:
         return
     group_id = group["group_id"]
+    if dry_run:
+        if (
+            container_id not in result.groups
+            and _existing(group_portal_type(), "group_id", container_id) is None
+        ):
+            result.skipped.append(
+                f"group {group_id}: no group {container_id!r} to file it inside"
+            )
+        return
     obj = _existing(group_portal_type(), "group_id", group_id)
     if obj is None:  # pragma: no cover - written a moment ago
         return
@@ -357,6 +442,19 @@ def _import_identities(
         provider = identity["provider"]
         subject = identity["subject"]
         owner = store.userid_for(provider, subject)
+        if owner is None:
+            # Claimed earlier in this document. A real run has linked it by
+            # now and the store says so; a dry run has written nothing, and
+            # without this would report two people holding one identity as
+            # fine.
+            owner = next(
+                (
+                    holder
+                    for name, key, holder in result.identities
+                    if (name, key) == (provider, subject)
+                ),
+                None,
+            )
 
         if owner == userid:
             # Already ours. This is what makes a second run a no-op.
@@ -504,6 +602,8 @@ def _preflight(document: Any, allow_unknown_providers: bool) -> tuple:
     """
     document = validate(document)
     plugin = _plugin()
+    if not users_as_content():
+        raise ExportImportError(NOT_CONTENT)
     if query_catalog() is None:
         raise ExportImportError(
             "This site has no identity catalog, so imported principals "

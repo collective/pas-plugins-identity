@@ -348,18 +348,16 @@ class IOwnsUserProperties(Interface):
     authoritative one for the users it serves, and it applies the provider's
     property map to them itself.
 
-    **Core no longer asks.** It used to: a fallback on the login path wrote
-    the mapped claims into ``portal_memberdata`` for a user nobody had
-    claimed, and this marker is what made it stand aside for one who had.
-    Every authenticated user gets a Profile now -- the layer that mints them
-    is not optional -- so the fallback was unreachable and was removed rather
-    than left as a branch no site can take.
+    **Core does not ask.** On a site that keeps its users as content, every
+    authenticated user gets a Profile and the Profile's own plugin applies the
+    map. On a site that does not -- one without :class:`IUsersAsContent` --
+    the identity plugin writes the mapped claims through the member's property
+    sheets instead, and there is no Profile plugin to stand aside for. The
+    two never run in the same site, so nothing has to arbitrate between them.
 
     The marker stays because it is the *layer's* declaration about its own
     sheet, and it is still true: a sheet at the top of the
-    ``IPropertiesPlugin`` order that wins reads is saying exactly this. What
-    it no longer does is switch off a second writer, because there is no
-    second writer.
+    ``IPropertiesPlugin`` order that wins reads is saying exactly this.
     """
 
 
@@ -609,4 +607,22 @@ class IIdentityProfileCatalog(Interface):
 
     The tool is looked up by this interface rather than by id, so a
     deployment may replace it wholesale.
+    """
+
+
+class IUsersAsContent(Interface):
+    """Marker for a Plone site that keeps its users and groups as content.
+
+    Provided by the site root, and only while the ``contenttypes`` profile is
+    installed: its import handler applies it and the uninstall handler takes
+    it away. Every decision that differs between the two kinds of site reads
+    this rather than inferring the answer from what happens to be present.
+
+    Inference is what this replaces. The catalog, the types and the type
+    records each answer a narrower question -- whether there is somewhere to
+    look, whether an object can be created, which type -- and on a site in
+    the middle of an install or an uninstall they disagree with each other.
+    A site whose users are not content still has users; it keeps them in
+    ``source_users`` and ``mutable_properties``, and the identity plugin
+    writes them there.
     """

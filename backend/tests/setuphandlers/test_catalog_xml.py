@@ -29,11 +29,11 @@ import pas.plugins.identity
 import pytest
 
 
-PROFILE = "pas.plugins.identity:default"
+PROFILE = "pas.plugins.identity:contenttypes"
 STEP = "identity-catalog"
 
 #: The shipped profile directory, which the context stub reads from.
-PROFILE_DIR = Path(pas.plugins.identity.__file__).parent / "profiles" / "default"
+PROFILE_DIR = Path(pas.plugins.identity.__file__).parent / "profiles" / "contenttypes"
 
 #: A catalog fragment adding one index and one column, which is the whole
 #: developer-facing promise: a new index is an edit to a file.
@@ -252,7 +252,9 @@ class TestTheStockStepCannotReachUs:
         """A ``catalog.xml`` here would be read by the stock step and applied
         to ``portal_catalog``, silently adding this package's indexes to the
         site catalog. It is not ignored; it is misdirected."""
-        profile = Path(pas.plugins.identity.__file__).parent / "profiles" / "default"
+        profile = (
+            Path(pas.plugins.identity.__file__).parent / "profiles" / "contenttypes"
+        )
 
         assert not (profile / "catalog.xml").exists()
         assert (profile / "identity-catalog.xml").exists()

@@ -1,0 +1,21 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    >
+
+  <!-- The default profile split into core and contenttypes. A site that had
+       default before has everything both install, and no record of either.
+       See the module docstring. -->
+  <genericsetup:upgradeSteps
+      profile="pas.plugins.identity:default"
+      source="1013"
+      destination="1014"
+      >
+    <genericsetup:upgradeStep
+        title="Record the core and contenttypes profiles as installed"
+        description="Marks both profiles installed at their own versions and marks the site as keeping its users as content. Imports nothing."
+        handler=".record_layer_profiles"
+        />
+  </genericsetup:upgradeSteps>
+
+</configure>

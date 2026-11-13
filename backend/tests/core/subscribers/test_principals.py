@@ -24,7 +24,7 @@ from pas.plugins.identity.core.pas.plugin import USER_CONTENT_TYPE_RECORD
 from pas.plugins.identity.core.subscribers.principals import container_path
 from pas.plugins.identity.core.subscribers.principals import on_folder_added
 from pas.plugins.identity.core.subscribers.principals import seed_type_records
-from pas.plugins.identity.setuphandlers import post_install
+from pas.plugins.identity.setuphandlers import post_install_contenttypes
 from plone import api
 from plone.registry.interfaces import IRegistry
 from zope.component import getUtility
@@ -145,17 +145,17 @@ class TestTheTypesAreTheSites:
         assert USER_CONTENT_TYPE_RECORD not in self.registry.records
 
     def test_a_reinstall_keeps_a_site_type(self):
-        """``post_install`` seeds; it does not overwrite."""
+        """``post_install_contenttypes`` seeds; it does not overwrite."""
         api.portal.set_registry_record(USER_CONTENT_TYPE_RECORD, "Person")
 
-        post_install(None)
+        post_install_contenttypes(None)
 
         assert record(USER_CONTENT_TYPE_RECORD) == "Person"
 
     def test_install_seeds_an_empty_record(self):
         api.portal.set_registry_record(USER_CONTENT_TYPE_RECORD, "")
 
-        post_install(None)
+        post_install_contenttypes(None)
 
         assert record(USER_CONTENT_TYPE_RECORD) == PROFILE_PORTAL_TYPE
 

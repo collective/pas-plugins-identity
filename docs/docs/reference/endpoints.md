@@ -71,6 +71,22 @@ can change.
 
 `@user-account` allows a caller asking about themselves without `Manage users`.
 
+### On a site without users as content
+
+<!-- source: backend/src/pas/plugins/identity/core/services/myprofile/__init__.py -->
+<!-- source: backend/src/pas/plugins/identity/core/services/groups/get.py -->
+<!-- source: backend/src/pas/plugins/identity/core/services/useraccount/get.py -->
+
+A site installed with the `core` profile alone has no Profiles and no content
+groups. The endpoints that read them answer as follows.
+
+| Endpoint | Answers |
+|---|---|
+| `@my-profile` | 200, with `profile` and `review_state` `null`, and `missing` and `emails` empty |
+| `@confirm-email` | 404, `No profile` |
+| `@group-members/<group id>` | 404, `Unknown group`, for every group |
+| `@user-account` | 200, with `profile_url` `null` and `emails` empty |
+
 ### `@confirm-email` refusals
 
 <!-- source: backend/src/pas/plugins/identity/core/services/myprofile/confirm.py -->

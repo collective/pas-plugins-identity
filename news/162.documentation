@@ -1,0 +1,1 @@
+Documented the `core` and `contenttypes` install profiles: a new guide to installing sign-in without users as content, what each profile installs and where its upgrades are offered, the `IUsersAsContent` site marker and what differs on a site without it, and the upgrade procedure, which now reapplies `core` and `contenttypes` rather than `default`. @ericof

@@ -70,7 +70,7 @@ class TestIdempotence:
 
     def test_post_install_runs_twice(self):
         """The whole handler, not just its parts."""
-        setuphandlers.post_install(Context())
+        setuphandlers.post_install_contenttypes(Context())
 
         indexes, columns = declared_catalog()
         assert set(self.catalog.indexes()) >= set(indexes)

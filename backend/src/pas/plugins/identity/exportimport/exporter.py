@@ -25,6 +25,7 @@ from pas.plugins.identity.core.interfaces import IGroupContent
 from pas.plugins.identity.core.pas import PLUGIN_ID
 from pas.plugins.identity.core.principal_types import group_portal_type
 from pas.plugins.identity.core.principal_types import user_portal_type
+from pas.plugins.identity.core.principal_types import users_as_content
 from pas.plugins.identity.core.utils.plugins import get as get_plugin
 from pas.plugins.identity.exportimport.fields import export_extra_fields
 from pas.plugins.identity.exportimport.schema import DOCUMENT_VERSION
@@ -32,6 +33,7 @@ from pas.plugins.identity.exportimport.schema import ExportImportError
 from pas.plugins.identity.exportimport.schema import GENERATOR
 from pas.plugins.identity.exportimport.schema import GROUP_FIELDS
 from pas.plugins.identity.exportimport.schema import GROUP_ROLES_FIELD
+from pas.plugins.identity.exportimport.schema import NOT_CONTENT
 from pas.plugins.identity.exportimport.schema import USER_EXTRA_FIELDS
 from pas.plugins.identity.exportimport.schema import USER_FIELDS
 from plone import api
@@ -79,8 +81,11 @@ def _objects_of_type(portal_type: str) -> list:
 
     :param portal_type: The type to find.
     :returns: The objects, in catalog order.
-    :raises ExportImportError: When the catalog is missing.
+    :raises ExportImportError: When the site does not keep its users as
+        content, or the catalog is missing.
     """
+    if not users_as_content():
+        raise ExportImportError(NOT_CONTENT)
     catalog = query_catalog()
     if catalog is None:
         raise ExportImportError(

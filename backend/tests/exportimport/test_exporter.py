@@ -10,11 +10,15 @@ from . import CLAIMS
 from . import PROVIDER
 from . import SUBJECT
 from . import USERID
+from pas.plugins.identity.core.catalog import CATALOG_ID
+from pas.plugins.identity.core.interfaces import IUsersAsContent
 from pas.plugins.identity.core.pas import PLUGIN_ID as CORE_PLUGIN_ID
 from pas.plugins.identity.exportimport import export_site
 from pas.plugins.identity.exportimport.schema import DOCUMENT_VERSION
 from pas.plugins.identity.exportimport.schema import ExportImportError
+from pas.plugins.identity.exportimport.schema import NOT_CONTENT
 from pas.plugins.identity.exportimport.schema import validate
+from zope.interface import noLongerProvides
 
 import json
 import pytest
@@ -114,3 +118,21 @@ class TestOnASiteWithoutTheAddOn:
             export_site()
 
         assert "no identity plugin" in str(error.value)
+
+    def test_a_site_without_users_as_content_is_refused(self, portal):
+        """A site installed with ``core`` alone has no Profiles to export."""
+        noLongerProvides(portal, IUsersAsContent)
+
+        with pytest.raises(ExportImportError) as error:
+            export_site()
+
+        assert str(error.value) == NOT_CONTENT
+
+    def test_a_site_that_lost_its_catalog_is_refused(self, portal):
+        """Marked, and the catalog gone: there is nothing to enumerate."""
+        portal._delObject(CATALOG_ID)
+
+        with pytest.raises(ExportImportError) as error:
+            export_site()
+
+        assert "no identity catalog" in str(error.value)

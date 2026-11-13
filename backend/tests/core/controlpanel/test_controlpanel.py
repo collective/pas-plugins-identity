@@ -111,8 +111,10 @@ class TestClassicView:
         form writes the records the rest of the package reads."""
         view = api.content.get_view("identity-controlpanel", self.portal, self.request)
 
-        assert view.form.schema is IIdentityPanelSchema
-        assert view.form.schema_prefix == "pas.plugins.identity"
+        form = view.form(self.portal, self.request)
+
+        assert form.schema is IIdentityPanelSchema
+        assert form.schema_prefix == "pas.plugins.identity"
 
     def test_view_renders(self):
         """Rendering is the only thing that catches a broken widget or a

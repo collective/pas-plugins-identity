@@ -13,6 +13,7 @@ Get the package running on a site, and keep it current.
 | Guide | Does |
 |---|---|
 | {doc}`backend` | Installs the Python package and applies its profile |
+| {doc}`authentication-only` | Installs sign-in alone, keeping users in Plone's own user folder |
 | {doc}`frontend` | Adds the Volto add-on to your frontend |
 | {doc}`upgrade` | Moves an existing site to a new release |
 
@@ -29,6 +30,7 @@ Install the backend first, then the frontend. Then add a provider: see
 :hidden: true
 
 backend
+authentication-only
 frontend
 upgrade
 ```

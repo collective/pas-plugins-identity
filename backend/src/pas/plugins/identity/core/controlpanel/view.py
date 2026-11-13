@@ -2,9 +2,9 @@
 
 The panel people are meant to use is the frontend one: it builds a form per
 provider out of that provider's driver schema, which no fixed schema can do.
-This form is the plain fallback -- a registry edit form over
-:class:`~pas.plugins.identity.core.controlpanel.interfaces.IIdentityPanelSchema`
--- so that a site without the frontend, or an operator already in the ZMI, has
+This form is the plain fallback -- a registry edit form over the panel schema
+:func:`~pas.plugins.identity.core.controlpanel.controlpanel.served_schema`
+picks -- so that a site without the frontend, or an operator already in the ZMI, has
 somewhere to go. It is also what the configlet's URL points at, so the entry
 in the Classic control panel leads to a real page rather than a 404.
 
@@ -14,14 +14,14 @@ up editable in one place and invisible in the other.
 """
 
 from pas.plugins.identity import _
-from pas.plugins.identity.core.controlpanel.interfaces import IIdentityPanelSchema
+from pas.plugins.identity.core.controlpanel.controlpanel import served_schema
 from plone.app.registry.browser import controlpanel
+from zope.interface import Interface
 
 
 class IdentitySettingsForm(controlpanel.RegistryEditForm):
     """Edit the identity settings as plain registry records."""
 
-    schema = IIdentityPanelSchema
     schema_prefix = "pas.plugins.identity"
     label = _("Identity providers")
     description = _(
@@ -29,6 +29,17 @@ class IdentitySettingsForm(controlpanel.RegistryEditForm):
         "list is stored as JSON; the frontend control panel edits it one "
         "provider at a time, with a form generated from each driver."
     )
+
+    @property
+    def schema(self) -> type[Interface]:
+        """Return the settings this site has records for.
+
+        The same answer the REST panel gives; see
+        :attr:`~pas.plugins.identity.core.controlpanel.controlpanel.IdentityConfigletPanel.schema`.
+
+        :returns: The panel schema.
+        """
+        return served_schema()
 
 
 class IdentitySettingsControlPanel(controlpanel.ControlPanelFormWrapper):

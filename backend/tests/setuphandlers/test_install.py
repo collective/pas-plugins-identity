@@ -1,10 +1,11 @@
-"""One profile installs the whole add-on.
+"""``default`` installs the whole add-on, as ``core`` plus ``contenttypes``.
 
-There used to be three, and two of them were named after packages rather than
-distributions so that the add-ons control panel would list them separately.
-What is left is the ``[server]`` layer, which is genuinely optional: its
-dependency is compiled, and a site that is not an authorization server has no
-reason to carry it.
+The add-ons control panel offers one thing: ``default``. The two profiles it
+is made of are hidden, and a site that wants authentication without users as
+content names ``core`` in its own ``metadata.xml``; that kind of site is
+tested in ``tests/core_only``. The ``[server]`` layer is the other optional
+part: its dependency is compiled, and a site that is not an authorization
+server has no reason to carry it.
 """
 
 from . import declared_catalog
@@ -45,6 +46,18 @@ class TestHiddenProfiles:
     )
     def test_uninstall_profiles_hidden(self, profile: str):
         """Uninstall profiles are reached through the add-on, not listed."""
+        assert profile in self.non_installable.profiles
+
+    @pytest.mark.parametrize(
+        "profile",
+        [
+            f"{PACKAGE_NAME}:core",
+            f"{PACKAGE_NAME}:contenttypes",
+        ],
+    )
+    def test_layer_profiles_hidden(self, profile: str):
+        """``default`` is both, so listing them would offer half the add-on
+        beside the whole of it under one name."""
         assert profile in self.non_installable.profiles
 
     def test_example_content_profile_hidden(self):
@@ -183,16 +196,29 @@ class TestSetupInstall:
 
     def test_latest_version(self, profile_last_version):
         """Test latest version of default profile."""
-        assert profile_last_version(f"{PACKAGE_NAME}:default") == "1013"
+        assert profile_last_version(f"{PACKAGE_NAME}:default") == "1014"
+
+    @pytest.mark.parametrize("profile", ["core", "contenttypes"])
+    def test_layer_profile_installed(self, profile_last_version, profile: str):
+        """``default`` holds no files: what it installs is its dependencies,
+        and each is recorded at its own version."""
+        assert profile_last_version(f"{PACKAGE_NAME}:{profile}") == "1000"
+
+    def test_site_is_marked(self):
+        """The marker is what every part of the package reads to decide that
+        users are content here."""
+        from pas.plugins.identity.core.interfaces import IUsersAsContent
+
+        assert IUsersAsContent.providedBy(self.portal)
 
 
 class TestBothPluginsInstalled:
-    """Two PAS plugins, and the one profile installs both.
+    """Two PAS plugins, and ``default`` installs both.
 
-    They used to arrive from two profiles, which meant a site could have the
-    authenticating half without the half that serves what a user *is*. The
-    symptom of that combination was a login that succeeded and returned a
-    principal nothing could describe.
+    ``core`` installs the authenticating one and ``contenttypes`` the one
+    that serves what a user *is*. A site with only ``core`` has no Profiles
+    to serve, and the identity plugin writes its users to ``source_users``
+    instead; see ``tests/core_only``.
     """
 
     @pytest.fixture(autouse=True)
@@ -249,7 +275,8 @@ class TestContentInstalled:
         """Install deliberately leaves it to the first person who needs one.
 
         Where Profiles live is a registry setting, and a profile layered on
-        top sets it *after* this handler has run. See ``post_install``.
+        top sets it *after* this handler has run. See
+        ``post_install_contenttypes``.
         """
         assert "identity-profiles" not in self.portal.objectIds()
 

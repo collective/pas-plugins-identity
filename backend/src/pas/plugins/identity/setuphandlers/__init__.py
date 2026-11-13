@@ -1,11 +1,24 @@
 """GenericSetup handlers.
 
-One ``default`` profile installs the whole add-on: the control panel, both PAS
-plugins, the two content types users and groups are, and the catalog they are
-filed in. There is no longer a second profile to remember, and no site where
-half of this is present.
+Two profiles install the add-on, and ``default`` is both of them:
 
-Every profile here has a matching uninstall profile, and uninstall is tested:
+``core``
+    The control panel, the ``identity`` PAS plugin and the settings it
+    reads. A site with nothing else keeps its users in ``source_users`` and
+    ``mutable_properties``, exactly as Plone does without this package.
+
+``contenttypes``
+    Users and groups as content: the two types, their workflows, the catalog
+    they are filed in, the ``identity_profile`` plugin that serves them, and
+    the marker on the site root that says all of this is here.
+
+``default`` names both as dependencies and holds nothing of its own, so the
+add-ons control panel -- which only ever installs a profile called
+``default`` -- installs the whole add-on, and a policy package that wants
+authentication alone depends on ``core`` instead.
+
+One ``uninstall`` profile removes both halves, because the add-ons control
+panel runs the profile of that name and no other. Uninstall is tested:
 install -> uninstall leaves no plugin behind and the site still works.
 """
 
@@ -15,6 +28,7 @@ from pas.plugins.identity.core.catalog import query_catalog
 from pas.plugins.identity.core.container import grant_add_permissions
 from pas.plugins.identity.core.controlpanel.interfaces import IIdentitySettings
 from pas.plugins.identity.core.controlpanel.interfaces import IProfileSettings
+from pas.plugins.identity.core.interfaces import IUsersAsContent
 from pas.plugins.identity.core.subscribers.principals import seed_type_records
 from pas.plugins.identity.core.subscribers.principals import sync_core_records
 from pas.plugins.identity.core.versioning import register_modifier
@@ -29,8 +43,20 @@ from plone.registry.interfaces import IRegistry
 from Products.GenericSetup.tool import SetupTool
 from Products.PluggableAuthService.PluggableAuthService import PluggableAuthService
 from zope.component import getUtility
+from zope.interface import alsoProvides
 from zope.interface import implementer
 from zope.interface import Interface
+from zope.interface import noLongerProvides
+
+
+#: The profile that installs authentication on its own.
+CORE_PROFILE = f"{PACKAGE_NAME}:core"
+
+#: The profile that installs users and groups as content.
+CONTENTTYPES_PROFILE = f"{PACKAGE_NAME}:contenttypes"
+
+#: The two profiles ``default`` is made of. An uninstall forgets both.
+LAYER_PROFILES = (CORE_PROFILE, CONTENTTYPES_PROFILE)
 
 
 @implementer(INonInstallable)
@@ -38,11 +64,18 @@ class HiddenProfiles:
     """Keep helper profiles out of the add-ons control panel."""
 
     def getNonInstallableProfiles(self) -> list[str]:
-        """Hide the uninstall profiles.
+        """Hide every profile but ``default``.
+
+        ``core`` and ``contenttypes`` are hidden as well as the uninstall
+        profiles. ``default`` is the two of them, and listing all three would
+        offer a button that installs half the add-on next to one that installs
+        all of it, under the same package name.
 
         :returns: Profile ids to hide.
         """
         return [
+            CORE_PROFILE,
+            CONTENTTYPES_PROFILE,
             f"{PACKAGE_NAME}:initial",
             f"{PACKAGE_NAME}:uninstall",
             f"{PACKAGE_NAME}.server:uninstall",
@@ -61,14 +94,11 @@ class HiddenProfiles:
 #: second, parallel set of records.
 SETTINGS_PREFIX = PACKAGE_NAME
 
-#: Every settings schema the ``default`` profile owns records for.
-SETTINGS_INTERFACES = (IIdentitySettings, IProfileSettings)
-
 
 def register_settings(interface: type[Interface]) -> None:
     """Create registry records for every field of a settings interface.
 
-    Called from ``post_install``, which makes a re-install self-healing: a
+    Called from the post handlers, which makes a re-install self-healing: a
     field added to the interface since the site was set up gets its record,
     with its schema default, without an upgrade step.
 
@@ -96,12 +126,25 @@ def _acl_users() -> PluggableAuthService:
     return api.portal.get_tool("acl_users")
 
 
-def post_install(context: SetupTool) -> None:
-    """Finish the install once the ``default`` profile is imported.
+def post_install_core(context: SetupTool) -> None:
+    """Finish the install once the ``core`` profile is imported.
 
-    Order matters. The settings come first because everything below reads
-    them; the catalog before the plugin that queries it; the core principal
-    records before anything asks where a user goes.
+    The settings first, because the plugin reads them.
+
+    :param context: The setup tool running the import.
+    """
+    register_settings(IIdentitySettings)
+    install_plugin(_acl_users())
+
+
+def post_install_contenttypes(context: SetupTool) -> None:
+    """Finish the install once the ``contenttypes`` profile is imported.
+
+    Order matters. The site is marked first, because the marker is what every
+    other part of the package reads to decide that users are content here.
+    Then the settings, because everything below reads them; the plugin that
+    queries the catalog after the import step that built it; the core
+    principal records before anything asks where a user goes.
 
     The Profile *container* is deliberately not created here. Where Profiles
     live is a registry setting, and a profile layered on top of this one -- a
@@ -114,15 +157,13 @@ def post_install(context: SetupTool) -> None:
 
     :param context: The setup tool running the import.
     """
-    for interface in SETTINGS_INTERFACES:
-        register_settings(interface)
+    alsoProvides(api.portal.get(), IUsersAsContent)
+    register_settings(IProfileSettings)
 
-    # The catalog's lexicon, indexes and columns are not built here any
-    # more: ``identity-catalog.xml`` declares them and the ``identity-catalog``
+    # The catalog's lexicon, indexes and columns are not built here:
+    # ``identity-catalog.xml`` declares them and the ``identity-catalog``
     # import step has already applied it by the time this post handler runs.
-    acl_users = _acl_users()
-    install_plugin(acl_users)
-    install_profile_plugin(acl_users)
+    install_profile_plugin(_acl_users())
 
     # Both principal types are versionable, and CMFEditions deep-copies
     # annotations -- which is where the optional password behavior keeps its
@@ -174,12 +215,22 @@ def post_uninstall(context: SetupTool) -> None:
     delete everyone's account data, so the Profiles and their container stay.
     The same reasoning already governs provider deletion in the control panel.
 
+    The two layer profiles are forgotten as well as the plugins. The add-ons
+    control panel unmarks ``default`` and nothing else, and GenericSetup
+    *upgrades* a dependency it believes is installed rather than applying it.
+    Left marked, ``core`` and ``contenttypes`` would make the next install a
+    no-op that brought back neither the types nor the plugins.
+
     :param context: The setup tool running the import.
     """
     acl_users = _acl_users()
     uninstall_profile_plugin(acl_users)
     uninstall_plugin(acl_users)
     unregister_modifier(api.portal.get_tool("portal_modifier"))
+    noLongerProvides(api.portal.get(), IUsersAsContent)
+    setup = api.portal.get_tool("portal_setup")
+    for profile_id in LAYER_PROFILES:
+        setup.unsetLastVersionForProfile(profile_id)
     # The records naming the user and group types are removed declaratively,
     # by this profile's ``registry.xml``. Blanking them here as well would run
     # after they are already gone, and ``set_registry_record`` raises for a

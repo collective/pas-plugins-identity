@@ -15,6 +15,32 @@ The mechanism that lets a Dexterity type *be* a user.
 For why it is built this way, read {doc}`/concepts/users-as-content`. For the
 types this package ships on top of it, read {doc}`profiles-and-groups`.
 
+(reference-users-as-content-marker)=
+
+## The site marker
+
+<!-- source: backend/src/pas/plugins/identity/core/interfaces.py, IUsersAsContent -->
+<!-- source: backend/src/pas/plugins/identity/core/principal_types.py, users_as_content -->
+
+The `pas.plugins.identity:contenttypes` profile marks the site root with
+`IUsersAsContent`, and its uninstall removes the marker.
+`users_as_content()` in `pas.plugins.identity.core.principal_types` answers
+whether the current site carries it.
+
+Everything that differs between a site that keeps its users as content and one
+that does not reads the marker.
+
+| | Marked: `default`, or `core` plus `contenttypes` | Not marked: `core` alone |
+|---|---|---|
+| A federated first sign-in creates | A `UserProfile`, through a subscriber | A `source_users` account with a random placeholder password |
+| An identity whose account was deleted | Gets its Profile back from the same subscriber, with a warning | Gets its `source_users` account back, with a warning |
+| The provider's property map writes to | The Profile, through the subscriber | The member's properties, only into empty ones |
+| The user's `email` | Chosen by the user among the provider's addresses, when the site asks | The first address the provider offers |
+| A placeholder password counts as a way in, when unlinking the last identity | Not applicable | No |
+| The **Settings** form shows | `IIdentitySettings` and `IProfileSettings` | `IIdentitySettings` only |
+| `@@identity-profile-url` answers | The user's Profile, or nothing | Volto's `personal-information` form |
+| Exporting or importing principals | Works | Refused, naming the `contenttypes` profile |
+
 ## Registry records
 
 <!-- source: backend/src/pas/plugins/identity/core/pas/plugin.py -->
@@ -185,8 +211,10 @@ left where they are.
 | `identity` | Creates user and group objects, and authenticates. |
 | `identity_profile` | Enumerates them, lists them, serves their properties, and deletes them. |
 
-Installing the package installs both. One without the other gives you a user that
-cannot be found: PAS looks a principal back up immediately after adding it.
+`pas.plugins.identity:default` installs both: `identity` comes with `core` and
+`identity_profile` with `contenttypes`. A site with `core` alone has
+`identity` only, and keeps its users in `source_users`; see
+{ref}`reference-users-as-content-marker`.
 
 <!-- source: backend/src/pas/plugins/identity/core/pas/profile.py, IUserIntrospection -->
 
@@ -245,11 +273,12 @@ When the adaptation succeeds, core writes nothing to `source_users`.
 | Situation | Result |
 |---|---|
 | An empty password | Never stored anywhere. |
-| An externally authenticated user | No `source_users` account. The content object is the record they are. |
+| An externally authenticated user | No `source_users` account. The content object is the record they are. On a site without the marker, a `source_users` account with a placeholder password. |
 | Nothing claims the login | The login still succeeds. The principal exists as an identity and nothing else, and a warning names the type that was not created. |
 
 A subscriber to `IExternalIdentityAuthenticated` creates the object—this
-package's own, or yours. The plugin writes nothing itself.
+package's own, or yours. On a site that keeps its users as content the plugin
+writes nothing itself.
 
 ```{warning}
 **Never store a credential in a Dexterity field.** A field is serialized by

@@ -139,7 +139,8 @@ fields set for a realm:
 
 The identity is recorded against `sub`, so a username the realm renames later
 does not break the sign-in. The Plone userid keeps the name it was created with,
-and a username already taken in Plone gets a numeric suffix.
+and a username already taken in Plone, as a user id or as a login name, gets a
+numeric suffix.
 
 ```{warning}
 A trusted verification is what an existing account is attached to. A realm

@@ -1,11 +1,12 @@
 """The registry records this package owns, as a schema.
 
 Everything configurable lives under the ``pas.plugins.identity`` prefix, and
-this interface is the single description of what each record is for. The
-GenericSetup profile imports it -- see
-``profiles/default/registry/pas.plugins.identity.core.controlpanel.interfaces.IIdentitySettings.xml``
--- and the control panel renders its form from it, so a record added here is
-a record the site knows about everywhere.
+these interfaces are the single description of what each record is for. The
+GenericSetup profiles import them -- ``core`` the records of
+:class:`IIdentitySettings`, ``contenttypes`` those of
+:class:`IProfileSettings`, each from a file under its ``registry/`` folder
+named for the interface -- and the control panel renders its form from them,
+so a record added here is a record the site knows about everywhere.
 """
 
 from copy import copy
@@ -748,6 +749,35 @@ class IIdentityPanelSchema(IProfileSettings, IIdentitySettings):
     user_container_path = _read_only(IIdentitySettings["user_container_path"])
     group_content_type = _read_only(IIdentitySettings["group_content_type"])
     group_container_path = _read_only(IIdentitySettings["group_container_path"])
+
+
+class IIdentityCorePanelSchema(IIdentitySettings):
+    """The panel schema of a site that does not keep its users as content.
+
+    :class:`IIdentityPanelSchema` without :class:`IProfileSettings`. Those
+    records are created by the ``contenttypes`` profile, and a panel naming
+    them on a site that does not have them fails as a whole:
+    ``registry.forInterface`` raises for the first field it finds no record
+    for, so the login settings would be unreachable too.
+
+    The four derived records stay read-only here for the same reason they are
+    on the full schema. On this kind of site they are empty, and stay empty.
+    """
+
+    user_content_type = _read_only(IIdentitySettings["user_content_type"])
+    user_container_path = _read_only(IIdentitySettings["user_container_path"])
+    group_content_type = _read_only(IIdentitySettings["group_content_type"])
+    group_container_path = _read_only(IIdentitySettings["group_container_path"])
+
+
+def panel_schema(as_content: bool) -> type[Interface]:
+    """Return the schema the control panel serves on a kind of site.
+
+    :param as_content: Whether the site keeps its users as content.
+    :returns: :class:`IIdentityPanelSchema` when it does, and
+        :class:`IIdentityCorePanelSchema` when it does not.
+    """
+    return IIdentityPanelSchema if as_content else IIdentityCorePanelSchema
 
 
 class IIdentityControlpanel(IControlpanel):

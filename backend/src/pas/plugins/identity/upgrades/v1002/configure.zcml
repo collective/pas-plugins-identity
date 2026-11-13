@@ -23,6 +23,7 @@
       >
     <genericsetup:upgradeDepends
         title="Put the Profile's email and personal fields on behaviors"
+        import_profile="pas.plugins.identity:contenttypes"
         import_steps="typeinfo"
         />
     <genericsetup:upgradeStep
