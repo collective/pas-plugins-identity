@@ -1,1 +1,0 @@
-Documented handing the session token to a local application from the login page: the request, which `return_url` values count as loopback, what is refused, and the `store_tokens` caveat. @ericof

@@ -8,6 +8,28 @@
 
 <!-- towncrier release notes start -->
 
+## 1.0.0-alpha.17 (2026-11-20)
+
+
+### Feature
+
+- Switched the login page and the sign-in block to plone.restapi's `GET @login`, the listing every login plugin feeds, keeping only this add-on's options. The email form and the redirect buttons are told apart by the option's `flow`, and the buttons are drawn from its `style`. Added the `LoginOption` and `LoginFlow` types, the `listLoginOptions` action and the `loginOptions` reducer. @ericof [#167](https://github.com/collective/pas-plugins-identity/issues/167)
+- The login page hands the session token to an application on the person's own computer, such as a command-line tool, with the same contract as `volto-authomatic`: `/login?return_url=<loopback URL>&state=<state>`, then a form POST of `token` and `state` to that URL. A new `/login-handoff` page asks the person first, after any way of signing in and also when they arrive already signed in. Only `http` URLs on `127.0.0.1`, `[::1]` or `localhost` with a port are accepted, and only with a `state`. @ericof [#171](https://github.com/collective/pas-plugins-identity/issues/171)
+
+
+### Bugfix
+
+- Fixed the profile gate and the first sign-in sending a user to `/plone/identity-profiles/...`, a page that does not exist, when Volto reaches the backend directly rather than through a proxy. Both now strip Volto's configured API path from the profile's address. @ericof [#155](https://github.com/collective/pas-plugins-identity/issues/155)
+- Darkened the Plone sign-in button's background to `#007db6`, so its white label meets the 4.5:1 contrast WCAG asks for. It was 4.21:1. @ericof [#155](https://github.com/collective/pas-plugins-identity/issues/155)
+- Fixed the profile edit form showing the site's fields instead of the profile's when the profile gate held a user right after signing in. The gate redirected a second time while Volto was still loading the first redirect, and Volto then built the form before the profile had arrived. @ericof [#156](https://github.com/collective/pas-plugins-identity/issues/156)
+
+
+### Tests
+
+- Added acceptance tests for the login screen, the sign-in block, the providers and groups pages, a user's account, every route's accessibility and hydration, and the Portuguese interface. They run against the add-on's own backend test layer, which resets the site between tests and captures mail. @ericof [#155](https://github.com/collective/pas-plugins-identity/issues/155)
+- Added acceptance tests that sign in through a real OpenID Connect provider (Dex): the round trip, the profile gate on a first sign-in, linking and removing a second sign-in method, verifying an address through its mailed link, the provider connection test, and the user menu. @ericof [#156](https://github.com/collective/pas-plugins-identity/issues/156)
+- Added acceptance tests for the authorization server's screens: registering a client and seeing its secret once, allowing and denying a request on the consent screen, and withdrawing an application's access. @ericof [#157](https://github.com/collective/pas-plugins-identity/issues/157)
+
 ## 1.0.0-alpha.16 (2026-11-08)
 
 

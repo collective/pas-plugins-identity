@@ -7,6 +7,78 @@
 -->
 
 <!-- towncrier release notes start -->
+## 1.0.0a17 (2026-11-20)
+
+### Backend
+
+
+#### Breaking
+
+- Split the `pas.plugins.identity:default` profile into `pas.plugins.identity:core`, with the control panel and the `identity` PAS plugin, and `pas.plugins.identity:contenttypes`, with the user and group content types, their workflows, the catalog and the `identity_profile` PAS plugin. `default` now holds no files and depends on both, so installing it installs the whole add-on as before, and a policy package that depends on it needs no change. Reapplying `default` no longer reapplies anything, because GenericSetup upgrades a dependency that is already installed: to reapply the add-on's configuration, apply `core` and then `contenttypes`, or uninstall and install it from the add-ons control panel. Upgrade step 1014 records both profiles as installed on an existing site and marks the site as keeping its users as content, importing nothing. `rebuild-catalog` and `initial` now depend on `contenttypes`, and the install handler `post_install` is now `post_install_core` and `post_install_contenttypes`. @ericof [#162](https://github.com/collective/pas-plugins-identity/issues/162)
+
+
+#### Feature
+
+- Made users and groups as content optional. A site that depends on `pas.plugins.identity:core` alone keeps its users in Plone's own `source_users` and `mutable_properties`: a federated first sign-in creates a `source_users` account with a random password nobody knows, which does not count as a way in when unlinking the last identity, and writes the provider's name and first offered address to the member's properties. The provider's property map is applied to empty properties on every sign-in, writing text only: a number becomes text, a list, an object or a boolean is not written, and a value a property refuses is logged and skipped rather than failing the sign-in. Group maps write to `source_groups`, and an identity whose account was deleted gets it back. Before, such a sign-in answered HTTP 500. On these sites the Identity providers control panel leaves out the Profile settings, the Profile entry of the user menu opens Volto's personal information form, and exporting or importing principals is refused with a message naming the `contenttypes` profile. Which kind of site it is comes from the new `IUsersAsContent` marker on the site root, which the `contenttypes` profile sets and its uninstall removes. @ericof [#162](https://github.com/collective/pas-plugins-identity/issues/162)
+- Added the login providers to plone.restapi's `GET @login`, where `pas.plugins.oidc` and `pas.plugins.authomatic` list theirs, so a client written against it finds them. Each entry carries `id`, `plugin` (`identity`), `title` and `url`, plus the `driver` and the button's icon and colours under `style`. A `flow` key says what `url` is: `redirect` for `@login-providers/<id>`, `email` for `@magic-link`. @ericof [#167](https://github.com/collective/pas-plugins-identity/issues/167)
+
+
+#### Bugfix
+
+- Fixed the consent screen sending its answer to the frontend's address when the site is reached through Volto's proxy. `@oauth-consent` now returns the authorization endpoint under the configured issuer, the one discovery names, and falls back to the site's address only when no issuer is set. @ericof [#157](https://github.com/collective/pas-plugins-identity/issues/157)
+- Fixed importing a principal document that held a value of the wrong type, an id the site cannot use, or a role it does not define. The dry run reported such a document fine, and the import then failed partway through. Now a wrong type refuses the document before anything is written, naming the record and the key. A user or group whose id its container refuses is skipped, and a role the site does not define is left out and reported. A dry run now also reports a group whose `container_group` does not exist, and an identity claimed by two users in the same document, as the import does. @ericof [#162](https://github.com/collective/pas-plugins-identity/issues/162)
+- Fixed a userid minted from a provider's username or address being handed out when it was already another account's login name. A site keeping its users in `source_users` refused the account, so the person's first sign-in, and every later one, failed. The name now gets a numeric suffix, as a taken userid already did. @ericof [#162](https://github.com/collective/pas-plugins-identity/issues/162)
+- Fixed the Identity providers control panel failing with a `KeyError` on a site that keeps its users as content but lacks a Profile setting's registry record. The panel now leaves the Profile settings out and logs a warning naming the profile step to reapply, so the other settings stay editable. @ericof [#162](https://github.com/collective/pas-plugins-identity/issues/162)
+
+
+#### Tests
+
+- Added `pas.plugins.identity.testing.ACCEPTANCE_TESTING`, the layer the Volto add-on's browser tests run against. It installs `plone.volto` and the authorization server, adds a virtual host monster so Volto can proxy to it, and points the sign-in callback, the issuer and the consent screen at the test servers. @ericof [#155](https://github.com/collective/pas-plugins-identity/issues/155)
+- Added a test that a token minted at sign-in renews through plone.restapi's `@login-renew`, which is how a command-line tool handed that token keeps it alive. @ericof [#171](https://github.com/collective/pas-plugins-identity/issues/171)
+
+
+
+### Frontend
+
+
+#### Feature
+
+- Switched the login page and the sign-in block to plone.restapi's `GET @login`, the listing every login plugin feeds, keeping only this add-on's options. The email form and the redirect buttons are told apart by the option's `flow`, and the buttons are drawn from its `style`. Added the `LoginOption` and `LoginFlow` types, the `listLoginOptions` action and the `loginOptions` reducer. @ericof [#167](https://github.com/collective/pas-plugins-identity/issues/167)
+- The login page hands the session token to an application on the person's own computer, such as a command-line tool, with the same contract as `volto-authomatic`: `/login?return_url=<loopback URL>&state=<state>`, then a form POST of `token` and `state` to that URL. A new `/login-handoff` page asks the person first, after any way of signing in and also when they arrive already signed in. Only `http` URLs on `127.0.0.1`, `[::1]` or `localhost` with a port are accepted, and only with a `state`. @ericof [#171](https://github.com/collective/pas-plugins-identity/issues/171)
+
+
+#### Bugfix
+
+- Fixed the profile gate and the first sign-in sending a user to `/plone/identity-profiles/...`, a page that does not exist, when Volto reaches the backend directly rather than through a proxy. Both now strip Volto's configured API path from the profile's address. @ericof [#155](https://github.com/collective/pas-plugins-identity/issues/155)
+- Darkened the Plone sign-in button's background to `#007db6`, so its white label meets the 4.5:1 contrast WCAG asks for. It was 4.21:1. @ericof [#155](https://github.com/collective/pas-plugins-identity/issues/155)
+- Fixed the profile edit form showing the site's fields instead of the profile's when the profile gate held a user right after signing in. The gate redirected a second time while Volto was still loading the first redirect, and Volto then built the form before the profile had arrived. @ericof [#156](https://github.com/collective/pas-plugins-identity/issues/156)
+
+
+#### Tests
+
+- Added acceptance tests for the login screen, the sign-in block, the providers and groups pages, a user's account, every route's accessibility and hydration, and the Portuguese interface. They run against the add-on's own backend test layer, which resets the site between tests and captures mail. @ericof [#155](https://github.com/collective/pas-plugins-identity/issues/155)
+- Added acceptance tests that sign in through a real OpenID Connect provider (Dex): the round trip, the profile gate on a first sign-in, linking and removing a second sign-in method, verifying an address through its mailed link, the provider connection test, and the user menu. @ericof [#156](https://github.com/collective/pas-plugins-identity/issues/156)
+- Added acceptance tests for the authorization server's screens: registering a client and seeing its secret once, allowing and denying a request on the consent screen, and withdrawing an application's access. @ericof [#157](https://github.com/collective/pas-plugins-identity/issues/157)
+
+
+
+### Project
+
+
+#### Documentation
+
+- Documented the `core` and `contenttypes` install profiles: a new guide to installing sign-in without users as content, what each profile installs and where its upgrades are offered, the `IUsersAsContent` site marker and what differs on a site without it, and the upgrade procedure, which now reapplies `core` and `contenttypes` rather than `default`. @ericof [#162](https://github.com/collective/pas-plugins-identity/issues/162)
+- Documented the entries this package adds to `GET @login` in the endpoint reference, and updated the guides that said the login page is built from `@login-providers`. @ericof [#167](https://github.com/collective/pas-plugins-identity/issues/167)
+- Documented handing the session token to a local application from the login page: the request, which `return_url` values count as loopback, what is refused, and the `store_tokens` caveat. @ericof [#171](https://github.com/collective/pas-plugins-identity/issues/171)
+
+
+#### Tests
+
+- Ran the Volto add-on's acceptance tests against the add-on's own backend test layer, with the frontend proxying to the backend as in production. @ericof [#155](https://github.com/collective/pas-plugins-identity/issues/155)
+- Started Dex beside the acceptance backend, locally with `make acceptance-dex-start` and in CI, so the browser tests can sign in through a real OpenID Connect provider. @ericof [#156](https://github.com/collective/pas-plugins-identity/issues/156)
+
+
+
 ## 1.0.0a16 (2026-11-08)
 
 ### Backend
