@@ -41,7 +41,7 @@ from pas.plugins.identity.setuphandlers.plugins import uninstall_profile_plugin
 from plone import api
 from plone.app.testing import TEST_USER_ID
 from plone.restapi.interfaces import ILoginProviders
-from zope.component import getAdapters
+from zope.component import getAdapter
 from zope.interface import noLongerProvides
 
 import pytest
@@ -278,15 +278,17 @@ class TestAddressHelpersAreInert:
 
 
 def ours(portal) -> list[dict]:
-    """Return this package's ``@login`` options, looked up as the service does.
+    """Return this package's ``@login`` options, from its named adapter.
+
+    By name rather than by collecting every adapter as the service does:
+    other plugins' adapters are not this test's subject, and
+    ``pas.plugins.authomatic`` 3 raises on a site where it is not installed.
 
     :param portal: The Plone site.
-    :returns: The options whose ``plugin`` is ours.
+    :returns: This package's options.
     """
-    options = []
-    for _name, adapter in getAdapters((portal,), ILoginProviders):
-        options.extend(adapter.get_providers())
-    return [e for e in options if e["plugin"] == "identity"]
+    adapter = getAdapter(portal, ILoginProviders, name="pas-plugins-identity-providers")
+    return adapter.get_providers()
 
 
 class TestLoginOptionsAreInert:

@@ -1,8 +1,9 @@
 """The providers as options of plone.restapi's ``GET @login``.
 
-Asked through plone.restapi's own service rather than the adapter, because
-what a client sees is whatever ``getAdapters`` finds: an adapter that is
-right but not registered would pass a test of the class and list nothing.
+Asked through the component registry rather than by building the class,
+because what a client sees is whatever plone.restapi's ``getAdapters`` finds:
+an adapter that is right but not registered would pass a test of the class
+and list nothing. Asked by name, so other plugins' adapters stay out of it.
 """
 
 from .. import body
@@ -14,7 +15,7 @@ from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.services.login.get import LoginProviders
 from pas.plugins.identity.core.services.magiclink.post import MagicLinkSend
 from plone.restapi.interfaces import ILoginProviders
-from zope.component import getAdapters
+from zope.component import getAdapter
 
 import pytest
 
@@ -34,19 +35,23 @@ SECOND_PROVIDER = {
 }
 
 
+#: The name the adapter is registered under in ``configure.zcml``.
+ADAPTER_NAME = "pas-plugins-identity-providers"
+
+
 def login_options(portal) -> list[dict]:
-    """Collect the ``@login`` options the way plone.restapi's service does.
+    """Return this package's ``@login`` options, looked up as the service does.
 
     plone.rest builds the service class itself, so it cannot be constructed
-    here; its whole body is this lookup over every named adapter.
+    here. The service collects every named ``ILoginProviders`` adapter; this
+    asks for ours by name, which still proves the registration, and keeps out
+    other plugins' adapters -- ``pas.plugins.authomatic`` 3 raises on a site
+    where it is not installed.
 
     :param portal: The Plone site.
-    :returns: Every option, from every plugin.
+    :returns: This package's options.
     """
-    options: list[dict] = []
-    for _name, adapter in getAdapters((portal,), ILoginProviders):
-        options.extend(adapter.get_providers())
-    return options
+    return getAdapter(portal, ILoginProviders, name=ADAPTER_NAME).get_providers()
 
 
 def login_providers_service(portal, request, provider_id: str | None = None):
