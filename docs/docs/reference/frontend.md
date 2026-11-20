@@ -53,6 +53,7 @@ Storybook is built from this repository and published beside these pages.
 | `/login-identity` | `CALLBACK_PATH` | `Callback` | core |
 | `/first-login` | `FIRST_LOGIN_PATH` | `FirstLogin` | core |
 | `/confirm-email` | `CONFIRM_EMAIL_PATH` | `ConfirmEmail` | core |
+| `/login-handoff` | `HANDOFF_PATH` | `Handoff` | core |
 | `/fallback_login` | `FALLBACK_LOGIN_PATH` | Volto's own `Login` | core |
 | `/identities` | `IDENTITIES_PATH` | `Identities` | core |
 | `/controlpanel/identity-providers` | `CONTROLPANEL_PATH` | `ProvidersControlPanel` | core |
@@ -168,6 +169,55 @@ A start that fails shows its error over the button rather than starting again.
 
 `/login-identity` links to `/login?choose=1` when it reports a failure, so a
 sign-in the provider refused does not go straight back to that provider.
+
+(reference-frontend-handoff)=
+
+## Handing the token to a local application
+
+<!-- source: frontend/packages/volto-identity/src/helpers/handoff.ts -->
+<!-- source: frontend/packages/volto-identity/src/components/Login/Login.tsx -->
+<!-- source: frontend/packages/volto-identity/src/components/Handoff/Handoff.tsx -->
+<!-- source: frontend/packages/volto-identity/src/components/Handoff/HandoffPanel.tsx -->
+
+A command-line tool on the person's own computer can ask the login page for a
+token. The contract is the one `volto-authomatic` defines, so one client works
+against both add-ons.
+
+| Step | Value |
+|---|---|
+| The tool opens | `/login?return_url=<loopback URL>&state=<state>` |
+| After sign-in | `/login-handoff` asks the person to allow or deny it |
+| On Allow | The browser posts `token` and `state` to the loopback URL, as `application/x-www-form-urlencoded` |
+| On Deny | Nothing is sent, and the person goes to the site root |
+
+A `return_url` is a loopback URL when all of these hold:
+
+| Part | Must be |
+|---|---|
+| Scheme | `http` |
+| Host | `127.0.0.1`, `[::1]` or `localhost` |
+| Port | Present |
+| User name and password | Absent |
+
+| Request | What happens |
+|---|---|
+| A loopback `return_url` with one non-empty `state` | Kept until the consent page |
+| A loopback `return_url` without a `state`, with an empty one, or with two | Refused: the sign-in goes on, and lands on the site root |
+| Two `return_url` values | Refused, as above |
+| Any other absolute `return_url` | Not a handoff; lands on the site root |
+| Visitor already signed in | Sent to `/login-handoff` straight away |
+
+The token is the browser's own session token, the one
+`plone.restapi`'s `@login-renew` accepts. With the JWT plugin's `store_tokens` on, renewing it
+deletes the token it replaces, which signs the browser out. `store_tokens` is
+off by default.
+
+The pending request is kept in the `identity_handoff` cookie for 30 minutes,
+across a provider redirect, an emailed magic link and the profile gate. It
+never reaches the backend. Any other visit to `/login` forgets it, except
+`/login?choose=1`.
+
+`/login-handoff` is not one of the profile gate's exempt paths.
 
 ## Expansion on content requests
 

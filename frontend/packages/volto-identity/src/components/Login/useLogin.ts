@@ -20,6 +20,7 @@ import {
 } from '../../actions';
 import { login } from '@plone/volto/actions/userSession/userSession';
 
+import { afterSignIn } from '../../helpers/handoff';
 import { goTo } from '../../helpers/navigate';
 import { returnUrl } from '../../helpers/returnUrl';
 import { showPloneLogin } from '../../helpers/showPloneLogin';
@@ -141,7 +142,7 @@ export function useLogin(): LoginState {
   useEffect(() => {
     const token = userSession?.token;
     if (token && token !== sessionOnArrival) {
-      goTo(returnUrl(location.search, location.pathname), push);
+      goTo(afterSignIn(returnUrl(location.search, location.pathname)), push);
     }
   }, [
     userSession?.token,

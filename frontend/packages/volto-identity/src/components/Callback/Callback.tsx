@@ -30,6 +30,7 @@ import { IDENTITIES_PATH } from '../../config/routes';
 import LoginPanel from '../Login/LoginPanel';
 
 import './Callback.scss';
+import { afterSignIn } from '../../helpers/handoff';
 import { goTo } from '../../helpers/navigate';
 
 const messages = defineMessages({
@@ -147,7 +148,8 @@ const Callback: React.FC<CallbackProps> = ({ onToken }) => {
     // that was rendered for an anonymous user, which is what the page load
     // this used to do was standing in for. `came_from` arrives in a query
     // string, so `goTo` is also what stops it being an open redirect.
-    goTo(cameFrom || '/', push);
+    // A pending handoff (`helpers/handoff`) goes to its consent page instead.
+    goTo(afterSignIn(cameFrom || '/'), push);
   }, [answered, onToken, dispatch, push]);
 
   // Every backend refusal reads the same on purpose: expired, replayed,

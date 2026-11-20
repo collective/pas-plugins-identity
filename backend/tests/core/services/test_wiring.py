@@ -17,6 +17,7 @@ from pas.plugins.identity.core.container import GROUP
 from pas.plugins.identity.core.controlpanel import CALLBACK_URL_RECORD
 from pas.plugins.identity.core.controlpanel import ProviderConfig
 from pas.plugins.identity.core.controlpanel import set_providers
+from pas.plugins.identity.core.services.jwt import mint_token
 from plone import api
 from plone.app.testing import SITE_OWNER_NAME
 from plone.app.testing import SITE_OWNER_PASSWORD
@@ -407,3 +408,54 @@ class TestThePrincipalServicesArePublished:
 
         assert response.status_code == 401
         assert response.headers["Content-Type"].startswith("application/json")
+
+
+class TestASignInTokenRenews:
+    """The token a sign-in mints is the one a local application is handed.
+
+    The frontend hands the session token to an application on the person's
+    computer (#171), and that application keeps it alive with plone.restapi's
+    ``@login-renew``. Minted here, by the same code the provider callback and
+    the magic link use, and renewed through the publisher.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, portal, url: str, principals: str) -> None:
+        self.url = url
+        self.token = mint_token(principals)
+
+    def renew(self, token: str) -> requests.Response:
+        """Ask ``@login-renew`` for a fresh token.
+
+        :param token: The token to present.
+        :returns: The response.
+        """
+        return requests.post(
+            f"{self.url}/@login-renew",
+            headers={
+                "Accept": "application/json",
+                "Authorization": f"Bearer {token}",
+            },
+            timeout=30,
+        )
+
+    def test_renews(self):
+        response = self.renew(self.token)
+
+        assert response.status_code == 200
+        assert response.json()["token"]
+
+    def test_the_renewed_token_signs_in_as_the_same_person(self):
+        renewed = self.renew(self.token).json()["token"]
+
+        response = requests.get(
+            f"{self.url}/@users/{USERID}",
+            headers={
+                "Accept": "application/json",
+                "Authorization": f"Bearer {renewed}",
+            },
+            timeout=30,
+        )
+
+        assert response.status_code == 200
+        assert response.json()["id"] == USERID

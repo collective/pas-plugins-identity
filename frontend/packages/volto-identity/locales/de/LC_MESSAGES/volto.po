@@ -52,8 +52,14 @@ msgstr "Hinzufügen {item}"
 
 #. Default: "Allow"
 #: components/Consent/ConsentPanel
+#: components/Handoff/HandoffPanel
 msgid "Allow"
 msgstr "Erlauben"
+
+#. Default: "Allow an application on this computer to use your account?"
+#: components/Handoff/HandoffPanel
+msgid "Allow an application on this computer to use your account?"
+msgstr "Einer Anwendung auf diesem Computer erlauben, Ihr Konto zu verwenden?"
 
 #. Default: "Allow {client} to use your account?"
 #: components/Consent/ConsentPanel
@@ -64,6 +70,11 @@ msgstr "Erlauben Sie {client}, Ihr Konto zu verwenden?"
 #: components/ControlPanel/ClientsPanel
 msgid "Allowed groups"
 msgstr "Erlaubte Gruppen"
+
+#. Default: "An application on this computer asks to act as {user} on {site}."
+#: components/Handoff/HandoffPanel
+msgid "An application on this computer asks to act as {user} on {site}."
+msgstr "Eine Anwendung auf diesem Computer möchte als {user} auf {site} handeln."
 
 #. Default: "An export carries every client secret in the clear. Handle the file the way you would handle the secrets inside it."
 #: components/ControlPanel/ProvidersControlPanel
@@ -241,6 +252,7 @@ msgstr "Diesen Anbieter löschen? Identitäten, die bereits damit verknüpft sin
 
 #. Default: "Deny"
 #: components/Consent/ConsentPanel
+#: components/Handoff/HandoffPanel
 msgid "Deny"
 msgstr "Ablehnen"
 
@@ -584,6 +596,11 @@ msgstr "OAuth-Clients"
 #: components/ControlPanel/ClientsPanel
 msgid "Older keys stay in the ring so tokens already issued keep verifying."
 msgstr "Ältere Schlüssel bleiben im Ring, damit bereits ausgegebene Tokens die Verifizierung weiterhin durchführen. Der Ring hält {size}; Das Drehen von mehr als diesem innerhalb einer Zugriffstoken-Lebensdauer invalidiert noch immer Tokens."
+
+#. Default: "Only allow it if you started the sign-in from that application yourself. It will be able to do anything you can do on this site."
+#: components/Handoff/HandoffPanel
+msgid "Only allow it if you started the sign-in from that application yourself."
+msgstr "Erlauben Sie dies nur, wenn Sie die Anmeldung selbst in dieser Anwendung gestartet haben. Sie kann dann alles tun, was Sie auf dieser Website tun können."
 
 #. Default: "Page"
 #: components/Toolbar/Toolbar

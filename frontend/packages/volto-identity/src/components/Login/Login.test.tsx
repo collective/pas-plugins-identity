@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '../../testing';
-import { MemoryRouter } from 'react-router-dom';
+import { act, fireEvent, render, screen } from '../../testing';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import React from 'react';
 
@@ -9,6 +9,12 @@ import {
   LIST_LOGIN_OPTIONS,
   START_PROVIDER_LOGIN,
 } from '../../constants/ActionTypes';
+import {
+  clearHandoff,
+  HANDOFF_PATH,
+  pendingHandoff,
+  storeHandoff,
+} from '../../helpers/handoff';
 import * as redirectModule from '../../helpers/redirectToSoleProvider';
 import * as showPloneLoginModule from '../../helpers/showPloneLogin';
 
@@ -317,6 +323,155 @@ describe('Login, when one provider is the only way in', () => {
 
     expect(starts(dispatched)).toEqual([
       '/@login-providers/github?came_from=%2Fnews',
+    ]);
+  });
+});
+
+describe('Login and a local application asking for the token', () => {
+  const LOOPBACK = 'http://127.0.0.1:8765/callback';
+  const HANDOFF = `?return_url=${encodeURIComponent(LOOPBACK)}&state=xyz`;
+
+  /** Reports where the router is. */
+  function Where() {
+    return <span data-testid="where">{useLocation().pathname}</span>;
+  }
+
+  /**
+   * Render the page with a store whose session can change after mount.
+   *
+   * @param search The page's query string.
+   * @param token The session the visitor arrives with.
+   * @returns A way to sign the visitor in while the page is showing.
+   */
+  function mountLogin(search: string, token?: string) {
+    let state: any = {
+      loginOptions: LOADED_PROVIDERS,
+      providerLogin: {},
+      magicLinkSend: {},
+      userSession: { token, login: {} },
+    };
+    const listeners = new Set<() => void>();
+    const store = {
+      getState: () => state,
+      dispatch: (action: any) => action,
+      subscribe: (listener: () => void) => {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      },
+    };
+    render(
+      <Provider store={store as any}>
+        <MemoryRouter initialEntries={[`/login${search}`]}>
+          <Login />
+          <Where />
+        </MemoryRouter>
+      </Provider>,
+    );
+    return {
+      signIn: (newToken: string) =>
+        act(() => {
+          state = { ...state, userSession: { token: newToken, login: {} } };
+          listeners.forEach((listener) => listener());
+        }),
+    };
+  }
+
+  const where = () => screen.getByTestId('where').textContent;
+
+  afterEach(() => {
+    clearHandoff();
+    vi.restoreAllMocks();
+  });
+
+  it('keeps the request until the consent page', () => {
+    mountLogin(HANDOFF);
+
+    expect(pendingHandoff()).toEqual({ returnUrl: LOOPBACK, state: 'xyz' });
+    // Nobody is signed in yet: the options stay on screen.
+    expect(where()).toBe('/login');
+  });
+
+  it('asks somebody already signed in straight away', () => {
+    mountLogin(HANDOFF, 'an-existing-token');
+
+    expect(where()).toBe(HANDOFF_PATH);
+  });
+
+  it('asks once somebody signs in on the page', () => {
+    // The password form: the token appears while the page is mounted.
+    const { signIn } = mountLogin(HANDOFF);
+
+    signIn('a-new-token');
+
+    expect(where()).toBe(HANDOFF_PATH);
+  });
+
+  it('does not ask after an ordinary sign-in', () => {
+    const { signIn } = mountLogin('?came_from=%2Fnews');
+
+    signIn('a-new-token');
+
+    expect(where()).toBe('/news');
+  });
+
+  it('forgets an abandoned request on an ordinary visit', () => {
+    storeHandoff({ returnUrl: LOOPBACK, state: 'old' });
+
+    mountLogin('?came_from=%2Fnews');
+
+    expect(pendingHandoff()).toBeNull();
+  });
+
+  it('keeps the request when sent back to choose again', () => {
+    // The callback page, after a sign-in failed in the middle of it.
+    storeHandoff({ returnUrl: LOOPBACK, state: 'xyz' });
+
+    mountLogin('?choose=1');
+
+    expect(pendingHandoff()).toEqual({ returnUrl: LOOPBACK, state: 'xyz' });
+  });
+
+  it('refuses a loopback return_url without a state', () => {
+    const { signIn } = mountLogin(
+      `?return_url=${encodeURIComponent(LOOPBACK)}`,
+    );
+
+    signIn('a-new-token');
+
+    expect(pendingHandoff()).toBeNull();
+    // And the person stays on the site.
+    expect(where()).toBe('/');
+  });
+
+  it('never hands the loopback URL to the backend as came_from', () => {
+    vi.spyOn(redirectModule, 'redirectToSoleProvider').mockReturnValue(false);
+    const dispatched: any[] = [];
+    const state = {
+      loginOptions: LOADED_PROVIDERS,
+      providerLogin: {},
+      magicLinkSend: {},
+      userSession: { login: {} },
+    };
+    const store = {
+      getState: () => state,
+      dispatch: (action: any) => {
+        dispatched.push(action);
+        return action;
+      },
+      subscribe: () => () => {},
+    };
+    render(
+      <Provider store={store as any}>
+        <MemoryRouter initialEntries={[`/login${HANDOFF}`]}>
+          <Login />
+        </MemoryRouter>
+      </Provider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /GitHub/ }));
+
+    expect(starts(dispatched)).toEqual([
+      '/@login-providers/github?came_from=%2F',
     ]);
   });
 });
