@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = "==3.14.*"
 
 [[package]]
@@ -973,7 +973,7 @@ requires-dist = [
     { name = "horse-with-no-namespace", marker = "extra == 'test'" },
     { name = "import-linter", marker = "extra == 'test'" },
     { name = "joserfc", specifier = ">=1.0" },
-    { name = "pas-plugins-authomatic", marker = "extra == 'test'", specifier = ">=2.0.0" },
+    { name = "pas-plugins-authomatic", marker = "extra == 'test'", specifier = ">=3.1.0" },
     { name = "pas-plugins-oidc", marker = "extra == 'test'", specifier = ">=2.0.0" },
     { name = "plone-api" },
     { name = "plone-app-dexterity" },
