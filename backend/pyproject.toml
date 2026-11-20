@@ -92,7 +92,7 @@ test = [
     # Migration fixtures. Test-only, and deliberately real rather than
     # synthesized: a fixture that encodes our reading of their storage would
     # pass while the migration was wrong about it.
-    "pas.plugins.authomatic>=2.0.0",
+    "pas.plugins.authomatic>=3.1.0",
     "pas.plugins.oidc>=2.0.0",
     "plone.volto",
     "horse-with-no-namespace",

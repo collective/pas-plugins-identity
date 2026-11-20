@@ -5,12 +5,29 @@
 
 import {
   COMPLETE_CALLBACK,
+  LIST_LOGIN_OPTIONS,
   LIST_LOGIN_PROVIDERS,
   START_PROVIDER_LOGIN,
 } from '../constants/ActionTypes';
 
 /**
- * List the providers this site offers.
+ * List the ways in, from plone.restapi's `GET @login`.
+ *
+ * What the login page and the sign-in block draw from. The answer carries
+ * every login plugin's options; the reducer keeps this add-on's own.
+ */
+export function listLoginOptions() {
+  return {
+    type: LIST_LOGIN_OPTIONS,
+    request: { op: 'get', path: '/@login' },
+  };
+}
+
+/**
+ * List the providers this site offers, from `@login-providers`.
+ *
+ * The same providers as {@link listLoginOptions}, in this add-on's own shape.
+ * The identities page reads them as a component of `@identities` instead.
  */
 export function listLoginProviders() {
   return {

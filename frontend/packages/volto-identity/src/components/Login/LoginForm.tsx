@@ -10,8 +10,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Container } from '@plone/components';
 import { defineMessages, useIntl } from 'react-intl';
 
-import type { LoginProvider } from '../../types';
-import { EMAIL_DRIVER } from '../../helpers/identities';
+import type { LoginOption } from '../../types';
 import LoginOverlay, { useDismissibleError } from './LoginOverlay';
 import MagicLinkForm from './MagicLinkForm';
 import PasswordForm from './PasswordForm';
@@ -43,7 +42,8 @@ const messages = defineMessages({
 });
 
 export interface LoginFormProps {
-  providers: LoginProvider[];
+  /** This add-on's options from `GET @login`. */
+  providers: LoginOption[];
   /**
    * Whether the sign-in options are still unknown.
    *
@@ -79,7 +79,7 @@ export interface LoginFormProps {
    * for a visitor who arrived signed in, or who asked to choose.
    */
   redirectToSoleProvider: boolean;
-  onSelectProvider: (provider: LoginProvider) => void;
+  onSelectProvider: (provider: LoginOption) => void;
   onSendMagicLink: (email: string) => void;
   onPasswordLogin: (username: string, password: string) => void;
 }
@@ -126,13 +126,14 @@ const LoginForm: React.FC<LoginFormProps> = ({
   const [step, setStep] = useState<Step>(null);
   // Which provider the redirect is for, so the wait can name it. The store
   // knows a flow was started; only the click knows which button began it.
-  const [going, setGoing] = useState<LoginProvider | null>(null);
+  const [going, setGoing] = useState<LoginOption | null>(null);
   const [showError, dismissError] = useDismissibleError(error);
   // Providers that sign somebody in by sending them somewhere. Email is not
   // one: it answers with a message rather than an authorize URL, so it must
-  // stay out of every branch that redirects.
-  const buttons = providers.filter((p) => p.driver !== EMAIL_DRIVER);
-  const emailProvider = providers.find((p) => p.driver === EMAIL_DRIVER);
+  // stay out of every branch that redirects. The backend says which is which
+  // in `flow`, so this does not have to know which driver mails a link.
+  const buttons = providers.filter((p) => p.flow === 'redirect');
+  const emailProvider = providers.find((p) => p.flow === 'email');
   const hasMagicLink = Boolean(emailProvider);
   // With nothing configured the password form is the login page whatever the
   // setting says. The setting decides whether a password is offered *beside*
@@ -261,9 +262,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
               id={provider.id}
               driver={provider.driver}
               label={provider.title || provider.id}
-              icon={provider.icon}
-              background_color={provider.background_color}
-              foreground_color={provider.foreground_color}
+              icon={provider.style.icon}
+              background_color={provider.style.background_color}
+              foreground_color={provider.style.foreground_color}
               disabled={starting}
               onSelect={() => {
                 setGoing(provider);
@@ -284,9 +285,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
               id={emailProvider.id}
               driver={emailProvider.driver}
               label={emailProvider.title || emailProvider.id}
-              icon={emailProvider.icon}
-              background_color={emailProvider.background_color}
-              foreground_color={emailProvider.foreground_color}
+              icon={emailProvider.style.icon}
+              background_color={emailProvider.style.background_color}
+              foreground_color={emailProvider.style.foreground_color}
               disabled={starting}
               onSelect={() => setStep('email')}
             />

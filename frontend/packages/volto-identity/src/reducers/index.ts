@@ -37,7 +37,12 @@ import {
   linkableProviders,
 } from './identities';
 import { keyRotate, signingKeys } from './keys';
-import { identityCallback, loginProviders, providerLogin } from './login';
+import {
+  identityCallback,
+  loginOptions,
+  loginProviders,
+  providerLogin,
+} from './login';
 import { magicLinkConfirm, magicLinkSend } from './magiclink';
 import {
   emailConfirmation,
@@ -80,7 +85,12 @@ export {
   linkableProviders,
 } from './identities';
 export { keyRotate, signingKeys } from './keys';
-export { identityCallback, loginProviders, providerLogin } from './login';
+export {
+  identityCallback,
+  loginOptions,
+  loginProviders,
+  providerLogin,
+} from './login';
 export { magicLinkConfirm, magicLinkSend } from './magiclink';
 export {
   emailConfirmation,
@@ -100,6 +110,7 @@ export {
 } from './providers';
 
 const reducers = {
+  loginOptions,
   loginProviders,
   providerLogin,
   identityCallback,

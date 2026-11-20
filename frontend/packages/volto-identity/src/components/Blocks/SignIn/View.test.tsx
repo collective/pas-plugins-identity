@@ -12,6 +12,7 @@ import {
   GITHUB,
   GOOGLE,
   LOADED,
+  loginOption,
   tokenFor,
 } from '../../../stories/fixtures';
 import type { LoginProvider } from '../../../types';
@@ -48,7 +49,7 @@ function mount({
 }: Mount = {}) {
   const dispatched: any[] = [];
   const state = {
-    loginProviders: { ...LOADED, data: providers },
+    loginOptions: { ...LOADED, data: providers.map(loginOption) },
     providerLogin: {},
     magicLinkSend: {},
     userSession: { token, login: {} },

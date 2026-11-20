@@ -110,8 +110,8 @@ is drawn with its driver's, and an icon uploaded on the provider replaces it.
 | `keycloak` | `keycloak.svg` | Volto, `finger-print.svg` | MIT |
 | `email` | `email.svg` | Volto, `email.svg` | MIT |
 
-The default is resolved when a provider is drawn, in `@login-providers` and
-`@identities`, and never stored. The provider's record, the control panel form
+The default is resolved when a provider is drawn, in `@login`,
+`@login-providers` and `@identities`, and never stored. The provider's record, the control panel form
 and an export carry only an uploaded icon. `@identity-drivers` serves each
 driver's default, and the form's **Icon** field shows it until one is uploaded.
 

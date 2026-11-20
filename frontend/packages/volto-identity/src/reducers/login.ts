@@ -6,11 +6,33 @@
 import {
   COMPLETE_CALLBACK,
   LIST_IDENTITIES,
+  LIST_LOGIN_OPTIONS,
   LIST_LOGIN_PROVIDERS,
   START_PROVIDER_LOGIN,
 } from '../constants/ActionTypes';
-import type { AuthorizeRedirect, LoginProvider, TokenResponse } from '../types';
+import type {
+  AuthorizeRedirect,
+  LoginOption,
+  LoginProvider,
+  TokenResponse,
+} from '../types';
 import { requestReducer } from './factory';
+
+/**
+ * This add-on's options in `GET @login`.
+ *
+ * `@login` answers every login plugin's options, and only ours can be started
+ * by this add-on: another plugin's `url` belongs to another flow. Kept here
+ * rather than in each component, so nothing downstream sees a foreign entry.
+ */
+export const loginOptions = requestReducer<LoginOption[]>(
+  LIST_LOGIN_OPTIONS,
+  (result) =>
+    (result?.options ?? []).filter(
+      (option: { plugin?: string }) => option?.plugin === 'identity',
+    ),
+  [],
+);
 
 export const loginProviders = requestReducer<LoginProvider[]>(
   LIST_LOGIN_PROVIDERS,

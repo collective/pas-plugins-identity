@@ -20,6 +20,9 @@ from pas.plugins.identity.core import profiles
 from pas.plugins.identity.core import subscribers
 from pas.plugins.identity.core.catalog import CATALOG_ID
 from pas.plugins.identity.core.catalog import query_catalog
+from pas.plugins.identity.core.controlpanel import get_provider
+from pas.plugins.identity.core.controlpanel import ProviderConfig
+from pas.plugins.identity.core.controlpanel import set_providers
 from pas.plugins.identity.core.events import ExternalIdentityAuthenticated
 from pas.plugins.identity.core.indexers.subscribers import profile_modified
 from pas.plugins.identity.core.indexers.subscribers import profile_moved
@@ -33,9 +36,13 @@ from pas.plugins.identity.core.services.useraccount.get import UserAccountGet
 from pas.plugins.identity.core.subscribers.gate import enforcing
 from pas.plugins.identity.core.subscribers.gate import incomplete_profile_url
 from pas.plugins.identity.core.utils import emails
+from pas.plugins.identity.interfaces import IBrowserLayer
 from pas.plugins.identity.setuphandlers.plugins import uninstall_profile_plugin
 from plone import api
 from plone.app.testing import TEST_USER_ID
+from plone.restapi.interfaces import ILoginProviders
+from zope.component import getAdapter
+from zope.interface import noLongerProvides
 
 import pytest
 
@@ -268,6 +275,53 @@ class TestAddressHelpersAreInert:
         """An object being read outside any request has nobody to prove an
         address for."""
         assert emails.verified_addresses("", ("alice@example.com",)) == ()
+
+
+def ours(portal) -> list[dict]:
+    """Return this package's ``@login`` options, from its named adapter.
+
+    By name rather than by collecting every adapter as the service does:
+    other plugins' adapters are not this test's subject, and
+    ``pas.plugins.authomatic`` 3 raises on a site where it is not installed.
+
+    :param portal: The Plone site.
+    :returns: This package's options.
+    """
+    adapter = getAdapter(portal, ILoginProviders, name="pas-plugins-identity-providers")
+    return adapter.get_providers()
+
+
+class TestLoginOptionsAreInert:
+    """The ``@login`` adapter is registered instance-wide, and ``@login`` is
+    plone.restapi's endpoint: a site without this package must still answer
+    it, with nothing of ours in it."""
+
+    def test_login_lists_none_of_ours(self, portal, request_, installer):
+        """Including a provider configured while the add-on was installed.
+
+        Its records survive the uninstall, but ``@login-providers`` does not:
+        it is bound to the browser layer, which plone.browserlayer marks on
+        each request only while the add-on is installed. The test request was
+        marked before the uninstall, so the marker is taken off by hand, as
+        the site's next request would arrive.
+        """
+        installer.install_product(PACKAGE_NAME)
+        set_providers([
+            ProviderConfig.deserialize({
+                "id": "dex",
+                "driver": "oidc-generic",
+                "title": "Dex",
+                "enabled": True,
+                "config": {"issuer": "http://dex:5556/dex", "client_id": "plone"},
+            })
+        ])
+        installed = ours(portal)
+        installer.uninstall_product(PACKAGE_NAME)
+        noLongerProvides(request_, IBrowserLayer)
+
+        assert [e["id"] for e in installed] == ["dex"]
+        assert get_provider("dex") is not None
+        assert ours(portal) == []
 
 
 class TestGroupAndAccountServicesAreInert:

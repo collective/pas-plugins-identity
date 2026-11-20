@@ -5,7 +5,7 @@ import {
   FAILED,
   LOADED,
   LOADING,
-  PROVIDERS,
+  OPTIONS,
   withStore,
 } from '../../stories/fixtures';
 
@@ -21,7 +21,7 @@ type Story = StoryObj<typeof Login>;
 export const Default: Story = {
   decorators: [
     withStore({
-      loginProviders: { ...LOADED, data: PROVIDERS },
+      loginOptions: { ...LOADED, data: OPTIONS },
       providerLogin: {},
       magicLinkSend: {},
       userSession: { token: null, login: {} },
@@ -32,7 +32,7 @@ export const Default: Story = {
 export const Loading: Story = {
   decorators: [
     withStore({
-      loginProviders: { ...LOADING, data: [] },
+      loginOptions: { ...LOADING, data: [] },
       providerLogin: {},
       magicLinkSend: {},
       userSession: { token: null, login: {} },
@@ -43,7 +43,7 @@ export const Loading: Story = {
 export const NoProvidersConfigured: Story = {
   decorators: [
     withStore({
-      loginProviders: { ...LOADED, data: [] },
+      loginOptions: { ...LOADED, data: [] },
       providerLogin: {},
       magicLinkSend: {},
       userSession: { token: null, login: {} },
@@ -54,7 +54,7 @@ export const NoProvidersConfigured: Story = {
 export const PasswordRefused: Story = {
   decorators: [
     withStore({
-      loginProviders: { ...LOADED, data: PROVIDERS },
+      loginOptions: { ...LOADED, data: OPTIONS },
       providerLogin: {},
       magicLinkSend: {},
       userSession: { token: null, login: { error: FAILED.error } },

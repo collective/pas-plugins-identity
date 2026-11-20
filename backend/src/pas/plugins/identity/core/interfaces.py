@@ -4,6 +4,7 @@ Everything a consumer of this package needs to talk to the identity store, to
 write a driver, or to plug in an audit sink is declared here.
 """
 
+from typing import Literal
 from typing import Protocol
 from typing import TypedDict
 from zope.interface import Attribute
@@ -37,6 +38,54 @@ class ProviderEmail(TypedDict):
     address: str
     verified: bool
     primary: bool
+
+
+class ProviderStyle(TypedDict):
+    """How a provider's button looks, as every public listing serves it.
+
+    Mirrored by ``ProviderStyle`` in the frontend's ``types/api.ts``. Each
+    value may be empty, which means the client's own styling.
+
+    :ivar icon: SVG source, sanitized when it was stored; the driver's default
+        icon when the provider has none of its own.
+    :ivar background_color: The button's background colour.
+    :ivar foreground_color: The button's text and icon colour.
+    """
+
+    icon: str
+    background_color: str
+    foreground_color: str
+
+
+#: What ``url`` in a :class:`LoginOption` is. ``redirect``: a ``GET`` starts an
+#: authorization-code flow and answers the ``authorize_url``. ``email``: a
+#: ``POST`` with ``{"email": …}`` mails a magic link.
+type LoginFlow = Literal["redirect", "email"]
+
+
+class LoginOption(TypedDict):
+    """One provider as an option of plone.restapi's ``GET @login``.
+
+    Mirrored by ``LoginOption`` in the frontend's ``types/api.ts``. ``id``,
+    ``title``, ``plugin`` and ``url`` are the keys ``ILoginProviders``
+    documents; the rest are this package's.
+
+    :ivar id: The provider id.
+    :ivar plugin: Always ``identity``, telling a client whose flow it is.
+    :ivar title: The title the login page shows.
+    :ivar url: Where the sign-in starts; what to do with it is ``flow``.
+    :ivar flow: How the sign-in starts.
+    :ivar driver: The driver id.
+    :ivar style: The button's icon and colours.
+    """
+
+    id: str
+    plugin: Literal["identity"]
+    title: str
+    url: str
+    flow: LoginFlow
+    driver: str
+    style: ProviderStyle
 
 
 class Claims(TypedDict, total=False):

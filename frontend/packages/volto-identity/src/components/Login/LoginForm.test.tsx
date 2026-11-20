@@ -4,20 +4,28 @@ import { MemoryRouter } from 'react-router-dom';
 import React from 'react';
 
 import LoginForm from './LoginForm';
-import type { LoginProvider } from '../../types';
+import type { LoginOption } from '../../types';
 
-const DEX: LoginProvider = {
-  '@id': '/@login-providers/dex',
+const NO_STYLE = { icon: '', background_color: '', foreground_color: '' };
+
+const DEX: LoginOption = {
   id: 'dex',
+  plugin: 'identity',
   title: 'Dex',
+  url: '/@login-providers/dex',
+  flow: 'redirect',
   driver: 'oidc-generic',
+  style: NO_STYLE,
 };
 
-const EMAIL: LoginProvider = {
-  '@id': '/@login-providers/email',
+const EMAIL: LoginOption = {
   id: 'email',
+  plugin: 'identity',
   title: 'Email',
+  url: '/@magic-link',
+  flow: 'email',
   driver: 'email',
+  style: NO_STYLE,
 };
 
 function renderForm(
@@ -380,6 +388,34 @@ describe('LoginForm', () => {
     fireEvent.click(screen.getByText('Email'));
 
     expect(onSelectProvider).not.toHaveBeenCalled();
+  });
+
+  it('tells the email form from a redirect by flow, not by driver', () => {
+    // The backend says which options mail a link; a driver this add-on has
+    // never heard of can be either.
+    const mailer: LoginOption = { ...EMAIL, id: 'mailer', driver: 'mailer' };
+    const { onSelectProvider } = renderForm({ providers: [DEX, mailer] });
+
+    fireEvent.click(screen.getByText('Email'));
+
+    expect(onSelectProvider).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Email address')).toBeTruthy();
+  });
+
+  it("draws a button in the option's style", () => {
+    const styled: LoginOption = {
+      ...DEX,
+      style: {
+        icon: '',
+        background_color: '#4b3f72',
+        foreground_color: '#fff',
+      },
+    };
+    renderForm({ providers: [styled] });
+
+    const button = screen.getByText('Dex').closest('button');
+    expect(button?.style.backgroundColor).toBe('rgb(75, 63, 114)');
+    expect(button?.style.color).toBe('rgb(255, 255, 255)');
   });
 
   it('closes the password form when the email one opens', () => {
