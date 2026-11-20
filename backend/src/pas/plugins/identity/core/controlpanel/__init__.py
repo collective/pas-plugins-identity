@@ -46,6 +46,7 @@ from pas.plugins.identity.core.controlpanel.interfaces import IProviderRecords
 from pas.plugins.identity.core.drivers import get_driver
 from pas.plugins.identity.core.drivers.base import BaseDriver
 from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity.core.interfaces import ProviderStyle
 from pas.plugins.identity.core.interfaces import ProviderUnusable
 from pas.plugins.identity.core.utils.propertymap import mappable_fields
 from pas.plugins.identity.core.utils.svg import decode_upload
@@ -624,7 +625,7 @@ class ProviderConfig:
             "groupmap": dict(self.groupmap),
         }
 
-    def style(self) -> JSONDict:
+    def style(self) -> ProviderStyle:
         """Render just what a client needs to draw the button.
 
         Separate from :meth:`serialize`, which is the control panel's view and
@@ -638,7 +639,7 @@ class ProviderConfig:
         somebody uploaded, and a driver that ships a new icon changes every
         provider that never chose its own.
 
-        :returns: JSON-ready mapping of icon and colours.
+        :returns: The icon and colours.
         """
         driver = self.driver
         return {

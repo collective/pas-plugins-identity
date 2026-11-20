@@ -4,14 +4,14 @@ import View from './View';
 import {
   ALICE_ACCOUNT,
   LOADED,
-  PROVIDERS,
+  OPTIONS,
   tokenFor,
   withStore,
 } from '../../../stories/fixtures';
 
 /** What the ways in read, for somebody not signed in. */
 const VISITOR = {
-  loginProviders: { ...LOADED, data: PROVIDERS },
+  loginOptions: { ...LOADED, data: OPTIONS },
   providerLogin: {},
   magicLinkSend: {},
   userSession: { token: null, login: {} },

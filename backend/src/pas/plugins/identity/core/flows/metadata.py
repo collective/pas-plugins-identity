@@ -136,6 +136,28 @@ def issuer_for(provider: ProviderConfig) -> str:
     return issuer
 
 
+def has_endpoints(provider: ProviderConfig) -> bool:
+    """Whether a provider can have an authorization endpoint at all.
+
+    The question a client following a start URL needs answered before it is
+    offered one: :func:`metadata_for` refuses the providers this answers
+    ``False`` for, permanently, so a button for them can only fail. Whether
+    the provider is configured well enough to *reach* its endpoint is a
+    different question, answered when the flow starts.
+
+    :param provider: The configured provider.
+    :returns: Whether the driver publishes endpoints, fixes an issuer, or asks
+        the operator for one. False for ``email`` and for a provider whose
+        driver has been uninstalled.
+    """
+    driver = provider.driver
+    if driver is None:
+        return False
+    return bool(driver.static_metadata or driver.issuer) or _asks_for_an_issuer(
+        provider
+    )
+
+
 def _asks_for_an_issuer(provider: ProviderConfig) -> bool:
     """Whether this provider's driver takes an issuer from the operator.
 

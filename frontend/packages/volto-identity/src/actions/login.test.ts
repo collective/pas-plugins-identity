@@ -2,9 +2,19 @@ import { describe, expect, it } from 'vitest';
 
 import {
   completeCallback,
+  listLoginOptions,
   listLoginProviders,
   startProviderLogin,
 } from './login';
+
+describe('listLoginOptions', () => {
+  it("reads plone.restapi's @login", () => {
+    expect(listLoginOptions().request).toEqual({
+      op: 'get',
+      path: '/@login',
+    });
+  });
+});
 
 describe('listLoginProviders', () => {
   it('reads the listing', () => {

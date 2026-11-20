@@ -2,9 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react';
 
 import LoginForm from './LoginForm';
 import {
-  EMAIL,
+  EMAIL_OPTION,
   FAILED,
-  PROVIDERS,
+  OPTIONS,
   withLoginCard,
 } from '../../stories/fixtures';
 
@@ -13,7 +13,7 @@ const meta: Meta<typeof LoginForm> = {
   component: LoginForm,
   decorators: [withLoginCard()],
   args: {
-    providers: PROVIDERS,
+    providers: OPTIONS,
     loading: false,
     starting: false,
     magicLinkSent: false,
@@ -40,7 +40,7 @@ export const Providers: Story = {};
  * any other, which is the only thing the picker is about.
  */
 export const WithMagicLink: Story = {
-  args: { providers: [...PROVIDERS, EMAIL] },
+  args: { providers: [...OPTIONS, EMAIL_OPTION] },
 };
 
 export const Loading: Story = { args: { loading: true } };
@@ -62,7 +62,7 @@ export const ProvidersOnly: Story = {
  * on its own, so what is on screen is where it is going.
  */
 export const TheOnlyWayIn: Story = {
-  args: { showPloneLogin: false, providers: [PROVIDERS[0]] },
+  args: { showPloneLogin: false, providers: [OPTIONS[0]] },
 };
 
 /**
@@ -72,7 +72,7 @@ export const TheOnlyWayIn: Story = {
 export const TheOnlyWayInAsAButton: Story = {
   args: {
     showPloneLogin: false,
-    providers: [PROVIDERS[0]],
+    providers: [OPTIONS[0]],
     redirectToSoleProvider: false,
   },
 };
@@ -81,7 +81,7 @@ export const TheOnlyWayInAsAButton: Story = {
 export const TheOnlyWayInFailed: Story = {
   args: {
     showPloneLogin: false,
-    providers: [PROVIDERS[0]],
+    providers: [OPTIONS[0]],
     error: FAILED.error,
   },
 };
@@ -95,7 +95,7 @@ export const TheOnlyWayInFailed: Story = {
  * it is pinned in `LoginForm.test.tsx` rather than here.
  */
 export const MagicLinkOnly: Story = {
-  args: { showPloneLogin: false, providers: [EMAIL] },
+  args: { showPloneLogin: false, providers: [EMAIL_OPTION] },
 };
 
 export const Redirecting: Story = { args: { starting: true } };

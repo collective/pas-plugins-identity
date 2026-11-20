@@ -33,6 +33,7 @@ export { listIdentities, startLinking, unlinkIdentity } from './identities';
 export { listKeys, rotateKey } from './keys';
 export {
   completeCallback,
+  listLoginOptions,
   listLoginProviders,
   startProviderLogin,
 } from './login';

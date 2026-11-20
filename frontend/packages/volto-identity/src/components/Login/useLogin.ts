@@ -14,7 +14,7 @@ import { useHistory, useLocation } from 'react-router-dom';
 import { defineMessages, useIntl } from 'react-intl';
 
 import {
-  listLoginProviders,
+  listLoginOptions,
   sendMagicLink,
   startProviderLogin,
 } from '../../actions';
@@ -23,7 +23,7 @@ import { login } from '@plone/volto/actions/userSession/userSession';
 import { goTo } from '../../helpers/navigate';
 import { returnUrl } from '../../helpers/returnUrl';
 import { showPloneLogin } from '../../helpers/showPloneLogin';
-import type { LoginProvider } from '../../types';
+import type { LoginOption } from '../../types';
 import type { LoginFormProps } from './LoginForm';
 
 const messages = defineMessages({
@@ -74,7 +74,7 @@ export function useLogin(): LoginState {
   const { push } = useHistory();
   const [redirecting, setRedirecting] = useState(false);
 
-  const providers = useSelector((state: any) => state.loginProviders);
+  const providers = useSelector((state: any) => state.loginOptions);
   const started = useSelector((state: any) => state.providerLogin);
   const magic = useSelector((state: any) => state.magicLinkSend);
   const userSession = useSelector((state: any) => state.userSession);
@@ -89,7 +89,7 @@ export function useLogin(): LoginState {
   const [sessionOnArrival] = useState<string>(() => userSession?.token ?? '');
 
   useEffect(() => {
-    dispatch(listLoginProviders());
+    dispatch(listLoginOptions());
   }, [dispatch]);
 
   useEffect(() => {
@@ -101,7 +101,7 @@ export function useLogin(): LoginState {
   }, [redirecting, started, push]);
 
   const onSelectProvider = useCallback(
-    (provider: LoginProvider) => {
+    (provider: LoginOption) => {
       setRedirecting(true);
       dispatch(
         startProviderLogin(

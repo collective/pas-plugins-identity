@@ -31,6 +31,7 @@ import type {
   GroupMembers,
   Identity,
   JsonSchema,
+  LoginOption,
   LoginProvider,
   OAuthClient,
   OAuthGrants,
@@ -99,6 +100,38 @@ export const STYLED: LoginProvider = {
   background_color: '#4b3f72',
   foreground_color: '#ffffff',
 };
+
+/**
+ * One of the providers above as `GET @login` lists it.
+ *
+ * Derived rather than written out a second time, so a provider's title and
+ * look cannot differ between the two listings in a story either.
+ *
+ * @param provider The `@login-providers` item.
+ * @returns The `@login` option the backend builds from the same provider.
+ */
+export function loginOption(provider: LoginProvider): LoginOption {
+  const email = provider.driver === 'email';
+  return {
+    id: provider.id,
+    plugin: 'identity',
+    title: provider.title,
+    url: email ? '/@magic-link' : provider['@id'],
+    flow: email ? 'email' : 'redirect',
+    driver: provider.driver,
+    style: {
+      icon: provider.icon ?? '',
+      background_color: provider.background_color ?? '',
+      foreground_color: provider.foreground_color ?? '',
+    },
+  };
+}
+
+/** {@link PROVIDERS} as `GET @login` lists them. */
+export const OPTIONS = PROVIDERS.map(loginOption);
+
+/** The email provider as `GET @login` lists it. */
+export const EMAIL_OPTION = loginOption(EMAIL);
 
 /** A profile's addresses: one proved, one not. */
 export const PROFILE_EMAILS: ProfileEmail[] = [

@@ -5,7 +5,10 @@ import { Provider } from 'react-redux';
 import React from 'react';
 
 import Login from './Login';
-import { START_PROVIDER_LOGIN } from '../../constants/ActionTypes';
+import {
+  LIST_LOGIN_OPTIONS,
+  START_PROVIDER_LOGIN,
+} from '../../constants/ActionTypes';
 import * as redirectModule from '../../helpers/redirectToSoleProvider';
 import * as showPloneLoginModule from '../../helpers/showPloneLogin';
 
@@ -49,13 +52,23 @@ const LOADED_PROVIDERS = {
   loading: false,
   loaded: true,
   error: null,
-  data: [{ id: 'github', title: 'GitHub' }],
+  data: [
+    {
+      id: 'github',
+      plugin: 'identity',
+      title: 'GitHub',
+      url: '/@login-providers/github',
+      flow: 'redirect',
+      driver: 'github',
+      style: { icon: '', background_color: '', foreground_color: '' },
+    },
+  ],
 };
 
-function storeWith(token?: string, loginProviders: any = LOADED_PROVIDERS) {
+function storeWith(token?: string, loginOptions: any = LOADED_PROVIDERS) {
   const dispatched: any[] = [];
   const state = {
-    loginProviders,
+    loginOptions,
     providerLogin: {},
     magicLinkSend: {},
     userSession: { token, login: {} },
@@ -76,9 +89,9 @@ function storeWith(token?: string, loginProviders: any = LOADED_PROVIDERS) {
 function renderLogin(
   token?: string,
   search = '?came_from=%2F%40%40oauth-authorize',
-  loginProviders?: any,
+  loginOptions?: any,
 ) {
-  const { store, dispatched } = storeWith(token, loginProviders);
+  const { store, dispatched } = storeWith(token, loginOptions);
   render(
     <Provider store={store as any}>
       <MemoryRouter initialEntries={[`/login${search}`]}>
@@ -134,6 +147,18 @@ describe('Login', () => {
     renderLogin('an-existing-token');
 
     expect(capture.navigated).toEqual([]);
+  });
+
+  it("asks plone.restapi's @login for the ways in", () => {
+    // The listing every login plugin feeds, so the page and other clients
+    // see the same providers.
+    const { dispatched } = renderLogin();
+
+    expect(
+      dispatched
+        .filter((action) => action.type === LIST_LOGIN_OPTIONS)
+        .map((action) => action.request.path),
+    ).toEqual(['/@login']);
   });
 
   it('shows the providers instead of redirecting', () => {

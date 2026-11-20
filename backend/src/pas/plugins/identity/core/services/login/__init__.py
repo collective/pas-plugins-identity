@@ -14,6 +14,7 @@ def render_provider(base: str, provider: ProviderConfig) -> JSONDict:
         needs an id, a label, somewhere to click and how to look.
     """
     driver = provider.driver
+    style = provider.style()
     return {
         "@id": f"{base}/{provider.provider_id}",
         "id": provider.provider_id,
@@ -25,7 +26,9 @@ def render_provider(base: str, provider: ProviderConfig) -> JSONDict:
         "supports_manual_link": (
             driver.supports_manual_link if driver is not None else False
         ),
-        **provider.style(),
+        "icon": style["icon"],
+        "background_color": style["background_color"],
+        "foreground_color": style["foreground_color"],
     }
 
 

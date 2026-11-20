@@ -25,7 +25,13 @@ export interface ProviderStyle {
   foreground_color?: string;
 }
 
-/** One provider offered on the login page, from `@login-providers`. */
+/**
+ * One provider offered on the login page, from `@login-providers`.
+ *
+ * The sign-in methods page reads these, through the `login-providers`
+ * component of `@identities`. The login page itself draws from
+ * {@link LoginOption}s.
+ */
 export interface LoginProvider extends ProviderStyle {
   '@id': string;
   id: string;
@@ -41,6 +47,34 @@ export interface LoginProvider extends ProviderStyle {
    * observe it.
    */
   supports_manual_link?: boolean;
+}
+
+/**
+ * What `url` in a {@link LoginOption} is.
+ *
+ * `redirect`: a `GET` starts an authorization-code flow and answers an
+ * {@link AuthorizeRedirect}. `email`: a `POST` with `{ email }` mails a
+ * magic link, and there is nowhere to send the browser.
+ */
+export type LoginFlow = 'redirect' | 'email';
+
+/**
+ * One of this package's entries in plone.restapi's `GET @login` `options`.
+ *
+ * Mirrors `LoginOption` in the backend's `core/interfaces.py`. `id`, `title`,
+ * `plugin` and `url` are the keys plone.restapi's `ILoginProviders`
+ * documents; other plugins' entries carry only those, so check `plugin`
+ * before reading the rest. The login page and the sign-in block draw from
+ * these; the reducer keeps only this add-on's.
+ */
+export interface LoginOption {
+  id: string;
+  plugin: 'identity';
+  title: string;
+  url: string;
+  flow: LoginFlow;
+  driver: string;
+  style: ProviderStyle;
 }
 
 /** Answer from `@login-providers/<id>`: where to send the browser. */

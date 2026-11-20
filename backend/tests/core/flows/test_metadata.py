@@ -9,10 +9,12 @@ from . import DEX_PROVIDER
 from copy import deepcopy
 from datetime import timedelta
 from pas.plugins.identity.core.controlpanel import ProviderConfig
+from pas.plugins.identity.core.drivers import all_drivers
 from pas.plugins.identity.core.drivers.github import GitHubDriver
 from pas.plugins.identity.core.flows import metadata as md
 from pas.plugins.identity.core.interfaces import FlowError
 from pas.plugins.identity.core.interfaces import JSONDict
+from pas.plugins.identity.core.interfaces import ProviderUnusable
 from plone import api
 from plone.registry.interfaces import IRegistry
 from zope.component import getUtility
@@ -248,6 +250,43 @@ class TestIssuerResolution:
         })
 
         assert md._asks_for_an_issuer(provider) is asks
+
+    def test_has_endpoints_agrees_with_metadata_for(self, monkeypatch):
+        """``has_endpoints`` decides which providers ``@login`` offers, so it
+        must answer ``False`` exactly where :func:`metadata_for` refuses for
+        good. Asked of every registered driver, with the network stubbed --
+        a loop rather than parametrize, because the drivers are utilities
+        that do not exist yet when tests are collected."""
+        monkeypatch.setattr(md, "discover", lambda issuer: dict(DISCOVERY))
+        resolves = {}
+        answers = {}
+        for driver_id in all_drivers():
+            provider = ProviderConfig.deserialize({
+                "id": "p",
+                "driver": driver_id,
+                "config": {"issuer": ISSUER},
+            })
+            try:
+                md.metadata_for(provider)
+            except ProviderUnusable:
+                resolves[driver_id] = False
+            else:
+                resolves[driver_id] = True
+            answers[driver_id] = md.has_endpoints(provider)
+
+        assert answers == resolves
+        assert [driver_id for driver_id, ok in resolves.items() if not ok] == ["email"]
+        assert len(resolves) >= 6
+
+    def test_a_driver_that_is_gone_has_no_endpoints(self):
+        """Nothing left to ask, so nothing to offer."""
+        provider = ProviderConfig.deserialize({
+            "id": "orphan",
+            "driver": "no-such-driver",
+            "config": {"issuer": ISSUER},
+        })
+
+        assert md.has_endpoints(provider) is False
 
     def test_a_provider_whose_driver_is_gone_is_refused(self):
         """Uninstalling the add-on that registered a driver leaves the

@@ -11,6 +11,13 @@
       name="login-providers"
       />
 
+  <!-- The same providers, as options of plone.restapi's GET @login, where
+       pas.plugins.oidc and pas.plugins.authomatic list theirs. -->
+  <adapter
+      factory=".options.LoginOptions"
+      name="pas-plugins-identity-providers"
+      />
+
   <plone:service
       method="GET"
       factory=".get.LoginProviders"

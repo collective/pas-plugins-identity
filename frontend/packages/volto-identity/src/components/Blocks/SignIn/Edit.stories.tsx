@@ -1,14 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react';
 
 import Edit from './Edit';
-import { LOADED, PROVIDERS, withStore } from '../../../stories/fixtures';
+import { LOADED, OPTIONS, withStore } from '../../../stories/fixtures';
 
 const meta: Meta<typeof Edit> = {
   title: 'Identity/Blocks/SignIn/Edit',
   component: Edit,
   decorators: [
     withStore({
-      loginProviders: { ...LOADED, data: PROVIDERS },
+      loginOptions: { ...LOADED, data: OPTIONS },
       providerLogin: {},
       magicLinkSend: {},
       userSession: { token: null, login: {} },

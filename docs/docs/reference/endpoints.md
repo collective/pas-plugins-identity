@@ -29,7 +29,8 @@ Present in every installation.
 
 | Method | Path | Requires | Purpose |
 |---|---|---|---|
-| GET | `@login-providers` | anonymous | Providers to offer on the login page. Enabled **and** shown only. Also available as a `plone.restapi` expander. |
+| GET | `@login-providers` | anonymous | The providers the login page offers, enabled **and** shown only, in this package's own shape. Also available as a `plone.restapi` expander, which the sign-in methods page reads. |
+| GET | `@login` | anonymous | `plone.restapi`'s own endpoint, not this package's. Its `options` carry one entry per provider `@login-providers` lists, and the login page and the sign-in block are drawn from them. See {ref}`reference-endpoints-login-options`. |
 | POST | `@identity-callback` | anonymous | The provider redirects here; completes a sign-in. |
 | POST | `@magic-link` | anonymous | Send a single-use sign-in link. Answers identically whether or not the address is known. |
 | POST | `@magic-link-confirm` | anonymous | Redeem a link. Burns the token. |
@@ -60,6 +61,38 @@ asked about.
 The second is what `plone.restapi`'s `PATCH @groups/<id>` asks for, so a Site
 Administrator, who holds it without `Manage users`, can read the members they
 can change.
+
+(reference-endpoints-login-options)=
+
+### Options in `@login`
+
+<!-- source: backend/src/pas/plugins/identity/core/services/login/options.py -->
+
+`GET @login` collects its `options` from every `ILoginProviders` adapter on
+the site, and `pas.plugins.oidc` and `pas.plugins.authomatic` list their
+providers there too. This package's entries carry these keys.
+
+| Key | Value |
+|---|---|
+| `id` | The provider id |
+| `plugin` | `identity` |
+| `title` | The title `@login-providers` shows |
+| `url` | Where the sign-in starts. Depends on `flow`. |
+| `flow` | `redirect` or `email` |
+| `driver` | The driver id, as in `@login-providers` |
+| `style` | The button's `icon`, `background_color` and `foreground_color`, the same values as in `@login-providers` |
+
+| `flow` | `url` | What a client does |
+|---|---|---|
+| `redirect` | `@login-providers/<id>` | `GET` it, then send the browser to the `authorize_url` it answers |
+| `email` | `@magic-link` | `POST` `{"email": "<address>"}` to it. A single-use sign-in link is mailed, and there is nowhere to send the browser. A client that only handles redirects skips the entry. |
+
+| Provider | In `@login` |
+|---|---|
+| Enabled and shown at login | Yes, in the login page's order |
+| Hidden from the login page, or disabled | No |
+| Its driver has neither endpoints nor a mailbox | No |
+| On a site where the add-on is not installed | No |
 
 ### Three answers worth knowing
 

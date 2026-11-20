@@ -40,8 +40,8 @@ The event name in the log is the fastest route into the table below.
 
 ## The login button for a provider does not appear
 
-The login page is built from `@login-providers`, which returns only providers
-that are **both** enabled and shown.
+The login page is built from this package's options in `plone.restapi`'s
+`@login`, which lists only providers that are **both** enabled and shown.
 
 1. Open the **Identity providers** control panel.
 2. Check {guilabel}`Enabled` **and** {guilabel}`Show on the login screen`.

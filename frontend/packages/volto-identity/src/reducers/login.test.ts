@@ -2,10 +2,53 @@ import { describe, expect, it } from 'vitest';
 
 import {
   COMPLETE_CALLBACK,
+  LIST_LOGIN_OPTIONS,
   LIST_LOGIN_PROVIDERS,
   START_PROVIDER_LOGIN,
 } from '../constants/ActionTypes';
-import { identityCallback, loginProviders, providerLogin } from './login';
+import {
+  identityCallback,
+  loginOptions,
+  loginProviders,
+  providerLogin,
+} from './login';
+
+describe('loginOptions', () => {
+  it('starts empty and not loading', () => {
+    const state = loginOptions(undefined, { type: 'INIT' });
+
+    expect(state.data).toEqual([]);
+    expect(state.loaded).toBe(false);
+  });
+
+  it("keeps this add-on's options and drops other plugins'", () => {
+    // @login lists every login plugin; another plugin's url belongs to a
+    // flow this add-on cannot run.
+    const state = loginOptions(undefined, {
+      type: `${LIST_LOGIN_OPTIONS}_SUCCESS`,
+      result: {
+        options: [
+          { id: 'dex', plugin: 'identity', flow: 'redirect' },
+          { id: 'github', plugin: 'authomatic' },
+          { id: 'keycloak', plugin: 'oidc' },
+          { id: 'email', plugin: 'identity', flow: 'email' },
+        ],
+      },
+    });
+
+    expect(state.data.map((option) => option.id)).toEqual(['dex', 'email']);
+    expect(state.loaded).toBe(true);
+  });
+
+  it('survives an answer with no options', () => {
+    const state = loginOptions(undefined, {
+      type: `${LIST_LOGIN_OPTIONS}_SUCCESS`,
+      result: {},
+    });
+
+    expect(state.data).toEqual([]);
+  });
+});
 
 describe('loginProviders', () => {
   it('starts empty and not loading', () => {

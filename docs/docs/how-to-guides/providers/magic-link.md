@@ -47,8 +47,8 @@ Send a test message from the Mail control panel before continuing.
 ```{important}
 The magic-link form appears on `/login` only when the `email` provider is
 **shown on the login screen**, not merely enabled. The login page builds itself
-from the providers `@login-providers` returns, and that endpoint filters on
-exactly this flag.
+from this package's options in `plone.restapi`'s `@login`, which list only the
+providers with exactly this flag.
 
 An `email` provider that is enabled and hidden still verifies addresses and can
 still be linked to an account. It just has no button.
