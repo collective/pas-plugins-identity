@@ -6,6 +6,11 @@ import React from 'react';
 
 import { LOGIN } from '@plone/volto/constants/ActionTypes';
 import Callback from './Callback';
+import {
+  clearHandoff,
+  HANDOFF_PATH,
+  storeHandoff,
+} from '../../helpers/handoff';
 
 /**
  * Render the callback route with a store whose state we control.
@@ -135,6 +140,26 @@ describe('Callback', () => {
     });
 
     expect(screen.getByTestId('where').textContent).toBe('/');
+  });
+
+  it('asks about a pending handoff before going anywhere', () => {
+    // A local application asked for the token before this sign-in started.
+    // Every way in ends at its consent page, the provider callback and the
+    // magic link included -- the backend never knew about the request.
+    storeHandoff({ returnUrl: 'http://127.0.0.1:8765/', state: 'xyz' });
+    try {
+      renderCallback({
+        identityCallback: {
+          loaded: true,
+          data: { token: 'a-token', came_from: '/some/page' },
+        },
+        magicLinkConfirm: {},
+      });
+
+      expect(screen.getByTestId('where').textContent).toBe(HANDOFF_PATH);
+    } finally {
+      clearHandoff();
+    }
   });
 
   it('lets a caller override what happens with the token', () => {

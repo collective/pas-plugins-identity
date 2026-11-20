@@ -46,26 +46,57 @@ function decodeSegment(segment: string): string {
 }
 
 /**
+ * Return a session token's claims.
+ *
+ * @param token The JWT from `state.userSession.token`, if there is one.
+ * @returns The claims, or an empty object when there is no usable token.
+ */
+function claimsFromToken(
+  token: string | undefined | null,
+): Record<string, unknown> {
+  const segment = (token ?? '').split('.')[1];
+  if (!segment) {
+    return {};
+  }
+  const decoded = decodeSegment(segment);
+  if (!decoded) {
+    return {};
+  }
+  try {
+    const claims = JSON.parse(decoded);
+    return claims && typeof claims === 'object' ? claims : {};
+  } catch {
+    // A token that is not a JWT at all. Answering "nobody" is right: the
+    // alternative is throwing inside a component that renders on every page.
+    return {};
+  }
+}
+
+/**
  * Return the userid a session token was issued for.
  *
  * @param token The JWT from `state.userSession.token`, if there is one.
  * @returns The `sub` claim, or an empty string when there is no usable token.
  */
 export function useridFromToken(token: string | undefined | null): string {
-  const segment = (token ?? '').split('.')[1];
-  if (!segment) {
-    return '';
+  const { sub } = claimsFromToken(token);
+  return typeof sub === 'string' ? sub : '';
+}
+
+/**
+ * Return a name to show for the person a session token was issued for.
+ *
+ * The `fullname` claim, which `plone.restapi` and this add-on both put in the
+ * tokens they mint, and the userid when it is missing or empty: a federated
+ * userid can be an opaque string nobody would recognise as themselves.
+ *
+ * @param token The JWT from `state.userSession.token`, if there is one.
+ * @returns The name, or an empty string when there is no usable token.
+ */
+export function nameFromToken(token: string | undefined | null): string {
+  const { fullname } = claimsFromToken(token);
+  if (typeof fullname === 'string' && fullname.trim()) {
+    return fullname.trim();
   }
-  const decoded = decodeSegment(segment);
-  if (!decoded) {
-    return '';
-  }
-  try {
-    const claims = JSON.parse(decoded);
-    return typeof claims?.sub === 'string' ? claims.sub : '';
-  } catch {
-    // A token that is not a JWT at all. Answering "nobody" is right: the
-    // alternative is throwing inside a component that renders on every page.
-    return '';
-  }
+  return useridFromToken(token);
 }

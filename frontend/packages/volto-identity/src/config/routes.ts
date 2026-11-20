@@ -6,6 +6,7 @@ import Callback from '../components/Callback/Callback';
 import ConfirmEmail from '../components/ConfirmEmail/ConfirmEmail';
 import Consent from '../components/Consent/Consent';
 import FirstLogin from '../components/FirstLogin/FirstLogin';
+import Handoff from '../components/Handoff/Handoff';
 import ClientsControlPanel from '../components/ControlPanel/ClientsControlPanel';
 import ProvidersControlPanel from '../components/ControlPanel/ProvidersControlPanel';
 import UserAccount from '../components/ControlPanel/UserAccount';
@@ -15,6 +16,7 @@ import ManageMembers, {
   MANAGE_MEMBERS_VIEW,
 } from '../components/ManageMembers/ManageMembers';
 import VoltoLogin from '@plone/volto/components/theme/Login/Login';
+import { HANDOFF_PATH } from '../helpers/handoff';
 import { CONFIRM_EMAIL_PATH } from '../helpers/profileGate';
 
 /**
@@ -25,6 +27,16 @@ import { CONFIRM_EMAIL_PATH } from '../helpers/profileGate';
  * imports the components that import it.
  */
 export { CONFIRM_EMAIL_PATH };
+
+/**
+ * Where a signed-in user is asked whether to hand their session token to an
+ * application on their own computer. Defined in `helpers/handoff`, beside the
+ * rest of that contract, and re-exported here with the other paths.
+ *
+ * Not exempt from the profile gate: a person whose profile the site holds
+ * them on completes it first, and the gate brings them back here.
+ */
+export { HANDOFF_PATH };
 
 /** The frontend route the provider redirects back to. */
 export const CALLBACK_PATH = '/login-identity';
@@ -149,6 +161,7 @@ export default function install(config: ConfigType) {
     new RegExp(`^${CONFIRM_EMAIL_PATH}$`),
     new RegExp(`^${IDENTITIES_PATH}$`),
     new RegExp(`^${CONSENT_PATH}$`),
+    new RegExp(`^${HANDOFF_PATH}$`),
     new RegExp(`^${APPLICATIONS_PATH}$`),
     // Not covered by Volto's own `/login` entry: `nonContentRoutes`
     // strings are tested as unanchored regexes, and `/login` does not
@@ -168,6 +181,7 @@ export default function install(config: ConfigType) {
     { path: '/**/login', exact: true, component: Login },
     { path: IDENTITIES_PATH, exact: true, component: Identities },
     { path: CONSENT_PATH, exact: true, component: Consent },
+    { path: HANDOFF_PATH, exact: true, component: Handoff },
     { path: APPLICATIONS_PATH, exact: true, component: Applications },
     { path: USER_ACCOUNT_PATH, exact: true, component: UserAccount },
     { path: CONTROLPANEL_PATH, exact: true, component: ProvidersControlPanel },

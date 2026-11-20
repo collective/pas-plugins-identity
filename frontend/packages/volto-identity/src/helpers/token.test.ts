@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { useridFromToken } from './token';
+import { nameFromToken, useridFromToken } from './token';
 
 /**
  * Build a JWT-shaped string around a payload.
@@ -58,5 +58,27 @@ describe('useridFromToken', () => {
 
   it('answers nobody when the subject is not a string', () => {
     expect(useridFromToken(tokenFor({ sub: 42 }))).toBe('');
+  });
+});
+
+describe('nameFromToken', () => {
+  it('reads the full name', () => {
+    expect(
+      nameFromToken(tokenFor({ sub: 'a1b2c3', fullname: 'Alice Liddell' })),
+    ).toBe('Alice Liddell');
+  });
+
+  it('falls back to the userid without a full name', () => {
+    expect(nameFromToken(tokenFor({ sub: 'alice' }))).toBe('alice');
+  });
+
+  it('falls back to the userid for a blank full name', () => {
+    expect(nameFromToken(tokenFor({ sub: 'alice', fullname: '  ' }))).toBe(
+      'alice',
+    );
+  });
+
+  it('answers nobody when there is no token', () => {
+    expect(nameFromToken(undefined)).toBe('');
   });
 });

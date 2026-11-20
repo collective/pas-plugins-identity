@@ -57,8 +57,14 @@ msgstr "Adicionar {item}"
 
 #. Default: "Allow"
 #: components/Consent/ConsentPanel
+#: components/Handoff/HandoffPanel
 msgid "Allow"
 msgstr "Permitir"
+
+#. Default: "Allow an application on this computer to use your account?"
+#: components/Handoff/HandoffPanel
+msgid "Allow an application on this computer to use your account?"
+msgstr "Permitir que um aplicativo neste computador use sua conta?"
 
 #. Default: "Allow {client} to use your account?"
 #: components/Consent/ConsentPanel
@@ -69,6 +75,11 @@ msgstr "Permitir que {client} use sua conta?"
 #: components/ControlPanel/ClientsPanel
 msgid "Allowed groups"
 msgstr "Grupos permitidos"
+
+#. Default: "An application on this computer asks to act as {user} on {site}."
+#: components/Handoff/HandoffPanel
+msgid "An application on this computer asks to act as {user} on {site}."
+msgstr "Um aplicativo neste computador pede para agir como {user} em {site}."
 
 #. Default: "An export carries every client secret in the clear. Handle the file the way you would handle the secrets inside it."
 #: components/ControlPanel/ProvidersControlPanel
@@ -246,6 +257,7 @@ msgstr "Excluir este provedor?"
 
 #. Default: "Deny"
 #: components/Consent/ConsentPanel
+#: components/Handoff/HandoffPanel
 msgid "Deny"
 msgstr "Recusar"
 
@@ -589,6 +601,11 @@ msgstr "Clientes OAuth"
 #: components/ControlPanel/ClientsPanel
 msgid "Older keys stay in the ring so tokens already issued keep verifying."
 msgstr "Chaves mais antigas permanecem no anel para que os tokens já emitidos continuem verificando. O anel contém {size}; rotacionar mais que isso em uma vida de token de acesso invalidará tokens ainda em voo."
+
+#. Default: "Only allow it if you started the sign-in from that application yourself. It will be able to do anything you can do on this site."
+#: components/Handoff/HandoffPanel
+msgid "Only allow it if you started the sign-in from that application yourself."
+msgstr "Só permita se você mesmo iniciou o acesso a partir desse aplicativo. Ele poderá fazer tudo o que você pode fazer neste site."
 
 #. Default: "Page"
 #: components/Toolbar/Toolbar

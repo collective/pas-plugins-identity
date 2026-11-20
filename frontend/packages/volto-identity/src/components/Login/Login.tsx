@@ -5,9 +5,15 @@
  * are `useLogin`, which the sign-in block shares.
  * @module components/Login/Login
  */
-import React from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useHistory, useLocation } from 'react-router-dom';
 
+import {
+  clearHandoff,
+  HANDOFF_PATH,
+  readHandoffRequest,
+  storeHandoff,
+} from '../../helpers/handoff';
 import {
   asksToChoose,
   redirectToSoleProvider,
@@ -18,7 +24,32 @@ import { useLogin } from './useLogin';
 
 const Login: React.FC = () => {
   const location = useLocation();
+  const { replace } = useHistory();
   const { form, title, description, sessionOnArrival } = useLogin();
+
+  // A local application asking for the token (`helpers/handoff`). Kept until
+  // the consent page, which every way in ends at while it is pending.
+  // Somebody already signed in is asked straight away: the question is the
+  // same.
+  //
+  // Any other visit forgets an earlier request, so one somebody abandoned
+  // does not ask its question at their next ordinary sign-in -- except
+  // `?choose`, which is the callback page sending somebody back to the
+  // options after a sign-in failed, in the middle of the same request.
+  //
+  // Only on this page, not in `useLogin`: the sign-in block shares that, and
+  // a block on whatever page the profile gate shows must not forget it.
+  useEffect(() => {
+    const request = readHandoffRequest(location.search);
+    if (request && request !== 'refused') {
+      storeHandoff(request);
+      if (sessionOnArrival) {
+        replace(HANDOFF_PATH);
+      }
+    } else if (!asksToChoose(location.search)) {
+      clearHandoff();
+    }
+  }, [location.search, sessionOnArrival, replace]);
 
   // Whether a sole provider may be started without showing its button. The
   // site answers first, and this visit can still say no:

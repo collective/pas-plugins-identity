@@ -1,0 +1,1 @@
+Added a test that a token minted at sign-in renews through plone.restapi's `@login-renew`, which is how a command-line tool handed that token keeps it alive. @ericof
